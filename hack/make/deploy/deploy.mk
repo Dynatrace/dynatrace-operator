@@ -1,4 +1,5 @@
 ENABLE_CSI ?= true
+CSI_MIGRATION_MODE ?= false
 DEBUG_LOGS ?= true
 DT_CLIENT_LOG_LEVEL ?= response
 WEBHOOK_REPLICAS ?= 2
@@ -32,6 +33,7 @@ deploy: manifests/crd/helm
 			--atomic \
 			--set installCRD=true \
 			--set csidriver.enabled=$(ENABLE_CSI) \
+			--set csidriver.migrationMode=$(CSI_MIGRATION_MODE) \
 			--set webhook.replicas=$(WEBHOOK_REPLICAS) \
 			--set manifests=true \
 			--set image=$(IMAGE_URI) \

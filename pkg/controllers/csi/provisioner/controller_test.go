@@ -85,6 +85,25 @@ func TestReconcile(t *testing.T) {
 		assert.False(t, areFsDirsCreated(t, prov, dk))
 	})
 
+	t.Run("OCI volumes (similar to migration mode case) => cleanup only, no install, long requeue", func(t *testing.T) {
+		installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: false})
+
+		dk := createDynaKubeWithImage(t)
+		dk.Annotations[exp.OAImageVolumeKey] = "true"
+		prov := createProvisioner(t, dk)
+		// imageInstallerBuilder is intentionally NOT set, if it were called the test would panic
+		prov.imageInstallerBuilder = func(_ context.Context, _ *image.Properties) (installer.Installer, error) {
+			return nil, errors.New("imageInstallerBuilder should not be called in migration mode")
+		}
+
+		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		assert.Equal(t, longRequeueDuration, result.RequeueAfter)
+
+		assert.False(t, areFsDirsCreated(t, prov, dk))
+	})
+
 	t.Run("dynakube status not ready => only setup base fs, no error, short requeue", func(t *testing.T) {
 		dk := createNotReadyDynaKube(t)
 		prov := createProvisioner(t, dk)
@@ -391,8 +410,9 @@ func createDynaKubeBase(t *testing.T) *dynakube.DynaKube {
 
 	return &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-dk",
-			Namespace: "test-ns",
+			Name:        "test-dk",
+			Namespace:   "test-ns",
+			Annotations: make(map[string]string),
 		},
 		Spec: dynakube.DynaKubeSpec{APIURL: "https://csi-provisioner-dummy-url:9090"},
 	}
