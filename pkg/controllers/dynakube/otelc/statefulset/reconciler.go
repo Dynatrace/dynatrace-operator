@@ -5,7 +5,6 @@ package statefulset
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -55,34 +54,31 @@ func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 	}
 }
 
-func resolveImage(ctx context.Context, imageClient dtimage.Client, dk *dynakube.DynaKube, component dtimage.ComponentType) (string, error) {
+func resolveImage(ctx context.Context, imageClient dtimage.Client, dk *dynakube.DynaKube, component dtimage.ComponentType) error {
 	if ref := dk.Spec.Templates.OpenTelemetryCollector.ImageRef; ref.HasImage() {
-		return ref.String(), nil
-	}
+		dk.Status.OTelCollector.ResolvedImage = ref.String()
 
-	if !dk.FF().IsPublicRegistry() {
-		return "", fmt.Errorf("image for %q is not set: either set the image or enable the public registry feature flag", component)
+		return nil
 	}
 
 	imageURI, err := registry.ResolveImage(ctx, imageClient, dk.PublicRegistryOverride(), component)
 	if err != nil {
-		return "", err
+		return err
 	}
 
 	dk.Status.OTelCollector.ResolvedImage = imageURI
 
-	return imageURI, nil
+	return nil
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, imageClient dtimage.Client, dk *dynakube.DynaKube) error {
 	ctx, log := logd.NewFromContext(ctx, "statefulset")
 	if dk.TelemetryIngest().IsEnabled() {
-		imageURI, err := resolveImage(ctx, imageClient, dk, dtimage.OTelCollector)
-		if err != nil {
+		if err := resolveImage(ctx, imageClient, dk, dtimage.OTelCollector); err != nil {
 			return err
 		}
 
-		return r.createOrUpdateStatefulset(ctx, dk, imageURI)
+		return r.createOrUpdateStatefulset(ctx, dk)
 	} else { // do cleanup or
 		if meta.FindStatusCondition(*dk.Conditions(), conditionType) == nil {
 			return nil
@@ -107,7 +103,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, imageClient dtimage.Client, 
 	}
 }
 
-func (r *Reconciler) createOrUpdateStatefulset(ctx context.Context, dk *dynakube.DynaKube, imageURI string) error {
+func (r *Reconciler) createOrUpdateStatefulset(ctx context.Context, dk *dynakube.DynaKube) error {
 	log := logd.FromContext(ctx)
 	if !r.checkDataIngestTokenExists(ctx, dk) {
 		msg := "data ingest token is missing, but it's required for telemetery ingest"
@@ -135,7 +131,7 @@ func (r *Reconciler) createOrUpdateStatefulset(ctx context.Context, dk *dynakube
 		return err
 	}
 
-	sts, err := k8sstatefulset.Build(dk, dk.OTelCollectorStatefulsetName(), getContainer(dk, replicas, imageURI),
+	sts, err := k8sstatefulset.Build(dk, dk.OTelCollectorStatefulsetName(), getContainer(dk, replicas, dk.Status.OTelCollector.ResolvedImage),
 		k8sstatefulset.SetReplicas(replicas),
 		k8sstatefulset.SetPodManagementPolicy(appsv1.ParallelPodManagement),
 		k8sstatefulset.SetAllLabels(appLabels.BuildLabels(), appLabels.BuildMatchLabels(), appLabels.BuildLabels(), dk.Spec.Templates.OpenTelemetryCollector.Labels),
