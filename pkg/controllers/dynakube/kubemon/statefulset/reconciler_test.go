@@ -421,6 +421,69 @@ func TestReconcileBuildsStatefulSet(t *testing.T) {
 		assert.Contains(t, names, dk.TenantRegistryPullSecretName())
 		assert.Contains(t, names, "my-custom-pull-secret")
 	})
+
+	t.Run("KSPM disabled, no automatic TLS secret", func(t *testing.T) {
+		dk := newTestDynaKube()
+		sts := reconcileAndGetSTS(t, dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t))
+
+		assert.False(t, slices.ContainsFunc(sts.Spec.Template.Spec.Volumes, func(v corev1.Volume) bool {
+			return v.Secret != nil && v.Secret.SecretName == dk.KubernetesMonitoring().GetAutoTLSSecretName()
+		}))
+	})
+
+	t.Run("KSPM disabled, neither custom nor automatic TLS secret is created", func(t *testing.T) {
+		dk := newTestDynaKube()
+		dk.Spec.KubernetesMonitoring.TLSCertsRef = &kubemonapi.TLSCertsRef{
+			SecretName: "custom-tls-secret",
+		}
+		sts := reconcileAndGetSTS(t, dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t))
+
+		assert.False(t, slices.ContainsFunc(sts.Spec.Template.Spec.Volumes, func(v corev1.Volume) bool {
+			return v.Secret != nil && (v.Secret.SecretName == "custom-tls-secret" || v.Secret.SecretName == dk.KubernetesMonitoring().GetAutoTLSSecretName())
+		}))
+	})
+
+	t.Run("KSPM enabled, automatic TLS certificate volume and mount are added", func(t *testing.T) {
+		dk := newTestDynaKube()
+		dk.Spec.KSPM = &kspmapi.Spec{}
+		sts := reconcileAndGetSTS(t, dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t))
+
+		certVolume := k8svolume.FindByName(sts.Spec.Template.Spec.Volumes, agconsts.CertsVolumeName)
+		require.NotNil(t, certVolume, agconsts.CertsVolumeName+" volume not found")
+		require.NotNil(t, certVolume.Secret)
+		require.NotNil(t, certVolume.Secret.DefaultMode)
+		assert.Equal(t, dk.KubernetesMonitoring().GetAutoTLSSecretName(), certVolume.Secret.SecretName)
+		assert.EqualValues(t, 0o640, *certVolume.Secret.DefaultMode)
+
+		container := sts.Spec.Template.Spec.Containers[0]
+		certMount, err := k8smount.Find(container.VolumeMounts, agconsts.CertsVolumeName)
+		require.NoError(t, err)
+		assert.True(t, certMount.ReadOnly)
+		assert.Equal(t, agconsts.CertsMountPath, certMount.MountPath)
+	})
+
+	t.Run("KSPM enabled, custom TLS certificate volume and mount are added", func(t *testing.T) {
+		dk := newTestDynaKube()
+		dk.Spec.KubernetesMonitoring.TLSCertsRef = &kubemonapi.TLSCertsRef{
+			SecretName: "custom-tls-secret",
+		}
+		dk.Spec.KSPM = &kspmapi.Spec{}
+		sts := reconcileAndGetSTS(t, dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t))
+
+		certVolume := k8svolume.FindByName(sts.Spec.Template.Spec.Volumes, agconsts.CertsVolumeName)
+		require.NotNil(t, certVolume, agconsts.CertsVolumeName+" volume not found")
+		require.NotNil(t, certVolume.Secret)
+		require.NotNil(t, certVolume.Secret.DefaultMode)
+		// dk.KubernetesMonitoring().GetTLSSecretName() not called to make sure custom secret has higher priority
+		assert.Equal(t, "custom-tls-secret", certVolume.Secret.SecretName)
+		assert.EqualValues(t, 0o640, *certVolume.Secret.DefaultMode)
+
+		container := sts.Spec.Template.Spec.Containers[0]
+		certMount, err := k8smount.Find(container.VolumeMounts, agconsts.CertsVolumeName)
+		require.NoError(t, err)
+		assert.True(t, certMount.ReadOnly)
+		assert.Equal(t, agconsts.CertsMountPath, certMount.MountPath)
+	})
 }
 
 func TestReconcileMetadata(t *testing.T) {
