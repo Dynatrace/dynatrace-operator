@@ -4,7 +4,6 @@
 package injection
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
@@ -65,7 +64,7 @@ func (h *Handler) Handle(mutationRequest *dtwebhook.MutationRequest) error {
 
 	if installContainer := k8scontainer.FindInitInPodSpec(&mutationRequest.Pod.Spec, dtwebhook.InstallContainerName); installContainer != nil {
 		mutationRequest.InstallContainer = installContainer
-		h.handlePodReinvocation(ctx, mutationRequest)
+		h.handlePodReinvocation(mutationRequest)
 
 		return nil
 	}
@@ -80,7 +79,7 @@ func (h *Handler) Handle(mutationRequest *dtwebhook.MutationRequest) error {
 		}
 	}
 
-	mutated, err := h.handlePodMutation(ctx, mutationRequest)
+	mutated, err := h.handlePodMutation(mutationRequest)
 	if err != nil {
 		return err
 	}
@@ -107,8 +106,8 @@ func (h *Handler) Handle(mutationRequest *dtwebhook.MutationRequest) error {
 	return nil
 }
 
-func (h *Handler) handlePodMutation(ctx context.Context, mutationRequest *dtwebhook.MutationRequest) (bool, error) {
-	mutationRequest.InstallContainer = h.createInitContainerBase(ctx, mutationRequest.Pod, mutationRequest.DynaKube)
+func (h *Handler) handlePodMutation(mutationRequest *dtwebhook.MutationRequest) (bool, error) {
+	mutationRequest.InstallContainer = h.createInitContainerBase(mutationRequest.Context, mutationRequest.Pod, mutationRequest.DynaKube)
 
 	var mutated bool
 
@@ -119,7 +118,7 @@ func (h *Handler) handlePodMutation(ctx context.Context, mutationRequest *dtwebh
 
 	mutated = true
 
-	if h.oaMutator.IsEnabled(ctx, mutationRequest.BaseRequest) {
+	if h.oaMutator.IsEnabled(mutationRequest.Context, mutationRequest.BaseRequest) {
 		err := h.oaMutator.Mutate(mutationRequest)
 		if err != nil {
 			return false, err
@@ -139,8 +138,8 @@ func (h *Handler) handlePodMutation(ctx context.Context, mutationRequest *dtwebh
 	return mutated, nil
 }
 
-func (h *Handler) handlePodReinvocation(ctx context.Context, mutationRequest *dtwebhook.MutationRequest) {
-	log := logd.FromContext(ctx)
+func (h *Handler) handlePodReinvocation(mutationRequest *dtwebhook.MutationRequest) {
+	log := logd.FromContext(mutationRequest.Context)
 	log.Debug("Dynatrace init-container already present, skipping mutation, doing reinvocation", "containerName", dtwebhook.InstallContainerName)
 
 	updated, err := metadata.AddContainerAttributes(mutationRequest.BaseRequest, mutationRequest.InstallContainer)
@@ -150,7 +149,7 @@ func (h *Handler) handlePodReinvocation(ctx context.Context, mutationRequest *dt
 		return
 	}
 
-	if (h.oaMutator.IsEnabled(ctx, mutationRequest.BaseRequest) && h.oaMutator.Reinvoke(mutationRequest.Context, mutationRequest.ToReinvocationRequest())) || updated {
+	if (h.oaMutator.IsEnabled(mutationRequest.Context, mutationRequest.BaseRequest) && h.oaMutator.Reinvoke(mutationRequest.Context, mutationRequest.ToReinvocationRequest())) || updated {
 		log.Info("reinvocation policy applied", "podName", mutationRequest.PodName())
 		events.SendPodUpdateEvent(h.recorder, &mutationRequest.DynaKube, mutationRequest.Pod)
 
