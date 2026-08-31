@@ -20,6 +20,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
+	opconsts "github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	agconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/consts"
 	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
@@ -106,7 +107,7 @@ func Feature(t *testing.T) features.Feature {
 
 	agSecret := k8ssecret.New(consts.AgSecretName, testDynakube.Namespace,
 		map[string][]byte{
-			dynakube.ServerCertKey:                 agCrt,
+			opconsts.TLSServerCrtDataName:          agCrt,
 			consts.AgCertificateAndPrivateKeyField: agP12,
 		})
 	builder.Assess("create AG TLS secret", k8ssecret.Create(agSecret))

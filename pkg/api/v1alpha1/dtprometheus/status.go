@@ -15,6 +15,8 @@ type DTPrometheusStatus struct { //nolint:revive
 
 	Gateway GatewayStatus `json:"gateway,omitempty"`
 
+	TargetAllocator TargetAllocatorStatus `json:"targetAllocator,omitempty"`
+
 	// Conditions includes status about the current state of the instance
 	// +listType=map
 	// +listMapKey=type
@@ -23,6 +25,11 @@ type DTPrometheusStatus struct { //nolint:revive
 
 type GatewayStatus struct {
 	// Image URI of the gateway currently deployed.
+	ResolvedImage string `json:"image,omitempty"`
+}
+
+type TargetAllocatorStatus struct {
+	// Image URI of the target allocator currently deployed.
 	ResolvedImage string `json:"image,omitempty"`
 }
 

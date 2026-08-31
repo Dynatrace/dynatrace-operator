@@ -54,7 +54,7 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 					SecretName: dk.ActiveGate().GetTLSSecretName(),
 					Items: []corev1.KeyToPath{
 						{
-							Key:  dynakube.ServerCertKey,
+							Key:  consts.TLSServerCrtDataName,
 							Path: otelcconsts.ActiveGateCertFile,
 						},
 					},
