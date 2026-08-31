@@ -70,7 +70,6 @@ type reconcileScope struct {
 	AppLabels   *k8slabel.Labels
 	ImageClient image.Client
 	// Computed during reconcile
-	resolvedImage string
 	ConfigMapHash string
 	StatefulSet   *appsv1.StatefulSet
 }
@@ -106,18 +105,17 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtp *dtprometheus.DTPromethe
 // resolveImage uses the explicit image from .spec.gateway.image when set, otherwise resolves
 // the latest gateway image from the fleet management API.
 func (r *Reconciler) resolveImage(ctx context.Context, s *reconcileScope) error {
-	imageURI := s.Spec.Image
+	if s.Spec.Image != "" {
+		s.Owner.Status.Gateway.ResolvedImage = s.Spec.Image
 
-	if imageURI == "" {
-		var err error
-
-		imageURI, err = registry.ResolveImage(ctx, s.ImageClient, s.Owner.Spec.PublicRegistryOverride, image.Gateway)
-		if err != nil {
-			return err
-		}
+		return nil
 	}
 
-	s.resolvedImage = imageURI
+	imageURI, err := registry.ResolveImage(ctx, s.ImageClient, s.Owner.Spec.PublicRegistryOverride, image.Gateway)
+	if err != nil {
+		return err
+	}
+
 	s.Owner.Status.Gateway.ResolvedImage = imageURI
 
 	return nil
@@ -294,7 +292,7 @@ func buildContainer(s *reconcileScope, current corev1.Container) corev1.Containe
 
 	return corev1.Container{
 		Name:            "gateway",
-		Image:           s.resolvedImage,
+		Image:           s.Owner.Status.Gateway.ResolvedImage,
 		ImagePullPolicy: imagePullPolicy,
 		Command:         []string{"/dynatrace-otel-collector"},
 		Args:            []string{"--config=" + configMountDir + "/" + relayConfigFile},

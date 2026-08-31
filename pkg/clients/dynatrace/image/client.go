@@ -16,13 +16,14 @@ import (
 type ComponentType string
 
 const (
-	OneAgent    ComponentType = "oneagent"
-	CodeModules ComponentType = "codemodules"
-	ActiveGate  ComponentType = "activegate"
-	EEC         ComponentType = "eec"
-	LogModule   ComponentType = "logmodule"
-	DBExecutor  ComponentType = "sql-extension-executor"
-	Gateway     ComponentType = "" // TODO: image name is still unknown
+	OneAgent        ComponentType = "oneagent"
+	CodeModules     ComponentType = "codemodules"
+	ActiveGate      ComponentType = "activegate"
+	EEC             ComponentType = "eec"
+	LogModule       ComponentType = "logmodule"
+	DBExecutor      ComponentType = "sql-extension-executor"
+	Gateway         ComponentType = "otel_collector"
+	TargetAllocator ComponentType = "otel_target_allocator"
 	// DBExecutorOldName is a fallback for the old name of the DBExecutor component type
 	// TODO: remove this fallback in a future release
 	DBExecutorOldName ComponentType = "dynatrace-sql-extension-executor"

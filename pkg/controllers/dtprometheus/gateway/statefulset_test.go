@@ -29,7 +29,7 @@ func newTestDynaKube() *dynakube.DynaKube {
 }
 
 func TestReconcileStatefulSet(t *testing.T) {
-	t.Run("missing image, fleet resolve fails", func(t *testing.T) {
+	t.Run("fleet resolve fails when no imageRef set", func(t *testing.T) {
 		dtp := newTestDTP("dtp", "dynatrace")
 		s := newTestScopeWithDynaKube(dtp, newTestDynaKube())
 		imageClient := imagemock.NewClient(t)
@@ -47,11 +47,11 @@ func TestReconcileStatefulSet(t *testing.T) {
 		assert.True(t, k8serrors.IsNotFound(getErr))
 	})
 
-	t.Run("resolves image from fleet API when spec image unset", func(t *testing.T) {
+	t.Run("resolves image from fleet API when no imageRef set", func(t *testing.T) {
 		dtp := newTestDTP("dtp", "dynatrace")
 		s := newTestScopeWithDynaKube(dtp, newTestDynaKube())
 		imageClient := imagemock.NewClient(t)
-		imageClient.EXPECT().GetComponentLatestInfo(mock.Anything, image.Gateway, mock.Anything).Return(&image.Info{URI: "registry.example.com/fleet-gateway:latest"}, nil)
+		imageClient.EXPECT().GetComponentLatestInfo(mock.Anything, image.Gateway, "").Return(&image.Info{URI: "registry.example.com/fleet-gateway:latest"}, nil)
 		s.ImageClient = imageClient
 		c := fake.NewClient()
 		r := &Reconciler{Client: c}
@@ -63,6 +63,25 @@ func TestReconcileStatefulSet(t *testing.T) {
 		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetStatefulSetName(), Namespace: dtp.Namespace}, sts))
 		assert.Equal(t, "registry.example.com/fleet-gateway:latest", sts.Spec.Template.Spec.Containers[0].Image)
 		assert.Equal(t, "registry.example.com/fleet-gateway:latest", dtp.Status.Gateway.ResolvedImage)
+	})
+
+	t.Run("resolves image from fleet API with publicRegistryOverride", func(t *testing.T) {
+		dtp := newTestDTP("dtp", "dynatrace")
+		dtp.Spec.PublicRegistryOverride = "custom.registry.example.com"
+		s := newTestScopeWithDynaKube(dtp, newTestDynaKube())
+		imageClient := imagemock.NewClient(t)
+		imageClient.EXPECT().GetComponentLatestInfo(mock.Anything, image.Gateway, "custom.registry.example.com").Return(&image.Info{URI: "custom.registry.example.com/fleet-gateway:latest"}, nil)
+		s.ImageClient = imageClient
+		c := fake.NewClient()
+		r := &Reconciler{Client: c}
+
+		require.NoError(t, r.reconcileStatefulset(t.Context(), s))
+		require.NotNil(t, s.StatefulSet)
+
+		sts := &appsv1.StatefulSet{}
+		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetStatefulSetName(), Namespace: dtp.Namespace}, sts))
+		assert.Equal(t, "custom.registry.example.com/fleet-gateway:latest", sts.Spec.Template.Spec.Containers[0].Image)
+		assert.Equal(t, "custom.registry.example.com/fleet-gateway:latest", dtp.Status.Gateway.ResolvedImage)
 	})
 
 	t.Run("apply spec", func(t *testing.T) {
