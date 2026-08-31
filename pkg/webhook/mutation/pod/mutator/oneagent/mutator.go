@@ -61,6 +61,10 @@ func hasOCIVolumeAnnotation(mutationRequest *dtwebhook.BaseRequest) bool {
 	return false
 }
 
+func isImageVolume(mutationRequest *dtwebhook.BaseRequest) bool {
+	return hasOCIVolumeAnnotation(mutationRequest) || mutationRequest.DynaKube.FF().IsCodeModuleImageVolume()
+}
+
 func IsEnabled(request *dtwebhook.BaseRequest) bool {
 	enabledOnPod := maputils.GetFieldBool(request.Pod.Annotations, AnnotationInject, request.DynaKube.FF().IsAutomaticInjection())
 	enabledOnDynakube := request.DynaKube.OneAgent().GetNamespaceSelector() != nil
@@ -147,9 +151,8 @@ func mutateUserContainers(request *dtwebhook.BaseRequest, installPath string, lo
 func addOneAgentToContainer(request *dtwebhook.BaseRequest, container *corev1.Container, namespace corev1.Namespace, installPath string, log logd.Logger) {
 	log.Info("adding OneAgent to container", "name", container.Name)
 
-	isImageVolume := hasOCIVolumeAnnotation(request) || request.DynaKube.FF().IsCodeModuleImageVolume()
-	log.Info("install path", "installPath", installPath, "isImageVolume", isImageVolume)
-	addVolumeMounts(container, installPath, isImageVolume)
+	log.Info("install path", "installPath", installPath, "isImageVolume", isImageVolume(request))
+	addVolumeMounts(container, installPath, isImageVolume(request))
 	addDeploymentMetadataEnv(container, request.DynaKube)
 	addPreloadEnv(container, installPath)
 	addDTStorageEnv(container)
