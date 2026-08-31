@@ -476,8 +476,8 @@ func TestAddOneAgentToContainer(t *testing.T) {
 				},
 			},
 		}
-
-		addOneAgentToContainer(baseReq, &container, corev1.Namespace{}, installPath, logd.Get())
+		addVolumeMounts(&container, installPath, isImageVolume(baseReq))
+		addOneAgentEnvsToContainer(baseReq, &container, corev1.Namespace{}, installPath, logd.Get())
 
 		assert.Len(t, container.VolumeMounts, 2) // preload,bin
 
