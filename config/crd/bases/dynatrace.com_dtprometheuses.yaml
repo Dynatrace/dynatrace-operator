@@ -60,14 +60,6 @@ spec:
                   settings (apiUrl, tokens, proxy, networkZone, trustedCAs, ActiveGate, etc.).
                 minLength: 1
                 type: string
-              dynatracePreset:
-                description: |-
-                  When enabled, the operator creates a built-in ScrapeConfig that discovers
-                  pods annotated with metrics.dynatrace.com/scrape: "true" and reads the
-                  port, path, and secure annotations to construct scrape targets.
-                  This provides backwards compatibility with the ActiveGate Kubernetes
-                  module annotation-based discovery workflow.
-                type: object
               gateway:
                 default: {}
                 description: |-
@@ -4131,6 +4123,12 @@ spec:
                 description: Defines the current state (Running, Deploying, Error,
                   ...)
                 type: string
+              targetAllocator:
+                properties:
+                  image:
+                    description: Image URI of the target allocator currently deployed.
+                    type: string
+                type: object
             type: object
         required:
         - spec

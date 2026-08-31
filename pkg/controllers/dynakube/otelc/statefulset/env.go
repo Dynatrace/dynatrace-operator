@@ -9,7 +9,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
-	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/activegate"
 	otelcConsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
@@ -30,25 +29,13 @@ const (
 	envMyPodIP            = "MY_POD_IP"
 	envOTLPgrpcPort       = "OTLP_GRPC_PORT"
 	envOTLPhttpPort       = "OTLP_HTTP_PORT"
-	envEECDStoken         = "EEC_DS_TOKEN"
-	envTrustedCAs         = "TRUSTED_CAS"
 	envK8sClusterName     = "K8S_CLUSTER_NAME"
 	envK8sClusterUID      = "K8S_CLUSTER_UID"
 	envDTentityK8sCluster = "DT_ENTITY_KUBERNETES_CLUSTER"
 	envDTendpoint         = "DT_ENDPOINT"
-	// certDirEnv is the environment variable that identifies which directory
-	// to check for SSL certificate files. If set, this overrides the system default.
-	// It is a colon separated list of directories.
-	// See https://www.openssl.org/docs/man1.0.2/man1/c_rehash.html.
-	envCertDir          = "SSL_CERT_DIR"
-	envEECcontrollerTLS = "EXTENSIONS_CONTROLLER_TLS"
-	envHTTPProxy        = "HTTP_PROXY"
-	envHTTPSProxy       = "HTTPS_PROXY"
-	envNoProxy          = "NO_PROXY"
-
-	// Volume names and paths
-	customEECTLSCertificatePath     = "/tls/custom/eec"
-	customEECTLSCertificateFullPath = customEECTLSCertificatePath + "/" + consts.TLSCrtDataName
+	envHTTPProxy          = "HTTP_PROXY"
+	envHTTPSProxy         = "HTTPS_PROXY"
+	envNoProxy            = "NO_PROXY"
 )
 
 func getEnvs(dk *dynakube.DynaKube, replicas int32) []corev1.EnvVar {
@@ -80,45 +67,25 @@ func getEnvs(dk *dynakube.DynaKube, replicas int32) []corev1.EnvVar {
 		envs = append(envs, corev1.EnvVar{Name: envNoProxy, Value: getDynakubeNoProxyEnvValue(dk)})
 	}
 
-	if dk.Extensions().IsPrometheusEnabled() {
-		envs = append(
-			envs,
-			corev1.EnvVar{Name: envEECDStoken, ValueFrom: &corev1.EnvVarSource{
-				SecretKeyRef: &corev1.SecretKeySelector{
-					LocalObjectReference: corev1.LocalObjectReference{Name: dk.Extensions().GetTokenSecretName()},
-					Key:                  consts.DatasourceTokenSecretKey,
-				}},
+	envs = append(envs,
+		corev1.EnvVar{Name: envDTendpoint, ValueFrom: &corev1.EnvVarSource{
+			ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{Name: otelcConsts.OTLPAPIEndpointConfigMapName},
+				Key:                  envDTendpoint,
 			},
-			corev1.EnvVar{Name: envCertDir, Value: customEECTLSCertificatePath},
-			corev1.EnvVar{Name: envEECcontrollerTLS, Value: customEECTLSCertificateFullPath},
-		)
-	}
-
-	if dk.TelemetryIngest().IsEnabled() {
-		envs = append(envs,
-			corev1.EnvVar{Name: envDTendpoint, ValueFrom: &corev1.EnvVarSource{
-				ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
-					LocalObjectReference: corev1.LocalObjectReference{Name: otelcConsts.OTLPAPIEndpointConfigMapName},
-					Key:                  envDTendpoint,
-				},
-			}},
-			corev1.EnvVar{Name: envMyPodIP, ValueFrom: &corev1.EnvVarSource{
-				FieldRef: &corev1.ObjectFieldSelector{
-					FieldPath: "status.podIP",
-				},
-			}},
-			corev1.EnvVar{Name: otelcConsts.EnvDataIngestToken, ValueFrom: &corev1.EnvVarSource{
-				SecretKeyRef: &corev1.SecretKeySelector{
-					LocalObjectReference: corev1.LocalObjectReference{Name: dk.Tokens()},
-					Key:                  token.DataIngestKey,
-				},
-			}},
-		)
-	}
-
-	if dk.Extensions().IsPrometheusEnabled() && dk.Spec.TrustedCAs != "" {
-		envs = append(envs, corev1.EnvVar{Name: envTrustedCAs, Value: otelcConsts.TrustedCAVolumePath})
-	}
+		}},
+		corev1.EnvVar{Name: envMyPodIP, ValueFrom: &corev1.EnvVarSource{
+			FieldRef: &corev1.ObjectFieldSelector{
+				FieldPath: "status.podIP",
+			},
+		}},
+		corev1.EnvVar{Name: otelcConsts.EnvDataIngestToken, ValueFrom: &corev1.EnvVarSource{
+			SecretKeyRef: &corev1.SecretKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{Name: dk.Tokens()},
+				Key:                  token.DataIngestKey,
+			},
+		}},
+	)
 
 	return envs
 }
@@ -143,10 +110,6 @@ func getDynakubeNoProxyEnvValue(dk *dynakube.DynaKube) string {
 	noProxyValues := []string{
 		"$(KUBERNETES_SERVICE_HOST)",
 		"kubernetes.default",
-	}
-
-	if ext := dk.Extensions(); ext.IsPrometheusEnabled() {
-		noProxyValues = append(noProxyValues, ext.GetServiceNameFQDN())
 	}
 
 	if dk.ActiveGate().IsEnabled() {

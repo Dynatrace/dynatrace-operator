@@ -39,7 +39,7 @@ func getEnvs(dk dynakube.DynaKube, tenantUUID string) []corev1.EnvVar {
 		},
 	}
 
-	if dk.ActiveGate().HasCaCert() {
+	if dk.IsKubemonEnabled() || dk.ActiveGate().HasCaCert() {
 		envs = append(envs, getCertEnv())
 	}
 

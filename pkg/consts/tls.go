@@ -10,4 +10,6 @@ const (
 
 	// TLSCrtDataName is the key used to store a TLS certificate in the secret's data field.
 	TLSCrtDataName = "tls.crt"
+
+	TLSServerCrtDataName = "server.crt"
 )

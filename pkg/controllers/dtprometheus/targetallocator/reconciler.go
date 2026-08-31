@@ -8,12 +8,14 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"maps"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/dtprometheus"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
@@ -202,14 +204,29 @@ func (r *Reconciler) reconcileConfigMap(ctx context.Context, s *reconcileScope) 
 	return nil
 }
 
+func (r *Reconciler) resolveImage(ctx context.Context, s *reconcileScope) error {
+	if s.Spec.Image != "" {
+		s.Owner.Status.TargetAllocator.ResolvedImage = s.Spec.Image
+
+		return nil
+	}
+
+	imageURI, err := registry.ResolveImage(ctx, s.ImageClient, s.Owner.Spec.PublicRegistryOverride, image.TargetAllocator)
+	if err != nil {
+		return err
+	}
+
+	s.Owner.Status.TargetAllocator.ResolvedImage = imageURI
+
+	return nil
+}
+
 func (r *Reconciler) reconcileDeployment(ctx context.Context, s *reconcileScope) error {
 	log := logd.FromContext(ctx)
 	log.Debug("reconciling deployment")
 
-	if s.Spec.Image == "" {
-		// TODO: fix this once the target allocator images are available
-		// imageURI, err := registry.ResolveImage(ctx, s.Image, s.Owner.Spec.PublicRegistryOverride, image.TargetAllocator)
-		return errors.New("missing image")
+	if err := r.resolveImage(ctx, s); err != nil {
+		return fmt.Errorf("resolve image: %w", err)
 	}
 
 	deploy := &appsv1.Deployment{ObjectMeta: metav1.ObjectMeta{Name: s.Spec.GetDeploymentName(), Namespace: s.Owner.Namespace}}
@@ -296,12 +313,12 @@ func mutateDeployment(deploy *appsv1.Deployment, s *reconcileScope) {
 	deploy.Spec.Template.Spec.TopologySpreadConstraints = s.Spec.TopologySpreadConstraints
 	deploy.Spec.Template.Spec.Volumes = buildVolumes(s.Spec)
 	deploy.Spec.Template.Spec.Containers = []corev1.Container{
-		buildContainer(s.Spec, s.Owner.Namespace, getContainer(deploy)),
+		buildContainer(s.Spec, s.Owner.Status.TargetAllocator.ResolvedImage, s.Owner.Namespace, getContainer(deploy)),
 	}
 }
 
 // Build the container for the target allocator. The created container should only cause an update if a mandated value changed.
-func buildContainer(spec *dtprometheus.TargetAllocator, namespace string, current corev1.Container) corev1.Container {
+func buildContainer(spec *dtprometheus.TargetAllocator, imageURI string, namespace string, current corev1.Container) corev1.Container {
 	currentLivenessProbe := ptr.Deref(current.LivenessProbe, corev1.Probe{})
 	currentReadinessProbe := ptr.Deref(current.ReadinessProbe, corev1.Probe{})
 
@@ -312,7 +329,7 @@ func buildContainer(spec *dtprometheus.TargetAllocator, namespace string, curren
 
 	return corev1.Container{
 		Name:            "targetallocator",
-		Image:           spec.Image, // TODO: allow using image from fleetmanagement API
+		Image:           imageURI,
 		ImagePullPolicy: imagePullPolicy,
 		Args:            spec.SanitizedArgs(),
 		Ports: []corev1.ContainerPort{

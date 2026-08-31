@@ -13,7 +13,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
-	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	otelcConsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/stretchr/testify/assert"
@@ -28,52 +27,6 @@ const (
 )
 
 func TestEnvironmentVariables(t *testing.T) {
-	t.Run("environment variables with Extensions enabled", func(t *testing.T) {
-		dk := getTestDynakubeWithExtensions()
-
-		statefulSet := getStatefulset(t, dk)
-
-		assert.Equal(t, corev1.EnvVar{Name: envShards, Value: fmt.Sprintf("%d", getReplicas(dk))}, statefulSet.Spec.Template.Spec.Containers[0].Env[0])
-		assert.Equal(t, corev1.EnvVar{Name: envPodNamePrefix, Value: dk.Name + "-otel-collector"}, statefulSet.Spec.Template.Spec.Containers[0].Env[1])
-		assert.Equal(t, corev1.EnvVar{Name: envPodName, ValueFrom: &corev1.EnvVarSource{
-			FieldRef: &corev1.ObjectFieldSelector{
-				FieldPath: "metadata.labels['statefulset.kubernetes.io/pod-name']",
-			},
-		}}, statefulSet.Spec.Template.Spec.Containers[0].Env[2])
-		assert.Equal(t, corev1.EnvVar{Name: envShardID, ValueFrom: &corev1.EnvVarSource{
-			FieldRef: &corev1.ObjectFieldSelector{
-				FieldPath: "metadata.labels['apps.kubernetes.io/pod-index']",
-			},
-		}}, statefulSet.Spec.Template.Spec.Containers[0].Env[3])
-		assert.Equal(t, corev1.EnvVar{Name: envOTLPgrpcPort, Value: defaultOLTPgrpcPort}, statefulSet.Spec.Template.Spec.Containers[0].Env[4])
-		assert.Equal(t, corev1.EnvVar{Name: envOTLPhttpPort, Value: defaultOLTPhttpPort}, statefulSet.Spec.Template.Spec.Containers[0].Env[5])
-		assert.Equal(t, corev1.EnvVar{Name: envK8sClusterName, Value: testKubernetesClusterName}, statefulSet.Spec.Template.Spec.Containers[0].Env[6])
-		assert.Equal(t, corev1.EnvVar{Name: envK8sClusterUID, Value: testKubeSystemUUID}, statefulSet.Spec.Template.Spec.Containers[0].Env[7])
-		assert.Equal(t, corev1.EnvVar{Name: envDTentityK8sCluster, Value: testKubernetesClusterMEID}, statefulSet.Spec.Template.Spec.Containers[0].Env[8])
-		assert.Equal(t, corev1.EnvVar{Name: envEECDStoken, ValueFrom: &corev1.EnvVarSource{
-			SecretKeyRef: &corev1.SecretKeySelector{
-				LocalObjectReference: corev1.LocalObjectReference{Name: dk.Extensions().GetTokenSecretName()},
-				Key:                  consts.DatasourceTokenSecretKey,
-			},
-		}}, statefulSet.Spec.Template.Spec.Containers[0].Env[9])
-		assert.Equal(t, corev1.EnvVar{Name: envCertDir, Value: customEECTLSCertificatePath}, statefulSet.Spec.Template.Spec.Containers[0].Env[10])
-	})
-	t.Run("environment variables with trustedCA", func(t *testing.T) {
-		dk := getTestDynakubeWithExtensions()
-		dk.Spec.TrustedCAs = "test-trusted-ca"
-
-		statefulSet := getStatefulset(t, dk)
-
-		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envTrustedCAs, Value: otelcConsts.TrustedCAVolumePath})
-	})
-	t.Run("environment variables with custom EEC TLS certificate", func(t *testing.T) {
-		dk := getTestDynakubeWithExtensions()
-		dk.Spec.Templates.ExtensionExecutionController.TLSRefName = "test-tls-ca"
-
-		statefulSet := getStatefulset(t, dk)
-
-		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envEECcontrollerTLS, Value: customEECTLSCertificateFullPath})
-	})
 	t.Run("environment variables for open signal configuration", func(t *testing.T) {
 		dk := getTestDynakube()
 		dk.Spec.TelemetryIngest = &telemetryingest.Spec{}
@@ -129,27 +82,14 @@ func TestProxyEnvsNoProxy(t *testing.T) {
 		activeGate      *activegate.Spec
 	}{
 		{
-			name:            "extensions without proxy",
-			extensions:      &extensions.Spec{Prometheus: &extensions.PrometheusSpec{}},
-			telemetryIngest: nil,
-		},
-		{
 			name:            "telemetryIngest, public AG, without proxy",
-			extensions:      nil,
 			telemetryIngest: &telemetryingest.Spec{},
 			activeGate:      nil,
 		},
 		{
 			name:            "telemetryIngest, local AG, without proxy",
-			extensions:      nil,
 			telemetryIngest: &telemetryingest.Spec{},
 			activeGate:      getProxyTestActiveGate(),
-		},
-		{
-			name:            "telemetryIngest, extensions, local AG, without proxy",
-			extensions:      &extensions.Spec{Prometheus: &extensions.PrometheusSpec{}},
-			telemetryIngest: &telemetryingest.Spec{},
-			activeGate:      nil,
 		},
 	}
 	for _, tt := range tests {
@@ -185,17 +125,7 @@ func TestProxyEnvsProxySecret(t *testing.T) {
 		expectedNoProxy string
 	}{
 		{
-			name:            "extensions with proxy secret",
-			extensions:      &extensions.Spec{Prometheus: &extensions.PrometheusSpec{}},
-			telemetryIngest: nil,
-			proxy: &value.Source{
-				ValueFrom: testProxySecretName,
-			},
-			expectedNoProxy: "$(KUBERNETES_SERVICE_HOST),kubernetes.default,dynakube-extension-controller.dynatrace,dynakube-activegate.dynatrace",
-		},
-		{
 			name:            "telemetryIngest, public AG, with proxy secret",
-			extensions:      nil,
 			telemetryIngest: &telemetryingest.Spec{},
 			activeGate:      nil,
 			proxy: &value.Source{
@@ -205,23 +135,12 @@ func TestProxyEnvsProxySecret(t *testing.T) {
 		},
 		{
 			name:            "telemetryIngest, local AG, with proxy secret",
-			extensions:      nil,
 			telemetryIngest: &telemetryingest.Spec{},
 			activeGate:      getProxyTestActiveGate(),
 			proxy: &value.Source{
 				ValueFrom: testProxySecretName,
 			},
 			expectedNoProxy: "$(KUBERNETES_SERVICE_HOST),kubernetes.default,dynakube-activegate.dynatrace",
-		},
-		{
-			name:            "telemetryIngest, extensions, local AG, with proxy secret",
-			extensions:      &extensions.Spec{Prometheus: &extensions.PrometheusSpec{}},
-			telemetryIngest: &telemetryingest.Spec{},
-			activeGate:      nil,
-			proxy: &value.Source{
-				ValueFrom: testProxySecretName,
-			},
-			expectedNoProxy: "$(KUBERNETES_SERVICE_HOST),kubernetes.default,dynakube-extension-controller.dynatrace,dynakube-activegate.dynatrace",
 		},
 	}
 
@@ -274,17 +193,7 @@ func TestProxyEnvsProxyValue(t *testing.T) {
 		expectedNoProxy string
 	}{
 		{
-			name:            "extensions with proxy value",
-			extensions:      &extensions.Spec{Prometheus: &extensions.PrometheusSpec{}},
-			telemetryIngest: nil,
-			proxy: &value.Source{
-				Value: testProxyValue,
-			},
-			expectedNoProxy: "$(KUBERNETES_SERVICE_HOST),kubernetes.default,dynakube-extension-controller.dynatrace,dynakube-activegate.dynatrace",
-		},
-		{
 			name:            "telemetryIngest, public AG, with proxy value",
-			extensions:      nil,
 			telemetryIngest: &telemetryingest.Spec{},
 			activeGate:      nil,
 			proxy: &value.Source{
@@ -294,23 +203,12 @@ func TestProxyEnvsProxyValue(t *testing.T) {
 		},
 		{
 			name:            "telemetryIngest, local AG, with proxy value",
-			extensions:      nil,
 			telemetryIngest: &telemetryingest.Spec{},
 			activeGate:      getProxyTestActiveGate(),
 			proxy: &value.Source{
 				Value: testProxyValue,
 			},
 			expectedNoProxy: "$(KUBERNETES_SERVICE_HOST),kubernetes.default,dynakube-activegate.dynatrace",
-		},
-		{
-			name:            "telemetryIngest, extensions, local AG, with proxy value",
-			extensions:      &extensions.Spec{Prometheus: &extensions.PrometheusSpec{}},
-			telemetryIngest: &telemetryingest.Spec{},
-			activeGate:      nil,
-			proxy: &value.Source{
-				Value: testProxyValue,
-			},
-			expectedNoProxy: "$(KUBERNETES_SERVICE_HOST),kubernetes.default,dynakube-extension-controller.dynatrace,dynakube-activegate.dynatrace",
 		},
 	}
 

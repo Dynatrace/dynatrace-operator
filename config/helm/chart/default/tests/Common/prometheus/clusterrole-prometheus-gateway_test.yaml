@@ -6,6 +6,8 @@ templates:
   - Common/prometheus/clusterrole-prometheus-gateway.yaml
 tests:
   - it: should exist with correct name and labels
+    set:
+      experimental.enablePrometheus: true
     asserts:
       - isKind:
           of: ClusterRole
@@ -16,6 +18,8 @@ tests:
           path: metadata.labels
 
   - it: should have correct core permissions
+    set:
+      experimental.enablePrometheus: true
     asserts:
       - contains:
           path: rules
@@ -32,6 +36,8 @@ tests:
               - watch
 
   - it: should have apps permissions
+    set:
+      experimental.enablePrometheus: true
     asserts:
       - contains:
           path: rules
@@ -46,6 +52,8 @@ tests:
               - watch
 
   - it: should have batch permissions
+    set:
+      experimental.enablePrometheus: true
     asserts:
       - contains:
           path: rules
@@ -63,6 +71,7 @@ tests:
   - it: should have OpenShift SCC permission on openshift platform
     set:
       platform: openshift
+      experimental.enablePrometheus: true
     asserts:
       - contains:
           path: rules
@@ -77,6 +86,8 @@ tests:
               - use
 
   - it: shouldn't have OpenShift SCC permission on default platform
+    set:
+      experimental.enablePrometheus: true
     asserts:
       - notContains:
           path: rules
@@ -93,6 +104,14 @@ tests:
   - it: shouldn't exist if prometheus rbac is turned off
     set:
       rbac.prometheus.create: false
+      experimental.enablePrometheus: true
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: shouldn't exist if experimental.enablePrometheus is off
+    set:
+      experimental.enablePrometheus: false
     asserts:
       - hasDocuments:
           count: 0

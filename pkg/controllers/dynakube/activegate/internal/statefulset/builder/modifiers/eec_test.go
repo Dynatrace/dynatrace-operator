@@ -15,7 +15,7 @@ import (
 func TestEecEnabled(t *testing.T) {
 	t.Run("Extensions are enabled", func(t *testing.T) {
 		dk := getBaseDynakube()
-		dk.Spec.Extensions = &extensions.Spec{Prometheus: &extensions.PrometheusSpec{}}
+		dk.Spec.Extensions = &extensions.Spec{Databases: []extensions.DatabaseSpec{{ID: "test"}}}
 
 		mod := NewEECVolumeModifier(dk)
 
@@ -35,7 +35,7 @@ func TestEecEnabled(t *testing.T) {
 func TestEecModify(t *testing.T) {
 	t.Run("Statefulset is successfully modified with eec volume", func(t *testing.T) {
 		dk := getBaseDynakube()
-		dk.Spec.Extensions = &extensions.Spec{Prometheus: &extensions.PrometheusSpec{}}
+		dk.Spec.Extensions = &extensions.Spec{Databases: []extensions.DatabaseSpec{{ID: "test"}}}
 
 		mod := NewEECVolumeModifier(dk)
 		builder := createBuilderForTesting()

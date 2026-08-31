@@ -827,6 +827,36 @@ tests:
             name: EXPERIMENTAL_ENABLE_KUBEMON_OPERAND
           any: true
 
+  - it: should have EXPERIMENTAL_ENABLE_PROMETHEUS if experimental.enablePrometheus is true
+    set:
+      experimental.enablePrometheus: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: EXPERIMENTAL_ENABLE_PROMETHEUS
+            value: "true"
+          count: 1
+          any: true
+
+  - it: should not have EXPERIMENTAL_ENABLE_PROMETHEUS by default
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: EXPERIMENTAL_ENABLE_PROMETHEUS
+          any: true
+
+  - it: should render without error and omit EXPERIMENTAL_ENABLE_PROMETHEUS when experimental is null
+    set:
+      experimental: null
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: EXPERIMENTAL_ENABLE_PROMETHEUS
+          any: true
+
   - it: should have apparmor annotation when enabled on Kubernetes < 1.31.0
     set:
       platform: kubernetes

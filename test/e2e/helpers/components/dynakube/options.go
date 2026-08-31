@@ -305,17 +305,6 @@ func WithApplicationMonitoringSpec(applicationMonitoringSpec *oneagent.Applicati
 	}
 }
 
-func WithExtensionsPrometheusEnabledSpec(promEnabled bool) Option {
-	return func(dk *dynakube.DynaKube) {
-		if promEnabled {
-			dk.Spec.Extensions = &extensions.Spec{Prometheus: &extensions.PrometheusSpec{}}
-			dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume = new(true)
-		} else {
-			dk.Spec.Extensions = nil
-		}
-	}
-}
-
 func GetLatestDBExecutorImageTagURI(t *testing.T) string {
 	t.Helper()
 
