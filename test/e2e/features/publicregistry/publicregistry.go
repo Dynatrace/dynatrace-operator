@@ -96,7 +96,6 @@ func feature(t *testing.T, featureName, sampleNS string, imageOpts []dynakube.Op
 		dynakube.WithAPIURL(secretConfig.APIURL),
 		dynakube.WithCloudNativeSpec(cloudnative.DefaultCloudNativeSpec()),
 		dynakube.WithActiveGate(),
-		dynakube.WithExtensionsPrometheusEnabledSpec(true),
 		dynakube.WithKSPM(),
 		dynakube.WithTelemetryIngestEnabled(true),
 		dynakube.WithExtensionsDatabases(extensions.DatabaseSpec{ID: "mysql"}),

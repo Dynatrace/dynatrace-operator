@@ -76,13 +76,11 @@ func resolveImage(ctx context.Context, imageClient dtimage.Client, dk *dynakube.
 
 func (r *Reconciler) Reconcile(ctx context.Context, imageClient dtimage.Client, dk *dynakube.DynaKube) error {
 	ctx, log := logd.NewFromContext(ctx, "statefulset")
-
-	if dk.Extensions().IsPrometheusEnabled() || dk.TelemetryIngest().IsEnabled() {
+	if dk.TelemetryIngest().IsEnabled() {
 		imageURI, err := resolveImage(ctx, imageClient, dk, dtimage.OTelCollector)
 		if err != nil {
 			return err
 		}
-
 		return r.createOrUpdateStatefulset(ctx, dk, imageURI)
 	} else { // do cleanup or
 		if meta.FindStatusCondition(*dk.Conditions(), conditionType) == nil {
@@ -110,15 +108,13 @@ func (r *Reconciler) Reconcile(ctx context.Context, imageClient dtimage.Client, 
 
 func (r *Reconciler) createOrUpdateStatefulset(ctx context.Context, dk *dynakube.DynaKube, imageURI string) error {
 	log := logd.FromContext(ctx)
-	if dk.TelemetryIngest().IsEnabled() {
-		if !r.checkDataIngestTokenExists(ctx, dk) {
-			msg := "data ingest token is missing, but it's required for telemetery ingest"
-			k8sconditions.SetDataIngestTokenMissing(dk.Conditions(), dynakube.TokenConditionType, msg)
+	if !r.checkDataIngestTokenExists(ctx, dk) {
+		msg := "data ingest token is missing, but it's required for telemetery ingest"
+		k8sconditions.SetDataIngestTokenMissing(dk.Conditions(), dynakube.TokenConditionType, msg)
 
-			log.Error(errors.New(msg), "could not create or update statefulset")
+		log.Error(errors.New(msg), "could not create or update statefulset")
 
-			return nil
-		}
+		return nil
 	}
 
 	appLabels := buildAppLabels(dk.Name)
@@ -179,16 +175,7 @@ func (r *Reconciler) buildTemplateAnnotations(ctx context.Context, dk *dynakube.
 		templateAnnotations = k8ssecuritycontext.RemoveAppArmorAnnotation(dk.Spec.Templates.OpenTelemetryCollector.Annotations, containerName)
 	}
 
-	if dk.Extensions().IsPrometheusEnabled() {
-		tlsSecretHash, err := r.calculateSecretHash(ctx, dk.Extensions().GetTLSSecretName(), dk.Namespace)
-		if err != nil {
-			return nil, err
-		}
-
-		templateAnnotations[api.AnnotationExtensionsSecretHash] = tlsSecretHash
-	}
-
-	if dk.TelemetryIngest().IsEnabled() && dk.TelemetryIngest().TLSRefName != "" {
+	if dk.TelemetryIngest().TLSRefName != "" {
 		tlsSecretHash, err := r.calculateSecretHash(ctx, dk.TelemetryIngest().TLSRefName, dk.Namespace)
 		if err != nil {
 			return nil, err
@@ -197,21 +184,19 @@ func (r *Reconciler) buildTemplateAnnotations(ctx context.Context, dk *dynakube.
 		templateAnnotations[annotationTelemetryIngestSecretHash] = tlsSecretHash
 	}
 
-	if dk.TelemetryIngest().IsEnabled() {
-		configConfigMapHash, err := r.calculateConfigMapHash(ctx, configuration.GetConfigMapName(dk.Name), dk.Namespace)
-		if err != nil {
-			return nil, err
-		}
-
-		templateAnnotations[annotationTelemetryIngestConfigurationConfigMapHash] = configConfigMapHash
-
-		dataIngestTokenHash, err := r.calculateDataIngestTokenHash(ctx, dk)
-		if err != nil {
-			return nil, err
-		}
-
-		templateAnnotations[annotationDataIngestTokenSecretHash] = dataIngestTokenHash
+	configConfigMapHash, err := r.calculateConfigMapHash(ctx, configuration.GetConfigMapName(dk.Name), dk.Namespace)
+	if err != nil {
+		return nil, err
 	}
+
+	templateAnnotations[annotationTelemetryIngestConfigurationConfigMapHash] = configConfigMapHash
+
+	dataIngestTokenHash, err := r.calculateDataIngestTokenHash(ctx, dk)
+	if err != nil {
+		return nil, err
+	}
+
+	templateAnnotations[annotationDataIngestTokenSecretHash] = dataIngestTokenHash
 
 	return templateAnnotations, nil
 }

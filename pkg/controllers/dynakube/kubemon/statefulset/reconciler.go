@@ -40,6 +40,7 @@ const (
 	AnnotationAuthTokenHash        = api.InternalFlagPrefix + "kubemon-authtoken-hash"
 	AnnotationCustomPropertiesHash = api.InternalFlagPrefix + "kubemon-customproperties-hash"
 	AnnotationKSPMTokenHash        = api.InternalFlagPrefix + "kubemon-kspm-token-hash"
+	AnnotationTLSSecretHash        = api.InternalFlagPrefix + "kubemon-tls-secret-hash"
 	StorageVolumeName              = "kubemon-storage"
 	AuthTokenVolumeName            = "kubemon-authtoken-secret"
 	kspmTokenVolumeName            = "kspm-token"
@@ -113,6 +114,7 @@ func buildPodAnnotations(dk *dynakube.DynaKube, tokenHash, authTokenHash, custom
 
 	if dk.KSPM().IsEnabled() {
 		annotations[AnnotationKSPMTokenHash] = dk.KSPM().TokenSecretHash
+		annotations[AnnotationTLSSecretHash] = dk.KubernetesMonitoring().TLSSecretHash
 	}
 
 	return annotations
@@ -220,15 +222,25 @@ func buildVolumes(dk *dynakube.DynaKube) []corev1.Volume {
 	}
 
 	if dk.KSPM().IsEnabled() {
-		volumes = append(volumes, corev1.Volume{
-			Name: kspmTokenVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName:  dk.KSPM().GetTokenSecretName(),
-					DefaultMode: new(int32(0o640)),
+		volumes = append(volumes,
+			corev1.Volume{
+				Name: kspmTokenVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName:  dk.KSPM().GetTokenSecretName(),
+						DefaultMode: new(int32(0o640)),
+					},
 				},
 			},
-		})
+			corev1.Volume{
+				Name: agconsts.CertsVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName:  dk.KubernetesMonitoring().GetTLSSecretName(),
+						DefaultMode: new(int32(0o640)),
+					},
+				},
+			})
 	}
 
 	return volumes
@@ -265,12 +277,18 @@ func buildVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 	}
 
 	if dk.KSPM().IsEnabled() {
-		mounts = append(mounts, corev1.VolumeMount{
-			Name:      kspmTokenVolumeName,
-			ReadOnly:  true,
-			MountPath: kspmTokenMountPath,
-			SubPath:   kspm.TokenSecretKey,
-		})
+		mounts = append(mounts,
+			corev1.VolumeMount{
+				Name:      kspmTokenVolumeName,
+				ReadOnly:  true,
+				MountPath: kspmTokenMountPath,
+				SubPath:   kspm.TokenSecretKey,
+			},
+			corev1.VolumeMount{
+				Name:      agconsts.CertsVolumeName,
+				ReadOnly:  true,
+				MountPath: agconsts.CertsMountPath,
+			})
 	}
 
 	return mounts

@@ -4128,6 +4128,12 @@ spec:
                 description: Defines the current state (Running, Deploying, Error,
                   ...)
                 type: string
+              targetAllocator:
+                properties:
+                  image:
+                    description: Image URI of the target allocator currently deployed.
+                    type: string
+                type: object
             type: object
         required:
         - spec
