@@ -208,12 +208,7 @@ func (r *Reconciler) reconcileConfigMap(ctx context.Context, s *reconcileScope) 
 func (r *Reconciler) resolveImage(ctx context.Context, s *reconcileScope) error {
 	if s.Spec.Image != "" {
 		s.resolvedImage = s.Spec.Image
-
 		return nil
-	}
-
-	if !s.DynaKube.FF().IsPublicRegistry() {
-		return errors.New("target allocator image is not set: either set spec.targetAllocator.image or enable the public registry feature flag")
 	}
 
 	imageURI, err := registry.ResolveImage(ctx, s.ImageClient, s.Owner.Spec.PublicRegistryOverride, image.TargetAllocator)

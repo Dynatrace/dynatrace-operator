@@ -54,25 +54,10 @@ func newTestDTP(name, namespace string) *dtprometheus.DTPrometheus {
 	}
 }
 
-func newTestDynaKube() *dynakube.DynaKube {
-	return &dynakube.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: "dk", Namespace: "dynatrace"}}
-}
-
-func newTestDynaKubeWithPublicRegistry() *dynakube.DynaKube {
-	dk := newTestDynaKube()
-	dk.Annotations = map[string]string{"feature.dynatrace.com/use-public-registry": "true"}
-
-	return dk
-}
-
 func newTestScope(dtp *dtprometheus.DTPrometheus) *reconcileScope {
-	return newTestScopeWithDynaKube(dtp, newTestDynaKube())
-}
-
-func newTestScopeWithDynaKube(dtp *dtprometheus.DTPrometheus, dk *dynakube.DynaKube) *reconcileScope {
 	return &reconcileScope{
 		Owner:     dtp,
-		DynaKube:  dk,
+		DynaKube:  &dynakube.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: "dk", Namespace: "dynatrace"}},
 		Spec:      dtp.TargetAllocator(),
 		AppLabels: k8slabel.OTelTargetAllocator(),
 	}
@@ -165,24 +150,9 @@ func TestReconcileConfigMap(t *testing.T) {
 }
 
 func TestReconcileDeployment(t *testing.T) {
-	t.Run("validation rejects when public registry FF is disabled and no imageRef", func(t *testing.T) {
+	t.Run("fleet resolve fails when no imageRef set", func(t *testing.T) {
 		dtp := newTestDTP("dtp", "dynatrace")
-		s := newTestScopeWithDynaKube(dtp, newTestDynaKube()) // FF disabled by default
-		c := fake.NewClient()
-		r := &Reconciler{Client: c}
-
-		err := r.reconcileDeployment(t.Context(), s)
-
-		require.Error(t, err)
-		assert.Nil(t, s.Deployment)
-
-		getErr := c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetDeploymentName(), Namespace: dtp.Namespace}, &appsv1.Deployment{})
-		assert.True(t, k8serrors.IsNotFound(getErr))
-	})
-
-	t.Run("fleet resolve fails when public registry FF is enabled", func(t *testing.T) {
-		dtp := newTestDTP("dtp", "dynatrace")
-		s := newTestScopeWithDynaKube(dtp, newTestDynaKubeWithPublicRegistry())
+		s := newTestScope(dtp)
 		imageClient := imagemock.NewClient(t)
 		imageClient.EXPECT().GetComponentLatestInfo(mock.Anything, mock.Anything, mock.Anything).Return(nil, errors.New("no image found"))
 		s.ImageClient = imageClient
@@ -198,9 +168,9 @@ func TestReconcileDeployment(t *testing.T) {
 		assert.True(t, k8serrors.IsNotFound(getErr))
 	})
 
-	t.Run("resolves image from fleet API when public registry FF is enabled", func(t *testing.T) {
+	t.Run("resolves image from fleet API when no imageRef set", func(t *testing.T) {
 		dtp := newTestDTP("dtp", "dynatrace")
-		s := newTestScopeWithDynaKube(dtp, newTestDynaKubeWithPublicRegistry())
+		s := newTestScope(dtp)
 		imageClient := imagemock.NewClient(t)
 		imageClient.EXPECT().GetComponentLatestInfo(mock.Anything, image.TargetAllocator, "").Return(&image.Info{URI: "registry.example.com/fleet-ta:latest"}, nil)
 		s.ImageClient = imageClient
@@ -219,7 +189,7 @@ func TestReconcileDeployment(t *testing.T) {
 	t.Run("resolves image from fleet API with publicRegistryOverride", func(t *testing.T) {
 		dtp := newTestDTP("dtp", "dynatrace")
 		dtp.Spec.PublicRegistryOverride = "custom.registry.example.com"
-		s := newTestScopeWithDynaKube(dtp, newTestDynaKubeWithPublicRegistry())
+		s := newTestScope(dtp)
 		imageClient := imagemock.NewClient(t)
 		imageClient.EXPECT().GetComponentLatestInfo(mock.Anything, image.TargetAllocator, "custom.registry.example.com").Return(&image.Info{URI: "custom.registry.example.com/fleet-ta:latest"}, nil)
 		s.ImageClient = imageClient
