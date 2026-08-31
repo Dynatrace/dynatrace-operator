@@ -40,12 +40,6 @@ func NewMutator() dtwebhook.Mutator {
 	return &Mutator{}
 }
 
-func IsSelfExtractingImage(mutationRequest *dtwebhook.BaseRequest) bool {
-	hasImage := mutationRequest.DynaKube.OneAgent().GetCodeModulesImage() != ""
-
-	return hasImage && !isCSIVolume(mutationRequest)
-}
-
 func isCSIVolume(mutationRequest *dtwebhook.BaseRequest) bool {
 	defaultVolumeType := EphemeralVolumeType
 	if mutationRequest.DynaKube.OneAgent().IsCSIAvailable() {

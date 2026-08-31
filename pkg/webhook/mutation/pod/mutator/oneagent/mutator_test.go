@@ -12,7 +12,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/stretchr/testify/assert"
@@ -252,89 +251,6 @@ func TestIsEnabled(t *testing.T) {
 			req := &dtwebhook.MutationRequest{BaseRequest: &dtwebhook.BaseRequest{Pod: pod, DynaKube: *dk, Namespace: *ns}}
 
 			assert.Equal(t, test.enabled, IsEnabled(req.BaseRequest))
-		})
-	}
-}
-
-func TestIsSelfExtractingImage(t *testing.T) {
-	type testCase struct {
-		title        string
-		podMods      func(*corev1.Pod)
-		dkMods       func(*dynakube.DynaKube)
-		isCSIPresent bool
-		enabled      bool
-	}
-
-	cases := []testCase{
-		{
-			title:        "nothing enabled => not enabled",
-			podMods:      func(p *corev1.Pod) {},
-			dkMods:       func(dk *dynakube.DynaKube) {},
-			enabled:      false,
-			isCSIPresent: false,
-		},
-
-		{
-			title:   "only OA enabled => not enabled",
-			podMods: func(p *corev1.Pod) {},
-			dkMods: func(dk *dynakube.DynaKube) {
-				dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
-			},
-			enabled:      false,
-			isCSIPresent: false,
-		},
-
-		{
-			title:   "OA + image set + no-csi => enabled",
-			podMods: func(p *corev1.Pod) {},
-			dkMods: func(dk *dynakube.DynaKube) {
-				dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
-				dk.Status.CodeModules.ImageID = "testImage"
-			},
-			enabled:      true,
-			isCSIPresent: false,
-		},
-
-		{
-			title:   "OA + image set + csi => not enabled",
-			podMods: func(p *corev1.Pod) {},
-			dkMods: func(dk *dynakube.DynaKube) {
-				dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
-				dk.Status.CodeModules.ImageID = "testImage"
-			},
-			enabled:      false,
-			isCSIPresent: true,
-		},
-
-		{
-			title: "OA + image set + csi + pod annotation => enabled",
-			podMods: func(p *corev1.Pod) {
-				p.Annotations = map[string]string{
-					AnnotationVolumeType: EphemeralVolumeType,
-				}
-			},
-			dkMods: func(dk *dynakube.DynaKube) {
-				dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
-				dk.Status.CodeModules.ImageID = "testImage"
-			},
-			enabled:      true,
-			isCSIPresent: true,
-		},
-	}
-	for _, test := range cases {
-		t.Run(test.title, func(t *testing.T) {
-			ns := &corev1.Namespace{}
-			pod := &corev1.Pod{}
-			dk := &dynakube.DynaKube{}
-
-			test.dkMods(dk)
-			test.podMods(pod)
-
-			req := &dtwebhook.MutationRequest{BaseRequest: &dtwebhook.BaseRequest{Pod: pod, DynaKube: *dk, Namespace: *ns}}
-
-			installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: test.isCSIPresent})
-
-			assert.Equal(t, test.enabled, IsSelfExtractingImage(req.BaseRequest))
 		})
 	}
 }
