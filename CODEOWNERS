@@ -102,7 +102,7 @@
 /*.md                                                      @Incredible-O @waodim @jokuniew
 
 # ── Repo & CI — build, deps, workflows, linters, scanners, metadata ──────────
-/.github/                                                  @Incredible-O @waodim @jokuniew
+/.github/                                                  @Incredible-O @Dynatrace/kubernetes-operator-release @jokuniew
 /hack/                                                     @Incredible-O @waodim @jokuniew
 /Dockerfile                                                @Incredible-O @waodim @jokuniew
 /Makefile                                                  @Incredible-O @waodim @jokuniew
