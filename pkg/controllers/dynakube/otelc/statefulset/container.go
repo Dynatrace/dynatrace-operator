@@ -14,10 +14,10 @@ const (
 	containerName = "collector"
 )
 
-func getContainer(dk *dynakube.DynaKube, replicas int32, imageURI string) corev1.Container {
+func getContainer(dk *dynakube.DynaKube, replicas int32) corev1.Container {
 	container := corev1.Container{
 		Name:            containerName,
-		Image:           imageURI,
+		Image:           dk.Status.OTelCollector.ResolvedImage,
 		ImagePullPolicy: dk.Spec.Templates.OpenTelemetryCollector.ImageRef.PullPolicy,
 		SecurityContext: buildSecurityContext(dk),
 		Env:             getEnvs(dk, replicas),
