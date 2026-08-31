@@ -61,7 +61,7 @@ func (ff *FeatureFlags) SkipOneAgentLivenessProbe() bool {
 	return ff.getBoolWithDefault(OASkipLivenessProbeKey, false)
 }
 
-func (ff *FeatureFlags) IsImageVolume() bool {
+func (ff *FeatureFlags) IsCodeModuleImageVolume() bool {
 	return ff.getBoolWithDefault(OAImageVolumeKey, false)
 }
 

@@ -23,7 +23,7 @@ import (
 const (
 	CSIVolumeType       = "csi"
 	EphemeralVolumeType = "ephemeral"
-	OCIVolumeImageType  = "oci"
+	ImageVolumeType     = "oci"
 )
 
 type invalidInstallPathError struct {
@@ -61,7 +61,7 @@ func isCSIVolume(mutationRequest *dtwebhook.BaseRequest) bool {
 
 func hasOCIVolumeAnnotation(mutationRequest *dtwebhook.BaseRequest) bool {
 	if mutationRequest.DynaKube.OneAgent().GetCodeModulesImage() != "" {
-		return maputils.GetField(mutationRequest.Pod.Annotations, AnnotationVolumeType, EphemeralVolumeType) == OCIVolumeImageType
+		return maputils.GetField(mutationRequest.Pod.Annotations, AnnotationVolumeType, EphemeralVolumeType) == ImageVolumeType
 	}
 
 	return false
@@ -153,7 +153,7 @@ func mutateUserContainers(request *dtwebhook.BaseRequest, installPath string, lo
 func addOneAgentToContainer(request *dtwebhook.BaseRequest, container *corev1.Container, namespace corev1.Namespace, installPath string, log logd.Logger) {
 	log.Info("adding OneAgent to container", "name", container.Name)
 
-	isImageVolume := hasOCIVolumeAnnotation(request) || request.DynaKube.FF().IsImageVolume()
+	isImageVolume := hasOCIVolumeAnnotation(request) || request.DynaKube.FF().IsCodeModuleImageVolume()
 	log.Info("install path", "installPath", installPath, "isImageVolume", isImageVolume)
 	addVolumeMounts(container, installPath, isImageVolume)
 	addDeploymentMetadataEnv(container, request.DynaKube)

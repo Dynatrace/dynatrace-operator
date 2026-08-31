@@ -29,7 +29,7 @@ func TestHasOCIVolumeAnnotation(t *testing.T) {
 			Pod: &corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						AnnotationVolumeType: OCIVolumeImageType,
+						AnnotationVolumeType: ImageVolumeType,
 					},
 				},
 			},
@@ -50,7 +50,7 @@ func TestHasOCIVolumeAnnotation(t *testing.T) {
 			Pod: &corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						AnnotationVolumeType: OCIVolumeImageType,
+						AnnotationVolumeType: ImageVolumeType,
 					},
 				},
 			},

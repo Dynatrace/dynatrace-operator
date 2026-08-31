@@ -56,6 +56,8 @@ Use a nodeSelector to avoid this conflict. Conflicting DynaKubes: %s`
 	warningDeprecatedVersionIgnored = `version field is deprecated and ignored. Please remove the version field from the DynaKube specification.`
 
 	errorImagePullRequiresCodeModulesImage = `The DynaKube specification enables node image pull, but neither a code modules image is set nor a public registry is used.`
+
+	errorConflictingImageMode = `Node image pull and OCI image volume are mutually exclusive as OCI image volume will not use the CSI driver, while node-image-pull FF only influences the CSI driver.`
 )
 
 func conflictingOneAgentConfiguration(ctx context.Context, _ *Validator, dk *dynakube.DynaKube) string {
@@ -342,15 +344,15 @@ func findDuplicates[S ~[]E, E comparable](s S) []E {
 }
 
 func conflictingImageMode(_ context.Context, v *Validator, dk *dynakube.DynaKube) string {
-	if dk.FF().IsNodeImagePull() && dk.FF().IsImageVolume() {
-		return "node-image-pull and OCI image volume are mutually exclusive"
+	if dk.FF().IsNodeImagePull() && dk.FF().IsCodeModuleImageVolume() {
+		return errorConflictingImageMode
 	}
 
 	return ""
 }
 
 func missingCodeModulesImage(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
-	if dk.OneAgent().IsAppInjectionNeeded() && (dk.FF().IsNodeImagePull() || dk.FF().IsImageVolume()) {
+	if dk.OneAgent().IsAppInjectionNeeded() && (dk.FF().IsNodeImagePull() || dk.FF().IsCodeModuleImageVolume()) {
 		if dk.OneAgent().GetCustomCodeModulesImage() == "" && !dk.FF().IsPublicRegistry() {
 			return errorImagePullRequiresCodeModulesImage
 		}

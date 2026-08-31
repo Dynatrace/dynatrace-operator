@@ -1239,7 +1239,7 @@ func TestConflictingImageMode(t *testing.T) {
 			if tc.isValid {
 				assertAllowedWithoutWarnings(t, dk)
 			} else {
-				assertDenied(t, []string{"node-image-pull and OCI image volume are mutually exclusive"}, dk)
+				assertDenied(t, []string{errorConflictingImageMode}, dk)
 			}
 		})
 	}

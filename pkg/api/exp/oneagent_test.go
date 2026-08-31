@@ -286,7 +286,7 @@ func TestIsImageVolume(t *testing.T) {
 				OAImageVolumeKey: c.in,
 			}}
 
-			out := ff.IsImageVolume()
+			out := ff.IsCodeModuleImageVolume()
 
 			assert.Equal(t, c.out, out)
 		})
