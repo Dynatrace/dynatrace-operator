@@ -242,7 +242,7 @@ func (controller *Controller) reconcileEdgeConnect(ctx context.Context, ec *edge
 
 			log.Debug("reconcileEdgeConnect status update error")
 
-			return reconcile.Result{RequeueAfter: fastRequeueInterval}, retErr
+			return reconcile.Result{}, retErr
 		}
 	}
 
