@@ -49,6 +49,7 @@ func TestConfigurationConfigMap(t *testing.T) {
 
 		_, ok := configMap.Data[consts.ConfigFieldName]
 		assert.True(t, ok)
+		assert.NotContains(t, configMap.Data[consts.ConfigFieldName], "resource/staticAttrs")
 
 		require.Len(t, dk.Status.Conditions, 1)
 		assert.Equal(t, conditionType, dk.Status.Conditions[0].Type)
@@ -75,17 +76,4 @@ func TestConfigurationConfigMap(t *testing.T) {
 		assert.Contains(t, configData, "action: insert")
 	})
 
-	t.Run("configmap has no static resource attributes processor when spec.resourceAttributes is unset", func(t *testing.T) {
-		mockK8sClient := fake.NewFakeClient()
-		dk := getTestDynakube(&telemetryingest.Spec{})
-
-		err := NewReconciler(mockK8sClient, mockK8sClient).Reconcile(t.Context(), dk)
-		require.NoError(t, err)
-
-		configMap := &corev1.ConfigMap{}
-		err = mockK8sClient.Get(t.Context(), client.ObjectKey{Name: GetConfigMapName(dk.Name), Namespace: dk.Namespace}, configMap)
-		require.NoError(t, err)
-
-		assert.NotContains(t, configMap.Data[consts.ConfigFieldName], "resource/staticAttrs")
-	})
 }
