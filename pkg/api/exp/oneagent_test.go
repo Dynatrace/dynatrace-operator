@@ -255,7 +255,7 @@ func TestSkipOneAgentLivenessProbe(t *testing.T) {
 	}
 }
 
-func TestIsImageVolume(t *testing.T) {
+func TestIsCodeModuleImageVolume(t *testing.T) {
 	type testCase struct {
 		title string
 		in    string

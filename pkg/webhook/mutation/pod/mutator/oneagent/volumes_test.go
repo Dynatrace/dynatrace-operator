@@ -232,7 +232,7 @@ func TestAddOCIBinVolume(t *testing.T) {
 	t.Run("should add OCI image volume", func(t *testing.T) {
 		pod := &corev1.Pod{}
 
-		require.NoError(t, addOCIBinVolume(pod, testImage, corev1.PullIfNotPresent))
+		require.NoError(t, addImageBinVolume(pod, testImage, corev1.PullIfNotPresent))
 
 		require.Len(t, pod.Spec.Volumes, 1)
 		assert.Equal(t, corev1.Volume{
@@ -264,7 +264,7 @@ func TestAddOCIBinVolume(t *testing.T) {
 		}
 		expectedPod := pod.DeepCopy()
 
-		require.NoError(t, addOCIBinVolume(pod, testImage, corev1.PullIfNotPresent))
+		require.NoError(t, addImageBinVolume(pod, testImage, corev1.PullIfNotPresent))
 		assert.Equal(t, expectedPod, pod)
 	})
 
@@ -281,6 +281,6 @@ func TestAddOCIBinVolume(t *testing.T) {
 			},
 		}
 
-		require.Error(t, addOCIBinVolume(pod, testImage, "Always"))
+		require.Error(t, addImageBinVolume(pod, testImage, "Always"))
 	})
 }

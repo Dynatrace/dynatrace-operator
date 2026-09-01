@@ -11,6 +11,7 @@ import (
 	"strings"
 	"unicode"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8smount"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
@@ -145,23 +146,23 @@ func mutateUserContainers(request *dtwebhook.BaseRequest, installPath string, lo
 	newContainers := request.NewContainers(containerIsInjected)
 	for _, container := range newContainers {
 		addVolumeMounts(container, installPath, isImageVolume(request))
-		addOneAgentEnvsToContainer(request, container, request.Namespace, installPath, log)
+		addOneAgentEnvsToContainer(request.DynaKube, container, request.Namespace, installPath, log)
 	}
 
 	return len(newContainers) > 0
 }
 
-func addOneAgentEnvsToContainer(request *dtwebhook.BaseRequest, container *corev1.Container, namespace corev1.Namespace, installPath string, log logd.Logger) {
+func addOneAgentEnvsToContainer(dk dynakube.DynaKube, container *corev1.Container, namespace corev1.Namespace, installPath string, log logd.Logger) {
 	log.Info("adding OneAgent envs to container", "name", container.Name)
-	addDeploymentMetadataEnv(container, request.DynaKube)
+	addDeploymentMetadataEnv(container, dk)
 	addPreloadEnv(container, installPath)
 	addDTStorageEnv(container)
 
-	if request.DynaKube.Spec.NetworkZone != "" {
-		addNetworkZoneEnv(container, request.DynaKube.Spec.NetworkZone)
+	if dk.Spec.NetworkZone != "" {
+		addNetworkZoneEnv(container, dk.Spec.NetworkZone)
 	}
 
-	if request.DynaKube.FF().IsLabelVersionDetection() {
+	if dk.FF().IsLabelVersionDetection() {
 		addVersionDetectionEnvs(container, namespace)
 	}
 }

@@ -57,7 +57,7 @@ Use a nodeSelector to avoid this conflict. Conflicting DynaKubes: %s`
 
 	errorImagePullRequiresCodeModulesImage = `The DynaKube specification enables node image pull, but neither a code modules image is set nor a public registry is used.`
 
-	errorConflictingImageMode = `Node image pull and OCI image volume are mutually exclusive as OCI image volume will not use the CSI driver, while node-image-pull FF only influences the CSI driver.`
+	errorConflictingImageMode = `Node image pull and image volume are mutually exclusive as image volume will not use the CSI driver, while node-image-pull FF only influences the CSI driver.`
 )
 
 func conflictingOneAgentConfiguration(ctx context.Context, _ *Validator, dk *dynakube.DynaKube) string {

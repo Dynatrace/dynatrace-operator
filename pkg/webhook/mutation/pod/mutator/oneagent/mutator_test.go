@@ -20,7 +20,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestHasOCIVolumeAnnotation(t *testing.T) {
+func TestHasImageVolumeAnnotation(t *testing.T) {
 	const testImage = "test-registry/test-image:latest"
 
 	t.Run("image volume type annotation + codeModulesImage set => true", func(t *testing.T) {
@@ -477,7 +477,7 @@ func TestAddOneAgentToContainer(t *testing.T) {
 			},
 		}
 		addVolumeMounts(&container, installPath, isImageVolume(baseReq))
-		addOneAgentEnvsToContainer(baseReq, &container, corev1.Namespace{}, installPath, logd.Get())
+		addOneAgentEnvsToContainer(baseReq.DynaKube, &container, corev1.Namespace{}, installPath, logd.Get())
 
 		assert.Len(t, container.VolumeMounts, 2) // preload,bin
 
