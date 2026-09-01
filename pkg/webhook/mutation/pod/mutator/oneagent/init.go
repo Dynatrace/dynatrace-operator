@@ -46,6 +46,7 @@ func mutateInitContainer(mutationRequest *dtwebhook.MutationRequest, installPath
 	switch {
 	case isImageVolume(mutationRequest.BaseRequest):
 		log.Info("configuring init-container with image bin volume", "name", mutationRequest.PodName())
+
 		if err := addImageBinVolume(mutationRequest.Pod,
 			mutationRequest.DynaKube.OneAgent().GetCodeModulesImage(),
 			mutationRequest.DynaKube.OneAgent().GetCodeModulesImagePullPolicy()); err != nil {
@@ -78,6 +79,7 @@ func mutateInitContainer(mutationRequest *dtwebhook.MutationRequest, installPath
 		if customInitResources == nil {
 			mutationRequest.InstallContainer.Resources = corev1.ResourceRequirements{}
 		}
+
 		if mutationRequest.DynaKube.OneAgent().GetCodeModulesImage() != "" {
 			log.Info("configuring init-container with self-extracting image", "name", mutationRequest.PodName())
 			// The first element would be the "bootstrap" subcommand, which is not needed in case of self-extracting image
