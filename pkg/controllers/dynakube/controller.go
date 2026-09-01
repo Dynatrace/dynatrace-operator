@@ -146,7 +146,7 @@ type extensionReconciler interface {
 	Reconcile(ctx context.Context, imageClient image.Client, dk *dynakube.DynaKube) error
 }
 
-type oTelcReconciler interface {
+type oTelColReconciler interface {
 	Reconcile(ctx context.Context, imageClient image.Client, dk *dynakube.DynaKube) error
 }
 
@@ -191,7 +191,7 @@ type Controller struct {
 	k8sEntityReconciler          dtSettingReconciler
 	kspmReconciler               kspmReconciler
 	kubemonReconciler            kubemonReconciler
-	oTelColReconciler            oTelcReconciler
+	oTelColReconciler            oTelColReconciler
 	proxyReconciler              dynakubeReconciler
 	deploymentMetadataReconciler dynakubeReconciler
 	istioReconciler              istioReconciler

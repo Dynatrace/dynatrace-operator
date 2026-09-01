@@ -45,7 +45,7 @@ packages:
       dtSettingReconciler:
       dynakubeReconciler:
       extensionReconciler:
-      oTelcReconciler:
+      oTelColReconciler:
       istioReconciler:
       logMonitoringReconciler:
       oneAgentReconciler:

@@ -362,7 +362,7 @@ func TestReconcileComponents(t *testing.T) {
 		mockExtensionReconciler := newMockExtensionReconciler(t)
 		mockKSPMReconciler := newMockDtSettingReconciler(t)
 		mockK8sEntityReconciler := newMockDtSettingReconciler(t)
-		mockOTelColReconciler := newMockOTelcReconciler(t)
+		mockOTelColReconciler := newMockOTelColReconciler(t)
 		mockIstioReconciler := newMockIstioReconciler(t)
 
 		controller := &Controller{
@@ -405,7 +405,7 @@ func TestReconcileComponents(t *testing.T) {
 		mockActiveGateReconciler := newMockActiveGateReconciler(t)
 		mockExtensionReconciler := newMockExtensionReconciler(t)
 		mockKubemonReconciler := newMockKubemonReconciler(t)
-		mockOTelColReconciler := newMockOTelcReconciler(t)
+		mockOTelColReconciler := newMockOTelColReconciler(t)
 		k8sEntityReconciler := newMockDtSettingReconciler(t)
 		mockIstioReconciler := newMockIstioReconciler(t)
 		mockKSPMReconciler := newMockKspmReconciler(t)
@@ -452,7 +452,7 @@ func TestReconcileComponents(t *testing.T) {
 		mockExtensionReconciler := newMockExtensionReconciler(t)
 		mockKSPMReconciler := newMockDtSettingReconciler(t)
 		mockK8sEntityReconciler := newMockDtSettingReconciler(t)
-		mockOTelColReconciler := newMockOTelcReconciler(t)
+		mockOTelColReconciler := newMockOTelColReconciler(t)
 
 		controller := &Controller{
 			client:    fakeClient,
@@ -499,7 +499,7 @@ func TestReconcileComponents(t *testing.T) {
 		mockExtensionReconciler := newMockExtensionReconciler(t)
 		mockKSPMReconciler := newMockDtSettingReconciler(t)
 		mockK8sEntityReconciler := newMockDtSettingReconciler(t)
-		mockOTelColReconciler := newMockOTelcReconciler(t)
+		mockOTelColReconciler := newMockOTelColReconciler(t)
 
 		controller := &Controller{
 			client:    fakeClient,
@@ -582,7 +582,7 @@ func TestReconcileDynaKube(t *testing.T) {
 	mockExtensionReconciler := newMockExtensionReconciler(t)
 	mockExtensionReconciler.EXPECT().Reconcile(anyCtx, dtClient.Images, anyDynaKube).Return(nil)
 
-	mockOTelColReconciler := newMockOTelcReconciler(t)
+	mockOTelColReconciler := newMockOTelColReconciler(t)
 	mockOTelColReconciler.EXPECT().Reconcile(anyCtx, dtClient.Images, anyDynaKube).Return(nil)
 
 	mockIstioReconciler := newMockIstioReconciler(t)
