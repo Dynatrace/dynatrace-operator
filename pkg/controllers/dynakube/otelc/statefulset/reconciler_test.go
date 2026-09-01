@@ -117,6 +117,7 @@ func TestReconcile(t *testing.T) {
 func TestImageResolution(t *testing.T) {
 	t.Cleanup(version.DisableCacheForTest(123))
 	ctx := t.Context()
+	anyCtx := mock.MatchedBy(func(context.Context) bool { return true })
 
 	t.Run("custom imageRef is used as-is, no fleet management call", func(t *testing.T) {
 		dk := getTestDynakubeWithTelemetryIngest()
@@ -124,11 +125,8 @@ func TestImageResolution(t *testing.T) {
 		mockK8sClient := fake.NewClient()
 		mockK8sClient = mockTLSSecret(t, mockK8sClient, dk)
 
-		tokenSecret := getTokens(dk.Tokens(), dk.Namespace)
-		require.NoError(t, mockK8sClient.Create(ctx, &tokenSecret))
-
-		configMap := getConfigConfigMap(dk.Name, dk.Namespace)
-		require.NoError(t, mockK8sClient.Create(ctx, &configMap))
+		require.NoError(t, mockK8sClient.Create(ctx, new(getTokens(dk.Tokens(), dk.Namespace))))
+		require.NoError(t, mockK8sClient.Create(ctx, new(getConfigConfigMap(dk.Name, dk.Namespace))))
 
 		imageClient := imageclientmock.NewClient(t)
 		// no expectation set — fleet management must not be called
@@ -150,14 +148,11 @@ func TestImageResolution(t *testing.T) {
 		mockK8sClient := fake.NewClient()
 		mockK8sClient = mockTLSSecret(t, mockK8sClient, dk)
 
-		tokenSecret := getTokens(dk.Tokens(), dk.Namespace)
-		require.NoError(t, mockK8sClient.Create(ctx, &tokenSecret))
-
-		configMap := getConfigConfigMap(dk.Name, dk.Namespace)
-		require.NoError(t, mockK8sClient.Create(ctx, &configMap))
+		require.NoError(t, mockK8sClient.Create(ctx, new(getTokens(dk.Tokens(), dk.Namespace))))
+		require.NoError(t, mockK8sClient.Create(ctx, new(getConfigConfigMap(dk.Name, dk.Namespace))))
 
 		imageClient := imageclientmock.NewClient(t)
-		imageClient.EXPECT().GetComponentLatestInfo(mock.MatchedBy(func(context.Context) bool { return true }), dtimage.OTelCollector, "").
+		imageClient.EXPECT().GetComponentLatestInfo(anyCtx, dtimage.OTelCollector, "").
 			Return(&dtimage.Info{URI: testFleetMgmtImageURI}, nil)
 
 		err := NewReconciler(mockK8sClient, mockK8sClient).Reconcile(ctx, imageClient, dk)
@@ -181,14 +176,11 @@ func TestImageResolution(t *testing.T) {
 		mockK8sClient := fake.NewClient()
 		mockK8sClient = mockTLSSecret(t, mockK8sClient, dk)
 
-		tokenSecret := getTokens(dk.Tokens(), dk.Namespace)
-		require.NoError(t, mockK8sClient.Create(ctx, &tokenSecret))
-
-		configMap := getConfigConfigMap(dk.Name, dk.Namespace)
-		require.NoError(t, mockK8sClient.Create(ctx, &configMap))
+		require.NoError(t, mockK8sClient.Create(ctx, new(getTokens(dk.Tokens(), dk.Namespace))))
+		require.NoError(t, mockK8sClient.Create(ctx, new(getConfigConfigMap(dk.Name, dk.Namespace))))
 
 		imageClient := imageclientmock.NewClient(t)
-		imageClient.EXPECT().GetComponentLatestInfo(mock.MatchedBy(func(context.Context) bool { return true }), dtimage.OTelCollector, testRegistryOverride).
+		imageClient.EXPECT().GetComponentLatestInfo(anyCtx, dtimage.OTelCollector, testRegistryOverride).
 			Return(&dtimage.Info{URI: testFleetMgmtImageURI}, nil)
 
 		err := NewReconciler(mockK8sClient, mockK8sClient).Reconcile(ctx, imageClient, dk)
