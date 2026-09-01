@@ -374,8 +374,6 @@ spec:
                 type: integer
               enableIstio:
                 type: boolean
-              extensions:
-                type: object
               kspm:
                 properties:
                   mappedHostPaths:
@@ -4602,8 +4600,6 @@ spec:
                     x-kubernetes-list-map-keys:
                     - id
                     x-kubernetes-list-type: map
-                  prometheus:
-                    type: object
                 type: object
               kspm:
                 properties:
@@ -6665,6 +6661,8 @@ spec:
                         type: string
                     type: object
                   image:
+                    type: string
+                  tlsSecretHash:
                     type: string
                 type: object
               metadataEnrichment:

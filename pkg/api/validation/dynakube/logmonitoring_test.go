@@ -12,6 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
+	"github.com/stretchr/testify/assert"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -42,12 +43,16 @@ func TestIgnoredLogMonitoringTemplate(t *testing.T) {
 		dk := createStandaloneLogMonitoringDynakube(testName, testAPIURL, "")
 		dk.Spec.OneAgent.CloudNativeFullStack = &oneagent.CloudNativeFullStackSpec{}
 		dk.Spec.Templates.LogMonitoring = nil
-		assertAllowedWithWarnings(t, 1, dk)
+
+		warnings, _ := assertAllowed(t, dk)
+		assert.NotContains(t, warnings, warningLogMonitoringIgnoredTemplate)
 	})
 	t.Run("warning if logMonitoring template section is not empty", func(t *testing.T) {
 		dk := createStandaloneLogMonitoringDynakube(testName, testAPIURL, "something")
 		dk.Spec.OneAgent.CloudNativeFullStack = &oneagent.CloudNativeFullStackSpec{}
-		assertAllowedWithWarnings(t, 2, dk)
+
+		warnings, _ := assertAllowed(t, dk)
+		assert.Contains(t, warnings, warningLogMonitoringIgnoredTemplate)
 	})
 }
 

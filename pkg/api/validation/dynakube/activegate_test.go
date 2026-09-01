@@ -110,7 +110,7 @@ func TestActiveGatePVCSettings(t *testing.T) {
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL:     testAPIURL,
-					Extensions: &extensions.Spec{Prometheus: &extensions.PrometheusSpec{}},
+					Extensions: &extensions.Spec{Databases: []extensions.DatabaseSpec{{ID: "test"}}},
 					ActiveGate: activegate.Spec{
 						UseEphemeralVolume:  new(true),
 						VolumeClaimTemplate: &corev1.PersistentVolumeClaimSpec{},

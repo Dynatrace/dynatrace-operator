@@ -5,11 +5,13 @@ package gateway
 
 import (
 	"errors"
+	"path/filepath"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	imagemock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/image"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -87,7 +89,7 @@ func TestReconcileStatefulSet(t *testing.T) {
 		sts := &appsv1.StatefulSet{}
 		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetStatefulSetName(), Namespace: dtp.Namespace}, sts))
 
-		assertGolden(t, "statefulset.yaml", sts)
+		helpers.AssertGolden(t, filepath.Join("testdata", "statefulset.yaml"), sts)
 	})
 
 	t.Run("preserve existing replicas", func(t *testing.T) {

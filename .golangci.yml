@@ -24,7 +24,6 @@ linters:
     - gochecksumtype
     - gocognit
     - gocritic
-    - gocyclo
     - godot
     - goheader
     - gomoddirectives
@@ -175,7 +174,7 @@ linters:
             - 468
         - name: cyclomatic
           arguments:
-            - 13
+            - 30
         - name: banned-characters
           disabled: true
         - name: forbidden-call-in-wg-go

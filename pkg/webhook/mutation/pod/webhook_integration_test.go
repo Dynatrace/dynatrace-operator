@@ -1233,7 +1233,7 @@ func TestOTLPWebhook(t *testing.T) { //nolint:revive
 				Namespace: testNamespace,
 			},
 			Data: map[string][]byte{
-				dynakube.TLSCertKey: []byte(agCertData),
+				consts.TLSCrtDataName: []byte(agCertData),
 			},
 		}
 		integrationtests.CreateKubernetesObject(t, clt, agCertSecret)
@@ -1632,7 +1632,7 @@ func getOTLPExporterCertsSecret(namespace string) *corev1.Secret {
 			Namespace: namespace,
 		},
 		Data: map[string][]byte{
-			dynakube.TLSCertKey: []byte("ag-cert-data"),
+			consts.TLSCrtDataName: []byte("ag-cert-data"),
 		},
 	}
 }

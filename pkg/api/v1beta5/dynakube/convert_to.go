@@ -29,7 +29,6 @@ func (src *DynaKube) ConvertTo(dstRaw conversion.Hub) error {
 	src.toMetadataEnrichment(dst)
 	src.toLogMonitoringSpec(dst)
 	src.toKSPMSpec(dst)
-	src.toExtensionsSpec(dst)
 	src.toOneAgentSpec(dst)
 	src.toActiveGateSpec(dst)
 	// we need to convert TelemetryIngestSpec first since `toTemplatesSpec` relies on it
@@ -75,14 +74,6 @@ func (src *DynaKube) toKSPMSpec(dst *dynakubelatest.DynaKube) {
 	if src.Spec.KSPM != nil {
 		dst.Spec.KSPM = &kspmlatest.Spec{
 			MappedHostPaths: src.Spec.KSPM.MappedHostPaths,
-		}
-	}
-}
-
-func (src *DynaKube) toExtensionsSpec(dst *dynakubelatest.DynaKube) {
-	if src.Spec.Extensions != nil {
-		dst.Spec.Extensions = &extensionslatest.Spec{
-			Prometheus: &extensionslatest.PrometheusSpec{},
 		}
 	}
 }
@@ -163,11 +154,15 @@ func toOpenTelemetryCollectorTemplate(dk *dynakubelatest.DynaKube, src OpenTelem
 	dst.Replicas = src.Replicas
 	dst.ImageRef = src.ImageRef
 
-	if !dst.ImageRef.HasImage() && (dk.TelemetryIngest().IsEnabled() || dk.Extensions().IsPrometheusEnabled()) {
+	if !dst.ImageRef.HasImage() && dk.TelemetryIngest().IsEnabled() {
 		dst.ImageRef.Repository = "public.ecr.aws/dynatrace/dynatrace-otel-collector"
 		dst.ImageRef.Tag = "latest"
 
 		dk.RemovedFields().DefaultOTelColImage.Set(new(true))
+	} else {
+		// Drop any stale marker so we never signal a defaulted image when the image
+		// is user-set or telemetry is disabled; otherwise ConvertFrom would wipe it.
+		dk.RemovedFields().DefaultOTelColImage.Set(nil)
 	}
 
 	dst.TLSRefName = src.TLSRefName
