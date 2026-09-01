@@ -46,7 +46,6 @@ func TestProbes(t *testing.T) {
 		dk := getTestDynakube()
 		dk.Spec.TelemetryIngest = &telemetryingest.Spec{}
 
-		dk.Status.OTelCollector.ResolvedImage = "test-image:latest"
 		container := getContainer(dk, 1)
 		assert.NotNil(t, container.LivenessProbe)
 		assert.NotNil(t, container.ReadinessProbe)
