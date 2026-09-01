@@ -18,6 +18,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/dtprometheus"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/registry"
@@ -52,17 +53,19 @@ const (
 
 	serviceAccountName = "dynatrace-prometheus-gateway"
 
+	// nonRootUser is the "nonroot" UID/GID the gateway image runs as.
+	nonRootUser = 65532
+
 	configVolumeName  = "opentelemetry-collector-configmap"
 	configMountDir    = "/conf"
 	relayConfigFile   = "relay.yaml"
 	cacertsVolumeName = "cacerts"
 
-	// Ingest token file, sourced from the DynaKube token Secret via a projected volume.
-	// Mounted as a directory (not subPath) so kubelet propagates Secret updates to the file,
-	// enabling the bearertokenauth extension to pick up token rotations without a pod restart.
+	// Mounted as a directory, not subPath: subPath mounts don't receive live Secret
+	// updates, which would break token rotation.
 	tokenVolumeName = "dt-token"
-	tokenMountPath  = "/etc/dynatrace/token"
-	tokenFileName   = "token"
+	tokenMountPath  = consts.DTComponentsSecretsRootDir + "/tokens"
+	tokenFileName   = "data-ingest-token"
 )
 
 type Reconciler struct {
@@ -271,6 +274,9 @@ func mutateStatefulSet(sts *appsv1.StatefulSet, s *reconcileScope) {
 	sts.Spec.Selector = &metav1.LabelSelector{MatchLabels: s.AppLabels.AsSelector()}
 	sts.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 	sts.Spec.Template.Spec.AutomountServiceAccountToken = new(true)
+	// fsGroup lets the container (RunAsGroup nonRootUser) read the token volume via the group
+	// bit, so the file doesn't need to be world-readable.
+	sts.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{FSGroup: new(int64(nonRootUser))}
 	sts.Spec.Template.Spec.Affinity = s.Spec.Affinity
 	sts.Spec.Template.Spec.NodeSelector = s.Spec.NodeSelector
 	sts.Spec.Template.Spec.PriorityClassName = s.Spec.PriorityClassName
@@ -315,8 +321,8 @@ func buildContainer(s *reconcileScope, current corev1.Container) corev1.Containe
 			Privileged:               new(false),
 			AllowPrivilegeEscalation: new(false),
 			RunAsNonRoot:             new(true),
-			RunAsUser:                new(int64(65532)),
-			RunAsGroup:               new(int64(65532)),
+			RunAsUser:                new(int64(nonRootUser)),
+			RunAsGroup:               new(int64(nonRootUser)),
 			ReadOnlyRootFilesystem:   new(true),
 			SeccompProfile:           &corev1.SeccompProfile{Type: corev1.SeccompProfileTypeRuntimeDefault},
 			Capabilities:             &corev1.Capabilities{Drop: []corev1.Capability{"ALL"}},
@@ -360,10 +366,6 @@ func buildEnv(s *reconcileScope) []corev1.EnvVar {
 				FieldRef: &corev1.ObjectFieldSelector{APIVersion: "v1", FieldPath: "status.podIP"},
 			},
 		},
-		{Name: "DT_API_TOKEN", ValueFrom: &corev1.EnvVarSource{SecretKeyRef: &corev1.SecretKeySelector{
-			LocalObjectReference: corev1.LocalObjectReference{Name: dk.Tokens()},
-			Key:                  token.APIKey,
-		}}},
 	}, s.Spec.Resources)
 
 	if dk.HasProxy() {
@@ -424,23 +426,18 @@ func buildVolumes(s *reconcileScope) []corev1.Volume {
 			},
 		},
 		{
-			// projected volume exposes only the apiToken key from the DynaKube token Secret as a
-			// single file at /etc/dynatrace/token/token. Mounted as a directory (no subPath) so
-			// kubelet propagates Secret rotations to the mounted file, which the bearertokenauth
-			// extension watches.
 			Name: tokenVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				Projected: &corev1.ProjectedVolumeSource{
-					// 0444 (world-readable) is required because the container runs as UID 65532
-					// but the projected file is owned by root:root — without a matching fsGroup
-					// on the pod, only world-readable modes are accessible to the gateway process.
-					DefaultMode: new(int32(0o444)),
+					// Group-readable, not world-readable: the pod's fsGroup grants read access to
+					// the container without exposing the file to any other UID.
+					DefaultMode: new(int32(0o440)),
 					Sources: []corev1.VolumeProjection{
 						{
 							Secret: &corev1.SecretProjection{
 								LocalObjectReference: corev1.LocalObjectReference{Name: dk.Tokens()},
 								Items: []corev1.KeyToPath{
-									{Key: token.APIKey, Path: tokenFileName},
+									{Key: token.DataIngestKey, Path: tokenFileName},
 								},
 							},
 						},
