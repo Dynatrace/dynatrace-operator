@@ -27,6 +27,7 @@ var (
 	transformID         = component.MustNewID("transform")
 	otlphttpID          = component.MustNewID("otlphttp")
 	healthCheckID       = component.MustNewID("health_check")
+	bearerAuthID        = component.MustNewID("bearertokenauth")
 	metricsSignalID     = pipeline.NewID(pipeline.SignalMetrics)
 )
 
@@ -53,9 +54,16 @@ func buildGatewayOTelConfig(data gatewayConfigData) *otelcgen.Config {
 			healthCheckID: map[string]any{
 				"endpoint": "${env:MY_POD_IP}:13133",
 			},
+			// bearertokenauth reads the ingest token from a file mounted via a projected volume
+			// off the DynaKube token Secret and refreshes the outgoing Authorization header when
+			// the file content changes, enabling token rotation without a pod restart.
+			bearerAuthID: map[string]any{
+				"scheme":   "Api-Token",
+				"filename": tokenMountPath + "/" + tokenFileName,
+			},
 		},
 		Service: otelcgen.ServiceConfig{
-			Extensions: extensions.Config{healthCheckID},
+			Extensions: extensions.Config{healthCheckID, bearerAuthID},
 			Pipelines: pipelines.Config{
 				metricsSignalID: &pipelines.PipelineConfig{
 					Receivers:  []component.ID{otlpID},
@@ -97,8 +105,15 @@ func buildProcessorMap(data gatewayConfigData) (map[component.ID]component.Confi
 func buildOTLPHTTPExporter(data gatewayConfigData) component.Config {
 	exp := map[string]any{
 		"endpoint": data.Endpoint,
+		// Static Authorization header kept during the bearertokenauth rollout as a fallback.
+		// bearertokenauth (auth.authenticator below) sets Authorization at request time and takes
+		// precedence over static headers; once rotation is verified, both this header and the
+		// DT_API_TOKEN env var should be removed.
 		"headers": map[string]any{
 			"Authorization": "Api-Token ${env:DT_API_TOKEN}",
+		},
+		"auth": map[string]any{
+			"authenticator": bearerAuthID.String(),
 		},
 		"sending_queue": map[string]any{
 			"batch": map[string]any{

@@ -56,6 +56,13 @@ const (
 	configMountDir    = "/conf"
 	relayConfigFile   = "relay.yaml"
 	cacertsVolumeName = "cacerts"
+
+	// Ingest token file, sourced from the DynaKube token Secret via a projected volume.
+	// Mounted as a directory (not subPath) so kubelet propagates Secret updates to the file,
+	// enabling the bearertokenauth extension to pick up token rotations without a pod restart.
+	tokenVolumeName = "dt-token"
+	tokenMountPath  = "/etc/dynatrace/token"
+	tokenFileName   = "token"
 )
 
 type Reconciler struct {
@@ -416,6 +423,31 @@ func buildVolumes(s *reconcileScope) []corev1.Volume {
 				},
 			},
 		},
+		{
+			// projected volume exposes only the apiToken key from the DynaKube token Secret as a
+			// single file at /etc/dynatrace/token/token. Mounted as a directory (no subPath) so
+			// kubelet propagates Secret rotations to the mounted file, which the bearertokenauth
+			// extension watches.
+			Name: tokenVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				Projected: &corev1.ProjectedVolumeSource{
+					// 0444 (world-readable) is required because the container runs as UID 65532
+					// but the projected file is owned by root:root — without a matching fsGroup
+					// on the pod, only world-readable modes are accessible to the gateway process.
+					DefaultMode: new(int32(0o444)),
+					Sources: []corev1.VolumeProjection{
+						{
+							Secret: &corev1.SecretProjection{
+								LocalObjectReference: corev1.LocalObjectReference{Name: dk.Tokens()},
+								Items: []corev1.KeyToPath{
+									{Key: token.APIKey, Path: tokenFileName},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 
 	if dk.Spec.TrustedCAs != "" {
@@ -439,6 +471,7 @@ func buildVolumeMounts(s *reconcileScope) []corev1.VolumeMount {
 
 	mounts := []corev1.VolumeMount{
 		{Name: configVolumeName, MountPath: configMountDir, ReadOnly: true},
+		{Name: tokenVolumeName, MountPath: tokenMountPath, ReadOnly: true},
 	}
 
 	if dk.Spec.TrustedCAs != "" {
