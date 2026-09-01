@@ -36,8 +36,8 @@ RUN --mount=type=cache,target="/root/.cache/go-build" \
 RUN cyclonedx-gomod app -licenses -assert-licenses -json -main cmd/ -output ./build/_output/bin/dynatrace-operator-bin-sbom.cdx.json
 
 # platform is required, otherwise the copy command will copy the wrong architecture files, don't trust GitHub Actions linting warnings
-FROM --platform=$TARGETPLATFORM registry.access.redhat.com/ubi10-micro:10.2-1786324819@sha256:cabedb588644e9da2c95ebb173a67b78d58aaedcb0eaa42a86f880bcef8a0b2f AS base
-FROM --platform=$TARGETPLATFORM registry.access.redhat.com/ubi10:10.2-1787608172@sha256:2186e040d4218876009633aabff936882a10173b73b2c6f924dc5262bd651491 AS dependency
+FROM --platform=$TARGETPLATFORM registry.access.redhat.com/ubi10-micro:10.2-1787684489@sha256:37fadb004c6bea628fcdd81376c8fb77bd8d9fd432d90503af4d9e76b1ff7191 AS base
+FROM --platform=$TARGETPLATFORM registry.access.redhat.com/ubi10:10.2-1788218897@sha256:4690398669a07627339936c9e79b05233053056ce688efeb4400d3c1c530486b AS dependency
 RUN mkdir -p /tmp/rootfs-dependency
 COPY --from=base / /tmp/rootfs-dependency
 RUN dnf install --installroot /tmp/rootfs-dependency \
