@@ -66,7 +66,6 @@ type reconcileScope struct {
 	AppLabels   *k8slabel.Labels
 	ImageClient image.Client
 	// Computed during reconcile
-	resolvedImage string
 	ConfigMapHash string
 	Deployment    *appsv1.Deployment
 }
@@ -117,7 +116,6 @@ func (r *Reconciler) resolveImage(ctx context.Context, s *reconcileScope) error 
 		}
 	}
 
-	s.resolvedImage = imageURI
 	s.Owner.Status.Scraper.ResolvedImage = imageURI
 
 	return nil
@@ -250,7 +248,7 @@ func buildContainer(s *reconcileScope, current corev1.Container) corev1.Containe
 
 	return corev1.Container{
 		Name:            "scraper",
-		Image:           s.resolvedImage,
+		Image:           s.Owner.Status.Scraper.ResolvedImage,
 		ImagePullPolicy: imagePullPolicy,
 		Command:         []string{"/dynatrace-otel-collector"},
 		Args:            buildArgs(s),
@@ -258,7 +256,7 @@ func buildContainer(s *reconcileScope, current corev1.Container) corev1.Containe
 			{Name: healthCheckPortName, ContainerPort: healthCheckPort, Protocol: corev1.ProtocolTCP},
 		},
 		Env:          buildEnv(s),
-		VolumeMounts: buildVolumeMounts(s),
+		VolumeMounts: buildVolumeMounts(),
 		Resources:    s.Spec.Resources,
 		SecurityContext: &corev1.SecurityContext{
 			Privileged:               new(false),
@@ -347,7 +345,7 @@ func buildVolumes(s *reconcileScope) []corev1.Volume {
 	}
 }
 
-func buildVolumeMounts(s *reconcileScope) []corev1.VolumeMount {
+func buildVolumeMounts() []corev1.VolumeMount {
 	return []corev1.VolumeMount{
 		{Name: configVolumeName, MountPath: configMountDir, ReadOnly: true},
 	}

@@ -276,7 +276,7 @@ func TestBuildVolumes(t *testing.T) {
 		s := newTestScope(newTestDTP("dtp", "dynatrace"))
 
 		volumes := buildVolumes(s)
-		mounts := buildVolumeMounts(s)
+		mounts := buildVolumeMounts()
 
 		require.Len(t, volumes, 1)
 		assert.Equal(t, configVolumeName, volumes[0].Name)
@@ -290,7 +290,6 @@ func TestMutateDeploymentIsIdempotent(t *testing.T) {
 	dtp := newTestDTP("dtp", "dynatrace")
 	dtp.Spec.Scraper.Image = testImage
 	s := newTestScope(dtp)
-	s.resolvedImage = testImage
 
 	deploy := &appsv1.Deployment{}
 	mutateDeployment(deploy, s)

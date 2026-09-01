@@ -69,7 +69,6 @@ type reconcileScope struct {
 	AppLabels   *k8slabel.Labels
 	ImageClient image.Client
 	// Computed during reconcile
-	resolvedImage string
 	ConfigMapHash string
 	StatefulSet   *appsv1.StatefulSet
 }
@@ -117,7 +116,6 @@ func (r *Reconciler) resolveImage(ctx context.Context, s *reconcileScope) error 
 		}
 	}
 
-	s.resolvedImage = imageURI
 	s.Owner.Status.Gateway.ResolvedImage = imageURI
 
 	return nil
@@ -248,7 +246,7 @@ func buildContainer(s *reconcileScope, current corev1.Container) corev1.Containe
 
 	return corev1.Container{
 		Name:            "gateway",
-		Image:           s.resolvedImage,
+		Image:           s.Owner.Status.Gateway.ResolvedImage,
 		ImagePullPolicy: imagePullPolicy,
 		Command:         []string{"/dynatrace-otel-collector"},
 		Args:            []string{"--config=" + configMountDir + "/" + relayConfigFile},
