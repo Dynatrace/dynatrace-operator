@@ -124,7 +124,6 @@ func TestImageResolution(t *testing.T) {
 		setupDynakube    func(*dynakube.DynaKube)
 		setupImageClient func(*imageclientmock.Client)
 		expectedImage    string
-		expectedStatus   string
 	}{
 		{
 			name: "custom imageRef is used as-is, no fleet management call",
@@ -134,8 +133,7 @@ func TestImageResolution(t *testing.T) {
 			setupImageClient: func(ic *imageclientmock.Client) {
 				// no expectation set — fleet management must not be called
 			},
-			expectedImage:  testOTelCImageRepository + ":" + testOTelCImageTag,
-			expectedStatus: testOTelCImageRepository + ":" + testOTelCImageTag,
+			expectedImage: testOTelCImageRepository + ":" + testOTelCImageTag,
 		},
 		{
 			name: "no imageRef, public registry enabled — image from fleet management (default registry)",
@@ -147,8 +145,7 @@ func TestImageResolution(t *testing.T) {
 				ic.EXPECT().GetComponentLatestInfo(anyCtx, dtimage.OTelCollector, "").
 					Return(&dtimage.Info{URI: testFleetMgmtImageURI}, nil)
 			},
-			expectedImage:  testFleetMgmtImageURI,
-			expectedStatus: testFleetMgmtImageURI,
+			expectedImage: testFleetMgmtImageURI,
 		},
 		{
 			name: "no imageRef, public registry enabled with override — image from fleet management (override registry)",
@@ -161,8 +158,7 @@ func TestImageResolution(t *testing.T) {
 				ic.EXPECT().GetComponentLatestInfo(anyCtx, dtimage.OTelCollector, "my.registry.example.com").
 					Return(&dtimage.Info{URI: testFleetMgmtImageURI}, nil)
 			},
-			expectedImage:  testFleetMgmtImageURI,
-			expectedStatus: testFleetMgmtImageURI,
+			expectedImage: testFleetMgmtImageURI,
 		},
 	}
 
@@ -187,7 +183,7 @@ func TestImageResolution(t *testing.T) {
 			err = mockK8sClient.Get(ctx, types.NamespacedName{Name: dk.OTelCollectorStatefulsetName(), Namespace: dk.Namespace}, &sts)
 			require.NoError(t, err)
 			assert.Equal(t, tc.expectedImage, sts.Spec.Template.Spec.Containers[0].Image)
-			assert.Equal(t, tc.expectedStatus, dk.Status.OTelCollector.ResolvedImage)
+			assert.Equal(t, tc.expectedImage, dk.Status.OTelCollector.ResolvedImage)
 		})
 	}
 }
