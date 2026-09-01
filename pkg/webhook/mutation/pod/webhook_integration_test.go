@@ -102,11 +102,7 @@ var (
 	}
 )
 
-func buildArgument(attr string, value string) string {
-	return fmt.Sprintf("--%s=%s=%s", podattr.Flag, attr, value)
-}
-
-func TestWebhook(t *testing.T) { //nolint:revive // Complexity too high
+func TestWebhook(t *testing.T) { //nolint:revive // Function too long
 	clt := integrationtests.SetupWebhookTestEnvironment(
 		t,
 		getWebhookInstallOptions(),
@@ -479,12 +475,48 @@ func TestWebhook(t *testing.T) { //nolint:revive // Complexity too high
 	})
 
 	t.Run("bootstrapper args", func(t *testing.T) {
-		t.Run("with deprecated fields", func(t *testing.T) {
-			testBoostrapperArgs(t, clt, false)
-		})
-		t.Run("without deprecated fields", func(t *testing.T) {
-			testBoostrapperArgs(t, clt, true)
-		})
+		tests := []bootstrapperArgsTestCase{
+			{
+				name:                 "enrichment rules",
+				rules:                metadataEnrichmentRules.Rules,
+				namespaceLabels:      map[string]string{testSecContextLabel: "high", testCustomMetadataLabel: "custom-label"},
+				namespaceAnnotations: map[string]string{testCostCenterAnnotation: "sales", testCustomMetadataAnnotation: "custom-annotation"},
+				expect: map[string]string{
+					"dt.security_context":                                      "high",
+					"dt.cost.costcenter":                                       "sales",
+					"k8s.namespace.label." + testCustomMetadataLabel:           "custom-label",
+					"k8s.namespace.annotation." + testCustomMetadataAnnotation: "custom-annotation",
+				},
+			},
+			{
+				name:                 "user-provided annotations",
+				namespaceAnnotations: map[string]string{"metadata.dynatrace.com/ns-key": "ns-value"},
+				workloadAnnotations:  map[string]string{"metadata.dynatrace.com/workload-key": "workload-value"},
+				podAnnotations:       podMetadataAnnotations,
+				expect: map[string]string{
+					"ns-key":       "ns-value",
+					"workload-key": "workload-value",
+					"service.name": "checkout service",
+					"custom.key":   "value:with/special chars",
+				},
+			},
+			{
+				name:               "resource attributes",
+				resourceAttributes: map[string]string{"global": "global", "shared": "global"},
+				oaAttributes:       map[string]string{"shared": "oneagent"},
+				expect:             map[string]string{"global": "global", "shared": "oneagent"},
+			},
+			{
+				name:              "without deprecated fields",
+				withoutDeprecated: true,
+			},
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				testBootstrapperArgs(t, clt, tt)
+			})
+		}
 	})
 
 	t.Run("OTLP", func(t *testing.T) {
@@ -793,8 +825,29 @@ func testMetadataJSON(t *testing.T, clt client.Client, tt metadataJSONTestCase) 
 	assert.Equal(t, maputils.MergeMap(commonExpected, tt.expect), metadataJSON)
 }
 
-func testBoostrapperArgs(t *testing.T, clt client.Client, withoutDeprecatedAnnotations bool) {
+type bootstrapperArgsTestCase struct {
+	name                 string
+	rules                []metadataenrichment.Rule
+	resourceAttributes   map[string]string
+	oaAttributes         map[string]string
+	namespaceLabels      map[string]string
+	namespaceAnnotations map[string]string
+	workloadLabels       map[string]string
+	workloadAnnotations  map[string]string
+	podLabels            map[string]string
+	podAnnotations       map[string]string
+	withoutDeprecated    bool
+	expect               map[string]string
+}
+
+func testBootstrapperArgs(t *testing.T, clt client.Client, tt bootstrapperArgsTestCase) {
 	t.Helper()
+
+	ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "bootstrapper-args-test"}}
+	ns.Labels = maputils.MergeMap(tt.namespaceLabels, map[string]string{podmutator.InjectionInstanceLabel: "dynakube"})
+	ns.Annotations = tt.namespaceAnnotations
+	integrationtests.CreateKubernetesObject(t, clt, ns)
+	integrationtests.CreateKubernetesObject(t, clt, getBoostrapperSecret(ns.Name))
 
 	dk := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
@@ -806,17 +859,20 @@ func testBoostrapperArgs(t *testing.T, clt client.Client, withoutDeprecatedAnnot
 		},
 		Spec: dynakube.DynaKubeSpec{
 			OneAgent: oneagent.Spec{
-				CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
+				CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
+					HostInjectSpec: oneagent.HostInjectSpec{
+						AdditionalResourceAttributes: tt.oaAttributes,
+					},
+				},
 			},
-			MetadataEnrichment: metadataenrichment.Spec{
-				Enabled: new(true),
-			},
+			MetadataEnrichment: metadataenrichment.Spec{Enabled: new(true)},
+			ResourceAttributes: tt.resourceAttributes,
 		},
 		Status: dynakube.DynaKubeStatus{
 			KubernetesClusterMEID: testMEID,
 			KubernetesClusterName: testClusterName,
-			MetadataEnrichment:    metadataEnrichmentRules,
 			KubeSystemUUID:        testClusterUUID,
+			MetadataEnrichment:    metadataenrichment.Status{Rules: tt.rules},
 			OneAgent: oneagent.Status{
 				ConnectionInfo: communication.ConnectionInfo{
 					TenantUUID: uuid.NewString(),
@@ -829,49 +885,68 @@ func testBoostrapperArgs(t *testing.T, clt client.Client, withoutDeprecatedAnnot
 			},
 		},
 	}
-
-	if withoutDeprecatedAnnotations {
+	if tt.withoutDeprecated {
 		dk.Annotations[exp.EnrichmentEnableAttributesDTKubernetes] = "false"
 	}
-
 	integrationtests.CreateDynakube(t, clt, dk)
-	integrationtests.CreateKubernetesObject(t, clt, getBoostrapperSecret(testNamespace))
 
-	dummyOwner := getOwnerDeployment()
-	integrationtests.CreateKubernetesObject(t, clt, dummyOwner)
+	owner := getOwnerDeployment()
+	owner.Namespace = ns.Name
+	owner.Labels = tt.workloadLabels
+	owner.Annotations = tt.workloadAnnotations
+	integrationtests.CreateKubernetesObject(t, clt, owner)
+
 	pod := createPod(t, clt, func(pod *corev1.Pod) {
-		pod.Annotations = podMetadataAnnotations
-		require.NoError(t, controllerutil.SetControllerReference(dummyOwner, pod, scheme.Scheme))
+		pod.Namespace = ns.Name
+		pod.Labels = tt.podLabels
+		pod.Annotations = tt.podAnnotations
+		require.NoError(t, controllerutil.SetControllerReference(owner, pod, scheme.Scheme))
 	})
 
 	require.Len(t, pod.Spec.InitContainers, 1)
-	assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("k8s.workload.kind", strings.ToLower(pod.OwnerReferences[0].Kind)))
-	assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("k8s.workload.name", strings.ToLower(pod.OwnerReferences[0].Name)))
-	assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("custom.ns-meta", "custom-ns-meta-value"))
-	assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("dt.security_context", "high"))
-	assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("dt.cost.costcenter", "sales"))
-	assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("k8s.namespace.label."+testCustomMetadataLabel, "custom-label"))
-	assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("k8s.namespace.annotation."+testCustomMetadataAnnotation, "custom-annotation"))
-	assert.Contains(t, pod.Spec.InitContainers[0].Args, "--"+bootstrapper.MetadataEnrichmentFlag)
-	assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("k8s.pod.uid", "$(K8S_PODUID)"))
-	assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("k8s.pod.name", "$(K8S_PODNAME)"))
-	assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("k8s.node.name", "$(K8S_NODE_NAME)"))
-	assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("k8s.namespace.name", pod.Namespace))
-	assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("k8s.cluster.uid", testClusterUUID))
-	assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("k8s.cluster.name", testClusterName))
-	assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("dt.entity.kubernetes_cluster", testMEID))
+	args := pod.Spec.InitContainers[0].Args
 
-	if withoutDeprecatedAnnotations {
-		assert.NotContains(t, pod.Spec.InitContainers[0].Args, buildArgument(attributes.DeprecatedWorkloadKindKey, strings.ToLower(pod.OwnerReferences[0].Kind)))
-		assert.NotContains(t, pod.Spec.InitContainers[0].Args, buildArgument(attributes.DeprecatedWorkloadNameKey, strings.ToLower(pod.OwnerReferences[0].Name)))
-		assert.NotContains(t, pod.Spec.InitContainers[0].Args, buildArgument(attributes.DeprecatedClusterIDKey, testClusterUUID))
-	} else {
-		assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument(attributes.DeprecatedWorkloadKindKey, strings.ToLower(pod.OwnerReferences[0].Kind)))
-		assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument(attributes.DeprecatedWorkloadNameKey, strings.ToLower(pod.OwnerReferences[0].Name)))
-		assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument(attributes.DeprecatedClusterIDKey, testClusterUUID))
+	commonDefaults := map[string]string{
+		"k8s.workload.kind":            strings.ToLower(pod.OwnerReferences[0].Kind),
+		"k8s.workload.name":            strings.ToLower(pod.OwnerReferences[0].Name),
+		"k8s.pod.uid":                  "$(K8S_PODUID)",
+		"k8s.pod.name":                 "$(K8S_PODNAME)",
+		"k8s.node.name":                "$(K8S_NODE_NAME)",
+		"k8s.namespace.name":           pod.Namespace,
+		"k8s.cluster.uid":              testClusterUUID,
+		"k8s.cluster.name":             testClusterName,
+		"dt.entity.kubernetes_cluster": testMEID,
+	}
+	if !tt.withoutDeprecated {
+		commonDefaults[attributes.DeprecatedWorkloadKindKey] = commonDefaults["k8s.workload.kind"]
+		commonDefaults[attributes.DeprecatedWorkloadNameKey] = commonDefaults["k8s.workload.name"]
+		commonDefaults[attributes.DeprecatedClusterIDKey] = testClusterUUID
 	}
 
-	assert.Contains(t, pod.Spec.InitContainers[0].Args, "--attribute-container={\"container_image.registry\":\"docker.io\",\"container_image.repository\":\"myapp\",\"container_image.tags\":\"1.2.3\",\"k8s.container.name\":\"app\"}")
+	assert.Equal(t, maputils.MergeMap(commonDefaults, tt.expect), attributeArgsToMap(t, args))
+
+	assert.Contains(t, args, "--"+bootstrapper.MetadataEnrichmentFlag)
+	assert.Contains(t, args, "--attribute-container={\"container_image.registry\":\"docker.io\",\"container_image.repository\":\"myapp\",\"container_image.tags\":\"1.2.3\",\"k8s.container.name\":\"app\"}")
+}
+
+func attributeArgsToMap(t *testing.T, args []string) map[string]string {
+	t.Helper()
+
+	prefix := "--" + podattr.Flag + "="
+	result := make(map[string]string)
+
+	for _, a := range args {
+		rest, ok := strings.CutPrefix(a, prefix)
+		if !ok {
+			continue
+		}
+
+		key, value, found := strings.Cut(rest, "=")
+		require.True(t, found, "malformed attribute arg: %s", a)
+		result[key] = value
+	}
+
+	return result
 }
 
 type otlpTestCase struct {
