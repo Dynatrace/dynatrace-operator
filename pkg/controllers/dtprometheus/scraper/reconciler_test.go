@@ -303,7 +303,7 @@ func TestBuildEnv(t *testing.T) {
 
 		assert.Contains(t, noProxy, "$(KUBERNETES_SERVICE_HOST)")
 		assert.Contains(t, noProxy, "kubernetes.default")
-		assert.Contains(t, noProxy, "dtp-prometheus-allocator.dynatrace.svc.cluster.local")
+		assert.Contains(t, noProxy, "dtp-allocator.dynatrace.svc.cluster.local")
 		assert.Contains(t, noProxy, "dtp-gateway.dynatrace.svc.cluster.local")
 	})
 

@@ -19,8 +19,8 @@ func TestBuildScraperConfigData(t *testing.T) {
 
 		data := buildScraperConfigData(s)
 
-		assert.Equal(t, "http://dtp-prometheus-allocator.dynatrace.svc.cluster.local:8080", data.TargetAllocatorEndpoint)
-		assert.Equal(t, "dtp-gateway.dynatrace.svc.cluster.local:4317", data.GatewayEndpoint)
+		assert.Equal(t, "http://dtp-allocator.dynatrace.svc.cluster.local:80", data.TargetAllocatorEndpoint)
+		assert.Equal(t, "dtp-gateway.dynatrace", data.GatewayService)
 	})
 
 	t.Run("endpoints follow the owner name and namespace", func(t *testing.T) {
@@ -28,8 +28,8 @@ func TestBuildScraperConfigData(t *testing.T) {
 
 		data := buildScraperConfigData(s)
 
-		assert.Equal(t, "http://other-prometheus-allocator.custom-ns.svc.cluster.local:8080", data.TargetAllocatorEndpoint)
-		assert.Equal(t, "other-gateway.custom-ns.svc.cluster.local:4317", data.GatewayEndpoint)
+		assert.Equal(t, "http://other-allocator.custom-ns.svc.cluster.local:80", data.TargetAllocatorEndpoint)
+		assert.Equal(t, "other-gateway.custom-ns", data.GatewayService)
 	})
 
 	t.Run("poll interval is taken from the spec", func(t *testing.T) {
@@ -43,7 +43,7 @@ func TestBuildScraperConfigData(t *testing.T) {
 func TestBuildScraperOTelConfig(t *testing.T) {
 	data := scraperConfigData{
 		TargetAllocatorEndpoint: "http://ta.dynatrace.svc.cluster.local:8080",
-		GatewayEndpoint:         "gw.dynatrace.svc.cluster.local:4317",
+		GatewayService:          "gw.dynatrace",
 		TargetsPollInterval:     "1m0s",
 	}
 
@@ -54,7 +54,7 @@ func TestBuildScraperOTelConfig(t *testing.T) {
 		require.NotNil(t, pipeline)
 		assert.Equal(t, []component.ID{prometheusID}, pipeline.Receivers)
 		assert.Equal(t, []component.ID{memoryLimiterID}, pipeline.Processors)
-		assert.Equal(t, []component.ID{otlpID}, pipeline.Exporters)
+		assert.Equal(t, []component.ID{loadBalancingID}, pipeline.Exporters)
 	})
 
 	t.Run("receiver polls the target allocator", func(t *testing.T) {
@@ -69,12 +69,24 @@ func TestBuildScraperOTelConfig(t *testing.T) {
 		assert.Equal(t, "${env:MY_POD_NAME}", ta["collector_id"])
 	})
 
-	t.Run("exporter targets the gateway without TLS", func(t *testing.T) {
-		exporter, ok := buildScraperOTelConfig(data).Exporters[otlpID].(map[string]any)
+	t.Run("load-balancing exporter uses k8s resolver on the gateway service without TLS", func(t *testing.T) {
+		exporter, ok := buildScraperOTelConfig(data).Exporters[loadBalancingID].(map[string]any)
 		require.True(t, ok)
 
-		assert.Equal(t, data.GatewayEndpoint, exporter["endpoint"])
-		assert.Equal(t, map[string]any{"insecure": true}, exporter["tls"])
+		resolver, ok := exporter["resolver"].(map[string]any)
+		require.True(t, ok)
+
+		k8s, ok := resolver["k8s"].(map[string]any)
+		require.True(t, ok)
+		assert.Equal(t, data.GatewayService, k8s["service"])
+		assert.Equal(t, []int{gatewayOTLPPort}, k8s["ports"])
+
+		protocol, ok := exporter["protocol"].(map[string]any)
+		require.True(t, ok)
+
+		otlp, ok := protocol["otlp"].(map[string]any)
+		require.True(t, ok)
+		assert.Equal(t, map[string]any{"insecure": true}, otlp["tls"])
 	})
 
 	t.Run("marshals to valid yaml", func(t *testing.T) {
@@ -83,6 +95,7 @@ func TestBuildScraperOTelConfig(t *testing.T) {
 		require.NoError(t, err)
 		assert.Contains(t, rendered, "prometheus:")
 		assert.Contains(t, rendered, data.TargetAllocatorEndpoint)
-		assert.Contains(t, rendered, data.GatewayEndpoint)
+		assert.Contains(t, rendered, "loadbalancing:")
+		assert.Contains(t, rendered, data.GatewayService)
 	})
 }

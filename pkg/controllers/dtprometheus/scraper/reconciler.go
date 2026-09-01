@@ -47,9 +47,9 @@ const (
 	healthCheckPortName = "health"
 	healthCheckPort     = 13133
 
-	// targetAllocatorPort is the target allocator's plain HTTP port, matching the
-	// listen_addr its reconciler writes into its own config.
-	targetAllocatorPort = 8080
+	// targetAllocatorPort is the TA Service's plain HTTP port (not the container
+	// listen port 8080 — the Service maps 80 → http-port/8080 on the pod).
+	targetAllocatorPort = 80
 
 	// gatewayOTLPPort is the gateway service's OTLP/gRPC port.
 	gatewayOTLPPort = 4317
@@ -167,8 +167,7 @@ func buildScraperConfigData(s *reconcileScope) scraperConfigData {
 	return scraperConfigData{
 		TargetAllocatorEndpoint: "http://" + net.JoinHostPort(
 			serviceFQDN(s.Owner.TargetAllocator().GetDeploymentName(), namespace), strconv.Itoa(targetAllocatorPort)),
-		GatewayEndpoint: net.JoinHostPort(
-			serviceFQDN(s.Owner.Gateway().GetStatefulSetName(), namespace), strconv.Itoa(gatewayOTLPPort)),
+		GatewayService:      s.Owner.Gateway().GetStatefulSetName() + "." + namespace,
 		TargetsPollInterval: s.Spec.TargetsPollInterval.Duration.String(),
 	}
 }

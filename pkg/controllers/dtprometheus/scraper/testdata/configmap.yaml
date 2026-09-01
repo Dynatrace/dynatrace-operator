@@ -3,10 +3,18 @@ data:
   scraper: |
     connectors: {}
     exporters:
-        otlp:
-            endpoint: dtp-gateway.dynatrace.svc.cluster.local:4317
-            tls:
-                insecure: true
+        debug:
+            verbosity: basic
+        loadbalancing:
+            protocol:
+                otlp:
+                    tls:
+                        insecure: true
+            resolver:
+                k8s:
+                    ports:
+                        - 4317
+                    service: dtp-gateway.dynatrace
     extensions:
         health_check:
             endpoint: ${env:MY_POD_IP}:13133
@@ -21,7 +29,7 @@ data:
                 scrape_configs: []
             target_allocator:
                 collector_id: ${env:MY_POD_NAME}
-                endpoint: http://dtp-prometheus-allocator.dynatrace.svc.cluster.local:8080
+                endpoint: http://dtp-allocator.dynatrace.svc.cluster.local:80
                 interval: 1m0s
     service:
         extensions:
@@ -29,7 +37,7 @@ data:
         pipelines:
             metrics:
                 exporters:
-                    - otlp
+                    - loadbalancing
                 processors:
                     - memory_limiter
                 receivers:
