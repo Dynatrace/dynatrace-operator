@@ -15,6 +15,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
+	opconsts "github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	otelcconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/consts"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/consts"
 	componentActiveGate "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/activegate"
@@ -408,7 +409,7 @@ func createAgTLSSecret(namespace string) (corev1.Secret, error) {
 
 	return k8ssecret.New(consts.AgSecretName, namespace,
 		map[string][]byte{
-			dynakube.ServerCertKey:                 agCrt,
+			opconsts.TLSServerCrtDataName:          agCrt,
 			consts.AgCertificateAndPrivateKeyField: agP12,
 		}), nil
 }

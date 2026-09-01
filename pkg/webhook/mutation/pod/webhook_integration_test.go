@@ -1248,7 +1248,7 @@ func getOTLPExporterCertsSecret(namespace string) *corev1.Secret {
 			Namespace: namespace,
 		},
 		Data: map[string][]byte{
-			dynakube.TLSCertKey: []byte("ag-cert-data"),
+			consts.TLSCrtDataName: []byte("ag-cert-data"),
 		},
 	}
 }

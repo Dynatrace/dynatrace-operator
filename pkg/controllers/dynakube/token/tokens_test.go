@@ -113,7 +113,7 @@ func TestTokens(t *testing.T) {
 		tokens = tokens.AddFeatureScopesToTokens()
 		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t, fakeTokenAllAPITokenPermissions), dynakube.DynaKube{})
 
-		assert.Len(t, tokens.APIToken().Features, 10)
+		assert.Len(t, tokens.APIToken().Features, 9)
 		assert.Empty(t, tokens.PaasToken().Features)
 		assert.Empty(t, tokens.DataIngestToken().Features)
 
@@ -128,7 +128,7 @@ func TestTokens(t *testing.T) {
 		tokens = tokens.AddFeatureScopesToTokens()
 		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t, fakeTokenAllAPITokenPermissions, fakeTokenPaas), dynakube.DynaKube{})
 
-		assert.Len(t, tokens.APIToken().Features, 10)
+		assert.Len(t, tokens.APIToken().Features, 9)
 		assert.Len(t, tokens.PaasToken().Features, 1)
 		assert.Empty(t, tokens.DataIngestToken().Features)
 		assert.NoError(t, err)
@@ -140,7 +140,7 @@ func TestTokens(t *testing.T) {
 		tokens = tokens.AddFeatureScopesToTokens()
 		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t, fakeTokenAllAPITokenPermissionsIncludingPaaS), dynakube.DynaKube{})
 
-		assert.Len(t, tokens.APIToken().Features, 10)
+		assert.Len(t, tokens.APIToken().Features, 9)
 		assert.Empty(t, tokens.PaasToken().Features)
 		assert.Empty(t, tokens.DataIngestToken().Features)
 		assert.NoError(t, err)
@@ -157,7 +157,7 @@ func TestTokens(t *testing.T) {
 		tokens = tokens.AddFeatureScopesToTokens()
 		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t, fakeTokenNoPermissions), dk)
 
-		assert.Len(t, tokens.APIToken().Features, 10)
+		assert.Len(t, tokens.APIToken().Features, 9)
 		assert.Empty(t, tokens.PaasToken().Features)
 		assert.Empty(t, tokens.DataIngestToken().Features)
 		assert.Equal(t, []string{"DataExport", "InstallerDownload", "activeGateTokenManagement.create"}, GetMissingScopes(err))
@@ -174,7 +174,7 @@ func TestTokens(t *testing.T) {
 		tokens = tokens.AddFeatureScopesToTokens()
 		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t, fakeTokenAllAPITokenPermissionsIncludingPaaS, fakeTokenNoPermissions), dk)
 
-		assert.Len(t, tokens.APIToken().Features, 10)
+		assert.Len(t, tokens.APIToken().Features, 9)
 		assert.Empty(t, tokens.PaasToken().Features)
 		assert.Len(t, tokens.DataIngestToken().Features, 8)
 		assert.Equal(t, []string{"metrics.ingest"}, GetMissingScopes(err))
@@ -188,7 +188,7 @@ func TestTokens(t *testing.T) {
 		tokens = tokens.AddFeatureScopesToTokens()
 		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t, fakeTokenAllAPITokenPermissionsIncludingPaaS, fakeTokenAllDataIngestPermissions), dynakube.DynaKube{})
 
-		assert.Len(t, tokens.APIToken().Features, 10)
+		assert.Len(t, tokens.APIToken().Features, 9)
 		assert.Empty(t, tokens.PaasToken().Features)
 		assert.Len(t, tokens.DataIngestToken().Features, 8)
 		assert.NoError(t, err)
@@ -213,7 +213,7 @@ func TestTokens(t *testing.T) {
 		tokens = tokens.AddFeatureScopesToTokens()
 		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t, fakeTokenAllAPITokenPermissionsIncludingPaaS, fakeTokenNoPermissions), dk)
 
-		assert.Len(t, tokens.APIToken().Features, 10)
+		assert.Len(t, tokens.APIToken().Features, 9)
 		assert.Empty(t, tokens.PaasToken().Features)
 		assert.Len(t, tokens.DataIngestToken().Features, 8)
 		assert.Equal(t, []string{"logs.ingest", "metrics.ingest", "openTelemetryTrace.ingest"}, GetMissingScopes(err))
@@ -239,7 +239,7 @@ func TestTokens(t *testing.T) {
 		tokens = tokens.AddFeatureScopesToTokens()
 		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t, fakeTokenAllAPITokenPermissionsIncludingPaaS, fakeTokenAllOTLPExporterPermissions), dk)
 
-		assert.Len(t, tokens.APIToken().Features, 10)
+		assert.Len(t, tokens.APIToken().Features, 9)
 		assert.Empty(t, tokens.PaasToken().Features)
 		assert.Len(t, tokens.DataIngestToken().Features, 8)
 		assert.NoError(t, err)

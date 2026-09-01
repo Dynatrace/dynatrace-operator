@@ -59,7 +59,7 @@ func getTestDynakube() *dynakube.DynaKube {
 			Annotations: map[string]string{},
 		},
 		Spec: dynakube.DynaKubeSpec{
-			Extensions: &extensions.Spec{Prometheus: &extensions.PrometheusSpec{}},
+			Extensions: &extensions.Spec{Databases: []extensions.DatabaseSpec{{ID: "test"}}},
 			Templates: dynakube.TemplatesSpec{
 				ExtensionExecutionController: extensions.ExecutionControllerSpec{
 					ImageRef: image.Ref{
@@ -1193,8 +1193,8 @@ func TestLegacyVolumes(t *testing.T) {
 						SecretName:  dk.ActiveGate().GetTLSSecretName(),
 						Items: []corev1.KeyToPath{
 							{
-								Key:  activeGateTrustedCertSecretKeyPath,
-								Path: activeGateTrustedCertSecretKeyPath,
+								Key:  consts.TLSServerCrtDataName,
+								Path: consts.TLSServerCrtDataName,
 							},
 						},
 					},
@@ -1307,8 +1307,8 @@ func TestLegacyVolumes(t *testing.T) {
 						SecretName:  dk.ActiveGate().GetTLSSecretName(),
 						Items: []corev1.KeyToPath{
 							{
-								Key:  activeGateTrustedCertSecretKeyPath,
-								Path: activeGateTrustedCertSecretKeyPath,
+								Key:  consts.TLSServerCrtDataName,
+								Path: consts.TLSServerCrtDataName,
 							},
 						},
 					},
@@ -1443,8 +1443,8 @@ func TestLegacyVolumes(t *testing.T) {
 						SecretName:  dk.ActiveGate().GetTLSSecretName(),
 						Items: []corev1.KeyToPath{
 							{
-								Key:  activeGateTrustedCertSecretKeyPath,
-								Path: activeGateTrustedCertSecretKeyPath,
+								Key:  consts.TLSServerCrtDataName,
+								Path: consts.TLSServerCrtDataName,
 							},
 						},
 					},
@@ -1537,8 +1537,8 @@ func TestVolumes(t *testing.T) {
 						SecretName:  dk.ActiveGate().GetTLSSecretName(),
 						Items: []corev1.KeyToPath{
 							{
-								Key:  activeGateTrustedCertSecretKeyPath,
-								Path: activeGateTrustedCertSecretKeyPath,
+								Key:  consts.TLSServerCrtDataName,
+								Path: consts.TLSServerCrtDataName,
 							},
 						},
 					},
@@ -1629,8 +1629,8 @@ func TestVolumes(t *testing.T) {
 						SecretName:  dk.ActiveGate().GetTLSSecretName(),
 						Items: []corev1.KeyToPath{
 							{
-								Key:  activeGateTrustedCertSecretKeyPath,
-								Path: activeGateTrustedCertSecretKeyPath,
+								Key:  consts.TLSServerCrtDataName,
+								Path: consts.TLSServerCrtDataName,
 							},
 						},
 					},
@@ -1743,8 +1743,8 @@ func TestVolumes(t *testing.T) {
 						SecretName:  dk.ActiveGate().GetTLSSecretName(),
 						Items: []corev1.KeyToPath{
 							{
-								Key:  activeGateTrustedCertSecretKeyPath,
-								Path: activeGateTrustedCertSecretKeyPath,
+								Key:  consts.TLSServerCrtDataName,
+								Path: consts.TLSServerCrtDataName,
 							},
 						},
 					},
@@ -1817,8 +1817,8 @@ func TestActiveGateVolumes(t *testing.T) {
 				SecretName:  tlsSecretName,
 				Items: []corev1.KeyToPath{
 					{
-						Key:  activeGateTrustedCertSecretKeyPath,
-						Path: activeGateTrustedCertSecretKeyPath,
+						Key:  consts.TLSServerCrtDataName,
+						Path: consts.TLSServerCrtDataName,
 					},
 				},
 			},
@@ -1832,8 +1832,8 @@ func TestActiveGateVolumes(t *testing.T) {
 				SecretName:  testDynakubeName + activegate.TLSSecretSuffix,
 				Items: []corev1.KeyToPath{
 					{
-						Key:  activeGateTrustedCertSecretKeyPath,
-						Path: activeGateTrustedCertSecretKeyPath,
+						Key:  consts.TLSServerCrtDataName,
+						Path: consts.TLSServerCrtDataName,
 					},
 				},
 			},

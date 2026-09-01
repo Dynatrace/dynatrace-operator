@@ -81,7 +81,7 @@ func (controller *Controller) determineExtensionsExecutionControllerPhase(ctx co
 }
 
 func (controller *Controller) determineOTelCollectorPhase(ctx context.Context, dk *dynakube.DynaKube) status.DeploymentPhase {
-	if dk.Extensions().IsPrometheusEnabled() || dk.TelemetryIngest().IsEnabled() {
+	if dk.TelemetryIngest().IsEnabled() {
 		return controller.determineStatefulSetPhase(ctx, dk, dk.OTelCollectorStatefulsetName())
 	}
 

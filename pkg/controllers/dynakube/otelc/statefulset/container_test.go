@@ -42,25 +42,8 @@ func TestProbes(t *testing.T) {
 		assert.EqualValues(t, 1, probe.SuccessThreshold)
 	})
 
-	t.Run("enable with telemetryIngest", func(t *testing.T) {
+	t.Run("probes are always set", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Spec.TelemetryIngest = &telemetryingest.Spec{}
-
-		container := getContainer(dk, 1)
-		assert.NotNil(t, container.LivenessProbe)
-		assert.NotNil(t, container.ReadinessProbe)
-	})
-
-	t.Run("disable with EEC prometheus", func(t *testing.T) {
-		dk := getTestDynakubeWithExtensions()
-
-		container := getContainer(dk, 1)
-		assert.Nil(t, container.LivenessProbe)
-		assert.Nil(t, container.ReadinessProbe)
-	})
-
-	t.Run("enabled with EEC prometheus and telemetryingest", func(t *testing.T) {
-		dk := getTestDynakubeWithExtensions()
 		dk.Spec.TelemetryIngest = &telemetryingest.Spec{}
 
 		container := getContainer(dk, 1)
@@ -70,33 +53,7 @@ func TestProbes(t *testing.T) {
 }
 
 func TestContainer(t *testing.T) {
-	t.Run("only TelemetryIngest enabled", func(t *testing.T) {
-		dk := getTestDynakube()
-		dk.Spec.TelemetryIngest = &telemetryingest.Spec{}
-
-		assert.Equal(t, []string{"--config=file:///config/telemetry.yaml"}, buildArgs(dk))
-	})
-
-	t.Run("only EEC enabled", func(t *testing.T) {
-		dk := getTestDynakubeWithExtensions()
-		assert.Equal(
-			t,
-			[]string{"--config=eec://dynakube-extension-controller.dynatrace:14599/otcconfig/prometheusMetrics#refresh-interval=5s&auth-file=/secrets/tokens/datasource.token"},
-			buildArgs(dk),
-		)
-	})
-
-	t.Run("TelemetryIngest and EEC enabled", func(t *testing.T) {
-		dk := getTestDynakubeWithExtensions()
-		dk.Spec.TelemetryIngest = &telemetryingest.Spec{}
-
-		assert.Equal(
-			t,
-			[]string{
-				"--config=eec://dynakube-extension-controller.dynatrace:14599/otcconfig/prometheusMetrics#refresh-interval=5s&auth-file=/secrets/tokens/datasource.token",
-				"--config=file:///config/telemetry.yaml",
-			},
-			buildArgs(dk),
-		)
+	t.Run("builds the telemetry config arg", func(t *testing.T) {
+		assert.Equal(t, []string{"--config=file:///config/telemetry.yaml"}, buildArgs())
 	})
 }

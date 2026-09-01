@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -104,15 +105,15 @@ func activeGateTLSCertificate(t *testing.T) {
 
 	t.Run("get tls certificates from server.crt", func(t *testing.T) {
 		testFunc(t, map[string][]byte{
-			dynakube.ServerCertKey: []byte(testSecretValue),
+			consts.TLSServerCrtDataName: []byte(testSecretValue),
 		})
 	})
 
 	t.Run("get tls certificates from tls.crt", func(t *testing.T) {
 		testFunc(t, map[string][]byte{
 			// prioritize tls.crt over server.crt
-			dynakube.TLSCertKey:    []byte(testSecretValue),
-			dynakube.ServerCertKey: []byte(testSecretValueNew),
+			consts.TLSCrtDataName:       []byte(testSecretValue),
+			consts.TLSServerCrtDataName: []byte(testSecretValueNew),
 		})
 	})
 }

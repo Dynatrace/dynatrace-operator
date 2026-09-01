@@ -54,8 +54,6 @@ func TestNameTooLong(t *testing.T) {
 		{"max + 1", dynakube.MaxNameLength + 1, dynakube.DynaKubeSpec{}, 40},
 		{"max oneagent", dynakube.MaxNameLength, dynakube.DynaKubeSpec{OneAgent: oneagent.Spec{CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{}}}, 0},
 		{"max + 1 oneagent", dynakube.MaxNameLength + 1, dynakube.DynaKubeSpec{OneAgent: oneagent.Spec{CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{}}}, 40},
-		{"max prometheus", 31, dynakube.DynaKubeSpec{Extensions: &extensions.Spec{Prometheus: &extensions.PrometheusSpec{}}}, 0},
-		{"max + 1 prometheus", 32, dynakube.DynaKubeSpec{Extensions: &extensions.Spec{Prometheus: &extensions.PrometheusSpec{}}}, 31},
 		{"max databases", 31, dynakube.DynaKubeSpec{Extensions: &extensions.Spec{Databases: []extensions.DatabaseSpec{{ID: "a"}}}}, 0},
 		{"max + 1 databases", 32, dynakube.DynaKubeSpec{Extensions: &extensions.Spec{Databases: []extensions.DatabaseSpec{{ID: "a"}}}}, 31},
 		{"max otelc", 37, dynakube.DynaKubeSpec{TelemetryIngest: &telemetryingest.Spec{}}, 0},
