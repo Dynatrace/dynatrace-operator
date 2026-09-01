@@ -15,9 +15,12 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/dtprometheus"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
+	imagemock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/image"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -53,6 +56,7 @@ func newTestDTP(name, namespace string) *dtprometheus.DTPrometheus {
 func newTestScope(dtp *dtprometheus.DTPrometheus) *reconcileScope {
 	return &reconcileScope{
 		Owner:     dtp,
+		DynaKube:  &dynakube.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: "dk", Namespace: "dynatrace"}},
 		Spec:      dtp.TargetAllocator(),
 		AppLabels: k8slabel.OTelTargetAllocator(),
 	}
@@ -147,9 +151,12 @@ func TestReconcileConfigMap(t *testing.T) {
 }
 
 func TestReconcileDeployment(t *testing.T) {
-	t.Run("missing image", func(t *testing.T) {
+	t.Run("fleet resolve fails when no imageRef set", func(t *testing.T) {
 		dtp := newTestDTP("dtp", "dynatrace")
 		s := newTestScope(dtp)
+		imageClient := imagemock.NewClient(t)
+		imageClient.EXPECT().GetComponentLatestInfo(mock.Anything, mock.Anything, mock.Anything).Return(nil, errors.New("no image found"))
+		s.ImageClient = imageClient
 		c := fake.NewClient()
 		r := &Reconciler{Client: c}
 
@@ -160,6 +167,43 @@ func TestReconcileDeployment(t *testing.T) {
 
 		getErr := c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetDeploymentName(), Namespace: dtp.Namespace}, &appsv1.Deployment{})
 		assert.True(t, k8serrors.IsNotFound(getErr))
+	})
+
+	t.Run("resolves image from fleet API when no imageRef set", func(t *testing.T) {
+		dtp := newTestDTP("dtp", "dynatrace")
+		s := newTestScope(dtp)
+		imageClient := imagemock.NewClient(t)
+		imageClient.EXPECT().GetComponentLatestInfo(mock.Anything, image.TargetAllocator, "").Return(&image.Info{URI: "registry.example.com/fleet-ta:latest"}, nil)
+		s.ImageClient = imageClient
+		c := fake.NewClient()
+		r := &Reconciler{Client: c}
+
+		require.NoError(t, r.reconcileDeployment(t.Context(), s))
+		require.NotNil(t, s.Deployment)
+
+		deploy := &appsv1.Deployment{}
+		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetDeploymentName(), Namespace: dtp.Namespace}, deploy))
+		assert.Equal(t, "registry.example.com/fleet-ta:latest", deploy.Spec.Template.Spec.Containers[0].Image)
+		assert.Equal(t, "registry.example.com/fleet-ta:latest", dtp.Status.TargetAllocator.ResolvedImage)
+	})
+
+	t.Run("resolves image from fleet API with publicRegistryOverride", func(t *testing.T) {
+		dtp := newTestDTP("dtp", "dynatrace")
+		dtp.Spec.PublicRegistryOverride = "custom.registry.example.com"
+		s := newTestScope(dtp)
+		imageClient := imagemock.NewClient(t)
+		imageClient.EXPECT().GetComponentLatestInfo(mock.Anything, image.TargetAllocator, "custom.registry.example.com").Return(&image.Info{URI: "custom.registry.example.com/fleet-ta:latest"}, nil)
+		s.ImageClient = imageClient
+		c := fake.NewClient()
+		r := &Reconciler{Client: c}
+
+		require.NoError(t, r.reconcileDeployment(t.Context(), s))
+		require.NotNil(t, s.Deployment)
+
+		deploy := &appsv1.Deployment{}
+		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetDeploymentName(), Namespace: dtp.Namespace}, deploy))
+		assert.Equal(t, "custom.registry.example.com/fleet-ta:latest", deploy.Spec.Template.Spec.Containers[0].Image)
+		assert.Equal(t, "custom.registry.example.com/fleet-ta:latest", dtp.Status.TargetAllocator.ResolvedImage)
 	})
 
 	t.Run("apply spec", func(t *testing.T) {

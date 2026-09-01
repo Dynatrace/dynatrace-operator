@@ -4129,6 +4129,12 @@ spec:
                     description: Image URI of the scraper currently deployed.
                     type: string
                 type: object
+              targetAllocator:
+                properties:
+                  image:
+                    description: Image URI of the target allocator currently deployed.
+                    type: string
+                type: object
             type: object
         required:
         - spec

@@ -15,25 +15,17 @@ type Extensions struct {
 	namespace string
 
 	Databases []DatabaseSpec
-
-	prometheusEnabled bool
 }
 
 // +kubebuilder:object:generate=true
 
 type Spec struct {
-	Prometheus *PrometheusSpec `json:"prometheus,omitempty"`
-
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:MinItems:=1
 	// +listType=map
 	// +listMapKey=id
 	Databases []DatabaseSpec `json:"databases,omitempty"`
 }
-
-// +kubebuilder:object:generate=true
-
-type PrometheusSpec struct{}
 
 // +kubebuilder:object:generate=true
 
