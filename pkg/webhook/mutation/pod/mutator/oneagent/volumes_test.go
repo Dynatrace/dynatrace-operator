@@ -268,7 +268,7 @@ func TestAddOCIBinVolume(t *testing.T) {
 		assert.Equal(t, expectedPod, pod)
 	})
 
-	t.Run("conflicting volume", func(t *testing.T) {
+	t.Run("conflicting image volume", func(t *testing.T) {
 		pod := &corev1.Pod{
 			Spec: corev1.PodSpec{
 				Volumes: []corev1.Volume{
@@ -281,6 +281,21 @@ func TestAddOCIBinVolume(t *testing.T) {
 			},
 		}
 
+		require.Error(t, addImageBinVolume(pod, testImage, "Always"))
+	})
+
+	t.Run("conflicting any type of volume", func(t *testing.T) {
+		pod := &corev1.Pod{
+			Spec: corev1.PodSpec{
+				Volumes: []corev1.Volume{
+					{Name: BinVolumeName, VolumeSource: corev1.VolumeSource{
+						Projected: &corev1.ProjectedVolumeSource{
+							Sources: []corev1.VolumeProjection{},
+						},
+					}},
+				},
+			},
+		}
 		require.Error(t, addImageBinVolume(pod, testImage, "Always"))
 	})
 }
