@@ -13,7 +13,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/dtprometheus"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
@@ -56,13 +55,8 @@ func newTestDTP(name, namespace string) *dtprometheus.DTPrometheus {
 }
 
 func newTestScope(dtp *dtprometheus.DTPrometheus) *reconcileScope {
-	return newTestScopeWithDynaKube(dtp, &dynakube.DynaKube{})
-}
-
-func newTestScopeWithDynaKube(dtp *dtprometheus.DTPrometheus, dk *dynakube.DynaKube) *reconcileScope {
 	return &reconcileScope{
 		Owner:     dtp,
-		DynaKube:  dk,
 		Spec:      dtp.Scraper(),
 		AppLabels: k8slabel.OTelScraper(),
 	}
@@ -255,68 +249,11 @@ func TestBuildArgs(t *testing.T) {
 }
 
 func TestBuildEnv(t *testing.T) {
-	t.Run("no proxy env without a proxy on the dynakube", func(t *testing.T) {
-		envs := buildEnv(newTestScope(newTestDTP("dtp", "dynatrace")))
-
-		for _, env := range envs {
-			assert.NotContains(t, env.Name, "PROXY")
-		}
-	})
-
 	t.Run("pod name and ip are exposed for the collector config", func(t *testing.T) {
 		envs := buildEnv(newTestScope(newTestDTP("dtp", "dynatrace")))
 
 		assert.Equal(t, "metadata.name", findEnv(t, envs, "MY_POD_NAME").ValueFrom.FieldRef.FieldPath)
 		assert.Equal(t, "status.podIP", findEnv(t, envs, "MY_POD_IP").ValueFrom.FieldRef.FieldPath)
-	})
-
-	t.Run("proxy value is taken from the dynakube", func(t *testing.T) {
-		dk := &dynakube.DynaKube{}
-		dk.Spec.Proxy = &value.Source{Value: "http://proxy:3128"}
-		s := newTestScopeWithDynaKube(newTestDTP("dtp", "dynatrace"), dk)
-
-		envs := buildEnv(s)
-
-		assert.Equal(t, "http://proxy:3128", findEnv(t, envs, "HTTPS_PROXY").Value)
-		assert.Equal(t, "http://proxy:3128", findEnv(t, envs, "HTTP_PROXY").Value)
-	})
-
-	t.Run("proxy secret reference is passed through", func(t *testing.T) {
-		dk := &dynakube.DynaKube{}
-		dk.Spec.Proxy = &value.Source{ValueFrom: "proxy-secret"}
-		s := newTestScopeWithDynaKube(newTestDTP("dtp", "dynatrace"), dk)
-
-		envs := buildEnv(s)
-
-		ref := findEnv(t, envs, "HTTPS_PROXY").ValueFrom.SecretKeyRef
-		assert.Equal(t, "proxy-secret", ref.Name)
-		assert.Equal(t, dynakube.ProxyKey, ref.Key)
-	})
-
-	t.Run("no_proxy excludes the api server, target allocator and gateway", func(t *testing.T) {
-		dk := &dynakube.DynaKube{}
-		dk.Spec.Proxy = &value.Source{Value: "http://proxy:3128"}
-		dtp := newTestDTP("dtp", "dynatrace")
-		s := newTestScopeWithDynaKube(dtp, dk)
-
-		noProxy := findEnv(t, buildEnv(s), "NO_PROXY").Value
-
-		assert.Contains(t, noProxy, "$(KUBERNETES_SERVICE_HOST)")
-		assert.Contains(t, noProxy, "kubernetes.default")
-		assert.Contains(t, noProxy, "dtp-allocator.dynatrace.svc.cluster.local")
-		assert.Contains(t, noProxy, "dtp-gateway.dynatrace.svc.cluster.local")
-	})
-
-	t.Run("no_proxy appends the user-configured entries", func(t *testing.T) {
-		dk := &dynakube.DynaKube{}
-		dk.Spec.Proxy = &value.Source{Value: "http://proxy:3128"}
-		dk.Annotations = map[string]string{"feature.dynatrace.com/no-proxy": "10.42.0.0/16, *.internal"}
-		s := newTestScopeWithDynaKube(newTestDTP("dtp", "dynatrace"), dk)
-
-		noProxy := findEnv(t, buildEnv(s), "NO_PROXY").Value
-
-		assert.Contains(t, noProxy, "10.42.0.0/16")
-		assert.Contains(t, noProxy, "*.internal")
 	})
 }
 
@@ -335,7 +272,7 @@ func findEnv(t *testing.T, envs []corev1.EnvVar, name string) corev1.EnvVar {
 }
 
 func TestBuildVolumes(t *testing.T) {
-	t.Run("config volume only without trusted CAs", func(t *testing.T) {
+	t.Run("config volume only", func(t *testing.T) {
 		s := newTestScope(newTestDTP("dtp", "dynatrace"))
 
 		volumes := buildVolumes(s)
@@ -346,22 +283,6 @@ func TestBuildVolumes(t *testing.T) {
 		assert.Equal(t, "dtp-scraper", volumes[0].ConfigMap.Name)
 		require.Len(t, mounts, 1)
 		assert.Equal(t, configMountDir, mounts[0].MountPath)
-	})
-
-	t.Run("cacerts volume is added for trusted CAs", func(t *testing.T) {
-		dk := &dynakube.DynaKube{}
-		dk.Spec.TrustedCAs = "ca-bundle"
-		s := newTestScopeWithDynaKube(newTestDTP("dtp", "dynatrace"), dk)
-
-		volumes := buildVolumes(s)
-		mounts := buildVolumeMounts(s)
-
-		require.Len(t, volumes, 2)
-		assert.Equal(t, cacertsVolumeName, volumes[1].Name)
-		assert.Equal(t, "ca-bundle", volumes[1].ConfigMap.Name)
-		require.Len(t, mounts, 2)
-		assert.Equal(t, trustedCAVolumeMountPath, mounts[1].MountPath)
-		assert.True(t, mounts[1].ReadOnly)
 	})
 }
 

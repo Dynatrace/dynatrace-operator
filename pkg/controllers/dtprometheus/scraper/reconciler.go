@@ -11,10 +11,8 @@ import (
 	"maps"
 	"net"
 	"strconv"
-	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/dtprometheus"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dtprometheus/condition"
@@ -41,9 +39,6 @@ const (
 	scraperConfigFile    = "scraper.yaml"
 	configHashAnnotation = "internal.operator.dynatrace.com/scraper-config-hash"
 
-	trustedCAVolumeMountPath = "/tls/custom/cacerts"
-	trustedCAFile            = "rootca.pem"
-
 	healthCheckPortName = "health"
 	healthCheckPort     = 13133
 
@@ -56,9 +51,8 @@ const (
 
 	serviceAccountName = "dynatrace-prometheus-scraper"
 
-	configVolumeName  = "opentelemetry-collector-configmap"
-	configMountDir    = "/conf"
-	cacertsVolumeName = "cacerts"
+	configVolumeName = "opentelemetry-collector-configmap"
+	configMountDir   = "/conf"
 )
 
 type Reconciler struct {
@@ -68,7 +62,6 @@ type Reconciler struct {
 type reconcileScope struct {
 	// Required for reconcile
 	Owner       *dtprometheus.DTPrometheus
-	DynaKube    *dynakube.DynaKube
 	Spec        *dtprometheus.Scraper
 	AppLabels   *k8slabel.Labels
 	ImageClient image.Client
@@ -88,7 +81,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtp *dtprometheus.DTPromethe
 
 	scope := &reconcileScope{
 		Owner:       dtp,
-		DynaKube:    dk,
 		Spec:        dtp.Scraper(),
 		AppLabels:   k8slabel.OTelScraper(),
 		ImageClient: imageClient,
@@ -317,9 +309,7 @@ func buildArgs(s *reconcileScope) []string {
 }
 
 func buildEnv(s *reconcileScope) []corev1.EnvVar {
-	dk := s.DynaKube
-
-	envs := k8senv.AppendGoMemoryLimit([]corev1.EnvVar{
+	return k8senv.AppendGoMemoryLimit([]corev1.EnvVar{
 		// APIVersion must be set explicitly: the API server defaults it to "v1" on
 		// storage, so omitting it here would cause a reconcile diff on every iteration.
 		{
@@ -335,70 +325,15 @@ func buildEnv(s *reconcileScope) []corev1.EnvVar {
 			},
 		},
 	}, s.Spec.Resources)
-
-	if dk.HasProxy() {
-		envs = append(
-			envs,
-			proxyEnv("HTTPS_PROXY", dk.Spec.Proxy),
-			proxyEnv("HTTP_PROXY", dk.Spec.Proxy),
-			corev1.EnvVar{Name: "NO_PROXY", Value: noProxyValue(s)},
-		)
-	}
-
-	return envs
-}
-
-func proxyEnv(name string, src *value.Source) corev1.EnvVar {
-	if src.ValueFrom != "" {
-		return corev1.EnvVar{
-			Name: name,
-			ValueFrom: &corev1.EnvVarSource{
-				SecretKeyRef: &corev1.SecretKeySelector{
-					LocalObjectReference: corev1.LocalObjectReference{Name: src.ValueFrom},
-					Key:                  dynakube.ProxyKey,
-				},
-			},
-		}
-	}
-
-	return corev1.EnvVar{Name: name, Value: src.Value}
-}
-
-// noProxyValue keeps the scraper's cluster-internal traffic out of the proxy: the API
-// server, the target allocator it polls and the gateway it exports to.
-//
-// Scrape targets themselves are not covered. Prometheus service discovery addresses
-// them by pod IP, which no hostname entry can match, so a user scraping in-cluster
-// targets from behind a proxy has to add the pod CIDR to the DynaKube noProxy feature
-// flag; that list is appended below.
-func noProxyValue(s *reconcileScope) string {
-	namespace := s.Owner.Namespace
-
-	values := []string{
-		"$(KUBERNETES_SERVICE_HOST)",
-		"kubernetes.default",
-		serviceFQDN(s.Owner.TargetAllocator().GetDeploymentName(), namespace),
-		serviceFQDN(s.Owner.Gateway().GetStatefulSetName(), namespace),
-	}
-
-	for hostname := range strings.SplitSeq(s.DynaKube.FF().GetNoProxy(), ",") {
-		if hostname = strings.TrimSpace(hostname); hostname != "" {
-			values = append(values, hostname)
-		}
-	}
-
-	return strings.Join(values, ",")
 }
 
 func buildVolumes(s *reconcileScope) []corev1.Volume {
-	dk := s.DynaKube
-
 	// DefaultMode is set explicitly (matching what the apiserver defaults it to) so a freshly-built
 	// Volume compares equal to the stored, already-defaulted one on the next reconcile — otherwise
 	// every reconcile sees a nil-vs-0644 diff and issues a spurious Update.
 	defaultMode := new(int32(0o644))
 
-	volumes := []corev1.Volume{
+	return []corev1.Volume{
 		{
 			Name: configVolumeName,
 			VolumeSource: corev1.VolumeSource{
@@ -410,33 +345,10 @@ func buildVolumes(s *reconcileScope) []corev1.Volume {
 			},
 		},
 	}
-
-	// Mounted so scrape configs can point their tlsConfig at it; the collector config
-	// itself does not reference the bundle.
-	if dk.Spec.TrustedCAs != "" {
-		volumes = append(volumes, corev1.Volume{
-			Name: cacertsVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{Name: dk.Spec.TrustedCAs},
-					Items:                []corev1.KeyToPath{{Key: "certs", Path: trustedCAFile}},
-					DefaultMode:          defaultMode,
-				},
-			},
-		})
-	}
-
-	return volumes
 }
 
 func buildVolumeMounts(s *reconcileScope) []corev1.VolumeMount {
-	mounts := []corev1.VolumeMount{
+	return []corev1.VolumeMount{
 		{Name: configVolumeName, MountPath: configMountDir, ReadOnly: true},
 	}
-
-	if s.DynaKube.Spec.TrustedCAs != "" {
-		mounts = append(mounts, corev1.VolumeMount{Name: cacertsVolumeName, MountPath: trustedCAVolumeMountPath, ReadOnly: true})
-	}
-
-	return mounts
 }
