@@ -11,6 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/dtprometheus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -108,6 +109,61 @@ func TestValidateCreateAndUpdateSurfaceWarning(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, warnings, 1)
 	})
+}
+
+func TestNew(t *testing.T) {
+	clt := fake.NewClient()
+	v := New(clt)
+
+	validator, ok := v.(*Validator)
+	require.True(t, ok)
+	assert.Equal(t, clt, validator.apiReader)
+}
+
+func TestValidateDelete(t *testing.T) {
+	validator := &Validator{}
+	warnings, err := validator.ValidateDelete(t.Context(), testDTPrometheus)
+	assert.Nil(t, warnings)
+	assert.NoError(t, err)
+}
+
+func TestValidateCreateAndUpdateWithWrongType(t *testing.T) {
+	clt := fake.NewClientWithInterceptors(noPrometheusCRDsInterceptor)
+	validator := &Validator{apiReader: clt}
+
+	// no GVK set -> hits "unknown object %T"
+	noGVK := &corev1.Pod{}
+	// GVK set but wrong kind -> hits "unknown object %s"
+	withGVK := &corev1.Pod{TypeMeta: metav1.TypeMeta{Kind: "Pod", APIVersion: "v1"}}
+
+	_, err := validator.ValidateCreate(t.Context(), noGVK)
+	require.Error(t, err)
+
+	_, err = validator.ValidateCreate(t.Context(), withGVK)
+	require.Error(t, err)
+
+	_, err = validator.ValidateUpdate(t.Context(), testDTPrometheus, noGVK)
+	require.Error(t, err)
+}
+
+func TestValidateCreateWithBlockingError(t *testing.T) {
+	original := validatorErrorFuncs
+	validatorErrorFuncs = []validatorFunc{
+		func(_ context.Context, _ *Validator, _ *dtprometheus.DTPrometheus) string {
+			return "fail"
+		},
+	}
+	defer func() { validatorErrorFuncs = original }()
+
+	clt := fake.NewClient()
+	validator := &Validator{apiReader: clt}
+
+	_, err := validator.ValidateCreate(t.Context(), testDTPrometheus)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "fail")
+
+	_, err = validator.ValidateUpdate(t.Context(), testDTPrometheus, testDTPrometheus)
+	require.Error(t, err)
 }
 
 func collectWarnings(t *testing.T, funcs interceptor.Funcs, dtp *dtprometheus.DTPrometheus) []string {
