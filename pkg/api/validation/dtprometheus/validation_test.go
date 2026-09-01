@@ -38,13 +38,14 @@ var noPrometheusCRDsInterceptor = interceptor.Funcs{
 
 func TestMissingPrometheusCRDs(t *testing.T) {
 	t.Run("all CRDs missing produces a single warning listing all of them", func(t *testing.T) {
-		warnings := collectWarnings(t, noPrometheusCRDsInterceptor, testDTPrometheus)
+		clt := fake.NewClientWithInterceptors(noPrometheusCRDsInterceptor)
 
-		require.Len(t, warnings, 1)
-		assert.Contains(t, warnings[0], "servicemonitors.monitoring.coreos.com")
-		assert.Contains(t, warnings[0], "podmonitors.monitoring.coreos.com")
-		assert.Contains(t, warnings[0], "probes.monitoring.coreos.com")
-		assert.Contains(t, warnings[0], "scrapeconfigs.monitoring.coreos.com")
+		msg := missingPrometheusCRDs(t.Context(), clt)
+
+		assert.Contains(t, msg, "servicemonitors.monitoring.coreos.com")
+		assert.Contains(t, msg, "podmonitors.monitoring.coreos.com")
+		assert.Contains(t, msg, "probes.monitoring.coreos.com")
+		assert.Contains(t, msg, "scrapeconfigs.monitoring.coreos.com")
 	})
 
 	t.Run("only some CRDs missing lists just those", func(t *testing.T) {
@@ -57,26 +58,22 @@ func TestMissingPrometheusCRDs(t *testing.T) {
 				return nil
 			},
 		}
+		clt := fake.NewClientWithInterceptors(partialInterceptor)
 
-		warnings := collectWarnings(t, partialInterceptor, testDTPrometheus)
+		msg := missingPrometheusCRDs(t.Context(), clt)
 
-		require.Len(t, warnings, 1)
-		assert.Contains(t, warnings[0], "scrapeconfigs.monitoring.coreos.com")
-		assert.NotContains(t, warnings[0], "servicemonitors.monitoring.coreos.com")
-		assert.NotContains(t, warnings[0], "podmonitors.monitoring.coreos.com")
-		assert.NotContains(t, warnings[0], "probes.monitoring.coreos.com")
+		assert.Contains(t, msg, "scrapeconfigs.monitoring.coreos.com")
+		assert.NotContains(t, msg, "servicemonitors.monitoring.coreos.com")
+		assert.NotContains(t, msg, "podmonitors.monitoring.coreos.com")
+		assert.NotContains(t, msg, "probes.monitoring.coreos.com")
 	})
 
 	t.Run("all CRDs present produces no warning", func(t *testing.T) {
-		presentInterceptor := interceptor.Funcs{
-			List: func(_ context.Context, _ client.WithWatch, _ client.ObjectList, _ ...client.ListOption) error {
-				return nil
-			},
-		}
+		clt := fake.NewClient()
 
-		warnings := collectWarnings(t, presentInterceptor, testDTPrometheus)
+		msg := missingPrometheusCRDs(t.Context(), clt)
 
-		assert.Empty(t, warnings)
+		assert.Empty(t, msg)
 	})
 
 	t.Run("non-NoMatch error assumes the CRD is present and produces no warning", func(t *testing.T) {
@@ -85,10 +82,11 @@ func TestMissingPrometheusCRDs(t *testing.T) {
 				return apierrors.NewForbidden(schema.GroupResource{Group: prometheusOperatorGroup, Resource: list.GetObjectKind().GroupVersionKind().Kind}, "", nil)
 			},
 		}
+		clt := fake.NewClientWithInterceptors(forbiddenInterceptor)
 
-		warnings := collectWarnings(t, forbiddenInterceptor, testDTPrometheus)
+		msg := missingPrometheusCRDs(t.Context(), clt)
 
-		assert.Empty(t, warnings)
+		assert.Empty(t, msg)
 	})
 }
 
@@ -111,6 +109,19 @@ func TestValidateCreateAndUpdateSurfaceWarning(t *testing.T) {
 	})
 }
 
+func TestValidateCreateAndUpdateWithAllCRDsPresent(t *testing.T) {
+	clt := fake.NewClient()
+	validator := &Validator{apiReader: clt}
+
+	warnings, err := validator.ValidateCreate(t.Context(), testDTPrometheus)
+	require.NoError(t, err)
+	assert.Empty(t, warnings)
+
+	warnings, err = validator.ValidateUpdate(t.Context(), testDTPrometheus, testDTPrometheus)
+	require.NoError(t, err)
+	assert.Empty(t, warnings)
+}
+
 func TestNew(t *testing.T) {
 	clt := fake.NewClient()
 	v := New(clt)
@@ -131,9 +142,9 @@ func TestValidateCreateAndUpdateWithWrongType(t *testing.T) {
 	clt := fake.NewClientWithInterceptors(noPrometheusCRDsInterceptor)
 	validator := &Validator{apiReader: clt}
 
-	// no GVK set -> hits "unknown object %T"
+	// no GVK set, hits "unknown object %T"
 	noGVK := &corev1.Pod{}
-	// GVK set but wrong kind -> hits "unknown object %s"
+	// GVK set but wrong kind, hits "unknown object %s"
 	withGVK := &corev1.Pod{TypeMeta: metav1.TypeMeta{Kind: "Pod", APIVersion: "v1"}}
 
 	_, err := validator.ValidateCreate(t.Context(), noGVK)
@@ -144,33 +155,4 @@ func TestValidateCreateAndUpdateWithWrongType(t *testing.T) {
 
 	_, err = validator.ValidateUpdate(t.Context(), testDTPrometheus, noGVK)
 	require.Error(t, err)
-}
-
-func TestValidateCreateWithBlockingError(t *testing.T) {
-	original := validatorErrorFuncs
-	validatorErrorFuncs = []validatorFunc{
-		func(_ context.Context, _ *Validator, _ *dtprometheus.DTPrometheus) string {
-			return "fail"
-		},
-	}
-	defer func() { validatorErrorFuncs = original }()
-
-	clt := fake.NewClient()
-	validator := &Validator{apiReader: clt}
-
-	_, err := validator.ValidateCreate(t.Context(), testDTPrometheus)
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "fail")
-
-	_, err = validator.ValidateUpdate(t.Context(), testDTPrometheus, testDTPrometheus)
-	require.Error(t, err)
-}
-
-func collectWarnings(t *testing.T, funcs interceptor.Funcs, dtp *dtprometheus.DTPrometheus) []string {
-	t.Helper()
-
-	clt := fake.NewClientWithInterceptors(funcs)
-	validator := &Validator{apiReader: clt}
-
-	return validator.runValidators(t.Context(), validatorWarningFuncs, dtp)
 }

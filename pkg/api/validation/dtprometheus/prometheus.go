@@ -8,11 +8,11 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/dtprometheus"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -34,7 +34,7 @@ var requiredPrometheusCRDs = []prometheusCRD{
 	{resource: "scrapeconfigs", version: "v1alpha1", listKind: "ScrapeConfigList"},
 }
 
-func missingPrometheusCRDs(ctx context.Context, dv *Validator, _ *dtprometheus.DTPrometheus) string {
+func missingPrometheusCRDs(ctx context.Context, apiReader client.Reader) string {
 	log := logd.FromContext(ctx)
 	missing := []string{}
 
@@ -44,7 +44,7 @@ func missingPrometheusCRDs(ctx context.Context, dv *Validator, _ *dtprometheus.D
 
 		resource := fmt.Sprintf("%s.%s", crd.resource, prometheusOperatorGroup)
 
-		err := dv.apiReader.List(ctx, list)
+		err := apiReader.List(ctx, list)
 		switch {
 		case err == nil:
 			continue
