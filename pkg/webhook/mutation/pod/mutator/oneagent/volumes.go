@@ -142,9 +142,16 @@ func addCSIBinVolume(pod *corev1.Pod, dkName string, maxTimeout string) error {
 	return nil
 }
 
-func addOCIBinVolume(pod *corev1.Pod, imageName string, pullPolicy corev1.PullPolicy) {
-	if k8svolume.Contains(pod.Spec.Volumes, BinVolumeName) {
-		return
+func addOCIBinVolume(pod *corev1.Pod, imageName string, pullPolicy corev1.PullPolicy) error {
+	if vol := k8svolume.FindByName(pod.Spec.Volumes, BinVolumeName); vol != nil {
+		if vol.Image != nil && vol.Image.Reference != imageName {
+			return dtwebhook.MutatorError{
+				Err:      volumes.ExistingVolumeError(BinVolumeName),
+				Annotate: setNotInjectedAnnotationFunc(volumes.ConflictingVolumeTypeReason),
+			}
+		}
+
+		return nil
 	}
 
 	volumeSource := corev1.VolumeSource{
@@ -160,4 +167,6 @@ func addOCIBinVolume(pod *corev1.Pod, imageName string, pullPolicy corev1.PullPo
 			VolumeSource: volumeSource,
 		},
 	)
+
+	return nil
 }

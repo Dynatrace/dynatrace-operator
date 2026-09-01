@@ -232,7 +232,7 @@ func TestAddOCIBinVolume(t *testing.T) {
 	t.Run("should add OCI image volume", func(t *testing.T) {
 		pod := &corev1.Pod{}
 
-		addOCIBinVolume(pod, testImage, corev1.PullIfNotPresent)
+		require.NoError(t, addOCIBinVolume(pod, testImage, corev1.PullIfNotPresent))
 
 		require.Len(t, pod.Spec.Volumes, 1)
 		assert.Equal(t, corev1.Volume{
@@ -264,7 +264,23 @@ func TestAddOCIBinVolume(t *testing.T) {
 		}
 		expectedPod := pod.DeepCopy()
 
-		addOCIBinVolume(pod, testImage, corev1.PullIfNotPresent)
+		require.NoError(t, addOCIBinVolume(pod, testImage, corev1.PullIfNotPresent))
 		assert.Equal(t, expectedPod, pod)
+	})
+
+	t.Run("conflicting volume", func(t *testing.T) {
+		pod := &corev1.Pod{
+			Spec: corev1.PodSpec{
+				Volumes: []corev1.Volume{
+					{Name: BinVolumeName, VolumeSource: corev1.VolumeSource{
+						Image: &corev1.ImageVolumeSource{
+							Reference: "my-image",
+						},
+					}},
+				},
+			},
+		}
+
+		require.Error(t, addOCIBinVolume(pod, testImage, "Always"))
 	})
 }
