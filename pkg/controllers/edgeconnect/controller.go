@@ -421,7 +421,7 @@ func (controller *Controller) reconcileEdgeConnectRegular(ctx context.Context, e
 	return nil
 }
 
-func (controller *Controller) reconcileEdgeConnectProvisioner(ctx context.Context, ec *edgeconnect.EdgeConnect) error { //nolint:revive
+func (controller *Controller) reconcileEdgeConnectProvisioner(ctx context.Context, ec *edgeconnect.EdgeConnect) error {
 	log := logd.FromContext(ctx)
 
 	log.Info("reconcileEdgeConnectProvisioner")
