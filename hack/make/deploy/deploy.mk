@@ -51,10 +51,6 @@ deploy: manifests/crd/helm
 
 ## Undeploy the current operator installation
 undeploy:
-	kubectl delete dynakube --all -n dynatrace || true
-	kubectl delete edgeconnect --all -n dynatrace || true
-	kubectl delete dtprometheus --all -n dynatrace || true
+	for crd in $$(kubectl api-resources --api-group dynatrace.com -o name); do echo kubectl delete $$crd --all -n dynatrace || true; done
 	kubectl -n dynatrace wait pod --for=delete -l app.kubernetes.io/managed-by=dynatrace-operator --timeout=300s
-
-	helm uninstall dynatrace-operator \
-			--namespace dynatrace
+	helm uninstall dynatrace-operator --namespace dynatrace

@@ -387,7 +387,6 @@ func (controller *Controller) setupTokensAndClient(ctx context.Context, dk *dyna
 	return dtClient, nil
 }
 
-//nolint:revive // complexity is above 13; this function needs refactoring.
 func (controller *Controller) reconcileComponents(ctx context.Context, dtClient *dynatrace.Client, dk *dynakube.DynaKube) error {
 	log := logd.FromContext(ctx)
 

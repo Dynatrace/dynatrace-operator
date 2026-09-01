@@ -104,13 +104,21 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 	if !installconfig.GetModules().CSIDriver || dk.FF().IsCodeModuleImageVolume() {
 		log.Info("CSI driver migration mode active, running cleanup only")
 
-		return reconcile.Result{RequeueAfter: longRequeueDuration}, provisioner.cleaner.Run(ctx)
+		if err := provisioner.cleaner.Run(ctx); err != nil {
+			return reconcile.Result{}, err
+		}
+
+		return reconcile.Result{RequeueAfter: longRequeueDuration}, nil
 	}
 
 	if !isProvisionerNeeded(&dk) {
 		log.Info("CSI driver provisioner not needed")
 
-		return reconcile.Result{RequeueAfter: longRequeueDuration}, provisioner.cleaner.Run(ctx)
+		if err := provisioner.cleaner.Run(ctx); err != nil {
+			return reconcile.Result{}, err
+		}
+
+		return reconcile.Result{RequeueAfter: longRequeueDuration}, nil
 	}
 
 	err = provisioner.setupFileSystem(&dk)
