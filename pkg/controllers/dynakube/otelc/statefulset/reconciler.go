@@ -54,14 +54,14 @@ func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 	}
 }
 
-func resolveImage(ctx context.Context, imageClient dtimage.Client, dk *dynakube.DynaKube, component dtimage.ComponentType) error {
+func resolveImage(ctx context.Context, imageClient dtimage.Client, dk *dynakube.DynaKube) error {
 	if ref := dk.Spec.Templates.OpenTelemetryCollector.ImageRef; ref.HasImage() {
 		dk.Status.OTelCollector.ResolvedImage = ref.String()
 
 		return nil
 	}
 
-	imageURI, err := registry.ResolveImage(ctx, imageClient, dk.PublicRegistryOverride(), component)
+	imageURI, err := registry.ResolveImage(ctx, imageClient, dk.PublicRegistryOverride(), dtimage.OTelCollector)
 	if err != nil {
 		return err
 	}
@@ -74,7 +74,7 @@ func resolveImage(ctx context.Context, imageClient dtimage.Client, dk *dynakube.
 func (r *Reconciler) Reconcile(ctx context.Context, imageClient dtimage.Client, dk *dynakube.DynaKube) error {
 	ctx, log := logd.NewFromContext(ctx, "statefulset")
 	if dk.TelemetryIngest().IsEnabled() {
-		if err := resolveImage(ctx, imageClient, dk, dtimage.OTelCollector); err != nil {
+		if err := resolveImage(ctx, imageClient, dk); err != nil {
 			return err
 		}
 
