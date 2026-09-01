@@ -95,7 +95,7 @@ func TestBuildScraperOTelConfig(t *testing.T) {
 		require.NoError(t, err)
 		assert.Contains(t, rendered, "prometheus:")
 		assert.Contains(t, rendered, data.TargetAllocatorEndpoint)
-		assert.Contains(t, rendered, "loadbalancing:")
+		assert.Contains(t, rendered, "load_balancing:")
 		assert.Contains(t, rendered, data.GatewayService)
 	})
 }

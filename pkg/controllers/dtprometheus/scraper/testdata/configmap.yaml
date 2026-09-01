@@ -3,9 +3,7 @@ data:
   scraper: |
     connectors: {}
     exporters:
-        debug:
-            verbosity: basic
-        loadbalancing:
+        load_balancing:
             protocol:
                 otlp:
                     tls:
@@ -15,6 +13,21 @@ data:
                     ports:
                         - 4317
                     service: dtp-gateway.dynatrace
+            retry_on_failure:
+                enabled: true
+                initial_interval: 5s
+                max_elapsed_time: 300s
+                max_interval: 30s
+            routing_key: resource
+            sending_queue:
+                batch:
+                    flush_timeout: 10s
+                    max_size: 5000
+                    min_size: 500
+                enabled: true
+                num_consumers: 10
+                queue_size: 10000
+            timeout: 10s
     extensions:
         health_check:
             endpoint: ${env:MY_POD_IP}:13133
@@ -25,8 +38,6 @@ data:
             spike_limit_percentage: 5
     receivers:
         prometheus:
-            config:
-                scrape_configs: []
             target_allocator:
                 collector_id: ${env:MY_POD_NAME}
                 endpoint: http://dtp-allocator.dynatrace.svc.cluster.local:80
@@ -37,7 +48,7 @@ data:
         pipelines:
             metrics:
                 exporters:
-                    - loadbalancing
+                    - load_balancing
                 processors:
                     - memory_limiter
                 receivers:
