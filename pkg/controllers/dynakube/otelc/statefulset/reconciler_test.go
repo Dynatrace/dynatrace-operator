@@ -119,79 +119,77 @@ func TestImageResolution(t *testing.T) {
 	ctx := t.Context()
 	anyCtx := mock.MatchedBy(func(context.Context) bool { return true })
 
-	t.Run("custom imageRef is used as-is, no fleet management call", func(t *testing.T) {
-		dk := getTestDynakubeWithTelemetryIngest()
+	tests := []struct {
+		name             string
+		setupDynakube    func(*dynakube.DynaKube)
+		setupImageClient func(*imageclientmock.Client)
+		expectedImage    string
+		expectedStatus   string
+	}{
+		{
+			name: "custom imageRef is used as-is, no fleet management call",
+			setupDynakube: func(dk *dynakube.DynaKube) {
+				// uses default imageRef from getTestDynakubeWithTelemetryIngest
+			},
+			setupImageClient: func(ic *imageclientmock.Client) {
+				// no expectation set — fleet management must not be called
+			},
+			expectedImage:  testOTelCImageRepository + ":" + testOTelCImageTag,
+			expectedStatus: testOTelCImageRepository + ":" + testOTelCImageTag,
+		},
+		{
+			name: "no imageRef, public registry enabled — image from fleet management (default registry)",
+			setupDynakube: func(dk *dynakube.DynaKube) {
+				dk.Spec.Templates.OpenTelemetryCollector.ImageRef = sharedimage.Ref{}
+				dk.Annotations = map[string]string{exp.UsePublicRegistryKey: "true"}
+			},
+			setupImageClient: func(ic *imageclientmock.Client) {
+				ic.EXPECT().GetComponentLatestInfo(anyCtx, dtimage.OTelCollector, "").
+					Return(&dtimage.Info{URI: testFleetMgmtImageURI}, nil)
+			},
+			expectedImage:  testFleetMgmtImageURI,
+			expectedStatus: testFleetMgmtImageURI,
+		},
+		{
+			name: "no imageRef, public registry enabled with override — image from fleet management (override registry)",
+			setupDynakube: func(dk *dynakube.DynaKube) {
+				dk.Spec.Templates.OpenTelemetryCollector.ImageRef = sharedimage.Ref{}
+				dk.Annotations = map[string]string{exp.UsePublicRegistryKey: "true"}
+				dk.Spec.PublicRegistryOverride = "my.registry.example.com"
+			},
+			setupImageClient: func(ic *imageclientmock.Client) {
+				ic.EXPECT().GetComponentLatestInfo(anyCtx, dtimage.OTelCollector, "my.registry.example.com").
+					Return(&dtimage.Info{URI: testFleetMgmtImageURI}, nil)
+			},
+			expectedImage:  testFleetMgmtImageURI,
+			expectedStatus: testFleetMgmtImageURI,
+		},
+	}
 
-		mockK8sClient := fake.NewClient()
-		mockK8sClient = mockTLSSecret(t, mockK8sClient, dk)
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			dk := getTestDynakubeWithTelemetryIngest()
+			tc.setupDynakube(dk)
 
-		require.NoError(t, mockK8sClient.Create(ctx, new(getTokens(dk.Tokens(), dk.Namespace))))
-		require.NoError(t, mockK8sClient.Create(ctx, new(getConfigConfigMap(dk.Name, dk.Namespace))))
+			mockK8sClient := fake.NewClient()
+			mockK8sClient = mockTLSSecret(t, mockK8sClient, dk)
 
-		imageClient := imageclientmock.NewClient(t)
-		// no expectation set — fleet management must not be called
+			require.NoError(t, mockK8sClient.Create(ctx, new(getTokens(dk.Tokens(), dk.Namespace))))
+			require.NoError(t, mockK8sClient.Create(ctx, new(getConfigConfigMap(dk.Name, dk.Namespace))))
 
-		err := NewReconciler(mockK8sClient, mockK8sClient).Reconcile(ctx, imageClient, dk)
-		require.NoError(t, err)
+			imageClient := imageclientmock.NewClient(t)
+			tc.setupImageClient(imageClient)
 
-		var sts appsv1.StatefulSet
-		err = mockK8sClient.Get(ctx, types.NamespacedName{Name: dk.OTelCollectorStatefulsetName(), Namespace: dk.Namespace}, &sts)
-		require.NoError(t, err)
-		assert.Equal(t, testOTelCImageRepository+":"+testOTelCImageTag, sts.Spec.Template.Spec.Containers[0].Image)
-	})
+			err := NewReconciler(mockK8sClient, mockK8sClient).Reconcile(ctx, imageClient, dk)
+			require.NoError(t, err)
 
-	t.Run("no imageRef, public registry enabled — image from fleet management (default registry)", func(t *testing.T) {
-		dk := getTestDynakubeWithTelemetryIngest()
-		dk.Spec.Templates.OpenTelemetryCollector.ImageRef = sharedimage.Ref{}
-		dk.Annotations = map[string]string{exp.UsePublicRegistryKey: "true"}
-
-		mockK8sClient := fake.NewClient()
-		mockK8sClient = mockTLSSecret(t, mockK8sClient, dk)
-
-		require.NoError(t, mockK8sClient.Create(ctx, new(getTokens(dk.Tokens(), dk.Namespace))))
-		require.NoError(t, mockK8sClient.Create(ctx, new(getConfigConfigMap(dk.Name, dk.Namespace))))
-
-		imageClient := imageclientmock.NewClient(t)
-		imageClient.EXPECT().GetComponentLatestInfo(anyCtx, dtimage.OTelCollector, "").
-			Return(&dtimage.Info{URI: testFleetMgmtImageURI}, nil)
-
-		err := NewReconciler(mockK8sClient, mockK8sClient).Reconcile(ctx, imageClient, dk)
-		require.NoError(t, err)
-
-		var sts appsv1.StatefulSet
-		err = mockK8sClient.Get(ctx, types.NamespacedName{Name: dk.OTelCollectorStatefulsetName(), Namespace: dk.Namespace}, &sts)
-		require.NoError(t, err)
-		assert.Equal(t, testFleetMgmtImageURI, sts.Spec.Template.Spec.Containers[0].Image)
-		assert.Equal(t, testFleetMgmtImageURI, dk.Status.OTelCollector.ResolvedImage)
-	})
-
-	t.Run("no imageRef, public registry enabled with override — image from fleet management (override registry)", func(t *testing.T) {
-		const testRegistryOverride = "my.registry.example.com"
-
-		dk := getTestDynakubeWithTelemetryIngest()
-		dk.Spec.Templates.OpenTelemetryCollector.ImageRef = sharedimage.Ref{}
-		dk.Annotations = map[string]string{exp.UsePublicRegistryKey: "true"}
-		dk.Spec.PublicRegistryOverride = testRegistryOverride
-
-		mockK8sClient := fake.NewClient()
-		mockK8sClient = mockTLSSecret(t, mockK8sClient, dk)
-
-		require.NoError(t, mockK8sClient.Create(ctx, new(getTokens(dk.Tokens(), dk.Namespace))))
-		require.NoError(t, mockK8sClient.Create(ctx, new(getConfigConfigMap(dk.Name, dk.Namespace))))
-
-		imageClient := imageclientmock.NewClient(t)
-		imageClient.EXPECT().GetComponentLatestInfo(anyCtx, dtimage.OTelCollector, testRegistryOverride).
-			Return(&dtimage.Info{URI: testFleetMgmtImageURI}, nil)
-
-		err := NewReconciler(mockK8sClient, mockK8sClient).Reconcile(ctx, imageClient, dk)
-		require.NoError(t, err)
-
-		var sts appsv1.StatefulSet
-		err = mockK8sClient.Get(ctx, types.NamespacedName{Name: dk.OTelCollectorStatefulsetName(), Namespace: dk.Namespace}, &sts)
-		require.NoError(t, err)
-		assert.Equal(t, testFleetMgmtImageURI, sts.Spec.Template.Spec.Containers[0].Image)
-		assert.Equal(t, testFleetMgmtImageURI, dk.Status.OTelCollector.ResolvedImage)
-	})
+			var sts appsv1.StatefulSet
+			err = mockK8sClient.Get(ctx, types.NamespacedName{Name: dk.OTelCollectorStatefulsetName(), Namespace: dk.Namespace}, &sts)
+			require.NoError(t, err)
+			assert.Equal(t, tc.expectedImage, sts.Spec.Template.Spec.Containers[0].Image)
+			assert.Equal(t, tc.expectedStatus, dk.Status.OTelCollector.ResolvedImage)
+		})
+	}
 }
 
 func TestDataIngestTokenHashAnnotation(t *testing.T) {
