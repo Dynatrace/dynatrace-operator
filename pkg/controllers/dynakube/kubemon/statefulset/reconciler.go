@@ -453,6 +453,8 @@ func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.D
 		return nil, err
 	}
 
+	km := dk.KubernetesMonitoring()
+
 	initContainer := corev1.Container{
 		Name:            agconsts.InitContainerTemplateName,
 		Image:           imageURI,
@@ -462,7 +464,7 @@ func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.D
 		Args:            []string{"-c", agconsts.K8scrt2jksPath},
 		VolumeMounts:    buildInitVolumeMounts(),
 		Resources:       dk.KubernetesMonitoring().Resources,
-		SecurityContext: buildSecurityContext(dk.KubernetesMonitoring().Annotations, agconsts.InitContainerTemplateName),
+		SecurityContext: buildSecurityContext(km.Annotations, agconsts.InitContainerTemplateName),
 	}
 
 	container := corev1.Container{
@@ -478,13 +480,10 @@ func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.D
 			{Name: agconsts.HTTPSServicePortName, ContainerPort: agconsts.HTTPSContainerPort},
 			{Name: agconsts.HTTPServicePortName, ContainerPort: agconsts.HTTPContainerPort},
 		},
-		SecurityContext: buildSecurityContext(dk.KubernetesMonitoring().Annotations, ContainerName),
+		SecurityContext: buildSecurityContext(km.Annotations, ContainerName),
 	}
 
-	km := dk.KubernetesMonitoring()
-
-	km.Annotations = k8ssecuritycontext.RemoveAppArmorAnnotation(km.Annotations, agconsts.InitContainerTemplateName)
-	km.Annotations = k8ssecuritycontext.RemoveAppArmorAnnotation(km.Annotations, ContainerName)
+	km.Annotations = k8ssecuritycontext.RemoveAppArmorAnnotation(km.Annotations, agconsts.InitContainerTemplateName, ContainerName)
 
 	labels := k8slabel.New(k8slabel.KubeMonComponentLabel, dk.GetName(), "")
 
