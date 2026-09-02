@@ -229,8 +229,8 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 			&dynakube.DynaKube{},
 			// Map requests from DynaKube to DTPrometheus
 			handler.EnqueueRequestsFromMapFunc(newDTPrometheusFromDynaKubeMapper(mgr.GetClient())),
-			// Filter out any DynaKube changes that are not phase changes
-			builder.WithPredicates(newDynaKubePhaseChangedPredicate()),
+			// Filter out any DynaKube changes that are not relevant for DTPrometheus
+			builder.WithPredicates(predicate.Or(newDynaKubePhaseChangedPredicate(), newDynaKubeTokenNameChangedPredicate())),
 		).
 		Named("dtprometheus").
 		Complete(r)
@@ -285,6 +285,31 @@ func newDynaKubePhaseChangedPredicate() predicate.Funcs {
 			}
 
 			return oldDK.Status.Phase != newDK.Status.Phase
+		},
+		GenericFunc: func(event.TypedGenericEvent[client.Object]) bool {
+			return false
+		},
+	}
+}
+
+// Create [predicate.Funcs] that only return true when the DK token secret name changes
+func newDynaKubeTokenNameChangedPredicate() predicate.Funcs {
+	return predicate.Funcs{
+		CreateFunc: func(event.TypedCreateEvent[client.Object]) bool {
+			return false
+		},
+		DeleteFunc: func(event.TypedDeleteEvent[client.Object]) bool {
+			return false
+		},
+		UpdateFunc: func(e event.TypedUpdateEvent[client.Object]) bool {
+			oldDK, _ := e.ObjectOld.(*dynakube.DynaKube)
+			newDK, _ := e.ObjectNew.(*dynakube.DynaKube)
+
+			if oldDK == nil || newDK == nil {
+				return false
+			}
+
+			return oldDK.Tokens() != newDK.Tokens()
 		},
 		GenericFunc: func(event.TypedGenericEvent[client.Object]) bool {
 			return false
