@@ -55,10 +55,13 @@ jobs:
           # renovate datasource=github-releases depName=kubernetes-sigs/kind
           version: v0.31.0
           install_only: true
+      - name: Get go version
+        id: go-version
+        run: echo "go_version=$(grep -m1 'FROM.*golang:' Dockerfile | sed 's/.*golang:\([0-9.]*\).*/\1/')" >> "$GITHUB_OUTPUT"
       - name: Set up go
         uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
         with:
-          go-version-file: "./go.mod"
+          go-version: ${{ steps.go-version.outputs.go_version }}
       - name: Set up helm
         uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4.3.1
         with:
