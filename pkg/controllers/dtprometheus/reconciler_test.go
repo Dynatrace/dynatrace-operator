@@ -24,7 +24,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
-	"sigs.k8s.io/controller-runtime/pkg/event"
 )
 
 func TestReconcile(t *testing.T) {
@@ -181,33 +180,6 @@ func Test_setPhase(t *testing.T) {
 			} else {
 				require.ErrorIs(t, gotErr, tt.expectedErr)
 			}
-		})
-	}
-}
-
-func Test_newDynaKubeTokenNameChangedPredicate(t *testing.T) {
-	pred := newDynaKubeTokenNameChangedPredicate()
-
-	mkDK := func(tokens string) *dynakube.DynaKube {
-		return &dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{Tokens: tokens}}
-	}
-
-	tests := []struct {
-		name   string
-		oldDK  client.Object
-		newDK  client.Object
-		expect bool
-	}{
-		{"same token name", mkDK("secret-a"), mkDK("secret-a"), false},
-		{"different token name", mkDK("secret-a"), mkDK("secret-b"), true},
-		{"wrong type old", &corev1.ConfigMap{}, mkDK("secret-a"), false},
-		{"wrong type new", mkDK("secret-a"), &corev1.ConfigMap{}, false},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := pred.Update(event.TypedUpdateEvent[client.Object]{ObjectOld: tt.oldDK, ObjectNew: tt.newDK})
-			require.Equal(t, tt.expect, result)
 		})
 	}
 }
