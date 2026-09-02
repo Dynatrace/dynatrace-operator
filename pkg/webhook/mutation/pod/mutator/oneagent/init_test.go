@@ -537,6 +537,60 @@ func TestMutateInitContainer(t *testing.T) {
 		require.ErrorAs(t, err, &webhook.MutatorError{})
 	})
 
+	t.Run("image volume with pod annotation with CSI -> default init-resources", func(t *testing.T) {
+		image := "myimage.io:latest"
+		dk := createAppMonDKwithImage(t, image)
+		pod := &corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					AnnotationVolumeType: ImageVolumeType,
+				},
+			},
+		}
+
+		request := &webhook.MutationRequest{
+			BaseRequest: &webhook.BaseRequest{
+				Pod:      pod,
+				DynaKube: dk,
+			},
+			InstallContainer: initContainerBase.DeepCopy(),
+		}
+
+		err := mutateInitContainer(request, installPath)
+		require.NoError(t, err)
+
+		imageVolume := k8svolume.FindByName(request.Pod.Spec.Volumes, BinVolumeName)
+		assertVolumeIsImage(t, imageVolume, image)
+
+		assert.Equal(t, initContainerBase.Resources, request.InstallContainer.Resources) // respects default resources
+	})
+
+	t.Run("image volume with DK + ImageVolume FF with CSI -> custom init-resources", func(t *testing.T) {
+		image := "myimage.io:latest"
+		dk := createAppMonDKwithImage(t, image)
+		dk.Annotations[exp.OAImageVolumeKey] = "true"
+		dk.Spec.OneAgent.ApplicationMonitoring.InitResources = &corev1.ResourceRequirements{
+			Requests: k8sresource.NewResourceList("40m", "40Mi"),
+		}
+		pod := &corev1.Pod{}
+
+		request := &webhook.MutationRequest{
+			BaseRequest: &webhook.BaseRequest{
+				Pod:      pod,
+				DynaKube: dk,
+			},
+			InstallContainer: initContainerBase.DeepCopy(),
+		}
+
+		err := mutateInitContainer(request, installPath)
+		require.NoError(t, err)
+
+		imageVolume := k8svolume.FindByName(request.Pod.Spec.Volumes, BinVolumeName)
+		assertVolumeIsImage(t, imageVolume, image)
+
+		assert.Equal(t, *dk.Spec.OneAgent.ApplicationMonitoring.InitResources, request.InstallContainer.Resources) // respects custom resources
+	})
+
 	t.Run("image-volume-scenario -> conflicting volume type", func(t *testing.T) {
 		image := "myimage.io:latest"
 		dk := createAppMonDKwithImage(t, image)
