@@ -12,7 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"k8s.io/mount-utils"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/mount"
 )
 
 func TestRemoveHostMounts(t *testing.T) {
@@ -78,8 +78,8 @@ func TestRemoveHostMounts(t *testing.T) {
 		cleaner := createCleaner(t)
 		dks := []dynakube.DynaKube{}
 		hostFolders := []string{tenantUUID1, tenantUUID2}
-		fakeMounter := mount.NewFakeMounter(nil)
-		fakeMounter.MountCheckErrors = map[string]error{}
+		mockMounter := mount.NewMockMounter()
+		mockMounter.MountCheckErrors = map[string]error{}
 
 		for _, folder := range hostFolders {
 			cleaner.createHostDirs(t, folder)
@@ -87,10 +87,10 @@ func TestRemoveHostMounts(t *testing.T) {
 			expectedDir := cleaner.path.OSAgentDir(folder)
 			assert.DirExists(t, expectedDir)
 
-			fakeMounter.MountCheckErrors[expectedDir] = nil
+			mockMounter.MountCheckErrors[expectedDir] = nil
 		}
 
-		cleaner.mounter = fakeMounter
+		cleaner.mounter = mockMounter
 
 		cleaner.removeHostMounts(t.Context(), dks, fsState{
 			hostDks: hostFolders,

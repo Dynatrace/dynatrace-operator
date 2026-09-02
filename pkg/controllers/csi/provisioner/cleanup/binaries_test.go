@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/mount-utils"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/mount"
 )
 
 func TestRemoveUnusedBinaries(t *testing.T) {
@@ -320,7 +320,7 @@ func TestRemoveOldBinarySymlinks(t *testing.T) {
 func mockMountPoints(t *testing.T, cleaner *Cleaner, mountPoints ...mount.MountPoint) {
 	t.Helper()
 
-	cleaner.mounter = mount.NewFakeMounter(mountPoints)
+	cleaner.mounter = mount.NewMockMounter(mountPoints...)
 }
 
 func createAppMonDK(t *testing.T, name, apiURL string) dynakube.DynaKube {

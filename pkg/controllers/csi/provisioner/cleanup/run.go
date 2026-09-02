@@ -10,13 +10,13 @@ import (
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
-	"k8s.io/mount-utils"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/mount"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type Cleaner struct {
 	apiReader client.Reader
-	mounter   mount.Interface
+	mounter   mount.Mounter
 	path      metadata.PathResolver
 }
 
@@ -30,7 +30,7 @@ type fsState struct {
 	hostDks []string
 }
 
-func New(apiReader client.Reader, path metadata.PathResolver, mounter mount.Interface) *Cleaner {
+func New(apiReader client.Reader, path metadata.PathResolver, mounter mount.Mounter) *Cleaner {
 	return &Cleaner{
 		apiReader: apiReader,
 		path:      path,

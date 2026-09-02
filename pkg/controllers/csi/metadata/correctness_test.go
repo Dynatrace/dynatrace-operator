@@ -19,7 +19,7 @@ import (
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/mount-utils"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/mount"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -43,17 +43,17 @@ func TestGetRelevantOverlayMounts(t *testing.T) {
 			},
 		}
 
-		mounter := mount.NewFakeMounter([]mount.MountPoint{
+		mounter := mount.NewMockMounter(
 			relevantMountPoint,
-			{
+			mount.MountPoint{
 				Device: "not-relevant-mount-type",
 			},
-			{
+			mount.MountPoint{
 				Device: "overlay",
 				Path:   "not-relevant-overlay-mount",
 				Type:   "overlay",
 			},
-		})
+		)
 
 		mounts, err := GetRelevantOverlayMounts(mounter, baseFolder)
 		require.NoError(t, err)
@@ -66,7 +66,7 @@ func TestGetRelevantOverlayMounts(t *testing.T) {
 	})
 
 	t.Run("works with no mount points", func(t *testing.T) {
-		mounter := mount.NewFakeMounter([]mount.MountPoint{})
+		mounter := mount.NewMockMounter()
 		mounts, err := GetRelevantOverlayMounts(mounter, "")
 		require.NoError(t, err)
 		require.NotNil(t, mounts)
@@ -74,16 +74,16 @@ func TestGetRelevantOverlayMounts(t *testing.T) {
 	})
 
 	t.Run("ignores irrelevant mounts", func(t *testing.T) {
-		mounter := mount.NewFakeMounter([]mount.MountPoint{
-			{
+		mounter := mount.NewMockMounter(
+			mount.MountPoint{
 				Device: "not-relevant-mount-type",
 			},
-			{
+			mount.MountPoint{
 				Device: "overlay",
 				Path:   "not-relevant-overlay-mount",
 				Type:   "overlay",
 			},
-		})
+		)
 		mounts, err := GetRelevantOverlayMounts(mounter, "/test")
 		require.NoError(t, err)
 		require.NotNil(t, mounts)
@@ -127,12 +127,10 @@ func TestMigrateAppMounts(t *testing.T) {
 	volID := "someid"
 
 	checker := NewCorrectnessChecker(nil, dtcsi.CSIOptions{RootDir: tempDir})
-	checker.mounter = mount.NewFakeMounter([]mount.MountPoint{
-		{
-			Device: "overlay",
-			Path:   filepath.Join(tempDir, "appvol", volID, "mount"),
-			Type:   "overlay",
-		},
+	checker.mounter = mount.NewMockMounter(mount.MountPoint{
+		Device: "overlay",
+		Path:   filepath.Join(tempDir, "appvol", volID, "mount"),
+		Type:   "overlay",
 	})
 
 	checker.migrateAppMounts(setupLogForTest(t))

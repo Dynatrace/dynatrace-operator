@@ -14,13 +14,13 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/symlink"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
-	"k8s.io/mount-utils"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/mount"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type CorrectnessChecker struct {
 	apiReader client.Reader
-	mounter   mount.Interface
+	mounter   mount.Mounter
 	path      PathResolver
 }
 
@@ -34,7 +34,7 @@ type OverlayMount struct {
 func NewCorrectnessChecker(apiReader client.Reader, opts dtcsi.CSIOptions) *CorrectnessChecker {
 	return &CorrectnessChecker{
 		apiReader: apiReader,
-		mounter:   mount.New(""),
+		mounter:   mount.New(),
 		path:      PathResolver{RootDir: opts.RootDir},
 	}
 }
@@ -171,7 +171,7 @@ func GetRelevantDynaKubes(ctx context.Context, apiReader client.Reader) ([]dynak
 	return relevantDks, nil
 }
 
-func GetRelevantOverlayMounts(mounter mount.Interface, baseFolder string) ([]OverlayMount, error) {
+func GetRelevantOverlayMounts(mounter mount.Mounter, baseFolder string) ([]OverlayMount, error) {
 	mountPoints, err := mounter.List()
 	if err != nil {
 		return nil, err

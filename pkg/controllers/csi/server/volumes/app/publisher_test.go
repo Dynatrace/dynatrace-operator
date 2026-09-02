@@ -15,7 +15,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"k8s.io/mount-utils"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/mount"
 )
 
 func TestPublishVolume(t *testing.T) {
@@ -31,7 +31,7 @@ func TestPublishVolume(t *testing.T) {
 		})
 
 		path := metadata.PathResolver{RootDir: problematicFolder}
-		mounter := mount.NewFakeMounter([]mount.MountPoint{})
+		mounter := mount.NewMockMounter()
 		volumeCfg := getTestVolumeConfig(t)
 
 		pub := NewPublisher(mounter, path)
@@ -45,7 +45,7 @@ func TestPublishVolume(t *testing.T) {
 
 	t.Run("early return - retry limit reached", func(t *testing.T) {
 		path := metadata.PathResolver{RootDir: t.TempDir()}
-		mounter := mount.NewFakeMounter([]mount.MountPoint{})
+		mounter := mount.NewMockMounter()
 		volumeCfg := getTestVolumeConfig(t)
 		require.NoError(t, os.MkdirAll(path.AppMountRetryTrackerForID(volumeCfg.VolumeID), os.ModePerm))
 
@@ -67,7 +67,7 @@ func TestPublishVolume(t *testing.T) {
 
 	t.Run("early return (with error) - no binary present", func(t *testing.T) {
 		path := metadata.PathResolver{RootDir: t.TempDir()}
-		mounter := mount.NewFakeMounter([]mount.MountPoint{})
+		mounter := mount.NewMockMounter()
 		volumeCfg := getTestVolumeConfig(t)
 
 		pub := NewPublisher(mounter, path)
@@ -82,7 +82,7 @@ func TestPublishVolume(t *testing.T) {
 
 	t.Run("early return (with error) - binary is just a file", func(t *testing.T) {
 		path := metadata.PathResolver{RootDir: t.TempDir()}
-		mounter := mount.NewFakeMounter([]mount.MountPoint{})
+		mounter := mount.NewMockMounter()
 		volumeCfg := getTestVolumeConfig(t)
 		require.NoError(t, os.MkdirAll(filepath.Dir(path.LatestAgentBinaryForDynaKube(volumeCfg.DynakubeName)), os.ModePerm))
 		file, err := os.Create(path.LatestAgentBinaryForDynaKube(volumeCfg.DynakubeName))
@@ -101,7 +101,7 @@ func TestPublishVolume(t *testing.T) {
 
 	t.Run("NO early return - retry limit reached but binary is available (node restart scenario)", func(t *testing.T) {
 		path := metadata.PathResolver{RootDir: t.TempDir()}
-		mounter := mount.NewFakeMounter([]mount.MountPoint{})
+		mounter := mount.NewMockMounter()
 		volumeCfg := getTestVolumeConfig(t)
 		require.NoError(t, os.MkdirAll(path.AppMountRetryTrackerForID(volumeCfg.VolumeID), os.ModePerm))
 
@@ -152,7 +152,7 @@ func TestPublishVolume(t *testing.T) {
 
 	t.Run("happy path", func(t *testing.T) {
 		path := metadata.PathResolver{RootDir: t.TempDir()}
-		mounter := mount.NewFakeMounter([]mount.MountPoint{})
+		mounter := mount.NewMockMounter()
 		volumeCfg := getTestVolumeConfig(t)
 
 		// Binary present

@@ -18,10 +18,10 @@ import (
 	"github.com/pkg/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	mount "k8s.io/mount-utils"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/mount"
 )
 
-func NewPublisher(mounter mount.Interface, path metadata.PathResolver) csivolumes.Publisher {
+func NewPublisher(mounter mount.Mounter, path metadata.PathResolver) csivolumes.Publisher {
 	return &Publisher{
 		mounter: mounter,
 		path:    path,
@@ -30,7 +30,7 @@ func NewPublisher(mounter mount.Interface, path metadata.PathResolver) csivolume
 }
 
 type Publisher struct {
-	mounter mount.Interface
+	mounter mount.Mounter
 	time    *timeprovider.Provider
 	path    metadata.PathResolver
 }

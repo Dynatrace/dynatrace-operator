@@ -11,7 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"k8s.io/mount-utils"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/mount"
 )
 
 func TestGetFilesystemState(t *testing.T) {
@@ -148,7 +148,7 @@ func createCleaner(t *testing.T) *Cleaner {
 	t.Helper()
 
 	return &Cleaner{
-		mounter:   mount.NewFakeMounter(nil),
+		mounter:   mount.NewMockMounter(),
 		apiReader: fake.NewClient(),
 		path:      metadata.PathResolver{RootDir: t.TempDir()},
 	}

@@ -27,7 +27,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	mount "k8s.io/mount-utils"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/mount"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
@@ -39,7 +39,7 @@ type Server struct {
 	csi.UnimplementedIdentityServer
 	csi.UnimplementedNodeServer
 
-	mounter mount.Interface
+	mounter mount.Mounter
 
 	publishers map[string]csivolumes.Publisher
 	opts       dtcsi.CSIOptions
@@ -52,7 +52,7 @@ var _ csi.NodeServer = &Server{}
 func NewServer(opts dtcsi.CSIOptions) *Server {
 	return &Server{
 		opts:    opts,
-		mounter: mount.New(""),
+		mounter: mount.New(),
 		path:    metadata.PathResolver{RootDir: opts.RootDir},
 	}
 }

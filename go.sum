@@ -143,8 +143,6 @@ github.com/mitchellh/reflectwalk v1.0.2 h1:G2LzWKi524PWgd3mLHV8Y5k7s6XUvT0Gef6zx
 github.com/mitchellh/reflectwalk v1.0.2/go.mod h1:mSTlrgnPZtwu0c4WaC2kGObEpuNDbx0jmZXqmk4esnw=
 github.com/moby/spdystream v0.5.1 h1:9sNYeYZUcci9R6/w7KDaFWEWeV4LStVG78Mpyq/Zm/Y=
 github.com/moby/spdystream v0.5.1/go.mod h1:xBAYlnt/ay+11ShkdFKNAG7LsyK/tmNBVvVOwrfMgdI=
-github.com/moby/sys/mountinfo v0.7.2 h1:1shs6aH5s4o5H2zQLn796ADW1wMrIwHsyJ2v9KouLrg=
-github.com/moby/sys/mountinfo v0.7.2/go.mod h1:1YOa8w8Ih7uW0wALDUgT1dTTSBrZ+HiBLGws92L2RU4=
 github.com/modern-go/concurrent v0.0.0-20180228061459-e0a39a4cb421/go.mod h1:6dJC0mAP4ikYIbvyc7fijjWJddQyLn8Ig3JB5CqoB9Q=
 github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd h1:TRLaZ9cD/w8PVh93nsPXa1VrQ6jlwL5oN8l14QlcNfg=
 github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd/go.mod h1:6dJC0mAP4ikYIbvyc7fijjWJddQyLn8Ig3JB5CqoB9Q=
@@ -440,8 +438,6 @@ k8s.io/kube-openapi v0.0.0-20260721132016-d427ff9ee9ad h1:oXImqH8mQNk7PmvzKhmN3d
 k8s.io/kube-openapi v0.0.0-20260721132016-d427ff9ee9ad/go.mod h1:0/mqHCVhlumdJ3BhCfnjSZQE037nAhNodh1/hK0T8/I=
 k8s.io/kubelet v0.36.4 h1:mlmXnkrq3H02r/r0H/8M2jdPY7f4I4u4cA0tHnsPzY0=
 k8s.io/kubelet v0.36.4/go.mod h1:jcOhk4E8cdUBn7WswW67WH9waQTe37G057ttnYdcaKY=
-k8s.io/mount-utils v0.36.4 h1:dmCrrFDdcj56q1GuHJw228Ri62iBzMvt8PbPFHS91pA=
-k8s.io/mount-utils v0.36.4/go.mod h1:f4k8GAu4zHwLuBqdyAHTNG2I7rAey5B+Zr3UI7HoNfE=
 k8s.io/streaming v0.36.4 h1:RS5YlhrdBN2pKGVjgygGntdu6SNdsduyjGWGe3cX0vo=
 k8s.io/streaming v0.36.4/go.mod h1:tJ6S2bZa2HxIBauguBbCWSCYyd93Grfz1+z3tcOvlDE=
 k8s.io/utils v0.0.0-20260707023825-cf1189d6abe3 h1:jVkFFVfXdXP74B/zbO3hM3hpSFD0xvhQ5U686DPurkE=

@@ -26,7 +26,7 @@ import (
 	"github.com/pkg/errors"
 	batchv1 "k8s.io/api/batch/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/mount-utils"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/mount"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -68,7 +68,7 @@ func NewOneAgentProvisioner(mgr manager.Manager, opts dtcsi.CSIOptions) *OneAgen
 		urlInstallerBuilder:   binary.NewInstaller,
 		imageInstallerBuilder: image.NewImageInstaller,
 		jobInstallerBuilder:   job.NewInstaller,
-		cleaner:               cleanup.New(mgr.GetAPIReader(), path, mount.New("")),
+		cleaner:               cleanup.New(mgr.GetAPIReader(), path, mount.New()),
 		dtClientFactory:       dynatrace.NewClientFromDynakube,
 	}
 }

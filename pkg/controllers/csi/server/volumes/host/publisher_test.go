@@ -14,7 +14,7 @@ import (
 	csivolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/server/volumes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"k8s.io/mount-utils"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/mount"
 )
 
 func TestPublishVolume(t *testing.T) {
@@ -22,7 +22,7 @@ func TestPublishVolume(t *testing.T) {
 
 	t.Run("happy path", func(t *testing.T) {
 		path := metadata.PathResolver{RootDir: t.TempDir()}
-		mounter := mount.NewFakeMounter([]mount.MountPoint{})
+		mounter := mount.NewMockMounter()
 		volumeCfg := getTestVolumeConfig(t)
 		pub := NewPublisher(mounter, path)
 
@@ -53,7 +53,7 @@ func TestPublishVolume(t *testing.T) {
 		})
 
 		path := metadata.PathResolver{RootDir: problematicFolder}
-		mounter := mount.NewFakeMounter([]mount.MountPoint{})
+		mounter := mount.NewMockMounter()
 		volumeCfg := getTestVolumeConfig(t)
 
 		pub := NewPublisher(mounter, path)
@@ -66,7 +66,7 @@ func TestPublishVolume(t *testing.T) {
 	t.Run("handles dangling fs path", func(t *testing.T) {
 		path := metadata.PathResolver{RootDir: t.TempDir()}
 
-		mounter := mount.NewFakeMounter([]mount.MountPoint{})
+		mounter := mount.NewMockMounter()
 		volumeCfg := getTestVolumeConfig(t)
 
 		// Create dir to be symlinked

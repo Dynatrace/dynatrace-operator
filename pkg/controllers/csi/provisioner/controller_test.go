@@ -34,7 +34,7 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/mount-utils"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/mount"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -295,7 +295,7 @@ func createProvisioner(t *testing.T, objs ...client.Object) OneAgentProvisioner 
 	return OneAgentProvisioner{
 		path:            path,
 		apiReader:       apiReader,
-		cleaner:         cleanup.New(apiReader, path, mount.NewFakeMounter(nil)),
+		cleaner:         cleanup.New(apiReader, path, mount.NewMockMounter()),
 		dtClientFactory: dynatrace.NewClientFromDynakube,
 	}
 }

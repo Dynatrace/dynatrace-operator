@@ -13,30 +13,12 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
-	"k8s.io/mount-utils"
 )
 
 func (c *Cleaner) isMountPoint(file string) (bool, error) {
-	fakeMounter, ok := c.mounter.(*mount.FakeMounter)
-	if ok {
-		// you can't use the fake mounter IsLikelyNotMountPoint, as it will still use the os package
-		err, ok := fakeMounter.MountCheckErrors[file]
-		if ok {
-			if err == nil {
-				return true, nil
-			}
-
-			return false, err
-		} else {
-			return false, nil
-		}
-	}
-
 	isMountPoint, err := c.mounter.IsMountPoint(file)
 	if os.IsNotExist(err) {
-		// this is a different not exist err from the previous,
-		// if the file is a symlink, then what the symlink is pointing to can also not exist
-		// and IsMountPoint follows symlink without question
+		// if the file is a symlink, what it points to may also not exist
 		return false, nil
 	}
 
