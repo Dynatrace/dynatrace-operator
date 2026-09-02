@@ -161,6 +161,7 @@ func Cleanup(ctx context.Context, client client.Client, apiReader client.Reader,
 
 func cleanupConfig(ctx context.Context, client client.Client, apiReader client.Reader, namespaces []corev1.Namespace, dk *dynakube.DynaKube) error {
 	log := logd.FromContext(ctx)
+
 	clearMalformedETagLookup(dk)
 
 	defer meta.RemoveStatusCondition(dk.Conditions(), ConfigConditionType)

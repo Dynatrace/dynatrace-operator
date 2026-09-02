@@ -8,7 +8,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"strings"
+	"regexp"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
@@ -87,6 +87,10 @@ func (c *ClientImpl) GetProcessGroupingConfig(ctx context.Context, kubernetesClu
 	return pgc, nil
 }
 
+var validETagRegex = regexp.MustCompile(`^"[0-9]+"$`)
+
+// IsMalformedETag reports whether etag is present but doesn't look like a real ETag from this API.
+// An empty etag means "none yet" and is not malformed.
 func IsMalformedETag(etag string) bool {
-	return strings.Contains(etag, ":dtagent")
+	return etag != "" && !validETagRegex.MatchString(etag)
 }

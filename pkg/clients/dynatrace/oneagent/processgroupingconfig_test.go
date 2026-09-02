@@ -17,8 +17,8 @@ import (
 
 const (
 	testCBORData     = "\x81\x01" // minimal CBOR: array of one integer
-	testETag         = `"abc123"`
-	testResponseETag = `"def456"`
+	testETag         = `"5678"`
+	testResponseETag = `"1234"`
 	testClusterID    = "my-cluster"
 )
 
@@ -180,19 +180,18 @@ func TestGetProcessGroupingConfig(t *testing.T) {
 	})
 
 	t.Run("bad request", func(t *testing.T) {
-		const badETag = "bad_etag"
 		serverErr := &core.HTTPError{StatusCode: http.StatusBadRequest, Message: "bad request"}
 
 		client := setupMockedProcessGroupingClient(
 			t,
 			map[string]string{"kubernetesClusterId": testClusterID},
-			map[string]string{"If-None-Match": badETag},
+			map[string]string{"If-None-Match": testETag},
 			nil,
 			nil,
 			serverErr,
 		)
 
-		pgc, err := client.GetProcessGroupingConfig(t.Context(), testClusterID, badETag)
+		pgc, err := client.GetProcessGroupingConfig(t.Context(), testClusterID, testETag)
 		require.ErrorIs(t, err, serverErr)
 		assert.Nil(t, pgc)
 	})
@@ -226,4 +225,23 @@ func TestGetProcessGroupingConfig(t *testing.T) {
 		pgc, err := client.GetProcessGroupingConfig(t.Context(), testClusterID, "1234567890:dtagent1234567890ABC")
 		assertEmpty(t, pgc, err)
 	})
+}
+
+func TestIsMalformedETag(t *testing.T) {
+	tests := []struct {
+		name string
+		etag string
+		want bool
+	}{
+		{"empty etag is not malformed", "", false},
+		{"valid quoted numeric etag", `"12345"`, false},
+		{"known malformed pattern", `"0:dtagent10348260901170245Pkr0"`, true},
+		{"unquoted numeric etag", "12345", true},
+		{"quoted non-numeric etag", `"abc123"`, true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, IsMalformedETag(tt.etag))
+		})
+	}
 }

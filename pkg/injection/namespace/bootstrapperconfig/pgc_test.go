@@ -21,7 +21,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const invalidTestETag = "1234567890:dtagent1234567890ABC"
+const (
+	testETag        = `"1234657890"`
+	invalidTestETag = `"1234567890:dtagent1234567890ABC"`
+)
 
 func Test_SecretGenerator_preparePGC(t *testing.T) {
 	const (
@@ -53,7 +56,7 @@ func Test_SecretGenerator_preparePGC(t *testing.T) {
 		mockDTClient.EXPECT().
 			GetProcessGroupingConfig(mock.Anything, testClusterMEID, "").
 			Return(&oneagent.ProcessGroupConfig{
-				ETag: "etag123",
+				ETag: testETag,
 				Data: payload,
 			}, nil)
 
@@ -63,7 +66,7 @@ func Test_SecretGenerator_preparePGC(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, pgc)
 		assert.Equal(t, payload, pgc.Data)
-		assert.Equal(t, "etag123", pgc.ETag)
+		assert.Equal(t, testETag, pgc.ETag)
 	})
 
 	t.Run("success - response between 800 KiB and 900 KiB triggers warning", func(t *testing.T) {
@@ -75,7 +78,7 @@ func Test_SecretGenerator_preparePGC(t *testing.T) {
 		mockDTClient.EXPECT().
 			GetProcessGroupingConfig(mock.Anything, testClusterMEID, "").
 			Return(&oneagent.ProcessGroupConfig{
-				ETag: "etag123",
+				ETag: testETag,
 				Data: payload,
 			}, nil)
 
@@ -96,7 +99,7 @@ func Test_SecretGenerator_preparePGC(t *testing.T) {
 		mockDTClient.EXPECT().
 			GetProcessGroupingConfig(mock.Anything, testClusterMEID, "").
 			Return(&oneagent.ProcessGroupConfig{
-				ETag: "etag123",
+				ETag: testETag,
 				Data: payload,
 			}, nil)
 
@@ -150,14 +153,13 @@ func Test_SecretGenerator_preparePGC(t *testing.T) {
 	t.Run("304 not modified uses cached data", func(t *testing.T) {
 		dk := newDK()
 		cachedData := []byte("cached-pgc-data")
-		cachedETag := "etag-abc"
 
 		sourceSecret := &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      GetSourceConfigSecretName(testDynakube),
 				Namespace: testNamespace,
 				Annotations: map[string]string{
-					annotationPGCETag: cachedETag,
+					annotationPGCETag: testETag,
 				},
 			},
 			Data: map[string][]byte{
@@ -169,8 +171,8 @@ func Test_SecretGenerator_preparePGC(t *testing.T) {
 		mockDTClient := oneagentclientmock.NewClient(t)
 
 		mockDTClient.EXPECT().
-			GetProcessGroupingConfig(mock.Anything, testClusterMEID, cachedETag).
-			Return(&oneagent.ProcessGroupConfig{ETag: cachedETag}, nil)
+			GetProcessGroupingConfig(mock.Anything, testClusterMEID, testETag).
+			Return(&oneagent.ProcessGroupConfig{ETag: testETag}, nil)
 
 		sg := NewSecretGenerator(clt, clt, mockDTClient)
 		pgc, err := sg.preparePGC(t.Context(), dk)
@@ -178,7 +180,7 @@ func Test_SecretGenerator_preparePGC(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, pgc)
 		assert.Equal(t, cachedData, pgc.Data)
-		assert.Equal(t, cachedETag, pgc.ETag)
+		assert.Equal(t, testETag, pgc.ETag)
 	})
 
 	t.Run("empty MEID skips without error", func(t *testing.T) {
@@ -202,12 +204,11 @@ func Test_SecretGenerator_preparePGC(t *testing.T) {
 		mockDTClient := oneagentclientmock.NewClient(t)
 
 		payload := []byte("pgc-data")
-		responseETag := "new-etag-xyz"
 
 		mockDTClient.EXPECT().
 			GetProcessGroupingConfig(mock.Anything, testClusterMEID, "").
 			Return(&oneagent.ProcessGroupConfig{
-				ETag: responseETag,
+				ETag: testETag,
 				Data: payload,
 			}, nil)
 
@@ -216,7 +217,7 @@ func Test_SecretGenerator_preparePGC(t *testing.T) {
 
 		require.NoError(t, err)
 		require.NotNil(t, pgc)
-		assert.Equal(t, responseETag, pgc.ETag)
+		assert.Equal(t, testETag, pgc.ETag)
 	})
 
 	t.Run("throttle malformed etag lookup", func(t *testing.T) {
@@ -260,12 +261,11 @@ func Test_SecretGenerator_preparePGC(t *testing.T) {
 		mockDTClient := oneagentclientmock.NewClient(t)
 
 		payload := []byte("pgc-data")
-		responseETag := "new-etag-xyz"
 
 		mockDTClient.EXPECT().
 			GetProcessGroupingConfig(mock.Anything, testClusterMEID, invalidTestETag).
 			Return(&oneagent.ProcessGroupConfig{
-				ETag: responseETag,
+				ETag: testETag,
 				Data: payload,
 			}, nil)
 
@@ -274,7 +274,7 @@ func Test_SecretGenerator_preparePGC(t *testing.T) {
 
 		require.NoError(t, err)
 		require.NotNil(t, pgc)
-		assert.Equal(t, responseETag, pgc.ETag)
+		assert.Equal(t, testETag, pgc.ETag)
 	})
 }
 
@@ -314,6 +314,6 @@ func Test_registerMalformedETagLookup(t *testing.T) {
 	assert.NotContains(t, malformedETagLastLookup, dk.Name)
 	registerMalformedETagLookup(dk, invalidTestETag)
 	assert.Contains(t, malformedETagLastLookup, dk.Name)
-	registerMalformedETagLookup(dk, "1234:1234")
+	registerMalformedETagLookup(dk, testETag)
 	assert.NotContains(t, malformedETagLastLookup, dk.Name)
 }
