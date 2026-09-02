@@ -35,6 +35,7 @@ jobs:
       is_snyk_authorized: ${{ steps.is-snyk-authorized.outputs.is_authorized == 'true' && 'true' || '' }}
       is_docker_authorized: ${{ steps.is-docker-authorized.outputs.is_authorized == 'true' && 'true' || '' }}
       markdown_changed: ${{ steps.markdown.outputs.any_changed == 'true' && 'true' || '' }}
+      go_version: ${{ steps.go-version.outputs.go_version }}
     steps:
       - name: Checkout
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -42,6 +43,9 @@ jobs:
           fetch-depth: ${{ github.event_name == 'merge_group' && 0 || 2 }}
           ref: ${{ github.event.pull_request.head.sha || github.event.merge_group.head_sha || github.sha }}
           persist-credentials: false
+      - name: Get go version
+        id: go-version
+        run: echo "go_version=$(grep -m1 'FROM.*golang:' Dockerfile | sed 's/.*golang:\([0-9.]*\).*/\1/')" >> "$GITHUB_OUTPUT"
       - name: Check if it is a protected branch
         id: is-protected-branch
         run: |
@@ -171,7 +175,7 @@ jobs:
       - name: Setup Golang
         uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 # v6.3.0
         with:
-          go-version: 'stable' # Latest stable version
+          go-version: ${{ needs.detect-changes.outputs.go_version }}
           cache: false
       - name: Run Unit tests and Integration tests
         id: unittest
@@ -195,7 +199,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 # v6.3.0
         with:
-          go-version: 'stable' # Latest stable version
+          go-version: ${{ needs.detect-changes.outputs.go_version }}
           cache: false
       - name: Get golangci-lint version
         id: linter-version
@@ -221,7 +225,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 # v6.3.0
         with:
-          go-version: 'stable' # Latest stable version
+          go-version: ${{ needs.detect-changes.outputs.go_version }}
           cache: false
       - name: Set up Helm
         uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4.3.1
