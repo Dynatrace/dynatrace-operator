@@ -143,11 +143,12 @@ func containerIsInjected(container corev1.Container, _ *dtwebhook.BaseRequest) b
 }
 
 func mutateUserContainers(request *dtwebhook.BaseRequest, installPath string, log logd.Logger) bool {
-	log.Info("install path", "installPath", installPath, "isImageVolume", isImageVolume(request))
+	isImageVolumeEnabled := isImageVolume(request)
+	log.Info("install path", "installPath", installPath, "isImageVolume", isImageVolumeEnabled)
 
 	newContainers := request.NewContainers(containerIsInjected)
 	for _, container := range newContainers {
-		addVolumeMounts(container, installPath, isImageVolume(request))
+		addVolumeMounts(container, installPath, isImageVolumeEnabled)
 		addOneAgentEnvsToContainer(request.DynaKube, container, request.Namespace, installPath, log)
 	}
 
