@@ -21,6 +21,13 @@ func createOrUpdateHandler(r *resources.Resources) decoder.HandlerFunc {
 	return func(ctx context.Context, obj k8s.Object) error {
 		err := r.Create(ctx, obj)
 		if k8serrors.IsAlreadyExists(err) {
+			existing := obj.DeepCopyObject().(k8s.Object)
+			if getErr := r.Get(ctx, obj.GetName(), obj.GetNamespace(), existing); getErr != nil {
+				return getErr
+			}
+
+			obj.SetResourceVersion(existing.GetResourceVersion())
+
 			return r.Update(ctx, obj)
 		}
 
