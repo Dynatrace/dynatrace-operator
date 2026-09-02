@@ -72,7 +72,7 @@ func (c *ClientImpl) GetProcessGroupingConfig(ctx context.Context, kubernetesClu
 		}
 
 		if core.IsBadRequest(err) {
-			log.Info("process grouping config API rejected the cached ETag, clearing it", "error", err)
+			log.Info("process grouping config API rejected the ETag, clearing it", "etag", etag, "error", err)
 
 			return &ProcessGroupConfig{}, nil
 		}

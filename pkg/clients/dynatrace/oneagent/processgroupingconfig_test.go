@@ -69,7 +69,7 @@ func setupMockedProcessGroupingClient(
 }
 
 func TestGetProcessGroupingConfig(t *testing.T) {
-	t.Run("success_200_with_etag", func(t *testing.T) {
+	t.Run("success 200 with etag", func(t *testing.T) {
 		respHeaders := http.Header{"Etag": []string{testResponseETag}}
 
 		client := setupMockedProcessGroupingClient(t,
@@ -88,7 +88,7 @@ func TestGetProcessGroupingConfig(t *testing.T) {
 		assert.NotEqual(t, testETag, pgc.ETag)
 	})
 
-	t.Run("success_200_without_etag", func(t *testing.T) {
+	t.Run("success 200 without etag", func(t *testing.T) {
 		respHeaders := http.Header{"Etag": []string{testResponseETag}}
 
 		client := setupMockedProcessGroupingClient(t,
@@ -105,7 +105,7 @@ func TestGetProcessGroupingConfig(t *testing.T) {
 		assert.Equal(t, testResponseETag, pgc.ETag)
 	})
 
-	t.Run("not_modified_304", func(t *testing.T) {
+	t.Run("not modified 304", func(t *testing.T) {
 		httpErr := &core.HTTPError{StatusCode: 304}
 
 		client := setupMockedProcessGroupingClient(t,
@@ -123,7 +123,7 @@ func TestGetProcessGroupingConfig(t *testing.T) {
 		assert.Equal(t, testETag, pgc.ETag)
 	})
 
-	t.Run("with_kubernetes_cluster_id", func(t *testing.T) {
+	t.Run("with kubernetes cluster id", func(t *testing.T) {
 		respHeaders := http.Header{"Etag": []string{testResponseETag}}
 
 		client := setupMockedProcessGroupingClient(t,
@@ -139,7 +139,7 @@ func TestGetProcessGroupingConfig(t *testing.T) {
 		assert.Equal(t, testResponseETag, pgc.ETag)
 	})
 
-	t.Run("empty_kubernetes_cluster_id_returns_error", func(t *testing.T) {
+	t.Run("empty kubernetes cluster id returns error", func(t *testing.T) {
 		// Create a client directly without mock setup since we expect early return
 		coreClient := coremock.NewClient(t)
 		client := NewClient(coreClient, "", "")
@@ -149,7 +149,7 @@ func TestGetProcessGroupingConfig(t *testing.T) {
 		assert.Nil(t, pgc)
 	})
 
-	t.Run("server_error", func(t *testing.T) {
+	t.Run("server error", func(t *testing.T) {
 		serverErr := &core.HTTPError{StatusCode: http.StatusInternalServerError, Message: "internal server error"}
 
 		client := setupMockedProcessGroupingClient(t,
@@ -166,7 +166,7 @@ func TestGetProcessGroupingConfig(t *testing.T) {
 		assert.Nil(t, pgc)
 	})
 
-	t.Run("bad_request_clears_etag", func(t *testing.T) {
+	t.Run("bad request clears etag", func(t *testing.T) {
 		const badETag = "bad_etag"
 		serverErr := &core.HTTPError{StatusCode: http.StatusBadRequest, Message: "bad request"}
 
@@ -185,7 +185,7 @@ func TestGetProcessGroupingConfig(t *testing.T) {
 		assert.Empty(t, pgc.ETag)
 	})
 
-	t.Run("not_found_404_endpoint_unavailable", func(t *testing.T) {
+	t.Run("not found 404 endpoint unavailable", func(t *testing.T) {
 		httpErr := &core.HTTPError{StatusCode: http.StatusNotFound, Message: "endpoint not available"}
 
 		client := setupMockedProcessGroupingClient(t,
