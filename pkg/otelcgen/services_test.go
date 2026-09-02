@@ -63,5 +63,5 @@ func TestBuildPipelineProcessors_WithResourceAttributes(t *testing.T) {
 
 	processors := cfg.buildPipelineProcessors()
 
-	require.Equal(t, []component.ID{memoryLimiter, transformPodIP, k8sattributes, transform, staticResourceAttrs}, processors)
+	require.Equal(t, []component.ID{memoryLimiter, transformPodIP, k8sattributes, staticResourceAttrs, transform}, processors)
 }

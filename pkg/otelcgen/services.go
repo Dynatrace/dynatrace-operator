@@ -95,16 +95,14 @@ func buildExporters() []component.ID {
 }
 
 func (c *Config) buildPipelineProcessors() []component.ID {
-	// resource/staticAttrs must run after k8sattributes and transform: those processors only
-	// set an attribute when it is not already present, so if the static default were applied
-	// first it would always win and per-pod/per-workload values could never override it.
-	processors := []component.ID{memoryLimiter, transformPodIP, k8sattributes, transform}
+	// annotations (merge_maps) > staticAttrs > k8sattributes
+	processors := []component.ID{memoryLimiter, transformPodIP, k8sattributes}
 
 	if len(c.resourceAttributes) > 0 {
 		processors = append(processors, staticResourceAttrs)
 	}
 
-	return processors
+	return append(processors, transform)
 }
 
 func filter(componentIDs []component.ID, f func(component.ID) bool) []component.ID {

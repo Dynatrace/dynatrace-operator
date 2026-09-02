@@ -131,8 +131,7 @@ func (c *Config) buildProcessors() map[component.ID]component.Config {
 	return processors
 }
 
-// buildStaticResourceAttributes builds the resource/staticAttrs processor config, using
-// action "insert" so per-pod/per-workload values always take precedence.
+// buildStaticResourceAttributes builds the resource/staticAttrs processor config with action "upsert".
 func (c *Config) buildStaticResourceAttributes() map[string]any {
 	if len(c.resourceAttributes) == 0 {
 		return nil
@@ -150,7 +149,7 @@ func (c *Config) buildStaticResourceAttributes() map[string]any {
 		attributes = append(attributes, map[string]any{
 			"key":    k,
 			"value":  c.resourceAttributes[k],
-			"action": "insert",
+			"action": "upsert",
 		})
 	}
 
@@ -185,7 +184,7 @@ func (c *Config) dynatraceTransformations() []map[string]any {
 		{
 			"context": "resource",
 			"statements": []string{
-				`merge_maps(attributes, ParseJSON(attributes["metadata.dynatrace.com"]), "insert") where IsMatch(attributes["metadata.dynatrace.com"], "^\\{")`,
+				`merge_maps(attributes, ParseJSON(attributes["metadata.dynatrace.com"]), "upsert") where IsMatch(attributes["metadata.dynatrace.com"], "^\\{")`,
 				`delete_key(attributes, "metadata.dynatrace.com")`,
 				"set(attributes[\"k8s.workload.name\"], attributes[\"k8s.statefulset.name\"]) where IsString(attributes[\"k8s.statefulset.name\"])",
 				"set(attributes[\"k8s.workload.name\"], attributes[\"k8s.replicaset.name\"]) where IsString(attributes[\"k8s.replicaset.name\"])",

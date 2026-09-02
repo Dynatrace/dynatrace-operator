@@ -53,7 +53,7 @@ processors:
     log_statements:
       - context: resource
         statements:
-          - 'merge_maps(attributes, ParseJSON(attributes["metadata.dynatrace.com"]), "insert") where IsMatch(attributes["metadata.dynatrace.com"], "^\\{")'
+          - 'merge_maps(attributes, ParseJSON(attributes["metadata.dynatrace.com"]), "upsert") where IsMatch(attributes["metadata.dynatrace.com"], "^\\{")'
           - 'delete_key(attributes, "metadata.dynatrace.com")'
           - set(attributes["k8s.workload.name"], attributes["k8s.statefulset.name"]) where IsString(attributes["k8s.statefulset.name"])
           - set(attributes["k8s.workload.name"], attributes["k8s.replicaset.name"]) where IsString(attributes["k8s.replicaset.name"])
@@ -81,7 +81,7 @@ processors:
     metric_statements:
       - context: resource
         statements:
-          - 'merge_maps(attributes, ParseJSON(attributes["metadata.dynatrace.com"]), "insert") where IsMatch(attributes["metadata.dynatrace.com"], "^\\{")'
+          - 'merge_maps(attributes, ParseJSON(attributes["metadata.dynatrace.com"]), "upsert") where IsMatch(attributes["metadata.dynatrace.com"], "^\\{")'
           - 'delete_key(attributes, "metadata.dynatrace.com")'
           - set(attributes["k8s.workload.name"], attributes["k8s.statefulset.name"]) where IsString(attributes["k8s.statefulset.name"])
           - set(attributes["k8s.workload.name"], attributes["k8s.replicaset.name"]) where IsString(attributes["k8s.replicaset.name"])
@@ -109,7 +109,7 @@ processors:
     trace_statements:
       - context: resource
         statements:
-          - 'merge_maps(attributes, ParseJSON(attributes["metadata.dynatrace.com"]), "insert") where IsMatch(attributes["metadata.dynatrace.com"], "^\\{")'
+          - 'merge_maps(attributes, ParseJSON(attributes["metadata.dynatrace.com"]), "upsert") where IsMatch(attributes["metadata.dynatrace.com"], "^\\{")'
           - 'delete_key(attributes, "metadata.dynatrace.com")'
           - set(attributes["k8s.workload.name"], attributes["k8s.statefulset.name"]) where IsString(attributes["k8s.statefulset.name"])
           - set(attributes["k8s.workload.name"], attributes["k8s.replicaset.name"]) where IsString(attributes["k8s.replicaset.name"])

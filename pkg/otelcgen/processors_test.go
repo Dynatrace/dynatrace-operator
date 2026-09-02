@@ -36,7 +36,7 @@ func TestBuildProcessors_WithResourceAttributes(t *testing.T) {
 		assert.NotContains(t, processors, staticResourceAttrs)
 	})
 
-	t.Run("static resource attrs processor added, sorted, insert action", func(t *testing.T) {
+	t.Run("static resource attrs processor added, sorted, upsert action", func(t *testing.T) {
 		cfg := &Config{resourceAttributes: map[string]string{"team": "shopping-cart", "env": "prod"}}
 		processors := cfg.buildProcessors()
 
@@ -47,8 +47,8 @@ func TestBuildProcessors_WithResourceAttributes(t *testing.T) {
 		require.True(t, ok)
 		require.Len(t, attributes, 2)
 
-		assert.Equal(t, map[string]any{"key": "env", "value": "prod", "action": "insert"}, attributes[0])
-		assert.Equal(t, map[string]any{"key": "team", "value": "shopping-cart", "action": "insert"}, attributes[1])
+		assert.Equal(t, map[string]any{"key": "env", "value": "prod", "action": "upsert"}, attributes[0])
+		assert.Equal(t, map[string]any{"key": "team", "value": "shopping-cart", "action": "upsert"}, attributes[1])
 	})
 }
 
@@ -93,7 +93,7 @@ func TestDynatraceTransformationsJSONAnnotation(t *testing.T) {
 	require.GreaterOrEqual(t, len(statements), 2)
 
 	t.Run("merge_maps statement is first", func(t *testing.T) {
-		assert.Contains(t, statements[0], "merge_maps(attributes, ParseJSON(attributes[\"metadata.dynatrace.com\"]), \"insert\")")
+		assert.Contains(t, statements[0], "merge_maps(attributes, ParseJSON(attributes[\"metadata.dynatrace.com\"]), \"upsert\")")
 		assert.Contains(t, statements[0], `IsMatch(attributes["metadata.dynatrace.com"], "^\\{")`)
 	})
 
