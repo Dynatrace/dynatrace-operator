@@ -5,6 +5,7 @@ package bootstrapperconfig
 
 import (
 	"context"
+	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -52,6 +53,11 @@ func (s *SecretGenerator) preparePGC(ctx context.Context, dk *dynakube.DynaKube)
 	}
 
 	cachedPGC := s.readCachedPGC(ctx, dk)
+	if oneagent.IsMalformedETag(cachedPGC.ETag) && !shouldLookupWithMalformedETag(dk) {
+		log.Debug("throttled API request with malformed cached etag", "etag", cachedPGC.ETag)
+
+		return cachedPGC, nil
+	}
 
 	pgc, err := s.dtClient.GetProcessGroupingConfig(ctx, dk.Status.KubernetesClusterMEID, cachedPGC.ETag)
 	if err != nil {
@@ -63,6 +69,8 @@ func (s *SecretGenerator) preparePGC(ctx context.Context, dk *dynakube.DynaKube)
 	if pgc == nil {
 		return &oneagent.ProcessGroupConfig{}, nil
 	}
+
+	registerMalformedETagLookup(dk, pgc.ETag)
 
 	if pgc.ETag == cachedPGC.ETag && pgc.ETag != "" {
 		return cachedPGC, nil
@@ -96,4 +104,28 @@ func (s *SecretGenerator) readCachedPGC(ctx context.Context, dk *dynakube.DynaKu
 		ETag: secret.Annotations[annotationPGCETag],
 		Data: secret.Data[DeclarativeInputFileName],
 	}
+}
+
+// In-memory throttling for API lookups with malformed ETag, so we don't spam the API.
+// The implementation is purposefully kept simple:
+// * No thread-safety: The whole DynaKube controller is not thread-safe, so this requires a bigger effort
+// * Use DynaKube names as key: We only process DynaKubes in a single namespace, so there won't be any collisions
+var malformedETagLastLookup = make(map[string]time.Time)
+
+func shouldLookupWithMalformedETag(dk *dynakube.DynaKube) bool {
+	lastLookup := malformedETagLastLookup[dk.Name]
+
+	return lastLookup.IsZero() || time.Since(lastLookup) > dk.APIRequestThreshold()
+}
+
+func registerMalformedETagLookup(dk *dynakube.DynaKube, etag string) {
+	if oneagent.IsMalformedETag(etag) {
+		malformedETagLastLookup[dk.Name] = time.Now()
+	} else {
+		delete(malformedETagLastLookup, dk.Name)
+	}
+}
+
+func clearMalformedETagLookup(dk *dynakube.DynaKube) {
+	delete(malformedETagLastLookup, dk.Name)
 }

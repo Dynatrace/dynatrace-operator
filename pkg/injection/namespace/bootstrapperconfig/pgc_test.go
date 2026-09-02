@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
@@ -19,6 +20,8 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+const invalidTestETag = "1234567890:dtagent1234567890ABC"
 
 func Test_SecretGenerator_preparePGC(t *testing.T) {
 	const (
@@ -215,4 +218,102 @@ func Test_SecretGenerator_preparePGC(t *testing.T) {
 		require.NotNil(t, pgc)
 		assert.Equal(t, responseETag, pgc.ETag)
 	})
+
+	t.Run("throttle malformed etag lookup", func(t *testing.T) {
+		dk := newDK()
+		secret := &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:        GetSourceConfigSecretName(dk.Name),
+				Namespace:   dk.Namespace,
+				Annotations: map[string]string{annotationPGCETag: invalidTestETag},
+			},
+		}
+
+		t.Cleanup(func() { clear(malformedETagLastLookup) })
+		malformedETagLastLookup[dk.Name] = time.Now().Add(-1 * time.Minute)
+
+		clt := fake.NewClient(dk, secret)
+		mockDTClient := oneagentclientmock.NewClient(t)
+
+		sg := NewSecretGenerator(clt, clt, mockDTClient)
+		pgc, err := sg.preparePGC(t.Context(), dk)
+
+		require.NoError(t, err)
+		require.NotNil(t, pgc)
+		assert.Equal(t, invalidTestETag, pgc.ETag)
+	})
+
+	t.Run("clear malformed etag", func(t *testing.T) {
+		dk := newDK()
+		secret := &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:        GetSourceConfigSecretName(dk.Name),
+				Namespace:   dk.Namespace,
+				Annotations: map[string]string{annotationPGCETag: invalidTestETag},
+			},
+		}
+
+		t.Cleanup(func() { clear(malformedETagLastLookup) })
+		malformedETagLastLookup[dk.Name] = time.Now().Add(-15 * time.Minute)
+
+		clt := fake.NewClient(dk, secret)
+		mockDTClient := oneagentclientmock.NewClient(t)
+
+		payload := []byte("pgc-data")
+		responseETag := "new-etag-xyz"
+
+		mockDTClient.EXPECT().
+			GetProcessGroupingConfig(mock.Anything, testClusterMEID, invalidTestETag).
+			Return(&oneagent.ProcessGroupConfig{
+				ETag: responseETag,
+				Data: payload,
+			}, nil)
+
+		sg := NewSecretGenerator(clt, clt, mockDTClient)
+		pgc, err := sg.preparePGC(t.Context(), dk)
+
+		require.NoError(t, err)
+		require.NotNil(t, pgc)
+		assert.Equal(t, responseETag, pgc.ETag)
+	})
+}
+
+func Test_shouldLookupWithMalformedETag(t *testing.T) {
+	tests := []struct {
+		name         string
+		apiThreshold uint16
+		preseed      time.Time
+		expect       bool
+	}{
+		{"no entry", 15, time.Time{}, true},
+		{"zero threshold", 0, time.Now().Add(-1 * time.Hour), true},
+		{"below threshold", 15, time.Now().Add(-14 * time.Minute), false},
+		{"above threshold", 15, time.Now().Add(-15 * time.Minute), true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			dk := &dynakube.DynaKube{}
+			dk.Name = "test"
+			dk.Spec.DynatraceAPIRequestThreshold = new(tt.apiThreshold)
+
+			t.Cleanup(func() { clear(malformedETagLastLookup) })
+			malformedETagLastLookup[dk.Name] = tt.preseed
+
+			got := shouldLookupWithMalformedETag(dk)
+			assert.Equal(t, tt.expect, got)
+		})
+	}
+}
+
+func Test_registerMalformedETagLookup(t *testing.T) {
+	dk := &dynakube.DynaKube{}
+	dk.Name = "test"
+
+	t.Cleanup(func() { clear(malformedETagLastLookup) })
+
+	assert.NotContains(t, malformedETagLastLookup, dk.Name)
+	registerMalformedETagLookup(dk, invalidTestETag)
+	assert.Contains(t, malformedETagLastLookup, dk.Name)
+	registerMalformedETagLookup(dk, "1234:1234")
+	assert.NotContains(t, malformedETagLastLookup, dk.Name)
 }
