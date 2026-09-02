@@ -8,6 +8,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
@@ -29,14 +30,13 @@ type ProcessGroupConfig struct {
 //
 // Parameters:
 //   - kubernetesClusterId: required Kubernetes cluster ID to scope the config. Empty string returns an error.
-//   - etag: optional ETag from a previous response. When non-empty, sent as If-None-Match header.
+//   - etag: optional ETag from a previous response. When non-empty, sent as If-None-Match header unless it is malformed.
 //     If the server responds with 304 Not Modified, returns a ProcessGroupConfig with the original ETag.
 //
 // Returns:
 //   - On HTTP 200: *ProcessGroupConfig with ETag from response header and CBOR data, nil error.
 //   - On HTTP 304: *ProcessGroupConfig with the original ETag and nil Data, nil error.
 //   - On HTTP 404: *ProcessGroupConfig (empty), nil error. Endpoint not available.
-//   - On HTTP 400: *ProcessGroupConfig (empty), nil error. Clears a stale/rejected ETag instead of getting stuck retrying it forever.
 //   - On other errors: non-nil error.
 func (c *ClientImpl) GetProcessGroupingConfig(ctx context.Context, kubernetesClusterID string, etag string) (*ProcessGroupConfig, error) {
 	ctx, log := logd.NewFromContext(ctx, loggerName)
@@ -53,6 +53,11 @@ func (c *ClientImpl) GetProcessGroupingConfig(ctx context.Context, kubernetesClu
 		WithQueryParams(params).
 		WithHeader("Accept", "application/cbor")
 
+	if IsMalformedETag(etag) {
+		log.Info("ignoring malformed ETag", "etag", etag)
+		etag = ""
+	}
+
 	if etag != "" {
 		req = req.WithHeader(requestHeaderEtag, etag)
 	}
@@ -66,13 +71,7 @@ func (c *ClientImpl) GetProcessGroupingConfig(ctx context.Context, kubernetesClu
 
 	if err != nil {
 		if core.IsNotFound(err) {
-			log.Info("process grouping config not available on cluster, skipping getting process grouping config")
-
-			return &ProcessGroupConfig{}, nil
-		}
-
-		if core.IsBadRequest(err) {
-			log.Info("process grouping config API rejected the ETag, clearing it", "etag", etag, "error", err)
+			log.Info("process grouping config not available on cluster")
 
 			return &ProcessGroupConfig{}, nil
 		}
@@ -86,4 +85,8 @@ func (c *ClientImpl) GetProcessGroupingConfig(ctx context.Context, kubernetesClu
 	}
 
 	return pgc, nil
+}
+
+func IsMalformedETag(etag string) bool {
+	return strings.Contains(etag, ":dtagent")
 }

@@ -69,10 +69,19 @@ func setupMockedProcessGroupingClient(
 }
 
 func TestGetProcessGroupingConfig(t *testing.T) {
+	assertEmpty := func(t *testing.T, pgc *ProcessGroupConfig, err error) {
+		t.Helper()
+		require.NoError(t, err)
+		assert.NotNil(t, pgc)
+		assert.Empty(t, pgc.Data)
+		assert.Empty(t, pgc.ETag)
+	}
+
 	t.Run("success 200 with etag", func(t *testing.T) {
 		respHeaders := http.Header{"Etag": []string{testResponseETag}}
 
-		client := setupMockedProcessGroupingClient(t,
+		client := setupMockedProcessGroupingClient(
+			t,
 			map[string]string{"kubernetesClusterId": testClusterID},
 			map[string]string{"If-None-Match": testETag},
 			respHeaders,
@@ -91,7 +100,8 @@ func TestGetProcessGroupingConfig(t *testing.T) {
 	t.Run("success 200 without etag", func(t *testing.T) {
 		respHeaders := http.Header{"Etag": []string{testResponseETag}}
 
-		client := setupMockedProcessGroupingClient(t,
+		client := setupMockedProcessGroupingClient(
+			t,
 			map[string]string{"kubernetesClusterId": testClusterID},
 			nil,
 			respHeaders,
@@ -108,7 +118,8 @@ func TestGetProcessGroupingConfig(t *testing.T) {
 	t.Run("not modified 304", func(t *testing.T) {
 		httpErr := &core.HTTPError{StatusCode: 304}
 
-		client := setupMockedProcessGroupingClient(t,
+		client := setupMockedProcessGroupingClient(
+			t,
 			map[string]string{"kubernetesClusterId": testClusterID},
 			map[string]string{"If-None-Match": testETag},
 			nil,
@@ -126,7 +137,8 @@ func TestGetProcessGroupingConfig(t *testing.T) {
 	t.Run("with kubernetes cluster id", func(t *testing.T) {
 		respHeaders := http.Header{"Etag": []string{testResponseETag}}
 
-		client := setupMockedProcessGroupingClient(t,
+		client := setupMockedProcessGroupingClient(
+			t,
 			map[string]string{"kubernetesClusterId": testClusterID},
 			nil,
 			respHeaders,
@@ -152,7 +164,8 @@ func TestGetProcessGroupingConfig(t *testing.T) {
 	t.Run("server error", func(t *testing.T) {
 		serverErr := &core.HTTPError{StatusCode: http.StatusInternalServerError, Message: "internal server error"}
 
-		client := setupMockedProcessGroupingClient(t,
+		client := setupMockedProcessGroupingClient(
+			t,
 			map[string]string{"kubernetesClusterId": testClusterID},
 			nil,
 			nil,
@@ -166,11 +179,12 @@ func TestGetProcessGroupingConfig(t *testing.T) {
 		assert.Nil(t, pgc)
 	})
 
-	t.Run("bad request clears etag", func(t *testing.T) {
+	t.Run("bad request", func(t *testing.T) {
 		const badETag = "bad_etag"
 		serverErr := &core.HTTPError{StatusCode: http.StatusBadRequest, Message: "bad request"}
 
-		client := setupMockedProcessGroupingClient(t,
+		client := setupMockedProcessGroupingClient(
+			t,
 			map[string]string{"kubernetesClusterId": testClusterID},
 			map[string]string{"If-None-Match": badETag},
 			nil,
@@ -179,16 +193,15 @@ func TestGetProcessGroupingConfig(t *testing.T) {
 		)
 
 		pgc, err := client.GetProcessGroupingConfig(t.Context(), testClusterID, badETag)
-		require.NoError(t, err)
-		assert.NotNil(t, pgc)
-		assert.Empty(t, pgc.Data)
-		assert.Empty(t, pgc.ETag)
+		require.ErrorIs(t, err, serverErr)
+		assert.Nil(t, pgc)
 	})
 
 	t.Run("not found 404 endpoint unavailable", func(t *testing.T) {
 		httpErr := &core.HTTPError{StatusCode: http.StatusNotFound, Message: "endpoint not available"}
 
-		client := setupMockedProcessGroupingClient(t,
+		client := setupMockedProcessGroupingClient(
+			t,
 			map[string]string{"kubernetesClusterId": testClusterID},
 			nil,
 			nil,
@@ -197,9 +210,20 @@ func TestGetProcessGroupingConfig(t *testing.T) {
 		)
 
 		pgc, err := client.GetProcessGroupingConfig(t.Context(), testClusterID, "")
-		require.NoError(t, err)
-		assert.NotNil(t, pgc)
-		assert.Empty(t, pgc.Data)
-		assert.Empty(t, pgc.ETag)
+		assertEmpty(t, pgc, err)
+	})
+
+	t.Run("clear malformed etag", func(t *testing.T) {
+		client := setupMockedProcessGroupingClient(
+			t,
+			map[string]string{"kubernetesClusterId": testClusterID},
+			nil,
+			nil,
+			nil,
+			nil,
+		)
+
+		pgc, err := client.GetProcessGroupingConfig(t.Context(), testClusterID, "1234567890:dtagent1234567890ABC")
+		assertEmpty(t, pgc, err)
 	})
 }
