@@ -36,6 +36,7 @@ type ProcessGroupConfig struct {
 //   - On HTTP 200: *ProcessGroupConfig with ETag from response header and CBOR data, nil error.
 //   - On HTTP 304: *ProcessGroupConfig with the original ETag and nil Data, nil error.
 //   - On HTTP 404: *ProcessGroupConfig (empty), nil error. Endpoint not available.
+//   - On HTTP 400: *ProcessGroupConfig (empty), nil error. Clears a stale/rejected ETag instead of getting stuck retrying it forever.
 //   - On other errors: non-nil error.
 func (c *ClientImpl) GetProcessGroupingConfig(ctx context.Context, kubernetesClusterID string, etag string) (*ProcessGroupConfig, error) {
 	ctx, log := logd.NewFromContext(ctx, loggerName)
@@ -66,6 +67,12 @@ func (c *ClientImpl) GetProcessGroupingConfig(ctx context.Context, kubernetesClu
 	if err != nil {
 		if core.IsNotFound(err) {
 			log.Info("process grouping config not available on cluster, skipping getting process grouping config")
+
+			return &ProcessGroupConfig{}, nil
+		}
+
+		if core.IsBadRequest(err) {
+			log.Info("process grouping config API rejected the cached ETag, clearing it", "error", err)
 
 			return &ProcessGroupConfig{}, nil
 		}

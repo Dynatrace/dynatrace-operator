@@ -166,7 +166,7 @@ func TestGetProcessGroupingConfig(t *testing.T) {
 		assert.Nil(t, pgc)
 	})
 
-	t.Run("bad_request", func(t *testing.T) {
+	t.Run("bad_request_clears_etag", func(t *testing.T) {
 		const badETag = "bad_etag"
 		serverErr := &core.HTTPError{StatusCode: http.StatusBadRequest, Message: "bad request"}
 
@@ -179,9 +179,10 @@ func TestGetProcessGroupingConfig(t *testing.T) {
 		)
 
 		pgc, err := client.GetProcessGroupingConfig(t.Context(), testClusterID, badETag)
-		require.Error(t, err)
-		require.True(t, core.HasStatusCode(err, http.StatusBadRequest))
-		assert.Nil(t, pgc)
+		require.NoError(t, err)
+		assert.NotNil(t, pgc)
+		assert.Empty(t, pgc.Data)
+		assert.Empty(t, pgc.ETag)
 	})
 
 	t.Run("not_found_404_endpoint_unavailable", func(t *testing.T) {
