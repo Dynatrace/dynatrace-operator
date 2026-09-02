@@ -211,10 +211,13 @@ jobs:
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
+      - name: Get go version
+        id: go-version
+        run: echo "go_version=$(grep -m1 'FROM.*golang:' Dockerfile | sed 's/.*golang:\([0-9.]*\).*/\1/')" >> "$GITHUB_OUTPUT"
       - name: Setup Golang
         uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 # v6.3.0
         with:
-          go-version: 'stable' # Latest stable version
+          go-version: ${{ steps.go-version.outputs.go_version }}
           cache: false
       - name: Generate release notes
         shell: bash
