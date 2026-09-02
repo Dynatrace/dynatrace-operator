@@ -57,11 +57,11 @@ func (mod KubernetesMonitoringModifier) getInitContainers() []corev1.Container {
 	}, mod.getReadOnlyInitVolumeMounts())
 
 	securityContext := GetSecurityContext(true)
-	securityContext.AppArmorProfile = k8ssecuritycontext.GetAppArmorProfile(mod.dk.ActiveGate().Annotations, consts.InitContainerTemplateName)
+	securityContext.AppArmorProfile = k8ssecuritycontext.GetAppArmorProfile(mod.dk.ActiveGate().Annotations, consts.InitContainerName)
 
 	return []corev1.Container{
 		{
-			Name:            consts.InitContainerTemplateName,
+			Name:            consts.InitContainerName,
 			Image:           mod.dk.ActiveGate().GetImage(),
 			ImagePullPolicy: mod.dk.ActiveGate().ImagePullPolicy,
 			WorkingDir:      consts.InitCertLoaderWorkDirMountPath,

@@ -456,7 +456,7 @@ func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.D
 	km := dk.KubernetesMonitoring()
 
 	initContainer := corev1.Container{
-		Name:            agconsts.InitContainerTemplateName,
+		Name:            agconsts.InitContainerName,
 		Image:           imageURI,
 		ImagePullPolicy: dk.KubernetesMonitoring().ImagePullPolicy,
 		WorkingDir:      agconsts.InitCertLoaderWorkDirMountPath,
@@ -464,7 +464,7 @@ func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.D
 		Args:            []string{"-c", agconsts.K8scrt2jksPath},
 		VolumeMounts:    buildInitVolumeMounts(),
 		Resources:       dk.KubernetesMonitoring().Resources,
-		SecurityContext: buildSecurityContext(km.Annotations, agconsts.InitContainerTemplateName),
+		SecurityContext: buildSecurityContext(km.Annotations, agconsts.InitContainerName),
 	}
 
 	container := corev1.Container{
@@ -483,7 +483,7 @@ func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.D
 		SecurityContext: buildSecurityContext(km.Annotations, ContainerName),
 	}
 
-	km.Annotations = k8ssecuritycontext.RemoveAppArmorAnnotation(km.Annotations, agconsts.InitContainerTemplateName, ContainerName)
+	km.Annotations = k8ssecuritycontext.RemoveAppArmorAnnotation(km.Annotations, agconsts.InitContainerName, ContainerName)
 
 	labels := k8slabel.New(k8slabel.KubeMonComponentLabel, dk.GetName(), "")
 

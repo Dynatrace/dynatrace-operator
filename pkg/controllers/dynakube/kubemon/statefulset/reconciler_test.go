@@ -567,8 +567,8 @@ func TestReconcileBuildsStatefulSet(t *testing.T) {
 
 		dk := newTestDynaKube()
 		dk.Spec.KubernetesMonitoring.Annotations = map[string]string{
-			corev1.DeprecatedAppArmorBetaContainerAnnotationKeyPrefix + statefulset.ContainerName:          "runtime/default",
-			corev1.DeprecatedAppArmorBetaContainerAnnotationKeyPrefix + agconsts.InitContainerTemplateName: "unconfined",
+			corev1.DeprecatedAppArmorBetaContainerAnnotationKeyPrefix + statefulset.ContainerName:  "runtime/default",
+			corev1.DeprecatedAppArmorBetaContainerAnnotationKeyPrefix + agconsts.InitContainerName: "unconfined",
 		}
 		sts := reconcileAndGetSTS(t, dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t))
 
@@ -581,7 +581,7 @@ func TestReconcileBuildsStatefulSet(t *testing.T) {
 		assert.Equal(t, corev1.AppArmorProfileTypeRuntimeDefault, sts.Spec.Template.Spec.Containers[0].SecurityContext.AppArmorProfile.Type)
 
 		assert.NotContains(t, sts.Spec.Template.Annotations, corev1.DeprecatedAppArmorBetaContainerAnnotationKeyPrefix+statefulset.ContainerName)
-		assert.NotContains(t, sts.Spec.Template.Annotations, corev1.DeprecatedAppArmorBetaContainerAnnotationKeyPrefix+agconsts.InitContainerTemplateName)
+		assert.NotContains(t, sts.Spec.Template.Annotations, corev1.DeprecatedAppArmorBetaContainerAnnotationKeyPrefix+agconsts.InitContainerName)
 	})
 }
 

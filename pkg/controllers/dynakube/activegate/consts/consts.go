@@ -96,9 +96,9 @@ const (
 	DockerImageUser  int64 = 1001
 	DockerImageGroup int64 = 1001
 
-	K8sCertificateFile        = "k8s-local.jks"
-	K8scrt2jksPath            = "/opt/dynatrace/gateway/k8scrt2jks.sh"
-	InitContainerTemplateName = "certificate-loader"
+	K8sCertificateFile = "k8s-local.jks"
+	K8scrt2jksPath     = "/opt/dynatrace/gateway/k8scrt2jks.sh"
+	InitContainerName  = "certificate-loader"
 )
 
 var (
