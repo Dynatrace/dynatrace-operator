@@ -11,10 +11,11 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/dtprometheus"
-	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dtprometheus/scraper"
 	"github.com/Dynatrace/dynatrace-operator/test/integrationtests"
+	imagemock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/image"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -34,15 +35,6 @@ const (
 	integrationDynaKubeName = "dk"
 	integrationImage        = "registry.example.com/scraper:1.2.3"
 )
-
-// unresolvableImageClient stands in for the fleet management image API, which cannot
-// serve a scraper image yet. Once .spec.scraper.image is set the reconciler no longer
-// consults it, so every phase after missing-image is unaffected.
-type unresolvableImageClient struct{}
-
-func (unresolvableImageClient) GetComponentLatestInfo(context.Context, image.ComponentType, string) (*image.Info, error) {
-	return nil, errors.New("no scraper image available")
-}
 
 type lifecycleDeps struct {
 	clt        client.Client
@@ -80,7 +72,9 @@ func TestReconcileLifecycle(t *testing.T) {
 func runMissingImagePhase(t *testing.T, deps *lifecycleDeps) {
 	t.Helper()
 
-	require.Error(t, deps.reconciler.Reconcile(t.Context(), deps.dtp, deps.dk, unresolvableImageClient{}))
+	imgClient := imagemock.NewClient(t)
+	imgClient.EXPECT().GetComponentLatestInfo(mock.Anything, mock.Anything, mock.Anything).Return(nil, errors.New("no scraper image available"))
+	require.Error(t, deps.reconciler.Reconcile(t.Context(), deps.dtp, deps.dk, imgClient))
 
 	getConfigMap(t, deps)
 	assertDeploymentAbsent(t, deps)
@@ -91,8 +85,10 @@ func runMissingImagePhase(t *testing.T, deps *lifecycleDeps) {
 func runProvisionPhase(t *testing.T, deps *lifecycleDeps) {
 	t.Helper()
 
+	imgClient := imagemock.NewClient(t)
+	imgClient.EXPECT().GetComponentLatestInfo(mock.Anything, mock.Anything, mock.Anything).Return(nil, errors.New("no scraper image available")).Maybe()
 	deps.dtp.Spec.Scraper.Image = integrationImage
-	require.NoError(t, deps.reconciler.Reconcile(t.Context(), deps.dtp, deps.dk, unresolvableImageClient{}))
+	require.NoError(t, deps.reconciler.Reconcile(t.Context(), deps.dtp, deps.dk, imgClient))
 
 	cm := getConfigMap(t, deps)
 	deploy := getDeployment(t, deps)
@@ -120,8 +116,11 @@ func runStabilizePhase(t *testing.T, deps *lifecycleDeps) {
 	counting := &updateCallCounter{Client: deps.clt}
 	reconciler := &scraper.Reconciler{Client: counting}
 
+	imgClient := imagemock.NewClient(t)
+	imgClient.EXPECT().GetComponentLatestInfo(mock.Anything, mock.Anything, mock.Anything).Return(nil, errors.New("no scraper image available")).Maybe()
+
 	for range 3 {
-		require.NoError(t, reconciler.Reconcile(t.Context(), deps.dtp, deps.dk, unresolvableImageClient{}))
+		require.NoError(t, reconciler.Reconcile(t.Context(), deps.dtp, deps.dk, imgClient))
 
 		assert.Equal(t, cmRV, getConfigMap(t, deps).ResourceVersion)
 		assert.Equal(t, deployRV, getDeployment(t, deps).ResourceVersion)
@@ -150,8 +149,10 @@ func runUpdatePhase(t *testing.T, deps *lifecycleDeps) {
 		cmRV := getConfigMap(t, deps).ResourceVersion
 		deployRV := getDeployment(t, deps).ResourceVersion
 
+		imgClient := imagemock.NewClient(t)
+		imgClient.EXPECT().GetComponentLatestInfo(mock.Anything, mock.Anything, mock.Anything).Return(nil, errors.New("no scraper image available")).Maybe()
 		deps.dtp.Spec.Scraper.TargetsPollInterval = metav1.Duration{Duration: 5 * time.Minute}
-		require.NoError(t, deps.reconciler.Reconcile(t.Context(), deps.dtp, deps.dk, unresolvableImageClient{}))
+		require.NoError(t, deps.reconciler.Reconcile(t.Context(), deps.dtp, deps.dk, imgClient))
 
 		assert.NotEqual(t, cmRV, getConfigMap(t, deps).ResourceVersion)
 		assert.NotEqual(t, deployRV, getDeployment(t, deps).ResourceVersion)
@@ -162,8 +163,10 @@ func runUpdatePhase(t *testing.T, deps *lifecycleDeps) {
 		cmRV := getConfigMap(t, deps).ResourceVersion
 		deployRV := getDeployment(t, deps).ResourceVersion
 
+		imgClient := imagemock.NewClient(t)
+		imgClient.EXPECT().GetComponentLatestInfo(mock.Anything, mock.Anything, mock.Anything).Return(nil, errors.New("no scraper image available")).Maybe()
 		deps.dtp.Spec.Scraper.Replicas = new(int32(2))
-		require.NoError(t, deps.reconciler.Reconcile(t.Context(), deps.dtp, deps.dk, unresolvableImageClient{}))
+		require.NoError(t, deps.reconciler.Reconcile(t.Context(), deps.dtp, deps.dk, imgClient))
 
 		assert.Equal(t, cmRV, getConfigMap(t, deps).ResourceVersion)
 		assert.NotEqual(t, deployRV, getDeployment(t, deps).ResourceVersion)

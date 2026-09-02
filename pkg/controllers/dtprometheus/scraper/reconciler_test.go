@@ -15,10 +15,11 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/dtprometheus"
-	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
+	imagemock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/image"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -60,16 +61,6 @@ func newTestScope(dtp *dtprometheus.DTPrometheus) *reconcileScope {
 		Spec:      dtp.Scraper(),
 		AppLabels: k8slabel.OTelScraper(),
 	}
-}
-
-// failingImageClient stands in for the fleet management image API when resolution
-// is expected to fail.
-type failingImageClient struct {
-	err error
-}
-
-func (c failingImageClient) GetComponentLatestInfo(context.Context, image.ComponentType, string) (*image.Info, error) {
-	return nil, c.err
 }
 
 func createErrorClient(createErr error) client.Client {
@@ -163,7 +154,9 @@ func TestReconcileDeployment(t *testing.T) {
 		dtp := newTestDTP("dtp", "dynatrace")
 		s := newTestScope(dtp)
 		// No explicit image on the spec, so the reconciler falls back to the registry.
-		s.ImageClient = failingImageClient{err: errors.New("no such component")}
+		imgClient := imagemock.NewClient(t)
+		imgClient.EXPECT().GetComponentLatestInfo(mock.Anything, mock.Anything, mock.Anything).Return(nil, errors.New("no such component"))
+		s.ImageClient = imgClient
 		c := fake.NewClient()
 		r := &Reconciler{Client: c}
 
