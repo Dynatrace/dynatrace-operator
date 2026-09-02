@@ -53,8 +53,8 @@ const (
 
 	serviceAccountName = "dynatrace-prometheus-gateway"
 
-	// nonRootUser is the "nonroot" UID/GID the gateway image runs as.
-	nonRootUser = 65532
+	// otelCollectorNonRootUser is the "nonroot" UID/GID the gateway image runs as.
+	otelCollectorNonRootUser = 10001
 
 	configVolumeName  = "opentelemetry-collector-configmap"
 	configMountDir    = "/conf"
@@ -276,7 +276,7 @@ func mutateStatefulSet(sts *appsv1.StatefulSet, s *reconcileScope) {
 	sts.Spec.Template.Spec.AutomountServiceAccountToken = new(true)
 	// fsGroup lets the container (RunAsGroup nonRootUser) read the token volume via the group
 	// bit, so the file doesn't need to be world-readable.
-	sts.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{FSGroup: new(int64(nonRootUser))}
+	sts.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{FSGroup: new(int64(otelCollectorNonRootUser))}
 	sts.Spec.Template.Spec.Affinity = s.Spec.Affinity
 	sts.Spec.Template.Spec.NodeSelector = s.Spec.NodeSelector
 	sts.Spec.Template.Spec.PriorityClassName = s.Spec.PriorityClassName
@@ -321,8 +321,8 @@ func buildContainer(s *reconcileScope, current corev1.Container) corev1.Containe
 			Privileged:               new(false),
 			AllowPrivilegeEscalation: new(false),
 			RunAsNonRoot:             new(true),
-			RunAsUser:                new(int64(nonRootUser)),
-			RunAsGroup:               new(int64(nonRootUser)),
+			RunAsUser:                new(int64(otelCollectorNonRootUser)),
+			RunAsGroup:               new(int64(otelCollectorNonRootUser)),
 			ReadOnlyRootFilesystem:   new(true),
 			SeccompProfile:           &corev1.SeccompProfile{Type: corev1.SeccompProfileTypeRuntimeDefault},
 			Capabilities:             &corev1.Capabilities{Drop: []corev1.Capability{"ALL"}},

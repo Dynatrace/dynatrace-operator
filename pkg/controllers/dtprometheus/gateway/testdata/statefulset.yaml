@@ -81,9 +81,9 @@ spec:
             - ALL
           privileged: false
           readOnlyRootFilesystem: true
-          runAsGroup: 65532
+          runAsGroup: 10001
           runAsNonRoot: true
-          runAsUser: 65532
+          runAsUser: 10001
           seccompProfile:
             type: RuntimeDefault
         volumeMounts:
@@ -97,7 +97,7 @@ spec:
         disk: ssd
       priorityClassName: high-priority
       securityContext:
-        fsGroup: 65532
+        fsGroup: 10001
       serviceAccountName: dynatrace-prometheus-gateway
       tolerations:
       - key: k
