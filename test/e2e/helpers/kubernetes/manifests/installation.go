@@ -26,6 +26,7 @@ func applyHandler(r *resources.Resources) decoder.HandlerFunc {
 		if err != nil {
 			return err
 		}
+
 		return r.Patch(ctx, obj, k8s.Patch{
 			PatchType: types.ApplyPatchType,
 			Data:      data,
