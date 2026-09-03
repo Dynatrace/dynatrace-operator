@@ -13,8 +13,8 @@ type DTPrometheusStatus struct { //nolint:revive
 	// Defines the current state (Running, Deploying, Error, ...)
 	Phase status.DeploymentPhase `json:"phase,omitempty"`
 
-	Gateway GatewayStatus `json:"gateway,omitempty"`
-
+	Gateway         GatewayStatus         `json:"gateway,omitempty"`
+	Scraper         ScraperStatus         `json:"scraper,omitempty"`
 	TargetAllocator TargetAllocatorStatus `json:"targetAllocator,omitempty"`
 
 	// Conditions includes status about the current state of the instance
@@ -25,6 +25,11 @@ type DTPrometheusStatus struct { //nolint:revive
 
 type GatewayStatus struct {
 	// Image URI of the gateway currently deployed.
+	ResolvedImage string `json:"image,omitempty"`
+}
+
+type ScraperStatus struct {
+	// Image URI of the scraper currently deployed.
 	ResolvedImage string `json:"image,omitempty"`
 }
 

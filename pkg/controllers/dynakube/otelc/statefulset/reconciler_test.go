@@ -4,10 +4,14 @@
 package statefulset
 
 import (
+	"context"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
+	sharedimage "github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
+	dtimage "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	otelcconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
@@ -18,7 +22,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8stopology"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/version"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
+	imageclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/image"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -38,6 +44,9 @@ const (
 	testKubeSystemUUID        = "123e4567-e89b-12d3-a456-426614174000"
 	testKubernetesClusterName = "test-cluster"
 	testKubernetesClusterMEID = "12345678901234567890"
+	testOTelCImageRepository  = "test-repo/dynatrace-otelc"
+	testOTelCImageTag         = "1.289.0"
+	testFleetMgmtImageURI     = "registry.example.com/dynatrace-otelc:1.300.0"
 )
 
 func TestReconcile(t *testing.T) {
@@ -57,7 +66,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, mockK8sClient.Create(ctx, &configMap))
 
 		reconciler := NewReconciler(mockK8sClient, mockK8sClient)
-		err := reconciler.Reconcile(ctx, dk)
+		err := reconciler.Reconcile(ctx, imageclientmock.NewClient(t), dk)
 		require.NoError(t, err)
 
 		condition := meta.FindStatusCondition(*dk.Conditions(), conditionType)
@@ -67,7 +76,7 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, k8sconditions.StatefulSetCreatedReason, condition.Reason)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
 
-		err = reconciler.Reconcile(t.Context(), dk)
+		err = reconciler.Reconcile(t.Context(), imageclientmock.NewClient(t), dk)
 		require.NoError(t, err)
 
 		var sts appsv1.StatefulSet
@@ -91,7 +100,7 @@ func TestReconcile(t *testing.T) {
 		k8sconditions.SetStatefulSetCreated(dk.Conditions(), conditionType, "this is a test")
 
 		reconciler := NewReconciler(mockK8sClient, mockK8sClient)
-		err := reconciler.Reconcile(ctx, dk)
+		err := reconciler.Reconcile(ctx, imageclientmock.NewClient(t), dk)
 
 		require.NoError(t, err)
 		assert.Empty(t, *dk.Conditions())
@@ -103,6 +112,80 @@ func TestReconcile(t *testing.T) {
 		}, &sts)
 		require.True(t, k8serrors.IsNotFound(err))
 	})
+}
+
+func TestImageResolution(t *testing.T) {
+	t.Cleanup(version.DisableCacheForTest(123))
+	ctx := t.Context()
+	anyCtx := mock.MatchedBy(func(context.Context) bool { return true })
+
+	tests := []struct {
+		name             string
+		setupDynakube    func(*dynakube.DynaKube)
+		setupImageClient func(*imageclientmock.Client)
+		expectedImage    string
+	}{
+		{
+			name: "custom imageRef is used as-is, no fleet management call",
+			setupDynakube: func(dk *dynakube.DynaKube) {
+				// uses default imageRef from getTestDynakubeWithTelemetryIngest
+			},
+			setupImageClient: func(ic *imageclientmock.Client) {
+				// no expectation set — fleet management must not be called
+			},
+			expectedImage: testOTelCImageRepository + ":" + testOTelCImageTag,
+		},
+		{
+			name: "no imageRef, public registry enabled — image from fleet management (default registry)",
+			setupDynakube: func(dk *dynakube.DynaKube) {
+				dk.Spec.Templates.OpenTelemetryCollector.ImageRef = sharedimage.Ref{}
+				dk.Annotations = map[string]string{exp.UsePublicRegistryKey: "true"}
+			},
+			setupImageClient: func(ic *imageclientmock.Client) {
+				ic.EXPECT().GetComponentLatestInfo(anyCtx, dtimage.OTelCollector, "").
+					Return(&dtimage.Info{URI: testFleetMgmtImageURI}, nil)
+			},
+			expectedImage: testFleetMgmtImageURI,
+		},
+		{
+			name: "no imageRef, public registry enabled with override — image from fleet management (override registry)",
+			setupDynakube: func(dk *dynakube.DynaKube) {
+				dk.Spec.Templates.OpenTelemetryCollector.ImageRef = sharedimage.Ref{}
+				dk.Annotations = map[string]string{exp.UsePublicRegistryKey: "true"}
+				dk.Spec.PublicRegistryOverride = "my.registry.example.com"
+			},
+			setupImageClient: func(ic *imageclientmock.Client) {
+				ic.EXPECT().GetComponentLatestInfo(anyCtx, dtimage.OTelCollector, "my.registry.example.com").
+					Return(&dtimage.Info{URI: testFleetMgmtImageURI}, nil)
+			},
+			expectedImage: testFleetMgmtImageURI,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			dk := getTestDynakubeWithTelemetryIngest()
+			tc.setupDynakube(dk)
+
+			mockK8sClient := fake.NewClient()
+			mockK8sClient = mockTLSSecret(t, mockK8sClient, dk)
+
+			require.NoError(t, mockK8sClient.Create(ctx, new(getTokens(dk.Tokens(), dk.Namespace))))
+			require.NoError(t, mockK8sClient.Create(ctx, new(getConfigConfigMap(dk.Name, dk.Namespace))))
+
+			imageClient := imageclientmock.NewClient(t)
+			tc.setupImageClient(imageClient)
+
+			err := NewReconciler(mockK8sClient, mockK8sClient).Reconcile(ctx, imageClient, dk)
+			require.NoError(t, err)
+
+			var sts appsv1.StatefulSet
+			err = mockK8sClient.Get(ctx, types.NamespacedName{Name: dk.OTelCollectorStatefulsetName(), Namespace: dk.Namespace}, &sts)
+			require.NoError(t, err)
+			assert.Equal(t, tc.expectedImage, sts.Spec.Template.Spec.Containers[0].Image)
+			assert.Equal(t, tc.expectedImage, dk.Status.OTelCollector.ResolvedImage)
+		})
+	}
 }
 
 func TestDataIngestTokenHashAnnotation(t *testing.T) {
@@ -118,7 +201,7 @@ func TestDataIngestTokenHashAnnotation(t *testing.T) {
 		configMap := getConfigConfigMap(dk.Name, dk.Namespace)
 		require.NoError(t, clt.Create(t.Context(), &configMap))
 
-		require.NoError(t, NewReconciler(clt, clt).Reconcile(t.Context(), dk))
+		require.NoError(t, NewReconciler(clt, clt).Reconcile(t.Context(), imageclientmock.NewClient(t), dk))
 
 		sts := &appsv1.StatefulSet{}
 		require.NoError(t, clt.Get(t.Context(), client.ObjectKey{Name: dk.OTelCollectorStatefulsetName(), Namespace: dk.Namespace}, sts))
@@ -139,7 +222,7 @@ func TestDataIngestTokenHashAnnotation(t *testing.T) {
 		require.NoError(t, clt.Create(t.Context(), &configMap))
 
 		reconciler := NewReconciler(clt, clt)
-		require.NoError(t, reconciler.Reconcile(t.Context(), dk))
+		require.NoError(t, reconciler.Reconcile(t.Context(), imageclientmock.NewClient(t), dk))
 
 		sts := &appsv1.StatefulSet{}
 		require.NoError(t, clt.Get(t.Context(), client.ObjectKey{Name: dk.OTelCollectorStatefulsetName(), Namespace: dk.Namespace}, sts))
@@ -149,7 +232,7 @@ func TestDataIngestTokenHashAnnotation(t *testing.T) {
 		tokenSecret.Data[token.DataIngestKey] = []byte("rotated-token-value")
 		require.NoError(t, clt.Update(t.Context(), &tokenSecret))
 
-		require.NoError(t, reconciler.Reconcile(t.Context(), dk))
+		require.NoError(t, reconciler.Reconcile(t.Context(), imageclientmock.NewClient(t), dk))
 
 		sts = &appsv1.StatefulSet{}
 		require.NoError(t, clt.Get(t.Context(), client.ObjectKey{Name: dk.OTelCollectorStatefulsetName(), Namespace: dk.Namespace}, sts))
@@ -525,7 +608,7 @@ func TestAppArmorAnnotationHandling(t *testing.T) {
 		configMap := getConfigConfigMap(dk.Name, dk.Namespace)
 		require.NoError(t, clt.Create(t.Context(), &configMap))
 
-		require.NoError(t, NewReconciler(clt, clt).Reconcile(t.Context(), dk))
+		require.NoError(t, NewReconciler(clt, clt).Reconcile(t.Context(), imageclientmock.NewClient(t), dk))
 		sts := &appsv1.StatefulSet{}
 		require.NoError(t, clt.Get(t.Context(), client.ObjectKey{Name: dk.OTelCollectorStatefulsetName(), Namespace: dk.Namespace}, sts))
 
@@ -562,7 +645,16 @@ func getTestDynakube() *dynakube.DynaKube {
 			Namespace:   testNamespaceName,
 			Annotations: map[string]string{},
 		},
-		Spec: dynakube.DynaKubeSpec{},
+		Spec: dynakube.DynaKubeSpec{
+			Templates: dynakube.TemplatesSpec{
+				OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{
+					ImageRef: sharedimage.Ref{
+						Repository: testOTelCImageRepository,
+						Tag:        testOTelCImageTag,
+					},
+				},
+			},
+		},
 		Status: dynakube.DynaKubeStatus{
 			KubeSystemUUID:        testKubeSystemUUID,
 			KubernetesClusterMEID: testKubernetesClusterMEID,
@@ -581,7 +673,7 @@ func getStatefulset(t *testing.T, dk *dynakube.DynaKube, objs ...client.Object) 
 	mockK8sClient := fake.NewClient(allObjs...)
 	mockK8sClient = mockTLSSecret(t, mockK8sClient, dk)
 
-	err := NewReconciler(mockK8sClient, mockK8sClient).Reconcile(t.Context(), dk)
+	err := NewReconciler(mockK8sClient, mockK8sClient).Reconcile(t.Context(), imageclientmock.NewClient(t), dk)
 	require.NoError(t, err)
 
 	statefulSet := &appsv1.StatefulSet{}

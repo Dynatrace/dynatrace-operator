@@ -38,6 +38,7 @@ var validatorErrorFuncs = []validatorFunc{
 	isValidSSOServerURL,
 	checkSSOServerProtocol,
 	isAllowedSSOServer,
+	publicRegistryOverrideWithCustomImage,
 }
 
 func New(apiReader client.Reader, cfg *rest.Config) admission.Validator[runtime.Object] {
