@@ -4123,6 +4123,12 @@ spec:
                 description: Defines the current state (Running, Deploying, Error,
                   ...)
                 type: string
+              scraper:
+                properties:
+                  image:
+                    description: Image URI of the scraper currently deployed.
+                    type: string
+                type: object
               targetAllocator:
                 properties:
                   image:

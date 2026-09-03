@@ -1,13 +1,13 @@
-kind: Deployment
 apiVersion: apps/v1
+kind: Deployment
 metadata:
-  name: dtp-allocator
-  namespace: dynatrace
   labels:
-    app.kubernetes.io/instance: otel-allocator
+    app.kubernetes.io/instance: otel-scraper
     app.kubernetes.io/managed-by: dynatrace-operator
-    app.kubernetes.io/name: opentelemetry-target-allocator
+    app.kubernetes.io/name: opentelemetry-collector
     internal.dynatrace.com/operator-version: snapshot
+  name: dtp-scraper
+  namespace: dynatrace
   ownerReferences:
   - apiVersion: dynatrace.com/v1alpha1
     blockOwnerDeletion: true
@@ -19,52 +19,60 @@ spec:
   replicas: 3
   selector:
     matchLabels:
-      app.kubernetes.io/instance: otel-allocator
+      app.kubernetes.io/instance: otel-scraper
       app.kubernetes.io/managed-by: dynatrace-operator
-      app.kubernetes.io/name: opentelemetry-target-allocator
+      app.kubernetes.io/name: opentelemetry-collector
   strategy: {}
   template:
     metadata:
       annotations:
-        internal.operator.dynatrace.com/allocator-config-hash: deadbeef
         custom: annotation
+        internal.operator.dynatrace.com/scraper-config-hash: deadbeef
       labels:
-        app.kubernetes.io/instance: otel-allocator
+        app.kubernetes.io/instance: otel-scraper
         app.kubernetes.io/managed-by: dynatrace-operator
-        app.kubernetes.io/name: opentelemetry-target-allocator
-        internal.dynatrace.com/operator-version: snapshot
+        app.kubernetes.io/name: opentelemetry-collector
         custom: label
+        internal.dynatrace.com/operator-version: snapshot
     spec:
       automountServiceAccountToken: true
       containers:
-      - name: targetallocator
-        image: registry.example.com/target-allocator:1.2.3
-        imagePullPolicy: Always
-        args:
-        - "--foo=bar"
+      - args:
+        - --config=/conf/scraper.yaml
+        - --foo=bar
+        command:
+        - /dynatrace-otel-collector
         env:
-        - name: OTELCOL_NAMESPACE
-          value: dynatrace
+        - name: MY_POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: MY_POD_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.podIP
         - name: GOMEMLIMIT
           value: "235929600"
+        image: registry.example.com/scraper:1.2.3
+        imagePullPolicy: Always
         livenessProbe:
           httpGet:
-            path: /livez
-            port: http-port
+            path: /
+            port: 13133
             scheme: HTTP
           initialDelaySeconds: 15
           periodSeconds: 20
+        name: scraper
         ports:
-        - containerPort: 8080
-          name: http-port
-          protocol: TCP
-        - containerPort: 8443
-          name: https-port
+        - containerPort: 13133
+          name: health
           protocol: TCP
         readinessProbe:
           httpGet:
-            path: /readyz
-            port: http-port
+            path: /
+            port: 13133
             scheme: HTTP
           initialDelaySeconds: 5
           periodSeconds: 10
@@ -87,12 +95,12 @@ spec:
             type: RuntimeDefault
         volumeMounts:
         - mountPath: /conf
-          name: config
+          name: opentelemetry-collector-configmap
           readOnly: true
       nodeSelector:
         disk: ssd
       priorityClassName: high-priority
-      serviceAccountName: dynatrace-target-allocator
+      serviceAccountName: dynatrace-prometheus-scraper
       tolerations:
       - key: k
         operator: Exists
@@ -100,8 +108,8 @@ spec:
       - configMap:
           defaultMode: 420
           items:
-          - key: targetallocator.yaml
-            path: targetallocator.yaml
-          name: dtp-allocator
-        name: config
+          - key: scraper
+            path: scraper.yaml
+          name: dtp-scraper
+        name: opentelemetry-collector-configmap
 status: {}
