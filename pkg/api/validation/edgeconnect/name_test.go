@@ -65,3 +65,36 @@ func Test_nameTooLong(t *testing.T) {
 		})
 	}
 }
+
+func Test_nameTooLongUpdate(t *testing.T) {
+	t.Run("name too long", func(t *testing.T) {
+		assertUpdateDenied(t,
+			[]string{fmt.Sprintf(errorNameTooLong, edgeconnect.MaxNameLength)},
+			&edgeconnect.EdgeConnect{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "normal",
+					Namespace: testNamespace,
+				},
+				Spec: edgeconnect.EdgeConnectSpec{
+					APIServer: "id." + allowedSuffix[0],
+					OAuth: edgeconnect.OAuthSpec{
+						Endpoint: testValidOAuthEndpoint,
+					},
+				},
+			},
+			&edgeconnect.EdgeConnect{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      strings.Repeat("a", edgeconnect.MaxNameLength+1),
+					Namespace: testNamespace,
+				},
+				Spec: edgeconnect.EdgeConnectSpec{
+					APIServer: "id." + allowedSuffix[0],
+					OAuth: edgeconnect.OAuthSpec{
+						Endpoint: testValidOAuthEndpoint,
+					},
+				},
+			},
+			prepareTestServiceAccount(t, testServiceAccountName, testNamespace),
+		)
+	})
+}

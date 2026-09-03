@@ -35,6 +35,16 @@ func assertAllowed(t *testing.T, ec *edgeconnect.EdgeConnect, other ...client.Ob
 	assert.Empty(t, warn)
 }
 
+func assertUpdateDenied(t *testing.T, errMessages []string, oldEC *edgeconnect.EdgeConnect, newEC *edgeconnect.EdgeConnect, other ...client.Object) {
+	t.Helper()
+	_, err := runUpdateValidators(t, oldEC, newEC, other...)
+	require.Error(t, err)
+
+	for _, errMsg := range errMessages {
+		assert.Contains(t, err.Error(), errMsg)
+	}
+}
+
 func runValidators(t *testing.T, ec *edgeconnect.EdgeConnect, other ...client.Object) (admission.Warnings, error) {
 	t.Helper()
 
@@ -50,4 +60,20 @@ func runValidators(t *testing.T, ec *edgeconnect.EdgeConnect, other ...client.Ob
 	}
 
 	return validator.ValidateCreate(t.Context(), ec)
+}
+
+func runUpdateValidators(t *testing.T, oldEC, newEC *edgeconnect.EdgeConnect, other ...client.Object) (admission.Warnings, error) {
+	t.Helper()
+	clt := fake.NewClient()
+
+	if other != nil {
+		clt = fake.NewClient(other...)
+	}
+
+	validator := &Validator{
+		apiReader: clt,
+		modules:   installconfig.GetModules(),
+	}
+
+	return validator.ValidateUpdate(t.Context(), oldEC, newEC)
 }
