@@ -24,7 +24,8 @@ const (
 	OTelCollector   ComponentType = "otel-collector"
 	DBExecutor      ComponentType = "sql-extension-executor"
 	Gateway         ComponentType = "otel-collector"
-	Scraper         ComponentType = "otel-collector"
+	Gateway         ComponentType = OTelCollector
+	Scraper         ComponentType = OTelCollector
 	TargetAllocator ComponentType = "otel_target_allocator"
 	// DBExecutorOldName is a fallback for the old name of the DBExecutor component type
 	// TODO: remove this fallback in a future release
