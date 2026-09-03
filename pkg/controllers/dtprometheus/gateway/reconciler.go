@@ -249,7 +249,7 @@ func buildContainer(s *reconcileScope, current corev1.Container) corev1.Containe
 		Image:           s.Owner.Status.Gateway.ResolvedImage,
 		ImagePullPolicy: imagePullPolicy,
 		Command:         []string{"/dynatrace-otel-collector"},
-		Args:            []string{"--config=" + configMountDir + "/" + relayConfigFile},
+		Args:            buildArgs(s),
 		Ports: []corev1.ContainerPort{
 			{Name: otlpPortName, ContainerPort: otlpPort, Protocol: corev1.ProtocolTCP},
 		},
@@ -291,6 +291,17 @@ func buildContainer(s *reconcileScope, current corev1.Container) corev1.Containe
 		TerminationMessagePath:   current.TerminationMessagePath,
 		TerminationMessagePolicy: current.TerminationMessagePolicy,
 	}
+}
+
+// buildArgs puts the operator-managed config flag first and appends any user-supplied
+// args from .spec.gateway.args after it.
+func buildArgs(s *reconcileScope) []string {
+	userArgs := s.Spec.SanitizedArgs()
+
+	args := make([]string, 0, 1+len(userArgs))
+	args = append(args, "--config="+configMountDir+"/"+relayConfigFile)
+
+	return append(args, userArgs...)
 }
 
 func buildEnv(s *reconcileScope) []corev1.EnvVar {
