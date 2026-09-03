@@ -64,12 +64,11 @@ type Reconciler struct {
 
 type reconcileScope struct {
 	// Required for reconcile
-	Owner       *dtprometheus.DTPrometheus
-	DynaKube    *dynakube.DynaKube
-	Spec        *dtprometheus.Gateway
-	AppLabels   *k8slabel.Labels
-	ImageClient image.Client
-	// Computed during reconcile
+	Owner         *dtprometheus.DTPrometheus
+	DynaKube      *dynakube.DynaKube
+	Spec          *dtprometheus.Gateway
+	AppLabels     *k8slabel.Labels
+	ImageClient   image.Client
 	ConfigMapHash string
 	StatefulSet   *appsv1.StatefulSet
 }
