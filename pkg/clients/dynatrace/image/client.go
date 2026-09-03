@@ -23,7 +23,6 @@ const (
 	LogModule       ComponentType = "logmodule"
 	OTelCollector   ComponentType = "otel-collector"
 	DBExecutor      ComponentType = "sql-extension-executor"
-	Gateway         ComponentType = "otel-collector"
 	Gateway         ComponentType = OTelCollector
 	Scraper         ComponentType = OTelCollector
 	TargetAllocator ComponentType = "otel_target_allocator"
