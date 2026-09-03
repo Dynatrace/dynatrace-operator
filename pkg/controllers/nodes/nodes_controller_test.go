@@ -5,6 +5,7 @@ package nodes
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"net/url"
 	"testing"
@@ -310,6 +311,137 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		require.NoError(t, ctrl.pruneCache(ctx, nodesCache))
+	})
+
+	t.Run("Use cached IP when DynaKube status has no IP for node", func(t *testing.T) {
+		ctx := t.Context()
+		fakeClient := createDefaultFakeClient()
+
+		// the mark for termination event has to go out with the cached IP
+		dtClient := createDTMockClient(t, "1.2.3.4", "HOST-42")
+		ctrl := createDefaultReconciler(t, fakeClient, dtClient)
+
+		// warm up the cache, so node1 is known with 1.2.3.4
+		result, err := ctrl.Reconcile(ctx, createReconcileRequest("node1"))
+		require.NoError(t, err)
+		assert.NotNil(t, result)
+
+		// the OneAgent pod is evicted -> the instance is kept, but without an IP
+		var dk dynakube.DynaKube
+
+		require.NoError(t, fakeClient.Get(ctx, client.ObjectKey{Name: "oneagent1", Namespace: testNamespace}, &dk))
+
+		dk.Status.OneAgent.Instances = map[string]oneagent.Instance{"node1": {}}
+		require.NoError(t, fakeClient.Status().Update(ctx, &dk))
+
+		// the node gets cordoned
+		var node1 corev1.Node
+
+		require.NoError(t, fakeClient.Get(ctx, client.ObjectKey{Name: "node1"}, &node1))
+
+		node1.Spec.Unschedulable = true
+		require.NoError(t, fakeClient.Update(ctx, &node1))
+
+		result, err = ctrl.Reconcile(ctx, createReconcileRequest("node1"))
+		require.NoError(t, err)
+		assert.NotNil(t, result)
+
+		// the cached IP must survive the empty DynaKube status
+		c, err := ctrl.getCache(ctx)
+		require.NoError(t, err)
+
+		entry, err := c.GetEntry("node1")
+		require.NoError(t, err)
+		assert.Equal(t, "1.2.3.4", entry.IPAddress)
+		assert.False(t, entry.LastMarkedForTermination.IsZero())
+	})
+
+	t.Run("Skip mark for termination when no IP is known for the node", func(t *testing.T) {
+		fakeClient := fake.NewClient(
+			&corev1.Node{
+				ObjectMeta: metav1.ObjectMeta{Name: "node1"},
+				Spec:       corev1.NodeSpec{Unschedulable: true},
+			},
+			&dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{Name: "oneagent1", Namespace: testNamespace},
+				Status: dynakube.DynaKubeStatus{
+					OneAgent: oneagent.Status{
+						// instance is known, but the OneAgent pod never reported an IP
+						Instances: map[string]oneagent.Instance{"node1": {}},
+					},
+				},
+			},
+			&corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "oneagent1",
+					Namespace: testNamespace,
+				},
+				Data: map[string][]byte{
+					token.APIKey: []byte(testAPIToken),
+				},
+			},
+		)
+
+		// no expectations -> any call to the Dynatrace API fails the test
+		hostClient := hostclientmock.NewClient(t)
+		ctrl := createDefaultReconciler(t, fakeClient, &dynatrace.Client{HostEvent: hostClient})
+
+		result, err := ctrl.Reconcile(t.Context(), createReconcileRequest("node1"))
+		require.NoError(t, err)
+		assert.Equal(t, reconcile.Result{}, result)
+	})
+
+	t.Run("Remove cache entry on node deletion when no IP is known", func(t *testing.T) {
+		ctx := t.Context()
+
+		staleEntry, err := json.Marshal(cache.Entry{
+			LastSeen:     time.Now().UTC(),
+			IPAddress:    "",
+			DynaKubeName: "oneagent1",
+		})
+		require.NoError(t, err)
+
+		fakeClient := fake.NewClient(
+			// node1 is gone from the cluster, but still in the cache without an IP
+			&dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{Name: "oneagent1", Namespace: testNamespace},
+				Status: dynakube.DynaKubeStatus{
+					OneAgent: oneagent.Status{
+						Instances: map[string]oneagent.Instance{"node1": {}},
+					},
+				},
+			},
+			&corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "oneagent1",
+					Namespace: testNamespace,
+				},
+				Data: map[string][]byte{
+					token.APIKey: []byte(testAPIToken),
+				},
+			},
+			&corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      cache.ConfigMapName,
+					Namespace: testNamespace,
+				},
+				Data: map[string]string{"node1": string(staleEntry)},
+			},
+		)
+
+		// no expectations -> any call to the Dynatrace API fails the test
+		hostClient := hostclientmock.NewClient(t)
+		ctrl := createDefaultReconciler(t, fakeClient, &dynatrace.Client{HostEvent: hostClient})
+
+		result, err := ctrl.Reconcile(ctx, createReconcileRequest("node1"))
+		require.NoError(t, err)
+		assert.Equal(t, reconcile.Result{}, result)
+
+		nodesCache, err := cache.New(ctx, fakeClient, testNamespace, nil)
+		require.NoError(t, err)
+
+		_, err = nodesCache.GetEntry("node1")
+		require.ErrorIs(t, err, cache.ErrEntryNotFound)
 	})
 
 	t.Run("Skip reconcile when platform token is detected", func(t *testing.T) {
