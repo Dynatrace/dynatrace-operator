@@ -15,6 +15,8 @@ const (
 
 	NameSuffix = "-kubemon"
 
+	DeploymentPropertiesConfigMapSuffix = "-deployment-properties"
+
 	ServiceAccountName = "dynatrace-activegate"
 
 	TenantRegistrySubPath = "/linux/activegate"
@@ -64,6 +66,10 @@ func (km *KubeMon) GetAuthTokenSecretName() string {
 
 func (km *KubeMon) GetCustomPropertiesSecretName() string {
 	return km.name + NameSuffix + "-custom-properties"
+}
+
+func (km *KubeMon) GetDeploymentPropertiesConfigMapName() string {
+	return km.name + NameSuffix + DeploymentPropertiesConfigMapSuffix
 }
 
 // GetTLSSecretName returns the name of the KubeMon TLS secret.
