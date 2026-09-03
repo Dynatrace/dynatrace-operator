@@ -306,14 +306,14 @@ func assertStatefulSetShape(t *testing.T, sts *appsv1.StatefulSet, dk *dynakube.
 	assert.NotNil(t, k8senv.Find(container.Env, connectioninfo.EnvDTTenant))
 	assert.NotNil(t, k8senv.Find(container.Env, connectioninfo.EnvDTServer))
 
-	require.Len(t, container.VolumeMounts, 3)
+	require.Len(t, container.VolumeMounts, 9)
 	assert.Equal(t, connectioninfo.TenantSecretVolumeName, container.VolumeMounts[0].Name)
 	assert.Equal(t, statefulset.AuthTokenVolumeName, container.VolumeMounts[1].Name)
 	assert.Equal(t, kubemonauthtoken.SecretKey, container.VolumeMounts[1].SubPath)
 	assert.Equal(t, statefulset.StorageVolumeName, container.VolumeMounts[2].Name)
 	assert.Equal(t, dk.KubernetesMonitoring().GetServiceAccountName(), sts.Spec.Template.Spec.ServiceAccountName)
 
-	require.Len(t, sts.Spec.Template.Spec.Volumes, 3)
+	require.Len(t, sts.Spec.Template.Spec.Volumes, 10)
 	assert.Equal(t, connectioninfo.TenantSecretVolumeName, sts.Spec.Template.Spec.Volumes[0].Name)
 	assert.Equal(t, statefulset.AuthTokenVolumeName, sts.Spec.Template.Spec.Volumes[1].Name)
 	assert.Equal(t, statefulset.StorageVolumeName, sts.Spec.Template.Spec.Volumes[2].Name)
