@@ -95,14 +95,20 @@ func buildExporters() []component.ID {
 }
 
 func (c *Config) buildPipelineProcessors() []component.ID {
-	// annotations (merge_maps) > staticAttrs > k8sattributes
-	processors := []component.ID{memoryLimiter, transformPodIP, k8sattributes}
+	// k8sattributesAnnotations must run before staticResourceAttrs so per-pod annotations claim
+	// their keys first (k8sattributesprocessor never overwrites an already-set attribute, so this
+	// is the only way for it to win); staticResourceAttrs must in turn run before
+	// k8sattributesFacts so the static DynaKube default can claim a key before the built-in fact
+	// extraction would. transform runs last: its merge_maps statement unpacks the
+	// metadata.dynatrace.com JSON blob (written by the enrichment webhook, which already resolves
+	// the full precedence chain) with "upsert", so that blob always wins over both static and facts.
+	processors := []component.ID{memoryLimiter, transformPodIP, k8sattributesAnnotations}
 
 	if len(c.resourceAttributes) > 0 {
 		processors = append(processors, staticResourceAttrs)
 	}
 
-	return append(processors, transform)
+	return append(processors, k8sattributesFacts, transform)
 }
 
 func filter(componentIDs []component.ID, f func(component.ID) bool) []component.ID {

@@ -36,7 +36,7 @@ func TestBuildProcessors_WithResourceAttributes(t *testing.T) {
 		assert.NotContains(t, processors, staticResourceAttrs)
 	})
 
-	t.Run("static resource attrs processor added, sorted, upsert action", func(t *testing.T) {
+	t.Run("static resource attrs processor added, sorted, insert action", func(t *testing.T) {
 		cfg := &Config{resourceAttributes: map[string]string{"team": "shopping-cart", "env": "prod"}}
 		processors := cfg.buildProcessors()
 
@@ -47,8 +47,8 @@ func TestBuildProcessors_WithResourceAttributes(t *testing.T) {
 		require.True(t, ok)
 		require.Len(t, attributes, 2)
 
-		assert.Equal(t, map[string]any{"key": "env", "value": "prod", "action": "upsert"}, attributes[0])
-		assert.Equal(t, map[string]any{"key": "team", "value": "shopping-cart", "action": "upsert"}, attributes[1])
+		assert.Equal(t, map[string]any{"key": "env", "value": "prod", "action": "insert"}, attributes[0])
+		assert.Equal(t, map[string]any{"key": "team", "value": "shopping-cart", "action": "insert"}, attributes[1])
 	})
 }
 
@@ -56,11 +56,17 @@ func TestK8sAttributesJSONAnnotation(t *testing.T) {
 	cfg := &Config{}
 	processors := cfg.buildProcessors()
 
-	k8sAttr, ok := processors[k8sattributes].(map[string]any)
+	k8sAttr, ok := processors[k8sattributesAnnotations].(map[string]any)
 	require.True(t, ok)
 
 	extract, ok := k8sAttr["extract"].(map[string]any)
 	require.True(t, ok)
+
+	// k8sattributesprocessor treats an omitted "metadata" field as "use its built-in default
+	// list" rather than "extract nothing", so it must be explicitly emptied here - otherwise
+	// this instance would also claim built-in facts (e.g. k8s.namespace.name) before
+	// resource/staticAttrs gets a chance to run.
+	assert.Equal(t, []string{}, extract["metadata"])
 
 	annotations, ok := extract["annotations"].([]map[string]any)
 	require.True(t, ok)
@@ -81,6 +87,20 @@ func TestK8sAttributesJSONAnnotation(t *testing.T) {
 		assert.Equal(t, "metadata.dynatrace.com", rule["tag_name"])
 		assert.NotContains(t, rule, "key_regex")
 	})
+}
+
+func TestK8sAttributesFacts(t *testing.T) {
+	cfg := &Config{}
+	processors := cfg.buildProcessors()
+
+	k8sAttr, ok := processors[k8sattributesFacts].(map[string]any)
+	require.True(t, ok)
+
+	extract, ok := k8sAttr["extract"].(map[string]any)
+	require.True(t, ok)
+
+	assert.NotContains(t, extract, "annotations")
+	assert.Equal(t, defaultK8Sattributes, extract["metadata"])
 }
 
 func TestDynatraceTransformationsJSONAnnotation(t *testing.T) {

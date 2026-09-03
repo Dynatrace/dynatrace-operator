@@ -52,21 +52,9 @@ receivers:
 ### processors ###
 processors:
   cumulativetodelta:
-  k8sattributes:
+  k8sattributes/annotations:
     extract:
-      metadata:
-        - k8s.cluster.uid
-        - k8s.node.name
-        - k8s.namespace.name
-        - k8s.pod.name
-        - k8s.pod.uid
-        - k8s.pod.ip
-        - k8s.deployment.name
-        - k8s.replicaset.name
-        - k8s.statefulset.name
-        - k8s.daemonset.name
-        - k8s.cronjob.name
-        - k8s.job.name
+      metadata: []
       annotations:
         - from: pod
           key_regex: metadata.dynatrace.com/(.*)
@@ -88,6 +76,36 @@ processors:
             name: k8s.pod.uid
       - sources:
           - from: connection
+  # resource/staticAttrs (from .spec.resourceAttributes, action "insert") goes here when configured
+  k8sattributes/facts:
+    extract:
+      metadata:
+        - k8s.cluster.uid
+        - k8s.node.name
+        - k8s.namespace.name
+        - k8s.pod.name
+        - k8s.pod.uid
+        - k8s.pod.ip
+        - k8s.deployment.name
+        - k8s.replicaset.name
+        - k8s.statefulset.name
+        - k8s.daemonset.name
+        - k8s.cronjob.name
+        - k8s.job.name
+    pod_association:
+      - sources:
+          - from: resource_attribute
+            name: k8s.pod.name
+          - from: resource_attribute
+            name: k8s.namespace.name
+      - sources:
+          - from: resource_attribute
+            name: k8s.pod.ip
+      - sources:
+          - from: resource_attribute
+            name: k8s.pod.uid
+      - sources:
+          - from: connection
   transform:
     error_mode: ignore
     trace_statements: &dynatrace_transformations
@@ -95,27 +113,27 @@ processors:
         statements:
           - 'merge_maps(attributes, ParseJSON(attributes["metadata.dynatrace.com"]), "upsert") where IsMatch(attributes["metadata.dynatrace.com"], "^\\{")'
           - 'delete_key(attributes, "metadata.dynatrace.com")'
-          - set(attributes["k8s.workload.kind"], "job") where IsString(attributes["k8s.job.name"])
-          - set(attributes["k8s.workload.name"], attributes["k8s.job.name"]) where IsString(attributes["k8s.job.name"])
-          - set(attributes["k8s.workload.kind"], "cronjob") where IsString(attributes["k8s.cronjob.name"])
-          - set(attributes["k8s.workload.name"], attributes["k8s.cronjob.name"]) where IsString(attributes["k8s.cronjob.name"])
-          - set(attributes["k8s.workload.kind"], "daemonset") where IsString(attributes["k8s.daemonset.name"])
-          - set(attributes["k8s.workload.name"], attributes["k8s.daemonset.name"]) where IsString(attributes["k8s.daemonset.name"])
-          - set(attributes["k8s.workload.kind"], "statefulset") where IsString(attributes["k8s.statefulset.name"])
-          - set(attributes["k8s.workload.name"], attributes["k8s.statefulset.name"]) where IsString(attributes["k8s.statefulset.name"])
-          - set(attributes["k8s.workload.kind"], "replicaset") where IsString(attributes["k8s.replicaset.name"])
-          - set(attributes["k8s.workload.name"], attributes["k8s.replicaset.name"]) where IsString(attributes["k8s.replicaset.name"])
-          - set(attributes["k8s.workload.kind"], "deployment") where IsString(attributes["k8s.deployment.name"])
-          - set(attributes["k8s.workload.name"], attributes["k8s.deployment.name"]) where IsString(attributes["k8s.deployment.name"])
-          - set(attributes["k8s.cluster.name"], "${env:K8S_CLUSTER_NAME}")
+          - set(attributes["k8s.workload.name"], attributes["k8s.statefulset.name"]) where IsString(attributes["k8s.statefulset.name"]) and attributes["k8s.workload.name"] == nil
+          - set(attributes["k8s.workload.name"], attributes["k8s.replicaset.name"]) where IsString(attributes["k8s.replicaset.name"]) and attributes["k8s.workload.name"] == nil
+          - set(attributes["k8s.workload.name"], attributes["k8s.job.name"]) where IsString(attributes["k8s.job.name"]) and attributes["k8s.workload.name"] == nil
+          - set(attributes["k8s.workload.name"], attributes["k8s.deployment.name"]) where IsString(attributes["k8s.deployment.name"]) and attributes["k8s.workload.name"] == nil
+          - set(attributes["k8s.workload.name"], attributes["k8s.daemonset.name"]) where IsString(attributes["k8s.daemonset.name"]) and attributes["k8s.workload.name"] == nil
+          - set(attributes["k8s.workload.name"], attributes["k8s.cronjob.name"]) where IsString(attributes["k8s.cronjob.name"]) and attributes["k8s.workload.name"] == nil
+          - set(attributes["k8s.workload.kind"], "statefulset") where IsString(attributes["k8s.statefulset.name"]) and attributes["k8s.workload.kind"] == nil
+          - set(attributes["k8s.workload.kind"], "replicaset") where IsString(attributes["k8s.replicaset.name"]) and attributes["k8s.workload.kind"] == nil
+          - set(attributes["k8s.workload.kind"], "job") where IsString(attributes["k8s.job.name"]) and attributes["k8s.workload.kind"] == nil
+          - set(attributes["k8s.workload.kind"], "deployment") where IsString(attributes["k8s.deployment.name"]) and attributes["k8s.workload.kind"] == nil
+          - set(attributes["k8s.workload.kind"], "daemonset") where IsString(attributes["k8s.daemonset.name"]) and attributes["k8s.workload.kind"] == nil
+          - set(attributes["k8s.workload.kind"], "cronjob") where IsString(attributes["k8s.cronjob.name"]) and attributes["k8s.workload.kind"] == nil
           - set(attributes["k8s.cluster.uid"], "${env:K8S_CLUSTER_UID}") where attributes["k8s.cluster.uid"] == nil
+          - set(attributes["k8s.cluster.name"], "${env:K8S_CLUSTER_NAME}") where attributes["k8s.cluster.name"] == nil
           - set(attributes["dt.entity.kubernetes_cluster"], "${env:DT_ENTITY_KUBERNETES_CLUSTER}")
-          - delete_key(attributes, "k8s.deployment.name")
-          - delete_key(attributes, "k8s.replicaset.name")
           - delete_key(attributes, "k8s.statefulset.name")
+          - delete_key(attributes, "k8s.replicaset.name")
+          - delete_key(attributes, "k8s.job.name")
+          - delete_key(attributes, "k8s.deployment.name")
           - delete_key(attributes, "k8s.daemonset.name")
           - delete_key(attributes, "k8s.cronjob.name")
-          - delete_key(attributes, "k8s.job.name")
           - set(attributes["dt.kubernetes.workload.name"], attributes["k8s.workload.name"])
           - set(attributes["dt.kubernetes.workload.kind"], attributes["k8s.workload.kind"])
     metric_statements: *dynatrace_transformations
@@ -164,7 +182,8 @@ service:
         - zipkin
       processors:
         - memory_limiter
-        - k8sattributes
+        - k8sattributes/annotations
+        - k8sattributes/facts
         - transform
         - batch/traces
       exporters:
@@ -177,7 +196,8 @@ service:
       processors:
         - memory_limiter
         - cumulativetodelta
-        - k8sattributes
+        - k8sattributes/annotations
+        - k8sattributes/facts
         - transform
         - batch/metrics
       exporters:
@@ -188,7 +208,8 @@ service:
         - otlp
       processors:
         - memory_limiter
-        - k8sattributes
+        - k8sattributes/annotations
+        - k8sattributes/facts
         - transform
         - batch/logs
       exporters:

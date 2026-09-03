@@ -63,5 +63,17 @@ func TestBuildPipelineProcessors_WithResourceAttributes(t *testing.T) {
 
 	processors := cfg.buildPipelineProcessors()
 
-	require.Equal(t, []component.ID{memoryLimiter, transformPodIP, k8sattributes, staticResourceAttrs, transform}, processors)
+	require.Equal(t, []component.ID{
+		memoryLimiter, transformPodIP, k8sattributesAnnotations, staticResourceAttrs, k8sattributesFacts, transform,
+	}, processors)
+}
+
+func TestBuildPipelineProcessors_WithoutResourceAttributes(t *testing.T) {
+	cfg := &Config{}
+
+	processors := cfg.buildPipelineProcessors()
+
+	require.Equal(t, []component.ID{
+		memoryLimiter, transformPodIP, k8sattributesAnnotations, k8sattributesFacts, transform,
+	}, processors)
 }

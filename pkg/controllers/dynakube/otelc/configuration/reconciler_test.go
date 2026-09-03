@@ -73,6 +73,6 @@ func TestConfigurationConfigMap(t *testing.T) {
 		assert.Contains(t, configData, "resource/staticAttrs")
 		assert.Contains(t, configData, "key: team")
 		assert.Contains(t, configData, "value: shopping-cart")
-		assert.Contains(t, configData, "action: upsert")
+		assert.Contains(t, configData, "action: insert")
 	})
 }

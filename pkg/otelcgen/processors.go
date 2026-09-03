@@ -30,16 +30,24 @@ type MemoryLimiter struct {
 // More details, about how to configure `processors,` can be found
 // https://github.com/open-telemetry/opentelemetry-collector/blob/main/processor/batchprocessor/README.md
 var (
-	k8sattributes       = component.MustNewID("k8sattributes")
-	transform           = component.MustNewID("transform")
-	transformPodIP      = component.MustNewIDWithName("transform", "add-pod-ip")
-	staticResourceAttrs = component.MustNewIDWithName("resource", "staticAttrs")
-	batch               = component.MustNewType("batch")
-	batchTraces         = component.NewIDWithName(batch, "traces")
-	batchMetrics        = component.NewIDWithName(batch, "metrics")
-	batchLogs           = component.NewIDWithName(batch, "logs")
-	memoryLimiter       = component.MustNewID("memory_limiter")
-	cumulativeToDelta   = component.MustNewID("cumulativetodelta")
+	// k8sattributesAnnotations and k8sattributesFacts must stay two separate processor instances:
+	// k8sattributesprocessor's setResourceAttribute helper is insert-only (never overwrites an
+	// already-set, non-empty attribute) for both its metadata and annotation extraction rules,
+	// regardless of pipeline position. That's the mechanism that lets resource/staticAttrs sit
+	// between them: annotations claim their keys first (so pod values always win over the static
+	// DynaKube default), then staticAttrs fills gaps and claims keys before the facts extraction
+	// runs (so the static default always wins over built-in facts). See buildPipelineProcessors.
+	k8sattributesAnnotations = component.MustNewIDWithName("k8sattributes", "annotations")
+	k8sattributesFacts       = component.MustNewIDWithName("k8sattributes", "facts")
+	transform                = component.MustNewID("transform")
+	transformPodIP           = component.MustNewIDWithName("transform", "add-pod-ip")
+	staticResourceAttrs      = component.MustNewIDWithName("resource", "staticAttrs")
+	batch                    = component.MustNewType("batch")
+	batchTraces              = component.NewIDWithName(batch, "traces")
+	batchMetrics             = component.NewIDWithName(batch, "metrics")
+	batchLogs                = component.NewIDWithName(batch, "logs")
+	memoryLimiter            = component.MustNewID("memory_limiter")
+	cumulativeToDelta        = component.MustNewID("cumulativetodelta")
 
 	defaultK8Sattributes = []string{
 		"k8s.cluster.uid",
@@ -60,9 +68,14 @@ var (
 func (c *Config) buildProcessors() map[component.ID]component.Config {
 	processors := map[component.ID]component.Config{
 		cumulativeToDelta: map[string]any{},
-		k8sattributes: map[string]any{
+		k8sattributesAnnotations: map[string]any{
 			"extract": map[string]any{
-				"metadata": defaultK8Sattributes,
+				// k8sattributesprocessor treats an omitted "metadata" field as "use its
+				// built-in default list" (which includes k8s.namespace.name and others), not
+				// "extract nothing" - it must be explicitly emptied here so this instance only
+				// ever claims annotation-derived keys, never built-in facts, before
+				// resource/staticAttrs runs.
+				"metadata": []string{},
 				"annotations": []map[string]any{
 					{
 						"from":      "pod",
@@ -76,29 +89,13 @@ func (c *Config) buildProcessors() map[component.ID]component.Config {
 					},
 				},
 			},
-			"pod_association": []map[string]any{
-				{
-					"sources": []map[string]any{
-						{"from": "resource_attribute", "name": "k8s.pod.name"},
-						{"from": "resource_attribute", "name": "k8s.namespace.name"},
-					},
-				},
-				{
-					"sources": []map[string]any{
-						{"from": "resource_attribute", "name": "k8s.pod.ip"},
-					},
-				},
-				{
-					"sources": []map[string]any{
-						{"from": "resource_attribute", "name": "k8s.pod.uid"},
-					},
-				},
-				{
-					"sources": []map[string]any{
-						{"from": "connection"},
-					},
-				},
+			"pod_association": k8sAttributesPodAssociation(),
+		},
+		k8sattributesFacts: map[string]any{
+			"extract": map[string]any{
+				"metadata": defaultK8Sattributes,
 			},
+			"pod_association": k8sAttributesPodAssociation(),
 		},
 		transform:      c.buildTransform(),
 		transformPodIP: c.buildTransformPodIP(),
@@ -131,7 +128,38 @@ func (c *Config) buildProcessors() map[component.ID]component.Config {
 	return processors
 }
 
-// buildStaticResourceAttributes builds the resource/staticAttrs processor config with action "upsert".
+// k8sAttributesPodAssociation returns the pod_association config shared by both k8sattributes
+// instances so each one can independently identify which pod a resource belongs to.
+func k8sAttributesPodAssociation() []map[string]any {
+	return []map[string]any{
+		{
+			"sources": []map[string]any{
+				{"from": "resource_attribute", "name": "k8s.pod.name"},
+				{"from": "resource_attribute", "name": "k8s.namespace.name"},
+			},
+		},
+		{
+			"sources": []map[string]any{
+				{"from": "resource_attribute", "name": "k8s.pod.ip"},
+			},
+		},
+		{
+			"sources": []map[string]any{
+				{"from": "resource_attribute", "name": "k8s.pod.uid"},
+			},
+		},
+		{
+			"sources": []map[string]any{
+				{"from": "connection"},
+			},
+		},
+	}
+}
+
+// buildStaticResourceAttributes builds the resource/staticAttrs processor config, using action
+// "insert" so it never overwrites a value already claimed by k8sattributesAnnotations (per-pod
+// annotations must win), while still being able to claim a key before k8sattributesFacts runs
+// (so the static DynaKube default wins over the built-in fact). See buildPipelineProcessors.
 func (c *Config) buildStaticResourceAttributes() map[string]any {
 	if len(c.resourceAttributes) == 0 {
 		return nil
@@ -149,7 +177,7 @@ func (c *Config) buildStaticResourceAttributes() map[string]any {
 		attributes = append(attributes, map[string]any{
 			"key":    k,
 			"value":  c.resourceAttributes[k],
-			"action": "upsert",
+			"action": "insert",
 		})
 	}
 
@@ -179,37 +207,46 @@ func (c *Config) buildTransformPodIP() map[string]any {
 	}
 }
 
+// dynatraceTransformations derives k8s.workload.name/kind and k8s.cluster.name from built-in
+// facts using "== nil" guards, not just IsString(...): these run after resource/staticAttrs, so
+// without the guard they would unconditionally overwrite a DynaKube resourceAttributes override
+// with the built-in fact whenever the pod belongs to a real workload (i.e. almost always).
 func (c *Config) dynatraceTransformations() []map[string]any {
+	workloadNameFacts := []string{
+		"k8s.statefulset.name",
+		"k8s.replicaset.name",
+		"k8s.job.name",
+		"k8s.deployment.name",
+		"k8s.daemonset.name",
+		"k8s.cronjob.name",
+	}
+
+	nameStatements := make([]string, len(workloadNameFacts))
+	for i, fact := range workloadNameFacts {
+		nameStatements[i] = setValueIfPresentAndAbsent("k8s.workload.name", fact)
+	}
+
+	statements := slices.Concat([]string{
+		`merge_maps(attributes, ParseJSON(attributes["metadata.dynatrace.com"]), "upsert") where IsMatch(attributes["metadata.dynatrace.com"], "^\\{")`,
+		`delete_key(attributes, "metadata.dynatrace.com")`,
+	}, nameStatements, []string{
+		setLiteralIfPresentAndAbsent("k8s.workload.kind", "statefulset", "k8s.statefulset.name"),
+		setLiteralIfPresentAndAbsent("k8s.workload.kind", "replicaset", "k8s.replicaset.name"),
+		setLiteralIfPresentAndAbsent("k8s.workload.kind", "job", "k8s.job.name"),
+		setLiteralIfPresentAndAbsent("k8s.workload.kind", "deployment", "k8s.deployment.name"),
+		setLiteralIfPresentAndAbsent("k8s.workload.kind", "daemonset", "k8s.daemonset.name"),
+		setLiteralIfPresentAndAbsent("k8s.workload.kind", "cronjob", "k8s.cronjob.name"),
+		setLiteralIfAbsent("k8s.cluster.uid", "${env:K8S_CLUSTER_UID}"),
+		setLiteralIfAbsent("k8s.cluster.name", "${env:K8S_CLUSTER_NAME}"),
+		`set(attributes["dt.kubernetes.workload.name"], attributes["k8s.workload.name"])`,
+		`set(attributes["dt.kubernetes.workload.kind"], attributes["k8s.workload.kind"])`,
+		`set(attributes["dt.entity.kubernetes_cluster"], "${env:DT_ENTITY_KUBERNETES_CLUSTER}")`,
+	}, deleteKeys(workloadNameFacts...))
+
 	return []map[string]any{
 		{
-			"context": "resource",
-			"statements": []string{
-				`merge_maps(attributes, ParseJSON(attributes["metadata.dynatrace.com"]), "upsert") where IsMatch(attributes["metadata.dynatrace.com"], "^\\{")`,
-				`delete_key(attributes, "metadata.dynatrace.com")`,
-				"set(attributes[\"k8s.workload.name\"], attributes[\"k8s.statefulset.name\"]) where IsString(attributes[\"k8s.statefulset.name\"])",
-				"set(attributes[\"k8s.workload.name\"], attributes[\"k8s.replicaset.name\"]) where IsString(attributes[\"k8s.replicaset.name\"])",
-				"set(attributes[\"k8s.workload.name\"], attributes[\"k8s.job.name\"]) where IsString(attributes[\"k8s.job.name\"])",
-				"set(attributes[\"k8s.workload.name\"], attributes[\"k8s.deployment.name\"]) where IsString(attributes[\"k8s.deployment.name\"])",
-				"set(attributes[\"k8s.workload.name\"], attributes[\"k8s.daemonset.name\"]) where IsString(attributes[\"k8s.daemonset.name\"])",
-				"set(attributes[\"k8s.workload.name\"], attributes[\"k8s.cronjob.name\"]) where IsString(attributes[\"k8s.cronjob.name\"])",
-				"set(attributes[\"k8s.workload.kind\"], \"statefulset\") where IsString(attributes[\"k8s.statefulset.name\"])",
-				"set(attributes[\"k8s.workload.kind\"], \"replicaset\") where IsString(attributes[\"k8s.replicaset.name\"])",
-				"set(attributes[\"k8s.workload.kind\"], \"job\") where IsString(attributes[\"k8s.job.name\"])",
-				"set(attributes[\"k8s.workload.kind\"], \"deployment\") where IsString(attributes[\"k8s.deployment.name\"])",
-				"set(attributes[\"k8s.workload.kind\"], \"daemonset\") where IsString(attributes[\"k8s.daemonset.name\"])",
-				"set(attributes[\"k8s.workload.kind\"], \"cronjob\") where IsString(attributes[\"k8s.cronjob.name\"])",
-				"set(attributes[\"k8s.cluster.uid\"], \"${env:K8S_CLUSTER_UID}\") where attributes[\"k8s.cluster.uid\"] == nil",
-				"set(attributes[\"k8s.cluster.name\"], \"${env:K8S_CLUSTER_NAME}\")",
-				"set(attributes[\"dt.kubernetes.workload.name\"], attributes[\"k8s.workload.name\"])",
-				"set(attributes[\"dt.kubernetes.workload.kind\"], attributes[\"k8s.workload.kind\"])",
-				"set(attributes[\"dt.entity.kubernetes_cluster\"], \"${env:DT_ENTITY_KUBERNETES_CLUSTER}\")",
-				"delete_key(attributes, \"k8s.statefulset.name\")",
-				"delete_key(attributes, \"k8s.replicaset.name\")",
-				"delete_key(attributes, \"k8s.job.name\")",
-				"delete_key(attributes, \"k8s.deployment.name\")",
-				"delete_key(attributes, \"k8s.daemonset.name\")",
-				"delete_key(attributes, \"k8s.cronjob.name\")",
-			},
+			"context":    "resource",
+			"statements": statements,
 		},
 	}
 }
