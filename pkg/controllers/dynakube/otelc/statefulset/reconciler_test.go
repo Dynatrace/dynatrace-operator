@@ -254,7 +254,8 @@ func TestConfigConfigMapHashAnnotation(t *testing.T) {
 		configMap := getConfigConfigMap(dk.Name, dk.Namespace)
 		require.NoError(t, clt.Create(t.Context(), &configMap))
 
-		require.NoError(t, NewReconciler(clt, clt).Reconcile(t.Context(), dk))
+		imageClient := imageclientmock.NewClient(t)
+		require.NoError(t, NewReconciler(clt, clt).Reconcile(t.Context(), imageClient, dk))
 
 		sts := &appsv1.StatefulSet{}
 		require.NoError(t, clt.Get(t.Context(), client.ObjectKey{Name: dk.OTelCollectorStatefulsetName(), Namespace: dk.Namespace}, sts))
@@ -275,7 +276,8 @@ func TestConfigConfigMapHashAnnotation(t *testing.T) {
 		require.NoError(t, clt.Create(t.Context(), &configMap))
 
 		reconciler := NewReconciler(clt, clt)
-		require.NoError(t, reconciler.Reconcile(t.Context(), dk))
+		imageClient := imageclientmock.NewClient(t)
+		require.NoError(t, reconciler.Reconcile(t.Context(), imageClient, dk))
 
 		sts := &appsv1.StatefulSet{}
 		require.NoError(t, clt.Get(t.Context(), client.ObjectKey{Name: dk.OTelCollectorStatefulsetName(), Namespace: dk.Namespace}, sts))
@@ -285,7 +287,7 @@ func TestConfigConfigMapHashAnnotation(t *testing.T) {
 		configMap.Data[otelcconsts.ConfigFieldName] = "test-with-resource-attributes"
 		require.NoError(t, clt.Update(t.Context(), &configMap))
 
-		require.NoError(t, reconciler.Reconcile(t.Context(), dk))
+		require.NoError(t, reconciler.Reconcile(t.Context(), imageClient, dk))
 
 		sts = &appsv1.StatefulSet{}
 		require.NoError(t, clt.Get(t.Context(), client.ObjectKey{Name: dk.OTelCollectorStatefulsetName(), Namespace: dk.Namespace}, sts))
