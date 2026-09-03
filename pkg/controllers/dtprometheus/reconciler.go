@@ -33,8 +33,9 @@ import (
 )
 
 var (
-	errDynaKubeNotFound = errors.New("dynakube not found")
-	errDynaKubeNotReady = errors.New("dynakube not ready")
+	errDynaKubeNotFound           = errors.New("dynakube not found")
+	errDynaKubeNotReady           = errors.New("dynakube not ready")
+	errDataIngestTokenUnavailable = errors.New("data-ingest token not available")
 )
 
 func Add(mgr manager.Manager, _ string) error {
@@ -115,6 +116,12 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ct
 		return ctrl.Result{}, errDynaKubeNotReady
 	}
 
+	if tokens, err := token.NewReader(r, dk).ReadTokens(ctx); err != nil || !token.CheckForDataIngestToken(tokens) {
+		log.Info("skipping reconcile: data-ingest token not available")
+
+		return ctrl.Result{}, errDataIngestTokenUnavailable
+	}
+
 	dtClient, err := r.buildDynatraceClient(ctx, dk)
 	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("build dynatrace client: %w", err)
@@ -168,6 +175,12 @@ func setPhase(dtp *dtprometheus.DTPrometheus, err error) error {
 
 	if errors.Is(errDynaKubeNotReady, err) {
 		dtp.Status.Phase = status.Deploying
+
+		return nil
+	}
+
+	if errors.Is(errDataIngestTokenUnavailable, err) {
+		dtp.Status.Phase = status.Error
 
 		return nil
 	}
