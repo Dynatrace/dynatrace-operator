@@ -24,14 +24,14 @@ const (
 type prometheusCRD struct {
 	resource string
 	version  string
-	listKind string
+	kind     string
 }
 
 var requiredPrometheusCRDs = []prometheusCRD{
-	{resource: "servicemonitors", version: "v1", listKind: "ServiceMonitorList"},
-	{resource: "podmonitors", version: "v1", listKind: "PodMonitorList"},
-	{resource: "probes", version: "v1", listKind: "ProbeList"},
-	{resource: "scrapeconfigs", version: "v1alpha1", listKind: "ScrapeConfigList"},
+	{resource: "servicemonitors", version: "v1", kind: "ServiceMonitor"},
+	{resource: "podmonitors", version: "v1", kind: "PodMonitor"},
+	{resource: "probes", version: "v1", kind: "Probe"},
+	{resource: "scrapeconfigs", version: "v1alpha1", kind: "ScrapeConfig"},
 }
 
 func missingPrometheusCRDs(ctx context.Context, apiReader client.Reader) string {
@@ -39,12 +39,13 @@ func missingPrometheusCRDs(ctx context.Context, apiReader client.Reader) string 
 	missing := []string{}
 
 	for _, crd := range requiredPrometheusCRDs {
-		list := &unstructured.UnstructuredList{}
-		list.SetGroupVersionKind(schema.GroupVersionKind{Group: prometheusOperatorGroup, Version: crd.version, Kind: crd.listKind})
+		obj := &unstructured.Unstructured{}
+		obj.SetGroupVersionKind(schema.GroupVersionKind{Group: prometheusOperatorGroup, Version: crd.version, Kind: crd.kind})
 
 		resource := fmt.Sprintf("%s.%s", crd.resource, prometheusOperatorGroup)
 
-		err := apiReader.List(ctx, list)
+		err := apiReader.Get(ctx, client.ObjectKey{Namespace: "default", Name: "default"}, obj)
+
 		switch {
 		case err == nil:
 			continue

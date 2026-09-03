@@ -31,7 +31,7 @@ var testDTPrometheus = &dtprometheus.DTPrometheus{
 }
 
 var noPrometheusCRDsInterceptor = interceptor.Funcs{
-	List: func(_ context.Context, _ client.WithWatch, _ client.ObjectList, _ ...client.ListOption) error {
+	Get: func(_ context.Context, _ client.WithWatch, _ client.ObjectKey, _ client.Object, _ ...client.GetOption) error {
 		return &meta.NoKindMatchError{}
 	},
 }
@@ -50,8 +50,8 @@ func TestMissingPrometheusCRDs(t *testing.T) {
 
 	t.Run("only some CRDs missing lists just those", func(t *testing.T) {
 		partialInterceptor := interceptor.Funcs{
-			List: func(_ context.Context, _ client.WithWatch, list client.ObjectList, _ ...client.ListOption) error {
-				if list.GetObjectKind().GroupVersionKind().Kind == "ScrapeConfigList" {
+			Get: func(_ context.Context, _ client.WithWatch, _ client.ObjectKey, obj client.Object, _ ...client.GetOption) error {
+				if obj.GetObjectKind().GroupVersionKind().Kind == "ScrapeConfig" {
 					return &meta.NoKindMatchError{}
 				}
 
@@ -78,8 +78,8 @@ func TestMissingPrometheusCRDs(t *testing.T) {
 
 	t.Run("non-NoMatch error assumes the CRD is present and produces no warning", func(t *testing.T) {
 		forbiddenInterceptor := interceptor.Funcs{
-			List: func(_ context.Context, _ client.WithWatch, list client.ObjectList, _ ...client.ListOption) error {
-				return apierrors.NewForbidden(schema.GroupResource{Group: prometheusOperatorGroup, Resource: list.GetObjectKind().GroupVersionKind().Kind}, "", nil)
+			Get: func(_ context.Context, _ client.WithWatch, _ client.ObjectKey, obj client.Object, _ ...client.GetOption) error {
+				return apierrors.NewForbidden(schema.GroupResource{Group: prometheusOperatorGroup, Resource: obj.GetObjectKind().GroupVersionKind().Kind}, "", nil)
 			},
 		}
 		clt := fake.NewClientWithInterceptors(forbiddenInterceptor)

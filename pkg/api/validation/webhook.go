@@ -26,7 +26,7 @@ func (t typedValidator[T]) ValidateUpdate(ctx context.Context, oldObj, newObj T)
 }
 
 func (t typedValidator[T]) ValidateDelete(ctx context.Context, obj T) (admission.Warnings, error) {
-	return t.validator.ValidateDelete(ctx, obj)
+	return nil, nil
 }
 
 // SetupWebhookForType registers a validating webhook for the concrete API type T using a

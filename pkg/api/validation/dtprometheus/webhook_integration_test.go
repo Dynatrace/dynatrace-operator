@@ -28,7 +28,6 @@ func TestWebhook(t *testing.T) {
 
 	clt := integrationtests.SetupWebhookTestEnvironment(t,
 		envtest.WebhookInstallOptions{
-			// TODO(avorima): Load this from a file using Paths
 			ValidatingWebhooks: []*admissionregistrationv1.ValidatingWebhookConfiguration{
 				{
 					ObjectMeta: metav1.ObjectMeta{
@@ -135,7 +134,7 @@ func installMonitoringCRDs(t *testing.T, clt client.Client) {
 	}
 
 	for _, crd := range crds {
-		require.NoError(t, clt.Create(t.Context(), crd))
+		integrationtests.CreateKubernetesObject(t, clt, crd)
 
 		t.Cleanup(func() {
 			require.NoError(t, client.IgnoreNotFound(clt.Delete(context.Background(), crd)))
