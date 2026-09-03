@@ -19,6 +19,10 @@
 /.mockery.yaml
 /.testcoverage.yml                                         @0sewa0 @andriisoldatenko @avorima
 
+# ── Deployment — helm chart, OLM bundles ─────────────────────────────────────
+/config/                                                   @Incredible-O @waodim @jokuniew
+/assets/                                                   @Incredible-O @waodim @jokuniew
+
 # ── Core — CRD API, DT clients, shared libs, and cross-cutting controllers ───
 # Older API versions (e.g. v1beta5) are frozen and stay here, not split per operand.
 /pkg/                                                      @0sewa0 @andriisoldatenko @avorima
