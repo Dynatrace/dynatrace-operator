@@ -21,12 +21,6 @@ var _ volumeMountModifier = KubernetesMonitoringModifier{}
 var _ initContainerModifier = KubernetesMonitoringModifier{}
 var _ builder.Modifier = KubernetesMonitoringModifier{}
 
-const (
-	k8sCertificateFile        = "k8s-local.jks"
-	k8scrt2jksPath            = "/opt/dynatrace/gateway/k8scrt2jks.sh"
-	initContainerTemplateName = "certificate-loader"
-)
-
 func NewKubernetesMonitoringModifier(dk dynakube.DynaKube, capability capability.Capability) KubernetesMonitoringModifier {
 	return KubernetesMonitoringModifier{
 		dk:         dk,
@@ -63,16 +57,16 @@ func (mod KubernetesMonitoringModifier) getInitContainers() []corev1.Container {
 	}, mod.getReadOnlyInitVolumeMounts())
 
 	securityContext := GetSecurityContext(true)
-	securityContext.AppArmorProfile = k8ssecuritycontext.GetAppArmorProfile(mod.dk.ActiveGate().Annotations, initContainerTemplateName)
+	securityContext.AppArmorProfile = k8ssecuritycontext.GetAppArmorProfile(mod.dk.ActiveGate().Annotations, consts.InitContainerName)
 
 	return []corev1.Container{
 		{
-			Name:            initContainerTemplateName,
+			Name:            consts.InitContainerName,
 			Image:           mod.dk.ActiveGate().GetImage(),
 			ImagePullPolicy: mod.dk.ActiveGate().ImagePullPolicy,
 			WorkingDir:      consts.InitCertLoaderWorkDirMountPath,
 			Command:         []string{"/bin/bash"},
-			Args:            []string{"-c", k8scrt2jksPath},
+			Args:            []string{"-c", consts.K8scrt2jksPath},
 			VolumeMounts:    volumeMounts,
 			Resources:       mod.capability.Properties().Resources,
 			SecurityContext: securityContext,
@@ -106,7 +100,7 @@ func (mod KubernetesMonitoringModifier) getVolumeMounts() []corev1.VolumeMount {
 			ReadOnly:  true,
 			Name:      consts.TrustStoreVolumeName,
 			MountPath: consts.TrustStoreCacertsMountPath,
-			SubPath:   k8sCertificateFile,
+			SubPath:   consts.K8sCertificateFile,
 		},
 	}
 }
