@@ -6,6 +6,7 @@ package validation
 import (
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
@@ -381,6 +382,77 @@ func TestImages(t *testing.T) {
 							},
 						},
 					},
+				},
+			})
+	})
+
+	t.Run("no imageRef, public registry enabled — allowed, image from fleet management (default registry)", func(t *testing.T) {
+		assertAllowed(t,
+			&dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      testName,
+					Namespace: testNamespace,
+					Annotations: map[string]string{
+						exp.UsePublicRegistryKey: "true",
+					},
+				},
+				Spec: dynakube.DynaKubeSpec{
+					APIURL:          testAPIURL,
+					TelemetryIngest: &telemetryingest.Spec{},
+				},
+			})
+	})
+
+	t.Run("no imageRef, public registry enabled with override — allowed, image from fleet management (override registry)", func(t *testing.T) {
+		assertAllowed(t,
+			&dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      testName,
+					Namespace: testNamespace,
+					Annotations: map[string]string{
+						exp.UsePublicRegistryKey: "true",
+					},
+				},
+				Spec: dynakube.DynaKubeSpec{
+					APIURL:                 testAPIURL,
+					TelemetryIngest:        &telemetryingest.Spec{},
+					PublicRegistryOverride: "my.registry.example.com",
+				},
+			})
+	})
+
+	t.Run("imageRef set, public registry enabled — allowed, custom image used as-is", func(t *testing.T) {
+		assertAllowed(t,
+			&dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      testName,
+					Namespace: testNamespace,
+					Annotations: map[string]string{
+						exp.UsePublicRegistryKey: "true",
+					},
+				},
+				Spec: dynakube.DynaKubeSpec{
+					APIURL:          testAPIURL,
+					TelemetryIngest: &telemetryingest.Spec{},
+					Templates: dynakube.TemplatesSpec{
+						OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{
+							ImageRef: image.Ref{
+								Repository: "custom-repo",
+								Tag:        "custom-tag",
+							},
+						},
+					},
+				},
+			})
+	})
+
+	t.Run("no imageRef, public registry disabled — validation rejects DK", func(t *testing.T) {
+		assertDenied(t, []string{errorOTelCollectorMissingImage},
+			&dynakube.DynaKube{
+				ObjectMeta: defaultDynakubeObjectMeta,
+				Spec: dynakube.DynaKubeSpec{
+					APIURL:          testAPIURL,
+					TelemetryIngest: &telemetryingest.Spec{},
 				},
 			})
 	})

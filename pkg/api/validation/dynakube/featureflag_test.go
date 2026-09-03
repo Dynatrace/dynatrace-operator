@@ -97,15 +97,23 @@ func TestUnknownFeatureFlag(t *testing.T) {
 	})
 
 	t.Run("only known flags => no warning", func(t *testing.T) {
+		// mutually exclusive flags: setting both OANodeImagePullKey and OAImageVolumeKey to "true"
+		// triggers conflictingImageMode. Only one of the pair is set.
+		mutuallyExclusiveFlags := []string{exp.OAImageVolumeKey}
+
 		annotations := map[string]string{}
 		for _, flag := range knownFeatureFlags {
-			if !slices.Contains(deprecatedFeatureFlags, flag) {
+			if !slices.Contains(deprecatedFeatureFlags, flag) && !slices.Contains(mutuallyExclusiveFlags, flag) {
 				annotations[flag] = "true"
 			}
 		}
 
 		dk := getDK()
 		dk.Annotations = annotations
+		assertAllowedWithoutWarnings(t, dk)
+
+		// Test the mutually exclusive flag separately
+		dk.Annotations = map[string]string{exp.OAImageVolumeKey: "true"}
 		assertAllowedWithoutWarnings(t, dk)
 	})
 
