@@ -202,6 +202,24 @@ func TestSetupWithManager(t *testing.T) {
 		})
 	})
 
+	t.Run("DynaKube resource attributes change triggers reconcile", func(t *testing.T) {
+		dtprom, key := createDTPrometheus(t, "dtprom-dynakube-resattrs", "dk-resattrs")
+
+		dk := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{Name: dtprom.Spec.DynaKubeName, Namespace: dtprom.Namespace},
+			Spec:       dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
+			Status:     dynakube.DynaKubeStatus{Phase: status.Running},
+		}
+		assertReconcileTriggered(t, key, func() {
+			integrationtests.CreateDynakube(t, clt, dk)
+		})
+
+		assertReconcileTriggered(t, key, func() {
+			dk.Spec.ResourceAttributes = map[string]string{"region": "us-east"}
+			require.NoError(t, clt.Update(t.Context(), dk))
+		})
+	})
+
 	t.Run("phase change on a DynaKube not referenced by any DTPrometheus does not trigger reconcile", func(t *testing.T) {
 		_, key := createDTPrometheus(t, "dtprom-dynakube-unreferenced", "dk-referenced")
 
