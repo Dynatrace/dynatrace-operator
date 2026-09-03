@@ -19,7 +19,7 @@ data:
   relay: |
     connectors: {}
     exporters:
-        otlphttp:
+        otlp_http:
             endpoint: https://abc12345.live.dynatrace.com/api/v2/otlp
             headers:
                 Authorization: Api-Token ${env:DT_API_TOKEN}
@@ -32,10 +32,10 @@ data:
         health_check:
             endpoint: ${env:MY_POD_IP}:13133
     processors:
-        cumulativetodelta:
+        cumulative_to_delta:
             initial_value: drop
             max_staleness: 10m
-        k8sattributes:
+        k8s_attributes:
             extract:
                 annotations:
                     - from: pod
@@ -67,9 +67,6 @@ data:
             pod_association:
                 - sources:
                     - from: resource_attribute
-                      name: server.address
-                - sources:
-                    - from: resource_attribute
                       name: k8s.pod.name
                     - from: resource_attribute
                       name: k8s.namespace.name
@@ -85,7 +82,7 @@ data:
             check_interval: 1s
             limit_percentage: 95
             spike_limit_percentage: 5
-        metric_start_time: null
+        metric_start_time: {}
         transform:
             metric_statements:
                 - context: datapoint
@@ -112,20 +109,20 @@ data:
                     - delete_key(attributes, "url_scheme")
                 - context: resource
                   statements:
-                    - set(attributes["k8s.workload.name"], attributes["k8s.statefulset.name"]) where IsString(attributes["k8s.statefulset.name"])
                     - set(attributes["k8s.workload.name"], attributes["k8s.replicaset.name"]) where IsString(attributes["k8s.replicaset.name"])
+                    - set(attributes["k8s.workload.name"], attributes["k8s.statefulset.name"]) where IsString(attributes["k8s.statefulset.name"])
                     - set(attributes["k8s.workload.name"], attributes["k8s.job.name"]) where IsString(attributes["k8s.job.name"])
                     - set(attributes["k8s.workload.name"], attributes["k8s.deployment.name"]) where IsString(attributes["k8s.deployment.name"])
                     - set(attributes["k8s.workload.name"], attributes["k8s.daemonset.name"]) where IsString(attributes["k8s.daemonset.name"])
                     - set(attributes["k8s.workload.name"], attributes["k8s.cronjob.name"]) where IsString(attributes["k8s.cronjob.name"])
-                    - set(attributes["k8s.workload.kind"], "statefulset") where IsString(attributes["k8s.statefulset.name"])
                     - set(attributes["k8s.workload.kind"], "replicaset") where IsString(attributes["k8s.replicaset.name"])
+                    - set(attributes["k8s.workload.kind"], "statefulset") where IsString(attributes["k8s.statefulset.name"])
                     - set(attributes["k8s.workload.kind"], "job") where IsString(attributes["k8s.job.name"])
                     - set(attributes["k8s.workload.kind"], "deployment") where IsString(attributes["k8s.deployment.name"])
                     - set(attributes["k8s.workload.kind"], "daemonset") where IsString(attributes["k8s.daemonset.name"])
                     - set(attributes["k8s.workload.kind"], "cronjob") where IsString(attributes["k8s.cronjob.name"])
-                    - set(attributes["k8s.workload.uid"], attributes["k8s.statefulset.uid"]) where IsString(attributes["k8s.statefulset.uid"])
                     - set(attributes["k8s.workload.uid"], attributes["k8s.replicaset.uid"]) where IsString(attributes["k8s.replicaset.uid"])
+                    - set(attributes["k8s.workload.uid"], attributes["k8s.statefulset.uid"]) where IsString(attributes["k8s.statefulset.uid"])
                     - set(attributes["k8s.workload.uid"], attributes["k8s.job.uid"]) where IsString(attributes["k8s.job.uid"])
                     - set(attributes["k8s.workload.uid"], attributes["k8s.deployment.uid"]) where IsString(attributes["k8s.deployment.uid"])
                     - set(attributes["k8s.workload.uid"], attributes["k8s.daemonset.uid"]) where IsString(attributes["k8s.daemonset.uid"])
@@ -150,6 +147,9 @@ data:
                     - delete_key(attributes, "otel.scope.version")
                 - context: resource
                   statements:
+                    - set(attributes["k8s.cluster.name"], "${env:K8S_CLUSTER_NAME}") where attributes["k8s.cluster.name"] == nil and Len("${env:K8S_CLUSTER_NAME}") > 0
+                - context: resource
+                  statements:
                     - set(attributes["deploy.mood"], "yolo") where attributes["deploy.mood"] == nil
                     - set(attributes["favorite.coffee"], "espresso") where attributes["favorite.coffee"] == nil
                 - context: resource
@@ -167,12 +167,12 @@ data:
         pipelines:
             metrics:
                 exporters:
-                    - otlphttp
+                    - otlp_http
                 processors:
                     - memory_limiter
                     - metric_start_time
-                    - cumulativetodelta
-                    - k8sattributes
+                    - cumulative_to_delta
+                    - k8s_attributes
                     - transform
                 receivers:
                     - otlp
