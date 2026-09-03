@@ -109,9 +109,9 @@
 /Makefile                                                  @Incredible-O @waodim @jokuniew
 /go.mod
 /go.sum
-/.golangci.yml                                             @Incredible-O @waodim @jokuniew
-/.markdownlint.json                                        @Incredible-O @waodim @jokuniew
-/.markdownlintignore                                       @Incredible-O @waodim @jokuniew
+/.golangci.yml                                             @Dynatrace/kubernetes-operator
+/.markdownlint.json                                        @Dynatrace/kubernetes-operator
+/.markdownlintignore                                       @Dynatrace/kubernetes-operator
 /.snyk                                                     @Incredible-O @waodim @jokuniew @aorcholski
 /PROJECT                                                   @Incredible-O @waodim @jokuniew
 /LICENSE                                                   @Incredible-O @waodim @jokuniew
