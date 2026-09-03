@@ -8,7 +8,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
-	"fmt"
 	"testing"
 	"time"
 
@@ -63,43 +62,45 @@ func newTestScope(dtp *dtprometheus.DTPrometheus) *reconcileScope {
 	}
 }
 
+// The condition branch logic is covered by the condition package. What matters here is
+// that the target allocator wires itself to the right condition type, component name and
+// rollout check.
 func TestReconcileCondition(t *testing.T) {
-	boom := fmt.Errorf("wrap: %w", errors.New("boom"))
+	t.Run("freshly created deployment with no ready replicas -> pending", func(t *testing.T) {
+		dtp := newTestDTP("dtp", "dynatrace")
+		dtp.Spec.TargetAllocator.Image = "registry.example.com/target-allocator:1.2.3"
+		dtp.Spec.TargetAllocator.Replicas = new(int32(2))
 
-	completeDeployment := &appsv1.Deployment{
-		Spec:   appsv1.DeploymentSpec{Replicas: new(int32(2))},
-		Status: appsv1.DeploymentStatus{ReadyReplicas: 2},
-	}
+		r := &Reconciler{Client: fake.NewClient()}
+		require.NoError(t, r.Reconcile(t.Context(), dtp, &dynakube.DynaKube{}, nil))
 
-	tests := []struct {
-		name        string
-		err         error
-		deployment  *appsv1.Deployment
-		wantStatus  metav1.ConditionStatus
-		wantReason  string
-		wantMessage string
-	}{
-		{"deployment not rolled out -> reconciling", nil, nil, metav1.ConditionFalse, status.ReasonReconciling, "target allocator is pending"},
-		{"rollout complete -> available", nil, completeDeployment, metav1.ConditionTrue, status.ReasonAvailable, "target allocator is ready"},
-		{"error -> error", boom, nil, metav1.ConditionFalse, status.ReasonError, "boom"},
-		{"error takes precedence over complete rollout", boom, completeDeployment, metav1.ConditionFalse, status.ReasonError, "boom"},
-	}
+		condition := meta.FindStatusCondition(dtp.Status.Conditions, dtprometheus.TargetAllocatorAvailable)
+		require.NotNil(t, condition)
+		assert.Equal(t, metav1.ConditionFalse, condition.Status)
+		assert.Equal(t, status.ReasonReconciling, condition.Reason)
+		assert.Equal(t, "target allocator is pending", condition.Message)
+	})
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			dtp := newTestDTP("dtp", "dynatrace")
-			s := &reconcileScope{Owner: dtp, Deployment: test.deployment}
-			r := &Reconciler{}
+	t.Run("reconcile error -> error, with unwrapped message", func(t *testing.T) {
+		dtp := newTestDTP("dtp", "dynatrace")
+		dtp.Spec.TargetAllocator.Image = "registry.example.com/target-allocator:1.2.3"
 
-			r.reconcileCondition(s, test.err)
-
-			condition := meta.FindStatusCondition(dtp.Status.Conditions, dtprometheus.TargetAllocatorAvailable)
-			require.NotNil(t, condition)
-			assert.Equal(t, test.wantStatus, condition.Status)
-			assert.Equal(t, test.wantReason, condition.Reason)
-			assert.Equal(t, test.wantMessage, condition.Message)
+		boom := errors.New("boom")
+		clt := fake.NewClientWithInterceptors(interceptor.Funcs{
+			Create: func(context.Context, client.WithWatch, client.Object, ...client.CreateOption) error {
+				return boom
+			},
 		})
-	}
+
+		r := &Reconciler{Client: clt}
+		require.Error(t, r.Reconcile(t.Context(), dtp, &dynakube.DynaKube{}, nil))
+
+		condition := meta.FindStatusCondition(dtp.Status.Conditions, dtprometheus.TargetAllocatorAvailable)
+		require.NotNil(t, condition)
+		assert.Equal(t, metav1.ConditionFalse, condition.Status)
+		assert.Equal(t, status.ReasonError, condition.Reason)
+		assert.Equal(t, boom.Error(), condition.Message)
+	})
 }
 
 func TestReconcileConfigMap(t *testing.T) {
