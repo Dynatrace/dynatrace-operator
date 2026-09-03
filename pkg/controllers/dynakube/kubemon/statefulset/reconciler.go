@@ -20,6 +20,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	kubemonauthtoken "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/authtoken"
 	kubemoncustomproperties "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/customproperties"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/deploymentproperties"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
@@ -36,16 +37,17 @@ import (
 )
 
 const (
-	ContainerName                  = "kubemon"
-	AnnotationTenantTokenHash      = api.InternalFlagPrefix + "kubemon-tenant-token-hash"
-	AnnotationAuthTokenHash        = api.InternalFlagPrefix + "kubemon-authtoken-hash"
-	AnnotationCustomPropertiesHash = api.InternalFlagPrefix + "kubemon-customproperties-hash"
-	AnnotationKSPMTokenHash        = api.InternalFlagPrefix + "kubemon-kspm-token-hash"
-	AnnotationTLSSecretHash        = api.InternalFlagPrefix + "kubemon-tls-secret-hash"
-	StorageVolumeName              = "kubemon-storage"
-	AuthTokenVolumeName            = "kubemon-authtoken-secret"
-	kspmTokenVolumeName            = "kspm-token"
-	kspmTokenMountPath             = operatorconsts.DTComponentsSecretsRootDir + "/tokens/kspm/node-configuration-collector"
+	ContainerName                      = "kubemon"
+	AnnotationTenantTokenHash          = api.InternalFlagPrefix + "kubemon-tenant-token-hash"
+	AnnotationAuthTokenHash            = api.InternalFlagPrefix + "kubemon-authtoken-hash"
+	AnnotationCustomPropertiesHash     = api.InternalFlagPrefix + "kubemon-customproperties-hash"
+	AnnotationKSPMTokenHash            = api.InternalFlagPrefix + "kubemon-kspm-token-hash"
+	AnnotationTLSSecretHash            = api.InternalFlagPrefix + "kubemon-tls-secret-hash"
+	AnnotationDeploymentPropertiesHash = api.InternalFlagPrefix + "kubemon-deploymentproperties-hash"
+	StorageVolumeName                  = "kubemon-storage"
+	AuthTokenVolumeName                = "kubemon-authtoken-secret"
+	kspmTokenVolumeName                = "kspm-token"
+	kspmTokenMountPath                 = operatorconsts.DTComponentsSecretsRootDir + "/tokens/kspm/node-configuration-collector"
 )
 
 var (
@@ -105,11 +107,12 @@ func ensureReady(dk *dynakube.DynaKube) error {
 	return nil
 }
 
-func buildPodAnnotations(dk *dynakube.DynaKube, tokenHash, authTokenHash, customPropertiesHash string) map[string]string {
+func buildPodAnnotations(dk *dynakube.DynaKube, tokenHash, authTokenHash, customPropertiesHash, deploymentPropertiesHash string) map[string]string {
 	annotations := map[string]string{
 		AnnotationTenantTokenHash:              tokenHash,
 		AnnotationAuthTokenHash:                authTokenHash,
 		AnnotationCustomPropertiesHash:         customPropertiesHash,
+		AnnotationDeploymentPropertiesHash:     deploymentPropertiesHash,
 		mutator.AnnotationInjectionSplitMounts: "true",
 	}
 
@@ -284,6 +287,25 @@ func buildVolumes(dk *dynakube.DynaKube) []corev1.Volume {
 			})
 	}
 
+	if len(dk.GetResourceAttributes()) > 0 {
+		volumes = append(volumes, corev1.Volume{
+			Name: agconsts.DeploymentPropertiesVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: dk.KubernetesMonitoring().GetDeploymentPropertiesConfigMapName(),
+					},
+					Items: []corev1.KeyToPath{
+						{
+							Key:  agconsts.DeploymentPropertiesFileName,
+							Path: agconsts.DeploymentPropertiesFileName,
+						},
+					},
+				},
+			},
+		})
+	}
+
 	return volumes
 }
 
@@ -361,6 +383,15 @@ func buildVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 				ReadOnly:  true,
 				MountPath: agconsts.CertsMountPath,
 			})
+	}
+
+	if len(dk.GetResourceAttributes()) > 0 {
+		mounts = append(mounts, corev1.VolumeMount{
+			ReadOnly:  true,
+			Name:      agconsts.DeploymentPropertiesVolumeName,
+			MountPath: agconsts.DeploymentPropertiesMountPath,
+			SubPath:   agconsts.DeploymentPropertiesFileName,
+		})
 	}
 
 	return mounts
@@ -453,6 +484,11 @@ func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.D
 		return nil, err
 	}
 
+	deploymentPropertiesHash, err := r.getDeploymentPropertiesHash(dk)
+	if err != nil {
+		return nil, err
+	}
+
 	km := dk.KubernetesMonitoring()
 
 	initContainer := corev1.Container{
@@ -490,7 +526,7 @@ func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.D
 	opts := []k8sstatefulset.Option{
 		k8sstatefulset.SetReplicas(replicas),
 		k8sstatefulset.SetAllLabels(labels.AsMap(), labels.AsSelector(), labels.AsMap(), km.Labels),
-		k8sstatefulset.SetAllAnnotations(nil, maputil.MergeMap(km.Annotations, buildPodAnnotations(dk, tokenHash, authTokenHash, customPropertiesHash))),
+		k8sstatefulset.SetAllAnnotations(nil, maputil.MergeMap(km.Annotations, buildPodAnnotations(dk, tokenHash, authTokenHash, customPropertiesHash, deploymentPropertiesHash))),
 		k8sstatefulset.SetServiceAccount(km.GetServiceAccountName()),
 		k8sstatefulset.SetNodeSelector(km.NodeSelector),
 		k8sstatefulset.SetTolerations(km.Tolerations),
@@ -604,4 +640,17 @@ func buildPodSecurityContext() *corev1.PodSecurityContext {
 	sc.FSGroup = new(agconsts.DockerImageGroup)
 
 	return &sc
+}
+
+func (r *Reconciler) getDeploymentPropertiesHash(dk *dynakube.DynaKube) (string, error) {
+	if len(dk.Spec.ResourceAttributes) == 0 {
+		return "", nil
+	}
+
+	hash, err := hasher.GenerateHash(deploymentproperties.ConfigMapData(dk))
+	if err != nil {
+		return "", errors.Wrap(err, "failed to hash deployment.properties configMap")
+	}
+
+	return hash, nil
 }
