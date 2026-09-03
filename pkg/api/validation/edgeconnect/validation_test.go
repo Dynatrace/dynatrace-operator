@@ -11,10 +11,30 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
+
+func TestValidateDelete(t *testing.T) {
+	testEC := edgeconnect.EdgeConnect{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-name",
+			Namespace: "test-namespace",
+		},
+		Spec: edgeconnect.EdgeConnectSpec{
+			APIServer: "id." + allowedSuffix[0],
+			OAuth: edgeconnect.OAuthSpec{
+				Endpoint: testValidOAuthEndpoint,
+			},
+		},
+	}
+	validator := &Validator{}
+	warnings, err := validator.ValidateDelete(t.Context(), &testEC)
+	assert.Nil(t, warnings)
+	assert.NoError(t, err)
+}
 
 func assertDenied(t *testing.T, errMessages []string, ec *edgeconnect.EdgeConnect, other ...client.Object) {
 	t.Helper()
