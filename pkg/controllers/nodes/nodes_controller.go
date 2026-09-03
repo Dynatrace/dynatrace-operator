@@ -145,6 +145,10 @@ func (controller *Controller) reconcileNodeUpdate(ctx context.Context, dk *dynak
 
 	if cached, err := nodeCache.GetEntry(nodeName); err == nil {
 		cacheEntry.SetLastMarkedForTerminationTimestamp(cached.LastMarkedForTermination)
+
+		if cacheEntry.IPAddress == "" {
+			cacheEntry.IPAddress = cached.IPAddress
+		}
 	}
 
 	// Handle unschedulable Nodes, if they have a OneAgent instance
@@ -242,6 +246,12 @@ func (controller *Controller) sendMarkedForTermination(ctx context.Context, dk *
 
 func (controller *Controller) markForTermination(ctx context.Context, dk *dynakube.DynaKube, cacheEntry *cache.Entry) error {
 	log := logd.FromContext(ctx)
+
+	if cacheEntry.IPAddress == "" {
+		log.Info("skipping mark for termination event, no IP address known for node", "dynakube", dk.Name, "node", cacheEntry.NodeName)
+
+		return nil
+	}
 
 	if !cacheEntry.IsMarkableForTermination(controller.timeProvider.Now().UTC()) {
 		return nil
