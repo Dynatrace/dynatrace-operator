@@ -10,5 +10,5 @@ import (
 )
 
 func TestSumErrors(t *testing.T) {
-	assert.Equal(t, SumErrors([]string{"asd"}, "1"), "\n1 error(s) found in the 1\n 1. asd")
+	assert.Equal(t, "\n1 error(s) found in the 1\n 1. asd", SumErrors([]string{"asd"}, "1"))
 }
