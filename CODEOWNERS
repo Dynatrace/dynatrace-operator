@@ -103,15 +103,15 @@
 
 # ── Repo & CI — build, deps, workflows, linters, scanners, metadata ──────────
 /.github/                                                  @Incredible-O @Dynatrace/kubernetes-operator-release @jokuniew
-/api/                                                      @Incredible-O @waodim @jokuniew @andriisoldatenko @avorima
-/hack/                                                     @Incredible-O @waodim @jokuniew @andriisoldatenko @avorima
-/Dockerfile                                                @Incredible-O @waodim @jokuniew @andriisoldatenko @avorima
-/Makefile                                                  @Incredible-O @waodim @jokuniew @andriisoldatenko @avorima
+/api/                                                      @Incredible-O @waodim @jokuniew @mihaitanasedt
+/Dockerfile
+/Makefile
+/hack/
 /go.mod
 /go.sum
-/.golangci.yml                                             @Incredible-O @waodim @jokuniew @andriisoldatenko @avorima
-/.markdownlint.json                                        @Incredible-O @waodim @jokuniew
-/.markdownlintignore                                       @Incredible-O @waodim @jokuniew
+/.golangci.yml
+/.markdownlint.json
+/.markdownlintignore
 /.snyk                                                     @Incredible-O @waodim @jokuniew @aorcholski
 /PROJECT                                                   @Incredible-O @waodim @jokuniew
 /LICENSE                                                   @Incredible-O @waodim @jokuniew
