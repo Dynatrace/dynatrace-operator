@@ -51,8 +51,10 @@ spec:
         - name: DT_API_TOKEN
           valueFrom:
             secretKeyRef:
-              key: apiToken
+              key: dataIngestToken
               name: dk
+        - name: K8S_CLUSTER_NAME
+          value: "prometheus"
         - name: GOMEMLIMIT
           value: "471859200"
         image: registry.example.com/gateway:1.2.3

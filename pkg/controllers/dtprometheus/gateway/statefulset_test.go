@@ -80,6 +80,7 @@ func TestReconcileStatefulSet(t *testing.T) {
 		}
 		s := newTestScopeWithDynaKube(dtp, newTestDynaKube())
 		s.ConfigMapHash = "deadbeef"
+		s.DynaKube.Status.KubernetesClusterName = "prometheus"
 		c := fake.NewClient()
 		r := &Reconciler{Client: c}
 

@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
@@ -241,8 +242,11 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 			&dynakube.DynaKube{},
 			// Map requests from DynaKube to DTPrometheus
 			handler.EnqueueRequestsFromMapFunc(newDTPrometheusFromDynaKubeMapper(mgr.GetClient())),
-			// Filter out any DynaKube changes that are not phase changes
-			builder.WithPredicates(newDynaKubePhaseChangedPredicate()),
+			// Filter out DynaKube changes that are neither a phase change nor a resource-attributes change
+			builder.WithPredicates(predicate.Or(
+				newDynaKubePredicate(phaseChecker),
+				newDynaKubePredicate(resourceAttributesChecker),
+			)),
 		).
 		Named("dtprometheus").
 		Complete(r)
@@ -276,8 +280,7 @@ func newDTPrometheusFromDynaKubeMapper(c client.Client) handler.MapFunc {
 	}
 }
 
-// Create [predicate.Funcs] that only return true when the DynaKube phase changed.
-func newDynaKubePhaseChangedPredicate() predicate.Funcs {
+func newDynaKubePredicate(check func(oldDK, newDK *dynakube.DynaKube) bool) predicate.Funcs {
 	return predicate.Funcs{
 		CreateFunc: func(event.TypedCreateEvent[client.Object]) bool {
 			return false
@@ -296,10 +299,18 @@ func newDynaKubePhaseChangedPredicate() predicate.Funcs {
 				return false
 			}
 
-			return oldDK.Status.Phase != newDK.Status.Phase
+			return check(oldDK, newDK)
 		},
 		GenericFunc: func(event.TypedGenericEvent[client.Object]) bool {
 			return false
 		},
 	}
+}
+
+func phaseChecker(oldDK, newDK *dynakube.DynaKube) bool {
+	return oldDK.Status.Phase != newDK.Status.Phase
+}
+
+func resourceAttributesChecker(oldDK, newDK *dynakube.DynaKube) bool {
+	return !maps.Equal(oldDK.Spec.ResourceAttributes, newDK.Spec.ResourceAttributes)
 }
