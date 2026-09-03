@@ -148,6 +148,34 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, c.Get(t.Context(), client.ObjectKeyFromObject(dtp), dtp))
 		require.Equal(t, status.Error, dtp.Status.Phase)
 	})
+
+	t.Run("scraper error", func(t *testing.T) {
+		dtp := &dtprometheus.DTPrometheus{ObjectMeta: metav1.ObjectMeta{Name: req.Name, Namespace: req.Namespace}, Spec: dtprometheus.DTPrometheusSpec{DynaKubeName: "dk"}}
+		dk := &dynakube.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: "dk", Namespace: req.Namespace}, Status: dynakube.DynaKubeStatus{Phase: status.Running}}
+		secret := &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "dk", Namespace: req.Namespace}, Data: map[string][]byte{token.APIKey: []byte("api-token"), token.DataIngestKey: []byte("data-ingest-token")}}
+
+		expectErr := errors.New("boom")
+		gm := newMockGatewayReconciler(t)
+		gm.EXPECT().Reconcile(t.Context(), dtp, dk, image.Client(nil)).Return(nil).Once()
+		m := newMockTargetAllocatorReconciler(t)
+		m.EXPECT().Reconcile(t.Context(), dtp, dk, image.Client(nil)).Return(nil).Once()
+		sm := newMockScraperReconciler(t)
+		sm.EXPECT().Reconcile(t.Context(), dtp, dk, image.Client(nil)).Return(expectErr).Once()
+		c := fake.NewClient(dtp, dk, secret)
+		r := NewReconciler(c)
+		r.newDynatraceClient = func(context.Context, client.Reader, *dynakube.DynaKube, string, string, string, time.Duration) (*dynatrace.Client, error) {
+			return &dynatrace.Client{}, nil
+		}
+		r.gateway = gm
+		r.targetAllocator = m
+		r.scraper = sm
+
+		_, err := r.Reconcile(t.Context(), req)
+
+		require.ErrorIs(t, err, expectErr)
+		require.NoError(t, c.Get(t.Context(), client.ObjectKeyFromObject(dtp), dtp))
+		require.Equal(t, status.Error, dtp.Status.Phase)
+	})
 }
 
 func Test_setPhase(t *testing.T) {

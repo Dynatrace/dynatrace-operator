@@ -7,7 +7,6 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
-	"errors"
 	"fmt"
 	"maps"
 	"path/filepath"
@@ -15,21 +14,21 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/dtprometheus"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dtprometheus/condition"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8scontainer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	k8sobject "github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
@@ -80,7 +79,6 @@ type reconcileScope struct {
 	AppLabels   *k8slabel.Labels
 	ImageClient image.Client
 	// Computed during reconcile
-	resolvedImage string
 	ConfigMapHash string
 	StatefulSet   *appsv1.StatefulSet
 }
@@ -108,7 +106,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtp *dtprometheus.DTPromethe
 		}
 	}
 
-	r.reconcileCondition(scope, err)
+	condition.Set(&scope.Owner.Status.Conditions, dtprometheus.GatewayAvailable, "gateway",
+		func() bool { return k8sstatefulset.IsRolloutComplete(scope.StatefulSet) }, err)
 
 	return err
 }
@@ -127,50 +126,9 @@ func (r *Reconciler) resolveImage(ctx context.Context, s *reconcileScope) error 
 		}
 	}
 
-	s.resolvedImage = imageURI
 	s.Owner.Status.Gateway.ResolvedImage = imageURI
 
 	return nil
-}
-
-func (r *Reconciler) reconcileCondition(s *reconcileScope, err error) {
-	condition := metav1.Condition{Type: dtprometheus.GatewayAvailable}
-
-	switch {
-	case err != nil:
-		condition.Status = metav1.ConditionFalse
-		condition.Reason = status.ReasonError
-		condition.Message = safeUnwrap(err).Error()
-	case k8sstatefulset.IsRolloutComplete(s.StatefulSet):
-		condition.Status = metav1.ConditionTrue
-		condition.Reason = status.ReasonAvailable
-		condition.Message = "gateway is ready"
-	default:
-		condition.Status = metav1.ConditionFalse
-		condition.Reason = status.ReasonReconciling
-		condition.Message = "gateway is pending"
-	}
-
-	_ = meta.SetStatusCondition(&s.Owner.Status.Conditions, condition)
-}
-
-// safeUnwrap returns the innermost wrapped error for cleaner condition messages.
-func safeUnwrap(err error) error {
-	if u := errors.Unwrap(err); u != nil {
-		return u
-	}
-
-	return err
-}
-
-func mergeAppLabels(obj client.Object, appLabels *k8slabel.Labels) {
-	labels := obj.GetLabels()
-	if labels == nil {
-		labels = make(map[string]string)
-	}
-
-	maps.Copy(labels, appLabels.AsMap())
-	obj.SetLabels(labels)
 }
 
 func (r *Reconciler) reconcileConfigMap(ctx context.Context, s *reconcileScope) error {
@@ -184,7 +142,7 @@ func (r *Reconciler) reconcileConfigMap(ctx context.Context, s *reconcileScope) 
 	cm := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: s.Owner.Namespace}}
 
 	err = k8sobject.RetryCreateOrUpdate(ctx, r, cm, func() error {
-		mergeAppLabels(cm, s.AppLabels)
+		s.AppLabels.MergeInto(cm)
 		cm.Data = map[string]string{gatewayConfigKey: rendered}
 
 		return controllerutil.SetControllerReference(s.Owner, cm, r.Scheme())
@@ -247,7 +205,7 @@ func (r *Reconciler) reconcileStatefulset(ctx context.Context, s *reconcileScope
 }
 
 func mutateStatefulSet(sts *appsv1.StatefulSet, s *reconcileScope) {
-	mergeAppLabels(sts, s.AppLabels)
+	s.AppLabels.MergeInto(sts)
 
 	sts.Spec.Template.Labels = maps.Clone(s.Spec.Labels)
 	if sts.Spec.Template.Labels == nil {
@@ -256,7 +214,7 @@ func mutateStatefulSet(sts *appsv1.StatefulSet, s *reconcileScope) {
 
 	maps.Copy(sts.Spec.Template.Labels, s.AppLabels.AsMap())
 
-	sts.Spec.Template.Annotations = s.Spec.Annotations
+	sts.Spec.Template.Annotations = maps.Clone(s.Spec.Annotations)
 	if sts.Spec.Template.Annotations == nil {
 		sts.Spec.Template.Annotations = make(map[string]string)
 	}
@@ -283,17 +241,11 @@ func mutateStatefulSet(sts *appsv1.StatefulSet, s *reconcileScope) {
 	sts.Spec.Template.Spec.Tolerations = s.Spec.Tolerations
 	sts.Spec.Template.Spec.TopologySpreadConstraints = s.Spec.TopologySpreadConstraints
 	sts.Spec.Template.Spec.Volumes = buildVolumes(s)
-	sts.Spec.Template.Spec.Containers = []corev1.Container{buildContainer(s, getContainer(sts))}
-}
-
-// getContainer returns the current first container so buildContainer can preserve apiserver-defaulted
-// fields (e.g. ImagePullPolicy, probe timeouts) and avoid spurious diffs.
-func getContainer(sts *appsv1.StatefulSet) corev1.Container {
-	if len(sts.Spec.Template.Spec.Containers) > 0 {
-		return sts.Spec.Template.Spec.Containers[0]
+	// The stored container is passed in so buildContainer can preserve apiserver-defaulted
+	// fields (e.g. ImagePullPolicy, probe timeouts) and avoid spurious diffs.
+	sts.Spec.Template.Spec.Containers = []corev1.Container{
+		buildContainer(s, k8scontainer.GetFirstInPodSpec(&sts.Spec.Template.Spec)),
 	}
-
-	return corev1.Container{}
 }
 
 func buildContainer(s *reconcileScope, current corev1.Container) corev1.Container {
@@ -307,7 +259,7 @@ func buildContainer(s *reconcileScope, current corev1.Container) corev1.Containe
 
 	return corev1.Container{
 		Name:            "gateway",
-		Image:           s.resolvedImage,
+		Image:           s.Owner.Status.Gateway.ResolvedImage,
 		ImagePullPolicy: imagePullPolicy,
 		Command:         []string{"/dynatrace-otel-collector"},
 		Args:            []string{"--config=" + configMountDir + "/" + relayConfigFile},
@@ -482,7 +434,7 @@ func (r *Reconciler) reconcileService(ctx context.Context, s *reconcileScope) er
 	svc := &corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: s.Spec.GetStatefulSetName(), Namespace: s.Owner.Namespace}}
 
 	return k8sobject.RetryCreateOrUpdate(ctx, r, svc, func() error {
-		mergeAppLabels(svc, s.AppLabels)
+		s.AppLabels.MergeInto(svc)
 
 		svc.Spec.Selector = s.AppLabels.AsSelector()
 		svc.Spec.Ports = []corev1.ServicePort{

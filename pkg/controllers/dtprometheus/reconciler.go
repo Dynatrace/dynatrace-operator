@@ -14,6 +14,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dtprometheus/gateway"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dtprometheus/scraper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dtprometheus/targetallocator"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
@@ -47,6 +48,7 @@ func NewReconciler(c client.Client) *Reconciler {
 		Client:             c,
 		targetAllocator:    &targetallocator.Reconciler{Client: c},
 		gateway:            &gateway.Reconciler{Client: c},
+		scraper:            &scraper.Reconciler{Client: c},
 		newDynatraceClient: dynatrace.NewClientFromDynakube,
 	}
 }
@@ -56,6 +58,7 @@ type Reconciler struct {
 
 	targetAllocator targetAllocatorReconciler
 	gateway         gatewayReconciler
+	scraper         scraperReconciler
 
 	newDynatraceClient dynatrace.ClientFactory
 }
@@ -65,6 +68,10 @@ type targetAllocatorReconciler interface {
 }
 
 type gatewayReconciler interface {
+	Reconcile(ctx context.Context, dtp *dtprometheus.DTPrometheus, dk *dynakube.DynaKube, imageClient image.Client) error
+}
+
+type scraperReconciler interface {
 	Reconcile(ctx context.Context, dtp *dtprometheus.DTPrometheus, dk *dynakube.DynaKube, imageClient image.Client) error
 }
 
@@ -133,6 +140,11 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ct
 
 	if err := r.targetAllocator.Reconcile(ctx, dtp, dk, dtClient.Images); err != nil {
 		return ctrl.Result{}, fmt.Errorf("reconcile target allocator: %w", err)
+	}
+
+	// Reconciled last: its config references the gateway and target allocator services.
+	if err := r.scraper.Reconcile(ctx, dtp, dk, dtClient.Images); err != nil {
+		return ctrl.Result{}, fmt.Errorf("reconcile scraper: %w", err)
 	}
 
 	return ctrl.Result{}, nil

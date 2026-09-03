@@ -1,4 +1,5 @@
 ENABLE_CSI ?= true
+CSI_MIGRATION_MODE ?= false
 DEBUG_LOGS ?= true
 DT_CLIENT_LOG_LEVEL ?= response
 WEBHOOK_REPLICAS ?= 2
@@ -20,6 +21,10 @@ deploy/show-image-ref/fips:
 deploy/no-csi:
 	@make ENABLE_CSI=false $(@D)
 
+## Deploy the operator in CSI migration mode
+deploy/csi-migration:
+	@make ENABLE_CSI=true CSI_MIGRATION_MODE=true $(@D)
+
 deploy/fips:
 	@make IMAGE_URI="$(IMAGE_URI)"-fips $(@D)
 
@@ -32,6 +37,7 @@ deploy: manifests/crd/helm
 			--atomic \
 			--set installCRD=true \
 			--set csidriver.enabled=$(ENABLE_CSI) \
+			--set csidriver.migrationMode=$(CSI_MIGRATION_MODE) \
 			--set webhook.replicas=$(WEBHOOK_REPLICAS) \
 			--set manifests=true \
 			--set image=$(IMAGE_URI) \
@@ -45,6 +51,6 @@ deploy: manifests/crd/helm
 
 ## Undeploy the current operator installation
 undeploy:
-	for crd in $$(kubectl api-resources --api-group dynatrace.com -o name); do echo kubectl delete $$crd --all -n dynatrace || true; done
+	for crd in $$(kubectl api-resources --api-group dynatrace.com -o name); do kubectl delete $$crd --all -n dynatrace || true; done
 	kubectl -n dynatrace wait pod --for=delete -l app.kubernetes.io/managed-by=dynatrace-operator --timeout=300s
 	helm uninstall dynatrace-operator --namespace dynatrace

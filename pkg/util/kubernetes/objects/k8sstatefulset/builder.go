@@ -108,6 +108,12 @@ func SetContainer(container corev1.Container) Option {
 	}
 }
 
+func SetInitContainer(container corev1.Container) Option {
+	return func(s *appsv1.StatefulSet) {
+		s.Spec.Template.Spec.InitContainers = append(s.Spec.Template.Spec.InitContainers, container)
+	}
+}
+
 func SetServiceAccount(serviceAccountName string) Option {
 	return func(s *appsv1.StatefulSet) {
 		s.Spec.Template.Spec.ServiceAccountName = serviceAccountName

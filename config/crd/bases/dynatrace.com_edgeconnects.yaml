@@ -1025,6 +1025,10 @@ spec:
                     format: int32
                     type: integer
                 type: object
+              publicRegistryOverride:
+                description: Overrides the default public registry from which the
+                  EdgeConnect image is pulled.
+                type: string
               replicas:
                 description: 'Amount of replicas for your EdgeConnect (the default
                   value is: 1)'

@@ -101,7 +101,7 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 		return reconcile.Result{}, err
 	}
 
-	if !installconfig.GetModules().CSIDriver {
+	if !installconfig.GetModules().CSIDriver || dk.FF().IsCodeModuleImageVolume() {
 		log.Info("CSI driver migration mode active, running cleanup only")
 
 		if err := provisioner.cleaner.Run(ctx); err != nil {
