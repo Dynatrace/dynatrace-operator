@@ -319,6 +319,9 @@ func newDynaKubeTokenNameChangedPredicate() predicate.Funcs {
 			newDK, _ := e.ObjectNew.(*dynakube.DynaKube)
 
 			if oldDK == nil || newDK == nil {
+				// Don't need to drag a context or logger variable into this closure for this unexpected case.
+				logd.Get().WithName("dtprometheus-predicate").Error(nil, fmt.Sprintf("expected DynaKube, but got old:%T, new:%T", e.ObjectOld, e.ObjectNew))
+
 				return false
 			}
 
