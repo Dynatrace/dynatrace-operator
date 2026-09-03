@@ -12,6 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit/configure"
 	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit/move"
 	"github.com/Dynatrace/dynatrace-operator/cmd/bootstrapper"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
@@ -28,6 +29,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+//nolint:revive // ignore maximum number of lines per function exceeded
 func TestMutateInitContainer(t *testing.T) {
 	installPath := "test/path"
 	initContainerBase := corev1.Container{
@@ -383,6 +385,301 @@ func TestMutateInitContainer(t *testing.T) {
 		require.NoError(t, mutateInitContainer(request, installPath))
 		assert.Contains(t, request.InstallContainer.Env, corev1.EnvVar{Name: k8senv.DTExtractCodeModulesImageLinksEnvVar, Value: "true"})
 	})
+
+	t.Run("image volume with pod annotation with CSI", func(t *testing.T) {
+		image := "myimage.io:latest"
+		dk := createAppMonDKwithImage(t, image)
+		pod := &corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					AnnotationVolumeType: ImageVolumeType,
+				},
+			},
+		}
+
+		request := &webhook.MutationRequest{
+			BaseRequest: &webhook.BaseRequest{
+				Pod:      pod,
+				DynaKube: dk,
+			},
+			InstallContainer: initContainerBase.DeepCopy(),
+		}
+
+		err := mutateInitContainer(request, installPath)
+		require.NoError(t, err)
+
+		imageVolume := k8svolume.FindByName(request.Pod.Spec.Volumes, BinVolumeName)
+		assertVolumeIsImage(t, imageVolume, image)
+
+		imageVolumeMount, err := k8smount.Find(request.InstallContainer.VolumeMounts, BinVolumeName)
+		require.NoError(t, err)
+		require.True(t, imageVolumeMount.ReadOnly)
+
+		assert.NotEmpty(t, request.InstallContainer.Args)
+		assert.Subset(t, request.InstallContainer.Args, initContainerBase.Args)
+		assert.Equal(t, initContainerBase.Image, request.InstallContainer.Image)
+		assert.NotEmpty(t, request.InstallContainer.Resources) // does not touch default
+	})
+
+	t.Run("image volume with pod annotation without CSI", func(t *testing.T) {
+		installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: false})
+		image := "myimage.io:latest"
+		dk := createAppMonDKwithImage(t, image)
+		pod := &corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					AnnotationVolumeType: ImageVolumeType,
+				},
+			},
+		}
+
+		request := &webhook.MutationRequest{
+			BaseRequest: &webhook.BaseRequest{
+				Pod:      pod,
+				DynaKube: dk,
+			},
+			InstallContainer: initContainerBase.DeepCopy(),
+		}
+
+		err := mutateInitContainer(request, installPath)
+		require.NoError(t, err)
+
+		imageVolume := k8svolume.FindByName(request.Pod.Spec.Volumes, BinVolumeName)
+		assertVolumeIsImage(t, imageVolume, image)
+
+		imageVolumeMount, err := k8smount.Find(request.InstallContainer.VolumeMounts, BinVolumeName)
+		require.NoError(t, err)
+		require.True(t, imageVolumeMount.ReadOnly)
+
+		assert.NotEmpty(t, request.InstallContainer.Args)
+		assert.Subset(t, request.InstallContainer.Args, initContainerBase.Args)
+		assert.Equal(t, initContainerBase.Image, request.InstallContainer.Image)
+		assert.NotEmpty(t, request.InstallContainer.Resources) // does not touch default
+	})
+
+	t.Run("image volume with DK + ImageVolume FF with CSI", func(t *testing.T) {
+		image := "myimage.io:latest"
+		dk := createAppMonDKwithImage(t, image)
+		dk.Annotations[exp.OAImageVolumeKey] = "true"
+		pod := &corev1.Pod{}
+
+		request := &webhook.MutationRequest{
+			BaseRequest: &webhook.BaseRequest{
+				Pod:      pod,
+				DynaKube: dk,
+			},
+			InstallContainer: initContainerBase.DeepCopy(),
+		}
+
+		err := mutateInitContainer(request, installPath)
+		require.NoError(t, err)
+
+		imageVolume := k8svolume.FindByName(request.Pod.Spec.Volumes, BinVolumeName)
+		assertVolumeIsImage(t, imageVolume, image)
+
+		imageVolumeMount, err := k8smount.Find(request.InstallContainer.VolumeMounts, BinVolumeName)
+		require.NoError(t, err)
+		require.True(t, imageVolumeMount.ReadOnly)
+
+		assert.NotEmpty(t, request.InstallContainer.Args)
+		assert.Subset(t, request.InstallContainer.Args, initContainerBase.Args)
+		assert.Equal(t, initContainerBase.Image, request.InstallContainer.Image)
+		assert.NotEmpty(t, request.InstallContainer.Resources) // does not touch default
+	})
+
+	t.Run("csi-scenario -> conflicting volume type", func(t *testing.T) {
+		installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: true})
+
+		dk := dynakube.DynaKube{}
+		dk.Name = "csi-scenario"
+		dk.Status.CodeModules.Version = "1.2.3"
+		dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
+		pod := &corev1.Pod{}
+		// pre-populate with a non-CSI volume under the same name to trigger the conflict
+		pod.Spec.Volumes = []corev1.Volume{
+			{Name: BinVolumeName, VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}}},
+		}
+
+		request := &webhook.MutationRequest{
+			BaseRequest: &webhook.BaseRequest{
+				Pod:      pod,
+				DynaKube: dk,
+			},
+			InstallContainer: initContainerBase.DeepCopy(),
+		}
+
+		err := mutateInitContainer(request, installPath)
+		require.ErrorAs(t, err, &webhook.MutatorError{})
+	})
+
+	t.Run("zip-scenario -> conflicting volume type", func(t *testing.T) {
+		installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: false})
+
+		dk := dynakube.DynaKube{}
+		dk.Name = "zip-scenario"
+		dk.Status.CodeModules.Version = "1.2.3"
+		dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
+		pod := &corev1.Pod{}
+		// pre-populate with a non-emptyDir volume under the same name to trigger the conflict
+		pod.Spec.Volumes = []corev1.Volume{
+			{Name: BinVolumeName, VolumeSource: corev1.VolumeSource{HostPath: &corev1.HostPathVolumeSource{Path: "/some/path"}}},
+		}
+
+		request := &webhook.MutationRequest{
+			BaseRequest: &webhook.BaseRequest{
+				Pod:      pod,
+				DynaKube: dk,
+			},
+			InstallContainer: initContainerBase.DeepCopy(),
+		}
+
+		err := mutateInitContainer(request, installPath)
+		require.ErrorAs(t, err, &webhook.MutatorError{})
+	})
+
+	t.Run("image volume with pod annotation with CSI -> default init-resources", func(t *testing.T) {
+		image := "myimage.io:latest"
+		dk := createAppMonDKwithImage(t, image)
+		pod := &corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					AnnotationVolumeType: ImageVolumeType,
+				},
+			},
+		}
+
+		request := &webhook.MutationRequest{
+			BaseRequest: &webhook.BaseRequest{
+				Pod:      pod,
+				DynaKube: dk,
+			},
+			InstallContainer: initContainerBase.DeepCopy(),
+		}
+
+		err := mutateInitContainer(request, installPath)
+		require.NoError(t, err)
+
+		imageVolume := k8svolume.FindByName(request.Pod.Spec.Volumes, BinVolumeName)
+		assertVolumeIsImage(t, imageVolume, image)
+
+		assert.Equal(t, initContainerBase.Resources, request.InstallContainer.Resources) // respects default resources
+	})
+
+	t.Run("image volume with DK + ImageVolume FF with CSI -> custom init-resources", func(t *testing.T) {
+		image := "myimage.io:latest"
+		dk := createAppMonDKwithImage(t, image)
+		dk.Annotations[exp.OAImageVolumeKey] = "true"
+		dk.Spec.OneAgent.ApplicationMonitoring.InitResources = &corev1.ResourceRequirements{
+			Requests: k8sresource.NewResourceList("40m", "40Mi"),
+		}
+		pod := &corev1.Pod{}
+
+		request := &webhook.MutationRequest{
+			BaseRequest: &webhook.BaseRequest{
+				Pod:      pod,
+				DynaKube: dk,
+			},
+			InstallContainer: initContainerBase.DeepCopy(),
+		}
+
+		err := mutateInitContainer(request, installPath)
+		require.NoError(t, err)
+
+		imageVolume := k8svolume.FindByName(request.Pod.Spec.Volumes, BinVolumeName)
+		assertVolumeIsImage(t, imageVolume, image)
+
+		assert.Equal(t, *dk.Spec.OneAgent.ApplicationMonitoring.InitResources, request.InstallContainer.Resources) // respects custom resources
+	})
+
+	t.Run("image-volume-scenario -> conflicting volume type", func(t *testing.T) {
+		image := "myimage.io:latest"
+		dk := createAppMonDKwithImage(t, image)
+		dk.Annotations[exp.OAImageVolumeKey] = "true"
+		pod := &corev1.Pod{}
+		// pre-populate with a volume referencing a different image to trigger the conflict
+		pod.Spec.Volumes = []corev1.Volume{
+			{Name: BinVolumeName, VolumeSource: corev1.VolumeSource{Image: &corev1.ImageVolumeSource{Reference: "other-image:v1"}}},
+		}
+
+		request := &webhook.MutationRequest{
+			BaseRequest: &webhook.BaseRequest{
+				Pod:      pod,
+				DynaKube: dk,
+			},
+			InstallContainer: initContainerBase.DeepCopy(),
+		}
+
+		err := mutateInitContainer(request, installPath)
+		require.ErrorAs(t, err, &webhook.MutatorError{})
+	})
+
+	t.Run("ephemeral pod annotation and DK + ImageVolume FF with CSI", func(t *testing.T) {
+		image := "myimage.io:latest"
+		dk := createAppMonDKwithImage(t, image)
+		dk.Annotations[exp.OAImageVolumeKey] = "true"
+		pod := &corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					AnnotationVolumeType: EphemeralVolumeType,
+				},
+			},
+		}
+
+		request := &webhook.MutationRequest{
+			BaseRequest: &webhook.BaseRequest{
+				Pod:      pod,
+				DynaKube: dk,
+			},
+			InstallContainer: initContainerBase.DeepCopy(),
+		}
+
+		err := mutateInitContainer(request, installPath)
+		require.NoError(t, err)
+
+		imageVolume := k8svolume.FindByName(request.Pod.Spec.Volumes, BinVolumeName)
+		assertVolumeIsEphemeral(t, imageVolume)
+
+		imageVolumeMount, err := k8smount.Find(request.InstallContainer.VolumeMounts, BinVolumeName)
+		require.NoError(t, err)
+		require.False(t, imageVolumeMount.ReadOnly)
+
+		assert.NotEmpty(t, request.InstallContainer.Args)
+		assert.NotSubset(t, request.InstallContainer.Args, initContainerBase.Args)
+		assert.Equal(t, image, request.InstallContainer.Image)
+		assert.Empty(t, request.InstallContainer.Resources) // removes default, as they wouldn't work
+	})
+}
+
+func createAppMonDKwithImage(t *testing.T, image string) dynakube.DynaKube {
+	t.Helper()
+	dk := dynakube.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{Name: "image-volume-scenario", Annotations: map[string]string{}},
+		Spec: dynakube.DynaKubeSpec{
+			OneAgent: oneagent.Spec{
+				ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
+					AppInjectionSpec: oneagent.AppInjectionSpec{
+						CodeModulesImage: image,
+					},
+				},
+			},
+		},
+	}
+	dk.Status.CodeModules.ImageID = image
+
+	return dk
+}
+
+func assertVolumeIsImage(t *testing.T, imageVolume *corev1.Volume, expectedImage string) {
+	t.Helper()
+	require.NotNil(t, imageVolume)
+	require.NotNil(t, imageVolume.Image)
+	require.Equal(t, expectedImage, imageVolume.Image.Reference)
+}
+
+func assertVolumeIsEphemeral(t *testing.T, volume *corev1.Volume) {
+	t.Helper()
+	require.NotNil(t, volume)
+	require.NotNil(t, volume.EmptyDir)
 }
 
 func TestAddInitArgs(t *testing.T) {
