@@ -14,6 +14,7 @@
 |`hostRestrictions`|Restrict outgoing HTTP requests to your internal resources to specified hosts|-|array|
 |`labels`|Adds additional labels to the EdgeConnect pods|-|object|
 |`nodeSelector`|Node selector to control the selection of nodes for the EdgeConnect pods|-|object|
+|`publicRegistryOverride`|Overrides the default public registry from which the EdgeConnect image is pulled.|-|string|
 |`replicas`|Amount of replicas for your EdgeConnect (the default value is: 1)|-|integer|
 |`resources`|Defines resources requests and limits for single pods|-|object|
 |`serviceAccountName`|ServiceAccountName that allows EdgeConnect to access the Kubernetes API|-|string|
