@@ -19,7 +19,7 @@ func TestBuildScraperConfigData(t *testing.T) {
 
 		data := buildScraperConfigData(s)
 
-		assert.Equal(t, "http://dtp-allocator.dynatrace.svc.cluster.local:80", data.TargetAllocatorEndpoint)
+		assert.Equal(t, "http://dtp-allocator.dynatrace:80", data.TargetAllocatorEndpoint)
 		assert.Equal(t, "dtp-gateway.dynatrace", data.GatewayService)
 	})
 
@@ -28,7 +28,7 @@ func TestBuildScraperConfigData(t *testing.T) {
 
 		data := buildScraperConfigData(s)
 
-		assert.Equal(t, "http://other-allocator.custom-ns.svc.cluster.local:80", data.TargetAllocatorEndpoint)
+		assert.Equal(t, "http://other-allocator.custom-ns:80", data.TargetAllocatorEndpoint)
 		assert.Equal(t, "other-gateway.custom-ns", data.GatewayService)
 	})
 
@@ -42,7 +42,7 @@ func TestBuildScraperConfigData(t *testing.T) {
 
 func TestBuildScraperOTelConfig(t *testing.T) {
 	data := scraperConfigData{
-		TargetAllocatorEndpoint: "http://ta.dynatrace.svc.cluster.local:8080",
+		TargetAllocatorEndpoint: "http://ta.dynatrace:8080",
 		GatewayService:          "gw.dynatrace",
 		TargetsPollInterval:     "1m0s",
 	}

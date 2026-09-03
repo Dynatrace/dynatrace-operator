@@ -156,14 +156,14 @@ func buildScraperConfigData(s *reconcileScope) scraperConfigData {
 
 	return scraperConfigData{
 		TargetAllocatorEndpoint: "http://" + net.JoinHostPort(
-			serviceFQDN(s.Owner.TargetAllocator().GetDeploymentName(), namespace), strconv.Itoa(targetAllocatorPort)),
+			serviceAddress(s.Owner.TargetAllocator().GetDeploymentName(), namespace), strconv.Itoa(targetAllocatorPort)),
 		GatewayService:      s.Owner.Gateway().GetStatefulSetName() + "." + namespace,
 		TargetsPollInterval: s.Spec.TargetsPollInterval.Duration.String(),
 	}
 }
 
-func serviceFQDN(name, namespace string) string {
-	return name + "." + namespace + ".svc.cluster.local"
+func serviceAddress(name, namespace string) string {
+	return name + "." + namespace
 }
 
 func renderScraperConfig(data scraperConfigData) (string, error) {
@@ -206,7 +206,7 @@ func mutateDeployment(deploy *appsv1.Deployment, s *reconcileScope) {
 
 	maps.Copy(deploy.Spec.Template.Labels, s.AppLabels.AsMap())
 
-	deploy.Spec.Template.Annotations = s.Spec.Annotations
+	deploy.Spec.Template.Annotations = maps.Clone(s.Spec.Annotations)
 	if deploy.Spec.Template.Annotations == nil {
 		deploy.Spec.Template.Annotations = make(map[string]string)
 	}

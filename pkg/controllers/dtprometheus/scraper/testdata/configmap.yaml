@@ -40,7 +40,7 @@ data:
         prometheus:
             target_allocator:
                 collector_id: ${env:MY_POD_NAME}
-                endpoint: http://dtp-allocator.dynatrace.svc.cluster.local:80
+                endpoint: http://dtp-allocator.dynatrace:80
                 interval: 1m0s
     service:
         extensions:
