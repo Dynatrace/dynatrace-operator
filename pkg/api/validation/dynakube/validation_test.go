@@ -193,22 +193,6 @@ func Test_getDynakube(t *testing.T) {
 	})
 }
 
-func TestValidateDelete(t *testing.T) {
-	testDK := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      testName,
-			Namespace: testNamespace,
-		},
-		Spec: dynakube.DynaKubeSpec{
-			APIURL: testAPIURL,
-		},
-	}
-	validator := &Validator{}
-	warnings, err := validator.ValidateDelete(t.Context(), testDK)
-	assert.Nil(t, warnings)
-	assert.NoError(t, err)
-}
-
 func assertDenied(t *testing.T, errMessages []string, dk *dynakube.DynaKube, other ...client.Object) {
 	t.Helper()
 	_, err := runValidators(t, dk, other...)

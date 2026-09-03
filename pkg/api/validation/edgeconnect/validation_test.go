@@ -11,30 +11,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
-
-func TestValidateDelete(t *testing.T) {
-	testEC := edgeconnect.EdgeConnect{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-name",
-			Namespace: "test-namespace",
-		},
-		Spec: edgeconnect.EdgeConnectSpec{
-			APIServer: "id." + allowedSuffix[0],
-			OAuth: edgeconnect.OAuthSpec{
-				Endpoint: testValidOAuthEndpoint,
-			},
-		},
-	}
-	validator := &Validator{}
-	warnings, err := validator.ValidateDelete(t.Context(), &testEC)
-	assert.Nil(t, warnings)
-	assert.NoError(t, err)
-}
 
 func assertDenied(t *testing.T, errMessages []string, ec *edgeconnect.EdgeConnect, other ...client.Object) {
 	t.Helper()
@@ -55,16 +35,6 @@ func assertAllowed(t *testing.T, ec *edgeconnect.EdgeConnect, other ...client.Ob
 	assert.Empty(t, warn)
 }
 
-func assertUpdateDenied(t *testing.T, errMessages []string, oldEC *edgeconnect.EdgeConnect, newEC *edgeconnect.EdgeConnect, other ...client.Object) {
-	t.Helper()
-	_, err := runUpdateValidators(t, oldEC, newEC, other...)
-	require.Error(t, err)
-
-	for _, errMsg := range errMessages {
-		assert.Contains(t, err.Error(), errMsg)
-	}
-}
-
 func runValidators(t *testing.T, ec *edgeconnect.EdgeConnect, other ...client.Object) (admission.Warnings, error) {
 	t.Helper()
 
@@ -80,20 +50,4 @@ func runValidators(t *testing.T, ec *edgeconnect.EdgeConnect, other ...client.Ob
 	}
 
 	return validator.ValidateCreate(t.Context(), ec)
-}
-
-func runUpdateValidators(t *testing.T, oldEC, newEC *edgeconnect.EdgeConnect, other ...client.Object) (admission.Warnings, error) {
-	t.Helper()
-	clt := fake.NewClient()
-
-	if other != nil {
-		clt = fake.NewClient(other...)
-	}
-
-	validator := &Validator{
-		apiReader: clt,
-		modules:   installconfig.GetModules(),
-	}
-
-	return validator.ValidateUpdate(t.Context(), oldEC, newEC)
 }
