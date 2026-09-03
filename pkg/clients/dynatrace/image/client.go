@@ -21,9 +21,11 @@ const (
 	ActiveGate      ComponentType = "activegate"
 	EEC             ComponentType = "eec"
 	LogModule       ComponentType = "logmodule"
+	OTelCollector   ComponentType = "otel-collector"
 	DBExecutor      ComponentType = "sql-extension-executor"
 	Gateway         ComponentType = "otel-collector"
-	TargetAllocator ComponentType = "target-allocator"
+	Scraper         ComponentType = "" // TODO: image name is still unknown
+	TargetAllocator ComponentType = "otel_target_allocator"
 	// DBExecutorOldName is a fallback for the old name of the DBExecutor component type
 	// TODO: remove this fallback in a future release
 	DBExecutorOldName ComponentType = "dynatrace-sql-extension-executor"

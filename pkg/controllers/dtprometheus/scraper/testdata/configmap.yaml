@@ -1,0 +1,71 @@
+apiVersion: v1
+data:
+  scraper: |
+    connectors: {}
+    exporters:
+        load_balancing:
+            protocol:
+                otlp:
+                    tls:
+                        insecure: true
+            resolver:
+                k8s:
+                    ports:
+                        - 4317
+                    service: dtp-gateway.dynatrace
+            retry_on_failure:
+                enabled: true
+                initial_interval: 5s
+                max_elapsed_time: 300s
+                max_interval: 30s
+            routing_key: resource
+            sending_queue:
+                batch:
+                    flush_timeout: 10s
+                    max_size: 5000
+                    min_size: 500
+                enabled: true
+                num_consumers: 10
+                queue_size: 10000
+            timeout: 10s
+    extensions:
+        health_check:
+            endpoint: ${env:MY_POD_IP}:13133
+    processors:
+        memory_limiter:
+            check_interval: 1s
+            limit_percentage: 95
+            spike_limit_percentage: 5
+    receivers:
+        prometheus:
+            target_allocator:
+                collector_id: ${env:MY_POD_NAME}
+                endpoint: http://dtp-allocator.dynatrace:80
+                interval: 1m0s
+    service:
+        extensions:
+            - health_check
+        pipelines:
+            metrics:
+                exporters:
+                    - load_balancing
+                processors:
+                    - memory_limiter
+                receivers:
+                    - prometheus
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/instance: otel-scraper
+    app.kubernetes.io/managed-by: dynatrace-operator
+    app.kubernetes.io/name: opentelemetry-collector
+    internal.dynatrace.com/operator-version: snapshot
+  name: dtp-scraper
+  namespace: dynatrace
+  ownerReferences:
+  - apiVersion: dynatrace.com/v1alpha1
+    blockOwnerDeletion: true
+    controller: true
+    kind: DTPrometheus
+    name: dtp
+    uid: dtp-uid

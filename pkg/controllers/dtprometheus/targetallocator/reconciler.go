@@ -7,23 +7,22 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
-	"errors"
 	"fmt"
 	"maps"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/dtprometheus"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dtprometheus/condition"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8scontainer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	k8sobject "github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sdeployment"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
@@ -116,32 +115,10 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtp *dtprometheus.DTPromethe
 		}
 	}
 
-	r.reconcileCondition(scope, err)
+	condition.Set(&scope.Owner.Status.Conditions, dtprometheus.TargetAllocatorAvailable, "target allocator",
+		func() bool { return k8sdeployment.IsRolloutComplete(scope.Deployment) }, err)
 
 	return err
-}
-
-func (r *Reconciler) reconcileCondition(s *reconcileScope, err error) {
-	condition := metav1.Condition{
-		Type: dtprometheus.TargetAllocatorAvailable,
-	}
-
-	switch {
-	case err != nil:
-		condition.Status = metav1.ConditionFalse
-		condition.Reason = status.ReasonError
-		condition.Message = safeUnwrap(err).Error()
-	case k8sdeployment.IsRolloutComplete(s.Deployment):
-		condition.Status = metav1.ConditionTrue
-		condition.Reason = status.ReasonAvailable
-		condition.Message = "target allocator is ready"
-	default:
-		condition.Status = metav1.ConditionFalse
-		condition.Reason = status.ReasonReconciling
-		condition.Message = "target allocator is pending"
-	}
-
-	_ = meta.SetStatusCondition(&s.Owner.Status.Conditions, condition)
 }
 
 func (r *Reconciler) reconcileConfigMap(ctx context.Context, s *reconcileScope) error {
@@ -183,11 +160,7 @@ func (r *Reconciler) reconcileConfigMap(ctx context.Context, s *reconcileScope) 
 	cm := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: s.Spec.GetDeploymentName(), Namespace: s.Owner.Namespace}}
 
 	err = k8sobject.RetryCreateOrUpdate(ctx, r, cm, func() error {
-		if cm.Labels == nil {
-			cm.Labels = make(map[string]string)
-		}
-
-		maps.Copy(cm.Labels, s.AppLabels.AsMap())
+		s.AppLabels.MergeInto(cm)
 
 		cm.Data = map[string]string{configFile: string(data)}
 
@@ -251,11 +224,7 @@ func (r *Reconciler) reconcileService(ctx context.Context, s *reconcileScope) er
 	svc := &corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: s.Spec.GetDeploymentName(), Namespace: s.Owner.Namespace}}
 
 	return k8sobject.RetryCreateOrUpdate(ctx, r, svc, func() error {
-		if svc.Labels == nil {
-			svc.Labels = make(map[string]string)
-		}
-
-		maps.Copy(svc.Labels, s.AppLabels.AsMap())
+		s.AppLabels.MergeInto(svc)
 
 		svc.Spec.Selector = s.AppLabels.AsSelector()
 		svc.Spec.Ports = []corev1.ServicePort{
@@ -278,20 +247,16 @@ func (r *Reconciler) reconcileService(ctx context.Context, s *reconcileScope) er
 }
 
 func mutateDeployment(deploy *appsv1.Deployment, s *reconcileScope) {
-	if deploy.Labels == nil {
-		deploy.Labels = make(map[string]string)
-	}
+	s.AppLabels.MergeInto(deploy)
 
-	maps.Copy(deploy.Labels, s.AppLabels.AsMap())
-
-	deploy.Spec.Template.Labels = s.Spec.Labels
+	deploy.Spec.Template.Labels = maps.Clone(s.Spec.Labels)
 	if s.Spec.Labels == nil {
 		deploy.Spec.Template.Labels = make(map[string]string)
 	}
 
 	maps.Copy(deploy.Spec.Template.Labels, s.AppLabels.AsMap())
 
-	deploy.Spec.Template.Annotations = s.Spec.Annotations
+	deploy.Spec.Template.Annotations = maps.Clone(s.Spec.Annotations)
 	if deploy.Spec.Template.Annotations == nil {
 		deploy.Spec.Template.Annotations = make(map[string]string)
 	}
@@ -312,7 +277,7 @@ func mutateDeployment(deploy *appsv1.Deployment, s *reconcileScope) {
 	deploy.Spec.Template.Spec.TopologySpreadConstraints = s.Spec.TopologySpreadConstraints
 	deploy.Spec.Template.Spec.Volumes = buildVolumes(s.Spec)
 	deploy.Spec.Template.Spec.Containers = []corev1.Container{
-		buildContainer(s.Spec, s.Owner.Status.TargetAllocator.ResolvedImage, s.Owner.Namespace, getContainer(deploy)),
+		buildContainer(s.Spec, s.Owner.Status.TargetAllocator.ResolvedImage, s.Owner.Namespace, k8scontainer.GetFirstInPodSpec(&deploy.Spec.Template.Spec)),
 	}
 }
 
@@ -413,20 +378,4 @@ func buildVolumes(spec *dtprometheus.TargetAllocator) []corev1.Volume {
 	// TODO: TLS volume
 
 	return volumes
-}
-
-func getContainer(deploy *appsv1.Deployment) corev1.Container {
-	if len(deploy.Spec.Template.Spec.Containers) > 0 {
-		return deploy.Spec.Template.Spec.Containers[0]
-	}
-
-	return corev1.Container{}
-}
-
-func safeUnwrap(err error) error {
-	if u := errors.Unwrap(err); u != nil {
-		return u
-	}
-
-	return err
 }
