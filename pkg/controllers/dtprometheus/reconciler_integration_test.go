@@ -184,6 +184,21 @@ func TestSetupWithManager(t *testing.T) {
 		})
 	})
 
+	t.Run("DynaKube tokens change triggers reconcile", func(t *testing.T) {
+		dtprom, key := createDTPrometheus(t, "dtprom-dynakube-tokens", "dk-tokens")
+
+		dk := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{Name: dtprom.Spec.DynaKubeName, Namespace: dtprom.Namespace},
+			Spec:       dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api", Tokens: "old-token-secret"},
+		}
+		integrationtests.CreateDynakube(t, clt, dk)
+
+		assertReconcileTriggered(t, key, func() {
+			dk.Spec.Tokens = "new-token-secret"
+			require.NoError(t, clt.Update(t.Context(), dk))
+		})
+	})
+
 	t.Run("DynaKube update without a phase change does not trigger reconcile", func(t *testing.T) {
 		dtprom, key := createDTPrometheus(t, "dtprom-dynakube-nophase", "dk-nophase")
 
