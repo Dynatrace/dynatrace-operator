@@ -27,6 +27,7 @@ var (
 	transformID         = component.MustNewID("transform")
 	otlphttpID          = component.MustNewID("otlphttp")
 	healthCheckID       = component.MustNewID("health_check")
+	bearerAuthID        = component.MustNewID("bearertokenauth")
 	metricsSignalID     = pipeline.NewID(pipeline.SignalMetrics)
 )
 
@@ -53,9 +54,14 @@ func buildGatewayOTelConfig(data gatewayConfigData) *otelcgen.Config {
 			healthCheckID: map[string]any{
 				"endpoint": "${env:MY_POD_IP}:13133",
 			},
+			// Watches the token file and refreshes Authorization on change — no pod restart needed.
+			bearerAuthID: map[string]any{
+				"scheme":   "Api-Token",
+				"filename": tokenMountPath + "/" + tokenFileName,
+			},
 		},
 		Service: otelcgen.ServiceConfig{
-			Extensions: extensions.Config{healthCheckID},
+			Extensions: extensions.Config{healthCheckID, bearerAuthID},
 			Pipelines: pipelines.Config{
 				metricsSignalID: &pipelines.PipelineConfig{
 					Receivers:  []component.ID{otlpID},
@@ -97,8 +103,8 @@ func buildProcessorMap(data gatewayConfigData) (map[component.ID]component.Confi
 func buildOTLPHTTPExporter(data gatewayConfigData) component.Config {
 	exp := map[string]any{
 		"endpoint": data.Endpoint,
-		"headers": map[string]any{
-			"Authorization": "Api-Token ${env:DT_API_TOKEN}",
+		"auth": map[string]any{
+			"authenticator": bearerAuthID.String(),
 		},
 		"sending_queue": map[string]any{
 			"batch": map[string]any{
