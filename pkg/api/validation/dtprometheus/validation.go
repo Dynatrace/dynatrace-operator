@@ -49,14 +49,13 @@ func (v *Validator) validate(ctx context.Context, obj runtime.Object) (admission
 	return warnings, nil
 }
 
-func getDTPrometheus(obj runtime.Object) (*dtprometheus.DTPrometheus, error) {
-	if dtp, ok := obj.(*dtprometheus.DTPrometheus); ok {
-		return dtp, nil
+func getDTPrometheus(obj runtime.Object) (dtp *dtprometheus.DTPrometheus, err error) {
+	switch v := obj.(type) {
+	case *dtprometheus.DTPrometheus:
+		dtp = v
+	default:
+		return nil, fmt.Errorf("unknown object %T", obj)
 	}
 
-	if gvk := obj.GetObjectKind().GroupVersionKind(); !gvk.Empty() {
-		return nil, fmt.Errorf("unknown object %s", gvk)
-	}
-
-	return nil, fmt.Errorf("unknown object %T", obj)
+	return
 }
