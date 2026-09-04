@@ -15,7 +15,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sserviceentry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8svirtualservice"
 	"github.com/pkg/errors"
-	istiov1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
@@ -327,13 +326,4 @@ func buildObjectMeta(name, namespace string, labels map[string]string) metav1.Ob
 		Namespace: namespace,
 		Labels:    labels,
 	}
-}
-
-func IsInstalled(ctx context.Context, apiReader client.Reader) bool {
-	vs := &istiov1beta1.VirtualService{}
-	if err := apiReader.Get(ctx, client.ObjectKey{Namespace: "default", Name: "default"}, vs); err != nil {
-		return !meta.IsNoMatchError(err)
-	}
-
-	return true
 }

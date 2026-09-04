@@ -8,9 +8,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
-	"k8s.io/apimachinery/pkg/api/meta"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8scrd"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -22,38 +20,26 @@ const (
 )
 
 type prometheusCRD struct {
+	schema.GroupVersionKind
 	resource string
-	version  string
-	kind     string
 }
 
 var requiredPrometheusCRDs = []prometheusCRD{
-	{resource: "servicemonitors", version: "v1", kind: "ServiceMonitor"},
-	{resource: "podmonitors", version: "v1", kind: "PodMonitor"},
-	{resource: "probes", version: "v1", kind: "Probe"},
-	{resource: "scrapeconfigs", version: "v1alpha1", kind: "ScrapeConfig"},
+	{GroupVersionKind: schema.GroupVersionKind{Group: prometheusOperatorGroup, Version: "v1", Kind: "ServiceMonitor"}, resource: "servicemonitors"},
+	{GroupVersionKind: schema.GroupVersionKind{Group: prometheusOperatorGroup, Version: "v1", Kind: "PodMonitor"}, resource: "podmonitors"},
+	{GroupVersionKind: schema.GroupVersionKind{Group: prometheusOperatorGroup, Version: "v1", Kind: "Probe"}, resource: "probes"},
+	{GroupVersionKind: schema.GroupVersionKind{Group: prometheusOperatorGroup, Version: "v1alpha1", Kind: "ScrapeConfig"}, resource: "scrapeconfigs"},
 }
 
 func missingPrometheusCRDs(ctx context.Context, apiReader client.Reader) string {
-	log := logd.FromContext(ctx)
 	missing := []string{}
 
 	for _, crd := range requiredPrometheusCRDs {
-		obj := &unstructured.Unstructured{}
-		obj.SetGroupVersionKind(schema.GroupVersionKind{Group: prometheusOperatorGroup, Version: crd.version, Kind: crd.kind})
-
-		resource := fmt.Sprintf("%s.%s", crd.resource, prometheusOperatorGroup)
-
-		err := apiReader.Get(ctx, client.ObjectKey{Namespace: "default", Name: "default"}, obj)
-
-		switch {
-		case err == nil:
+		if k8scrd.IsInstalled(ctx, apiReader, crd.GroupVersionKind) {
 			continue
-		case meta.IsNoMatchError(err):
-			missing = append(missing, resource)
-		default:
-			log.Debug("failed to check for Prometheus CRD, assuming it is present", "resource", resource, "err", err.Error())
 		}
+
+		missing = append(missing, fmt.Sprintf("%s.%s", crd.resource, crd.Group))
 	}
 
 	if len(missing) == 0 {

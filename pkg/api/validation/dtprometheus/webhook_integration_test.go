@@ -136,10 +136,6 @@ func installMonitoringCRDs(t *testing.T, clt client.Client) {
 	for _, crd := range crds {
 		integrationtests.CreateKubernetesObject(t, clt, crd)
 
-		t.Cleanup(func() {
-			require.NoError(t, client.IgnoreNotFound(clt.Delete(context.Background(), crd)))
-		})
-
 		waitForCRDEstablished(t, clt, crd.Name)
 	}
 }
