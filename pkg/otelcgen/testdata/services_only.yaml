@@ -15,7 +15,8 @@ service:
       processors:
         - memory_limiter
         - transform/add-pod-ip
-        - k8sattributes
+        - k8sattributes/annotations
+        - k8sattributes/facts
         - transform
         - batch/logs
     metrics:
@@ -27,7 +28,8 @@ service:
       processors:
         - memory_limiter
         - transform/add-pod-ip
-        - k8sattributes
+        - k8sattributes/annotations
+        - k8sattributes/facts
         - transform
         - cumulativetodelta
         - batch/metrics
@@ -41,6 +43,7 @@ service:
       processors:
         - memory_limiter
         - transform/add-pod-ip
-        - k8sattributes
+        - k8sattributes/annotations
+        - k8sattributes/facts
         - transform
         - batch/traces

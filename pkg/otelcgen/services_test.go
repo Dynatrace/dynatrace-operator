@@ -10,6 +10,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/collector/component"
 )
 
 func TestNewConfigWithServices(t *testing.T) {
@@ -55,4 +56,24 @@ func TestNewConfigWithServicesStatsdOnly(t *testing.T) {
 	expectedOutput, err := os.ReadFile(filepath.Join("testdata", "services_statsd_only.yaml"))
 	require.NoError(t, err)
 	assert.YAMLEq(t, string(expectedOutput), string(c))
+}
+
+func TestBuildPipelineProcessors_WithResourceAttributes(t *testing.T) {
+	cfg := &Config{resourceAttributes: map[string]string{"team": "shopping-cart"}}
+
+	processors := cfg.buildPipelineProcessors()
+
+	require.Equal(t, []component.ID{
+		memoryLimiter, transformPodIP, k8sattributesAnnotations, staticResourceAttrs, k8sattributesFacts, transform,
+	}, processors)
+}
+
+func TestBuildPipelineProcessors_WithoutResourceAttributes(t *testing.T) {
+	cfg := &Config{}
+
+	processors := cfg.buildPipelineProcessors()
+
+	require.Equal(t, []component.ID{
+		memoryLimiter, transformPodIP, k8sattributesAnnotations, k8sattributesFacts, transform,
+	}, processors)
 }
