@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
@@ -255,7 +256,7 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 			// Map requests from DynaKube to DTPrometheus
 			handler.EnqueueRequestsFromMapFunc(newDTPrometheusFromDynaKubeMapper(mgr.GetClient())),
 			// Filter out any DynaKube changes that are not relevant for DTPrometheus
-			builder.WithPredicates(predicate.Or(newDynaKubePhaseChangedPredicate(), newDynaKubeTokenNameChangedPredicate())),
+			builder.WithPredicates(newDynaKubeChangedPredicate()),
 		).
 		Named("dtprometheus").
 		Complete(r)
@@ -289,8 +290,12 @@ func newDTPrometheusFromDynaKubeMapper(c client.Client) handler.MapFunc {
 	}
 }
 
-// Create [predicate.Funcs] that only return true when the DynaKube phase changed.
-func newDynaKubePhaseChangedPredicate() predicate.Funcs {
+// Create [predicate.Funcs] that return true when DynaKube changed in a way that's relevant for a DTPrometheus.
+//   - status.phase changed
+//   - spec.token changed
+//   - spec.resourceAttributes changed
+//   - object deleted
+func newDynaKubeChangedPredicate() predicate.Funcs {
 	return predicate.Funcs{
 		CreateFunc: func(event.TypedCreateEvent[client.Object]) bool {
 			return false
@@ -309,35 +314,9 @@ func newDynaKubePhaseChangedPredicate() predicate.Funcs {
 				return false
 			}
 
-			return oldDK.Status.Phase != newDK.Status.Phase
-		},
-		GenericFunc: func(event.TypedGenericEvent[client.Object]) bool {
-			return false
-		},
-	}
-}
-
-// Create [predicate.Funcs] that only return true when the DK token secret name changes
-func newDynaKubeTokenNameChangedPredicate() predicate.Funcs {
-	return predicate.Funcs{
-		CreateFunc: func(event.TypedCreateEvent[client.Object]) bool {
-			return false
-		},
-		DeleteFunc: func(event.TypedDeleteEvent[client.Object]) bool {
-			return false
-		},
-		UpdateFunc: func(e event.TypedUpdateEvent[client.Object]) bool {
-			oldDK, _ := e.ObjectOld.(*dynakube.DynaKube)
-			newDK, _ := e.ObjectNew.(*dynakube.DynaKube)
-
-			if oldDK == nil || newDK == nil {
-				// Don't need to drag a context or logger variable into this closure for this unexpected case.
-				logd.Get().WithName("dtprometheus-predicate").Error(nil, fmt.Sprintf("expected DynaKube, but got old:%T, new:%T", e.ObjectOld, e.ObjectNew))
-
-				return false
-			}
-
-			return oldDK.Tokens() != newDK.Tokens()
+			return oldDK.Status.Phase != newDK.Status.Phase ||
+				oldDK.Tokens() != newDK.Tokens() ||
+				!maps.Equal(oldDK.Spec.ResourceAttributes, newDK.Spec.ResourceAttributes)
 		},
 		GenericFunc: func(event.TypedGenericEvent[client.Object]) bool {
 			return false
