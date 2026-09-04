@@ -23,8 +23,8 @@ const (
 	LogModule       ComponentType = "logmodule"
 	OTelCollector   ComponentType = "otel-collector"
 	DBExecutor      ComponentType = "sql-extension-executor"
-	Gateway         ComponentType = "" // TODO: image name is still unknown
-	Scraper         ComponentType = "" // TODO: image name is still unknown
+	Gateway         ComponentType = OTelCollector
+	Scraper         ComponentType = OTelCollector
 	TargetAllocator ComponentType = "otel_target_allocator"
 	// DBExecutorOldName is a fallback for the old name of the DBExecutor component type
 	// TODO: remove this fallback in a future release
