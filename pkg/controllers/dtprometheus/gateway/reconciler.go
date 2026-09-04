@@ -16,6 +16,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/dtprometheus"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dtprometheus/condition"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
@@ -51,10 +52,19 @@ const (
 
 	serviceAccountName = "dynatrace-prometheus-gateway"
 
+	// otelCollectorNonRootUser is the "nonroot" UID/GID the gateway image runs as.
+	otelCollectorNonRootUser = 10001
+
 	configVolumeName  = "opentelemetry-collector-configmap"
 	configMountDir    = "/conf"
 	relayConfigFile   = "relay.yaml"
 	cacertsVolumeName = "cacerts"
+
+	// Mounted as a directory, not subPath: subPath mounts don't receive live Secret
+	// updates, which would break token rotation.
+	tokenVolumeName = "dt-token"
+	tokenMountPath  = consts.DTComponentsSecretsRootDir + "/tokens"
+	tokenFileName   = "data-ingest-token"
 )
 
 type Reconciler struct {
@@ -222,6 +232,9 @@ func mutateStatefulSet(sts *appsv1.StatefulSet, s *reconcileScope) {
 	sts.Spec.Selector = &metav1.LabelSelector{MatchLabels: s.AppLabels.AsSelector()}
 	sts.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 	sts.Spec.Template.Spec.AutomountServiceAccountToken = new(true)
+	// fsGroup lets the container (RunAsGroup nonRootUser) read the token volume via the group
+	// bit, so the file doesn't need to be world-readable.
+	sts.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{FSGroup: new(int64(otelCollectorNonRootUser))}
 	sts.Spec.Template.Spec.Affinity = s.Spec.Affinity
 	sts.Spec.Template.Spec.NodeSelector = s.Spec.NodeSelector
 	sts.Spec.Template.Spec.PriorityClassName = s.Spec.PriorityClassName
@@ -260,8 +273,8 @@ func buildContainer(s *reconcileScope, current corev1.Container) corev1.Containe
 			Privileged:               new(false),
 			AllowPrivilegeEscalation: new(false),
 			RunAsNonRoot:             new(true),
-			RunAsUser:                new(int64(65532)),
-			RunAsGroup:               new(int64(65532)),
+			RunAsUser:                new(int64(otelCollectorNonRootUser)),
+			RunAsGroup:               new(int64(otelCollectorNonRootUser)),
 			ReadOnlyRootFilesystem:   new(true),
 			SeccompProfile:           &corev1.SeccompProfile{Type: corev1.SeccompProfileTypeRuntimeDefault},
 			Capabilities:             &corev1.Capabilities{Drop: []corev1.Capability{"ALL"}},
@@ -305,10 +318,6 @@ func buildEnv(s *reconcileScope) []corev1.EnvVar {
 				FieldRef: &corev1.ObjectFieldSelector{APIVersion: "v1", FieldPath: "status.podIP"},
 			},
 		},
-		{Name: "DT_API_TOKEN", ValueFrom: &corev1.EnvVarSource{SecretKeyRef: &corev1.SecretKeySelector{
-			LocalObjectReference: corev1.LocalObjectReference{Name: dk.Tokens()},
-			Key:                  token.APIKey,
-		}}},
 	}, s.Spec.Resources)
 
 	if dk.HasProxy() {
@@ -368,6 +377,26 @@ func buildVolumes(s *reconcileScope) []corev1.Volume {
 				},
 			},
 		},
+		{
+			Name: tokenVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				Projected: &corev1.ProjectedVolumeSource{
+					// Group-readable, not world-readable: the pod's fsGroup grants read access to
+					// the container without exposing the file to any other UID.
+					DefaultMode: new(int32(0o440)),
+					Sources: []corev1.VolumeProjection{
+						{
+							Secret: &corev1.SecretProjection{
+								LocalObjectReference: corev1.LocalObjectReference{Name: dk.Tokens()},
+								Items: []corev1.KeyToPath{
+									{Key: token.DataIngestKey, Path: tokenFileName},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 
 	if dk.Spec.TrustedCAs != "" {
@@ -391,6 +420,7 @@ func buildVolumeMounts(s *reconcileScope) []corev1.VolumeMount {
 
 	mounts := []corev1.VolumeMount{
 		{Name: configVolumeName, MountPath: configMountDir, ReadOnly: true},
+		{Name: tokenVolumeName, MountPath: tokenMountPath, ReadOnly: true},
 	}
 
 	if dk.Spec.TrustedCAs != "" {
