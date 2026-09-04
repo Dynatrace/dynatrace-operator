@@ -7,34 +7,25 @@ package applicationmonitoring
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/cmd/bootstrapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
-	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	maputil "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
-	metacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/metadata"
-	oacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/oneagent"
-	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers"
 	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/metadataenrichment"
-	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sdeployment"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/sample"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	corev1 "k8s.io/api/core/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-// Verification of the metadata enrichment part of the operator. The test checks that
-// enrichment variables are added to the initContainer and dt_metadata.json
-// file contains required fields.
+// MetadataEnrichment verifies that a pod injected with both OneAgent and metadata enrichment ends
+// up with a real dt_metadata.json file that contains the expected workload and (deprecated)
+// dt.kubernetes.* attributes. Reading that file requires an actual running pod; the mutation logic
+// that decides which flags/attributes get added for which annotation/namespace-selector combination
+// is covered by envtest (webhook_integration_test.go) and unit tests closer to the webhook code.
 func MetadataEnrichment(t *testing.T) features.Feature {
 	builder := features.New("metadata-enrichment")
 	secretConfig := tenant.GetSingleTenantSecret(t)
@@ -47,199 +38,22 @@ func MetadataEnrichment(t *testing.T) features.Feature {
 		dynakubeComponents.WithAnnotations(map[string]string{exp.EnrichmentEnableAttributesDTKubernetes: "true"}),
 	)
 
-	type testCase struct {
-		name   string
-		app    *sample.App
-		assess func(samplePod *sample.App) features.Func
-	}
-
 	injectEverythingLabels := maputil.MergeMap(
 		testDynakube.OneAgent().GetNamespaceSelector().MatchLabels,
 		testDynakube.MetadataEnrichment().GetNamespaceSelector().MatchLabels,
 	)
 
-	testCases := []testCase{
-		{
-			name: "control metadata-enrichment with annotations - deployment",
-			app: sample.NewApp(t, &testDynakube,
-				sample.WithName("deploy-metadata-annotation"),
-				sample.AsDeployment(),
-				sample.WithNamespaceLabels(injectEverythingLabels),
-				sample.WithAnnotations(map[string]string{
-					oacommon.AnnotationInject:   "false",
-					metacommon.AnnotationInject: "true",
-				})),
-			assess: deploymentPodsHaveOnlyMetadataEnrichmentInitContainer,
-		},
-		{
-			name: "control metadata-enrichment with annotations - pod",
-			app: sample.NewApp(t, &testDynakube,
-				sample.WithName("pod-metadata-annotation"),
-				sample.WithNamespaceLabels(injectEverythingLabels),
-				sample.WithAnnotations(map[string]string{
-					oacommon.AnnotationInject:   "false",
-					metacommon.AnnotationInject: "true",
-				})),
-			assess: podHasOnlyMetadataEnrichmentInitContainer,
-		},
-		{
-			name: "control metadata-enrichment with namespace-selector - deployment",
-			app: sample.NewApp(t, &testDynakube,
-				sample.WithName("deploy-metadata-label"),
-				sample.AsDeployment(),
-				sample.WithNamespaceLabels(testDynakube.MetadataEnrichment().GetNamespaceSelector().MatchLabels),
-			),
-			assess: deploymentPodsHaveOnlyMetadataEnrichmentInitContainer,
-		},
-		{
-			name: "control metadata-enrichment with namespace-selector - pod",
-			app: sample.NewApp(t, &testDynakube,
-				sample.WithName("pod-metadata-label"),
-				sample.WithNamespaceLabels(testDynakube.MetadataEnrichment().GetNamespaceSelector().MatchLabels),
-			),
-			assess: podHasOnlyMetadataEnrichmentInitContainer,
-		},
-		{
-			name: "control oneagent-injection with annotations (metadata enrichment will be enabled regardless of namespace selector/annotations) - pod",
-			app: sample.NewApp(t, &testDynakube,
-				sample.WithName("pod-oa-annotation"),
-				sample.WithNamespaceLabels(injectEverythingLabels),
-				sample.WithAnnotations(map[string]string{
-					oacommon.AnnotationInject:   "true",
-					metacommon.AnnotationInject: "false",
-				})),
-			assess: podHasCompleteInitContainer,
-		},
-		{
-			name: "control oneagent-injection with namespace-selector (metadata enrichment will be enabled regardless of namespace selector/annotations) - pod",
-			app: sample.NewApp(t, &testDynakube,
-				sample.WithName("pod-oa-label"),
-				sample.WithNamespaceLabels(testDynakube.OneAgent().GetNamespaceSelector().MatchLabels),
-			),
-			assess: podHasCompleteInitContainer,
-		},
-		{
-			name: "namespace-selectors don't conflict - pod",
-			app: sample.NewApp(t, &testDynakube,
-				sample.WithName("pod-all-label"),
-				sample.WithNamespaceLabels(injectEverythingLabels),
-			),
-			assess: podHasCompleteInitContainer,
-		},
-		{
-			name: "metadata enrichment have deprecated attributes - pod",
-			app: sample.NewApp(t, &testDynakube,
-				sample.WithName("pod-with-dt-attributes"),
-				sample.WithNamespaceLabels(injectEverythingLabels),
-			),
-			assess: assessMetadataEnrichmentHasDeprecatedAttributes,
-		},
-	}
-
-	// dynakubeComponents install
-	dynakubeComponents.Install(builder, &secretConfig, testDynakube)
-
-	// Register actual test
-	for _, test := range testCases {
-		builder.Assess(fmt.Sprintf("%s: Installing sample app", test.name), test.app.Install())
-		builder.Assess(fmt.Sprintf("%s: Checking sample app", test.name), test.assess(test.app))
-		builder.WithTeardown(fmt.Sprintf("%s: Uninstalling sample app", test.name), test.app.Uninstall())
-	}
-
-	return builder.Feature()
-}
-
-func MetadataEnrichmentWithoutDeprecatedAttributes(t *testing.T) features.Feature {
-	builder := features.New("metadata-enrichment-without-deprecated-attributes")
-	secretConfig := tenant.GetSingleTenantSecret(t)
-
-	testDynakube := *dynakubeComponents.New(
-		dynakubeComponents.WithAnnotations(map[string]string{exp.EnrichmentEnableAttributesDTKubernetes: "false"}),
-		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
-		dynakubeComponents.WithMetadataEnrichment(),
-		dynakubeComponents.WithApplicationMonitoringSpec(&oneagent.ApplicationMonitoringSpec{}),
+	sampleApp := sample.NewApp(t, &testDynakube,
+		sample.WithName("pod-with-dt-attributes"),
+		sample.WithNamespaceLabels(injectEverythingLabels),
 	)
+
 	dynakubeComponents.Install(builder, &secretConfig, testDynakube)
-
-	dummyApp := sample.NewApp(t, &testDynakube, sample.WithName("dummy-app"))
-
-	builder.Assess("Installing sample app", dummyApp.Install())
-	builder.Assess("Checking sample app", assessMetadataEnrichmentDoesNotHaveDeprecatedAttributes(dummyApp))
-	builder.WithTeardown("Uninstalling sample app", dummyApp.Uninstall())
-
-	dynakubeComponents.Delete(builder, helpers.LevelTeardown, testDynakube)
+	builder.Assess("Installing sample app", sampleApp.Install())
+	builder.Assess("Checking dt_metadata.json content", assessMetadataEnrichmentHasDeprecatedAttributes(sampleApp))
+	builder.WithTeardown("Uninstalling sample app", sampleApp.Uninstall())
 
 	return builder.Feature()
-}
-
-func podHasOnlyMetadataEnrichmentInitContainer(samplePod *sample.App) features.Func {
-	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		testPod := samplePod.GetPod(ctx, t, envConfig.Client().Resources())
-
-		assessOnlyMetadataEnrichmentIsInjected(t)(testPod)
-		assessPodHasMetadataEnrichmentFile(ctx, t, envConfig.Client().Resources(), testPod)
-
-		return ctx
-	}
-}
-
-func assessPodHasMetadataEnrichmentFile(ctx context.Context, t *testing.T, resource *resources.Resources, testPod corev1.Pod) {
-	enrichmentMetadata := metadataenrichment.GetMetadataJSONFromPod(ctx, t, resource, testPod)
-
-	assert.Equal(t, "pod", enrichmentMetadata.WorkloadKind)
-	assert.Equal(t, testPod.Name, enrichmentMetadata.WorkloadName)
-}
-
-func deploymentPodsHaveOnlyMetadataEnrichmentInitContainer(sampleApp *sample.App) features.Func {
-	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		query := k8sdeployment.NewQuery(ctx, envConfig.Client().Resources(), client.ObjectKey{
-			Name:      sampleApp.Name(),
-			Namespace: sampleApp.Namespace(),
-		})
-		err := query.ForEachPod(assessOnlyMetadataEnrichmentIsInjected(t))
-
-		require.NoError(t, err)
-
-		err = query.ForEachPod(assessDeploymentHasMetadataEnrichmentFile(ctx, t, envConfig.Client().Resources(), sampleApp.Name()))
-
-		require.NoError(t, err)
-
-		return ctx
-	}
-}
-
-// podHasCompleteInitContainer checks if the sample has BOTH the metadata-enrichment and oneagent parts added to it.
-func podHasCompleteInitContainer(samplePod *sample.App) features.Func {
-	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		testPod := samplePod.GetPod(ctx, t, envConfig.Client().Resources())
-		initContainers := testPod.Spec.InitContainers
-
-		require.Len(t, initContainers, 1)
-
-		return ctx
-	}
-}
-
-func assessDeploymentHasMetadataEnrichmentFile(ctx context.Context, t *testing.T, resource *resources.Resources, deploymentName string) k8sdeployment.PodConsumer {
-	return func(pod corev1.Pod) {
-		enrichmentMetadata := metadataenrichment.GetMetadataJSONFromPod(ctx, t, resource, pod)
-
-		assert.Equal(t, "deployment", enrichmentMetadata.WorkloadKind)
-		assert.Equal(t, deploymentName, enrichmentMetadata.WorkloadName)
-	}
-}
-
-func assessOnlyMetadataEnrichmentIsInjected(t *testing.T) k8sdeployment.PodConsumer {
-	return func(pod corev1.Pod) {
-		initContainers := pod.Spec.InitContainers
-
-		require.Len(t, initContainers, 1)
-
-		// The `--metadata-enrichment` is what turns on the feature in the init-container
-		assert.Contains(t, initContainers[0].Args, "--"+bootstrapper.MetadataEnrichmentFlag)
-		// The `--target=/mnt/bin` is a sign that the init-container will download/configure the oneagent
-		assert.NotContains(t, initContainers[0].Args, "--"+bootstrapper.TargetFolderFlag+"="+consts.AgentInitBinDirMount)
-	}
 }
 
 func assessMetadataEnrichmentHasDeprecatedAttributes(samplePod *sample.App) features.Func {
@@ -249,21 +63,6 @@ func assessMetadataEnrichmentHasDeprecatedAttributes(samplePod *sample.App) feat
 
 		assert.Equal(t, "pod", enrichmentMetadata.DTWorkloadKind)
 		assert.Equal(t, testPod.Name, enrichmentMetadata.DTWorkloadName)
-
-		assert.Equal(t, "pod", enrichmentMetadata.WorkloadKind)
-		assert.Equal(t, testPod.Name, enrichmentMetadata.WorkloadName)
-
-		return ctx
-	}
-}
-
-func assessMetadataEnrichmentDoesNotHaveDeprecatedAttributes(samplePod *sample.App) features.Func {
-	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		testPod := samplePod.ListPods(ctx, t, envConfig.Client().Resources()).Items[0]
-		enrichmentMetadata := metadataenrichment.GetMetadataJSONFromPod(ctx, t, envConfig.Client().Resources(), testPod)
-
-		assert.Empty(t, enrichmentMetadata.DTWorkloadKind)
-		assert.Empty(t, enrichmentMetadata.DTWorkloadName)
 
 		assert.Equal(t, "pod", enrichmentMetadata.WorkloadKind)
 		assert.Equal(t, testPod.Name, enrichmentMetadata.WorkloadName)

@@ -217,6 +217,34 @@ func TestHandleImpl(t *testing.T) {
 		assert.Nil(t, k8scontainer.FindInitInPodSpec(&request.Pod.Spec, dtwebhook.InstallContainerName))
 	})
 
+	t.Run("happy path - metadata enabled standalone, oneagent disabled => only metaMutator.Mutate runs", func(t *testing.T) {
+		oaMutator := webhookmock.NewMutator(t)
+		oaMutator.EXPECT().IsEnabled(anyCtx, mock.Anything).Return(false)
+		// no EXPECT().Mutate() set up: an unexpected call here would fail the test,
+		// proving metadata being enabled standalone does not also trigger oneagent.
+
+		metaMutator := webhookmock.NewMutator(t)
+		metaMutator.EXPECT().IsEnabled(anyCtx, mock.Anything).Return(true)
+		metaMutator.EXPECT().Mutate(mock.Anything).Return(nil)
+
+		h := createTestHandler(oaMutator, metaMutator, &initSecret, &certsSecret)
+
+		request := createTestMutationRequest(t, getTestDynakube())
+
+		err := h.Handle(request)
+		require.NoError(t, err)
+
+		isInjected, ok := request.Pod.Annotations[dtwebhook.AnnotationDynatraceInjected]
+		require.True(t, ok)
+		assert.Equal(t, "true", isInjected)
+
+		_, ok = request.Pod.Annotations[dtwebhook.AnnotationDynatraceReason]
+		require.False(t, ok)
+
+		installContainer := k8scontainer.FindInitInPodSpec(&request.Pod.Spec, dtwebhook.InstallContainerName)
+		require.NotNil(t, installContainer)
+	})
+
 	t.Run("happy path - reinvoke", func(t *testing.T) {
 		oaMutator := webhookmock.NewMutator(t)
 		oaMutator.EXPECT().IsEnabled(anyCtx, mock.Anything).Return(true).Twice()
