@@ -2,7 +2,7 @@
 
 set -e
 
-k8s_version=1.36
+k8s_version=1.37
 name=kind
 
 # Color codes and symbols
@@ -21,9 +21,10 @@ KIND_IMAGE_K8S_130=docker.io/kindest/node:v1.30.13@sha256:397209b3d947d154f6641f
 KIND_IMAGE_K8S_131=docker.io/kindest/node:v1.31.14@sha256:6f86cf509dbb42767b6e79debc3f2c32e4ee01386f0489b3b2be24b0a55aac2b
 KIND_IMAGE_K8S_132=docker.io/kindest/node:v1.32.11@sha256:5fc52d52a7b9574015299724bd68f183702956aa4a2116ae75a63cb574b35af8
 KIND_IMAGE_K8S_133=docker.io/kindest/node:v1.33.12@sha256:3f5c8443c620245e4d355cfe09e96a91ead32ceaa569d3f1ca9edf0cb2fe2ff4
-KIND_IMAGE_K8S_134=docker.io/kindest/node:v1.34.8@sha256:02722c2dedddcfc00febf5d27fbeb9b7b2c14294c82109ff4a85d89ac9ba3256
-KIND_IMAGE_K8S_135=docker.io/kindest/node:v1.35.5@sha256:ce977ae6d65918d0b58a5f8b5e940429c2ce42fa3a5619ec2bbc60b949c0ac95
-KIND_IMAGE_K8S_136=docker.io/kindest/node:v1.36.1@sha256:3489c7674813ba5d8b1a9977baea8a6e553784dab7b84759d1014dbd78f7ebd5
+KIND_IMAGE_K8S_134=docker.io/kindest/node:v1.34.11@sha256:44e222ee2132dab25ff87301682f89eb82c7880ea3a1bf543bfe9708fd08d67d
+KIND_IMAGE_K8S_135=docker.io/kindest/node:v1.35.8@sha256:07b2536e30b803ed61d1677a79df6115f798ce64c80f9e22f6ed45afd09323c0
+KIND_IMAGE_K8S_136=docker.io/kindest/node:v1.36.4@sha256:099e049362a1526b2db71494e1947aae99bd16290d7c895f2b7ea312e3cbfaed
+KIND_IMAGE_K8S_137=docker.io/kindest/node:v1.37.0@sha256:a1ed56cfb0e7b93589bdf97c8cd566405a265939e3620fc4f5de89adff580ae5
 
 kind_cluster_name=${name}
 
@@ -40,6 +41,7 @@ case "$k8s_version" in
 1.34*) image=$KIND_IMAGE_K8S_134 ;;
 1.35*) image=$KIND_IMAGE_K8S_135 ;;
 1.36*) image=$KIND_IMAGE_K8S_136 ;;
+1.37*) image=$KIND_IMAGE_K8S_137 ;;
 v*) printf "${red}${redcross}Error${end}: Kubernetes version must be given without the leading 'v'\n" >&2 && exit 1 ;;
 *) printf "${red}${redcross}Error${end}: unsupported Kubernetes version ${yel}${k8s_version}${end}\n" >&2 && exit 1 ;;
 esac
