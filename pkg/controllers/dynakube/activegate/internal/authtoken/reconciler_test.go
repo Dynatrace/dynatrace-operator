@@ -16,6 +16,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -198,4 +199,43 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, firstCreationTimestamp, secondCreationTimestamp)
 		assert.Equal(t, secondTransition, firstTransition)
 	})
+}
+
+func TestConditionSetSecretCreatedMalformedToken(t *testing.T) {
+	r := &Reconciler{}
+
+	tests := []struct {
+		name         string
+		token        string
+		expectErr    bool
+		expectStatus metav1.ConditionStatus
+		expectReason string
+	}{
+		{name: "empty token", token: "", expectErr: true, expectStatus: metav1.ConditionFalse, expectReason: malformedAuthTokenReason},
+		{name: "single-part token", token: "single", expectErr: true, expectStatus: metav1.ConditionFalse, expectReason: malformedAuthTokenReason},
+		{name: "valid token", token: testToken, expectErr: false, expectStatus: metav1.ConditionTrue, expectReason: k8sconditions.SecretCreatedReason},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			dk := newDynaKube()
+			secret := &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{CreationTimestamp: metav1.Now()},
+				Data:       map[string][]byte{ActiveGateAuthTokenName: []byte(tt.token)},
+			}
+
+			err := r.conditionSetSecretCreated(dk, secret)
+
+			if tt.expectErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+			}
+
+			condition := meta.FindStatusCondition(*dk.Conditions(), activeGateAuthTokenSecretConditionType)
+			require.NotNil(t, condition)
+			assert.Equal(t, tt.expectStatus, condition.Status)
+			assert.Equal(t, tt.expectReason, condition.Reason)
+		})
+	}
 }
