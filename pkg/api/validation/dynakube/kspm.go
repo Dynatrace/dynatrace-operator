@@ -46,11 +46,15 @@ func missingKSPMImage(_ context.Context, _ *Validator, dk *dynakube.DynaKube) st
 		return ""
 	}
 
-	if !dk.KSPM().ImageRef.HasImage() {
-		return errorKSPMMissingImage
+	if dk.KSPM().ImageRef.HasImage() {
+		return ""
 	}
 
-	return ""
+	if dk.FF().IsPublicRegistry() {
+		return ""
+	}
+
+	return errorKSPMMissingImage
 }
 
 func noMappedHostPaths(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
