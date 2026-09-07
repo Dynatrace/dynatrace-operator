@@ -10,7 +10,8 @@ import (
 	"os"
 	"testing"
 
-	agv1beta6 "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
+	dynakubeapi "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers"
 	agHelper "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/activegate"
@@ -38,8 +39,8 @@ func FeatureSplitAG(t *testing.T) features.Feature {
 	testDynakube := *componentDynakube.New(
 		componentDynakube.WithAPIURL(secretConfig.APIURL),
 		componentDynakube.WithActiveGateModules(
-			agv1beta6.RoutingCapability.DisplayName,
-			agv1beta6.MetricsIngestCapability.DisplayName,
+			activegate.RoutingCapability.DisplayName,
+			activegate.MetricsIngestCapability.DisplayName,
 		),
 		componentDynakube.WithKubernetesMonitoringRegistration(),
 	)
@@ -101,10 +102,17 @@ func FeatureSplitAG(t *testing.T) features.Feature {
 		return ctx
 	})
 
-	// remove kubemon from dynakube and make sure it was cleaned up properly
-	cleanedDK := testDynakube
-	cleanedDK.Spec.KubernetesMonitoring = nil
-	componentDynakube.Update(builder, cleanedDK)
+	// remove kubemon from dynakube and make sure it was cleaned up properly.
+	// Fetch the live cluster state first so fields like CustomPullSecret that were
+	// set by Install (on a local copy) are not lost by a full snapshot replacement.
+	builder.Assess("dynakube updated - kubemon removed", func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		var currentDK dynakubeapi.DynaKube
+		require.NoError(t, envConfig.Client().Resources().Get(ctx, testDynakube.Name, testDynakube.Namespace, &currentDK))
+		currentDK.Spec.KubernetesMonitoring = nil
+		require.NoError(t, envConfig.Client().Resources().Update(ctx, &currentDK))
+
+		return ctx
+	})
 
 	builder.Assess("kubemon statefulset is deleted",
 		k8sstatefulset.WaitForAbsence(testDynakube.KubernetesMonitoring().GetStatefulSetName(), testDynakube.Namespace))
