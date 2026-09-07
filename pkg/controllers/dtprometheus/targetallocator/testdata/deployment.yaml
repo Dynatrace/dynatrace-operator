@@ -1,7 +1,7 @@
 kind: Deployment
 apiVersion: apps/v1
 metadata:
-  name: dtp-prometheus-allocator
+  name: dtp-allocator
   namespace: dynatrace
   labels:
     app.kubernetes.io/instance: otel-allocator
@@ -102,6 +102,6 @@ spec:
           items:
           - key: targetallocator.yaml
             path: targetallocator.yaml
-          name: dtp-prometheus-allocator
+          name: dtp-allocator
         name: config
 status: {}

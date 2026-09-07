@@ -20,15 +20,18 @@ data:
     connectors: {}
     exporters:
         otlphttp:
+            auth:
+                authenticator: bearertokenauth
             endpoint: https://abc12345.live.dynatrace.com/api/v2/otlp
-            headers:
-                Authorization: Api-Token ${env:DT_API_TOKEN}
             sending_queue:
                 batch:
                     flush_timeout: 10s
                     max_size: 5000
                     min_size: 500
     extensions:
+        bearertokenauth:
+            filename: /var/lib/dynatrace/secrets/tokens/data-ingest-token
+            scheme: Api-Token
         health_check:
             endpoint: ${env:MY_POD_IP}:13133
     processors:
@@ -164,6 +167,7 @@ data:
     service:
         extensions:
             - health_check
+            - bearertokenauth
         pipelines:
             metrics:
                 exporters:

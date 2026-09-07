@@ -8,9 +8,14 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// ScraperNameSuffix is appended to the owning DTPrometheus name to derive the base
-// name of the scraper's Kubernetes resources.
-const ScraperNameSuffix = "-scraper"
+const (
+	// ScraperNameSuffix is appended to the owning DTPrometheus name to derive the base
+	// name of the scraper's Kubernetes resources.
+	ScraperNameSuffix = "-scraper"
+
+	// ScraperAvailable indicates whether the scraper pool is available.
+	ScraperAvailable = "ScraperAvailable"
+)
 
 // +kubebuilder:object:generate=false
 

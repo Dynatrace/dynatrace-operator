@@ -14,6 +14,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dtprometheus/gateway"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dtprometheus/scraper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dtprometheus/targetallocator"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
@@ -33,8 +34,9 @@ import (
 )
 
 var (
-	errDynaKubeNotFound = errors.New("dynakube not found")
-	errDynaKubeNotReady = errors.New("dynakube not ready")
+	errDynaKubeNotFound           = errors.New("dynakube not found")
+	errDynaKubeNotReady           = errors.New("dynakube not ready")
+	errDataIngestTokenUnavailable = errors.New("data-ingest token not available")
 )
 
 func Add(mgr manager.Manager, _ string) error {
@@ -46,6 +48,7 @@ func NewReconciler(c client.Client) *Reconciler {
 		Client:             c,
 		targetAllocator:    &targetallocator.Reconciler{Client: c},
 		gateway:            &gateway.Reconciler{Client: c},
+		scraper:            &scraper.Reconciler{Client: c},
 		newDynatraceClient: dynatrace.NewClientFromDynakube,
 	}
 }
@@ -55,6 +58,7 @@ type Reconciler struct {
 
 	targetAllocator targetAllocatorReconciler
 	gateway         gatewayReconciler
+	scraper         scraperReconciler
 
 	newDynatraceClient dynatrace.ClientFactory
 }
@@ -64,6 +68,10 @@ type targetAllocatorReconciler interface {
 }
 
 type gatewayReconciler interface {
+	Reconcile(ctx context.Context, dtp *dtprometheus.DTPrometheus, dk *dynakube.DynaKube, imageClient image.Client) error
+}
+
+type scraperReconciler interface {
 	Reconcile(ctx context.Context, dtp *dtprometheus.DTPrometheus, dk *dynakube.DynaKube, imageClient image.Client) error
 }
 
@@ -115,6 +123,12 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ct
 		return ctrl.Result{}, errDynaKubeNotReady
 	}
 
+	if tokens, err := token.NewReader(r, dk).ReadTokens(ctx); err != nil || !token.CheckForDataIngestToken(tokens) {
+		log.Info("skipping reconcile: data-ingest token not available")
+
+		return ctrl.Result{}, errDataIngestTokenUnavailable
+	}
+
 	dtClient, err := r.buildDynatraceClient(ctx, dk)
 	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("build dynatrace client: %w", err)
@@ -126,6 +140,11 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ct
 
 	if err := r.targetAllocator.Reconcile(ctx, dtp, dk, dtClient.Images); err != nil {
 		return ctrl.Result{}, fmt.Errorf("reconcile target allocator: %w", err)
+	}
+
+	// Reconciled last: its config references the gateway and target allocator services.
+	if err := r.scraper.Reconcile(ctx, dtp, dk, dtClient.Images); err != nil {
+		return ctrl.Result{}, fmt.Errorf("reconcile scraper: %w", err)
 	}
 
 	return ctrl.Result{}, nil
@@ -168,6 +187,12 @@ func setPhase(dtp *dtprometheus.DTPrometheus, err error) error {
 
 	if errors.Is(errDynaKubeNotReady, err) {
 		dtp.Status.Phase = status.Deploying
+
+		return nil
+	}
+
+	if errors.Is(errDataIngestTokenUnavailable, err) {
+		dtp.Status.Phase = status.Error
 
 		return nil
 	}
@@ -229,8 +254,8 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 			&dynakube.DynaKube{},
 			// Map requests from DynaKube to DTPrometheus
 			handler.EnqueueRequestsFromMapFunc(newDTPrometheusFromDynaKubeMapper(mgr.GetClient())),
-			// Filter out any DynaKube changes that are not phase changes
-			builder.WithPredicates(newDynaKubePhaseChangedPredicate()),
+			// Filter out any DynaKube changes that are not relevant for DTPrometheus
+			builder.WithPredicates(predicate.Or(newDynaKubePhaseChangedPredicate(), newDynaKubeTokenNameChangedPredicate())),
 		).
 		Named("dtprometheus").
 		Complete(r)
@@ -285,6 +310,34 @@ func newDynaKubePhaseChangedPredicate() predicate.Funcs {
 			}
 
 			return oldDK.Status.Phase != newDK.Status.Phase
+		},
+		GenericFunc: func(event.TypedGenericEvent[client.Object]) bool {
+			return false
+		},
+	}
+}
+
+// Create [predicate.Funcs] that only return true when the DK token secret name changes
+func newDynaKubeTokenNameChangedPredicate() predicate.Funcs {
+	return predicate.Funcs{
+		CreateFunc: func(event.TypedCreateEvent[client.Object]) bool {
+			return false
+		},
+		DeleteFunc: func(event.TypedDeleteEvent[client.Object]) bool {
+			return false
+		},
+		UpdateFunc: func(e event.TypedUpdateEvent[client.Object]) bool {
+			oldDK, _ := e.ObjectOld.(*dynakube.DynaKube)
+			newDK, _ := e.ObjectNew.(*dynakube.DynaKube)
+
+			if oldDK == nil || newDK == nil {
+				// Don't need to drag a context or logger variable into this closure for this unexpected case.
+				logd.Get().WithName("dtprometheus-predicate").Error(nil, fmt.Sprintf("expected DynaKube, but got old:%T, new:%T", e.ObjectOld, e.ObjectNew))
+
+				return false
+			}
+
+			return oldDK.Tokens() != newDK.Tokens()
 		},
 		GenericFunc: func(event.TypedGenericEvent[client.Object]) bool {
 			return false

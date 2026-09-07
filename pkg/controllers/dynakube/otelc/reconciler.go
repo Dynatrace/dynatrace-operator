@@ -7,6 +7,7 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	dtimage "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/configuration"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/endpoint"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/service"
@@ -35,7 +36,7 @@ func NewReconciler(client client.Client, apiReader client.Reader) *Reconciler { 
 	}
 }
 
-func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
+func (r *Reconciler) Reconcile(ctx context.Context, imageClient dtimage.Client, dk *dynakube.DynaKube) error {
 	ctx, log := logd.NewFromContext(ctx, "otel-collector")
 
 	err := r.serviceReconciler.Reconcile(ctx, dk)
@@ -53,7 +54,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 		return err
 	}
 
-	err = r.statefulsetReconciler.Reconcile(ctx, dk)
+	err = r.statefulsetReconciler.Reconcile(ctx, imageClient, dk)
 	if err != nil {
 		log.Info("failed to reconcile Dynatrace OTELc statefulset")
 

@@ -84,6 +84,7 @@ var (
 		missingCodeModulesImage,
 		mutualExclusiveKubernetesMonitoring,
 		kubemonMutualExclusiveCustomPropertiesValue,
+		conflictingImageMode,
 	}
 	validatorWarningFuncs = []validatorFunc{
 		missingActiveGateMemoryLimit,

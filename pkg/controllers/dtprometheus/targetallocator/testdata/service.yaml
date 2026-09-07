@@ -1,7 +1,7 @@
 kind: Service
 apiVersion: v1
 metadata:
-  name: dtp-prometheus-allocator
+  name: dtp-allocator
   namespace: dynatrace
   labels:
     app.kubernetes.io/instance: otel-allocator

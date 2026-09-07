@@ -48,11 +48,6 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.podIP
-        - name: DT_API_TOKEN
-          valueFrom:
-            secretKeyRef:
-              key: apiToken
-              name: dk
         - name: GOMEMLIMIT
           value: "471859200"
         image: registry.example.com/gateway:1.2.3
@@ -86,18 +81,23 @@ spec:
             - ALL
           privileged: false
           readOnlyRootFilesystem: true
-          runAsGroup: 65532
+          runAsGroup: 10001
           runAsNonRoot: true
-          runAsUser: 65532
+          runAsUser: 10001
           seccompProfile:
             type: RuntimeDefault
         volumeMounts:
         - mountPath: /conf
           name: opentelemetry-collector-configmap
           readOnly: true
+        - mountPath: /var/lib/dynatrace/secrets/tokens
+          name: dt-token
+          readOnly: true
       nodeSelector:
         disk: ssd
       priorityClassName: high-priority
+      securityContext:
+        fsGroup: 10001
       serviceAccountName: dynatrace-prometheus-gateway
       tolerations:
       - key: k
@@ -110,6 +110,15 @@ spec:
             path: relay.yaml
           name: dtp-gateway
         name: opentelemetry-collector-configmap
+      - name: dt-token
+        projected:
+          defaultMode: 288
+          sources:
+          - secret:
+              items:
+              - key: dataIngestToken
+                path: data-ingest-token
+              name: dk
   updateStrategy: {}
 status:
   availableReplicas: 0

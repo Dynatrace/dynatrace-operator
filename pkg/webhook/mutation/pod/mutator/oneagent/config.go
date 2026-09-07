@@ -31,7 +31,6 @@ const (
 	AnnotationInstallPath = AnnotationPrefix + ".dynatrace.com/install-path"
 
 	// AnnotationVolumeType can be set on a Pod to turn off the CSI volume usage.
-	// This annotation ONLY takes affect if `node-image-pull` feature-flag is set on the DynaKube.
 	AnnotationVolumeType = AnnotationPrefix + ".dynatrace.com/volume-type"
 
 	// AnnotationOneAgentBinResource is used to specify the volume size for EmptyDir for oneagent-bin.

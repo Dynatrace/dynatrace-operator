@@ -103,7 +103,7 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, ev
 		kspmReconciler:               kspm.NewReconciler(kubeClient, apiReader),
 		kubemonReconciler:            kubemon.NewReconciler(kubeClient),
 		k8sEntityReconciler:          k8sentity.NewReconciler(),
-		otelColReconciler:            otelc.NewReconciler(kubeClient, apiReader),
+		oTelColReconciler:            otelc.NewReconciler(kubeClient, apiReader),
 		proxyReconciler:              proxy.NewReconciler(kubeClient, apiReader),
 		deploymentMetadataReconciler: deploymentmetadata.NewReconciler(kubeClient, apiReader, clusterID),
 		istioReconciler:              istio.NewReconciler(kubeClient, apiReader),
@@ -143,6 +143,10 @@ type dynakubeReconciler interface {
 }
 
 type extensionReconciler interface {
+	Reconcile(ctx context.Context, imageClient image.Client, dk *dynakube.DynaKube) error
+}
+
+type oTelColReconciler interface {
 	Reconcile(ctx context.Context, imageClient image.Client, dk *dynakube.DynaKube) error
 }
 
@@ -187,7 +191,7 @@ type Controller struct {
 	k8sEntityReconciler          dtSettingReconciler
 	kspmReconciler               kspmReconciler
 	kubemonReconciler            kubemonReconciler
-	otelColReconciler            dynakubeReconciler
+	oTelColReconciler            oTelColReconciler
 	proxyReconciler              dynakubeReconciler
 	deploymentMetadataReconciler dynakubeReconciler
 	istioReconciler              istioReconciler
@@ -426,7 +430,7 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dtClient 
 
 	log.Info("start reconciling otel-collector")
 
-	if err := controller.otelColReconciler.Reconcile(ctx, dk); err != nil {
+	if err := controller.oTelColReconciler.Reconcile(ctx, dtClient.Images, dk); err != nil {
 		log.Info("could not reconcile otelc")
 
 		componentErrors = append(componentErrors, err)
