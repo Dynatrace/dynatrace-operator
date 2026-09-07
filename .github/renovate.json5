@@ -240,13 +240,7 @@
       groupName: "Dockerfile base images",
     },
     {
-      matchPackageNames: ["kindest/node"],
-      groupName: "kind node images",
-      commitMessagePrefix: "Kind:",
-      automerge: true,
-    },
-    {
-      matchManagers: ["pip_requirements", "npm", "regex"],
+      matchManagers: ["pip_requirements", "npm", "regex", "kindest/node"],
       groupName: "Dev tooling",
     },
   ],
