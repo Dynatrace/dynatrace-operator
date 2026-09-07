@@ -785,7 +785,7 @@ CI enforces that the relevant owners approve before merge.
 
 - **(CODEOWNER)** You will be automatically requested — this is your primary responsibility. Be prompt; if you cannot review soon, flag it to the author early so they are not left waiting. If you are one of multiple CODEOWNER groups, you only need to review the files you own.
 - **(Non-CODEOWNER)** Feel free to review, but prioritize PRs where you are a CODEOWNER.
-- **(PR author)** Wait for all CODEOWNERs — 1 approval unblocks CI, but all owners reviewing is the goal and everyone learns from it. Give reviewers time. If a CODEOWNER is unavailable and the merge cannot wait, you may merge — they will still see the notifications and can comment on the merged PR if they spot something.
+- **(PR author)** Wait for all CODEOWNERs — 1 approval unblocks CI, but all owners reviewing is the goal and everyone learns from it. Give reviewers time. If a CODEOWNER is unavailable and the merge cannot wait, you may merge — they will still see the notifications and can comment on the merged PR if they spot something. You can also manually request additional reviewers if you feel a specific person's input is needed.
 - **(Wrong CODEOWNER mapping)** File-to-area ownership is still evolving — if you receive a request for files you should not own, open a PR updating `CODEOWNERS` and ask a maintainer to review.
 
 ### General guidelines
