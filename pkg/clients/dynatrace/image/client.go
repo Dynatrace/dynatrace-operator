@@ -21,6 +21,7 @@ const (
 	ActiveGate      ComponentType = "activegate"
 	EEC             ComponentType = "eec"
 	LogModule       ComponentType = "logmodule"
+	NCC             ComponentType = "ncc"
 	OTelCollector   ComponentType = "otel-collector"
 	DBExecutor      ComponentType = "sql-extension-executor"
 	Gateway         ComponentType = "" // TODO: image name is still unknown
