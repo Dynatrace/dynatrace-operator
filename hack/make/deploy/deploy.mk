@@ -1,4 +1,5 @@
 ENABLE_CSI ?= true
+CSI_MIGRATION_MODE ?= false
 DEBUG_LOGS ?= true
 DT_CLIENT_LOG_LEVEL ?= response
 WEBHOOK_REPLICAS ?= 2
@@ -20,6 +21,10 @@ deploy/show-image-ref/fips:
 deploy/no-csi:
 	@make ENABLE_CSI=false $(@D)
 
+## Deploy the operator in CSI migration mode
+deploy/csi-migration:
+	@make ENABLE_CSI=true CSI_MIGRATION_MODE=true $(@D)
+
 deploy/fips:
 	@make IMAGE_URI="$(IMAGE_URI)"-fips $(@D)
 
@@ -32,6 +37,7 @@ deploy: manifests/crd/helm
 			--atomic \
 			--set installCRD=true \
 			--set csidriver.enabled=$(ENABLE_CSI) \
+			--set csidriver.migrationMode=$(CSI_MIGRATION_MODE) \
 			--set webhook.replicas=$(WEBHOOK_REPLICAS) \
 			--set manifests=true \
 			--set image=$(IMAGE_URI) \

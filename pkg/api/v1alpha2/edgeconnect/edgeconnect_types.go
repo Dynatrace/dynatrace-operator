@@ -47,6 +47,10 @@ type EdgeConnectSpec struct { //nolint:revive
 	// Enables automatic restarts of EdgeConnect pods in case a new version is available (the default value is: true)
 	AutoUpdate *bool `json:"autoUpdate,omitempty"`
 
+	// Overrides the default public registry from which the EdgeConnect image is pulled.
+	// +kubebuilder:validation:Optional
+	PublicRegistryOverride string `json:"publicRegistryOverride,omitempty"`
+
 	// Overrides the default image
 	// +kubebuilder:validation:Optional
 	ImageRef image.Ref `json:"imageRef,omitzero"`

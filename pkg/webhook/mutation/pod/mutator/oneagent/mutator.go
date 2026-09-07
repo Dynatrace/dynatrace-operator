@@ -24,6 +24,7 @@ import (
 const (
 	CSIVolumeType       = "csi"
 	EphemeralVolumeType = "ephemeral"
+	ImageVolumeType     = "image"
 )
 
 type invalidInstallPathError struct {
@@ -40,12 +41,6 @@ func NewMutator() dtwebhook.Mutator {
 	return &Mutator{}
 }
 
-func IsSelfExtractingImage(mutationRequest *dtwebhook.BaseRequest) bool {
-	hasImage := mutationRequest.DynaKube.OneAgent().GetCodeModulesImage() != ""
-
-	return hasImage && !isCSIVolume(mutationRequest)
-}
-
 func isCSIVolume(mutationRequest *dtwebhook.BaseRequest) bool {
 	defaultVolumeType := EphemeralVolumeType
 	if mutationRequest.DynaKube.OneAgent().IsCSIAvailable() {
@@ -57,6 +52,20 @@ func isCSIVolume(mutationRequest *dtwebhook.BaseRequest) bool {
 	}
 
 	return defaultVolumeType == CSIVolumeType
+}
+
+func isImageVolume(mutationRequest *dtwebhook.BaseRequest) bool {
+	defaultVolumeType := EphemeralVolumeType
+
+	if mutationRequest.DynaKube.FF().IsCodeModuleImageVolume() {
+		defaultVolumeType = ImageVolumeType
+	}
+
+	if mutationRequest.DynaKube.OneAgent().GetCodeModulesImage() != "" {
+		return maputils.GetField(mutationRequest.Pod.Annotations, AnnotationVolumeType, defaultVolumeType) == ImageVolumeType
+	}
+
+	return defaultVolumeType == ImageVolumeType
 }
 
 func IsEnabled(request *dtwebhook.BaseRequest) bool {
@@ -134,18 +143,20 @@ func containerIsInjected(container corev1.Container, _ *dtwebhook.BaseRequest) b
 }
 
 func mutateUserContainers(request *dtwebhook.BaseRequest, installPath string, log logd.Logger) bool {
+	isImageVolumeEnabled := isImageVolume(request)
+	log.Info("install path", "installPath", installPath, "isImageVolume", isImageVolumeEnabled)
+
 	newContainers := request.NewContainers(containerIsInjected)
 	for _, container := range newContainers {
-		addOneAgentToContainer(request.DynaKube, container, request.Namespace, installPath, log)
+		addVolumeMounts(container, installPath, isImageVolumeEnabled)
+		addOneAgentEnvsToContainer(request.DynaKube, container, request.Namespace, installPath, log)
 	}
 
 	return len(newContainers) > 0
 }
 
-func addOneAgentToContainer(dk dynakube.DynaKube, container *corev1.Container, namespace corev1.Namespace, installPath string, log logd.Logger) {
-	log.Info("adding OneAgent to container", "name", container.Name)
-
-	addVolumeMounts(container, installPath)
+func addOneAgentEnvsToContainer(dk dynakube.DynaKube, container *corev1.Container, namespace corev1.Namespace, installPath string, log logd.Logger) {
+	log.Info("adding OneAgent envs to container", "name", container.Name)
 	addDeploymentMetadataEnv(container, dk)
 	addPreloadEnv(container, installPath)
 	addDTStorageEnv(container)
