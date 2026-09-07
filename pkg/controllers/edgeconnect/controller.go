@@ -5,7 +5,6 @@ package edgeconnect
 
 import (
 	"context"
-	"net/http"
 	"slices"
 	"time"
 
@@ -14,6 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	edgeconnectClient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/edgeconnect"
+	dtimage "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect/config"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect/deployment"
@@ -28,7 +28,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sevent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/system"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/oci/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	"golang.org/x/oauth2/clientcredentials"
@@ -52,6 +51,9 @@ const (
 
 	controllerName = "edgeconnect-controller"
 	finalizerName  = "server"
+
+	// environmentAPIPathPrefix is the platform path under which the classic environment API is served
+	environmentAPIPathPrefix = "/platform/classic/environment-api"
 )
 
 var (
@@ -66,6 +68,8 @@ type oauthCredentialsType struct {
 
 type edgeConnectClientBuilderType func(ctx context.Context, ec *edgeconnect.EdgeConnect, oauthCredentials oauthCredentialsType, customCA []byte) (edgeconnectClient.Client, error)
 
+type imageClientBuilderType func(ctx context.Context, ec *edgeconnect.EdgeConnect, oauthCredentials oauthCredentialsType, customCA []byte) (dtimage.Client, error)
+
 // Controller reconciles an EdgeConnect object
 type Controller struct {
 	// This client, initialized using mgr.Client() above, is a split client
@@ -73,7 +77,7 @@ type Controller struct {
 	client                   client.Client
 	apiReader                client.Reader
 	eventRecorder            events.EventRecorder
-	registryClientBuilder    registry.ClientBuilder
+	imageClientBuilder       imageClientBuilderType
 	config                   *rest.Config
 	timeProvider             *timeprovider.Provider
 	edgeConnectClientBuilder edgeConnectClientBuilderType
@@ -89,7 +93,7 @@ func NewController(mgr manager.Manager) *Controller {
 		client:                   mgr.GetClient(),
 		apiReader:                mgr.GetAPIReader(),
 		eventRecorder:            mgr.GetEventRecorder(controllerName),
-		registryClientBuilder:    registry.NewClient,
+		imageClientBuilder:       newImageClient(),
 		config:                   mgr.GetConfig(),
 		timeProvider:             timeprovider.New(),
 		edgeConnectClientBuilder: newEdgeConnectClient(),
@@ -340,23 +344,8 @@ func (controller *Controller) updateVersionInfo(ctx context.Context, ec *edgecon
 
 	log.Info("updating version info")
 
-	transport := http.DefaultTransport.(*http.Transport).Clone()
-	keyChainSecret := ec.EmptyPullSecret()
-
-	registryClient, err := controller.registryClientBuilder(
-		registry.WithContext(ctx),
-		registry.WithAPIReader(controller.apiReader),
-		registry.WithTransport(transport),
-		registry.WithKeyChainSecret(&keyChainSecret),
-	)
-	if err != nil {
-		log.Debug("updating finalizers failed", "secretName", keyChainSecret.Name)
-
-		return errors.WithStack(err)
-	}
-
-	versionReconciler := version.NewReconciler(controller.apiReader, registryClient, timeprovider.New(), ec)
-	if err = versionReconciler.Reconcile(ctx); err != nil {
+	versionReconciler := version.NewReconciler(controller.apiReader, controller.imageClientProvider(ec), timeprovider.New(), ec)
+	if err := versionReconciler.Reconcile(ctx); err != nil {
 		log.Debug("reconciliation of EdgeConnect version failed")
 
 		return err
@@ -365,6 +354,53 @@ func (controller *Controller) updateVersionInfo(ctx context.Context, ec *edgecon
 	log.Debug("EdgeConnect version info updated")
 
 	return nil
+}
+
+// imageClientProvider defers building the fleet management image client until an image actually has
+// to be resolved. Building it requires reading the OAuth secret and an OAuth token exchange, which
+// would otherwise happen on every reconcile, even for a custom image or an up to date status.
+func (controller *Controller) imageClientProvider(ec *edgeconnect.EdgeConnect) version.ImageClientProvider {
+	return func(ctx context.Context) (dtimage.Client, error) {
+		oauthCredentials, err := controller.getOauthCredentials(ctx, ec)
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+
+		customCA, err := ec.TrustedCAs(ctx, controller.client)
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+
+		return controller.imageClientBuilder(ctx, ec, oauthCredentials, customCA)
+	}
+}
+
+// environmentAPIURL builds the base URL under which the classic environment API (/api/v2/...) is
+// reachable on an EdgeConnect apiServer, which always points at a Dynatrace platform host.
+func environmentAPIURL(ec *edgeconnect.EdgeConnect) string {
+	return "https://" + ec.Spec.APIServer + environmentAPIPathPrefix
+}
+
+func newImageClient() imageClientBuilderType {
+	return func(ctx context.Context, ec *edgeconnect.EdgeConnect, oauthCredentials oauthCredentialsType, customCA []byte) (dtimage.Client, error) {
+		// only the Images client of the returned OAuthClient may be used, the base URL is scoped to
+		// the classic environment API and does not resolve the platform paths of the other clients
+		oAuthClients, err := dynatrace.NewOAuthClient(
+			clientcredentials.Config{
+				ClientID:     oauthCredentials.clientID,
+				ClientSecret: oauthCredentials.clientSecret,
+				TokenURL:     ec.Spec.OAuth.Endpoint,
+				Scopes:       buildOAuthScopes(ec.IsK8SAutomationEnabled()),
+			},
+			dynatrace.WithBaseURL(environmentAPIURL(ec)),
+			dynatrace.WithCerts(customCA),
+		)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to create image client")
+		}
+
+		return oAuthClients.Images, nil
+	}
 }
 
 func (controller *Controller) updateEdgeConnectStatus(ctx context.Context, ec *edgeconnect.EdgeConnect) error {
@@ -907,6 +943,7 @@ func buildOAuthScopes(k8sAutomationEnabled bool) []string {
 		"app-engine:edge-connects:write",
 		"app-engine:edge-connects:delete",
 		"oauth2:clients:manage",
+		"fleet-management:container-images:read",
 	}
 	if k8sAutomationEnabled {
 		oAuthScopes = append(oAuthScopes, "settings:objects:read", "settings:objects:write")
