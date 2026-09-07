@@ -259,7 +259,7 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 			builder.WithPredicates(predicate.Or(
 				newDynaKubePredicate(phaseChecker),
 				newDynaKubePredicate(resourceAttributesChecker),
-        newDynaKubePredicate(resourceTokenNameChangedChecker),
+				newDynaKubePredicate(resourceTokenNameChangedChecker),
 			)),
 		).
 		Named("dtprometheus").
@@ -330,5 +330,5 @@ func resourceAttributesChecker(oldDK, newDK *dynakube.DynaKube) bool {
 }
 
 func resourceTokenNameChangedChecker(oldDK, newDK *dynakube.DynaKube) bool {
-  return oldDK.Tokens() != newDK.Tokens()
+	return oldDK.Tokens() != newDK.Tokens()
 }
