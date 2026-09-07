@@ -240,7 +240,7 @@
       groupName: "Dockerfile base images",
     },
     {
-      matchManagers: ["pip_requirements", "npm", "regex", "kindest/node"],
+      matchManagers: ["pip_requirements", "npm", "regex"],
       groupName: "Dev tooling",
     },
   ],
