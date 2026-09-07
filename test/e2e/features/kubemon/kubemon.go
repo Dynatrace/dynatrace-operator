@@ -7,6 +7,7 @@ package kubemon
 
 import (
 	"context"
+	"os"
 	"testing"
 
 	agv1beta6 "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
@@ -17,6 +18,7 @@ import (
 	componentOperator "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8ssecret"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sstatefulset"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/platform"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -67,14 +69,31 @@ func FeatureSplitAG(t *testing.T) features.Feature {
 		return ctx
 	})
 
-	builder.Assess("dynatrace-activegate ClusterRole exists", func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+	builder.Assess("dynatrace-kubernetes-monitoring-default ClusterRole exists", func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		var cr rbacv1.ClusterRole
-		require.NoError(t, envConfig.Client().Resources().Get(ctx, "dynatrace-activegate", "", &cr))
+		require.NoError(t, envConfig.Client().Resources().Get(ctx, "dynatrace-kubernetes-monitoring-default", "", &cr))
 
 		return ctx
 	})
 
-	builder.Assess("dynatrace-activegate ClusterRoleBinding exists", func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+	builder.Assess("dynatrace-kubernetes-monitoring-default ClusterRoleBinding exists", func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		var crb rbacv1.ClusterRoleBinding
+		require.NoError(t, envConfig.Client().Resources().Get(ctx, "dynatrace-kubernetes-monitoring-default", "", &crb))
+		assert.Equal(t, "dynatrace-kubernetes-monitoring-default", crb.RoleRef.Name)
+
+		return ctx
+	})
+
+	builder.Assess("dynatrace-activegate ClusterRole and ClusterRoleBinding exist on OLM or OpenShift", func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		isOpenshift, err := platform.NewResolver().IsOpenshift()
+		require.NoError(t, err)
+		if !isOpenshift && os.Getenv("OLM") != "true" {
+			t.Skip("dynatrace-activegate ClusterRole is only rendered on OpenShift or OLM installs")
+		}
+
+		var cr rbacv1.ClusterRole
+		require.NoError(t, envConfig.Client().Resources().Get(ctx, "dynatrace-activegate", "", &cr))
+
 		var crb rbacv1.ClusterRoleBinding
 		require.NoError(t, envConfig.Client().Resources().Get(ctx, "dynatrace-activegate", "", &crb))
 		assert.Equal(t, "dynatrace-activegate", crb.RoleRef.Name)
