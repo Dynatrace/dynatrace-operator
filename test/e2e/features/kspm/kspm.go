@@ -53,11 +53,7 @@ func FeatureWithKubemon(t *testing.T) features.Feature {
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
 	builder.Setup(componentKspm.DeleteKSPMSettingsFromTenant(secretConfig))
-	builder.Setup(helpers.ToFeatureFunc(componentOperator.InstallLocal(
-		false,
-		helm.WithArgs("--reuse-values"),
-		helm.WithArgs("--set", "experimental.enableKubemonOperand=true"),
-	), true))
+	builder.Setup(helpers.ToFeatureFunc(componentOperator.InstallLocal(false, componentOperator.EnableKubemonOperand()...), true))
 
 	options := []componentDynakube.Option{
 		componentDynakube.WithAPIURL(secretConfig.APIURL),
@@ -73,6 +69,8 @@ func FeatureWithKubemon(t *testing.T) features.Feature {
 	builder.Assess("kubemon statefulset is ready", k8sstatefulset.WaitFor(testDynakube.KubernetesMonitoring().GetStatefulSetName(), testDynakube.Namespace))
 
 	builder.Assess("kspm node config collector started", k8sdaemonset.IsReady(testDynakube.KSPM().GetDaemonSetName(), testDynakube.Namespace))
+
+	builder.Assess("check if KSPM settings were created on tenant", componentKspm.CheckKSPMSettingsExistOnTenant(secretConfig, &testDynakube))
 
 	builder.Teardown(helpers.ToFeatureFunc(componentOperator.InstallLocal(
 		false,

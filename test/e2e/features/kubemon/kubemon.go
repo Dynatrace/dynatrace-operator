@@ -1,0 +1,138 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
+//go:build e2e
+
+package kubemon
+
+import (
+	"context"
+	"testing"
+
+	agv1beta6 "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers"
+	agHelper "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/activegate"
+	componentDynakube "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
+	componentOperator "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/operator"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8ssecret"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sstatefulset"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	rbacv1 "k8s.io/api/rbac/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/e2e-framework/pkg/envconf"
+	"sigs.k8s.io/e2e-framework/pkg/features"
+)
+
+func FeatureSplitAG(t *testing.T) features.Feature {
+	builder := features.New("kubemon-split-ag-mode")
+
+	secretConfig := tenant.GetSingleTenantSecret(t)
+
+	builder.Setup(helpers.ToFeatureFunc(componentOperator.InstallLocal(false, componentOperator.EnableKubemonOperand()...), true))
+
+	testDynakube := *componentDynakube.New(
+		componentDynakube.WithAPIURL(secretConfig.APIURL),
+		componentDynakube.WithActiveGateModules(
+			agv1beta6.RoutingCapability.DisplayName,
+			agv1beta6.MetricsIngestCapability.DisplayName,
+		),
+		componentDynakube.WithKubernetesMonitoringRegistration(),
+	)
+
+	componentDynakube.Install(builder, &secretConfig, testDynakube)
+
+	builder.Assess("generic activegate statefulset is ready",
+		k8sstatefulset.IsReady(agHelper.GetActiveGateStateFulSetName(&testDynakube, "activegate"), testDynakube.Namespace))
+
+	builder.Assess("kubemon statefulset is ready",
+		k8sstatefulset.WaitFor(testDynakube.KubernetesMonitoring().GetStatefulSetName(), testDynakube.Namespace))
+
+	builder.Assess("kubemon authtoken secret exists",
+		k8ssecret.Exists(testDynakube.KubernetesMonitoring().GetAuthTokenSecretName(), testDynakube.Namespace))
+
+	builder.Assess("kubemon tenant secret exists",
+		k8ssecret.Exists(testDynakube.KubernetesMonitoring().GetTenantSecretName(), testDynakube.Namespace))
+
+	builder.Assess("KubernetesMonitoringAvailable condition is True",
+		componentDynakube.WaitForCondition(testDynakube, kubemon.KubeMonAvailableConditionType, metav1.ConditionTrue))
+
+	builder.Assess("kubemon pod uses dynatrace-activegate service account", func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		sts, err := k8sstatefulset.Get(ctx, envConfig.Client().Resources(), testDynakube.KubernetesMonitoring().GetStatefulSetName(), testDynakube.Namespace)
+		require.NoError(t, err)
+		assert.Equal(t, "dynatrace-activegate", sts.Spec.Template.Spec.ServiceAccountName)
+
+		return ctx
+	})
+
+	builder.Assess("dynatrace-activegate ClusterRole exists", func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		var cr rbacv1.ClusterRole
+		require.NoError(t, envConfig.Client().Resources().Get(ctx, "dynatrace-activegate", "", &cr))
+
+		return ctx
+	})
+
+	builder.Assess("dynatrace-activegate ClusterRoleBinding exists", func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		var crb rbacv1.ClusterRoleBinding
+		require.NoError(t, envConfig.Client().Resources().Get(ctx, "dynatrace-activegate", "", &crb))
+		assert.Equal(t, "dynatrace-activegate", crb.RoleRef.Name)
+
+		return ctx
+	})
+
+	// remove kubemon from dynakube and make sure it was cleaned up properly
+	cleanedDK := testDynakube
+	cleanedDK.Spec.KubernetesMonitoring = nil
+	componentDynakube.Update(builder, cleanedDK)
+
+	builder.Assess("kubemon statefulset is deleted",
+		k8sstatefulset.WaitForAbsence(testDynakube.KubernetesMonitoring().GetStatefulSetName(), testDynakube.Namespace))
+
+	builder.Assess("kubemon authtoken secret is deleted",
+		k8ssecret.WaitForAbsence(testDynakube.KubernetesMonitoring().GetAuthTokenSecretName(), testDynakube.Namespace))
+
+	builder.Assess("kubemon tenant secret is deleted",
+		k8ssecret.WaitForAbsence(testDynakube.KubernetesMonitoring().GetTenantSecretName(), testDynakube.Namespace))
+
+	builder.Assess("KubernetesMonitoringAvailable condition is absent",
+		componentDynakube.WaitForConditionAbsent(testDynakube, kubemon.KubeMonAvailableConditionType))
+
+	builder.Assess("generic activegate statefulset is still ready",
+		k8sstatefulset.IsReady(agHelper.GetActiveGateStateFulSetName(&testDynakube, "activegate"), testDynakube.Namespace))
+
+	return builder.Feature()
+}
+
+func FeatureRestartTriggers(t *testing.T) features.Feature {
+	builder := features.New("kubemon-restart-triggers")
+
+	secretConfig := tenant.GetSingleTenantSecret(t)
+
+	builder.Setup(helpers.ToFeatureFunc(componentOperator.InstallLocal(false, componentOperator.EnableKubemonOperand()...), true))
+
+	testDynakube := *componentDynakube.New(
+		componentDynakube.WithAPIURL(secretConfig.APIURL),
+		componentDynakube.WithKubernetesMonitoringRegistration(),
+	)
+
+	componentDynakube.Install(builder, &secretConfig, testDynakube)
+
+	builder.Assess("kubemon statefulset is ready",
+		k8sstatefulset.WaitFor(testDynakube.KubernetesMonitoring().GetStatefulSetName(), testDynakube.Namespace))
+
+	builder.Assess("KubernetesMonitoringAvailable condition is True",
+		componentDynakube.WaitForCondition(testDynakube, kubemon.KubeMonAvailableConditionType, metav1.ConditionTrue))
+
+	builder.Assess("rotate authtoken secret",
+		k8ssecret.Delete(k8ssecret.New(testDynakube.KubernetesMonitoring().GetAuthTokenSecretName(), testDynakube.Namespace, nil)))
+
+	builder.Assess("kubemon statefulset re-rolls after secret rotation",
+		k8sstatefulset.WaitFor(testDynakube.KubernetesMonitoring().GetStatefulSetName(), testDynakube.Namespace))
+
+	builder.Assess("KubernetesMonitoringAvailable condition is True after rotation",
+		componentDynakube.WaitForCondition(testDynakube, kubemon.KubeMonAvailableConditionType, metav1.ConditionTrue))
+
+	return builder.Feature()
+}

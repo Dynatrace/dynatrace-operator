@@ -20,6 +20,7 @@ import (
 	"github.com/stretchr/testify/require"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/e2e-framework/klient/k8s"
 	"sigs.k8s.io/e2e-framework/klient/wait"
 	"sigs.k8s.io/e2e-framework/klient/wait/conditions"
@@ -106,6 +107,38 @@ func VerifyStartup(builder *features.FeatureBuilder, level features.Level, dk dy
 		fmt.Sprintf("'%s' dynakube phase changes to 'Running'", dk.Name),
 		level,
 		WaitForPhase(dk, status.Running))
+}
+
+func WaitForCondition(dk dynakube.DynaKube, condType string, expectedStatus metav1.ConditionStatus) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resources := envConfig.Client().Resources()
+		err := wait.For(conditions.New(resources).ResourceMatch(&dk, func(object k8s.Object) bool {
+			d, ok := object.(*dynakube.DynaKube)
+			if !ok {
+				return false
+			}
+			cond := meta.FindStatusCondition(d.Status.Conditions, condType)
+
+			return cond != nil && cond.Status == expectedStatus
+		}), wait.WithTimeout(5*time.Minute))
+		require.NoError(t, err)
+
+		return ctx
+	}
+}
+
+func WaitForConditionAbsent(dk dynakube.DynaKube, condType string) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resources := envConfig.Client().Resources()
+		err := wait.For(conditions.New(resources).ResourceMatch(&dk, func(object k8s.Object) bool {
+			d, ok := object.(*dynakube.DynaKube)
+
+			return ok && meta.FindStatusCondition(d.Status.Conditions, condType) == nil
+		}), wait.WithTimeout(5*time.Minute))
+		require.NoError(t, err)
+
+		return ctx
+	}
 }
 
 func WaitForPhase(dk dynakube.DynaKube, phase status.DeploymentPhase) features.Func {
