@@ -83,12 +83,11 @@ type ScrapeConfig struct {
 
 type reconcileScope struct {
 	// Required for reconcile
-	Owner       *dtprometheus.DTPrometheus
-	DynaKube    *dynakube.DynaKube
-	Spec        *dtprometheus.TargetAllocator
-	AppLabels   *k8slabel.Labels
-	ImageClient image.Client
-	// Computed during reconcile
+	Owner         *dtprometheus.DTPrometheus
+	DynaKube      *dynakube.DynaKube
+	Spec          *dtprometheus.TargetAllocator
+	AppLabels     *k8slabel.Labels
+	ImageClient   image.Client
 	ConfigMapHash string
 	Deployment    *appsv1.Deployment
 }
