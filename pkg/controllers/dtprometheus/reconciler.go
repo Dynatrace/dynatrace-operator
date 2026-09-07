@@ -316,10 +316,25 @@ func newDynaKubeChangedPredicate() predicate.Funcs {
 
 			return oldDK.Status.Phase != newDK.Status.Phase ||
 				oldDK.Tokens() != newDK.Tokens() ||
+				oldDK.Spec.TrustedCAs != newDK.Spec.TrustedCAs ||
+				oldDK.GetDynatraceAPIRequestThreshold() != newDK.GetDynatraceAPIRequestThreshold() ||
+				dynaKubeProxyChanged(oldDK, newDK) ||
 				!maps.Equal(oldDK.Spec.ResourceAttributes, newDK.Spec.ResourceAttributes)
 		},
 		GenericFunc: func(event.TypedGenericEvent[client.Object]) bool {
 			return false
 		},
 	}
+}
+
+func dynaKubeProxyChanged(oldDK, newDK *dynakube.DynaKube) bool {
+	if (oldDK.Spec.Proxy != nil) != (newDK.Spec.Proxy != nil) {
+		return true
+	}
+
+	if oldDK.Spec.Proxy != nil {
+		return *oldDK.Spec.Proxy != *newDK.Spec.Proxy
+	}
+
+	return false
 }
