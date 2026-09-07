@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package registry
 
 import (
@@ -19,6 +22,7 @@ import (
 	"github.com/pkg/errors"
 	"golang.org/x/net/http/httpproxy"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -263,7 +267,7 @@ func PrepareTransportForDynaKube(ctx context.Context, apiReader client.Reader, t
 		}
 	}
 
-	transport = addSkipCertCheck(transport, dk.Spec.SkipCertCheck)
+	transport = addSkipCertCheck(transport, ptr.Deref(dk.Spec.SkipCertCheck, false))
 
 	return transport, nil
 }

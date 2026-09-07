@@ -1,18 +1,5 @@
-/*
-Copyright 2021 Dynatrace LLC.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
 
 package csiprovisioner
 
@@ -35,6 +22,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/job"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/pkg/errors"
 	batchv1 "k8s.io/api/batch/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -65,6 +53,8 @@ type OneAgentProvisioner struct {
 	jobInstallerBuilder   jobInstallerBuilder
 	cleaner               *cleanup.Cleaner
 	path                  metadata.PathResolver
+
+	dtClientFactory dynatrace.ClientFactory
 }
 
 // NewOneAgentProvisioner returns a new OneAgentProvisioner
@@ -79,6 +69,7 @@ func NewOneAgentProvisioner(mgr manager.Manager, opts dtcsi.CSIOptions) *OneAgen
 		imageInstallerBuilder: image.NewImageInstaller,
 		jobInstallerBuilder:   job.NewInstaller,
 		cleaner:               cleanup.New(mgr.GetAPIReader(), path, mount.New("")),
+		dtClientFactory:       dynatrace.NewClientFromDynakube,
 	}
 }
 
@@ -110,16 +101,24 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 		return reconcile.Result{}, err
 	}
 
-	if !installconfig.GetModules().CSIDriver {
+	if !installconfig.GetModules().CSIDriver || dk.FF().IsCodeModuleImageVolume() {
 		log.Info("CSI driver migration mode active, running cleanup only")
 
-		return reconcile.Result{RequeueAfter: longRequeueDuration}, provisioner.cleaner.Run(ctx)
+		if err := provisioner.cleaner.Run(ctx); err != nil {
+			return reconcile.Result{}, err
+		}
+
+		return reconcile.Result{RequeueAfter: longRequeueDuration}, nil
 	}
 
 	if !isProvisionerNeeded(&dk) {
 		log.Info("CSI driver provisioner not needed")
 
-		return reconcile.Result{RequeueAfter: longRequeueDuration}, provisioner.cleaner.Run(ctx)
+		if err := provisioner.cleaner.Run(ctx); err != nil {
+			return reconcile.Result{}, err
+		}
+
+		return reconcile.Result{RequeueAfter: longRequeueDuration}, nil
 	}
 
 	err = provisioner.setupFileSystem(&dk)
@@ -188,7 +187,7 @@ func buildDtc(provisioner *OneAgentProvisioner, ctx context.Context, dk *dynakub
 		return nil, err
 	}
 
-	dtClient, err := dynatrace.NewClientFromDynakube(ctx, provisioner.apiReader, dk, tokens.APIToken().String(), tokens.PaasToken().String(), "provisioner")
+	dtClient, err := provisioner.dtClientFactory(ctx, provisioner.apiReader, dk, tokens.APIToken().String(), tokens.PaasToken().String(), "provisioner", k8senv.GetCSIDriverDTClientConnectionTimeout(ctx))
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to create Dynatrace client")
 	}

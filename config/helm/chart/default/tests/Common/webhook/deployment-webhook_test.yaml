@@ -1,3 +1,6 @@
+# Copyright Dynatrace LLC
+# SPDX-License-Identifier: Apache-2.0
+
 suite: test deployment of webhook
 chart:
   version: 1.0.0
@@ -182,7 +185,7 @@ tests:
                     memory: 128Mi
                 volumeMounts:
                   - name: certs-dir
-                    mountPath: /tmp/k8s-webhook-server/serving-certs/
+                    mountPath: /tmp/k8s-webhook-server/serving-certs
                 securityContext:
                   seccompProfile:
                     type: RuntimeDefault
@@ -395,7 +398,7 @@ tests:
                     memory: 128Mi
                 volumeMounts:
                   - name: certs-dir
-                    mountPath: /tmp/k8s-webhook-server/serving-certs/
+                    mountPath: /tmp/k8s-webhook-server/serving-certs
                 securityContext:
                   seccompProfile:
                     type: RuntimeDefault
@@ -573,7 +576,7 @@ tests:
                     memory: 128Mi
                 volumeMounts:
                   - name: certs-dir
-                    mountPath: /tmp/k8s-webhook-server/serving-certs/
+                    mountPath: /tmp/k8s-webhook-server/serving-certs
                 securityContext:
                   seccompProfile:
                     type: RuntimeDefault
@@ -794,24 +797,64 @@ tests:
           content:
             name: DT_EXTRACT_CODEMODULES_IMAGE_LINKS
 
-  - it: should have KUBEMON_ENABLE_OPERAND if operator.kubemonEnableOperand is true
+  - it: should have EXPERIMENTAL_ENABLE_KUBEMON_OPERAND if experimental.enableKubemonOperand is true
     set:
-      operator.kubemonEnableOperand: true
+      experimental.enableKubemonOperand: true
     asserts:
       - contains:
           path: spec.template.spec.containers[0].env
           content:
-            name: KUBEMON_ENABLE_OPERAND
+            name: EXPERIMENTAL_ENABLE_KUBEMON_OPERAND
             value: "true"
           count: 1
           any: true
 
-  - it: should not have KUBEMON_ENABLE_OPERAND by default
+  - it: should not have EXPERIMENTAL_ENABLE_KUBEMON_OPERAND by default
     asserts:
       - notContains:
           path: spec.template.spec.containers[0].env
           content:
-            name: KUBEMON_ENABLE_OPERAND
+            name: EXPERIMENTAL_ENABLE_KUBEMON_OPERAND
+          any: true
+
+  - it: should render without error and omit EXPERIMENTAL_ENABLE_KUBEMON_OPERAND when experimental is null
+    set:
+      experimental: null
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: EXPERIMENTAL_ENABLE_KUBEMON_OPERAND
+          any: true
+
+  - it: should have EXPERIMENTAL_ENABLE_PROMETHEUS if experimental.enablePrometheus is true
+    set:
+      experimental.enablePrometheus: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: EXPERIMENTAL_ENABLE_PROMETHEUS
+            value: "true"
+          count: 1
+          any: true
+
+  - it: should not have EXPERIMENTAL_ENABLE_PROMETHEUS by default
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: EXPERIMENTAL_ENABLE_PROMETHEUS
+          any: true
+
+  - it: should render without error and omit EXPERIMENTAL_ENABLE_PROMETHEUS when experimental is null
+    set:
+      experimental: null
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: EXPERIMENTAL_ENABLE_PROMETHEUS
           any: true
 
   - it: should have apparmor annotation when enabled on Kubernetes < 1.31.0

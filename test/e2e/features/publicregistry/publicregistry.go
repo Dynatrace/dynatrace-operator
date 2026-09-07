@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 //go:build e2e
 
 package publicregistry
@@ -93,7 +96,6 @@ func feature(t *testing.T, featureName, sampleNS string, imageOpts []dynakube.Op
 		dynakube.WithAPIURL(secretConfig.APIURL),
 		dynakube.WithCloudNativeSpec(cloudnative.DefaultCloudNativeSpec()),
 		dynakube.WithActiveGate(),
-		dynakube.WithExtensionsPrometheusEnabledSpec(true),
 		dynakube.WithKSPM(),
 		dynakube.WithTelemetryIngestEnabled(true),
 		dynakube.WithExtensionsDatabases(extensions.DatabaseSpec{ID: "mysql"}),
@@ -116,7 +118,7 @@ func feature(t *testing.T, featureName, sampleNS string, imageOpts []dynakube.Op
 	builder.Assess("ActiveGate started", k8sstatefulset.IsReady(agStatefulSetName, testDynakube.Namespace))
 	builder.Assess("EEC started", k8sstatefulset.IsReady(testDynakube.Extensions().GetExecutionControllerStatefulsetName(), testDynakube.Namespace))
 	builder.Assess("KSPM node config collector started", k8sdaemonset.IsReady(testDynakube.KSPM().GetDaemonSetName(), testDynakube.Namespace))
-	builder.Assess("OTelCollector started", k8sstatefulset.IsReady(testDynakube.OtelCollectorStatefulsetName(), testDynakube.Namespace))
+	builder.Assess("OTelCollector started", k8sstatefulset.IsReady(testDynakube.OTelCollectorStatefulsetName(), testDynakube.Namespace))
 	dbExecutorDeployName := testDynakube.Extensions().GetDatabaseDatasourceName("mysql")
 	builder.Assess("DB executor deployment started", k8sdeployment.IsReady(dbExecutorDeployName, testDynakube.Namespace))
 
@@ -129,7 +131,7 @@ func feature(t *testing.T, featureName, sampleNS string, imageOpts []dynakube.Op
 	builder.Assess("KSPM DaemonSet uses expected image",
 		k8sdaemonset.VerifyUsesImage(testDynakube.KSPM().GetDaemonSetName(), testDynakube.Namespace, images.kspm))
 	builder.Assess("OTelCollector StatefulSet uses expected image",
-		k8sstatefulset.VerifyUsesImage(testDynakube.OtelCollectorStatefulsetName(), testDynakube.Namespace, images.otel))
+		k8sstatefulset.VerifyUsesImage(testDynakube.OTelCollectorStatefulsetName(), testDynakube.Namespace, images.otel))
 	builder.Assess("DB executor deployment uses expected image",
 		k8sdeployment.VerifyUsesImage(dbExecutorDeployName, testDynakube.Namespace, images.dbExecutor))
 

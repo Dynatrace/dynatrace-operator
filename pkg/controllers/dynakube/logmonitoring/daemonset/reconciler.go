@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package daemonset
 
 import (
@@ -21,6 +24,8 @@ import (
 )
 
 const (
+	ConditionType = "LogMonitoringDaemonSet"
+
 	serviceAccountName = "dynatrace-logmonitoring"
 )
 

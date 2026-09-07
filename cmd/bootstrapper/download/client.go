@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package download
 
 import (
@@ -9,6 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/binary"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 )
 
 type Client struct {
@@ -77,7 +81,7 @@ func (cl *Client) createDTClientFromFs(inputDir string) (oneagent.Client, error)
 		options = append(options, dynatrace.WithCerts(certs))
 	}
 
-	options = append(options, dynatrace.WithBaseURL(cl.baseURL))
+	options = append(options, dynatrace.WithBaseURL(cl.baseURL), dynatrace.WithConnectionTimeout(k8senv.DefaultCSIDriverDTClientConnectionTimeout))
 
 	dtClient, err := dynatrace.NewClient(options...)
 	if err != nil {

@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package statefulset
 
 import (
@@ -9,6 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder/modifiers"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/statefulset/probe"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8saffinity"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
@@ -22,7 +26,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
 )
 
 const (
@@ -152,7 +156,7 @@ func (statefulSetBuilder Builder) buildTopologySpreadConstraints(capability capa
 }
 
 func (statefulSetBuilder Builder) buildVolumes() []corev1.Volume {
-	volumes := []corev1.Volume{}
+	volumes := statefulSetBuilder.capability.Properties().Volumes
 
 	if statefulSetBuilder.dynakube.Spec.ActiveGate.VolumeClaimTemplate == nil {
 		if !isDefaultPVCNeeded(statefulSetBuilder.dynakube) {
@@ -169,10 +173,12 @@ func (statefulSetBuilder Builder) buildVolumes() []corev1.Volume {
 }
 
 func (statefulSetBuilder Builder) buildVolumeMounts() []corev1.VolumeMount {
-	return []corev1.VolumeMount{{
+	mounts := statefulSetBuilder.capability.Properties().VolumeMounts
+
+	return append(mounts, corev1.VolumeMount{
 		Name:      consts.GatewayTmpVolumeName,
-		MountPath: consts.GatewayTmpMountPoint,
-	}}
+		MountPath: consts.GatewayTmpMountPath,
+	})
 }
 
 func (statefulSetBuilder Builder) buildPodSecurityContext() *corev1.PodSecurityContext {
@@ -215,36 +221,11 @@ func (statefulSetBuilder Builder) buildBaseContainer(sts *appsv1.StatefulSet) []
 	container := corev1.Container{
 		Name:            consts.ActiveGateContainerName,
 		Image:           statefulSetBuilder.dynakube.ActiveGate().GetImage(),
-		ImagePullPolicy: statefulSetBuilder.dynakube.ActiveGate().GetPullPolicy(),
+		ImagePullPolicy: statefulSetBuilder.dynakube.ActiveGate().ImagePullPolicy,
 		Resources:       statefulSetBuilder.buildResources(),
 		Env:             statefulSetBuilder.buildCommonEnvs(),
-		ReadinessProbe: &corev1.Probe{
-			ProbeHandler: corev1.ProbeHandler{
-				HTTPGet: &corev1.HTTPGetAction{
-					Path:   "/rest/health",
-					Port:   intstr.IntOrString{IntVal: consts.HTTPSContainerPort},
-					Scheme: "HTTPS",
-				},
-			},
-			InitialDelaySeconds: 90,
-			PeriodSeconds:       15,
-			FailureThreshold:    3,
-			TimeoutSeconds:      2,
-		},
-		LivenessProbe: &corev1.Probe{
-			ProbeHandler: corev1.ProbeHandler{
-				HTTPGet: &corev1.HTTPGetAction{
-					Path:   "/rest/state",
-					Port:   intstr.IntOrString{IntVal: consts.HTTPSContainerPort},
-					Scheme: "HTTPS",
-				},
-			},
-			InitialDelaySeconds: 90,
-			PeriodSeconds:       30,
-			FailureThreshold:    2,
-			TimeoutSeconds:      1,
-			SuccessThreshold:    1,
-		},
+		ReadinessProbe:  probe.Readiness(),
+		LivenessProbe:   probe.Liveness(),
 		SecurityContext: securityContext,
 		VolumeMounts:    statefulSetBuilder.buildVolumeMounts(),
 	}
@@ -298,7 +279,7 @@ func (statefulSetBuilder Builder) nodeAffinity() *corev1.Affinity {
 }
 
 func isDefaultPVCNeeded(dk dynakube.DynaKube) bool {
-	return dk.TelemetryIngest().IsEnabled() && !dk.Spec.ActiveGate.UseEphemeralVolume
+	return dk.TelemetryIngest().IsEnabled() && !ptr.Deref(dk.Spec.ActiveGate.UseEphemeralVolume, false)
 }
 
 func (statefulSetBuilder Builder) addPersistentVolumeClaim(sts *appsv1.StatefulSet) {

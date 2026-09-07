@@ -1,13 +1,23 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package kubemon
 
-import corev1 "k8s.io/api/core/v1"
+import (
+	"strings"
+
+	"github.com/Dynatrace/dynatrace-operator/pkg/api"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtversion"
+)
 
 const (
 	KubeMonAvailableConditionType = "KubernetesMonitoringAvailable"
 
-	OperandNameSuffix = "-kubemon"
+	NameSuffix = "-kubemon"
 
 	ServiceAccountName = "dynatrace-activegate"
+
+	TenantRegistrySubPath = "/linux/activegate"
 )
 
 // KubeMon wraps Spec and Status for ergonomic access via dk.KubernetesMonitoring().
@@ -15,7 +25,8 @@ type KubeMon struct {
 	*Spec
 	*Status
 
-	name string
+	name       string
+	apiURLHost string
 }
 
 func (km *Spec) IsEnabled() bool {
@@ -27,28 +38,46 @@ func (km *KubeMon) SetName(name string) {
 	km.name = name
 }
 
+func (km *KubeMon) SetAPIURLHost(apiURLHost string) {
+	km.apiURLHost = apiURLHost
+}
+
 func (km *Spec) GetServiceAccountName() string {
 	return ServiceAccountName
 }
 
 func (km *KubeMon) GetStatefulSetName() string {
-	return km.name + OperandNameSuffix
+	return km.name + NameSuffix
 }
 
 func (km *KubeMon) GetConnectionInfoConfigMapName() string {
-	return km.name + OperandNameSuffix + "-connection-info"
+	return km.name + NameSuffix + "-connection-info"
 }
 
 func (km *KubeMon) GetTenantSecretName() string {
-	return km.name + OperandNameSuffix + "-tenant-secret"
+	return km.name + NameSuffix + "-tenant-secret"
 }
 
-func (km *Spec) GetPullPolicy() corev1.PullPolicy {
-	if km == nil {
-		return ""
+func (km *KubeMon) GetAuthTokenSecretName() string {
+	return km.name + NameSuffix + "-authtoken-secret"
+}
+
+func (km *KubeMon) GetCustomPropertiesSecretName() string {
+	return km.name + NameSuffix + "-custom-properties"
+}
+
+// GetTLSSecretName returns the name of the KubeMon TLS secret.
+func (km *KubeMon) GetTLSSecretName() string {
+	if km.TLSCertsRef != nil && km.TLSCertsRef.SecretName != "" {
+		return km.TLSCertsRef.SecretName
 	}
 
-	return corev1.PullPolicy(km.ImagePullPolicy)
+	return km.GetAutoTLSSecretName()
+}
+
+// GetAutoTLSSecretName returns the name of the automatically created KubeMon TLS secret.
+func (km *KubeMon) GetAutoTLSSecretName() string {
+	return km.name + NameSuffix + "-tls-secret"
 }
 
 // GetCustomImage returns the user-provided image override, or "" if unset.
@@ -58,4 +87,31 @@ func (km *Spec) GetCustomImage() string {
 	}
 
 	return km.Image
+}
+
+func (km *KubeMon) GetDefaultImage(version string) string {
+	if km.apiURLHost == "" {
+		return ""
+	}
+
+	truncatedVersion := dtversion.ToImageTag(version)
+	tag := truncatedVersion
+
+	if !strings.HasSuffix(tag, api.RawTag) {
+		tag += "-" + api.RawTag
+	}
+
+	return km.apiURLHost + TenantRegistrySubPath + ":" + tag
+}
+
+func (km *Spec) IsRegistrationEnabled() bool {
+	return km != nil && km.Registration != nil
+}
+
+func (km *Spec) GetRegistrationClusterName() string {
+	if km == nil || km.Registration == nil {
+		return ""
+	}
+
+	return km.Registration.ClusterName
 }

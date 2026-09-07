@@ -1,0 +1,12 @@
+apiVersion: dynatrace.com/v1beta6
+kind: DynaKube
+metadata:
+  name: partial
+  namespace: default
+spec:
+  apiUrl: https://partial.dev.dynatracelabs.com/api
+  metadataEnrichment:
+    enabled: true
+  oneAgent:
+    hostMonitoring:
+      version: 1.0.0.20240101-000000

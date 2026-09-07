@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package supportarchive
 
 const KubernetesVersionFileName = "kubernetes-version.txt"
@@ -10,6 +13,8 @@ const InjectedNamespacesManifestsDirectoryName = "injected_namespaces"
 const CRDDirectoryName = "crds"
 const WebhookConfigurationsDirectoryName = "webhook_configurations"
 const ManifestsFileExtension = ".yaml"
+
+const NodeTaintAnalysisFileName = "node-taint-analysis.txt"
 
 const CRDKindName = "CustomResourceDefinition"
 const ValidatingWebhookConfigurationKind = "ValidatingWebhookConfiguration"

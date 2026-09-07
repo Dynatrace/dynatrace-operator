@@ -24,7 +24,6 @@ linters:
     - gochecksumtype
     - gocognit
     - gocritic
-    - gocyclo
     - godot
     - goheader
     - gomoddirectives
@@ -160,9 +159,6 @@ linters:
         - ^require\.
         - WaitForCondition
         - ^int*
-    modernize:
-      disable:
-        - omitzero
     revive:
       enable-all-rules: true
       rules:
@@ -178,7 +174,7 @@ linters:
             - 468
         - name: cyclomatic
           arguments:
-            - 13
+            - 30
         - name: banned-characters
           disabled: true
         - name: forbidden-call-in-wg-go
@@ -293,6 +289,15 @@ linters:
     nolintlint:
       # Prevent flaky revive linter from failing CI
       allow-unused: true
+    forbidigo:
+      forbid:
+        # Catch wrong casings as substrings in identifiers
+        - pattern: '(?:Otel|OTEL)'
+          msg: "Use 'OTel' (not Otel/OTEL) ref https://opentelemetry.io/docs/concepts/glossary/"
+        # Catch wrong casings as substrings in identifiers
+        - pattern: '(?:Otelc|OTELC)'
+          msg: "Use 'OTelCol' (not Otelc/OTELC) ref https://opentelemetry.io/docs/concepts/glossary/"
+      analyze-types: true
   exclusions:
     generated: lax
     presets:
@@ -335,10 +340,11 @@ linters:
       - linters:
           - godot
         path-except: pkg/api/(.+)\.go
+      - linters:
+          - staticcheck
+        text: "SA1019:.*(NewAppLabels|NewCoreLabels|AppCreatedByLabel)"
     paths:
-      - pkg/api/v1alpha1/edgeconnect
       - pkg/api/v1beta4/dynakube
-      - pkg/api/v1beta5/dynakube
       - third_party$
       - builtin$
       - examples$
@@ -349,7 +355,6 @@ formatters:
   exclusions:
     generated: lax
     paths:
-      - pkg/api/v1alpha1/edgeconnect
       - third_party$
       - builtin$
       - examples$

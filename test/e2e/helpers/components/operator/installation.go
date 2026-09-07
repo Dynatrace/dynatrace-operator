@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 //go:build e2e
 
 package operator
@@ -45,7 +48,7 @@ func Install(releaseTag string, withCSI bool) env.Func {
 }
 
 // InstallLocal deploys the operator helm chart from filesystem.
-func InstallLocal(withCSI bool) env.Func {
+func InstallLocal(withCSI bool, extraOpts ...helm.Option) env.Func {
 	return func(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
 		if os.Getenv("OLM") == "true" {
 			if withCSI {
@@ -59,7 +62,7 @@ func InstallLocal(withCSI bool) env.Func {
 				return ctx, err
 			}
 		} else {
-			err := InstallViaHelm("", withCSI)
+			err := InstallViaHelm("", withCSI, extraOpts...)
 			if err != nil {
 				return ctx, err
 			}
@@ -190,12 +193,41 @@ func UninstallViaHelm(releaseName, namespace string, extraOpts ...helm.Option) e
 	}, extraOpts...)...)
 }
 
+// InstallViaManifests applies the pre-generated operator manifests for the given platform
+func InstallViaManifests(platform string, withCSI bool) error {
+	cmd := "manifests/apply/" + platform
+
+	if withCSI {
+		cmd += "/csi"
+	}
+
+	return execMakeCommand(
+		project.RootDir(),
+		cmd,
+	)
+}
+
+// UninstallViaManifests deletes the operator manifests for the given platform
+func UninstallViaManifests(platform string, withCSI bool) error {
+	cmd := "manifests/delete/" + platform
+
+	if withCSI {
+		cmd += "/csi"
+	}
+
+	return execMakeCommand(
+		project.RootDir(),
+		cmd,
+	)
+}
+
 func getHelmOptions(releaseTag, platform string, withCSI bool) ([]helm.Option, error) {
 	opts := []helm.Option{
 		helm.WithReleaseName("dynatrace-operator"),
 		helm.WithNamespace("dynatrace"),
 		helm.WithArgs("--create-namespace"),
 		helm.WithArgs("--install"),
+		helm.WithArgs("--rollback-on-failure"),
 		helm.WithArgs("--set", fmt.Sprintf("platform=%s", platform)),
 		helm.WithArgs("--set", "installCRD=true"),
 		helm.WithArgs("--set", fmt.Sprintf("csidriver.enabled=%t", withCSI)),
@@ -234,7 +266,17 @@ func getHelmOptions(releaseTag, platform string, withCSI bool) ([]helm.Option, e
 
 	// Install nightly
 	if chartURI := os.Getenv("HELM_CHART"); strings.HasSuffix(chartURI, ":0.0.0-nightly-chart") {
-		return append(opts, helm.WithArgs(chartURI)), nil
+		opts = append(opts, helm.WithArgs(chartURI))
+		if isFIPS {
+			repository := strings.TrimPrefix(strings.TrimSuffix(chartURI, ":0.0.0-nightly-chart"), "oci://")
+			opts = append(opts,
+				helm.WithArgs("--set", "imageRef.repository="+repository),
+				helm.WithArgs("--set", "imageRef.tag=nightly-fips"),
+				helm.WithArgs("--set", "imageRef.pullPolicy=Always"),
+			)
+		}
+
+		return opts, nil
 	}
 
 	return append(opts,

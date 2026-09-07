@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package consts
 
 const (
@@ -7,4 +10,6 @@ const (
 
 	// TLSCrtDataName is the key used to store a TLS certificate in the secret's data field.
 	TLSCrtDataName = "tls.crt"
+
+	TLSServerCrtDataName = "server.crt"
 )

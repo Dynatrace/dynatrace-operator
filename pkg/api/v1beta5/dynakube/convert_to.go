@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package dynakube
 
 import (
@@ -25,8 +28,7 @@ func (src *DynaKube) ConvertTo(dstRaw conversion.Hub) error {
 	src.toBase(dst)
 	src.toMetadataEnrichment(dst)
 	src.toLogMonitoringSpec(dst)
-	src.toKspmSpec(dst)
-	src.toExtensionsSpec(dst)
+	src.toKSPMSpec(dst)
 	src.toOneAgentSpec(dst)
 	src.toActiveGateSpec(dst)
 	// we need to convert TelemetryIngestSpec first since `toTemplatesSpec` relies on it
@@ -68,17 +70,10 @@ func (src *DynaKube) toLogMonitoringSpec(dst *dynakubelatest.DynaKube) {
 	}
 }
 
-func (src *DynaKube) toKspmSpec(dst *dynakubelatest.DynaKube) {
-	if src.Spec.Kspm != nil {
-		dst.Spec.KSPM = &kspmlatest.Spec{}
-		dst.Spec.KSPM.MappedHostPaths = []string{"/"}
-	}
-}
-
-func (src *DynaKube) toExtensionsSpec(dst *dynakubelatest.DynaKube) {
-	if src.Spec.Extensions != nil {
-		dst.Spec.Extensions = &extensionslatest.Spec{
-			Prometheus: &extensionslatest.PrometheusSpec{},
+func (src *DynaKube) toKSPMSpec(dst *dynakubelatest.DynaKube) {
+	if src.Spec.KSPM != nil {
+		dst.Spec.KSPM = &kspmlatest.Spec{
+			MappedHostPaths: src.Spec.KSPM.MappedHostPaths,
 		}
 	}
 }
@@ -87,19 +82,19 @@ func (src *DynaKube) toOneAgentSpec(dst *dynakubelatest.DynaKube) { //nolint:dup
 	switch {
 	case src.OneAgent().IsClassicFullStackMode():
 		dst.Spec.OneAgent.ClassicFullStack = toHostInjectSpec(*src.Spec.OneAgent.ClassicFullStack)
-		dst.RemovedFields().AutoUpdate.Set(src.Spec.OneAgent.ClassicFullStack.AutoUpdate)
+		dst.RemovedFields().AutoUpdate.Set(src.Spec.OneAgent.ClassicFullStack.AutoUpdate) //nolint:staticcheck
 	case src.OneAgent().IsCloudNativeFullstackMode():
 		dst.Spec.OneAgent.CloudNativeFullStack = &oneagentlatest.CloudNativeFullStackSpec{}
 		dst.Spec.OneAgent.CloudNativeFullStack.HostInjectSpec = *toHostInjectSpec(src.Spec.OneAgent.CloudNativeFullStack.HostInjectSpec)
-		dst.RemovedFields().AutoUpdate.Set(src.Spec.OneAgent.CloudNativeFullStack.AutoUpdate)
+		dst.RemovedFields().AutoUpdate.Set(src.Spec.OneAgent.CloudNativeFullStack.AutoUpdate) //nolint:staticcheck
 		dst.Spec.OneAgent.CloudNativeFullStack.AppInjectionSpec = *toAppInjectSpec(src.Spec.OneAgent.CloudNativeFullStack.AppInjectionSpec)
 	case src.OneAgent().IsApplicationMonitoringMode():
 		dst.Spec.OneAgent.ApplicationMonitoring = &oneagentlatest.ApplicationMonitoringSpec{}
-		dst.Spec.OneAgent.ApplicationMonitoring.Version = src.Spec.OneAgent.ApplicationMonitoring.Version
+		dst.Spec.OneAgent.ApplicationMonitoring.Version = src.Spec.OneAgent.ApplicationMonitoring.Version //nolint:staticcheck
 		dst.Spec.OneAgent.ApplicationMonitoring.AppInjectionSpec = *toAppInjectSpec(src.Spec.OneAgent.ApplicationMonitoring.AppInjectionSpec)
 	case src.OneAgent().IsHostMonitoringMode():
 		dst.Spec.OneAgent.HostMonitoring = toHostInjectSpec(*src.Spec.OneAgent.HostMonitoring)
-		dst.RemovedFields().AutoUpdate.Set(src.Spec.OneAgent.HostMonitoring.AutoUpdate)
+		dst.RemovedFields().AutoUpdate.Set(src.Spec.OneAgent.HostMonitoring.AutoUpdate) //nolint:staticcheck
 	}
 
 	dst.Spec.OneAgent.HostGroup = src.Spec.OneAgent.HostGroup
@@ -107,7 +102,7 @@ func (src *DynaKube) toOneAgentSpec(dst *dynakubelatest.DynaKube) { //nolint:dup
 
 func (src *DynaKube) toTemplatesSpec(dst *dynakubelatest.DynaKube) {
 	dst.Spec.Templates.LogMonitoring = toLogMonitoringTemplate(src.Spec.Templates.LogMonitoring)
-	dst.Spec.Templates.KSPMNodeConfigurationCollector = toKspmNodeConfigurationCollectorTemplate(src.Spec.Templates.KspmNodeConfigurationCollector)
+	dst.Spec.Templates.KSPMNodeConfigurationCollector = toKSPMNodeConfigurationCollectorTemplate(src.Spec.Templates.KSPMNodeConfigurationCollector)
 	dst.Spec.Templates.OpenTelemetryCollector = toOpenTelemetryCollectorTemplate(dst, src.Spec.Templates.OpenTelemetryCollector)
 	dst.Spec.Templates.ExtensionExecutionController = toExtensionControllerTemplate(src.Spec.Templates.ExtensionExecutionController)
 }
@@ -133,7 +128,7 @@ func toLogMonitoringTemplate(src *logmonitoring.TemplateSpec) *logmonitoringlate
 	return dst
 }
 
-func toKspmNodeConfigurationCollectorTemplate(src kspm.NodeConfigurationCollectorSpec) kspmlatest.NodeConfigurationCollectorSpec {
+func toKSPMNodeConfigurationCollectorTemplate(src kspm.NodeConfigurationCollectorSpec) kspmlatest.NodeConfigurationCollectorSpec {
 	dst := kspmlatest.NodeConfigurationCollectorSpec{}
 
 	dst.UpdateStrategy = src.UpdateStrategy
@@ -158,11 +153,18 @@ func toOpenTelemetryCollectorTemplate(dk *dynakubelatest.DynaKube, src OpenTelem
 	dst.Annotations = src.Annotations
 	dst.Replicas = src.Replicas
 	dst.ImageRef = src.ImageRef
-	if !dst.ImageRef.HasImage() && (dk.TelemetryIngest().IsEnabled() || dk.Extensions().IsPrometheusEnabled()) {
+
+	if !dst.ImageRef.HasImage() && dk.TelemetryIngest().IsEnabled() {
 		dst.ImageRef.Repository = "public.ecr.aws/dynatrace/dynatrace-otel-collector"
 		dst.ImageRef.Tag = "latest"
-		dk.RemovedFields().DefaultOTELCImage.Set(new(true))
+
+		dk.RemovedFields().DefaultOTelColImage.Set(new(true))
+	} else {
+		// Drop any stale marker so we never signal a defaulted image when the image
+		// is user-set or telemetry is disabled; otherwise ConvertFrom would wipe it.
+		dk.RemovedFields().DefaultOTelColImage.Set(nil)
 	}
+
 	dst.TLSRefName = src.TLSRefName
 	dst.Resources = src.Resources
 	dst.Tolerations = src.Tolerations
@@ -220,17 +222,19 @@ func (src *DynaKube) toStatus(dst *dynakubelatest.DynaKube) {
 		VersionStatus: src.Status.CodeModules.VersionStatus,
 	}
 
-	dst.Status.MetadataEnrichment.Rules = make([]metadataenrichmentlatest.Rule, 0)
-	for _, rule := range src.Status.MetadataEnrichment.Rules {
-		dst.Status.MetadataEnrichment.Rules = append(dst.Status.MetadataEnrichment.Rules,
-			metadataenrichmentlatest.Rule{
-				Type:   metadataenrichmentlatest.RuleType(rule.Type),
-				Source: rule.Source,
-				Target: rule.Target,
-			})
+	if len(src.Status.MetadataEnrichment.Rules) > 0 {
+		dst.Status.MetadataEnrichment.Rules = []metadataenrichmentlatest.Rule{}
+		for _, rule := range src.Status.MetadataEnrichment.Rules {
+			dst.Status.MetadataEnrichment.Rules = append(dst.Status.MetadataEnrichment.Rules,
+				metadataenrichmentlatest.Rule{
+					Type:   metadataenrichmentlatest.RuleType(rule.Type),
+					Source: rule.Source,
+					Target: rule.Target,
+				})
+		}
 	}
 
-	dst.Status.KSPM.TokenSecretHash = src.Status.Kspm.TokenSecretHash
+	dst.Status.KSPM.TokenSecretHash = src.Status.KSPM.TokenSecretHash
 	dst.Status.UpdatedTimestamp = src.Status.UpdatedTimestamp
 	dst.Status.Phase = src.Status.Phase
 	dst.Status.KubeSystemUUID = src.Status.KubeSystemUUID
@@ -268,7 +272,7 @@ func toHostInjectSpec(src oneagent.HostInjectSpec) *oneagentlatest.HostInjectSpe
 	dst.Annotations = src.Annotations
 	dst.Labels = src.Labels
 	dst.NodeSelector = src.NodeSelector
-	dst.Version = src.Version
+	dst.Version = src.Version //nolint:staticcheck
 	dst.Image = src.Image
 	dst.DNSPolicy = src.DNSPolicy
 	dst.PriorityClassName = src.PriorityClassName

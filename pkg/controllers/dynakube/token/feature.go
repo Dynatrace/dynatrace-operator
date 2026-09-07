@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package token
 
 import (
@@ -53,8 +56,7 @@ func getFeaturesForAPIToken(paasTokenExists bool) []Feature {
 				tokenclient.ScopeSettingsRead,
 				tokenclient.ScopeSettingsWrite},
 			IsEnabled: func(dk dynakube.DynaKube) bool {
-				return dk.ActiveGate().IsKubernetesMonitoringEnabled() &&
-					dk.FF().IsAutomaticK8sAPIMonitoring()
+				return dk.IsKubernetesMonitoringRegistrationEnabled()
 			},
 		},
 		{
@@ -82,15 +84,6 @@ func getFeaturesForAPIToken(paasTokenExists bool) []Feature {
 			},
 			IsEnabled: func(dk dynakube.DynaKube) bool {
 				return dk.TelemetryIngest().IsEnabled()
-			},
-		},
-		{
-			Name: "PrometheusExtensions",
-			OptionalScopes: []string{
-				tokenclient.ScopeSettingsRead,
-			},
-			IsEnabled: func(dk dynakube.DynaKube) bool {
-				return dk.Extensions().IsPrometheusEnabled()
 			},
 		},
 		{

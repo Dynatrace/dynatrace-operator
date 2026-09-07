@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package validation
 
 import (
@@ -35,6 +38,7 @@ var validatorErrorFuncs = []validatorFunc{
 	isValidSSOServerURL,
 	checkSSOServerProtocol,
 	isAllowedSSOServer,
+	publicRegistryOverrideWithCustomImage,
 }
 
 func New(apiReader client.Reader, cfg *rest.Config) admission.Validator[runtime.Object] {

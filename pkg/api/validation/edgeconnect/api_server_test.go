@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package validation
 
 import (
@@ -8,11 +11,12 @@ import (
 )
 
 const (
-	testName      = "test-name"
-	testNamespace = "test-namespace"
+	testName               = "test-name"
+	testNamespace          = "test-namespace"
+	testServiceAccountName = "test"
 )
 
-func TestApiServer(t *testing.T) {
+func Test_isAllowedSuffixAPIServer(t *testing.T) {
 	t.Run("happy apiServer", func(t *testing.T) {
 		for _, suffix := range allowedSuffix {
 			ec := &edgeconnect.EdgeConnect{
@@ -29,7 +33,7 @@ func TestApiServer(t *testing.T) {
 					},
 				},
 			}
-			assertAllowed(t, ec, prepareTestServiceAccount(testServiceAccountName, testNamespace))
+			assertAllowed(t, ec, prepareTestServiceAccount(t, testServiceAccountName, testNamespace))
 		}
 	})
 
@@ -72,6 +76,33 @@ func TestApiServer(t *testing.T) {
 		})
 	})
 
+	t.Run("invalid apiServer (path-in-host)", func(t *testing.T) {
+		for _, apiServer := range []string{
+			"someotherurl.tld/.apps.dynatrace.com",
+			"otherhost.example.org/.apps.dynatrace.com",
+			"127.0.0.1/.apps.dynatrace.com",
+			"169.254.169.254/.apps.dynatrace.com",
+			"tenantid.apps.dynatrace.com@someotherurl.tld",
+			"tenantid.apps.dynatrace.com\\.someotherurl.tld",
+			"tenantid.apps.dynatrace.com#fragment",
+			"tenantid.apps.dynatrace.com?query",
+			"//someotherurl.tld/.apps.dynatrace.com",
+		} {
+			assertDenied(t, []string{errorMissingAllowedSuffixAPIServer}, &edgeconnect.EdgeConnect{
+				Spec: edgeconnect.EdgeConnectSpec{
+					APIServer: apiServer,
+					OAuth: edgeconnect.OAuthSpec{
+						ClientSecret: "secret",
+						Endpoint:     testValidOAuthEndpoint,
+						Resource:     "resource",
+					},
+				},
+			})
+		}
+	})
+}
+
+func Test_checkAPIServerProtocolNotSet(t *testing.T) {
 	t.Run("invalid apiServer url should not start with numbers", func(t *testing.T) {
 		assertDenied(t, []string{errorInvalidAPIServer}, &edgeconnect.EdgeConnect{
 			Spec: edgeconnect.EdgeConnectSpec{
@@ -110,30 +141,5 @@ func TestApiServer(t *testing.T) {
 				},
 			},
 		})
-	})
-
-	t.Run("invalid apiServer (path-in-host)", func(t *testing.T) {
-		for _, apiServer := range []string{
-			"someotherurl.tld/.apps.dynatrace.com",
-			"otherhost.example.org/.apps.dynatrace.com",
-			"127.0.0.1/.apps.dynatrace.com",
-			"169.254.169.254/.apps.dynatrace.com",
-			"tenantid.apps.dynatrace.com@someotherurl.tld",
-			"tenantid.apps.dynatrace.com\\.someotherurl.tld",
-			"tenantid.apps.dynatrace.com#fragment",
-			"tenantid.apps.dynatrace.com?query",
-			"//someotherurl.tld/.apps.dynatrace.com",
-		} {
-			assertDenied(t, []string{errorMissingAllowedSuffixAPIServer}, &edgeconnect.EdgeConnect{
-				Spec: edgeconnect.EdgeConnectSpec{
-					APIServer: apiServer,
-					OAuth: edgeconnect.OAuthSpec{
-						ClientSecret: "secret",
-						Endpoint:     testValidOAuthEndpoint,
-						Resource:     "resource",
-					},
-				},
-			})
-		}
 	})
 }

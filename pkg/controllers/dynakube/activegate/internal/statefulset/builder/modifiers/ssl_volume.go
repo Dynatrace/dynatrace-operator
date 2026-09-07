@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package modifiers
 
 import (
@@ -51,7 +54,7 @@ func (mod SSLVolumeModifier) getVolumeMounts() []corev1.VolumeMount {
 		{
 			ReadOnly:  false,
 			Name:      consts.GatewaySslVolumeName,
-			MountPath: consts.GatewaySslMountPoint,
+			MountPath: consts.GatewaySslMountPath,
 		},
 	}
 }

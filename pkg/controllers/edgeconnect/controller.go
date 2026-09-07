@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package edgeconnect
 
 import (
@@ -239,7 +242,7 @@ func (controller *Controller) reconcileEdgeConnect(ctx context.Context, ec *edge
 
 			log.Debug("reconcileEdgeConnect status update error")
 
-			return reconcile.Result{RequeueAfter: fastRequeueInterval}, retErr
+			return reconcile.Result{}, retErr
 		}
 	}
 
@@ -418,7 +421,7 @@ func (controller *Controller) reconcileEdgeConnectRegular(ctx context.Context, e
 	return nil
 }
 
-func (controller *Controller) reconcileEdgeConnectProvisioner(ctx context.Context, ec *edgeconnect.EdgeConnect) error { //nolint:revive
+func (controller *Controller) reconcileEdgeConnectProvisioner(ctx context.Context, ec *edgeconnect.EdgeConnect) error {
 	log := logd.FromContext(ctx)
 
 	log.Info("reconcileEdgeConnectProvisioner")

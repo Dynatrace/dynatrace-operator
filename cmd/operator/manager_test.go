@@ -1,9 +1,13 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package operator
 
 import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -25,5 +29,19 @@ func TestGetControllerAddFuncs(t *testing.T) {
 		funcs := getControllerAddFuncs(true)
 
 		assert.Len(t, funcs, 2) // dk, ec
+	})
+
+	t.Run("with OLM and ExperimentalEnablePrometheus", func(t *testing.T) {
+		t.Setenv(k8senv.ExperimentalEnablePrometheus, "true")
+		funcs := getControllerAddFuncs(true)
+
+		assert.Len(t, funcs, 4) // dk, ec, dtp, nodes
+	})
+
+	t.Run("without OLM and with ExperimentalEnablePrometheus", func(t *testing.T) {
+		t.Setenv(k8senv.ExperimentalEnablePrometheus, "true")
+		funcs := getControllerAddFuncs(false)
+
+		assert.Len(t, funcs, 5) // dk, ec, dtp, nodes, certs
 	})
 }

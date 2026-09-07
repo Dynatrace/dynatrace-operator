@@ -1,0 +1,12 @@
+apiVersion: dynatrace.com/v1beta6
+kind: DynaKube
+metadata:
+  name: status-connection-info
+  namespace: default
+spec:
+  apiUrl: https://status.dev.dynatracelabs.com/api
+status:
+  oneAgent:
+    connectionInfoStatus:
+      endpoints: https://abc12345.dev.dynatracelabs.com
+      tenantUUID: abc12345

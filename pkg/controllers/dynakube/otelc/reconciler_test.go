@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package otelc
 
 import (
@@ -9,6 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
+	sharedimage "github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/consts"
@@ -17,6 +21,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sconfigmap"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
+	imageclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/image"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -88,6 +93,14 @@ func createDynaKube(activeGateEnabled bool) dynakube.DynaKube {
 				Value: "http://test-proxy:8080",
 			},
 			TelemetryIngest: &telemetryingest.Spec{},
+			Templates: dynakube.TemplatesSpec{
+				OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{
+					ImageRef: sharedimage.Ref{
+						Repository: "test-repo/otelc",
+						Tag:        "latest",
+					},
+				},
+			},
 		},
 		Status: dynakube.DynaKubeStatus{
 			ActiveGate: activegate.Status{
@@ -126,11 +139,11 @@ func reconcile(t *testing.T, ctx context.Context, clt client.WithWatch, dk dynak
 	require.True(t, ok)
 
 	sr := statefulset.NewReconciler(clt, clt)
-	err = sr.Reconcile(ctx, &dk)
+	err = sr.Reconcile(ctx, imageclientmock.NewClient(t), &dk)
 	require.NoError(t, err)
 
 	var otelcSts appsv1.StatefulSet
-	err = clt.Get(ctx, types.NamespacedName{Name: dk.OtelCollectorStatefulsetName(), Namespace: dk.Namespace}, &otelcSts)
+	err = clt.Get(ctx, types.NamespacedName{Name: dk.OTelCollectorStatefulsetName(), Namespace: dk.Namespace}, &otelcSts)
 	require.NoError(t, err)
 	require.NotEmpty(t, otelcSts.Spec.Template.Spec.Containers)
 

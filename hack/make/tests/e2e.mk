@@ -28,28 +28,28 @@ test/e2e/%/phase3:
 ## Run standard, no-csi, istio and release e2e tests
 test/e2e:
 	RC=0; \
+	make test/e2e/deploy || RC=1; \
 	make test/e2e/standard  || RC=1; \
 	make test/e2e/no-csi || RC=1; \
 	make test/e2e/istio  || RC=1; \
 	make test/e2e/release || RC=1; \
-	make test/e2e/permissions || RC=1; \
 	exit $$RC
 
 ## Run standard, no-csi, istio and release e2e tests with /publish
 test/e2e-publish:
 	RC=0; \
+	make test/e2e/deploy/publish || RC=1; \
 	make test/e2e/standard/publish || RC=1; \
 	make test/e2e/no-csi/publish || RC=1; \
 	make test/e2e/istio/publish || RC=1; \
 	make test/e2e/release/publish || RC=1; \
-	make test/e2e/permissions/publish || RC=1; \
 	exit $$RC
 
 ## Start tests that support kind
 test/e2e/kind:
 	RC=0; \
+	make test/e2e/deploy || RC=1; \
 	make test/e2e/edgeconnect/normal || RC=1; \
-	make test/e2e/permissions || RC=1; \
 	exit $$RC
 
 ## Run standard e2e test only
@@ -68,9 +68,25 @@ test/e2e/no-csi:
 test/e2e/release:
 	$(GOTESTCMD) -timeout 60m ./test/e2e/scenarios/release $(SKIPCLEANUP)
 
-## Run permissions e2e test
-test/e2e/permissions:
-	$(GOTESTCMD) -timeout 10m ./test/e2e/scenarios/permissions $(SKIPCLEANUP)
+## Run deploy e2e test
+test/e2e/deploy:
+	$(GOTESTCMD) -timeout 60m ./test/e2e/scenarios/deploy $(SKIPCLEANUP)
+
+## Run deploy e2e test deployer permissions
+test/e2e/deploy/permissions:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/deploy -run "permissions" $(SKIPCLEANUP)
+
+## Run deploy e2e test manifest
+test/e2e/deploy/manifests:
+	$(GOTESTCMD) -timeout 40m ./test/e2e/scenarios/deploy -run "manifest" $(SKIPCLEANUP)
+
+## Run deploy e2e test manifest kubernetes
+test/e2e/deploy/manifests/kubernetes:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/deploy -run "manifest_kubernetes" $(SKIPCLEANUP)
+
+## Run deploy e2e test manifest openshift
+test/e2e/deploy/manifests/openshift:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/deploy -run "manifest_openshift" $(SKIPCLEANUP)
 
 ## Runs ActiveGate e2e test only
 test/e2e/activegate:
@@ -152,9 +168,9 @@ test/e2e/cloudnative/switchmodes:
 test/e2e/cloudnative/csi-migration:
 	$(GOTESTCMD) -timeout 40m ./test/e2e/scenarios/standard -run "cloudnative_csi_migration" $(SKIPCLEANUP)
 
-## Runs CloudNative upgrade e2e test only
-test/e2e/cloudnative/upgrade:
-	$(GOTESTCMD) -timeout 100m ./test/e2e/scenarios/release -run "cloudnative_upgrade" $(SKIPCLEANUP)
+## Runs Operator upgrade e2e test only
+test/e2e/operator/upgrade:
+	$(GOTESTCMD) -timeout 100m ./test/e2e/scenarios/release -run "operator_upgrade" $(SKIPCLEANUP)
 
 ## Runs extensions upgrade e2e test only
 test/e2e/extensions/upgrade:
@@ -174,6 +190,10 @@ test/e2e/extensions/dbexecutor/scaling:
 ## Runs Application Monitoring metadata-enrichment e2e test only
 test/e2e/applicationmonitoring/metadataenrichment:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "metadata_enrichment" $(SKIPCLEANUP)
+
+## Runs Application Monitoring enrichment-rules e2e test only
+test/e2e/applicationmonitoring/enrichment-rules:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "enrichment_rules" $(SKIPCLEANUP)
 
 ## Runs Application Monitoring otlp-exporter-configuration e2e test only
 test/e2e/applicationmonitoring/otlpexporterconfiguration:
@@ -384,7 +404,10 @@ test/e2e/telemetryingest/scaling:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "telemetryingest_scaling" $(SKIPCLEANUP)
 
 test/e2e/kspm:
-	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "kspm.*" $(SKIPCLEANUP)
+	$(GOTESTCMD) -timeout 30m ./test/e2e/scenarios/nocsi -run "kspm.*" $(SKIPCLEANUP)
+
+test/e2e/kspm/kubemon:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "kspm_with_kubemon" $(SKIPCLEANUP)
 
 test/e2e/kspm/optionalscopes:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "kspm_with_optional_scopes" $(SKIPCLEANUP)

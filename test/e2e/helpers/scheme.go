@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 //go:build e2e
 
 package helpers
@@ -11,8 +14,6 @@ import (
 	_ "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2"
 	_ "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4"
-	_ "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5"
 	_ "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
@@ -24,10 +25,6 @@ func SetScheme(ctx context.Context, envConfig *envconf.Config) (context.Context,
 		return ctx, err
 	}
 	err = v1beta5.AddToScheme(envConfig.Client().Resources().GetScheme())
-	if err != nil {
-		return ctx, err
-	}
-	err = v1beta4.AddToScheme(envConfig.Client().Resources().GetScheme())
 	if err != nil {
 		return ctx, err
 	}

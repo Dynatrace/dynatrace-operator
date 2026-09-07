@@ -1,8 +1,13 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package nodes
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"net/url"
 	"testing"
 	"time"
 
@@ -15,6 +20,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/nodes/cache"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	hostclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/hostevent"
 	"github.com/stretchr/testify/assert"
@@ -28,6 +34,7 @@ import (
 )
 
 const (
+	testName      = "test-dynakube"
 	testNamespace = "dynatrace"
 	testAPIToken  = "test-api-token"
 )
@@ -306,6 +313,137 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, ctrl.pruneCache(ctx, nodesCache))
 	})
 
+	t.Run("Use cached IP when DynaKube status has no IP for node", func(t *testing.T) {
+		ctx := t.Context()
+		fakeClient := createDefaultFakeClient()
+
+		// the mark for termination event has to go out with the cached IP
+		dtClient := createDTMockClient(t, "1.2.3.4", "HOST-42")
+		ctrl := createDefaultReconciler(t, fakeClient, dtClient)
+
+		// warm up the cache, so node1 is known with 1.2.3.4
+		result, err := ctrl.Reconcile(ctx, createReconcileRequest("node1"))
+		require.NoError(t, err)
+		assert.NotNil(t, result)
+
+		// the OneAgent pod is evicted -> the instance is kept, but without an IP
+		var dk dynakube.DynaKube
+
+		require.NoError(t, fakeClient.Get(ctx, client.ObjectKey{Name: "oneagent1", Namespace: testNamespace}, &dk))
+
+		dk.Status.OneAgent.Instances = map[string]oneagent.Instance{"node1": {}}
+		require.NoError(t, fakeClient.Status().Update(ctx, &dk))
+
+		// the node gets cordoned
+		var node1 corev1.Node
+
+		require.NoError(t, fakeClient.Get(ctx, client.ObjectKey{Name: "node1"}, &node1))
+
+		node1.Spec.Unschedulable = true
+		require.NoError(t, fakeClient.Update(ctx, &node1))
+
+		result, err = ctrl.Reconcile(ctx, createReconcileRequest("node1"))
+		require.NoError(t, err)
+		assert.NotNil(t, result)
+
+		// the cached IP must survive the empty DynaKube status
+		c, err := ctrl.getCache(ctx)
+		require.NoError(t, err)
+
+		entry, err := c.GetEntry("node1")
+		require.NoError(t, err)
+		assert.Equal(t, "1.2.3.4", entry.IPAddress)
+		assert.False(t, entry.LastMarkedForTermination.IsZero())
+	})
+
+	t.Run("Skip mark for termination when no IP is known for the node", func(t *testing.T) {
+		fakeClient := fake.NewClient(
+			&corev1.Node{
+				ObjectMeta: metav1.ObjectMeta{Name: "node1"},
+				Spec:       corev1.NodeSpec{Unschedulable: true},
+			},
+			&dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{Name: "oneagent1", Namespace: testNamespace},
+				Status: dynakube.DynaKubeStatus{
+					OneAgent: oneagent.Status{
+						// instance is known, but the OneAgent pod never reported an IP
+						Instances: map[string]oneagent.Instance{"node1": {}},
+					},
+				},
+			},
+			&corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "oneagent1",
+					Namespace: testNamespace,
+				},
+				Data: map[string][]byte{
+					token.APIKey: []byte(testAPIToken),
+				},
+			},
+		)
+
+		// no expectations -> any call to the Dynatrace API fails the test
+		hostClient := hostclientmock.NewClient(t)
+		ctrl := createDefaultReconciler(t, fakeClient, &dynatrace.Client{HostEvent: hostClient})
+
+		result, err := ctrl.Reconcile(t.Context(), createReconcileRequest("node1"))
+		require.NoError(t, err)
+		assert.Equal(t, reconcile.Result{}, result)
+	})
+
+	t.Run("Remove cache entry on node deletion when no IP is known", func(t *testing.T) {
+		ctx := t.Context()
+
+		staleEntry, err := json.Marshal(cache.Entry{
+			LastSeen:     time.Now().UTC(),
+			IPAddress:    "",
+			DynaKubeName: "oneagent1",
+		})
+		require.NoError(t, err)
+
+		fakeClient := fake.NewClient(
+			// node1 is gone from the cluster, but still in the cache without an IP
+			&dynakube.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{Name: "oneagent1", Namespace: testNamespace},
+				Status: dynakube.DynaKubeStatus{
+					OneAgent: oneagent.Status{
+						Instances: map[string]oneagent.Instance{"node1": {}},
+					},
+				},
+			},
+			&corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "oneagent1",
+					Namespace: testNamespace,
+				},
+				Data: map[string][]byte{
+					token.APIKey: []byte(testAPIToken),
+				},
+			},
+			&corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      cache.ConfigMapName,
+					Namespace: testNamespace,
+				},
+				Data: map[string]string{"node1": string(staleEntry)},
+			},
+		)
+
+		// no expectations -> any call to the Dynatrace API fails the test
+		hostClient := hostclientmock.NewClient(t)
+		ctrl := createDefaultReconciler(t, fakeClient, &dynatrace.Client{HostEvent: hostClient})
+
+		result, err := ctrl.Reconcile(ctx, createReconcileRequest("node1"))
+		require.NoError(t, err)
+		assert.Equal(t, reconcile.Result{}, result)
+
+		nodesCache, err := cache.New(ctx, fakeClient, testNamespace, nil)
+		require.NoError(t, err)
+
+		_, err = nodesCache.GetEntry("node1")
+		require.ErrorIs(t, err, cache.ErrEntryNotFound)
+	})
+
 	t.Run("Skip reconcile when platform token is detected", func(t *testing.T) {
 		fakeClient := fake.NewClient(
 			&corev1.Node{ObjectMeta: metav1.ObjectMeta{Name: "node1"}},
@@ -332,6 +470,90 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, reconcile.Result{}, result)
 	})
+}
+
+func TestSendMarkedForTerminationForDTConnectionTimeout(t *testing.T) {
+	fakeClient := fake.NewClient(&corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testName,
+			Namespace: testNamespace,
+		},
+		Data: map[string][]byte{
+			token.APIKey: []byte(testAPIToken),
+		},
+	})
+
+	dk := &dynakube.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testName,
+			Namespace: testNamespace,
+		},
+		Spec: dynakube.DynaKubeSpec{APIURL: "localhost"},
+	}
+
+	t.Run("connection timeout from env var is applied to the underlying http.Client", func(t *testing.T) {
+		testCases := []struct {
+			envValue string
+			timeout  time.Duration
+		}{
+			{
+				envValue: "",
+				timeout:  30 * time.Second,
+			},
+			{
+				envValue: "29s",
+				timeout:  30 * time.Second,
+			},
+			{
+				envValue: "30s",
+				timeout:  30 * time.Second,
+			},
+			{
+				envValue: "15m",
+				timeout:  15 * time.Minute,
+			},
+			{
+				envValue: "901s",
+				timeout:  30 * time.Second,
+			},
+		}
+
+		for _, testCase := range testCases {
+			if testCase.envValue != "" {
+				t.Setenv(k8senv.DTClientConnectionTimeoutEnvVar, testCase.envValue)
+			}
+
+			controller := &Controller{
+				client:          fakeClient,
+				apiReader:       fakeClient,
+				dtClientFactory: testDTClientBuilder(t, testCase.timeout),
+			}
+
+			err := controller.sendMarkedForTermination(t.Context(), dk, &cache.Entry{
+				LastSeen:                 time.Now(),
+				LastMarkedForTermination: time.Now(),
+				IPAddress:                "127.0.0.1",
+				NodeName:                 "testNode",
+				DynaKubeName:             "dynakube",
+			})
+
+			// we just want to make sure that the timeout is applied correctly to the underlying http.Client
+			require.Error(t, err)
+
+			var urlErr *url.Error
+			require.ErrorAs(t, err, &urlErr)
+
+			assert.Equal(t, "unsupported protocol scheme \"\"", urlErr.Unwrap().Error())
+		}
+	})
+}
+
+func testDTClientBuilder(t *testing.T, timeout time.Duration) dynatrace.ClientFactory {
+	return func(ctx context.Context, apiReader client.Reader, dk *dynakube.DynaKube, apiToken, paasToken, userAgentSuffix string, clientConnectionTimeout time.Duration) (*dynatrace.Client, error) {
+		assert.Equal(t, timeout, clientConnectionTimeout)
+
+		return dynatrace.NewClientFromDynakube(ctx, apiReader, dk, apiToken, paasToken, userAgentSuffix, clientConnectionTimeout)
+	}
 }
 
 func createReconcileRequest(nodeName string) reconcile.Request {
@@ -417,7 +639,7 @@ func createDefaultFakeClient() client.Client {
 }
 
 func newClientFactory(dtClient *dynatrace.Client) dynatrace.ClientFactory {
-	return func(_ context.Context, _ client.Reader, _ *dynakube.DynaKube, _, _, _ string) (*dynatrace.Client, error) {
+	return func(_ context.Context, _ client.Reader, _ *dynakube.DynaKube, _, _, _ string, _ time.Duration) (*dynatrace.Client, error) {
 		return dtClient, nil
 	}
 }

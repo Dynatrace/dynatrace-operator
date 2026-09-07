@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package daemonset
 
 import (
@@ -21,6 +24,8 @@ import (
 
 const (
 	serviceAccountName = "dynatrace-node-config-collector"
+
+	conditionType = "NodeConfigCollectorDaemonSet"
 )
 
 type Reconciler struct {
@@ -78,7 +83,10 @@ func (r *Reconciler) generateDaemonSet(dk *dynakube.DynaKube) (*appsv1.DaemonSet
 	}
 
 	labels := k8slabel.NewAppLabels(k8slabel.KSPMComponentLabel, dk.Name, k8slabel.KSPMComponentLabel, dk.Spec.Templates.KSPMNodeConfigurationCollector.ImageRef.Tag)
-	templateAnnotations := map[string]string{tokenSecretHashAnnotation: dk.KSPM().TokenSecretHash}
+	templateAnnotations := map[string]string{
+		tokenSecretHashAnnotation: dk.KSPM().TokenSecretHash,
+		tlsSecretHashAnnotation:   dk.KubernetesMonitoring().TLSSecretHash,
+	}
 	maps.Copy(templateAnnotations, k8ssecuritycontext.RemoveAppArmorAnnotation(dk.KSPM().Annotations, containerName))
 
 	affinity := k8saffinity.NewAMDOnlyNodeAffinity()

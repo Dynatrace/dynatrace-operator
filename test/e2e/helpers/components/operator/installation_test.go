@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 //go:build e2e
 
 package operator
@@ -33,6 +36,7 @@ func TestGetHelmOptions(t *testing.T) {
 			Args: []string{
 				"--create-namespace",
 				"--install",
+				"--rollback-on-failure",
 				"--set", "platform=test",
 				"--set", "installCRD=true",
 				"--set", "csidriver.enabled=true",
@@ -53,12 +57,38 @@ func TestGetHelmOptions(t *testing.T) {
 			Args: []string{
 				"--create-namespace",
 				"--install",
+				"--rollback-on-failure",
 				"--set", "platform=test",
 				"--set", "installCRD=true",
 				"--set", "csidriver.enabled=true",
 				"--set", "manifests=true",
 				"--set", "debugLogs=true",
 				"oci://registry:0.0.0-nightly-chart",
+			},
+		}, opts)
+	})
+
+	t.Run("use nightly with fips", func(t *testing.T) {
+		t.Setenv("HELM_CHART", "oci://registry:0.0.0-nightly-chart")
+		t.Setenv("FIPS", "true")
+		opts, err := getHelmOptions("", "test", true)
+		require.NoError(t, err)
+		assertOptions(t, &helm.Opts{
+			Namespace:   "dynatrace",
+			ReleaseName: "dynatrace-operator",
+			Args: []string{
+				"--create-namespace",
+				"--install",
+				"--rollback-on-failure",
+				"--set", "platform=test",
+				"--set", "installCRD=true",
+				"--set", "csidriver.enabled=true",
+				"--set", "manifests=true",
+				"--set", "debugLogs=true",
+				"oci://registry:0.0.0-nightly-chart",
+				"--set", "imageRef.repository=registry",
+				"--set", "imageRef.tag=nightly-fips",
+				"--set", "imageRef.pullPolicy=Always",
 			},
 		}, opts)
 	})
@@ -78,6 +108,7 @@ func TestGetHelmOptions(t *testing.T) {
 			Args: []string{
 				"--create-namespace",
 				"--install",
+				"--rollback-on-failure",
 				"--set", "platform=test",
 				"--set", "installCRD=true",
 				"--set", "csidriver.enabled=false",
@@ -100,6 +131,7 @@ func TestGetHelmOptions(t *testing.T) {
 			Args: []string{
 				"--create-namespace",
 				"--install",
+				"--rollback-on-failure",
 				"--set", "platform=test",
 				"--set", "installCRD=true",
 				"--set", "csidriver.enabled=false",

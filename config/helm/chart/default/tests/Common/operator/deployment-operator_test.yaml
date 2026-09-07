@@ -1,3 +1,6 @@
+# Copyright Dynatrace LLC
+# SPDX-License-Identifier: Apache-2.0
+
 suite: test deployment for dynatrace operator
 chart:
   version: 1.0.0
@@ -297,23 +300,29 @@ tests:
             name: DT_HOST_AVAILABILITY_DETECTION
             value: "false"
 
-  - it: should not have init container on install
+  - it: should have certgen but not migrator on openshift install
     set:
       platform: openshift
       operator.crdStorageMigrationInitManager: true
     asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: webhook-cert-generator
       - isNull:
-          path: spec.template.spec.containers[0].initContainers
+          path: spec.template.spec.initContainers[1]
 
-  - it: should not have init container when they are disabled
+  - it: should have certgen but not migrator when migrator is disabled on openshift
     set:
       platform: openshift
       operator.crdStorageMigrationInitManager: false
     release:
       upgrade: true
     asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: webhook-cert-generator
       - isNull:
-          path: spec.template.spec.containers[0].initContainers
+          path: spec.template.spec.initContainers[1]
 
   - it: should not have imagePullSecrets defined in spec
     set:
@@ -357,6 +366,35 @@ tests:
           path: spec.template.spec
           value:
             initContainers:
+              - name: webhook-cert-generator
+                image: image-name
+                args:
+                  - certgen
+                env:
+                  - name: POD_NAMESPACE
+                    valueFrom:
+                      fieldRef:
+                        apiVersion: v1
+                        fieldPath: metadata.namespace
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 64Mi
+                  limits:
+                    cpu: 100m
+                    memory: 128Mi
+                securityContext:
+                  seccompProfile:
+                    type: RuntimeDefault
+                  privileged: false
+                  allowPrivilegeEscalation: false
+                  readOnlyRootFilesystem: true
+                  runAsNonRoot: true
+                  runAsUser: 1001
+                  runAsGroup: 1001
+                  capabilities:
+                    drop:
+                      - ALL
               - name: crd-storage-migrator
                 image: image-name
                 args:
@@ -1022,27 +1060,72 @@ tests:
             name: DT_DEFAULT_REQUEUE_AFTER
           any: true
 
-  - it: should have KUBEMON_ENABLE_OPERAND if operator.kubemonEnableOperand is true
+  - it: should have EXPERIMENTAL_ENABLE_KUBEMON_OPERAND if experimental.enableKubemonOperand is true
     set:
       platform: kubernetes
-      operator.kubemonEnableOperand: true
+      experimental.enableKubemonOperand: true
     asserts:
       - contains:
           path: spec.template.spec.containers[0].env
           content:
-            name: KUBEMON_ENABLE_OPERAND
+            name: EXPERIMENTAL_ENABLE_KUBEMON_OPERAND
             value: "true"
           count: 1
           any: true
 
-  - it: should not have KUBEMON_ENABLE_OPERAND by default
+  - it: should not have EXPERIMENTAL_ENABLE_KUBEMON_OPERAND by default
     set:
       platform: kubernetes
     asserts:
       - notContains:
           path: spec.template.spec.containers[0].env
           content:
-            name: KUBEMON_ENABLE_OPERAND
+            name: EXPERIMENTAL_ENABLE_KUBEMON_OPERAND
+          any: true
+
+  - it: should render without error and omit EXPERIMENTAL_ENABLE_KUBEMON_OPERAND when experimental is null
+    set:
+      platform: kubernetes
+      experimental: null
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: EXPERIMENTAL_ENABLE_KUBEMON_OPERAND
+          any: true
+
+  - it: should have EXPERIMENTAL_ENABLE_PROMETHEUS if experimental.enablePrometheus is true
+    set:
+      platform: kubernetes
+      experimental.enablePrometheus: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: EXPERIMENTAL_ENABLE_PROMETHEUS
+            value: "true"
+          count: 1
+          any: true
+
+  - it: should not have EXPERIMENTAL_ENABLE_PROMETHEUS by default
+    set:
+      platform: kubernetes
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: EXPERIMENTAL_ENABLE_PROMETHEUS
+          any: true
+
+  - it: should render without error and omit EXPERIMENTAL_ENABLE_PROMETHEUS when experimental is null
+    set:
+      platform: kubernetes
+      experimental: null
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: EXPERIMENTAL_ENABLE_PROMETHEUS
           any: true
 
   - it: should not have cert env vars when certs values are empty
@@ -1106,6 +1189,8 @@ tests:
 
   - it: should not have cert env vars in init container when certs values are empty
     asserts:
+      - isNotNull:
+          path: spec.template.spec.initContainers[0]
       - notContains:
           path: spec.template.spec.initContainers[0].env
           content:
@@ -1134,6 +1219,8 @@ tests:
       webhook.certs.renewalThreshold: "12h"
       webhook.certs.requeueAfter: "3h"
     asserts:
+      - isNotNull:
+          path: spec.template.spec.initContainers[0]
       - contains:
           path: spec.template.spec.initContainers[0].env
           content:
@@ -1162,3 +1249,24 @@ tests:
             value: "3h"
           count: 1
           any: true
+
+  - it: should not have DT_CLIENT_CONNECTION_TIMEOUT if clientConnectionTimeout is not set
+    set:
+      platform: kubernetes
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DT_CLIENT_CONNECTION_TIMEOUT
+
+  - it: should have DT_CLIENT_CONNECTION_TIMEOUT if clientConnectionTimeout is set
+    set:
+      platform: kubernetes
+      operator:
+        clientConnectionTimeout: 1m
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DT_CLIENT_CONNECTION_TIMEOUT
+            value: "1m"

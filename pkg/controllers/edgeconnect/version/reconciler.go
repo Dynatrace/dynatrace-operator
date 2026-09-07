@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package version
 
 import (
@@ -9,6 +12,12 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+type versionStatusUpdater interface {
+	Name() string
+	RequiresReconcile() bool
+	Update(ctx context.Context) error
+}
 
 type Reconciler struct {
 	edgeConnect  *edgeconnect.EdgeConnect

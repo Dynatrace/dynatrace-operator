@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package certificates
 
 import (
@@ -7,7 +10,9 @@ import (
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 )
 
-func createTestMutatingWebhookConfig(_ *testing.T) *admissionregistrationv1.MutatingWebhookConfiguration {
+func createTestMutatingWebhookConfig(t *testing.T) *admissionregistrationv1.MutatingWebhookConfiguration {
+	t.Helper()
+
 	return &admissionregistrationv1.MutatingWebhookConfiguration{
 		Webhooks: []admissionregistrationv1.MutatingWebhook{
 			{},
@@ -21,7 +26,9 @@ func createTestMutatingWebhookConfig(_ *testing.T) *admissionregistrationv1.Muta
 	}
 }
 
-func createTestValidatingWebhookConfig(_ *testing.T) *admissionregistrationv1.ValidatingWebhookConfiguration {
+func createTestValidatingWebhookConfig(t *testing.T) *admissionregistrationv1.ValidatingWebhookConfiguration {
+	t.Helper()
+
 	return &admissionregistrationv1.ValidatingWebhookConfiguration{
 		Webhooks: []admissionregistrationv1.ValidatingWebhook{
 			{},

@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package dynakube
 
 import (
@@ -10,10 +13,6 @@ func (dk *DynaKube) OneAgent() *oneagent.OneAgent {
 		&dk.Status.OneAgent,
 		&dk.Status.CodeModules,
 		dk.Name,
-		dk.APIURLHost(),
-		dk.FF().IsOneAgentPrivileged(),
-		dk.FF().SkipOneAgentLivenessProbe(),
-		dk.FF().IsNodeImagePull(),
 	)
 
 	return oa

@@ -1,3 +1,6 @@
+# Copyright Dynatrace LLC
+# SPDX-License-Identifier: Apache-2.0
+
 suite: test kspm clusterrole for kubernetes monitoring
 templates:
   - Common/activegate/kubernetes-monitoring/clusterrole-kubernetes-monitoring-kspm.yaml

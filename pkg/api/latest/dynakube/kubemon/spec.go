@@ -1,7 +1,9 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package kubemon
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -22,7 +24,8 @@ type StatefulSetProperties struct {
 
 	// The KubernetesMonitoring container image pull policy.
 	// +kubebuilder:validation:Optional
-	ImagePullPolicy image.PullPolicy `json:"imagePullPolicy,omitempty"`
+	// +kubebuilder:validation:Enum=IfNotPresent;Always;Never
+	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
 
 	// Node selector to control the selection of nodes.
 	// +kubebuilder:validation:Optional
@@ -38,7 +41,7 @@ type StatefulSetProperties struct {
 
 	// Define resources requests and limits for single KubernetesMonitoring pods.
 	// +kubebuilder:validation:Optional
-	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+	Resources corev1.ResourceRequirements `json:"resources,omitzero"`
 
 	// Define the rolling update strategy for the KubernetesMonitoring StatefulSet.
 	// +kubebuilder:validation:Optional
@@ -101,12 +104,10 @@ type TLSCertsRef struct {
 
 // Registration configures automatic cluster registration in Dynatrace.
 // Presence (even as {}) enables registration — follows CRD presence-based enablement.
+// Registration is also triggered by ActiveGate `kubernetes-monitoring` capability combined with the `automatic-kubernetes-api-monitoring` feature flag.
 type Registration struct {
-	// ClusterName is the display name used during registration. Defaults to the DynaKube name.
+	// ClusterName is the display name used during registration.
+	// When empty, falls back to the `automatic-kubernetes-api-monitoring-cluster-name` feature flag, then the DynaKube name.
 	// +kubebuilder:validation:Optional
 	ClusterName string `json:"clusterName,omitempty"`
-
-	// Enable the Kubernetes app (cluster details, workload views) in Dynatrace.
-	// +kubebuilder:validation:Optional
-	AppEnabled bool `json:"appEnabled,omitempty"`
 }

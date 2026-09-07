@@ -1,10 +1,12 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package supportarchive
 
 import (
 	"archive/zip"
 	"bufio"
 	"bytes"
-	"context"
 	"errors"
 	"io"
 	"testing"
@@ -45,8 +47,7 @@ func TestTroubleshootCollector(t *testing.T) {
 
 	buffer := bytes.Buffer{}
 	supportArchive := newZipArchive(bufio.NewWriter(&buffer))
-	ctx := context.TODO()
-	require.NoError(t, newTroubleshootCollector(ctx, log, supportArchive, testOperatorNamespace, clt, rest.Config{}).Do())
+	require.NoError(t, newTroubleshootCollector(t.Context(), log, supportArchive, testOperatorNamespace, clt, rest.Config{}).Do())
 
 	assertNoErrorOnClose(t, supportArchive)
 

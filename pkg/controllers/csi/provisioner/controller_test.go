@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package csiprovisioner
 
 import (
@@ -6,12 +9,14 @@ import (
 	"net/http"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	oneagentclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
@@ -22,6 +27,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/job"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	installermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/injection/codemodule/installer"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -65,6 +71,25 @@ func TestReconcile(t *testing.T) {
 		installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: false})
 
 		dk := createDynaKubeWithImage(t)
+		prov := createProvisioner(t, dk)
+		// imageInstallerBuilder is intentionally NOT set, if it were called the test would panic
+		prov.imageInstallerBuilder = func(_ context.Context, _ *image.Properties) (installer.Installer, error) {
+			return nil, errors.New("imageInstallerBuilder should not be called in migration mode")
+		}
+
+		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		assert.Equal(t, longRequeueDuration, result.RequeueAfter)
+
+		assert.False(t, areFsDirsCreated(t, prov, dk))
+	})
+
+	t.Run("image volumes (similar to migration mode case) => cleanup only, no install, long requeue", func(t *testing.T) {
+		installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: false})
+
+		dk := createDynaKubeWithImage(t)
+		dk.Annotations[exp.OAImageVolumeKey] = "true"
 		prov := createProvisioner(t, dk)
 		// imageInstallerBuilder is intentionally NOT set, if it were called the test would panic
 		prov.imageInstallerBuilder = func(_ context.Context, _ *image.Properties) (installer.Installer, error) {
@@ -287,9 +312,10 @@ func createProvisioner(t *testing.T, objs ...client.Object) OneAgentProvisioner 
 	apiReader := fake.NewClient(objs...)
 
 	return OneAgentProvisioner{
-		path:      path,
-		apiReader: apiReader,
-		cleaner:   cleanup.New(apiReader, path, mount.NewFakeMounter(nil)),
+		path:            path,
+		apiReader:       apiReader,
+		cleaner:         cleanup.New(apiReader, path, mount.NewFakeMounter(nil)),
+		dtClientFactory: dynatrace.NewClientFromDynakube,
 	}
 }
 
@@ -384,8 +410,9 @@ func createDynaKubeBase(t *testing.T) *dynakube.DynaKube {
 
 	return &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-dk",
-			Namespace: "test-ns",
+			Name:        "test-dk",
+			Namespace:   "test-ns",
+			Annotations: make(map[string]string),
 		},
 		Spec: dynakube.DynaKubeSpec{APIURL: "https://csi-provisioner-dummy-url:9090"},
 	}
@@ -457,5 +484,58 @@ func createToken(t *testing.T, dk *dynakube.DynaKube) *corev1.Secret {
 		Data: map[string][]byte{
 			token.APIKey: []byte("this is a token"),
 		},
+	}
+}
+
+func TestBuildDtcForConnectionTimeout(t *testing.T) {
+	t.Run("connection timeout from env var is applied to the underlying http.Client", func(t *testing.T) {
+		dk := createDynaKubeBase(t)
+		provisioner := createProvisioner(t, dk, createToken(t, dk))
+
+		testCases := []struct {
+			envValue string
+			timeout  time.Duration
+		}{
+			{
+				envValue: "",
+				timeout:  15 * time.Minute,
+			},
+			{
+				envValue: "29s",
+				timeout:  15 * time.Minute,
+			},
+			{
+				envValue: "30s",
+				timeout:  30 * time.Second,
+			},
+			{
+				envValue: "15m",
+				timeout:  15 * time.Minute,
+			},
+			{
+				envValue: "901s",
+				timeout:  15 * time.Minute,
+			},
+		}
+
+		for _, testCase := range testCases {
+			if testCase.envValue != "" {
+				t.Setenv(k8senv.DTClientConnectionTimeoutEnvVar, testCase.envValue)
+			}
+
+			provisioner.dtClientFactory = testDTClientBuilder(t, testCase.timeout)
+
+			dtClient, err := buildDtc(&provisioner, context.Background(), dk)
+			require.NoError(t, err)
+			assert.NotNil(t, dtClient)
+		}
+	})
+}
+
+func testDTClientBuilder(t *testing.T, timeout time.Duration) dynatrace.ClientFactory {
+	return func(ctx context.Context, apiReader client.Reader, dk *dynakube.DynaKube, apiToken, paasToken, userAgentSuffix string, clientConnectionTimeout time.Duration) (*dynatrace.Client, error) {
+		assert.Equal(t, timeout, clientConnectionTimeout)
+
+		return dynatrace.NewClientFromDynakube(ctx, apiReader, dk, apiToken, paasToken, userAgentSuffix, clientConnectionTimeout)
 	}
 }

@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package customproperties
 
 import (
@@ -18,14 +21,14 @@ import (
 )
 
 const (
-	Suffix     = "custom-properties"
-	DataKey    = "customProperties"
-	DataPath   = "custom.properties"
-	VolumeName = "custom-properties"
-	MountPath  = "/var/lib/dynatrace/gateway/config_template/custom.properties"
+	Suffix   = "custom-properties"
+	DataKey  = "customProperties"
+	DataPath = "custom.properties"
 
 	clientInternalSection = "[http.client.internal]"
 	noProxyFieldName      = "proxy-non-proxy-hosts"
+
+	customPropertiesConditionType string = "CustomPropertiesSecret"
 )
 
 type Reconciler struct {

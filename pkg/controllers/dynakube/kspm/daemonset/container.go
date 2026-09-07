@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package daemonset
 
 import (
@@ -22,7 +25,7 @@ func getContainer(dk dynakube.DynaKube, tenantUUID string) corev1.Container {
 	container := corev1.Container{
 		Name:            containerName,
 		Image:           dk.KSPM().ImageRef.StringWithDefaults(defaultImageRepo, defaultImageTag),
-		ImagePullPolicy: dk.KSPM().ImageRef.GetPullPolicy(),
+		ImagePullPolicy: dk.KSPM().ImageRef.PullPolicy,
 		VolumeMounts:    getMounts(dk),
 		Env:             getEnvs(dk, tenantUUID),
 		SecurityContext: &securityContext,

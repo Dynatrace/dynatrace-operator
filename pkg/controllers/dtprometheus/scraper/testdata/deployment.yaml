@@ -1,0 +1,115 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/instance: otel-scraper
+    app.kubernetes.io/managed-by: dynatrace-operator
+    app.kubernetes.io/name: opentelemetry-collector
+    internal.dynatrace.com/operator-version: snapshot
+  name: dtp-scraper
+  namespace: dynatrace
+  ownerReferences:
+  - apiVersion: dynatrace.com/v1alpha1
+    blockOwnerDeletion: true
+    controller: true
+    kind: DTPrometheus
+    name: dtp
+    uid: dtp-uid
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: otel-scraper
+      app.kubernetes.io/managed-by: dynatrace-operator
+      app.kubernetes.io/name: opentelemetry-collector
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        custom: annotation
+        internal.operator.dynatrace.com/scraper-config-hash: deadbeef
+      labels:
+        app.kubernetes.io/instance: otel-scraper
+        app.kubernetes.io/managed-by: dynatrace-operator
+        app.kubernetes.io/name: opentelemetry-collector
+        custom: label
+        internal.dynatrace.com/operator-version: snapshot
+    spec:
+      automountServiceAccountToken: true
+      containers:
+      - args:
+        - --config=/conf/scraper.yaml
+        - --foo=bar
+        command:
+        - /dynatrace-otel-collector
+        env:
+        - name: MY_POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: MY_POD_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.podIP
+        - name: GOMEMLIMIT
+          value: "235929600"
+        image: registry.example.com/scraper:1.2.3
+        imagePullPolicy: Always
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 13133
+            scheme: HTTP
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        name: scraper
+        ports:
+        - containerPort: 13133
+          name: health
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 13133
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        resources:
+          limits:
+            memory: 250Mi
+          requests:
+            memory: 125Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: true
+          runAsGroup: 65532
+          runAsNonRoot: true
+          runAsUser: 65532
+          seccompProfile:
+            type: RuntimeDefault
+        volumeMounts:
+        - mountPath: /conf
+          name: opentelemetry-collector-configmap
+          readOnly: true
+      nodeSelector:
+        disk: ssd
+      priorityClassName: high-priority
+      serviceAccountName: dynatrace-prometheus-scraper
+      tolerations:
+      - key: k
+        operator: Exists
+      volumes:
+      - configMap:
+          defaultMode: 420
+          items:
+          - key: scraper
+            path: scraper.yaml
+          name: dtp-scraper
+        name: opentelemetry-collector-configmap
+status: {}

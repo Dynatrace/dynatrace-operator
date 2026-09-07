@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 // +kubebuilder:object:generate=true
 // +groupName=dynatrace.com
 // +versionName=v1beta5
@@ -51,7 +54,7 @@ const (
 // +operator-sdk:csv:customresourcedefinitions:displayName="Dynatrace DynaKube"
 // +operator-sdk:csv:customresourcedefinitions:resources={{StatefulSet,v1,},{DaemonSet,v1,},{Pod,v1,}}
 
-// DynaKube is the Schema for the DynaKube API
+// DynaKube is the Schema for the DynaKube API.
 type DynaKube struct {
 	metav1.TypeMeta `json:",inline"`
 
@@ -62,7 +65,7 @@ type DynaKube struct {
 
 // +k8s:openapi-gen=true
 
-// DynaKubeSpec defines the desired state of DynaKube
+// DynaKubeSpec defines the desired state of DynaKube.
 type DynaKubeSpec struct { //nolint:revive
 	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
 
@@ -83,17 +86,12 @@ type DynaKubeSpec struct { //nolint:revive
 
 	// General configuration about the KSPM feature.
 	// +kubebuilder:validation:Optional
-	Kspm *kspm.Spec `json:"kspm,omitempty"`
+	KSPM *kspm.Spec `json:"kspm,omitempty"`
 
 	// Configuration for thresholding Dynatrace API requests.
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Dynatrace API Request Threshold",order=9,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	DynatraceAPIRequestThreshold *uint16 `json:"dynatraceApiRequestThreshold,omitempty"`
-
-	// When an (empty) ExtensionsSpec is provided, the extensions related components (extensions controller and extensions collector)
-	// are deployed by the operator.
-	// +kubebuilder:validation:Optional
-	Extensions *extensions.Spec `json:"extensions,omitempty"`
 
 	// When a TelemetryIngestSpec is provided, the OTEL collector is deployed by the operator.
 	// +kubebuilder:validation:Optional
@@ -145,14 +143,14 @@ type DynaKubeSpec struct { //nolint:revive
 	// Set to true if you want to skip certification validation checks.
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Skip Certificate Check",order=3,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
-	SkipCertCheck bool `json:"skipCertCheck,omitempty"`
+	SkipCertCheck *bool `json:"skipCertCheck,omitempty"`
 
 	// When enabled, and if Istio is installed on the Kubernetes environment, Dynatrace Operator will create the corresponding
 	// VirtualService and ServiceEntry objects to allow access to the Dynatrace Cluster from the OneAgent or ActiveGate.
 	// Disabled by default.
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Enable Istio automatic management",order=9,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
-	EnableIstio bool `json:"enableIstio,omitempty"`
+	EnableIstio *bool `json:"enableIstio,omitempty"`
 }
 
 type TemplatesSpec struct {
@@ -160,7 +158,7 @@ type TemplatesSpec struct {
 	// +kubebuilder:validation:Optional
 	LogMonitoring *logmonitoring.TemplateSpec `json:"logMonitoring,omitempty"`
 	// +kubebuilder:validation:Optional
-	KspmNodeConfigurationCollector kspm.NodeConfigurationCollectorSpec `json:"kspmNodeConfigurationCollector,omitempty"`
+	KSPMNodeConfigurationCollector kspm.NodeConfigurationCollectorSpec `json:"kspmNodeConfigurationCollector,omitempty"`
 	// +kubebuilder:validation:Optional
 	OpenTelemetryCollector OpenTelemetryCollectorSpec `json:"otelCollector,omitempty"`
 	// +kubebuilder:validation:Optional
@@ -170,7 +168,7 @@ type TemplatesSpec struct {
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +kubebuilder:object:root=true
 
-// DynaKubeList contains a list of DynaKube
+// DynaKubeList contains a list of DynaKube.
 type DynaKubeList struct { //nolint:revive
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

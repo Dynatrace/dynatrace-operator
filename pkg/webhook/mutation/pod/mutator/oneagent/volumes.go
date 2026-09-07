@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package oneagent
 
 import (
@@ -16,31 +19,50 @@ import (
 
 const (
 	BinVolumeName    = "oneagent-bin"
+	binVolumeSubPath = "opt/dynatrace/oneagent"
 	ldPreloadPath    = "/etc/ld.so.preload"
 	ldPreloadSubPath = preload.ConfigPath
 )
 
-func addVolumeMounts(container *corev1.Container, installPath string) {
-	container.VolumeMounts = append(container.VolumeMounts,
-		corev1.VolumeMount{
-			Name:      BinVolumeName,
-			MountPath: installPath,
-			ReadOnly:  true,
-		},
+func addVolumeMounts(container *corev1.Container, installPath string, isImageVolume bool) {
+	binMount := corev1.VolumeMount{
+		Name:      BinVolumeName,
+		MountPath: installPath,
+		ReadOnly:  true,
+	}
+	if isImageVolume {
+		binMount.SubPath = binVolumeSubPath
+	}
+
+	container.VolumeMounts = append(container.VolumeMounts, binMount,
 		corev1.VolumeMount{
 			Name:      volumes.ConfigVolumeName,
 			MountPath: ldPreloadPath,
 			SubPath:   ldPreloadSubPath,
+			ReadOnly:  true,
 		},
 	)
 }
 
 func addInitBinMount(initContainer *corev1.Container, readonly bool) {
-	initContainer.VolumeMounts = append(initContainer.VolumeMounts,
+	initContainer.VolumeMounts = append(
+		initContainer.VolumeMounts,
 		corev1.VolumeMount{
 			Name:      BinVolumeName,
 			MountPath: consts.AgentInitBinDirMount,
 			ReadOnly:  readonly,
+		},
+	)
+}
+
+func addInitBinMountWithSubPath(initContainer *corev1.Container) {
+	initContainer.VolumeMounts = append(
+		initContainer.VolumeMounts,
+		corev1.VolumeMount{
+			Name:      BinVolumeName,
+			MountPath: consts.AgentInitBinDirMount,
+			SubPath:   binVolumeSubPath,
+			ReadOnly:  true,
 		},
 	)
 }
@@ -74,7 +96,8 @@ func addEmptyDirBinVolume(pod *corev1.Pod, log logd.Logger) error {
 		EmptyDir: &emptyDirVS,
 	}
 
-	pod.Spec.Volumes = append(pod.Spec.Volumes,
+	pod.Spec.Volumes = append(
+		pod.Spec.Volumes,
 		corev1.Volume{
 			Name:         BinVolumeName,
 			VolumeSource: volumeSource,
@@ -105,6 +128,36 @@ func addCSIBinVolume(pod *corev1.Pod, dkName string, maxTimeout string) error {
 				csivolumes.CSIVolumeAttributeDynakubeField: dkName,
 				csivolumes.CSIVolumeAttributeRetryTimeout:  maxTimeout,
 			},
+		},
+	}
+
+	pod.Spec.Volumes = append(
+		pod.Spec.Volumes,
+		corev1.Volume{
+			Name:         BinVolumeName,
+			VolumeSource: volumeSource,
+		},
+	)
+
+	return nil
+}
+
+func addImageBinVolume(pod *corev1.Pod, imageName string, pullPolicy corev1.PullPolicy) error {
+	if vol := k8svolume.FindByName(pod.Spec.Volumes, BinVolumeName); vol != nil {
+		if vol.Image == nil || vol.Image.Reference != imageName {
+			return dtwebhook.MutatorError{
+				Err:      volumes.ExistingVolumeError(BinVolumeName),
+				Annotate: setNotInjectedAnnotationFunc(volumes.ConflictingVolumeTypeReason),
+			}
+		}
+
+		return nil
+	}
+
+	volumeSource := corev1.VolumeSource{
+		Image: &corev1.ImageVolumeSource{
+			Reference:  imageName,
+			PullPolicy: pullPolicy,
 		},
 	}
 

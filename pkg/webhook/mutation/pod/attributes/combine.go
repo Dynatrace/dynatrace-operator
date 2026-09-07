@@ -1,11 +1,17 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package attributes
 
 import (
 	"encoding/json"
+	"fmt"
 	"maps"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8spod"
+	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -20,6 +26,7 @@ const (
 	withContainerAttrs
 	withDynakube
 	withNamespaceAnnotations
+	withWorkloadAnnotations
 	withRules
 	withPodAnnotations
 	withCustom
@@ -29,10 +36,14 @@ const (
 	// withDeprecated is not included; combineAll adds it conditionally.
 	caseAll = withWorkloadInfo | withPodInfo | withClusterInfo |
 		withContainerAttrs | withDynakube | withNamespaceAnnotations |
-		withRules | withPodAnnotations | withCustom
+		withWorkloadAnnotations | withRules | withPodAnnotations | withCustom
 
 	caseJSONAnnotation = withDynakube | withNamespaceAnnotations |
-		withRules | withPodAnnotations | withWorkloadInfo
+		withWorkloadAnnotations | withRules | withPodAnnotations | withWorkloadInfo
+)
+
+const (
+	InvalidMetadataAnnotationSize = "Value of the metadata enrichment annotation exceeds the maximum allowed size of %d, actual size: %d"
 )
 
 func (attrs *Pod) ApplyJSONAnnotationToPod(pod *corev1.Pod) error {
@@ -41,9 +52,30 @@ func (attrs *Pod) ApplyJSONAnnotationToPod(pod *corev1.Pod) error {
 		return err
 	}
 
+	metadataSizeLimit := k8senv.GetMetadaSizeLimit(nil) //nolint:staticcheck
+	if len(json) > metadataSizeLimit {
+		errMsg := fmt.Sprintf(InvalidMetadataAnnotationSize, metadataSizeLimit, len(json))
+
+		return dtwebhook.MutatorError{
+			Err:      errors.New(errMsg),
+			Annotate: setNotInjectedAnnotationFunc(errMsg),
+		}
+	}
+
 	k8spod.SetAnnotationIfNotExists(pod, metadataenrichment.Annotation, json)
 
 	return nil
+}
+
+func setNotInjectedAnnotationFunc(reason string) func(*corev1.Pod) {
+	return func(pod *corev1.Pod) {
+		if pod.Annotations == nil {
+			pod.Annotations = make(map[string]string)
+		}
+
+		pod.Annotations[dtwebhook.AnnotationDynatraceInjected] = "false"
+		pod.Annotations[dtwebhook.AnnotationDynatraceReason] = reason
+	}
 }
 
 // combine copies maps into a single result in fixed precedence order (low → high).
@@ -63,6 +95,7 @@ func (attrs *Pod) combine(c combinationCase, containerAttrs map[string]string) m
 		{withRules, attrs.rules},
 		{withDynakube, attrs.dynakube},
 		{withNamespaceAnnotations, attrs.namespaceAnnotations},
+		{withWorkloadAnnotations, attrs.workloadAnnotations},
 		{withPodAnnotations, attrs.podAnnotations},
 		{withCustom, attrs.custom},
 	}

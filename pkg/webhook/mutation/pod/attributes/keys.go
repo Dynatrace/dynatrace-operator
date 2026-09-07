@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package attributes
 
 import "github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"

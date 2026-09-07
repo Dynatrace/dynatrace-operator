@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package activegate
 
 import (
@@ -7,7 +10,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtversion"
-	corev1 "k8s.io/api/core/v1"
 )
 
 const (
@@ -144,7 +146,7 @@ func (ag *Spec) GetDefaultImage(version string) string {
 	truncatedVersion := dtversion.ToImageTag(version)
 	tag := truncatedVersion
 
-	if !strings.Contains(tag, api.RawTag) {
+	if !strings.HasSuffix(tag, api.RawTag) {
 		tag += "-" + api.RawTag
 	}
 
@@ -154,11 +156,6 @@ func (ag *Spec) GetDefaultImage(version string) string {
 // GetCustomImage provides the image reference for the ActiveGate provided in the Spec.
 func (ag *Spec) GetCustomImage() string {
 	return ag.Image
-}
-
-// GetPullPolicy provides the image pull policy.
-func (ag *Spec) GetPullPolicy() corev1.PullPolicy {
-	return corev1.PullPolicy(ag.ImagePullPolicy)
 }
 
 // GetTerminationGracePeriodSeconds provides the configured value for the terminatGracePeriodSeconds parameter of the pod.

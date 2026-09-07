@@ -1,0 +1,22 @@
+apiVersion: dynatrace.com/v1alpha2
+kind: EdgeConnect
+metadata:
+  name: populated
+  namespace: default
+spec:
+  apiServer: foo.dev.apps.dynatracelabs.com
+  imageRef:
+    repository: my.registry/edgeconnect
+    tag: 1.2.3
+  oauth:
+    clientSecret: secret
+    endpoint: https://sso.dynatrace.com/sso/oauth2/token
+    provisioner: false
+    resource: urn:dtaccount:test
+  resources:
+    requests:
+      cpu: 100m
+status:
+  updatedTimestamp: "2024-01-01T00:00:00Z"
+  version:
+    version: 1.2.3

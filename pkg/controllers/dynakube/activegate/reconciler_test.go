@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package activegate
 
 import (
@@ -64,7 +67,7 @@ func TestReconciler_Reconcile_Error(t *testing.T) {
 				Name:      testName,
 			},
 			Spec: dynakube.DynaKubeSpec{
-				EnableIstio: true,
+				EnableIstio: new(true),
 				ActiveGate: activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{activegate.RoutingCapability.DisplayName},
 				},
@@ -166,7 +169,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				Name:      testName,
 			},
 			Spec: dynakube.DynaKubeSpec{
-				EnableIstio: true,
+				EnableIstio: new(true),
 				ActiveGate: activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{activegate.RoutingCapability.DisplayName},
 				},
@@ -198,7 +201,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				Name:      testName,
 			},
 			Spec: dynakube.DynaKubeSpec{
-				EnableIstio: true,
+				EnableIstio: new(true),
 				ActiveGate:  activegate.Spec{},
 			},
 			Status: dynakube.DynaKubeStatus{
@@ -234,7 +237,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				Name:      testName,
 			},
 			Spec: dynakube.DynaKubeSpec{
-				EnableIstio: true,
+				EnableIstio: new(true),
 				ActiveGate: activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{activegate.RoutingCapability.DisplayName},
 				},
@@ -401,7 +404,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 				Name:      testName,
 			},
 			Spec: dynakube.DynaKubeSpec{
-				Extensions: &extensions.Spec{Prometheus: &extensions.PrometheusSpec{}},
+				Extensions: &extensions.Spec{Databases: []extensions.DatabaseSpec{{ID: "test"}}},
 			},
 		}
 
@@ -433,7 +436,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 			},
 			Spec: dynakube.DynaKubeSpec{
 				ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{}},
-				Extensions: &extensions.Spec{Prometheus: &extensions.PrometheusSpec{}},
+				Extensions: &extensions.Spec{Databases: []extensions.DatabaseSpec{{ID: "test"}}},
 			},
 		}
 
@@ -465,7 +468,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 			},
 			Spec: dynakube.DynaKubeSpec{
 				ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}},
-				Extensions: &extensions.Spec{Prometheus: &extensions.PrometheusSpec{}},
+				Extensions: &extensions.Spec{Databases: []extensions.DatabaseSpec{{ID: "test"}}},
 			},
 		}
 
@@ -497,7 +500,7 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 			},
 			Spec: dynakube.DynaKubeSpec{
 				ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}},
-				Extensions: &extensions.Spec{Prometheus: &extensions.PrometheusSpec{}},
+				Extensions: &extensions.Spec{Databases: []extensions.DatabaseSpec{{ID: "test"}}},
 			},
 		}
 

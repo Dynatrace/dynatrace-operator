@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package otlp
 
 import (
@@ -11,6 +14,11 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/secrets"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+)
+
+const (
+	NoOTLPExporterConfigSecretReason         = "NoOTLPExporterConfigSecret"
+	NoOTLPExporterActiveGateCertSecretReason = "NoOTLPExporterActiveGateCertSecret"
 )
 
 type Handler struct {

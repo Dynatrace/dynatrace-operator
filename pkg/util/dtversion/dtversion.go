@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 // Package dtversion's purpose is to convert the component/image versions used by Dynatrace into semver or a valid image-tag.
 // - Example version used by Dynatrace:
 //   - 1.283.132.20240205-143805 (this translates to [version-number].[sprint-number].[quick-fix].[build-date]-[build-timestamp])

@@ -1,3 +1,6 @@
+# Copyright Dynatrace LLC
+# SPDX-License-Identifier: Apache-2.0
+
 suite: test job for CRD cleanup
 templates:
   - Common/crd/job-crd-storage-migration.yaml
@@ -60,6 +63,8 @@ tests:
       platform: kubernetes
       crdStorageMigrationJob: true
     asserts:
+      - isNotNull:
+          path: spec.template.spec.initContainers[0]
       - equal:
           path: spec.template.spec.initContainers[0].name
           value: webhook-cert-generator
@@ -79,7 +84,7 @@ tests:
       - isNotEmpty:
           path: spec.template.spec.initContainers[0].resources.limits
       - isNotEmpty:
-          path: spec.template.spec.initContainers[0].securityContex
+          path: spec.template.spec.initContainers[0].securityContext
 
   - it: should have apparmor annotation when enabled on Kubernetes < 1.31.0
     set:
@@ -199,6 +204,24 @@ tests:
     asserts:
       - isNotEmpty:
           path: spec.template.spec.affinity
+
+  - it: should have certgen init container on openshift
+    set:
+      platform: openshift
+      crdStorageMigrationJob: true
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: webhook-cert-generator
+
+  - it: should not have certgen init container when olm is true
+    set:
+      platform: kubernetes
+      olm: true
+      crdStorageMigrationJob: true
+    asserts:
+      - isNull:
+          path: spec.template.spec.initContainers
 
   - it: should not render when crdStorageMigrationJob is false
     set:

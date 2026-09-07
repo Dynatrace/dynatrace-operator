@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package bootstrapperconfig
 
 import (
@@ -166,7 +169,7 @@ func TestGenerateForDynakube(t *testing.T) {
 				token.PaaSKey: []byte(testPaasToken),
 			}),
 			clientSecret(dk.ActiveGate().TLSSecretName, testNamespaceDynatrace, map[string][]byte{
-				dynakube.ServerCertKey: []byte("test-cert-value"),
+				consts.TLSServerCrtDataName: []byte("test-cert-value"),
 			}),
 			clientSecret(dk.OneAgent().GetTenantSecret(), testNamespaceDynatrace, map[string][]byte{
 				"tenant-token": []byte(testTenantToken),
@@ -268,7 +271,7 @@ func TestGenerateForDynakube(t *testing.T) {
 				token.PaaSKey: []byte(testPaasToken),
 			}),
 			clientSecret(dk.ActiveGate().TLSSecretName, testNamespaceDynatrace, map[string][]byte{
-				dynakube.ServerCertKey: []byte("test-cert-value"),
+				consts.TLSServerCrtDataName: []byte("test-cert-value"),
 			}),
 			clientSecret(dk.OneAgent().GetTenantSecret(), testNamespaceDynatrace, map[string][]byte{
 				"tenant-token": []byte(testTenantToken),
@@ -402,7 +405,7 @@ func TestGenerateForDynakube(t *testing.T) {
 				token.PaaSKey: []byte(testPaasToken),
 			}),
 			clientSecret(dk.ActiveGate().TLSSecretName, testNamespaceDynatrace, map[string][]byte{
-				dynakube.ServerCertKey: []byte("test-cert-value"),
+				consts.TLSServerCrtDataName: []byte("test-cert-value"),
 			}),
 			clientSecret(dk.OneAgent().GetTenantSecret(), testNamespaceDynatrace, map[string][]byte{
 				"tenant-token": []byte(testTenantToken),
@@ -469,7 +472,7 @@ func TestGenerateForDynakube(t *testing.T) {
 				token.PaaSKey: []byte(testPaasToken),
 			}),
 			clientSecret(dk.ActiveGate().TLSSecretName, testNamespaceDynatrace, map[string][]byte{
-				dynakube.ServerCertKey: []byte("test-cert-value"),
+				consts.TLSServerCrtDataName: []byte("test-cert-value"),
 			}),
 			clientSecret(dk.OneAgent().GetTenantSecret(), testNamespaceDynatrace, map[string][]byte{
 				"tenant-token": []byte(testTenantToken),

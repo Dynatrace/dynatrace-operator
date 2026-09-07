@@ -1,8 +1,9 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package modifiers
 
 import (
-	"path/filepath"
-
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder"
@@ -63,12 +64,8 @@ func (mod DeploymentPropertiesModifier) getVolumeMounts() []corev1.VolumeMount {
 		{
 			ReadOnly:  true,
 			Name:      consts.DeploymentPropertiesVolumeName,
-			MountPath: getMountPath(),
+			MountPath: consts.DeploymentPropertiesMountPath,
 			SubPath:   consts.DeploymentPropertiesFileName,
 		},
 	}
-}
-
-func getMountPath() string {
-	return filepath.Join(consts.DeploymentPropertiesBasePath, consts.DeploymentPropertiesFileName)
 }

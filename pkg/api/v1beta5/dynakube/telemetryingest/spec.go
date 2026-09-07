@@ -1,12 +1,9 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package telemetryingest
 
 import "github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
-
-type TelemetryIngest struct {
-	*Spec
-
-	name string
-}
 
 // +kubebuilder:object:generate=true
 

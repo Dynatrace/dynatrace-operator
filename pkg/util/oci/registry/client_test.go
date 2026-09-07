@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package registry
 
 import (
@@ -65,14 +68,14 @@ func TestSkipCertCheck(t *testing.T) {
 	}
 
 	t.Run("has skipCertCheck enabled", func(t *testing.T) {
-		dk.Spec.SkipCertCheck = true
+		dk.Spec.SkipCertCheck = new(true)
 		transport := http.DefaultTransport.(*http.Transport).Clone()
 		transport, err := PrepareTransportForDynaKube(t.Context(), nil, transport, dk)
 		require.NoError(t, err)
 		assert.True(t, transport.TLSClientConfig.InsecureSkipVerify)
 	})
 	t.Run("has skipCertCheck disabled", func(t *testing.T) {
-		dk.Spec.SkipCertCheck = false
+		dk.Spec.SkipCertCheck = new(false)
 		transport := http.DefaultTransport.(*http.Transport).Clone()
 		transport, err := PrepareTransportForDynaKube(t.Context(), nil, transport, dk)
 		require.NoError(t, err)

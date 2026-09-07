@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 // +kubebuilder:object:generate=true
 // +k8s:openapi-gen=true
 package status
@@ -8,4 +11,10 @@ const (
 	Running   DeploymentPhase = "Running"
 	Deploying DeploymentPhase = "Deploying"
 	Error     DeploymentPhase = "Error"
+)
+
+const (
+	ReasonError       = "Error"
+	ReasonAvailable   = "Available"
+	ReasonReconciling = "Reconciling"
 )

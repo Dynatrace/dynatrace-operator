@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package annotations
 
 import (
@@ -12,6 +15,8 @@ import (
 )
 
 func newTestMutationRequest(t *testing.T) *mutator.MutationRequest {
+	t.Helper()
+
 	pod := &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "pod", Namespace: "ns"}}
 	ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "ns"}}
 	dk := &dynakube.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: "dk", Namespace: "ns"}}

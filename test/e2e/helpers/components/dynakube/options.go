@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 //go:build e2e
 
 package dynakube
@@ -11,6 +14,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
@@ -34,7 +38,7 @@ const (
 	defaultKSPMRepo                = "public.ecr.aws/dynatrace/dynatrace-k8s-node-config-collector"
 	kspmImageEnvVar                = "E2E_KSPM_IMAGE"
 	kspmDigestImageEnvVar          = "E2E_KSPM_IMAGE_DIGEST"
-	defaultOtelCollectorRepo       = "public.ecr.aws/dynatrace/dynatrace-otel-collector"
+	defaultOTelCollectorRepo       = "public.ecr.aws/dynatrace/dynatrace-otel-collector"
 	otelCollectorImageEnvVar       = "E2E_OTELC_IMAGE"
 	otelCollectorDigestImageEnvVar = "E2E_OTELC_IMAGE_DIGEST"
 	defaultDBExecutorRepo          = "public.ecr.aws/dynatrace/dynatrace-database-datasource-executor"
@@ -273,7 +277,7 @@ func WithProxy(proxy *value.Source) Option {
 
 func WithIstioIntegration() Option {
 	return func(dk *dynakube.DynaKube) {
-		dk.Spec.EnableIstio = true
+		dk.Spec.EnableIstio = new(true)
 	}
 }
 
@@ -298,17 +302,6 @@ func WithHostMonitoringSpec(hostInjectSpec *oneagent.HostInjectSpec) Option {
 func WithApplicationMonitoringSpec(applicationMonitoringSpec *oneagent.ApplicationMonitoringSpec) Option {
 	return func(dk *dynakube.DynaKube) {
 		dk.Spec.OneAgent.ApplicationMonitoring = applicationMonitoringSpec
-	}
-}
-
-func WithExtensionsPrometheusEnabledSpec(promEnabled bool) Option {
-	return func(dk *dynakube.DynaKube) {
-		if promEnabled {
-			dk.Spec.Extensions = &extensions.Spec{Prometheus: &extensions.PrometheusSpec{}}
-			dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume = true
-		} else {
-			dk.Spec.Extensions = nil
-		}
 	}
 }
 
@@ -363,13 +356,13 @@ func GetLatestKSPMImageDigestURI(t *testing.T) string {
 func GetLatestOTelCollectorImageTagURI(t *testing.T) string {
 	t.Helper()
 
-	return registry.GetLatestImageTagURI(t, defaultOtelCollectorRepo, otelCollectorImageEnvVar)
+	return registry.GetLatestImageTagURI(t, defaultOTelCollectorRepo, otelCollectorImageEnvVar)
 }
 
 func GetLatestOTelCollectorImageDigestURI(t *testing.T) string {
 	t.Helper()
 
-	return registry.GetLatestImageDigestURI(t, defaultOtelCollectorRepo, otelCollectorDigestImageEnvVar)
+	return registry.GetLatestImageDigestURI(t, defaultOTelCollectorRepo, otelCollectorDigestImageEnvVar)
 }
 
 func WithExtensionsEECImageRef(t *testing.T, imageURI string) Option {
@@ -423,6 +416,15 @@ func WithKSPMImageRef(t *testing.T, imageURI string) Option {
 	}
 }
 
+func WithKubernetesMonitoringRegistration() Option {
+	return func(dk *dynakube.DynaKube) {
+		if dk.Spec.KubernetesMonitoring == nil {
+			dk.Spec.KubernetesMonitoring = &kubemon.Spec{}
+		}
+		dk.Spec.KubernetesMonitoring.Registration = &kubemon.Registration{}
+	}
+}
+
 func WithTelemetryIngestEnabled(enabled bool, protocols ...otelcgen.Protocol) Option {
 	return func(dk *dynakube.DynaKube) {
 		if enabled {
@@ -445,7 +447,7 @@ func WithTelemetryIngestEndpointTLS(secretName string) Option {
 
 func WithOTelCollectorImageRef(t *testing.T, imageURI string) Option {
 	return func(dk *dynakube.DynaKube) {
-		applyImageRef(t, dk, &dk.Spec.Templates.OpenTelemetryCollector.ImageRef, imageURI, defaultOtelCollectorRepo)
+		applyImageRef(t, dk, &dk.Spec.Templates.OpenTelemetryCollector.ImageRef, imageURI, defaultOTelCollectorRepo)
 	}
 }
 

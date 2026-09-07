@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package activegate
 
 import (
@@ -15,15 +18,4 @@ type Status struct {
 
 	// The ClusterIPs set by Kubernetes on the ActiveGate Service created by the Operator
 	ServiceIPs []string `json:"serviceIPs,omitempty"`
-}
-
-// GetImage provides the image reference set in Status for the ActiveGate.
-// Format: repo@sha256:digest.
-func (ag *Status) GetImage() string {
-	return ag.ImageID
-}
-
-// GetVersion provides version set in Status for the ActiveGate.
-func (ag *Status) GetVersion() string {
-	return ag.Version
 }

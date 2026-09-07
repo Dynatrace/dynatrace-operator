@@ -1,0 +1,117 @@
+# Copyright Dynatrace LLC
+# SPDX-License-Identifier: Apache-2.0
+
+suite: test ClusterRole for prometheus gateway
+templates:
+  - Common/prometheus/clusterrole-prometheus-gateway.yaml
+tests:
+  - it: should exist with correct name and labels
+    set:
+      experimental.enablePrometheus: true
+    asserts:
+      - isKind:
+          of: ClusterRole
+      - equal:
+          path: metadata.name
+          value: dynatrace-prometheus-gateway
+      - isNotEmpty:
+          path: metadata.labels
+
+  - it: should have correct core permissions
+    set:
+      experimental.enablePrometheus: true
+    asserts:
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - ""
+            resources:
+              - pods
+              - namespaces
+              - nodes
+            verbs:
+              - get
+              - list
+              - watch
+
+  - it: should have apps permissions
+    set:
+      experimental.enablePrometheus: true
+    asserts:
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - apps
+            resources:
+              - replicasets
+            verbs:
+              - get
+              - list
+              - watch
+
+  - it: should have batch permissions
+    set:
+      experimental.enablePrometheus: true
+    asserts:
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - batch
+            resources:
+              - jobs
+              - cronjobs
+            verbs:
+              - get
+              - list
+              - watch
+
+  - it: should have OpenShift SCC permission on openshift platform
+    set:
+      platform: openshift
+      experimental.enablePrometheus: true
+    asserts:
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - security.openshift.io
+            resourceNames:
+              - nonroot-v2
+            resources:
+              - securitycontextconstraints
+            verbs:
+              - use
+
+  - it: shouldn't have OpenShift SCC permission on default platform
+    set:
+      experimental.enablePrometheus: true
+    asserts:
+      - notContains:
+          path: rules
+          content:
+            apiGroups:
+              - security.openshift.io
+            resourceNames:
+              - nonroot-v2
+            resources:
+              - securitycontextconstraints
+            verbs:
+              - use
+
+  - it: shouldn't exist if prometheus rbac is turned off
+    set:
+      rbac.prometheus.create: false
+      experimental.enablePrometheus: true
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: shouldn't exist if experimental.enablePrometheus is off
+    set:
+      experimental.enablePrometheus: false
+    asserts:
+      - hasDocuments:
+          count: 0

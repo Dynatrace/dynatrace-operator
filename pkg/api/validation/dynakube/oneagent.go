@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package validation
 
 import (
@@ -17,6 +20,10 @@ import (
 )
 
 const (
+	oneagentEnableVolumeStorageEnvVarName = "ONEAGENT_ENABLE_VOLUME_STORAGE"
+	oneagentInstallerScriptURLEnvVarName  = "ONEAGENT_INSTALLER_SCRIPT_URL"
+	oneagentInstallerTokenEnvVarName      = "ONEAGENT_INSTALLER_TOKEN"
+
 	errorConflictingOneagentMode = `The DynaKube specification attempts to use multiple OneAgent modes simultaneously, which is not supported.`
 
 	errorNodeSelectorConflict = `The Dynakube specification conflicts with another Dynakube's OneAgent or Standalone-LogMonitoring. Only one Agent per node is supported.
@@ -49,6 +56,8 @@ Use a nodeSelector to avoid this conflict. Conflicting DynaKubes: %s`
 	warningDeprecatedVersionIgnored = `version field is deprecated and ignored. Please remove the version field from the DynaKube specification.`
 
 	errorImagePullRequiresCodeModulesImage = `The DynaKube specification enables node image pull, but neither a code modules image is set nor a public registry is used.`
+
+	errorConflictingImageMode = `Node image pull and image volume are mutually exclusive as image volume will not use the CSI driver, while node-image-pull FF only influences the CSI driver.`
 )
 
 func conflictingOneAgentConfiguration(ctx context.Context, _ *Validator, dk *dynakube.DynaKube) string {
@@ -334,8 +343,16 @@ func findDuplicates[S ~[]E, E comparable](s S) []E {
 	return duplicates
 }
 
+func conflictingImageMode(_ context.Context, v *Validator, dk *dynakube.DynaKube) string {
+	if dk.FF().IsNodeImagePull() && dk.FF().IsCodeModuleImageVolume() {
+		return errorConflictingImageMode
+	}
+
+	return ""
+}
+
 func missingCodeModulesImage(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
-	if dk.OneAgent().IsAppInjectionNeeded() && dk.FF().IsNodeImagePull() {
+	if dk.OneAgent().IsAppInjectionNeeded() && (dk.FF().IsNodeImagePull() || dk.FF().IsCodeModuleImageVolume()) {
 		if dk.OneAgent().GetCustomCodeModulesImage() == "" && !dk.FF().IsPublicRegistry() {
 			return errorImagePullRequiresCodeModulesImage
 		}

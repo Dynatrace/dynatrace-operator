@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package k8ssecret
 
 import (
@@ -46,5 +49,11 @@ func setData(data map[string][]byte) builder.Option[*corev1.Secret] {
 func SetType(secretType corev1.SecretType) builder.Option[*corev1.Secret] {
 	return func(s *corev1.Secret) {
 		s.Type = secretType
+	}
+}
+
+func SetImmutable(immutable bool) builder.Option[*corev1.Secret] {
+	return func(s *corev1.Secret) {
+		s.Immutable = new(immutable)
 	}
 }

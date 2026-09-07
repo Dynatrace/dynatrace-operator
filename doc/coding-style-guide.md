@@ -3,6 +3,7 @@
 - [Coding style guide](#coding-style-guide)
   - [General](#general)
   - [Visibility](#visibility)
+  - [File organisation](#file-organisation)
   - [Function Parameter and Return-Value Order](#function-parameter-and-return-value-order)
   - [Cuddling of statements](#cuddling-of-statements)
   - [Go struct field alignment](#go-struct-field-alignment)
@@ -66,6 +67,45 @@ func buildStatefulSet(dk *dynakube.DynaKube) *appsv1.StatefulSet { ... }
 
 // ✗ exported with no external caller
 func BuildStatefulSet(dk *dynakube.DynaKube) *appsv1.StatefulSet { ... }
+```
+
+## File organisation
+
+A file should exist because it has a distinct, coherent responsibility — not merely because it holds a single constant.
+
+### Do's
+
+- Place constants and variables in the file that **implements or owns** the concept they describe.
+  - A condition-type constant used only by a reconciler belongs in `reconciler.go`, not in a dedicated `conditions.go`.
+  - A private constant used only by one file belongs in that file.
+- When a package's main file (e.g. `reconciler.go`, the file named after the package) already has a `const` block, append new constants there rather than creating a new file.
+
+### Don'ts
+
+- Do not create a standalone `config.go`, `conditions.go`, or similar file that contains only 1–2 private declarations.
+  Those files are noise: they fragment context without adding clarity.
+- Do not create a catch-all `util.go` or `helpers.go` as a dumping ground.
+  If a helper does not fit anywhere, it is a signal to reconsider the package structure.
+
+```go
+// ✓ conditionType lives in reconciler.go next to the code that uses it
+package customproperties
+
+const conditionType = "CustomPropertiesSecret"
+
+type Reconciler struct { ... }
+
+func (r *Reconciler) Reconcile(...) error {
+    // conditionType used here
+}
+```
+
+```go
+// ✗ standalone conditions.go with a single private constant
+// pkg/controllers/dynakube/.../conditions.go
+package customproperties
+
+const conditionType = "CustomPropertiesSecret"
 ```
 
 ## Function Parameter and Return-Value Order
@@ -300,6 +340,19 @@ dk.FeatureFlag("enable-otlp-exporter")
 ```
 
 Feature flags are for **cross-cutting behavior toggles** that have no natural home in the spec (e.g. experimental runtime options, rollout toggles).
+
+### `omitempty` vs `omitzero`
+
+`omitempty` has **no effect on struct-typed fields** (non-pointer). It only
+omits empty pointers, slices, maps, and zero-valued primitives. A struct value
+is never "empty" to the encoder, so the field is always rendered, even when all
+of its own fields are zero.
+
+Use `omitzero` (Go 1.24+) for struct-typed fields you want dropped when unset.
+It omits the field when the value is the zero value, and correctly handles
+`time.Time`, which `omitempty` cannot.
+
+- Both may be combined, the field is then omitted if it is empty **or** zero.
 
 ## Errors
 

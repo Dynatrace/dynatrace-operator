@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package exporterconfig
 
 import (
@@ -123,7 +126,7 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 				token.DataIngestKey: []byte(testDataIngestToken),
 			}),
 			clientSecret(tlsSecretName, testNamespaceDynatrace, map[string][]byte{
-				dynakube.TLSCertKey: []byte(testCrt),
+				consts.TLSCrtDataName: []byte(testCrt),
 			}),
 		)
 
@@ -189,7 +192,7 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 				token.DataIngestKey: []byte(testDataIngestToken),
 			}),
 			clientSecret(tlsSecretName, testNamespaceDynatrace, map[string][]byte{
-				dynakube.TLSCertKey: []byte(testCrt),
+				consts.TLSCrtDataName: []byte(testCrt),
 			}),
 			clientSecret(consts.OTLPExporterSecretName, testNamespace, map[string][]byte{
 				token.DataIngestKey: []byte(oldDataIngestToken),
@@ -292,7 +295,7 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 			namespace2,
 			terminatingNS,
 			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{token.DataIngestKey: []byte(testDataIngestToken)}),
-			clientSecret(tlsSecretName, testNamespaceDynatrace, map[string][]byte{dynakube.TLSCertKey: []byte(testCrt)}),
+			clientSecret(tlsSecretName, testNamespaceDynatrace, map[string][]byte{consts.TLSCrtDataName: []byte(testCrt)}),
 		)
 
 		secretGenerator := NewSecretGenerator(clt, clt)
@@ -352,7 +355,7 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 			dk,
 			nonInjected,
 			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{token.DataIngestKey: []byte(testDataIngestToken)}),
-			clientSecret(tlsSecretName, testNamespaceDynatrace, map[string][]byte{dynakube.TLSCertKey: []byte(testCrt)}),
+			clientSecret(tlsSecretName, testNamespaceDynatrace, map[string][]byte{consts.TLSCrtDataName: []byte(testCrt)}),
 		)
 
 		secretGenerator := NewSecretGenerator(clt, clt)

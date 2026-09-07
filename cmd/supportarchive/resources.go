@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package supportarchive
 
 import (
@@ -9,6 +12,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	k8smeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -19,7 +24,6 @@ import (
 const (
 	k8sResourceCollectorName = "k8sResourceCollector"
 	webhookValidatorName     = "dynatrace-webhook"
-	crdNameSuffix            = "dynatrace.com"
 )
 
 type k8sResourceCollector struct {
@@ -51,7 +55,13 @@ func (collector k8sResourceCollector) Do() error {
 	for _, query := range getQueries(collector.namespace, collector.appName) {
 		resourceList, err := collector.readObjectsList(query.groupVersionKind, query.filters)
 		if err != nil {
-			logErrorf(collector.log, err, "could not get manifest for %s", query.groupVersionKind.String())
+			switch {
+			case k8smeta.IsNoMatchError(err):
+				// CRD not installed, skip
+				continue
+			default:
+				logErrorf(collector.log, err, "could not get manifest for %s", query.groupVersionKind.String())
+			}
 
 			continue
 		}
@@ -147,6 +157,17 @@ func (collector k8sResourceCollector) readCustomResourceDefinitions() (*unstruct
 	}
 
 	resourceList.Items = append(resourceList.Items, collector.getCRD(dynaKube), collector.getCRD(edgeConnect))
+
+	var dtPrometheus apiextensionsv1.CustomResourceDefinition
+	if err := collector.apiReader.Get(collector.context, client.ObjectKey{Name: "dtprometheuses.dynatrace.com"}, &dtPrometheus); err != nil {
+		if !k8serrors.IsForbidden(err) && !k8serrors.IsNotFound(err) {
+			return nil, err
+		}
+
+		logInfof(collector.log, "skipping dtprometheuses.dynatrace.com CRD")
+	} else {
+		resourceList.Items = append(resourceList.Items, collector.getCRD(dtPrometheus))
+	}
 
 	return resourceList, nil
 }

@@ -1,9 +1,13 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package dockerkeychain
 
 import (
 	"bytes"
 	"context"
 	"maps"
+	"slices"
 	"sync"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
@@ -58,7 +62,7 @@ func NewDockerKeychains(ctx context.Context, apiReader client.Reader, namespaceN
 
 	if len(configFile.AuthConfigs) > 0 {
 		keychain.dockerConfig = &configFile
-		log.Debug("loaded docker configs", "registries", maps.Keys(configFile.AuthConfigs))
+		log.Debug("loaded docker configs", "registries", slices.Collect(maps.Keys(configFile.AuthConfigs)))
 	} else {
 		log.Debug("no docker configs found")
 	}

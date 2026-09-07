@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package logmonitoring
 
 import (
@@ -41,7 +44,7 @@ type TemplateSpec struct {
 
 	// Overrides the default image for the LogMonitoring pods
 	// +kubebuilder:validation:Optional
-	ImageRef image.Ref `json:"imageRef,omitempty"`
+	ImageRef image.Ref `json:"imageRef,omitzero"`
 
 	// Sets DNS Policy for the LogMonitoring pods
 	// +kubebuilder:validation:Optional
@@ -57,7 +60,7 @@ type TemplateSpec struct {
 
 	// Define resources' requests and limits for all the LogMonitoring pods
 	// +kubebuilder:validation:Optional
-	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+	Resources corev1.ResourceRequirements `json:"resources,omitzero"`
 
 	// Define the strategy for updating the LogMonitoring pods
 	// +kubebuilder:validation:Optional

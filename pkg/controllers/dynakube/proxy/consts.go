@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package proxy
 
 import "github.com/Dynatrace/dynatrace-operator/pkg/consts"
@@ -9,6 +12,7 @@ const (
 	passwordField = "password"
 	schemeField   = "scheme"
 
+	secretSuffix     = "internal-proxy"
 	SecretMountPath  = consts.DTComponentsSecretsRootDir + "/internal-proxy"
 	SecretVolumeName = "internal-proxy-secret-volume"
 )

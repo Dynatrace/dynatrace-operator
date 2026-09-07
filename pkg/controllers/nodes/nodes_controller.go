@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package nodes
 
 import (
@@ -24,6 +27,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+)
+
+var (
+	unschedulableTaints = []string{"ToBeDeletedByClusterAutoscaler"}
 )
 
 type Controller struct {
@@ -138,6 +145,10 @@ func (controller *Controller) reconcileNodeUpdate(ctx context.Context, dk *dynak
 
 	if cached, err := nodeCache.GetEntry(nodeName); err == nil {
 		cacheEntry.SetLastMarkedForTerminationTimestamp(cached.LastMarkedForTermination)
+
+		if cacheEntry.IPAddress == "" {
+			cacheEntry.IPAddress = cached.IPAddress
+		}
 	}
 
 	// Handle unschedulable Nodes, if they have a OneAgent instance
@@ -196,7 +207,7 @@ func (controller *Controller) sendMarkedForTermination(ctx context.Context, dk *
 	// Mark-for-termination events are rare, caching this possibly large dataset would waste memory with no meaningful benefit.
 	dk.Spec.DynatraceAPIRequestThreshold = new(uint16(0))
 
-	dtClient, err := controller.dtClientFactory(ctx, controller.apiReader, dk, tokens.APIToken().String(), tokens.PaasToken().String(), "")
+	dtClient, err := controller.dtClientFactory(ctx, controller.apiReader, dk, tokens.APIToken().String(), tokens.PaasToken().String(), "", k8senv.GetOperatorDTClientConnectionTimeout(ctx))
 	if err != nil {
 		return err
 	}
@@ -235,6 +246,12 @@ func (controller *Controller) sendMarkedForTermination(ctx context.Context, dk *
 
 func (controller *Controller) markForTermination(ctx context.Context, dk *dynakube.DynaKube, cacheEntry *cache.Entry) error {
 	log := logd.FromContext(ctx)
+
+	if cacheEntry.IPAddress == "" {
+		log.Info("skipping mark for termination event, no IP address known for node", "dynakube", dk.Name, "node", cacheEntry.NodeName)
+
+		return nil
+	}
 
 	if !cacheEntry.IsMarkableForTermination(controller.timeProvider.Now().UTC()) {
 		return nil

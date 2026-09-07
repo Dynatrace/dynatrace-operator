@@ -1,3 +1,6 @@
+# Copyright Dynatrace LLC
+# SPDX-License-Identifier: Apache-2.0
+
 suite: test role for webhook on kubernetes
 templates:
   - Common/webhook/role-webhook.yaml

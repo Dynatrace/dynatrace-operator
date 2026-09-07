@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package dynakube
 
 import (
@@ -134,18 +137,6 @@ func TestConvertFrom(t *testing.T) {
 		compareBase(t, to, from)
 	})
 
-	t.Run("migrate extensions from latest to v1beta5", func(t *testing.T) {
-		from := getNewDynakubeBase()
-		from.Spec.Extensions = &extensionslatest.Spec{}
-		to := DynaKube{}
-
-		err := to.ConvertFrom(&from)
-		require.NoError(t, err)
-
-		assert.NotNil(t, to.Spec.Extensions)
-		compareBase(t, to, from)
-	})
-
 	t.Run("migrate log-monitoring from latest to v1beta5", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		from.Spec.LogMonitoring = getNewLogMonitoringSpec()
@@ -159,15 +150,44 @@ func TestConvertFrom(t *testing.T) {
 	})
 
 	t.Run("migrate kspm from latest to v1beta5", func(t *testing.T) {
-		from := getNewDynakubeBase()
-		from.Spec.KSPM = &kspmlatest.Spec{}
-		to := DynaKube{}
+		testCases := []struct {
+			name            string
+			mappedHostPaths []string
+		}{
+			{
+				name:            "single entry is preserved",
+				mappedHostPaths: []string{"/boot"},
+			},
+			{
+				name:            "multiple entries are preserved",
+				mappedHostPaths: []string{"/boot", "/etc"},
+			},
+			{
+				name:            "empty slice is preserved",
+				mappedHostPaths: []string{},
+			},
+			{
+				name:            "nil slice is preserved",
+				mappedHostPaths: nil,
+			},
+		}
 
-		err := to.ConvertFrom(&from)
-		require.NoError(t, err)
+		for _, tc := range testCases {
+			t.Run(tc.name, func(t *testing.T) {
+				from := getNewDynakubeBase()
+				from.Spec.KSPM = &kspmlatest.Spec{
+					MappedHostPaths: tc.mappedHostPaths,
+				}
+				to := DynaKube{}
 
-		assert.NotNil(t, to.Spec.Kspm)
-		compareBase(t, to, from)
+				err := to.ConvertFrom(&from)
+				require.NoError(t, err)
+
+				require.NotNil(t, to.Spec.KSPM)
+				assert.Equal(t, tc.mappedHostPaths, to.Spec.KSPM.MappedHostPaths)
+				compareBase(t, to, from)
+			})
+		}
 	})
 
 	t.Run("migrate extensions templates from latest to v1beta5", func(t *testing.T) {
@@ -189,7 +209,7 @@ func TestConvertFrom(t *testing.T) {
 	t.Run("clear default otelc image", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		from.Spec.Templates.OpenTelemetryCollector = getNewOpenTelemetryTemplateSpec()
-		from.RemovedFields().DefaultOTELCImage.Set(new(true))
+		from.RemovedFields().DefaultOTelColImage.Set(new(true))
 
 		to := DynaKube{}
 
@@ -198,7 +218,7 @@ func TestConvertFrom(t *testing.T) {
 
 		assert.Empty(t, to.Spec.Templates.OpenTelemetryCollector.ImageRef.Repository)
 		assert.Empty(t, to.Spec.Templates.OpenTelemetryCollector.ImageRef.Tag)
-		assert.Empty(t, to.Annotations[conversion.DefaultOTELCImageKey])
+		assert.Empty(t, to.Annotations[conversion.DefaultOTelColImageKey])
 
 		compareBase(t, to, from)
 	})
@@ -225,7 +245,7 @@ func TestConvertFrom(t *testing.T) {
 		err := to.ConvertFrom(&from)
 		require.NoError(t, err)
 
-		compareNodeConfigurationCollectorTemplateSpec(t, to.Spec.Templates.KspmNodeConfigurationCollector, from.Spec.Templates.KSPMNodeConfigurationCollector)
+		compareNodeConfigurationCollectorTemplateSpec(t, to.Spec.Templates.KSPMNodeConfigurationCollector, from.Spec.Templates.KSPMNodeConfigurationCollector)
 		compareBase(t, to, from)
 	})
 
@@ -293,53 +313,53 @@ func TestConvertFrom(t *testing.T) {
 	})
 }
 
-func compareBase(t *testing.T, oldDk DynaKube, newDk dynakubelatest.DynaKube) {
-	require.NotEmpty(t, oldDk)
-	require.NotEmpty(t, newDk)
+func compareBase(t *testing.T, oldDK DynaKube, newDK dynakubelatest.DynaKube) {
+	require.NotEmpty(t, oldDK)
+	require.NotEmpty(t, newDK)
 
 	// Some feature-flags are moved, so ObjectMeta will differ in that 1 field
-	oldAnnotations := oldDk.Annotations
-	newAnnotations := newDk.Annotations
-	oldDk.Annotations = nil
-	newDk.Annotations = nil
+	oldAnnotations := oldDK.Annotations
+	newAnnotations := newDK.Annotations
+	oldDK.Annotations = nil
+	newDK.Annotations = nil
 
-	assert.Equal(t, oldDk.ObjectMeta, newDk.ObjectMeta)
+	assert.Equal(t, oldDK.ObjectMeta, newDK.ObjectMeta)
 
-	oldDk.Annotations = oldAnnotations
-	newDk.Annotations = newAnnotations
+	oldDK.Annotations = oldAnnotations
+	newDK.Annotations = newAnnotations
 
-	if oldDk.Spec.Proxy != nil || newDk.Spec.Proxy != nil { // necessary so we don't explode with nil pointer when not set
-		require.NotNil(t, oldDk.Spec.Proxy)
-		require.NotNil(t, newDk.Spec.Proxy)
-		assert.Equal(t, oldDk.Spec.Proxy.Value, newDk.Spec.Proxy.Value)
-		assert.Equal(t, oldDk.Spec.Proxy.ValueFrom, newDk.Spec.Proxy.ValueFrom)
+	if oldDK.Spec.Proxy != nil || newDK.Spec.Proxy != nil { // necessary so we don't explode with nil pointer when not set
+		require.NotNil(t, oldDK.Spec.Proxy)
+		require.NotNil(t, newDK.Spec.Proxy)
+		assert.Equal(t, oldDK.Spec.Proxy.Value, newDK.Spec.Proxy.Value)
+		assert.Equal(t, oldDK.Spec.Proxy.ValueFrom, newDK.Spec.Proxy.ValueFrom)
 	}
 
-	assert.Equal(t, oldDk.Spec.DynatraceAPIRequestThreshold, newDk.Spec.DynatraceAPIRequestThreshold)
-	assert.Equal(t, oldDk.Spec.APIURL, newDk.Spec.APIURL)
-	assert.Equal(t, oldDk.Spec.Tokens, newDk.Spec.Tokens)
-	assert.Equal(t, oldDk.Spec.TrustedCAs, newDk.Spec.TrustedCAs)
-	assert.Equal(t, oldDk.Spec.NetworkZone, newDk.Spec.NetworkZone)
-	assert.Equal(t, oldDk.Spec.CustomPullSecret, newDk.Spec.CustomPullSecret)
-	assert.Equal(t, oldDk.Spec.SkipCertCheck, newDk.Spec.SkipCertCheck)
-	assert.Equal(t, oldDk.Spec.EnableIstio, newDk.Spec.EnableIstio)
+	assert.Equal(t, oldDK.Spec.DynatraceAPIRequestThreshold, newDK.Spec.DynatraceAPIRequestThreshold)
+	assert.Equal(t, oldDK.Spec.APIURL, newDK.Spec.APIURL)
+	assert.Equal(t, oldDK.Spec.Tokens, newDK.Spec.Tokens)
+	assert.Equal(t, oldDK.Spec.TrustedCAs, newDK.Spec.TrustedCAs)
+	assert.Equal(t, oldDK.Spec.NetworkZone, newDK.Spec.NetworkZone)
+	assert.Equal(t, oldDK.Spec.CustomPullSecret, newDK.Spec.CustomPullSecret)
+	assert.Equal(t, oldDK.Spec.SkipCertCheck, newDK.Spec.SkipCertCheck)
+	assert.Equal(t, oldDK.Spec.EnableIstio, newDK.Spec.EnableIstio)
 
-	if newDk.OneAgent().IsAppInjectionNeeded() {
-		assert.Equal(t, oldDk.OneAgent().GetNamespaceSelector(), newDk.OneAgent().GetNamespaceSelector())
+	if newDK.OneAgent().IsAppInjectionNeeded() {
+		assert.Equal(t, oldDK.OneAgent().GetNamespaceSelector(), newDK.OneAgent().GetNamespaceSelector())
 	}
 
-	assert.Equal(t, oldDk.MetadataEnrichmentEnabled(), newDk.MetadataEnrichment().IsEnabled())
-	assert.Equal(t, oldDk.Spec.MetadataEnrichment.NamespaceSelector, newDk.Spec.MetadataEnrichment.NamespaceSelector)
+	assert.Equal(t, oldDK.MetadataEnrichmentEnabled(), newDK.MetadataEnrichment().IsEnabled())
+	assert.Equal(t, oldDK.Spec.MetadataEnrichment.NamespaceSelector, newDK.Spec.MetadataEnrichment.NamespaceSelector)
 
-	if oldDk.FF().GetCSIMaxFailedMountAttempts() != exp.DefaultCSIMaxFailedMountAttempts {
-		assert.Equal(t, exp.MountAttemptsToTimeout(oldDk.FF().GetCSIMaxFailedMountAttempts()), newDk.FF().GetCSIMaxRetryTimeout().String())
+	if oldDK.FF().GetCSIMaxFailedMountAttempts() != exp.DefaultCSIMaxFailedMountAttempts {
+		assert.Equal(t, exp.MountAttemptsToTimeout(oldDK.FF().GetCSIMaxFailedMountAttempts()), newDK.FF().GetCSIMaxRetryTimeout().String())
 	}
 }
 
 func compareHostInjectSpec(t *testing.T, oldSpec oneagent.HostInjectSpec, newSpec oneagentlatest.HostInjectSpec, removedFields *conversion.RemovedFields) {
 	assert.Equal(t, oldSpec.Annotations, newSpec.Annotations)
 	assert.Equal(t, oldSpec.Args, newSpec.Args)
-	assert.Equal(t, *oldSpec.AutoUpdate, *removedFields.AutoUpdate.Get())
+	assert.Equal(t, *oldSpec.AutoUpdate, *removedFields.AutoUpdate.Get()) //nolint:staticcheck
 	assert.Equal(t, oldSpec.DNSPolicy, newSpec.DNSPolicy)
 	assert.Equal(t, oldSpec.Env, newSpec.Env)
 	assert.Equal(t, oldSpec.Image, newSpec.Image)
@@ -348,7 +368,7 @@ func compareHostInjectSpec(t *testing.T, oldSpec oneagent.HostInjectSpec, newSpe
 	assert.Equal(t, oldSpec.OneAgentResources, newSpec.OneAgentResources)
 	assert.Equal(t, oldSpec.PriorityClassName, newSpec.PriorityClassName)
 	assert.Equal(t, oldSpec.Tolerations, newSpec.Tolerations)
-	assert.Equal(t, oldSpec.Version, newSpec.Version)
+	assert.Equal(t, oldSpec.Version, newSpec.Version) //nolint:staticcheck
 	assert.Equal(t, oldSpec.SecCompProfile, newSpec.SecCompProfile)
 }
 
@@ -364,7 +384,7 @@ func compareCloudNativeSpec(t *testing.T, oldSpec oneagent.CloudNativeFullStackS
 }
 
 func compareApplicationMonitoringSpec(t *testing.T, oldSpec oneagent.ApplicationMonitoringSpec, newSpec oneagentlatest.ApplicationMonitoringSpec) {
-	assert.Equal(t, oldSpec.Version, newSpec.Version)
+	assert.Equal(t, oldSpec.Version, newSpec.Version) //nolint:staticcheck
 	compareAppInjectionSpec(t, oldSpec.AppInjectionSpec, newSpec.AppInjectionSpec)
 }
 
@@ -541,8 +561,8 @@ func getNewDynakubeBase() dynakubelatest.DynaKube {
 			TrustedCAs:                   "trusted-ca",
 			NetworkZone:                  "network-zone",
 			CustomPullSecret:             "pull-secret",
-			SkipCertCheck:                true,
-			EnableIstio:                  true,
+			SkipCertCheck:                new(true),
+			EnableIstio:                  new(true),
 			MetadataEnrichment: metadataenrichmentlatest.Spec{
 				Enabled:           new(true),
 				NamespaceSelector: getTestNamespaceSelector(),
@@ -553,7 +573,7 @@ func getNewDynakubeBase() dynakubelatest.DynaKube {
 
 func getNewHostInjectSpec() oneagentlatest.HostInjectSpec {
 	return oneagentlatest.HostInjectSpec{
-		Version: "host-inject-version",
+		Version: "host-inject-version", //nolint:staticcheck
 		Image:   "host-inject-image",
 		Tolerations: []corev1.Toleration{
 			{Key: "host-inject-toleration-key", Operator: "In", Value: "host-inject-toleration-value"},
@@ -614,7 +634,7 @@ func getNewCloudNativeSpec() oneagentlatest.CloudNativeFullStackSpec {
 func getNewApplicationMonitoringSpec() oneagentlatest.ApplicationMonitoringSpec {
 	return oneagentlatest.ApplicationMonitoringSpec{
 		AppInjectionSpec: getNewAppInjectionSpec(),
-		Version:          "app-monitoring-version",
+		Version:          "app-monitoring-version", //nolint:staticcheck
 	}
 }
 
@@ -775,7 +795,7 @@ func getNewExtensionExecutionControllerSpec() extensionslatest.ExecutionControll
 		},
 		CustomConfig:                "custom-eec-config",
 		CustomExtensionCertificates: "custom-eec-certificates",
-		UseEphemeralVolume:          true,
+		UseEphemeralVolume:          new(true),
 	}
 }
 

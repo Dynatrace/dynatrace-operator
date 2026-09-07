@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package eec
 
 import (
@@ -14,6 +17,8 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+const extensionControllerStatefulSetConditionType string = "ExtensionControllerStatefulSet"
 
 type Reconciler struct {
 	client    client.Client

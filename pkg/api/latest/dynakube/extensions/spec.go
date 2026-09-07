@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package extensions
 
 import (
@@ -12,25 +15,17 @@ type Extensions struct {
 	namespace string
 
 	Databases []DatabaseSpec
-
-	prometheusEnabled bool
 }
 
 // +kubebuilder:object:generate=true
 
 type Spec struct {
-	Prometheus *PrometheusSpec `json:"prometheus,omitempty"`
-
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:MinItems:=1
 	// +listType=map
 	// +listMapKey=id
 	Databases []DatabaseSpec `json:"databases,omitempty"`
 }
-
-// +kubebuilder:object:generate=true
-
-type PrometheusSpec struct{}
 
 // +kubebuilder:object:generate=true
 
@@ -49,7 +44,7 @@ type ExecutionControllerSpec struct {
 
 	// Overrides the default image
 	// +kubebuilder:validation:Optional
-	ImageRef image.Ref `json:"imageRef"`
+	ImageRef image.Ref `json:"imageRef,omitzero"`
 
 	// +kubebuilder:validation:Optional
 	TLSRefName string `json:"tlsRefName,omitempty"`
@@ -64,7 +59,7 @@ type ExecutionControllerSpec struct {
 
 	// Define resources' requests and limits for single ExtensionExecutionController pod
 	// +kubebuilder:validation:Optional
-	Resources corev1.ResourceRequirements `json:"resources"`
+	Resources corev1.ResourceRequirements `json:"resources,omitzero"`
 
 	// Set tolerations for the ExtensionExecutionController pods
 	// +kubebuilder:validation:Optional
@@ -75,7 +70,7 @@ type ExecutionControllerSpec struct {
 	TopologySpreadConstraints []corev1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
 	// Selects EmptyDir volume to be storage device
 	// +kubebuilder:validation:Optional
-	UseEphemeralVolume bool `json:"useEphemeralVolume,omitempty"`
+	UseEphemeralVolume *bool `json:"useEphemeralVolume,omitempty"`
 }
 
 // +kubebuilder:object:generate=true

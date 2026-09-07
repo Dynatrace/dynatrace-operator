@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package validation
 
 import (
@@ -7,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
+	agconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	k8sversion "github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/version"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -81,7 +85,7 @@ func TestActiveGatePVCSettings(t *testing.T) {
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
 					ActiveGate: activegate.Spec{
-						UseEphemeralVolume:  false,
+						UseEphemeralVolume:  new(false),
 						VolumeClaimTemplate: &corev1.PersistentVolumeClaimSpec{},
 					},
 				},
@@ -94,7 +98,7 @@ func TestActiveGatePVCSettings(t *testing.T) {
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
 					ActiveGate: activegate.Spec{
-						UseEphemeralVolume: true,
+						UseEphemeralVolume: new(true),
 					},
 				},
 			})
@@ -106,10 +110,67 @@ func TestActiveGatePVCSettings(t *testing.T) {
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL:     testAPIURL,
-					Extensions: &extensions.Spec{Prometheus: &extensions.PrometheusSpec{}},
+					Extensions: &extensions.Spec{Databases: []extensions.DatabaseSpec{{ID: "test"}}},
 					ActiveGate: activegate.Spec{
-						UseEphemeralVolume:  true,
+						UseEphemeralVolume:  new(true),
 						VolumeClaimTemplate: &corev1.PersistentVolumeClaimSpec{},
+					},
+				},
+			})
+	})
+}
+
+func TestActiveGateConflictingVolumes(t *testing.T) {
+	t.Run("non-conflicting custom volumes are allowed", func(t *testing.T) {
+		assertAllowed(t, &dynakube.DynaKube{
+			ObjectMeta: defaultDynakubeObjectMeta,
+			Spec: dynakube.DynaKubeSpec{
+				APIURL: testAPIURL,
+				ActiveGate: activegate.Spec{
+					CapabilityProperties: activegate.CapabilityProperties{
+						Volumes: []corev1.Volume{
+							{Name: "my-custom-volume", VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}}},
+						},
+						VolumeMounts: []corev1.VolumeMount{
+							{Name: "my-custom-volume", MountPath: "/my/custom/path"},
+						},
+					},
+				},
+			},
+		})
+	})
+
+	t.Run("conflict with managed volume name is denied", func(t *testing.T) {
+		assertDenied(t,
+			[]string{fmt.Sprintf(errorActiveGateConflictingVolumeName, agconsts.AuthTokenSecretVolumeName)},
+			&dynakube.DynaKube{
+				ObjectMeta: defaultDynakubeObjectMeta,
+				Spec: dynakube.DynaKubeSpec{
+					APIURL: testAPIURL,
+					ActiveGate: activegate.Spec{
+						CapabilityProperties: activegate.CapabilityProperties{
+							Volumes: []corev1.Volume{
+								{Name: agconsts.AuthTokenSecretVolumeName},
+							},
+						},
+					},
+				},
+			})
+	})
+
+	t.Run("conflict with managed volume mount path is denied", func(t *testing.T) {
+		assertDenied(t,
+			[]string{fmt.Sprintf(errorActiveGateConflictingVolumeMountPath, agconsts.GatewayConfigMountPath)},
+			&dynakube.DynaKube{
+				ObjectMeta: defaultDynakubeObjectMeta,
+				Spec: dynakube.DynaKubeSpec{
+					APIURL: testAPIURL,
+					ActiveGate: activegate.Spec{
+						CapabilityProperties: activegate.CapabilityProperties{
+							VolumeMounts: []corev1.VolumeMount{
+								{MountPath: agconsts.GatewayConfigMountPath},
+							},
+						},
 					},
 				},
 			})

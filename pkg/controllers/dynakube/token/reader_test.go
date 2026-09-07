@@ -1,7 +1,9 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package token
 
 import (
-	"context"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -37,7 +39,7 @@ func testReadTokens(t *testing.T) {
 		dk := dynakube.DynaKube{}
 		reader := NewReader(clt, &dk)
 
-		_, err := reader.ReadTokens(context.Background())
+		_, err := reader.ReadTokens(t.Context())
 
 		require.Error(t, err)
 		assert.True(t, k8serrors.IsNotFound(err))
@@ -61,7 +63,7 @@ func testReadTokens(t *testing.T) {
 
 		reader := NewReader(clt, &dk)
 
-		tokens, err := reader.ReadTokens(context.Background())
+		tokens, err := reader.ReadTokens(t.Context())
 
 		require.NoError(t, err)
 		assert.Len(t, tokens, 4)

@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package k8sdeployment
 
 import (
@@ -11,6 +14,22 @@ import (
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+func IsRolloutComplete(deploy *appsv1.Deployment) bool {
+	if deploy == nil {
+		return false
+	}
+
+	if deploy.Generation != deploy.Status.ObservedGeneration {
+		return false
+	}
+
+	if ptr.Deref(deploy.Status.TerminatingReplicas, 0) > 0 {
+		return false
+	}
+
+	return deploy.Spec.Replicas != nil && *deploy.Spec.Replicas == deploy.Status.ReadyReplicas
+}
 
 // GetDeployment returns the Deployment object who is the owner of this pod.
 // not doable using generics

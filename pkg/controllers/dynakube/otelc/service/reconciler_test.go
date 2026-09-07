@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package service
 
 import (
@@ -134,7 +137,7 @@ func TestService(t *testing.T) {
 				Name:      dk.TelemetryIngest().GetDefaultServiceName(),
 				Namespace: dk.Namespace,
 				Labels: map[string]string{
-					k8slabel.AppComponentLabel: k8slabel.OtelCComponentLabel,
+					k8slabel.AppComponentLabel: k8slabel.OTelColComponentLabel,
 					k8slabel.AppCreatedByLabel: dk.Name,
 				},
 			},
@@ -165,7 +168,7 @@ func TestService(t *testing.T) {
 				Name:      testServiceName,
 				Namespace: dk.Namespace,
 				Labels: map[string]string{
-					k8slabel.AppComponentLabel: k8slabel.OtelCComponentLabel,
+					k8slabel.AppComponentLabel: k8slabel.OTelColComponentLabel,
 					k8slabel.AppCreatedByLabel: dk.Name,
 				},
 			},

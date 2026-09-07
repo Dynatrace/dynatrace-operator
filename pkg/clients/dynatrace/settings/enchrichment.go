@@ -1,7 +1,11 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package settings
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
@@ -16,6 +20,26 @@ const (
 	globalScope                      = "environment"
 	effectiveValuesPath              = "/v2/settings/effectiveValues"
 )
+
+// EnrichmentRuleObject holds the objectId of a single enrichment rule settings object,
+// used to identify rules for deletion.
+type EnrichmentRuleObject struct {
+	ObjectID string `json:"objectId"`
+}
+
+type enrichmentRulesObjectsResponse struct {
+	Items []EnrichmentRuleObject `json:"items"`
+}
+
+type enrichmentRuleValue struct {
+	Type        metadataenrichment.RuleType `json:"type"`
+	ValueSource string                      `json:"valueSource"`
+	Target      string                      `json:"target"`
+}
+
+type legacyEnrichmentValue struct {
+	Rules []metadataenrichment.Rule `json:"rules"`
+}
 
 type getRulesResponse struct {
 	Items []ruleItem `json:"items"`
@@ -41,6 +65,90 @@ type ingestEnrichmentConfig struct {
 	Target      string                      `json:"target"`
 	ValueSource string                      `json:"valueSource"`
 	Condition   string                      `json:"condition"`
+}
+
+func (c *ClientImpl) getEnrichmentRuleObjectsForSchema(ctx context.Context, schemaID, scope string) ([]EnrichmentRuleObject, error) {
+	var resp enrichmentRulesObjectsResponse
+
+	err := c.apiClient.GET(ctx, ObjectsPath).
+		WithQueryParams(map[string]string{
+			schemaIDsQueryParam: schemaID,
+			scopesQueryParam:    scope,
+		}).
+		Execute(&resp)
+	if err != nil {
+		return nil, fmt.Errorf("get enrichment rule objects (%s): %w", schemaID, err)
+	}
+
+	return resp.Items, nil
+}
+
+func (c *ClientImpl) GetEnrichmentRuleObjects(ctx context.Context, scope string) ([]EnrichmentRuleObject, error) {
+	if scope == "" {
+		return nil, errors.New("no scope provided for getting enrichment rule objects")
+	}
+
+	return c.getEnrichmentRuleObjectsForSchema(ctx, metadataEnrichmentSchemaID, scope)
+}
+
+func (c *ClientImpl) GetLegacyEnrichmentRuleObjects(ctx context.Context, scope string) ([]EnrichmentRuleObject, error) {
+	if scope == "" {
+		return nil, errors.New("no scope provided for getting legacy enrichment rule objects")
+	}
+
+	return c.getEnrichmentRuleObjectsForSchema(ctx, legacyMetadataEnrichmentSchemaID, scope)
+}
+
+func (c *ClientImpl) CreateEnrichmentRuleObject(ctx context.Context, scope string, rules ...metadataenrichment.Rule) ([]string, error) {
+	return c.createEnrichmentRule(ctx, metadataEnrichmentSchemaID, scope, rules)
+}
+
+func (c *ClientImpl) CreateLegacyEnrichmentRuleObject(ctx context.Context, scope string, rules ...metadataenrichment.Rule) ([]string, error) {
+	return c.createEnrichmentRule(ctx, legacyMetadataEnrichmentSchemaID, scope, rules)
+}
+
+func (c *ClientImpl) createEnrichmentRule(ctx context.Context, schemaID, scope string, rules []metadataenrichment.Rule) ([]string, error) {
+	if scope == "" {
+		return nil, errors.New("no scope (MEID) was provided for creating the enrichment rule")
+	}
+
+	var response []postObjectsResponse
+
+	err := c.apiClient.POST(ctx, ObjectsPath).
+		WithQueryParams(map[string]string{validateOnlyQueryParam: "false"}).
+		WithJSONBody(buildEnrichmentBody(schemaID, scope, rules)).
+		Execute(&response)
+	if err != nil {
+		return nil, fmt.Errorf("create enrichment rule (%s): %w", schemaID, err)
+	}
+
+	objectIDs := make([]string, len(response))
+	for i, resp := range response {
+		objectIDs[i] = resp.ObjectID
+	}
+
+	return objectIDs, nil
+}
+
+func buildEnrichmentBody(schemaID, scope string, rules []metadataenrichment.Rule) any {
+	if schemaID == metadataEnrichmentSchemaID {
+		values := make([]enrichmentRuleValue, len(rules))
+		for i, rule := range rules {
+			values[i] = convertRule(rule)
+		}
+
+		return newPostObjectsBody(schemaID, "", scope, values...)
+	}
+
+	return newPostObjectsBody(schemaID, "", scope, legacyEnrichmentValue{Rules: rules})
+}
+
+func convertRule(rule metadataenrichment.Rule) enrichmentRuleValue {
+	return enrichmentRuleValue{
+		Type:        rule.Type,
+		ValueSource: rule.Source,
+		Target:      rule.Target,
+	}
 }
 
 // GetRules returns metadata enrichment rules.
@@ -82,7 +190,7 @@ func (c *ClientImpl) GetRules(ctx context.Context, kubeSystemUUID, entityID stri
 		log.Info("updating data with new schema enabled on tenant", "schemaID", metadataEnrichmentSchemaID)
 	} else {
 		// The legacy schema was found and the toggle is not enabled
-		return getRulesFromResponse(resp), nil
+		return getRulesFromResponse(ctx, resp), nil
 	}
 
 	// Retry the request with the new schema. For managed this will always fail, but we have no practical way of knowing which environment we're running in.
@@ -103,7 +211,7 @@ func (c *ClientImpl) GetRules(ctx context.Context, kubeSystemUUID, entityID stri
 		return nil, nil
 	}
 
-	rules := getRulesFromResponse(resp)
+	rules := getRulesFromResponse(ctx, resp)
 	if useNewSchema && len(rules) == 0 {
 		// Rules get auto-migrated when moving to Latest Dynatrace environments, but before then it's the users responsibility to migrate them.
 		// Since the user explicitly requested the new schema, missing rules at this point are not an error.
@@ -123,15 +231,24 @@ func isNewSchemaRequested(resp getRulesResponse) bool {
 	return false
 }
 
-func getRulesFromResponse(resp getRulesResponse) []metadataenrichment.Rule {
-	var rules []metadataenrichment.Rule
+// Map rules from either schema to a list of [metadataenrichment.Rule].
+func getRulesFromResponse(ctx context.Context, resp getRulesResponse) []metadataenrichment.Rule {
+	// IMPORTANT: The order of the rules MUST NOT be changed. This is because we must guarantee that the first rule to match a key wins (ICP-7916).
+	var (
+		rules   []metadataenrichment.Rule
+		dropped []ingestEnrichmentConfig
+	)
 
 	// In practice, this loop is only actually required for the new schema where each rule is a separate item.
 	// The legacy schema put all rules into a single item's value.
 	for _, item := range resp.Items {
-		if cfg := item.Value.ingestEnrichmentConfig; metadataenrichment.IsSupportedType(cfg.Type) {
-			if cfg.Condition != "" {
-				// Skip rules with conditions for now
+		if cfg := item.Value.ingestEnrichmentConfig; cfg != (ingestEnrichmentConfig{}) {
+			if !metadataenrichment.IsSupportedType(cfg.Type) || cfg.Condition != "" || cfg.Target == "" {
+				// Rules with conditions are skipped for now. We might implement support later.
+				// At time of writing new schema does not allow rules without target.
+				// The injection can't handle empty targets for the new rule types, so drop them in case the API changes.
+				dropped = append(dropped, cfg)
+
 				continue
 			}
 
@@ -148,6 +265,10 @@ func getRulesFromResponse(resp getRulesResponse) []metadataenrichment.Rule {
 
 		// Old rules always have supported types
 		rules = append(rules, item.Value.Rules...)
+	}
+
+	if len(dropped) > 0 {
+		logd.FromContext(ctx).Info("skipped enrichment rules with unsupported values", "rules", dropped)
 	}
 
 	return rules

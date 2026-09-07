@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package version
 
 import (
@@ -29,7 +32,7 @@ func TestOneAgentUpdater(t *testing.T) {
 				OneAgent: oneagent.Spec{
 					ClassicFullStack: &oneagent.HostInjectSpec{
 						Image:   testImage,
-						Version: testVersion,
+						Version: testVersion, //nolint:staticcheck
 					},
 				},
 			},
@@ -83,7 +86,7 @@ func TestOneAgentUseDefault(t *testing.T) {
 				APIURL: testAPIURL,
 				OneAgent: oneagent.Spec{
 					ClassicFullStack: &oneagent.HostInjectSpec{
-						Version: testVersion,
+						Version: testVersion, //nolint:staticcheck
 					},
 				},
 			},

@@ -59,8 +59,7 @@ spec:
   apiUrl: https://url/api
   customPullSecret: pull-secret
   dynatraceApiRequestThreshold: 42
-  extensions:
-    prometheus: {}
+  enableIstio: false
   logMonitoring:
     ingestRuleMatchers:
     - attribute: attribute1
@@ -80,7 +79,6 @@ spec:
       - matcher3
   metadataEnrichment:
     enabled: false
-    namespaceSelector: {}
   networkZone: network-zone
   oneAgent:
     hostGroup: hostgroup-value
@@ -122,7 +120,7 @@ spec:
   proxy:
     value: proxy-value
     valueFrom: proxy-from
-  skipCertCheck: true
+  skipCertCheck: false
   telemetryIngest:
     protocols:
     - zipkin
@@ -266,17 +264,6 @@ spec:
       - maxSkew: 1
         topologyKey: kubernetes.io/hostname
         whenUnsatisfiable: ScheduleAnyway
-    sqlExtensionExecutor:
-      imageRef: {}
   tokens: token
   trustedCAs: trusted-ca
-status:
-  activeGate:
-    connectionInfoStatus: {}
-  apiToken:
-    availableOptionalScopes: {}
-  codeModules: {}
-  kspm: {}
-  metadataEnrichment: {}
-  oneAgent:
-    connectionInfoStatus: {}
+status: {}

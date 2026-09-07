@@ -8,6 +8,19 @@
 
 echo Shell: "${SHELL}"
 
+if make -n add-license-headers &>/dev/null; then
+    echo Adding licenses...
+    make add-license-headers
+fi
+
+echo Generate deep-copy files
+make manifests/deepcopy
+
+if ! git diff --quiet; then
+    echo "Additional changes were auto generated. Please stage the changes and recommit."
+    exit 1
+fi
+
 echo Linting markdown files...
 make markdown/lint
 

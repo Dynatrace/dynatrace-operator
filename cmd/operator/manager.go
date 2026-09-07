@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package operator
 
 import (
@@ -8,15 +11,18 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/certificates"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dtprometheus"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/nodes"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/envvars"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/pkg/errors"
 	_ "k8s.io/client-go/plugin/pkg/client/auth" // important for running operator locally
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
@@ -28,6 +34,10 @@ func getControllerAddFuncs(isOLM bool) []controllerSetupFunc {
 	funcs := []controllerSetupFunc{
 		dynakube.Add,
 		edgeconnect.Add,
+	}
+
+	if k8senv.IsPrometheusEnabled() {
+		funcs = append(funcs, dtprometheus.Add)
 	}
 
 	if envvars.GetBool(consts.HostAvailabilityDetectionEnvVar, true) {
@@ -66,6 +76,10 @@ func createOperatorManager(cfg *rest.Config, namespace string, isOLM bool) (mana
 
 func createOptions(namespace string) ctrl.Options {
 	return ctrl.Options{
+		Client: client.Options{
+			// For apply patch the owner is not inferred from the binary name, so we have to set this explicitly.
+			FieldOwner: "dynatrace-operator",
+		},
 		Cache: cache.Options{
 			DefaultNamespaces: map[string]cache.Config{
 				namespace: {},

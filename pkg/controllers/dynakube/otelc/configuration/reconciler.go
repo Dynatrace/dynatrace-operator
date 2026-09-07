@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package configuration
 
 import (
@@ -17,6 +20,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+const conditionType string = "OTELCConfigurationConfigMap"
 
 type Reconciler struct {
 	client    client.Client
@@ -81,7 +86,7 @@ func (r *Reconciler) prepareConfigMap(dk *dynakube.DynaKube) (*corev1.ConfigMap,
 		return nil, err
 	}
 
-	coreLabels := k8slabel.NewCoreLabels(dk.Name, k8slabel.OtelCComponentLabel).BuildLabels()
+	coreLabels := k8slabel.NewCoreLabels(dk.Name, k8slabel.OTelColComponentLabel).BuildLabels()
 
 	newSecret, err := k8sconfigmap.Build(dk,
 		GetConfigMapName(dk.Name),

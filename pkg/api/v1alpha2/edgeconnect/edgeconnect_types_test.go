@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package edgeconnect
 
 import (
@@ -9,7 +12,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestImage(t *testing.T) {
+func Test_EdgeConnect_Image(t *testing.T) {
 	t.Run("defaults", func(t *testing.T) {
 		ec := EdgeConnect{}
 		require.Equal(t, defaultEdgeConnectRepository+":"+api.LatestTag, ec.Image())
@@ -31,7 +34,7 @@ func TestImage(t *testing.T) {
 	})
 }
 
-func TestHostMappings(t *testing.T) {
+func Test_EdgeConnect_HostMappings(t *testing.T) {
 	t.Run("Get HostMappings", func(t *testing.T) {
 		e := EdgeConnect{
 			ObjectMeta: metav1.ObjectMeta{

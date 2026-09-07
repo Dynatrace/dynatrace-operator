@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 //go:build e2e
 
 package metadataenrichment
@@ -43,6 +46,13 @@ func GetMetadataJSONFromPod(ctx context.Context, t *testing.T, resource *resourc
 
 func GetRawMetadataFromPod(ctx context.Context, t *testing.T, resource *resources.Resources, enrichedPod corev1.Pod) []byte {
 	return readMetadataFile(ctx, t, resource, enrichedPod, MetadataFile)
+}
+
+func GetMetadataMapFromPod(ctx context.Context, t *testing.T, resource *resources.Resources, enrichedPod corev1.Pod) map[string]string {
+	var metadata map[string]string
+	require.NoError(t, json.Unmarshal(GetRawMetadataFromPod(ctx, t, resource, enrichedPod), &metadata))
+
+	return metadata
 }
 
 func GetMetadataPropertiesFromPod(ctx context.Context, t *testing.T, resource *resources.Resources, enrichedPod corev1.Pod) map[string]string {

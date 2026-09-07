@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package arch
 
 import containerv1 "github.com/google/go-containerregistry/pkg/v1"

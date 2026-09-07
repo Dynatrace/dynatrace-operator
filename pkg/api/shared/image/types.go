@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package image
 
 import corev1 "k8s.io/api/core/v1"
@@ -19,7 +22,8 @@ type Ref struct {
 	Digest string `json:"digest,omitempty"`
 
 	// Image pull policy to use
-	PullPolicy PullPolicy `json:"pullPolicy,omitempty"`
+	// +kubebuilder:validation:Enum=IfNotPresent;Always;Never
+	PullPolicy corev1.PullPolicy `json:"pullPolicy,omitempty"`
 }
 
 // StringWithDefaults will use the provided default values for fields that were not already set.
@@ -56,13 +60,3 @@ func (ref *Ref) HasImage() bool {
 
 	return ref.Repository != "" && (ref.Tag != "" || ref.Digest != "")
 }
-
-// GetPolicy returns the image pull policy.
-func (ref Ref) GetPullPolicy() corev1.PullPolicy {
-	return corev1.PullPolicy(ref.PullPolicy)
-}
-
-// +kubebuilder:validation:Enum=IfNotPresent;Always;Never
-
-// PullPolicy is the image pull policy. Use a custom type to share the validation marker.
-type PullPolicy string

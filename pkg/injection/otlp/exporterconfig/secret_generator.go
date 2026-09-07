@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package exporterconfig
 
 import (
@@ -15,6 +18,14 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+)
+
+const (
+	// ActiveGateCertDataName is the key used to store ActiveGate certificate data in the secret containing the ActiveGate Certificate for the OTLP exporter.
+	ActiveGateCertDataName = "activegate-tls.crt"
+
+	ConfigConditionType = "OTLPExporterConfigSecret"
+	CertsConditionType  = "OTLPExporterCertsConfig"
 )
 
 // SecretGenerator manages the OTLP exporter secret generation for the user namespaces.

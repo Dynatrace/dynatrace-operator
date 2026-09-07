@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package system
 
 import (
@@ -28,4 +31,8 @@ func GetUID(ctx context.Context, clt client.Reader) (types.UID, error) {
 
 func IsDeployedViaOLM() bool {
 	return os.Getenv(k8senv.OLMOperatorNamespaceEnv) != ""
+}
+
+func IsRunLocally() bool {
+	return os.Getenv("RUN_LOCAL") == "true"
 }

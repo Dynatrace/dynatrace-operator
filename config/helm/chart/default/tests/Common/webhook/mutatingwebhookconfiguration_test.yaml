@@ -1,3 +1,6 @@
+# Copyright Dynatrace LLC
+# SPDX-License-Identifier: Apache-2.0
+
 suite: test mutating webhook configuration
 templates:
   - Common/webhook/mutatingwebhookconfiguration.yaml

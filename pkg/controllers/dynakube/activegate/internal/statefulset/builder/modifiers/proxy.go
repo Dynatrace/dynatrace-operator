@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package modifiers
 
 import (
@@ -39,7 +42,7 @@ func (mod ProxyModifier) Modify(sts *appsv1.StatefulSet) error {
 func (mod ProxyModifier) getVolumes() []corev1.Volume {
 	return []corev1.Volume{
 		{
-			Name: proxy.SecretVolumeName,
+			Name: consts.ProxySecretVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName:  proxy.BuildSecretName(mod.dk.Name),
@@ -51,5 +54,10 @@ func (mod ProxyModifier) getVolumes() []corev1.Volume {
 }
 
 func (mod ProxyModifier) getVolumeMounts() []corev1.VolumeMount {
-	return []corev1.VolumeMount{proxy.BuildVolumeMount()}
+	return []corev1.VolumeMount{
+		{
+			Name:      consts.ProxySecretVolumeName,
+			MountPath: consts.ProxySecretMountPath,
+		},
+	}
 }

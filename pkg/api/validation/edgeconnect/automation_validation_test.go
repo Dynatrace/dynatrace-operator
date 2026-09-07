@@ -1,7 +1,9 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package validation
 
 import (
-	"context"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
@@ -9,12 +11,12 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func TestAutomationValidator(t *testing.T) {
+func Test_automationRequiresProvisionerValidation(t *testing.T) {
 	t.Run("accept edgeconnect config without automation or oauth configs set", func(t *testing.T) {
 		ec := &edgeconnect.EdgeConnect{
 			Spec: edgeconnect.EdgeConnectSpec{},
 		}
-		require.Empty(t, automationRequiresProvisionerValidation(context.Background(), nil, ec))
+		require.Empty(t, automationRequiresProvisionerValidation(t.Context(), nil, ec))
 	})
 	t.Run("reject automation without provisioning", func(t *testing.T) {
 		ec := &edgeconnect.EdgeConnect{
@@ -27,7 +29,7 @@ func TestAutomationValidator(t *testing.T) {
 				Resources: corev1.ResourceRequirements{},
 			},
 		}
-		require.Equal(t, errorAutomationRequiresProvisioner, automationRequiresProvisionerValidation(context.Background(), nil, ec))
+		require.Equal(t, errorAutomationRequiresProvisioner, automationRequiresProvisionerValidation(t.Context(), nil, ec))
 	})
 	t.Run("accept automation with provisioning enabled", func(t *testing.T) {
 		ec := &edgeconnect.EdgeConnect{
@@ -39,7 +41,7 @@ func TestAutomationValidator(t *testing.T) {
 				},
 			},
 		}
-		require.Empty(t, automationRequiresProvisionerValidation(context.Background(), nil, ec))
+		require.Empty(t, automationRequiresProvisionerValidation(t.Context(), nil, ec))
 	})
 	t.Run("reject automation with no oauth config", func(t *testing.T) {
 		ec := &edgeconnect.EdgeConnect{
@@ -48,6 +50,6 @@ func TestAutomationValidator(t *testing.T) {
 				KubernetesAutomation: &edgeconnect.KubernetesAutomationSpec{Enabled: true},
 			},
 		}
-		require.Equal(t, errorAutomationRequiresProvisioner, automationRequiresProvisionerValidation(context.Background(), nil, ec))
+		require.Equal(t, errorAutomationRequiresProvisioner, automationRequiresProvisionerValidation(t.Context(), nil, ec))
 	})
 }

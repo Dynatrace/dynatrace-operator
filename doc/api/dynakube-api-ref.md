@@ -50,13 +50,14 @@
 |`tolerations`||-|array|
 |`topologySpreadConstraints`||-|array|
 |`useEphemeralVolume`||-|boolean|
+|`volumeMounts`||-|array|
+|`volumes`||-|array|
 
 ### .spec.extensions
 
 |Parameter|Description|Default value|Data type|
 |:-|:-|:-|:-|
 |`databases`||-|array|
-|`prometheus`||-|object|
 
 ### .spec.logMonitoring
 

@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package mutator
 
 const (
@@ -29,6 +32,12 @@ const (
 
 	// InstallContainerName is the name used for the install container
 	InstallContainerName = "dynatrace-operator"
+
+	AnnotationInitContainerPrefix = "init-container.dynatrace.com/"
+	// AnnotationInitContainerRunAsUser can be set on a Pod to override the RunAsUser in the init container's security context.
+	AnnotationInitContainerRunAsUser = AnnotationInitContainerPrefix + "securityContext.runAsUser"
+	// AnnotationInitContainerRunAsGroup can be set on a Pod to override the RunAsGroup in the init container's security context.
+	AnnotationInitContainerRunAsGroup = AnnotationInitContainerPrefix + "securityContext.runAsGroup"
 
 	// AnnotationInjectionSplitMounts can be set on a Pod to indicate that the `/var/lib/dynatrace` volume mount on the user container should be split into multiple mounts.
 	// The following mounts are created:

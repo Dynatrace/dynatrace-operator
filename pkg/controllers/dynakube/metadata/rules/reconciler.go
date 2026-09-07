@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package rules
 
 import (
@@ -15,6 +18,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"k8s.io/apimachinery/pkg/api/meta"
 )
+
+const conditionType = "MetadataEnrichmentRules"
 
 type Reconciler struct {
 	timeProvider *timeprovider.Provider

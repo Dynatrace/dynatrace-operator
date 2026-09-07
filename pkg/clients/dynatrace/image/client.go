@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package image
 
 import (
@@ -13,12 +16,19 @@ import (
 type ComponentType string
 
 const (
-	OneAgent    ComponentType = "oneagent"
-	CodeModules ComponentType = "codemodules"
-	ActiveGate  ComponentType = "activegate"
-	EEC         ComponentType = "eec"
-	LogModule   ComponentType = "logmodule"
-	DBExecutor  ComponentType = "dynatrace-sql-extension-executor"
+	OneAgent        ComponentType = "oneagent"
+	CodeModules     ComponentType = "codemodules"
+	ActiveGate      ComponentType = "activegate"
+	EEC             ComponentType = "eec"
+	LogModule       ComponentType = "logmodule"
+	OTelCollector   ComponentType = "otel-collector"
+	DBExecutor      ComponentType = "sql-extension-executor"
+	Gateway         ComponentType = OTelCollector
+	Scraper         ComponentType = OTelCollector
+	TargetAllocator ComponentType = "otel_target_allocator"
+	// DBExecutorOldName is a fallback for the old name of the DBExecutor component type
+	// TODO: remove this fallback in a future release
+	DBExecutorOldName ComponentType = "dynatrace-sql-extension-executor"
 )
 
 type Info struct {

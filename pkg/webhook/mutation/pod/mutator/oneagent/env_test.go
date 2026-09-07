@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package oneagent
 
 import (
@@ -69,6 +72,8 @@ func createContainerWithPreloadEnv(existingPath string) *corev1.Container {
 }
 
 func verifyContainerWithPreloadEnv(t *testing.T, container *corev1.Container, expectedPath string) {
+	t.Helper()
+
 	require.NotEmpty(t, container.Env)
 	containerEnv := k8senv.Find(container.Env, PreloadEnv)
 	require.NotNil(t, containerEnv)

@@ -1,16 +1,5 @@
-# Copyright 2020 Dynatrace LLC
-
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-
-#     http://www.apache.org/licenses/LICENSE-2.0
-
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# Copyright Dynatrace LLC
+# SPDX-License-Identifier: Apache-2.0
 
 apiVersion: v2
 name: dynatrace-operator
@@ -22,13 +11,7 @@ version: 0.0.0-snapshot
 appVersion: 0.0.0-snapshot
 kubeVersion: '>=1.25.0-0'
 maintainers:
-- name: 0sewa0
-  email: marcell.sevcsik@dynatrace.com
-- name: andriisoldatenko
-  email: andrii.soldatenko@dynatrace.com
-- name: chrismuellner
-  email: christoph.muellner@dynatrace.com
-- name: geba-dyna
-  email: george.balea@dynatrace.com
+- name: team-kubernetes-operator
+  email: team-kubernetes-operator@dynatrace.com
 sources:
 - https://github.com/Dynatrace/dynatrace-operator

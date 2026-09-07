@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package dynakube
 
 import (
@@ -6,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/conversion"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	dynakubelatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	kspmlatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
 	telemetryingestlatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
@@ -129,19 +133,6 @@ func TestConvertTo(t *testing.T) {
 		assert.False(t, to.MetadataEnrichment().IsEnabled())
 	})
 
-	t.Run("migrate extensions from v1beta5 to latest", func(t *testing.T) {
-		from := getOldDynakubeBase()
-		from.Spec.Extensions = &extensions.Spec{}
-		to := dynakubelatest.DynaKube{}
-
-		err := from.ConvertTo(&to)
-		require.NoError(t, err)
-
-		assert.NotNil(t, to.Spec.Extensions)
-		assert.NotNil(t, to.Spec.Extensions.Prometheus)
-		compareBase(t, from, to)
-	})
-
 	t.Run("migrate log-monitoring from v1beta5 to latest", func(t *testing.T) {
 		from := getOldDynakubeBase()
 		from.Spec.LogMonitoring = getOldLogMonitoringSpec()
@@ -155,16 +146,49 @@ func TestConvertTo(t *testing.T) {
 	})
 
 	t.Run("migrate kspm from v1beta5 to latest", func(t *testing.T) {
-		from := getOldDynakubeBase()
-		from.Spec.Kspm = &kspm.Spec{}
-		to := dynakubelatest.DynaKube{}
+		testCases := []struct {
+			name            string
+			mappedHostPaths []string
+			expected        []string
+		}{
+			{
+				name:            "single entry is preserved, not loosened to root",
+				mappedHostPaths: []string{"/boot"},
+				expected:        []string{"/boot"},
+			},
+			{
+				name:            "multiple entries are preserved",
+				mappedHostPaths: []string{"/boot", "/etc"},
+				expected:        []string{"/boot", "/etc"},
+			},
+			{
+				name:            "empty slice is preserved, not loosened to root",
+				mappedHostPaths: []string{},
+				expected:        []string{},
+			},
+			{
+				name:            "nil slice is preserved, not loosened to root",
+				mappedHostPaths: nil,
+				expected:        nil,
+			},
+		}
 
-		err := from.ConvertTo(&to)
-		require.NoError(t, err)
+		for _, tc := range testCases {
+			t.Run(tc.name, func(t *testing.T) {
+				from := getOldDynakubeBase()
+				from.Spec.KSPM = &kspm.Spec{
+					MappedHostPaths: tc.mappedHostPaths,
+				}
+				to := dynakubelatest.DynaKube{}
 
-		assert.NotNil(t, to.Spec.KSPM)
-		assert.Equal(t, []string{"/"}, to.Spec.KSPM.MappedHostPaths)
-		compareBase(t, from, to)
+				err := from.ConvertTo(&to)
+				require.NoError(t, err)
+
+				require.NotNil(t, to.Spec.KSPM)
+				assert.Equal(t, tc.expected, to.Spec.KSPM.MappedHostPaths)
+				compareBase(t, from, to)
+			})
+		}
 	})
 
 	t.Run("migrate extensions templates from v1beta5 to latest", func(t *testing.T) {
@@ -197,7 +221,7 @@ func TestConvertTo(t *testing.T) {
 
 		assert.NotEmpty(t, to.Spec.Templates.OpenTelemetryCollector.ImageRef.Repository)
 		assert.NotEmpty(t, to.Spec.Templates.OpenTelemetryCollector.ImageRef.Tag)
-		assert.Contains(t, to.Annotations, conversion.DefaultOTELCImageKey)
+		assert.Contains(t, to.Annotations, conversion.DefaultOTelColImageKey)
 
 		compareBase(t, from, to)
 	})
@@ -217,8 +241,8 @@ func TestConvertTo(t *testing.T) {
 
 		assert.NotEmpty(t, to.Spec.Templates.OpenTelemetryCollector.ImageRef.Repository)
 		assert.NotEmpty(t, to.Spec.Templates.OpenTelemetryCollector.ImageRef.Tag)
-		assert.Equal(t, image.PullPolicy("Always"), to.Spec.Templates.OpenTelemetryCollector.ImageRef.PullPolicy)
-		assert.Contains(t, to.Annotations, conversion.DefaultOTELCImageKey)
+		assert.Equal(t, corev1.PullPolicy("Always"), to.Spec.Templates.OpenTelemetryCollector.ImageRef.PullPolicy)
+		assert.Contains(t, to.Annotations, conversion.DefaultOTelColImageKey)
 
 		compareBase(t, from, to)
 	})
@@ -238,7 +262,7 @@ func TestConvertTo(t *testing.T) {
 
 		assert.NotEqual(t, "user-supplied-repo", to.Spec.Templates.OpenTelemetryCollector.ImageRef.Repository)
 		assert.NotEmpty(t, to.Spec.Templates.OpenTelemetryCollector.ImageRef.Tag)
-		assert.Contains(t, to.Annotations, conversion.DefaultOTELCImageKey)
+		assert.Contains(t, to.Annotations, conversion.DefaultOTelColImageKey)
 
 		compareBase(t, from, to)
 	})
@@ -258,7 +282,7 @@ func TestConvertTo(t *testing.T) {
 
 		assert.Equal(t, "user-supplied-repo", to.Spec.Templates.OpenTelemetryCollector.ImageRef.Repository)
 		assert.Equal(t, "user-tag", to.Spec.Templates.OpenTelemetryCollector.ImageRef.Tag)
-		assert.NotContains(t, to.Annotations, conversion.DefaultOTELCImageKey)
+		assert.NotContains(t, to.Annotations, conversion.DefaultOTelColImageKey)
 
 		compareBase(t, from, to)
 	})
@@ -273,6 +297,25 @@ func TestConvertTo(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Empty(t, to.Spec.Templates.OpenTelemetryCollector.ImageRef)
+
+		compareBase(t, from, to)
+	})
+
+	t.Run("stale default otelc image marker is dropped when image is user-set and telemetry disabled", func(t *testing.T) {
+		from := getOldDynakubeBase()
+		from.Spec.TelemetryIngest = nil
+		from.Spec.Templates.OpenTelemetryCollector.ImageRef = image.Ref{Repository: "user-supplied-repo", Tag: "user-tag"}
+		// Simulate a stale marker left behind by a previous conversion (e.g. from the removed prometheus path).
+		from.Annotations[conversion.DefaultOTelColImageKey] = "true"
+
+		to := dynakubelatest.DynaKube{}
+
+		err := from.ConvertTo(&to)
+		require.NoError(t, err)
+
+		assert.Equal(t, "user-supplied-repo", to.Spec.Templates.OpenTelemetryCollector.ImageRef.Repository)
+		assert.Equal(t, "user-tag", to.Spec.Templates.OpenTelemetryCollector.ImageRef.Tag)
+		assert.NotContains(t, to.Annotations, conversion.DefaultOTelColImageKey)
 
 		compareBase(t, from, to)
 	})
@@ -292,14 +335,14 @@ func TestConvertTo(t *testing.T) {
 
 	t.Run("migrate kspm templates from v1beta5 to latest", func(t *testing.T) {
 		from := getOldDynakubeBase()
-		from.Spec.Templates.KspmNodeConfigurationCollector = getOldNodeConfigurationCollectorTemplateSpec()
+		from.Spec.Templates.KSPMNodeConfigurationCollector = getOldNodeConfigurationCollectorTemplateSpec()
 
 		to := dynakubelatest.DynaKube{}
 
 		err := from.ConvertTo(&to)
 		require.NoError(t, err)
 
-		compareNodeConfigurationCollectorTemplateSpec(t, from.Spec.Templates.KspmNodeConfigurationCollector, to.Spec.Templates.KSPMNodeConfigurationCollector)
+		compareNodeConfigurationCollectorTemplateSpec(t, from.Spec.Templates.KSPMNodeConfigurationCollector, to.Spec.Templates.KSPMNodeConfigurationCollector)
 		compareBase(t, from, to)
 	})
 
@@ -338,6 +381,55 @@ func TestConvertTo(t *testing.T) {
 		assert.Equal(t, from.Spec.TelemetryIngest.ServiceName, to.Spec.TelemetryIngest.ServiceName)
 		assert.Equal(t, from.Spec.TelemetryIngest.TLSRefName, to.Spec.TelemetryIngest.TLSRefName)
 	})
+
+	t.Run("migrate kspm MappedHostPaths from v1beta5 to latest and back", func(t *testing.T) {
+		testCases := []struct {
+			name            string
+			mappedHostPaths []string
+			expected        []string
+		}{
+			{
+				name:            "single entry is preserved",
+				mappedHostPaths: []string{"/boot"},
+				expected:        []string{"/boot"},
+			},
+			{
+				name:            "multiple entries are preserved",
+				mappedHostPaths: []string{"/boot", "/etc"},
+				expected:        []string{"/boot", "/etc"},
+			},
+			{
+				name:            "empty slice is preserved",
+				mappedHostPaths: []string{},
+				expected:        []string{},
+			},
+			{
+				name:            "nil slice is preserved",
+				mappedHostPaths: nil,
+				expected:        nil,
+			},
+		}
+
+		for _, tc := range testCases {
+			t.Run(tc.name, func(t *testing.T) {
+				original := getNewDynakubeBase()
+				original.Spec.KSPM = &kspmlatest.Spec{
+					MappedHostPaths: tc.mappedHostPaths,
+				}
+
+				// latest -> v1beta5
+				intermediateDK := DynaKube{}
+				require.NoError(t, intermediateDK.ConvertFrom(&original))
+
+				// v1beta5 -> latest
+				migratedDK := dynakubelatest.DynaKube{}
+				require.NoError(t, intermediateDK.ConvertTo(&migratedDK))
+
+				require.NotNil(t, migratedDK.Spec.KSPM)
+				assert.Equal(t, tc.expected, migratedDK.Spec.KSPM.MappedHostPaths)
+			})
+		}
+	})
 }
 
 func getTestNamespaceSelector() metav1.LabelSelector {
@@ -373,8 +465,8 @@ func getOldDynakubeBase() DynaKube {
 			APIURL:           "api-url",
 			Tokens:           "token",
 			CustomPullSecret: "pull-secret",
-			EnableIstio:      true,
-			SkipCertCheck:    true,
+			EnableIstio:      new(true),
+			SkipCertCheck:    new(true),
 			Proxy: &value.Source{
 				Value:     "proxy-value",
 				ValueFrom: "proxy-from",
@@ -401,7 +493,7 @@ func getOldHostInjectSpec() oneagent.HostInjectSpec {
 		Tolerations: []corev1.Toleration{
 			{Key: "host-inject-toleration-key", Operator: "In", Value: "host-inject-toleration-value"},
 		},
-		AutoUpdate: new(false),
+		AutoUpdate: new(false), //nolint:staticcheck
 		DNSPolicy:  corev1.DNSClusterFirstWithHostNet,
 		Annotations: map[string]string{
 			"host-inject-annotation-key": "host-inject-annotation-value",
@@ -472,9 +564,9 @@ func getOldActiveGateSpec() activegate.Spec {
 		TLSSecretName:       "activegate-tls-secret-name",
 		PriorityClassName:   "activegate-priority-class-name",
 		Capabilities: []activegate.CapabilityDisplayName{
-			activegate.DynatraceAPICapability.DisplayName,
-			activegate.KubeMonCapability.DisplayName,
-			activegate.MetricsIngestCapability.DisplayName,
+			"dynatrace-api",
+			"kubernetes-monitoring",
+			"metrics-ingest",
 		},
 		CapabilityProperties: activegate.CapabilityProperties{
 			Labels: map[string]string{
@@ -612,7 +704,7 @@ func getOldExtensionExecutionControllerSpec() extensions.ExecutionControllerSpec
 		},
 		CustomConfig:                "custom-eec-config",
 		CustomExtensionCertificates: "custom-eec-certificates",
-		UseEphemeralVolume:          true,
+		UseEphemeralVolume:          new(true),
 	}
 }
 

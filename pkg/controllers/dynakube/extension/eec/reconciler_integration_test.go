@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package eec
 
 import (
@@ -12,15 +15,15 @@ func TestStatefulSet(t *testing.T) {
 
 	dk := getTestDynakube()
 
-	integrationtests.CreateNamespace(t, t.Context(), clt, testNamespaceName)
-	integrationtests.CreateDynakube(t, t.Context(), clt, dk)
+	integrationtests.CreateNamespace(t, clt, testNamespaceName)
+	integrationtests.CreateDynakube(t, clt, dk)
 	mockTLSSecret(t, clt, dk)
 
 	reconciler := NewReconciler(clt, clt)
 	err := reconciler.Reconcile(t.Context(), nil, dk)
 	require.NoError(t, err)
 
-	dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume = true
+	dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume = new(true)
 	err = reconciler.Reconcile(t.Context(), nil, dk)
 	require.NoError(t, err)
 }

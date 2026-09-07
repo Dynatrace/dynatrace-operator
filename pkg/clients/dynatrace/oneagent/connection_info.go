@@ -1,30 +1,115 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package oneagent
 
 import (
 	"context"
+	"slices"
+	"strings"
+	"sync"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/pkg/errors"
 )
 
 const (
 	connectionInfoPath = "/v1/deployment/installer/agent/connectioninfo"
+
+	endpointsSeparator = ";"
 )
 
-type ConnectionInfo struct {
-	TenantUUID  string `json:"tenantUUID"`
-	TenantToken string `json:"tenantToken"`
-	Endpoints   string `json:"formattedCommunicationEndpoints"`
-	// NOTE: connectionInfoPath also returns
-	// communicationEndpoints []string (individual endpoints as a slice), but we only
-	// use the pre-formatted Endpoints string above. The slice is available if needed in the future.
+var (
+	NoCommunicationEndpointsError  = errors.New("no communication endpoints for OneAgent are available")
+	StaleNetworkZoneEndpointsError = errors.New("OneAgent endpoints do not contain the local ActiveGate Service IP, waiting for the ActiveGate to register itself")
+)
+
+// connectionInfoResponse is the raw shape returned by the connectioninfo API.
+// It is unmarshalled directly from JSON and never exposed outside this package.
+// It implements core.Cacheable so that Execute opts the request into the HTTP-layer cache.
+type connectionInfoResponse struct {
+	TenantUUID             string   `json:"tenantUUID"`
+	TenantToken            string   `json:"tenantToken"`
+	CommunicationEndpoints []string `json:"communicationEndpoints"`
+
+	dedupOnce sync.Once
+
+	requiredHosts []string
+	validateOnce  sync.Once
+	missing       bool
 }
 
-func (c *ClientImpl) GetConnectionInfo(ctx context.Context) (ConnectionInfo, error) {
+func (r *connectionInfoResponse) IsEmpty() bool {
+	return r.TenantUUID == "" || r.TenantToken == "" || len(r.uniqueEndpoints()) == 0 || r.missingRequiredHosts()
+}
+
+// uniqueEndpoints deduplicates the CommunicationEndpoints and returns them.
+// It doesn't use "k8s.io/apimachinery/pkg/util/sets", as we want to:
+// 1. Strip whitespace.
+// 2. Maintain the order of the endpoints. `set.UnsortedList()` would put them in random order.
+// The non-deduplicated version of CommunicationEndpoints are not kept, as they serve no purpose.
+func (r *connectionInfoResponse) uniqueEndpoints() []string {
+	r.dedupOnce.Do(func() {
+		seen := map[string]bool{}
+
+		var uniqueEndpoints []string
+
+		for _, endpoint := range r.CommunicationEndpoints {
+			endpoint = strings.TrimSpace(endpoint)
+			if endpoint == "" {
+				continue
+			}
+
+			if seen[endpoint] {
+				continue
+			}
+
+			seen[endpoint] = true
+			uniqueEndpoints = append(uniqueEndpoints, endpoint)
+		}
+
+		r.CommunicationEndpoints = uniqueEndpoints
+	})
+
+	return r.CommunicationEndpoints
+}
+
+// missingRequiredHosts validates if the requested endpoints contain atleast on of the `requiredHosts`.
+// This is needed to support the (strict) network-zone scenario where the OA should only talk to the local ActiveGate.
+// To make sure this happens, this func is ment to invalidate the cache until the local ActiveGate successfully registered itself.
+func (r *connectionInfoResponse) missingRequiredHosts() bool {
+	r.validateOnce.Do(func() {
+		r.missing = len(r.requiredHosts) > 0
+
+		for _, endpoint := range r.CommunicationEndpoints {
+			if r.missing {
+				if ch, err := connectioninfo.NewCommunicationHost(endpoint); err == nil {
+					r.missing = !slices.Contains(r.requiredHosts, ch.Host)
+				}
+			}
+		}
+	})
+
+	return r.missing
+}
+
+// ConnectionInfo is the public result of GetConnectionInfo. Endpoints is
+// always deduplicated and semicolon-separated, consumers never see the raw
+// endpoint list returned by the API
+type ConnectionInfo struct {
+	TenantUUID  string
+	TenantToken string
+	Endpoints   string
+}
+
+func (c *ClientImpl) GetConnectionInfo(ctx context.Context, requiredHosts []string) (ConnectionInfo, error) {
 	ctx, log := logd.NewFromContext(ctx, loggerName)
 
-	var resp ConnectionInfo
+	resp := connectionInfoResponse{
+		requiredHosts: requiredHosts,
+	}
 
 	params := map[string]string{}
 	if c.networkZone != "" {
@@ -47,5 +132,17 @@ func (c *ClientImpl) GetConnectionInfo(ctx context.Context) (ConnectionInfo, err
 		return ConnectionInfo{}, errors.WithStack(err)
 	}
 
-	return resp, nil
+	if len(resp.uniqueEndpoints()) == 0 {
+		err = NoCommunicationEndpointsError
+	} else if resp.missingRequiredHosts() {
+		err = StaleNetworkZoneEndpointsError
+	}
+
+	result := ConnectionInfo{
+		TenantUUID:  resp.TenantUUID,
+		TenantToken: resp.TenantToken,
+		Endpoints:   strings.Join(resp.uniqueEndpoints(), endpointsSeparator),
+	}
+
+	return result, err
 }

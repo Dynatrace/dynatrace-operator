@@ -1,0 +1,12 @@
+apiVersion: dynatrace.com/v1alpha2
+kind: EdgeConnect
+metadata:
+  name: minimal
+  namespace: default
+spec:
+  apiServer: foo.dev.apps.dynatracelabs.com
+  oauth:
+    clientSecret: secret
+    endpoint: https://sso.dynatrace.com/sso/oauth2/token
+    provisioner: false
+    resource: urn:dtaccount:test

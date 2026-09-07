@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package endpoint
 
 import (
@@ -17,6 +20,8 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+const configMapConditionType = "OtelpApiEndpointConfigMap"
 
 type Reconciler struct {
 	configMaps k8sconfigmap.QueryObject
@@ -77,7 +82,7 @@ func (r *Reconciler) reconcileConfigMap(ctx context.Context, dk *dynakube.DynaKu
 	configMap, err := k8sconfigmap.Build(dk,
 		consts.OTLPAPIEndpointConfigMapName,
 		configMapData,
-		k8sconfigmap.SetLabels(k8slabel.NewCoreLabels(dk.Name, k8slabel.OtelCComponentLabel).BuildLabels()),
+		k8sconfigmap.SetLabels(k8slabel.NewCoreLabels(dk.Name, k8slabel.OTelColComponentLabel).BuildLabels()),
 	)
 	if err != nil {
 		k8sconditions.SetKubeAPIError(dk.Conditions(), configMapConditionType, err)

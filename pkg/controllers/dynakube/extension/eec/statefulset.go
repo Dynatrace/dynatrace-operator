@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package eec
 
 import (
@@ -26,6 +29,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
 )
 
 const (
@@ -51,24 +55,23 @@ const (
 	// Env variable values
 	envExtensionsModuleExecPath = "/opt/dynatrace/remotepluginmodule/agent/lib64/extensionsmodule"
 	envDsInstallDir             = "/opt/dynatrace/remotepluginmodule/agent/datasources"
-	envActiveGateTrustedCert    = activeGateTrustedCertMountPath + "/" + activeGateTrustedCertSecretKeyPath
+	envActiveGateTrustedCert    = activeGateTrustedCertMountPath + "/" + consts.TLSServerCrtDataName
 	envEECHTTPSCertPathPem      = httpsCertMountPath + "/" + consts.TLSCrtDataName
 	envEECHTTPSPrivKeyPathPem   = httpsCertMountPath + "/" + consts.TLSKeyDataName
 	// Volume names and paths
-	eecTokenMountPath                  = "/secrets/tokens"
-	customCertificateMountPath         = "/secrets/extensions"
-	customCertificateVolumeName        = "extension-custom-certs"
-	runtimeVolumeName                  = "agent-runtime"
-	runtimeMountPath                   = "/var/lib/dynatrace/remotepluginmodule"
-	customConfigVolumeName             = "custom-config"
-	customConfigMountPath              = "/secrets/config"
-	activeGateTrustedCertVolumeName    = "server-certs"
-	activeGateTrustedCertMountPath     = "/secrets/ag"
-	activeGateTrustedCertSecretKeyPath = "server.crt"
-	httpsCertVolumeName                = "https-certs"
-	httpsCertMountPath                 = "/secrets/https"
-	runtimeConfigurationFilename       = "runtimeConfiguration"
-	serviceURLScheme                   = "https://"
+	eecTokenMountPath               = "/secrets/tokens"
+	customCertificateMountPath      = "/secrets/extensions"
+	customCertificateVolumeName     = "extension-custom-certs"
+	runtimeVolumeName               = "agent-runtime"
+	runtimeMountPath                = "/var/lib/dynatrace/remotepluginmodule"
+	customConfigVolumeName          = "custom-config"
+	customConfigMountPath           = "/secrets/config"
+	activeGateTrustedCertVolumeName = "server-certs"
+	activeGateTrustedCertMountPath  = "/secrets/ag"
+	httpsCertVolumeName             = "https-certs"
+	httpsCertMountPath              = "/secrets/https"
+	runtimeConfigurationFilename    = "runtimeConfiguration"
+	serviceURLScheme                = "https://"
 
 	legacyConfigurationVolumeName = "runtime-configuration"
 	legacyConfigurationMountPath  = "/var/lib/dynatrace/remotepluginmodule/agent/conf"
@@ -109,7 +112,7 @@ func (r *Reconciler) createOrUpdateStatefulset(ctx context.Context, dk *dynakube
 		k8sstatefulset.SetServiceAccount(serviceAccountName),
 		k8sstatefulset.SetSecurityContext(buildPodSecurityContext()),
 		k8sstatefulset.SetRollingUpdateStrategyType(),
-		setImagePullSecrets(dk.CustomPullSecretReferences()),
+		k8sstatefulset.SetImagePullSecrets(dk.CustomPullSecretReferences()),
 		setVolumes(dk),
 		setPersistentVolumeClaim(dk),
 	)
@@ -164,17 +167,11 @@ func buildAffinity() corev1.Affinity {
 	return k8saffinity.NewMultiArchNodeAffinity()
 }
 
-func setImagePullSecrets(imagePullSecrets []corev1.LocalObjectReference) func(o *appsv1.StatefulSet) {
-	return func(o *appsv1.StatefulSet) {
-		o.Spec.Template.Spec.ImagePullSecrets = imagePullSecrets
-	}
-}
-
 func buildContainer(dk *dynakube.DynaKube, imageURI string) corev1.Container {
 	return corev1.Container{
 		Name:            containerName,
 		Image:           imageURI,
-		ImagePullPolicy: dk.Spec.Templates.ExtensionExecutionController.ImageRef.GetPullPolicy(),
+		ImagePullPolicy: dk.Spec.Templates.ExtensionExecutionController.ImageRef.PullPolicy,
 		ReadinessProbe: &corev1.Probe{
 			ProbeHandler: corev1.ProbeHandler{
 				HTTPGet: &corev1.HTTPGetAction{
@@ -433,7 +430,7 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 			}
 		}
 
-		if dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume {
+		if ptr.Deref(dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume, false) {
 			o.Spec.Template.Spec.Volumes = append(o.Spec.Template.Spec.Volumes, corev1.Volume{
 				Name: runtimeVolumeName,
 				VolumeSource: corev1.VolumeSource{
@@ -464,8 +461,8 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 						SecretName:  dk.ActiveGate().GetTLSSecretName(),
 						Items: []corev1.KeyToPath{
 							{
-								Key:  activeGateTrustedCertSecretKeyPath,
-								Path: activeGateTrustedCertSecretKeyPath,
+								Key:  consts.TLSServerCrtDataName,
+								Path: consts.TLSServerCrtDataName,
 							},
 						},
 					},
@@ -489,7 +486,7 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 
 func setPersistentVolumeClaim(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 	return func(o *appsv1.StatefulSet) {
-		if !dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume {
+		if !ptr.Deref(dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume, false) {
 			if dk.Spec.Templates.ExtensionExecutionController.PersistentVolumeClaim == nil {
 				o.Spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{
 					{

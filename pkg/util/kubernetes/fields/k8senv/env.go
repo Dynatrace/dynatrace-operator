@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package k8senv
 
 import (
@@ -23,12 +26,20 @@ const (
 	AppVersion                  = "APP_VERSION"
 
 	DTExtractCodeModulesImageLinksEnvVar = "DT_EXTRACT_CODEMODULES_IMAGE_LINKS"
-	KubemonEnableOperand                 = "KUBEMON_ENABLE_OPERAND"
+	ExperimentalEnableKubemonOperand     = "EXPERIMENTAL_ENABLE_KUBEMON_OPERAND"
+	ExperimentalEnablePrometheus         = "EXPERIMENTAL_ENABLE_PROMETHEUS"
 
 	DTClientCacheCleanInterval        = "DT_CLIENT_CACHE_CLEAN_INTERVAL"
 	defaultDTClientCacheCleanInterval = time.Hour
 	minDTClientCacheCleanInterval     = 5 * time.Minute
 	maxDTClientCacheCleanInterval     = 100 * time.Hour
+
+	DTClientConnectionTimeoutEnvVar = "DT_CLIENT_CONNECTION_TIMEOUT"
+	// DefaultCSIDriverDTClientConnectionTimeout enough time to download an OneAgent package of about 1GB in size
+	DefaultCSIDriverDTClientConnectionTimeout = maxDTClientConnectionTimeout
+	DefaultOperatorDTClientConnectionTimeout  = minDTClientConnectionTimeout
+	minDTClientConnectionTimeout              = 30 * time.Second
+	maxDTClientConnectionTimeout              = 15 * time.Minute
 
 	DefaultRequeueAfterEnvVar = "DT_DEFAULT_REQUEUE_AFTER"
 	defaultRequeueInterval    = 15 * time.Minute
@@ -54,6 +65,9 @@ const (
 	defaultWebhookCertsRootDuration = 365 * 24 * time.Hour
 	minWebhookCertsRootDuration     = 7 * 24 * time.Hour
 	maxWebhookCertsRootDuration     = 10 * 365 * 24 * time.Hour
+
+	WebhookMetadataSizeLimitEnvVar       = "DT_METADATA_SIZE_LIMIT"
+	defaultWebhookMetadataSizeLimitValue = 24 * 1024
 )
 
 func Find(envVars []corev1.EnvVar, name string) *corev1.EnvVar {
@@ -133,11 +147,19 @@ func GetCSIDataDir() string {
 }
 
 func GetDefaultRequeueAfter(ctx context.Context) time.Duration {
-	return parseDuration(ctx, DefaultRequeueAfterEnvVar, defaultRequeueInterval, minRequeueInterval, maxRequeueInterval)
+	return getSafeDurationFromEnv(ctx, DefaultRequeueAfterEnvVar, defaultRequeueInterval, minRequeueInterval, maxRequeueInterval)
 }
 
 func GetDTClientCacheCleanInterval(ctx context.Context) time.Duration {
-	return parseDuration(ctx, DTClientCacheCleanInterval, defaultDTClientCacheCleanInterval, minDTClientCacheCleanInterval, maxDTClientCacheCleanInterval)
+	return getSafeDurationFromEnv(ctx, DTClientCacheCleanInterval, defaultDTClientCacheCleanInterval, minDTClientCacheCleanInterval, maxDTClientCacheCleanInterval)
+}
+
+func GetOperatorDTClientConnectionTimeout(ctx context.Context) time.Duration {
+	return getSafeDurationFromEnv(ctx, DTClientConnectionTimeoutEnvVar, DefaultOperatorDTClientConnectionTimeout, minDTClientConnectionTimeout, maxDTClientConnectionTimeout)
+}
+
+func GetCSIDriverDTClientConnectionTimeout(ctx context.Context) time.Duration {
+	return getSafeDurationFromEnv(ctx, DTClientConnectionTimeoutEnvVar, DefaultCSIDriverDTClientConnectionTimeout, minDTClientConnectionTimeout, maxDTClientConnectionTimeout)
 }
 
 // GetDTExtractCodeModulesImageLinks reads the value of DT_EXTRACT_CODEMODULES_IMAGE_LINKS.
@@ -159,7 +181,21 @@ func GetDTExtractCodeModulesImageLinks(ctx context.Context) bool {
 }
 
 func IsKubemonOperandEnabled() bool {
-	rawValue := os.Getenv(KubemonEnableOperand)
+	rawValue := os.Getenv(ExperimentalEnableKubemonOperand)
+	if rawValue == "" {
+		return false
+	}
+
+	value, err := strconv.ParseBool(rawValue)
+	if err != nil {
+		return false
+	}
+
+	return value
+}
+
+func IsPrometheusEnabled() bool {
+	rawValue := os.Getenv(ExperimentalEnablePrometheus)
 	if rawValue == "" {
 		return false
 	}
@@ -177,22 +213,22 @@ func NewRef(envName string) string {
 }
 
 func GetWebhookCertsRequeueAfter(ctx context.Context) time.Duration {
-	return parseDuration(ctx, WebhookCertsRequeueAfterEnvVar, defaultWebhookCertsRequeueAfter, minWebhookCertsRequeueAfter, maxWebhookCertsRequeueAfter)
+	return getSafeDurationFromEnv(ctx, WebhookCertsRequeueAfterEnvVar, defaultWebhookCertsRequeueAfter, minWebhookCertsRequeueAfter, maxWebhookCertsRequeueAfter)
 }
 
 func GetWebhookCertsRenewalThreshold(ctx context.Context) time.Duration {
-	return parseDuration(ctx, WebhookCertsRenewalThresholdEnvVar, defaultWebhookCertsRenewalThreshold, minWebhookCertsRenewalThreshold, maxWebhookCertsRenewalThreshold)
+	return getSafeDurationFromEnv(ctx, WebhookCertsRenewalThresholdEnvVar, defaultWebhookCertsRenewalThreshold, minWebhookCertsRenewalThreshold, maxWebhookCertsRenewalThreshold)
 }
 
 func GetWebhookCertsServerDuration(ctx context.Context) time.Duration {
-	return parseDuration(ctx, WebhookCertsServerDurationEnvVar, defaultWebhookCertsServerDuration, minWebhookCertsServerDuration, maxWebhookCertsServerDuration)
+	return getSafeDurationFromEnv(ctx, WebhookCertsServerDurationEnvVar, defaultWebhookCertsServerDuration, minWebhookCertsServerDuration, maxWebhookCertsServerDuration)
 }
 
 func GetWebhookCertsRootDuration(ctx context.Context) time.Duration {
-	return parseDuration(ctx, WebhookCertsRootDurationEnvVar, defaultWebhookCertsRootDuration, minWebhookCertsRootDuration, maxWebhookCertsRootDuration)
+	return getSafeDurationFromEnv(ctx, WebhookCertsRootDurationEnvVar, defaultWebhookCertsRootDuration, minWebhookCertsRootDuration, maxWebhookCertsRootDuration)
 }
 
-func parseDuration(ctx context.Context, envVar string, defaultValue, minValue, maxValue time.Duration) time.Duration {
+func getSafeDurationFromEnv(ctx context.Context, envVar string, defaultValue, minValue, maxValue time.Duration) time.Duration {
 	_, log := logd.NewFromContext(ctx, "k8senv")
 
 	rawDuration := os.Getenv(envVar)
@@ -218,4 +254,45 @@ func parseDuration(ctx context.Context, envVar string, defaultValue, minValue, m
 	log.Info("using custom duration", "env", envVar, "value", duration)
 
 	return duration
+}
+
+func GetMetadaSizeLimit(ctx context.Context) int {
+	var log logd.Logger
+	if ctx != nil {
+		_, log = logd.NewFromContext(ctx, "k8senv")
+	}
+
+	rawValue := os.Getenv(WebhookMetadataSizeLimitEnvVar)
+	if rawValue == "" {
+		if ctx != nil {
+			log.Debug("no custom env set, using default", "env", WebhookMetadataSizeLimitEnvVar, "default", defaultWebhookMetadataSizeLimitValue)
+		}
+
+		return defaultWebhookMetadataSizeLimitValue
+	}
+
+	value, err := strconv.Atoi(rawValue)
+	if err != nil || value < 0 {
+		if ctx != nil {
+			log.Error(err, "invalid int value, using default", "env", WebhookMetadataSizeLimitEnvVar, "value", rawValue, "default", defaultWebhookMetadataSizeLimitValue)
+		}
+
+		return defaultWebhookMetadataSizeLimitValue
+	}
+
+	if ctx != nil {
+		log.Info("using custom int value", "env", WebhookMetadataSizeLimitEnvVar, "value", value)
+	}
+
+	return value
+}
+
+// AppendGoMemoryLimit appends GOMEMLIMIT env var
+func AppendGoMemoryLimit(envs []corev1.EnvVar, resources corev1.ResourceRequirements) []corev1.EnvVar {
+	if memLimit := resources.Limits.Memory(); !memLimit.IsZero() {
+		gomemlimit := memLimit.Value() / 10 * 9 //nolint:mnd // 90%
+		envs = append(envs, corev1.EnvVar{Name: "GOMEMLIMIT", Value: strconv.FormatInt(gomemlimit, 10)})
+	}
+
+	return envs
 }

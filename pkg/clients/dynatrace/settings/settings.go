@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 // Package settings implements a client for the v2 settings API.
 package settings
 
@@ -61,6 +64,16 @@ type Client interface {
 	GetKSPMSettings(ctx context.Context, monitoredEntity string) (KSPMSettingsResponse, error)
 	// CreateKSPMSetting returns the object ID of the created kspm settings.
 	CreateKSPMSetting(ctx context.Context, monitoredEntity string, datasetPipelineEnabled bool) (string, error)
+	// GetEnrichmentRuleObjects returns the list of enrichment rule settings objects (with objectIds) for the given scope.
+	// Only intended for e2e tests, where the number of rules is small. Does not handle pagination.
+	GetEnrichmentRuleObjects(ctx context.Context, scope string) ([]EnrichmentRuleObject, error)
+	// GetLegacyEnrichmentRuleObjects returns enrichment rule settings objects for the legacy schema (builtin:kubernetes.generic.metadata.enrichment).
+	// Only intended for e2e tests, where the number of rules is small. Does not handle pagination.
+	GetLegacyEnrichmentRuleObjects(ctx context.Context, scope string) ([]EnrichmentRuleObject, error)
+	// CreateEnrichmentRuleObject creates a settings object for the builtin:ingest.enrichment.config schema.
+	CreateEnrichmentRuleObject(ctx context.Context, scope string, rules ...metadataenrichment.Rule) ([]string, error)
+	// CreateLegacyEnrichmentRuleObject creates a settings object for the builtin:kubernetes.generic.metadata.enrichment schema.
+	CreateLegacyEnrichmentRuleObject(ctx context.Context, scope string, rules ...metadataenrichment.Rule) ([]string, error)
 	// DeleteSettings deletes the settings for a monitored entity.
 	DeleteSettings(ctx context.Context, settingsID string) error
 }
@@ -103,21 +116,22 @@ type postObjectsResponse struct {
 
 type postObjectsBody[T any] struct {
 	SchemaID      string `json:"schemaId"`
-	SchemaVersion string `json:"schemaVersion"`
+	SchemaVersion string `json:"schemaVersion,omitempty"`
 	Scope         string `json:"scope,omitempty"`
 	Value         T      `json:"value"`
 }
 
-// As of 1.26 type deduction is not good enough to omit the type from struct initialization.
-func newPostObjectsBody[T any](schemaID, schemaVersion, scope string, value T) []postObjectsBody[T] {
-	return []postObjectsBody[T]{
-		{
-			SchemaID:      schemaID,
-			SchemaVersion: schemaVersion,
-			Scope:         scope,
-			Value:         value,
-		},
+func newPostObjectsBody[T any](schemaID, schemaVersion, scope string, values ...T) []postObjectsBody[T] {
+	body := make([]postObjectsBody[T], len(values))
+
+	for i, value := range values {
+		body[i].SchemaID = schemaID
+		body[i].SchemaVersion = schemaVersion
+		body[i].Scope = scope
+		body[i].Value = value
 	}
+
+	return body
 }
 
 // getObjectID gives back the ID of the first element of the post response.

@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package dynakube
 
 import (
@@ -10,7 +13,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	dynatracestatus "github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
-	agclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
@@ -37,7 +39,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8scrd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sevent"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/system"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/tenant/optionalscope"
 	"github.com/pkg/errors"
@@ -102,7 +103,7 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, ev
 		kspmReconciler:               kspm.NewReconciler(kubeClient, apiReader),
 		kubemonReconciler:            kubemon.NewReconciler(kubeClient),
 		k8sEntityReconciler:          k8sentity.NewReconciler(),
-		otelcReconciler:              otelc.NewReconciler(kubeClient, apiReader),
+		oTelColReconciler:            otelc.NewReconciler(kubeClient, apiReader),
 		proxyReconciler:              proxy.NewReconciler(kubeClient, apiReader),
 		deploymentMetadataReconciler: deploymentmetadata.NewReconciler(kubeClient, apiReader, clusterID),
 		istioReconciler:              istio.NewReconciler(kubeClient, apiReader),
@@ -145,6 +146,10 @@ type extensionReconciler interface {
 	Reconcile(ctx context.Context, imageClient image.Client, dk *dynakube.DynaKube) error
 }
 
+type oTelColReconciler interface {
+	Reconcile(ctx context.Context, imageClient image.Client, dk *dynakube.DynaKube) error
+}
+
 // dtSettingReconciler is a reconciler that uses the Dynatrace's Settings API during its reconcile.
 type dtSettingReconciler interface {
 	Reconcile(ctx context.Context, dtClient settings.Client, dk *dynakube.DynaKube) error
@@ -171,7 +176,7 @@ type injectionReconciler interface {
 }
 
 type kubemonReconciler interface {
-	Reconcile(ctx context.Context, dk *dynakube.DynaKube, agClient agclient.Client, tokens token.Tokens) error
+	Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtClient *dynatrace.Client, tokens token.Tokens) error
 }
 
 // Controller reconciles a DynaKube object
@@ -186,7 +191,7 @@ type Controller struct {
 	k8sEntityReconciler          dtSettingReconciler
 	kspmReconciler               kspmReconciler
 	kubemonReconciler            kubemonReconciler
-	otelcReconciler              dynakubeReconciler
+	oTelColReconciler            oTelColReconciler
 	proxyReconciler              dynakubeReconciler
 	deploymentMetadataReconciler dynakubeReconciler
 	istioReconciler              istioReconciler
@@ -365,7 +370,7 @@ func (controller *Controller) setupTokensAndClient(ctx context.Context, dk *dyna
 
 	controller.tokens = tokens
 
-	dtClient, err := controller.dtClientFactory(ctx, controller.apiReader, dk, tokens.APIToken().String(), tokens.PaasToken().String(), "")
+	dtClient, err := controller.dtClientFactory(ctx, controller.apiReader, dk, tokens.APIToken().String(), tokens.PaasToken().String(), "", k8senv.GetOperatorDTClientConnectionTimeout(ctx))
 	if err != nil {
 		controller.setConditionTokenError(dk, err)
 
@@ -386,7 +391,6 @@ func (controller *Controller) setupTokensAndClient(ctx context.Context, dk *dyna
 	return dtClient, nil
 }
 
-//nolint:revive // complexity is above 13; this function needs refactoring.
 func (controller *Controller) reconcileComponents(ctx context.Context, dtClient *dynatrace.Client, dk *dynakube.DynaKube) error {
 	log := logd.FromContext(ctx)
 
@@ -407,9 +411,9 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dtClient 
 
 	log.Debug("start reconciling KubernetesMonitoring")
 
-	if err := controller.kubemonReconciler.Reconcile(ctx, dk, dtClient.ActiveGate, controller.tokens); err != nil {
-		if errors.Is(err, k8sstatefulset.ErrRolloutInProgress) {
-			// rollout in progress is transient and shouldn't be reported as a component error
+	if err := controller.kubemonReconciler.Reconcile(ctx, dk, dtClient, controller.tokens); err != nil {
+		if kubemon.IsTransientError(err) {
+			// transient kubemon state (e.g. rollout in progress, connection info not ready) is not a component error
 			controller.setRequeueAfterIfNewIsShorter(fastRequeueInterval)
 		} else {
 			log.Info("could not reconcile KubernetesMonitoring")
@@ -426,7 +430,7 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dtClient 
 
 	log.Info("start reconciling otel-collector")
 
-	if err := controller.otelcReconciler.Reconcile(ctx, dk); err != nil {
+	if err := controller.oTelColReconciler.Reconcile(ctx, dtClient.Images, dk); err != nil {
 		log.Info("could not reconcile otelc")
 
 		componentErrors = append(componentErrors, err)
@@ -444,7 +448,7 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dtClient 
 
 	err = controller.logMonitoringReconciler.Reconcile(ctx, dtClient, dk)
 	if err != nil {
-		if isPostponedConnectionInfoError(err) || errors.Is(err, logmondaemonset.KubernetesSettingsNotAvailableError) {
+		if oaconnectioninfo.IsPostponedError(err) || errors.Is(err, logmondaemonset.KubernetesSettingsNotAvailableError) {
 			controller.setRequeueAfterIfNewIsShorter(fastRequeueInterval)
 
 			return goerrors.Join(componentErrors...)
@@ -459,7 +463,7 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dtClient 
 
 	err = controller.injectionReconciler.Reconcile(ctx, dtClient, dk)
 	if err != nil {
-		if isPostponedConnectionInfoError(err) {
+		if oaconnectioninfo.IsPostponedError(err) {
 			// missing or stale communication endpoints is not an error per se, just make sure next the reconciliation is happening ASAP
 			// this situation will clear itself after AG has been started or re-registered
 			controller.setRequeueAfterIfNewIsShorter(fastRequeueInterval)
@@ -476,7 +480,7 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dtClient 
 
 	err = controller.oneAgentReconciler.Reconcile(ctx, dk, dtClient, controller.tokens)
 	if err != nil {
-		if isPostponedConnectionInfoError(err) {
+		if oaconnectioninfo.IsPostponedError(err) {
 			// missing or stale communication endpoints is not an error per se, just make sure next the reconciliation is happening ASAP
 			// this situation will clear itself after AG has been started or re-registered
 			controller.setRequeueAfterIfNewIsShorter(fastRequeueInterval)
@@ -490,15 +494,6 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dtClient 
 	}
 
 	return goerrors.Join(componentErrors...)
-}
-
-// isPostponedConnectionInfoError reports whether the error indicates a transient
-// OneAgent connection-info state that resolves itself once the local ActiveGate is
-// ready or has re-registered. Callers treat these as "not yet ready" and trigger a
-// fast requeue instead of surfacing them as reconcile failures.
-func isPostponedConnectionInfoError(err error) bool {
-	return errors.Is(err, oaconnectioninfo.NoOneAgentCommunicationEndpointsError) ||
-		errors.Is(err, oaconnectioninfo.StaleNetworkZoneEndpointsError)
 }
 
 func (controller *Controller) createDynakubeMapper(ctx context.Context, dk *dynakube.DynaKube) *mapper.DynakubeMapper {

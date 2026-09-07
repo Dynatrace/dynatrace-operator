@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 // Package kubemon reconciles the dedicated Kubernetes Monitoring operand.
 //
 // Non-obvious behavior:
@@ -18,8 +21,16 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	kubemonapi "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	agclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/version"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dtpullsecret"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
+	kubemonauthtoken "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/authtoken"
 	kubemonconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/connectioninfo"
+	kubemoncustomproperties "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/customproperties"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/gateway"
 	kubemonstatefulset "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
@@ -28,6 +39,7 @@ import (
 	pkgerrors "github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/clock"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -43,29 +55,59 @@ type connectionInfoReconciler interface {
 	Reconcile(ctx context.Context, agClient agclient.Client, dk *dynakube.DynaKube) error
 }
 
+type authTokenReconciler interface {
+	Reconcile(ctx context.Context, agClient agclient.Client, dk *dynakube.DynaKube) error
+}
+
 type statefulsetReconciler interface {
+	Reconcile(ctx context.Context, dk *dynakube.DynaKube, imageClient image.Client, versionClient version.Client) error
+}
+
+type pullSecretReconciler interface {
+	Reconcile(ctx context.Context, dk *dynakube.DynaKube, tokens token.Tokens) error
+}
+
+type customPropertiesReconciler interface {
 	Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
+}
+
+type gatewayReconciler interface {
+	Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
+}
+
+type istioReconciler interface {
+	ReconcileActiveGate(ctx context.Context, dk *dynakube.DynaKube) error
 }
 
 // Reconciler orchestrates the kubemon operand. Sub-reconciler fields are interfaces so they
 // can be mocked in tests.
 type Reconciler struct {
-	connectionInfoReconciler connectionInfoReconciler
-	statefulsetReconciler    statefulsetReconciler
+	connectionInfoReconciler   connectionInfoReconciler
+	authTokenReconciler        authTokenReconciler
+	statefulsetReconciler      statefulsetReconciler
+	pullSecretReconciler       pullSecretReconciler
+	customPropertiesReconciler customPropertiesReconciler
+	gatewayReconciler          gatewayReconciler
+	istioReconciler            istioReconciler
 }
 
 func NewReconciler(kubeClient client.Client) *Reconciler {
 	return &Reconciler{
-		connectionInfoReconciler: kubemonconnectioninfo.NewReconciler(kubeClient),
-		statefulsetReconciler:    kubemonstatefulset.NewReconciler(kubeClient),
+		connectionInfoReconciler:   kubemonconnectioninfo.NewReconciler(kubeClient),
+		authTokenReconciler:        kubemonauthtoken.NewReconciler(kubeClient, clock.RealClock{}),
+		statefulsetReconciler:      kubemonstatefulset.NewReconciler(kubeClient),
+		pullSecretReconciler:       dtpullsecret.NewReconciler(kubeClient, kubeClient),
+		customPropertiesReconciler: kubemoncustomproperties.NewReconciler(kubeClient),
+		gatewayReconciler:          gateway.NewReconciler(kubeClient),
+		istioReconciler:            istio.NewReconciler(kubeClient, kubeClient),
 	}
 }
 
 // Reconcile is the operand entry point called by the parent DynaKube controller.
 // Sub-reconcilers mutate dk.Status.KubernetesMonitoring.* and dk.Status.Conditions in-memory;
 // the parent controller persists status changes via deferred Status().Update().
-func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, agClient agclient.Client, _ token.Tokens) (err error) {
-	ctx, log := logd.NewFromContext(ctx, "dynakube-kubemon")
+func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtclient *dynatrace.Client, tokens token.Tokens) (err error) {
+	ctx, log := logd.NewFromContext(ctx, "kubemon")
 
 	// Temporary gate, to be removed once kubemon is complete
 	if !k8senv.IsKubemonOperandEnabled() {
@@ -78,17 +120,49 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, agCli
 
 	defer func() { r.reconcileCondition(dk, err) }()
 
-	if err = r.connectionInfoReconciler.Reconcile(ctx, agClient, dk); err != nil {
+	if err = r.connectionInfoReconciler.Reconcile(ctx, dtclient.ActiveGate, dk); err != nil {
 		return err
 	}
 
-	if err = r.statefulsetReconciler.Reconcile(ctx, dk); err != nil {
+	if !dk.ActiveGate().IsEnabled() {
+		if err = r.istioReconciler.ReconcileActiveGate(ctx, dk); err != nil {
+			return err
+		}
+	}
+
+	if err = r.authTokenReconciler.Reconcile(ctx, dtclient.ActiveGate, dk); err != nil {
+		return err
+	}
+
+	if err = r.pullSecretReconciler.Reconcile(ctx, dk, tokens); err != nil {
+		return err
+	}
+
+	if err = r.customPropertiesReconciler.Reconcile(ctx, dk); err != nil {
+		return err
+	}
+
+	if err = r.gatewayReconciler.Reconcile(ctx, dk); err != nil {
+		return err
+	}
+
+	if err = r.statefulsetReconciler.Reconcile(ctx, dk, dtclient.Images, dtclient.Version); err != nil {
 		return err
 	}
 
 	log.Debug("reconciled kubernetes monitoring")
 
 	return nil
+}
+
+// IsTransientError reports whether err represents a converging/transient kubemon state
+// (e.g. rollout in progress, connection info not yet ready) rather than a hard failure.
+// Callers such as the parent DynaKube controller should trigger a fast requeue instead of
+// treating it as a component error. This is the single place new transient sentinels need
+// to be registered.
+func IsTransientError(err error) bool {
+	return errors.Is(err, k8sstatefulset.ErrRolloutInProgress) ||
+		errors.Is(err, kubemonconnectioninfo.ErrConnectionInfoNotReady)
 }
 
 func (r *Reconciler) reconcileCondition(dk *dynakube.DynaKube, err error) {
@@ -107,8 +181,7 @@ func (r *Reconciler) reconcileCondition(dk *dynakube.DynaKube, err error) {
 		condition.Status = metav1.ConditionTrue
 		condition.Reason = reasonAvailable
 		condition.Message = messageAvailable
-	case errors.Is(err, k8sstatefulset.ErrRolloutInProgress),
-		errors.Is(err, kubemonconnectioninfo.ErrConnectionInfoNotReady):
+	case IsTransientError(err):
 		condition.Status = metav1.ConditionFalse
 		condition.Reason = reasonReconciling
 		condition.Message = pkgerrors.Cause(err).Error()

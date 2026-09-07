@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 //go:build e2e
 
 package nocsi
@@ -13,7 +16,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/cloudnative"
 	cloudnativeStandard "github.com/Dynatrace/dynatrace-operator/test/e2e/features/cloudnative/standard"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/edgeconnect"
-	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/extensions"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/extensions/dbexecutor"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/hostmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/kspm"
@@ -79,8 +81,8 @@ func TestNoCSI_metadata_enrichment(t *testing.T) {
 	testEnv.Test(t, applicationmonitoring.MetadataEnrichment(t))
 }
 
-func TestNoCSI_metadata_enrichment_without_deprecated_attributes(t *testing.T) {
-	testEnv.Test(t, applicationmonitoring.MetadataEnrichmentWithoutDeprecatedAttributes(t))
+func TestNoCSI_enrichment_rules(t *testing.T) {
+	testEnv.Test(t, applicationmonitoring.EnrichmentRules(t))
 }
 
 func TestNoCSI_otlp_exporter_configuration(t *testing.T) {
@@ -113,10 +115,6 @@ func TestNoCSI_labelversion(t *testing.T) {
 
 func TestNoCSI_app_monitoring_without_csi(t *testing.T) {
 	testEnv.Test(t, applicationmonitoring.WithoutCSI(t))
-}
-
-func TestNoCSI_extensions(t *testing.T) {
-	testEnv.Test(t, extensions.Feature(t))
 }
 
 func TestNoCSI_edgeconnect_install(t *testing.T) {
@@ -233,7 +231,7 @@ func TestNoCSI_telemetryingest_w_otel_collector_endpoint_tls(t *testing.T) {
 }
 
 func TestNoCSI_telemetryingest_configuration_update(t *testing.T) {
-	testEnv.Test(t, telemetryingest.OtelCollectorConfigUpdate(t))
+	testEnv.Test(t, telemetryingest.OTelCollectorConfigUpdate(t))
 }
 
 func TestNoCSI_telemetryingest_scaling_hpa(t *testing.T) {
@@ -250,6 +248,10 @@ func TestNoCSI_kspm(t *testing.T) {
 
 func TestNoCSI_kspm_with_optional_scopes(t *testing.T) {
 	testEnv.Test(t, kspm.OptionalScopes(t))
+}
+
+func TestNoCSI_kspm_with_kubemon(t *testing.T) {
+	testEnv.Test(t, kspm.FeatureWithKubemon(t))
 }
 
 func TestNoCSI_extensions_db_executor(t *testing.T) {

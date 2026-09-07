@@ -63,3 +63,15 @@ all: prerequisites build deploy
 ## Pattern rule: use '<target>-local' to run any target with REGISTRY=quay.io
 %-local:
 	$(MAKE) REGISTRY=quay.io $*
+
+## Adds Apache 2.0 license headers to Go and Helm YAML source files that are missing them
+add-license-headers: prerequisites/addlicense
+	$(ADDLICENSE) -s=only -y "" -l apache -c "Dynatrace LLC" \
+		-ignore "vendor/**" \
+		-ignore "**/zz_generated.*.go" \
+		-ignore "test/mocks/**" \
+		-ignore "**/testdata/**" \
+		-ignore "**/mock_*_test.go" \
+		-ignore "config/helm/repos/stable/index.yaml" \
+		-ignore "config/helm/repos/stable/artifacthub-repo.yml" \
+		pkg cmd test config/helm Dockerfile

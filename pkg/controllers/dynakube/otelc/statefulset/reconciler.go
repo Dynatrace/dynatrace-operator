@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package statefulset
 
 import (
@@ -5,9 +8,11 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	dtimage "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/configuration"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8saffinity"
@@ -27,12 +32,14 @@ import (
 )
 
 const (
-	serviceAccountName                                  = "dynatrace" + consts.OTELCollectorNameSuffix
+	serviceAccountName                                  = "dynatrace" + consts.OTelCollectorNameSuffix
 	annotationTelemetryIngestSecretHash                 = api.InternalFlagPrefix + "telemetry-ingest-secret-hash"
 	annotationTelemetryIngestConfigurationConfigMapHash = api.InternalFlagPrefix + "telemetry-ingest-config-hash"
 	annotationDataIngestTokenSecretHash                 = api.InternalFlagPrefix + "data-ingest-token-hash"
 
 	runAs int64 = 10001
+
+	conditionType string = "OtelStatefulSet"
 )
 
 type Reconciler struct {
@@ -47,9 +54,30 @@ func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 	}
 }
 
-func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
+func resolveImage(ctx context.Context, imageClient dtimage.Client, dk *dynakube.DynaKube) error {
+	if ref := dk.Spec.Templates.OpenTelemetryCollector.ImageRef; ref.HasImage() {
+		dk.Status.OTelCollector.ResolvedImage = ref.String()
+
+		return nil
+	}
+
+	imageURI, err := registry.ResolveImage(ctx, imageClient, dk.PublicRegistryOverride(), dtimage.OTelCollector)
+	if err != nil {
+		return err
+	}
+
+	dk.Status.OTelCollector.ResolvedImage = imageURI
+
+	return nil
+}
+
+func (r *Reconciler) Reconcile(ctx context.Context, imageClient dtimage.Client, dk *dynakube.DynaKube) error {
 	ctx, log := logd.NewFromContext(ctx, "statefulset")
-	if dk.Extensions().IsPrometheusEnabled() || dk.TelemetryIngest().IsEnabled() {
+	if dk.TelemetryIngest().IsEnabled() {
+		if err := resolveImage(ctx, imageClient, dk); err != nil {
+			return err
+		}
+
 		return r.createOrUpdateStatefulset(ctx, dk)
 	} else { // do cleanup or
 		if meta.FindStatusCondition(*dk.Conditions(), conditionType) == nil {
@@ -57,16 +85,16 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 		}
 		defer meta.RemoveStatusCondition(dk.Conditions(), conditionType)
 
-		sts, err := k8sstatefulset.Build(dk, dk.OtelCollectorStatefulsetName(), corev1.Container{})
+		sts, err := k8sstatefulset.Build(dk, dk.OTelCollectorStatefulsetName(), corev1.Container{})
 		if err != nil {
-			log.Error(err, "could not build "+dk.OtelCollectorStatefulsetName()+" during cleanup")
+			log.Error(err, "could not build "+dk.OTelCollectorStatefulsetName()+" during cleanup")
 
 			return err
 		}
 
 		err = k8sstatefulset.Query(r.client, r.apiReader).Delete(ctx, sts)
 		if err != nil {
-			log.Error(err, "failed to clean up "+dk.OtelCollectorStatefulsetName()+" statufulset")
+			log.Error(err, "failed to clean up "+dk.OTelCollectorStatefulsetName()+" statufulset")
 
 			return nil
 		}
@@ -77,15 +105,13 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 
 func (r *Reconciler) createOrUpdateStatefulset(ctx context.Context, dk *dynakube.DynaKube) error {
 	log := logd.FromContext(ctx)
-	if dk.TelemetryIngest().IsEnabled() {
-		if !r.checkDataIngestTokenExists(ctx, dk) {
-			msg := "data ingest token is missing, but it's required for telemetery ingest"
-			k8sconditions.SetDataIngestTokenMissing(dk.Conditions(), dynakube.TokenConditionType, msg)
+	if !r.checkDataIngestTokenExists(ctx, dk) {
+		msg := "data ingest token is missing, but it's required for telemetery ingest"
+		k8sconditions.SetDataIngestTokenMissing(dk.Conditions(), dynakube.TokenConditionType, msg)
 
-			log.Error(errors.New(msg), "could not create or update statefulset")
+		log.Error(errors.New(msg), "could not create or update statefulset")
 
-			return nil
-		}
+		return nil
 	}
 
 	appLabels := buildAppLabels(dk.Name)
@@ -100,12 +126,12 @@ func (r *Reconciler) createOrUpdateStatefulset(ctx context.Context, dk *dynakube
 		topologySpreadConstraints = dk.Spec.Templates.OpenTelemetryCollector.TopologySpreadConstraints
 	}
 
-	replicas, err := k8sstatefulset.ResolveReplicas(ctx, r.apiReader, client.ObjectKey{Name: dk.OtelCollectorStatefulsetName(), Namespace: dk.Namespace}, dk.Spec.Templates.OpenTelemetryCollector.Replicas)
+	replicas, err := k8sstatefulset.ResolveReplicas(ctx, r.apiReader, client.ObjectKey{Name: dk.OTelCollectorStatefulsetName(), Namespace: dk.Namespace}, dk.Spec.Templates.OpenTelemetryCollector.Replicas)
 	if err != nil {
 		return err
 	}
 
-	sts, err := k8sstatefulset.Build(dk, dk.OtelCollectorStatefulsetName(), getContainer(dk, replicas),
+	sts, err := k8sstatefulset.Build(dk, dk.OTelCollectorStatefulsetName(), getContainer(dk, replicas),
 		k8sstatefulset.SetReplicas(replicas),
 		k8sstatefulset.SetPodManagementPolicy(appsv1.ParallelPodManagement),
 		k8sstatefulset.SetAllLabels(appLabels.BuildLabels(), appLabels.BuildMatchLabels(), appLabels.BuildLabels(), dk.Spec.Templates.OpenTelemetryCollector.Labels),
@@ -128,7 +154,7 @@ func (r *Reconciler) createOrUpdateStatefulset(ctx context.Context, dk *dynakube
 
 	_, err = k8sstatefulset.Query(r.client, r.apiReader).WithOwner(dk).CreateOrUpdate(ctx, sts)
 	if err != nil {
-		log.Info("failed to create/update " + dk.OtelCollectorStatefulsetName() + " statefulset")
+		log.Info("failed to create/update " + dk.OTelCollectorStatefulsetName() + " statefulset")
 		k8sconditions.SetKubeAPIError(dk.Conditions(), conditionType, err)
 
 		return err
@@ -146,16 +172,7 @@ func (r *Reconciler) buildTemplateAnnotations(ctx context.Context, dk *dynakube.
 		templateAnnotations = k8ssecuritycontext.RemoveAppArmorAnnotation(dk.Spec.Templates.OpenTelemetryCollector.Annotations, containerName)
 	}
 
-	if dk.Extensions().IsPrometheusEnabled() {
-		tlsSecretHash, err := r.calculateSecretHash(ctx, dk.Extensions().GetTLSSecretName(), dk.Namespace)
-		if err != nil {
-			return nil, err
-		}
-
-		templateAnnotations[api.AnnotationExtensionsSecretHash] = tlsSecretHash
-	}
-
-	if dk.TelemetryIngest().IsEnabled() && dk.TelemetryIngest().TLSRefName != "" {
+	if dk.TelemetryIngest().TLSRefName != "" {
 		tlsSecretHash, err := r.calculateSecretHash(ctx, dk.TelemetryIngest().TLSRefName, dk.Namespace)
 		if err != nil {
 			return nil, err
@@ -164,21 +181,19 @@ func (r *Reconciler) buildTemplateAnnotations(ctx context.Context, dk *dynakube.
 		templateAnnotations[annotationTelemetryIngestSecretHash] = tlsSecretHash
 	}
 
-	if dk.TelemetryIngest().IsEnabled() {
-		configConfigMapHash, err := r.calculateConfigMapHash(ctx, configuration.GetConfigMapName(dk.Name), dk.Namespace)
-		if err != nil {
-			return nil, err
-		}
-
-		templateAnnotations[annotationTelemetryIngestConfigurationConfigMapHash] = configConfigMapHash
-
-		dataIngestTokenHash, err := r.calculateDataIngestTokenHash(ctx, dk)
-		if err != nil {
-			return nil, err
-		}
-
-		templateAnnotations[annotationDataIngestTokenSecretHash] = dataIngestTokenHash
+	configConfigMapHash, err := r.calculateConfigMapHash(ctx, configuration.GetConfigMapName(dk.Name), dk.Namespace)
+	if err != nil {
+		return nil, err
 	}
+
+	templateAnnotations[annotationTelemetryIngestConfigurationConfigMapHash] = configConfigMapHash
+
+	dataIngestTokenHash, err := r.calculateDataIngestTokenHash(ctx, dk)
+	if err != nil {
+		return nil, err
+	}
+
+	templateAnnotations[annotationDataIngestTokenSecretHash] = dataIngestTokenHash
 
 	return templateAnnotations, nil
 }
@@ -281,7 +296,7 @@ func buildPodSecurityContext() *corev1.PodSecurityContext {
 }
 
 func buildAppLabels(dkName string) *k8slabel.AppLabels {
-	return k8slabel.NewAppLabels(k8slabel.OtelCComponentLabel, dkName, k8slabel.OtelCComponentLabel, "")
+	return k8slabel.NewAppLabels(k8slabel.OTelColComponentLabel, dkName, k8slabel.OTelColComponentLabel, "")
 }
 
 func buildAffinity() corev1.Affinity {

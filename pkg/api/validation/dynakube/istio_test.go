@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package validation
 
 import (
@@ -21,7 +24,7 @@ func TestIsIstioNotInstalled(t *testing.T) {
 		assertDeniedWithInterceptor(t, noIstioInterceptor, []string{errorNoIstioInstalled}, &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				APIURL:      testAPIURL,
-				EnableIstio: true,
+				EnableIstio: new(true),
 			},
 		})
 	})
@@ -30,7 +33,7 @@ func TestIsIstioNotInstalled(t *testing.T) {
 		assertAllowed(t, &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				APIURL:      testAPIURL,
-				EnableIstio: true,
+				EnableIstio: new(true),
 			},
 		})
 	})
@@ -39,7 +42,7 @@ func TestIsIstioNotInstalled(t *testing.T) {
 		assertAllowedWithInterceptor(t, noIstioInterceptor, &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				APIURL:      testAPIURL,
-				EnableIstio: false,
+				EnableIstio: new(false),
 			},
 		})
 	})

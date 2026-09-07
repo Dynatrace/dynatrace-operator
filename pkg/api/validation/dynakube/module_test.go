@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package validation
 
 import (
@@ -49,30 +52,9 @@ func TestIsModuleDisabled(t *testing.T) {
 			expectedMessage: "",
 		},
 		{
-			title:           "ecc module disabled but also configured in dk => error",
-			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{Extensions: &extensions.Spec{Prometheus: &extensions.PrometheusSpec{}}}},
-			modules:         installconfig.Modules{Extensions: false},
-			moduleFunc:      isExtensionsModuleDisabled,
-			expectedMessage: errorExtensionsModuleDisabled,
-		},
-		{
 			title:           "ecc module disabled but not configured => no error",
 			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{}},
 			modules:         installconfig.Modules{Extensions: false},
-			moduleFunc:      isExtensionsModuleDisabled,
-			expectedMessage: "",
-		},
-		{
-			title:           "ecc module disabled but prometheus extension enabled => error",
-			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{Extensions: &extensions.Spec{Prometheus: &extensions.PrometheusSpec{}}}},
-			modules:         installconfig.Modules{Extensions: false},
-			moduleFunc:      isExtensionsModuleDisabled,
-			expectedMessage: errorExtensionsModuleDisabled,
-		},
-		{
-			title:           "ecc module enabled and prometheus extension enabled => no error",
-			dk:              dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{Extensions: &extensions.Spec{Prometheus: &extensions.PrometheusSpec{}}}},
-			modules:         installconfig.Modules{Extensions: true},
 			moduleFunc:      isExtensionsModuleDisabled,
 			expectedMessage: "",
 		},

@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package extension
 
 import (
@@ -12,6 +15,11 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+)
+
+const (
+	secretConditionType  = "ExtensionsSecret"
+	serviceConditionType = "ExtensionsService"
 )
 
 type subReconciler interface {

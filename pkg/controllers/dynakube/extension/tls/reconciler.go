@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package tls
 
 import (
@@ -22,6 +25,8 @@ import (
 
 const (
 	extensionsSelfSignedTLSCommonNameSuffix = "extension-controller"
+
+	conditionType string = "ExtensionsTLSSecret"
 )
 
 type Reconciler struct {

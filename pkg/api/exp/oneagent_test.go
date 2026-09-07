@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package exp
 
 import (
@@ -186,6 +189,39 @@ func TestIsOneAgentPrivileged(t *testing.T) {
 	}
 }
 
+func TestIsClassicOneAgentNonroot(t *testing.T) {
+	type testCase struct {
+		title string
+		in    string
+		out   bool
+	}
+
+	cases := []testCase{
+		{
+			title: "default",
+			in:    "",
+			out:   false,
+		},
+		{
+			title: "overrule",
+			in:    "true",
+			out:   true,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.title, func(t *testing.T) {
+			ff := FeatureFlags{annotations: map[string]string{
+				OAClassicNonRootKey: c.in,
+			}}
+
+			out := ff.IsClassicOneAgentNonRoot()
+
+			assert.Equal(t, c.out, out)
+		})
+	}
+}
+
 func TestSkipOneAgentLivenessProbe(t *testing.T) {
 	type testCase struct {
 		title string
@@ -213,6 +249,44 @@ func TestSkipOneAgentLivenessProbe(t *testing.T) {
 			}}
 
 			out := ff.SkipOneAgentLivenessProbe()
+
+			assert.Equal(t, c.out, out)
+		})
+	}
+}
+
+func TestIsCodeModuleImageVolume(t *testing.T) {
+	type testCase struct {
+		title string
+		in    string
+		out   bool
+	}
+
+	cases := []testCase{
+		{
+			title: "default",
+			in:    "",
+			out:   false,
+		},
+		{
+			title: "overrule",
+			in:    "true",
+			out:   true,
+		},
+		{
+			title: "explicit false",
+			in:    "false",
+			out:   false,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.title, func(t *testing.T) {
+			ff := FeatureFlags{annotations: map[string]string{
+				OAImageVolumeKey: c.in,
+			}}
+
+			out := ff.IsCodeModuleImageVolume()
 
 			assert.Equal(t, c.out, out)
 		})

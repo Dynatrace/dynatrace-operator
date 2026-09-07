@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package activegate
 
 import (
@@ -163,7 +166,7 @@ func TestSetAGServiceIPs(t *testing.T) {
 				Name:      testName,
 			},
 			Spec: dynakube.DynaKubeSpec{
-				EnableIstio: true,
+				EnableIstio: new(true),
 				ActiveGate: activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{activegate.RoutingCapability.DisplayName},
 				},

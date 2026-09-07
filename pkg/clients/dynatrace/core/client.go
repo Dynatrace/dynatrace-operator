@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 // Package core implements the base Dynatrace API client, shared utilities and types.
 package core
 

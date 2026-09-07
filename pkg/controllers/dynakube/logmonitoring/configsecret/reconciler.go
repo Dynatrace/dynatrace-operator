@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package configsecret
 
 import (
@@ -23,6 +26,9 @@ import (
 )
 
 const (
+	LmcConditionType         = "LogMonitoringConfig"
+	DeploymentConfigFilename = "deployment.conf"
+
 	logMonitoringSecretSuffix = "-logmonitoring-config"
 
 	TokenHashAnnotationKey   = api.InternalFlagPrefix + "tenant-token-hash"

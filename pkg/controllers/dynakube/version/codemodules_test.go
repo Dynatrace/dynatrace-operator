@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package version
 
 import (
@@ -29,7 +32,7 @@ func TestCodeModulesUpdater(t *testing.T) {
 			Spec: dynakube.DynaKubeSpec{
 				OneAgent: oneagent.Spec{
 					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
-						Version: testVersion,
+						Version: testVersion, //nolint:staticcheck
 						AppInjectionSpec: oneagent.AppInjectionSpec{
 							CodeModulesImage: testImage,
 						},
@@ -59,7 +62,7 @@ func TestCodeModulesUseDefault(t *testing.T) {
 			Spec: dynakube.DynaKubeSpec{
 				OneAgent: oneagent.Spec{
 					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
-						Version: testVersion,
+						Version: testVersion, //nolint:staticcheck
 					},
 				},
 			},

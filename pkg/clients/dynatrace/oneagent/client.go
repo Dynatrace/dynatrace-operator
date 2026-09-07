@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package oneagent
 
 import (
@@ -8,7 +11,7 @@ import (
 )
 
 type Client interface {
-	GetConnectionInfo(ctx context.Context) (ConnectionInfo, error)
+	GetConnectionInfo(ctx context.Context, requiredIPs []string) (ConnectionInfo, error)
 
 	Get(ctx context.Context, args GetParams, writer io.Writer) error
 	GetLatest(ctx context.Context, args GetParams, writer io.Writer) error

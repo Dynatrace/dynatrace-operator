@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 //go:build e2e
 
 package logmonitoring
@@ -12,6 +15,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
+	opconsts "github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring/configsecret"
 	lmdaemonset "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring/logmonsettings"
@@ -67,7 +71,7 @@ func Feature(t *testing.T) features.Feature {
 
 	agSecret := k8ssecret.New(consts.AgSecretName, testDynakube.Namespace,
 		map[string][]byte{
-			dynakube.ServerCertKey:                 agCrt,
+			opconsts.TLSServerCrtDataName:          agCrt,
 			consts.AgCertificateAndPrivateKeyField: agP12,
 		})
 	builder.Assess("create AG TLS secret", k8ssecret.Create(agSecret))

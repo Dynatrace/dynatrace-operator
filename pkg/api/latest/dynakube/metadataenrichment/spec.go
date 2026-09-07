@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package metadataenrichment
 
 import (
@@ -13,8 +16,11 @@ const (
 
 	K8sNamespaceLabelRule      RuleType = "K8S_NAMESPACE_LABEL"
 	K8sNamespaceAnnotationRule RuleType = "K8S_NAMESPACE_ANNOTATION"
-	// TODO: implement support for this type.
-	CustomRule RuleType = "CUSTOM"
+	K8sWorkloadLabelRule       RuleType = "K8S_WORKLOAD_LABEL"
+	K8sWorkloadAnnotationRule  RuleType = "K8S_WORKLOAD_ANNOTATION"
+	K8sPodLabelRule            RuleType = "K8S_POD_LABEL"
+	K8sPodAnnotationRule       RuleType = "K8S_POD_ANNOTATION"
+	CustomRule                 RuleType = "CUSTOM"
 
 	Annotation         = "metadata.dynatrace.com"
 	Prefix             = Annotation + "/"
@@ -34,8 +40,9 @@ type Spec struct {
 	Enabled *bool `json:"enabled,omitempty"`
 
 	// The namespaces where you want Dynatrace Operator to inject enrichment.
+	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Namespace Selector",xDescriptors="urn:alm:descriptor:com.tectonic.ui:selector:core:v1:Namespace"
-	NamespaceSelector metav1.LabelSelector `json:"namespaceSelector,omitempty"`
+	NamespaceSelector metav1.LabelSelector `json:"namespaceSelector,omitzero"`
 
 	// Define resources' requests and limits for the initContainer used for standalone metadata-enrichment.
 	// Only respected when no OneAgent is injected.
@@ -57,9 +64,19 @@ func IsSupportedType(ruleType RuleType) bool {
 		AnnotationRule,
 		K8sNamespaceLabelRule,
 		K8sNamespaceAnnotationRule,
+		K8sWorkloadLabelRule,
+		K8sWorkloadAnnotationRule,
+		K8sPodLabelRule,
+		K8sPodAnnotationRule,
 		CustomRule:
 		return true
 	}
 
 	return false
+}
+
+// +kubebuilder:object:generate=true
+
+type Status struct {
+	Rules []Rule `json:"rules,omitempty"`
 }

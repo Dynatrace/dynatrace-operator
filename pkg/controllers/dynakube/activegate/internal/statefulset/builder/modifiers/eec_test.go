@@ -1,9 +1,13 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package modifiers
 
 import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -11,7 +15,7 @@ import (
 func TestEecEnabled(t *testing.T) {
 	t.Run("Extensions are enabled", func(t *testing.T) {
 		dk := getBaseDynakube()
-		dk.Spec.Extensions = &extensions.Spec{Prometheus: &extensions.PrometheusSpec{}}
+		dk.Spec.Extensions = &extensions.Spec{Databases: []extensions.DatabaseSpec{{ID: "test"}}}
 
 		mod := NewEECVolumeModifier(dk)
 
@@ -31,7 +35,7 @@ func TestEecEnabled(t *testing.T) {
 func TestEecModify(t *testing.T) {
 	t.Run("Statefulset is successfully modified with eec volume", func(t *testing.T) {
 		dk := getBaseDynakube()
-		dk.Spec.Extensions = &extensions.Spec{Prometheus: &extensions.PrometheusSpec{}}
+		dk.Spec.Extensions = &extensions.Spec{Databases: []extensions.DatabaseSpec{{ID: "test"}}}
 
 		mod := NewEECVolumeModifier(dk)
 		builder := createBuilderForTesting()
@@ -41,8 +45,8 @@ func TestEecModify(t *testing.T) {
 		require.NotEmpty(t, sts)
 		isSubset(t, mod.getVolumes(), sts.Spec.Template.Spec.Volumes)
 		isSubset(t, mod.getVolumeMounts(), sts.Spec.Template.Spec.Containers[0].VolumeMounts)
-		require.Equal(t, eecVolumeName, sts.Spec.Template.Spec.Containers[0].VolumeMounts[0].Name)
-		require.Equal(t, eecMountPath, sts.Spec.Template.Spec.Containers[0].VolumeMounts[0].MountPath)
+		require.Equal(t, consts.EECVolumeName, sts.Spec.Template.Spec.Containers[0].VolumeMounts[0].Name)
+		require.Equal(t, consts.EECMountPath, sts.Spec.Template.Spec.Containers[0].VolumeMounts[0].MountPath)
 		require.True(t, sts.Spec.Template.Spec.Containers[0].VolumeMounts[0].ReadOnly)
 	})
 }

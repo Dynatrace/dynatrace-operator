@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package symlink
 
 import (
@@ -8,6 +11,12 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/pkg/errors"
+)
+
+const (
+	// example match: 1.239.14.20220325-164521
+	versionRegexp = `^(\d+)\.(\d+)\.(\d+)\.(\d+)-(\d+)$`
+	binDir        = "/agent/bin"
 )
 
 func CreateForCurrentVersionIfNotExists(ctx context.Context, targetDir string) error {

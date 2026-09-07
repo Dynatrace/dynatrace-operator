@@ -1,9 +1,13 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package token
 
 import (
 	"context"
 	"errors"
 	"maps"
+	"slices"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
@@ -117,5 +121,8 @@ func GetMissingScopes(err error) []string {
 		}
 	}
 
-	return missingScopes
+	// A scope can be required by multiple features, but should only be reported once
+	slices.Sort(missingScopes)
+
+	return slices.Compact(missingScopes)
 }

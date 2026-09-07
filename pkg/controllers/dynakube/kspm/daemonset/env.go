@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package daemonset
 
 import (
@@ -5,6 +8,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/gateway"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -35,7 +39,7 @@ func getEnvs(dk dynakube.DynaKube, tenantUUID string) []corev1.EnvVar {
 		},
 	}
 
-	if dk.ActiveGate().HasCaCert() {
+	if dk.IsKubemonEnabled() || dk.ActiveGate().HasCaCert() {
 		envs = append(envs, getCertEnv())
 	}
 
@@ -46,7 +50,11 @@ func getEnvs(dk dynakube.DynaKube, tenantUUID string) []corev1.EnvVar {
 
 func getActiveGateEndpointTemplate(dk dynakube.DynaKube, tenantUUID string) string {
 	activeGateEndpointTemplate := "https://%s.%s/e/%s/api/v2/kubernetes/node-config"
+
 	serviceName := capability.BuildServiceName(dk.Name)
+	if dk.IsKubemonEnabled() {
+		serviceName = gateway.ServiceName(dk.Name)
+	}
 
 	return fmt.Sprintf(activeGateEndpointTemplate, serviceName, dk.Namespace, tenantUUID)
 }

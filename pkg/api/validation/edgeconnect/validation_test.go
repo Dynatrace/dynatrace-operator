@@ -1,7 +1,9 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package validation
 
 import (
-	"context"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
@@ -15,7 +17,9 @@ import (
 )
 
 func assertDenied(t *testing.T, errMessages []string, ec *edgeconnect.EdgeConnect, other ...client.Object) {
-	_, err := runValidators(ec, other...)
+	t.Helper()
+
+	_, err := runValidators(t, ec, other...)
 	require.Error(t, err)
 
 	for _, errMsg := range errMessages {
@@ -24,12 +28,16 @@ func assertDenied(t *testing.T, errMessages []string, ec *edgeconnect.EdgeConnec
 }
 
 func assertAllowed(t *testing.T, ec *edgeconnect.EdgeConnect, other ...client.Object) {
-	warn, err := runValidators(ec, other...)
+	t.Helper()
+
+	warn, err := runValidators(t, ec, other...)
 	require.NoError(t, err)
 	assert.Empty(t, warn)
 }
 
-func runValidators(ec *edgeconnect.EdgeConnect, other ...client.Object) (admission.Warnings, error) {
+func runValidators(t *testing.T, ec *edgeconnect.EdgeConnect, other ...client.Object) (admission.Warnings, error) {
+	t.Helper()
+
 	clt := fake.NewClient()
 	if other != nil {
 		clt = fake.NewClient(other...)
@@ -41,5 +49,5 @@ func runValidators(ec *edgeconnect.EdgeConnect, other ...client.Object) (admissi
 		modules:   installconfig.GetModules(),
 	}
 
-	return validator.ValidateCreate(context.Background(), ec)
+	return validator.ValidateCreate(t.Context(), ec)
 }

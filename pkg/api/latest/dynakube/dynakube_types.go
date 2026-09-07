@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 // +kubebuilder:object:generate=true
 // +groupName=dynatrace.com
 // +versionName=v1beta6
@@ -17,6 +20,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+// Hub tags this version as the 'source' of the conversion for controller runtime.
+func (*DynaKube) Hub() {}
 
 // TODO: Move these conditions related consts to a place where they are used, so we don't bloat this package further.
 const (
@@ -58,9 +64,17 @@ const (
 type DynaKube struct {
 	metav1.TypeMeta `json:",inline"`
 
-	Status            DynaKubeStatus `json:"status,omitempty"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
-	Spec              DynaKubeSpec `json:"spec,omitempty"`
+	// metadata is a standard object metadata
+	// +kubebuilder:validation:Optional
+	metav1.ObjectMeta `json:"metadata,omitzero"`
+
+	// spec defines the desired state of DynaKube
+	// +kubebuilder:validation:Required
+	Spec DynaKubeSpec `json:"spec"`
+
+	// status defines the observed state of DynaKube
+	// +kubebuilder:validation:Optional
+	Status DynaKubeStatus `json:"status,omitzero"`
 }
 
 // +k8s:openapi-gen=true
@@ -72,7 +86,7 @@ type DynaKubeSpec struct { //nolint:revive
 	// Configuration for Metadata Enrichment.
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Metadata Enrichment",order=9,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
-	MetadataEnrichment metadataenrichment.Spec `json:"metadataEnrichment,omitempty"`
+	MetadataEnrichment metadataenrichment.Spec `json:"metadataEnrichment,omitzero"`
 
 	// Set custom proxy settings either directly or from a secret with the field proxy.
 	// Note: Applies to Dynatrace Operator, ActiveGate, and OneAgents.
@@ -114,8 +128,9 @@ type DynaKubeSpec struct { //nolint:revive
 
 	// General configuration about OneAgent instances.
 	// You can't enable more than one module (classicFullStack, cloudNativeFullStack, hostMonitoring, or applicationMonitoring).
+	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OneAgent",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
-	OneAgent oneagent.Spec `json:"oneAgent,omitempty"`
+	OneAgent oneagent.Spec `json:"oneAgent,omitzero"`
 
 	// Dynatrace apiUrl, including the /api path at the end. For SaaS, set YOUR_ENVIRONMENT_ID to your environment ID. For Managed, change the apiUrl address.
 	// For instructions on how to determine the environment ID and how to configure the apiUrl address, see Environment ID (https://www.dynatrace.com/support/help/get-started/monitoring-environment/environment-id).
@@ -148,11 +163,12 @@ type DynaKubeSpec struct { //nolint:revive
 	CustomPullSecret string `json:"customPullSecret,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	Templates TemplatesSpec `json:"templates,omitempty"`
+	Templates TemplatesSpec `json:"templates,omitzero"`
 
 	// General configuration about ActiveGate instances.
+	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="ActiveGate",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
-	ActiveGate activegate.Spec `json:"activeGate,omitempty"`
+	ActiveGate activegate.Spec `json:"activeGate,omitzero"`
 
 	// Configuration for the KubernetesMonitoring operand (split-AG mode).
 	// When set, a dedicated KubernetesMonitoring StatefulSet is created independently of the ActiveGate.
@@ -163,14 +179,14 @@ type DynaKubeSpec struct { //nolint:revive
 	// Set to true if you want to skip certification validation checks.
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Skip Certificate Check",order=3,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
-	SkipCertCheck bool `json:"skipCertCheck,omitempty"`
+	SkipCertCheck *bool `json:"skipCertCheck,omitempty"`
 
 	// When enabled, and if Istio is installed on the Kubernetes environment, Dynatrace Operator will create the corresponding
 	// VirtualService and ServiceEntry objects to allow access to the Dynatrace Cluster from the OneAgent or ActiveGate.
 	// Disabled by default.
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Enable Istio automatic management",order=9,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
-	EnableIstio bool `json:"enableIstio,omitempty"`
+	EnableIstio *bool `json:"enableIstio,omitempty"`
 
 	// Overrides the default registry from which Dynatrace images are pulled.
 	// +kubebuilder:validation:Optional
@@ -183,13 +199,13 @@ type TemplatesSpec struct {
 	// +kubebuilder:validation:Optional
 	LogMonitoring *logmonitoring.TemplateSpec `json:"logMonitoring,omitempty"`
 	// +kubebuilder:validation:Optional
-	KSPMNodeConfigurationCollector kspm.NodeConfigurationCollectorSpec `json:"kspmNodeConfigurationCollector,omitempty"`
+	KSPMNodeConfigurationCollector kspm.NodeConfigurationCollectorSpec `json:"kspmNodeConfigurationCollector,omitzero"`
 	// +kubebuilder:validation:Optional
-	OpenTelemetryCollector OpenTelemetryCollectorSpec `json:"otelCollector,omitempty"`
+	OpenTelemetryCollector OpenTelemetryCollectorSpec `json:"otelCollector,omitzero"`
 	// +kubebuilder:validation:Optional
-	SQLExtensionExecutor extensions.DatabaseExecutorSpec `json:"sqlExtensionExecutor,omitempty"`
+	SQLExtensionExecutor extensions.DatabaseExecutorSpec `json:"sqlExtensionExecutor,omitzero"`
 	// +kubebuilder:validation:Optional
-	ExtensionExecutionController extensions.ExecutionControllerSpec `json:"extensionExecutionController,omitempty"`
+	ExtensionExecutionController extensions.ExecutionControllerSpec `json:"extensionExecutionController,omitzero"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -198,6 +214,6 @@ type TemplatesSpec struct {
 // DynaKubeList contains a list of DynaKube.
 type DynaKubeList struct { //nolint:revive
 	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
+	metav1.ListMeta `json:"metadata,omitzero"`
 	Items           []DynaKube `json:"items"`
 }

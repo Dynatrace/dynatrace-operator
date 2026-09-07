@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package deploymentmetadata
 
 const (
@@ -17,5 +20,6 @@ const (
 
 	OneAgentMetadataKey   = "oneagent"
 	ActiveGateMetadataKey = "activegate"
+	KubemonMetadataKey    = "kubemon"
 	OperatorVersionKey    = "operator"
 )

@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package binary
 
 import (
@@ -15,6 +18,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/pkg/errors"
 )
+
+const VersionLatest = "latest"
 
 type Properties struct {
 	OS            string
@@ -96,6 +101,8 @@ func (installer Installer) installAgent(ctx context.Context, targetDir string) e
 	} else {
 		path = filepath.Dir(targetDir)
 	}
+
+	cleanupOrphanedDownloads(ctx, path)
 
 	tmpFile, err := os.CreateTemp(path, "download")
 	if err != nil {
@@ -191,4 +198,19 @@ func (installer Installer) downloadOneAgent(ctx context.Context, tmpFile *os.Fil
 
 func isStandaloneInstall(targetDir string) bool {
 	return consts.AgentInitBinDirMount == targetDir
+}
+
+func cleanupOrphanedDownloads(ctx context.Context, path string) {
+	log := logd.FromContext(ctx)
+
+	// Glob only errors on malformed patterns; "download*" is always valid.
+	matches, _ := filepath.Glob(filepath.Join(path, "download*"))
+
+	for _, match := range matches {
+		if removeErr := os.Remove(match); removeErr != nil {
+			log.Error(removeErr, "failed to remove orphaned download file", "path", match)
+		} else {
+			log.Info("removed orphaned download file", "path", match)
+		}
+	}
 }

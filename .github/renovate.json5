@@ -107,16 +107,6 @@
     },
     {
       matchManagers: [
-        "dockerfile",
-      ],
-      matchFileNames: [
-        "assets/docker/codeModulesAMD.Dockerfile",
-        "assets/docker/codeModulesARM.Dockerfile",
-      ],
-      enabled: false,
-    },
-    {
-      matchManagers: [
         "gomod",
       ],
       matchBaseBranches: [

@@ -1,3 +1,6 @@
+# Copyright Dynatrace LLC
+# SPDX-License-Identifier: Apache-2.0
+
 suite: test clusterrole for the extension execution controller
 templates:
   - Common/extensions/clusterrole-extension-controller.yaml

@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package token
 
 import (
@@ -18,6 +21,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+const kspmConditionType = "KSPMTokenSecret"
 
 type Reconciler struct {
 	secrets k8ssecret.QueryObject

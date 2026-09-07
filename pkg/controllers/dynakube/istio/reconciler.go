@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package istio
 
 import (
@@ -15,6 +18,7 @@ import (
 	istiov1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -51,7 +55,7 @@ func (r *Reconciler) ReconcileAPIURL(ctx context.Context, dk *dynakube.DynaKube)
 		return errors.New("can't reconcile api url of nil dynakube")
 	}
 
-	if !dk.Spec.EnableIstio {
+	if !ptr.Deref(dk.Spec.EnableIstio, false) {
 		if isIstioConfigured(dk, OperatorComponent) {
 			err := r.cleanupIstio(ctx, dk, OperatorComponent)
 			if err != nil {
@@ -93,7 +97,7 @@ func (r *Reconciler) ReconcileCodeModules(ctx context.Context, dk *dynakube.Dyna
 
 	migrateDeprecatedCondition(dk.Conditions())
 
-	if !dk.Spec.EnableIstio || !dk.OneAgent().IsAppInjectionNeeded() {
+	if !ptr.Deref(dk.Spec.EnableIstio, false) || !dk.OneAgent().IsAppInjectionNeeded() {
 		if isIstioConfigured(dk, codeModuleConditionName) {
 			log.Info("appinjection disabled, cleaning up")
 
@@ -137,13 +141,13 @@ func (r *Reconciler) ReconcileCodeModules(ctx context.Context, dk *dynakube.Dyna
 func (r *Reconciler) ReconcileActiveGate(ctx context.Context, dk *dynakube.DynaKube) error {
 	log := logd.FromContext(ctx)
 
-	log.Info("reconciling istio components for activegate communication hosts")
+	log.Debug("reconciling istio components for activegate communication hosts")
 
 	if dk == nil {
 		return errors.New("can't reconcile activegate communication hosts of nil dynakube")
 	}
 
-	if !dk.Spec.EnableIstio || !dk.ActiveGate().IsEnabled() {
+	if !ptr.Deref(dk.Spec.EnableIstio, false) || (!dk.ActiveGate().IsEnabled() && !dk.IsKubemonEnabled()) {
 		if isIstioConfigured(dk, activeGateConditionName) {
 			log.Info("activegate disabled, cleaning up")
 
@@ -159,7 +163,18 @@ func (r *Reconciler) ReconcileActiveGate(ctx context.Context, dk *dynakube.DynaK
 		return nil
 	}
 
-	agCommunicationHosts, err := connectioninfo.ParseAGCommunicationHosts(dk.Status.ActiveGate.ConnectionInfo.Endpoints)
+	// We shouldn't reconcile this separately, as the endpoints of the Generic AG and the Kubemon AG will be the same.
+	// If we reconciled this separately, then we would duplicate the endpoints in ServiceEntries, which is not something Istio recommends.
+	var endpoints string
+
+	switch {
+	case dk.ActiveGate().IsEnabled():
+		endpoints = dk.Status.ActiveGate.ConnectionInfo.Endpoints
+	case dk.IsKubemonEnabled():
+		endpoints = dk.Status.KubernetesMonitoring.ConnectionInfo.Endpoints
+	}
+
+	agCommunicationHosts, err := connectioninfo.ParseAGCommunicationHosts(endpoints)
 	if err != nil {
 		setServiceEntryFailedConditionForComponent(dk.Conditions(), activeGateConditionName)
 

@@ -1,13 +1,8 @@
-package dynakube
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
 
-import (
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-)
+package dynakube
 
 func (dk *DynaKube) MetadataEnrichmentEnabled() bool {
 	return dk.Spec.MetadataEnrichment.Enabled != nil && *dk.Spec.MetadataEnrichment.Enabled
-}
-
-func (dk *DynaKube) MetadataEnrichmentNamespaceSelector() *metav1.LabelSelector {
-	return &dk.Spec.MetadataEnrichment.NamespaceSelector
 }

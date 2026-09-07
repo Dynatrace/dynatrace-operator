@@ -1,7 +1,9 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package edgeconnect
 
 import (
-	"context"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
@@ -12,7 +14,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func TestEdgeConnectPhaseChanges(t *testing.T) {
+func Test_Controller_determineEdgeConnectPhase(t *testing.T) {
 	ec := &edgeconnect.EdgeConnect{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testName,
@@ -27,7 +29,7 @@ func TestEdgeConnectPhaseChanges(t *testing.T) {
 			client:    fakeClient,
 			apiReader: fakeClient,
 		}
-		phase := controller.determineEdgeConnectPhase(context.Background(), ec)
+		phase := controller.determineEdgeConnectPhase(t.Context(), ec)
 		assert.Equal(t, status.Deploying, phase)
 	})
 
@@ -37,7 +39,7 @@ func TestEdgeConnectPhaseChanges(t *testing.T) {
 			client:    fakeClient,
 			apiReader: fakeClient,
 		}
-		phase := controller.determineEdgeConnectPhase(context.Background(), ec)
+		phase := controller.determineEdgeConnectPhase(t.Context(), ec)
 		assert.Equal(t, status.Error, phase)
 	})
 
@@ -53,7 +55,7 @@ func TestEdgeConnectPhaseChanges(t *testing.T) {
 			client:    fakeClient,
 			apiReader: fakeClient,
 		}
-		phase := controller.determineEdgeConnectPhase(context.Background(), ec)
+		phase := controller.determineEdgeConnectPhase(t.Context(), ec)
 		assert.Equal(t, status.Deploying, phase)
 	})
 
@@ -69,7 +71,7 @@ func TestEdgeConnectPhaseChanges(t *testing.T) {
 			client:    fakeClient,
 			apiReader: fakeClient,
 		}
-		phase := controller.determineEdgeConnectPhase(context.Background(), ec)
+		phase := controller.determineEdgeConnectPhase(t.Context(), ec)
 		assert.Equal(t, status.Running, phase)
 	})
 }

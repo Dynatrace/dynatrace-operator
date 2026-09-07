@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package authtoken
 
 import (
@@ -72,7 +75,7 @@ func TestReconcile(t *testing.T) {
 
 		assert.NotEmpty(t, authToken.Data[ActiveGateAuthTokenName])
 
-		condition := meta.FindStatusCondition(*dk.Conditions(), ActiveGateAuthTokenSecretConditionType)
+		condition := meta.FindStatusCondition(*dk.Conditions(), activeGateAuthTokenSecretConditionType)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
 		assert.Equal(t, k8sconditions.SecretCreatedReason, condition.Reason)
 	})
@@ -89,7 +92,7 @@ func TestReconcile(t *testing.T) {
 		err := r.Reconcile(t.Context(), agCl, dk)
 		require.NoError(t, err)
 
-		condition := meta.FindStatusCondition(*dk.Conditions(), ActiveGateAuthTokenSecretConditionType)
+		condition := meta.FindStatusCondition(*dk.Conditions(), activeGateAuthTokenSecretConditionType)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
 		assert.Equal(t, k8sconditions.SecretCreatedReason, condition.Reason)
 		firstTransition := condition.LastTransitionTime
@@ -117,7 +120,7 @@ func TestReconcile(t *testing.T) {
 		err = r.Reconcile(t.Context(), agCl, dk)
 		require.NoError(t, err)
 
-		condition = meta.FindStatusCondition(*dk.Conditions(), ActiveGateAuthTokenSecretConditionType)
+		condition = meta.FindStatusCondition(*dk.Conditions(), activeGateAuthTokenSecretConditionType)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
 		assert.Equal(t, k8sconditions.SecretCreatedReason, condition.Reason)
 		secondTransition := condition.LastTransitionTime
@@ -148,7 +151,7 @@ func TestReconcile(t *testing.T) {
 		err := r.Reconcile(t.Context(), agCl, dk)
 		require.NoError(t, err)
 
-		condition := meta.FindStatusCondition(*dk.Conditions(), ActiveGateAuthTokenSecretConditionType)
+		condition := meta.FindStatusCondition(*dk.Conditions(), activeGateAuthTokenSecretConditionType)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
 		assert.Equal(t, k8sconditions.SecretCreatedReason, condition.Reason)
 		firstTransition := condition.LastTransitionTime
@@ -177,7 +180,7 @@ func TestReconcile(t *testing.T) {
 		err = r.Reconcile(t.Context(), agCl, dk)
 		require.NoError(t, err)
 
-		condition = meta.FindStatusCondition(*dk.Conditions(), ActiveGateAuthTokenSecretConditionType)
+		condition = meta.FindStatusCondition(*dk.Conditions(), activeGateAuthTokenSecretConditionType)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
 		assert.Equal(t, k8sconditions.SecretCreatedReason, condition.Reason)
 		secondTransition := condition.LastTransitionTime

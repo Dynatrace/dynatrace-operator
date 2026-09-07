@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package injection
 
 import (
@@ -22,6 +25,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+var anyCtx = mock.MatchedBy(func(context.Context) bool { return true })
 
 func TestHandleImpl(t *testing.T) {
 	initSecret := corev1.Secret{
@@ -51,28 +56,26 @@ func TestHandleImpl(t *testing.T) {
 		err := h.Handle(request)
 		require.NoError(t, err)
 
-		_, ok := request.Pod.Annotations[dtwebhook.AnnotationDynatraceInjected]
-		require.False(t, ok)
-
-		_, ok = request.Pod.Annotations[dtwebhook.AnnotationDynatraceReason]
-		require.False(t, ok)
+		assert.NotContains(t, request.Pod.Annotations, dtwebhook.AnnotationDynatraceInjected)
+		assert.NotContains(t, request.Pod.Annotations, dtwebhook.AnnotationDynatraceReason)
 	})
 
 	t.Run("no init secret + no init secret source => no injection + only annotation", func(t *testing.T) {
-		h := createTestHandler(webhookmock.NewMutator(t), webhookmock.NewMutator(t))
+		oaMutator := webhookmock.NewMutator(t)
+		oaMutator.EXPECT().IsEnabled(anyCtx, mock.Anything).Return(true).Once()
+
+		metaMutator := webhookmock.NewMutator(t)
+		metaMutator.EXPECT().IsEnabled(anyCtx, mock.Anything).Return(false).Once()
+
+		h := createTestHandler(oaMutator, metaMutator)
 
 		request := createTestMutationRequest(t, getTestDynakube())
 
 		err := h.Handle(request)
 		require.NoError(t, err)
 
-		isInjected, ok := request.Pod.Annotations[dtwebhook.AnnotationDynatraceInjected]
-		require.True(t, ok)
-		assert.Equal(t, "false", isInjected)
-
-		reason, ok := request.Pod.Annotations[dtwebhook.AnnotationDynatraceReason]
-		require.True(t, ok)
-		assert.Equal(t, NoBootstrapperConfigReason, reason)
+		assert.Equal(t, "false", request.Pod.Annotations[dtwebhook.AnnotationDynatraceInjected])
+		assert.Equal(t, NoBootstrapperConfigReason, request.Pod.Annotations[dtwebhook.AnnotationDynatraceReason])
 	})
 
 	t.Run("no init secret and no certs + source (both) => replicate (both) + inject", func(t *testing.T) {
@@ -94,12 +97,12 @@ func TestHandleImpl(t *testing.T) {
 		}
 
 		oaMutator := webhookmock.NewMutator(t)
-		oaMutator.On("IsEnabled", mock.Anything, mock.Anything).Return(true)
-		oaMutator.On("Mutate", mock.Anything).Return(nil)
+		oaMutator.EXPECT().IsEnabled(anyCtx, mock.Anything).Return(true).Twice()
+		oaMutator.EXPECT().Mutate(mock.Anything).Return(nil).Once()
 
 		metaMutator := webhookmock.NewMutator(t)
-		metaMutator.On("IsEnabled", mock.Anything, mock.Anything).Return(false)
-		metaMutator.On("Mutate", mock.Anything).Return(nil)
+		metaMutator.EXPECT().IsEnabled(anyCtx, mock.Anything).Return(true).Once()
+		metaMutator.EXPECT().Mutate(mock.Anything).Return(nil).Once()
 
 		wh := createTestHandler(oaMutator, metaMutator, &source, &sourceCerts)
 
@@ -107,21 +110,17 @@ func TestHandleImpl(t *testing.T) {
 		require.NoError(t, err)
 
 		var replicated corev1.Secret
-		err = wh.apiReader.Get(context.Background(), client.ObjectKey{Name: consts.BootstrapperInitSecretName, Namespace: request.Namespace.Name}, &replicated)
+		err = wh.apiReader.Get(t.Context(), client.ObjectKey{Name: consts.BootstrapperInitSecretName, Namespace: request.Namespace.Name}, &replicated)
 		require.NoError(t, err)
 		assert.Equal(t, source.Data, replicated.Data)
 
 		var replicatedCerts corev1.Secret
-		err = wh.apiReader.Get(context.Background(), client.ObjectKey{Name: consts.BootstrapperInitCertsSecretName, Namespace: request.Namespace.Name}, &replicatedCerts)
+		err = wh.apiReader.Get(t.Context(), client.ObjectKey{Name: consts.BootstrapperInitCertsSecretName, Namespace: request.Namespace.Name}, &replicatedCerts)
 		require.NoError(t, err)
 		assert.Equal(t, sourceCerts.Data, replicatedCerts.Data)
 
-		isInjected, ok := request.Pod.Annotations[dtwebhook.AnnotationDynatraceInjected]
-		require.True(t, ok)
-		assert.Equal(t, "true", isInjected)
-
-		_, ok = request.Pod.Annotations[dtwebhook.AnnotationDynatraceReason]
-		require.False(t, ok)
+		assert.Equal(t, "true", request.Pod.Annotations[dtwebhook.AnnotationDynatraceInjected])
+		assert.NotContains(t, request.Pod.Annotations, dtwebhook.AnnotationDynatraceReason)
 	})
 
 	t.Run("no init and no certs, but don't replicate certs because we don't need it (AG is not enabled)", func(t *testing.T) {
@@ -144,12 +143,12 @@ func TestHandleImpl(t *testing.T) {
 		}
 
 		oaMutator := webhookmock.NewMutator(t)
-		oaMutator.On("IsEnabled", mock.Anything, mock.Anything).Return(true)
-		oaMutator.On("Mutate", mock.Anything).Return(nil)
+		oaMutator.EXPECT().IsEnabled(anyCtx, mock.Anything).Return(true).Twice()
+		oaMutator.EXPECT().Mutate(mock.Anything).Return(nil).Once()
 
 		metaMutator := webhookmock.NewMutator(t)
-		metaMutator.On("IsEnabled", mock.Anything, mock.Anything).Return(true)
-		metaMutator.On("Mutate", mock.Anything).Return(nil)
+		metaMutator.EXPECT().IsEnabled(anyCtx, mock.Anything).Return(true).Once()
+		metaMutator.EXPECT().Mutate(mock.Anything).Return(nil).Once()
 
 		wh := createTestHandler(oaMutator, metaMutator, &source, &sourceCerts)
 
@@ -157,12 +156,12 @@ func TestHandleImpl(t *testing.T) {
 		require.NoError(t, err)
 
 		var replicated corev1.Secret
-		err = wh.apiReader.Get(context.Background(), client.ObjectKey{Name: consts.BootstrapperInitSecretName, Namespace: request.Namespace.Name}, &replicated)
+		err = wh.apiReader.Get(t.Context(), client.ObjectKey{Name: consts.BootstrapperInitSecretName, Namespace: request.Namespace.Name}, &replicated)
 		require.NoError(t, err)
 		assert.Equal(t, source.Data, replicated.Data)
 
 		var replicatedCerts corev1.Secret
-		err = wh.apiReader.Get(context.Background(), client.ObjectKey{Name: consts.BootstrapperInitCertsSecretName, Namespace: request.Namespace.Name}, &replicatedCerts)
+		err = wh.apiReader.Get(t.Context(), client.ObjectKey{Name: consts.BootstrapperInitCertsSecretName, Namespace: request.Namespace.Name}, &replicatedCerts)
 		require.Error(t, err)
 		require.True(t, k8sErrors.IsNotFound(err))
 		assert.Empty(t, replicatedCerts.Data)
@@ -177,12 +176,56 @@ func TestHandleImpl(t *testing.T) {
 
 	t.Run("happy path", func(t *testing.T) {
 		oaMutator := webhookmock.NewMutator(t)
-		oaMutator.On("IsEnabled", mock.Anything, mock.Anything).Return(true)
-		oaMutator.On("Mutate", mock.Anything).Return(nil)
+		oaMutator.EXPECT().IsEnabled(anyCtx, mock.Anything).Return(true).Twice()
+		oaMutator.EXPECT().Mutate(mock.Anything).Return(nil).Once()
 
 		metaMutator := webhookmock.NewMutator(t)
-		metaMutator.On("IsEnabled", mock.Anything, mock.Anything).Return(true)
-		metaMutator.On("Mutate", mock.Anything).Return(nil)
+		metaMutator.EXPECT().IsEnabled(anyCtx, mock.Anything).Return(true).Once()
+		metaMutator.EXPECT().Mutate(mock.Anything).Return(nil).Once()
+
+		h := createTestHandler(oaMutator, metaMutator, &initSecret, &certsSecret)
+
+		request := createTestMutationRequest(t, getTestDynakube())
+
+		err := h.Handle(request)
+		require.NoError(t, err)
+
+		assert.Equal(t, "true", request.Pod.Annotations[dtwebhook.AnnotationDynatraceInjected])
+		assert.NotContains(t, request.Pod.Annotations, dtwebhook.AnnotationDynatraceReason)
+
+		installContainer := k8scontainer.FindInitInPodSpec(&request.Pod.Spec, dtwebhook.InstallContainerName)
+		require.NotNil(t, installContainer)
+		assert.NotEmpty(t, installContainer.Args)
+	})
+
+	t.Run("happy path - nothing is enabled", func(t *testing.T) {
+		oaMutator := webhookmock.NewMutator(t)
+		oaMutator.EXPECT().IsEnabled(anyCtx, mock.Anything).Return(false).Once()
+
+		metaMutator := webhookmock.NewMutator(t)
+		metaMutator.EXPECT().IsEnabled(anyCtx, mock.Anything).Return(false).Once()
+
+		h := createTestHandler(oaMutator, metaMutator, &initSecret, &certsSecret)
+
+		request := createTestMutationRequest(t, getTestDynakube())
+
+		err := h.Handle(request)
+		require.NoError(t, err)
+
+		assert.NotContains(t, request.Pod.Annotations, dtwebhook.AnnotationDynatraceInjected)
+		assert.NotContains(t, request.Pod.Annotations, dtwebhook.AnnotationDynatraceReason)
+		assert.Nil(t, k8scontainer.FindInitInPodSpec(&request.Pod.Spec, dtwebhook.InstallContainerName))
+	})
+
+	t.Run("happy path - metadata enabled standalone, oneagent disabled => only metaMutator.Mutate runs", func(t *testing.T) {
+		oaMutator := webhookmock.NewMutator(t)
+		oaMutator.EXPECT().IsEnabled(anyCtx, mock.Anything).Return(false)
+		// no EXPECT().Mutate() set up: an unexpected call here would fail the test,
+		// proving metadata being enabled standalone does not also trigger oneagent.
+
+		metaMutator := webhookmock.NewMutator(t)
+		metaMutator.EXPECT().IsEnabled(anyCtx, mock.Anything).Return(true)
+		metaMutator.EXPECT().Mutate(mock.Anything).Return(nil)
 
 		h := createTestHandler(oaMutator, metaMutator, &initSecret, &certsSecret)
 
@@ -200,41 +243,15 @@ func TestHandleImpl(t *testing.T) {
 
 		installContainer := k8scontainer.FindInitInPodSpec(&request.Pod.Spec, dtwebhook.InstallContainerName)
 		require.NotNil(t, installContainer)
-		assert.NotEmpty(t, installContainer.Args, 15)
-	})
-
-	t.Run("happy path - nothing is enabled", func(t *testing.T) {
-		oaMutator := webhookmock.NewMutator(t)
-		oaMutator.On("IsEnabled", mock.Anything, mock.Anything).Return(false)
-
-		metaMutator := webhookmock.NewMutator(t)
-		metaMutator.On("IsEnabled", mock.Anything, mock.Anything).Return(false)
-
-		h := createTestHandler(oaMutator, metaMutator, &initSecret, &certsSecret)
-
-		request := createTestMutationRequest(t, getTestDynakube())
-
-		err := h.Handle(request)
-		require.NoError(t, err)
-
-		isInjected, ok := request.Pod.Annotations[dtwebhook.AnnotationDynatraceInjected]
-		require.True(t, ok)
-		assert.Equal(t, "false", isInjected)
-
-		reason, ok := request.Pod.Annotations[dtwebhook.AnnotationDynatraceReason]
-		require.True(t, ok)
-		assert.Equal(t, NoMutationNeededReason, reason)
-
-		installContainer := k8scontainer.FindInitInPodSpec(&request.Pod.Spec, dtwebhook.InstallContainerName)
-		require.Nil(t, installContainer)
 	})
 
 	t.Run("happy path - reinvoke", func(t *testing.T) {
 		oaMutator := webhookmock.NewMutator(t)
-		oaMutator.On("IsEnabled", mock.Anything, mock.Anything).Return(true)
-		oaMutator.On("Reinvoke", mock.Anything, mock.Anything).Return(true)
+		oaMutator.EXPECT().IsEnabled(anyCtx, mock.Anything).Return(true).Twice()
+		oaMutator.EXPECT().Reinvoke(anyCtx, mock.Anything).Return(true).Once()
 
 		metaMutator := webhookmock.NewMutator(t)
+		metaMutator.EXPECT().IsEnabled(anyCtx, mock.Anything).Return(false).Once()
 
 		h := createTestHandler(oaMutator, metaMutator, &initSecret, &certsSecret)
 
@@ -242,20 +259,6 @@ func TestHandleImpl(t *testing.T) {
 
 		err := h.Handle(request)
 		require.NoError(t, err)
-	})
-}
-
-func TestIsInjected(t *testing.T) {
-	t.Run("init-container present == injected", func(t *testing.T) {
-		h := createTestHandler(nil, nil)
-
-		assert.True(t, h.isInjected(createTestMutationRequestWithInjectedPod(t, getTestDynakube())))
-	})
-
-	t.Run("init-container NOT present != injected", func(t *testing.T) {
-		h := createTestHandler(nil, nil)
-
-		assert.False(t, h.isInjected(createTestMutationRequest(t, getTestDynakube())))
 	})
 }
 
@@ -275,7 +278,7 @@ func getTestDynakubeWithAGCerts() *dynakube.DynaKube {
 func createTestMutationRequestWithInjectedPod(t *testing.T, dk *dynakube.DynaKube) *dtwebhook.MutationRequest {
 	t.Helper()
 
-	return dtwebhook.NewMutationRequest(context.Background(), *getTestNamespace(), nil, getInjectedPod(t), *dk)
+	return dtwebhook.NewMutationRequest(t.Context(), *getTestNamespace(), nil, getInjectedPod(t), *dk)
 }
 
 func getInjectedPod(t *testing.T) *corev1.Pod {
@@ -313,7 +316,7 @@ func getInjectedPod(t *testing.T) *corev1.Pod {
 
 	h := createTestHandler(webhookmock.NewMutator(t), webhookmock.NewMutator(t))
 
-	installContainer := h.createInitContainerBase(pod, *getTestDynakube())
+	installContainer := h.createInitContainerBase(t.Context(), pod, *getTestDynakube())
 	pod.Spec.InitContainers = append(pod.Spec.InitContainers, *installContainer)
 
 	return pod
@@ -354,6 +357,8 @@ func TestSetDynatraceInjectedAnnotation(t *testing.T) {
 }
 
 func createTestMutationRequest(t *testing.T, dk *dynakube.DynaKube) *dtwebhook.MutationRequest {
+	t.Helper()
+
 	return dtwebhook.NewMutationRequest(t.Context(), *getTestNamespace(), nil, getTestPod(), *dk)
 }
 

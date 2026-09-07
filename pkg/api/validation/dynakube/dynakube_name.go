@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package validation
 
 import (
@@ -44,7 +47,7 @@ const (
 	maxDeploymentLen = maxPodNameLen - podSuffixLen - hyphenLen //nolint:unused
 
 	maxNameLengthForExtensions = maxStatefulSetNameLength - len(consts.ExtensionsControllerSuffix)
-	maxNameLengthForOTELC      = maxStatefulSetNameLength - len(consts.OTELCollectorNameSuffix)
+	maxNameLengthForOTelCol    = maxStatefulSetNameLength - len(consts.OTelCollectorNameSuffix)
 	maxNameLengthForKSPM       = maxDaemonSetNameLength - len(consts.NodeCollectorNameSuffix)
 )
 
@@ -83,7 +86,7 @@ func nameTooLong(dk *dynakube.DynaKube) string {
 	}
 
 	if dk.TelemetryIngest().IsEnabled() {
-		maxLength = min(maxLength, maxNameLengthForOTELC)
+		maxLength = min(maxLength, maxNameLengthForOTelCol)
 		suffix = otelcNameTooLongSuffix
 	}
 

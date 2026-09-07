@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package statefulset
 
 import (
@@ -19,6 +22,11 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+)
+
+const (
+	ActiveGateStatefulSetConditionType string = "ActiveGateStatefulSet"
+	internalProxySecretVolumeName      string = "internal-proxy-secret-volume"
 )
 
 type Reconciler struct {

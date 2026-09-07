@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package metadata
 
 import (
@@ -593,6 +596,8 @@ func TestMutate_ResourceAttributes(t *testing.T) {
 }
 
 func createTestMutationRequest(t *testing.T, dk *dynakube.DynaKube, annotations map[string]string) *dtwebhook.MutationRequest {
+	t.Helper()
+
 	if dk == nil {
 		dk = &dynakube.DynaKube{}
 	}

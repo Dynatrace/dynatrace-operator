@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package validation
 
 import (
@@ -11,7 +14,7 @@ const (
 	testValidOAuthEndpoint = "https://sso.dynatrace.com/endpoint"
 )
 
-func TestOauthEndpoint(t *testing.T) {
+func Test_isValidSSOServerURL(t *testing.T) {
 	t.Run("happy apiServer", func(t *testing.T) {
 		for _, domain := range allowedSSODomains {
 			ec := &edgeconnect.EdgeConnect{

@@ -1,7 +1,9 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package troubleshoot
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -168,10 +170,10 @@ func TestImagePullable(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			logOutput := runWithTestLogger(func(log logd.Logger) {
-				ctx := context.Background()
+				ctx := t.Context()
 				clt := fake.NewClient(secret)
-				pullSecret, _ := checkDynakube(ctx, log, clt, test.dk)
-				keychain, _ := dockerkeychain.NewDockerKeychain(context.Background(), fake.NewClient(secret), pullSecret)
+				_ = checkDynakube(ctx, log, clt, test.dk)
+				keychain, _ := dockerkeychain.NewDockerKeychains(t.Context(), fake.NewClient(secret), test.dk.Namespace, test.dk.PullSecretNames())
 
 				transport, _ := createTransport(ctx, clt, test.dk, dockerServer.Client())
 				pullImage := CreateImagePullFunc(ctx, keychain, transport)
@@ -260,10 +262,10 @@ func TestImageNotPullable(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			logOutput := runWithTestLogger(func(log logd.Logger) {
-				ctx := context.Background()
+				ctx := t.Context()
 				clt := fake.NewClient(secret)
-				pullSecret, _ := checkDynakube(ctx, log, clt, test.dk)
-				keychain, _ := dockerkeychain.NewDockerKeychain(context.Background(), fake.NewClient(secret), pullSecret)
+				_ = checkDynakube(ctx, log, clt, test.dk)
+				keychain, _ := dockerkeychain.NewDockerKeychains(t.Context(), fake.NewClient(secret), test.dk.Namespace, test.dk.PullSecretNames())
 
 				transport, _ := createTransport(ctx, clt, test.dk, dockerServer.Client())
 				pullImage := CreateImagePullFunc(ctx, keychain, transport)
@@ -300,10 +302,10 @@ func TestOneAgentCodeModulesImageNotPullable(t *testing.T) {
 			withCloudNativeCodeModulesImage("myunknownserver.com/myrepo/mymissingcodemodules").
 			build()
 		logOutput := runWithTestLogger(func(log logd.Logger) {
-			ctx := context.Background()
+			ctx := t.Context()
 			clt := fake.NewClient(secret)
-			pullSecret, _ := checkDynakube(ctx, log, clt, &dk)
-			keychain, _ := dockerkeychain.NewDockerKeychain(context.Background(), fake.NewClient(secret), pullSecret)
+			_ = checkDynakube(ctx, log, clt, &dk)
+			keychain, _ := dockerkeychain.NewDockerKeychains(t.Context(), fake.NewClient(secret), dk.Namespace, dk.PullSecretNames())
 
 			transport, _ := createTransport(ctx, clt, &dk, dockerServer.Client())
 			pullImage := CreateImagePullFunc(ctx, keychain, transport)
@@ -321,10 +323,10 @@ func TestOneAgentCodeModulesImageNotPullable(t *testing.T) {
 			build()
 
 		logOutput := runWithTestLogger(func(log logd.Logger) {
-			ctx := context.Background()
+			ctx := t.Context()
 			clt := fake.NewClient(secret)
-			pullSecret, _ := checkDynakube(ctx, log, clt, &dk)
-			keychain, _ := dockerkeychain.NewDockerKeychain(context.Background(), fake.NewClient(secret), pullSecret)
+			_ = checkDynakube(ctx, log, clt, &dk)
+			keychain, _ := dockerkeychain.NewDockerKeychains(t.Context(), fake.NewClient(secret), dk.Namespace, dk.PullSecretNames())
 			transport, _ := createTransport(ctx, clt, &dk, dockerServer.Client())
 			pullImage := CreateImagePullFunc(ctx, keychain, transport)
 			verifyImageIsAvailable(log, pullImage, &dk, componentCodeModules, false)

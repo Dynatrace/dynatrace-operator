@@ -1,4 +1,6 @@
 all: false
+template-data:
+  boilerplate-file: ./hack/boilerplate.go.txt
 dir: 'test/mocks/{{trimPrefix "dynatrace-operator/" .InterfaceDirRelative}}'
 pkgname: mocks
 force-file-write: true
@@ -43,6 +45,7 @@ packages:
       dtSettingReconciler:
       dynakubeReconciler:
       extensionReconciler:
+      oTelColReconciler:
       istioReconciler:
       logMonitoringReconciler:
       oneAgentReconciler:
@@ -72,6 +75,7 @@ packages:
       versionReconciler:
       connectionInfoReconciler:
       enrichmentRulesReconciler:
+      secretGenerator:
   github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/oneagent:
     config:
       dir: "{{.InterfaceDir}}"
@@ -103,8 +107,23 @@ packages:
       structname: "{{.Mock}}{{.InterfaceName | firstUpper}}"
       filename: "mock_reconcilers_test.go"
     interfaces:
+      authTokenReconciler:
       connectionInfoReconciler:
+      customPropertiesReconciler:
+      pullSecretReconciler:
+      gatewayReconciler:
       statefulsetReconciler:
+      istioReconciler:
+  github.com/Dynatrace/dynatrace-operator/pkg/controllers/dtprometheus:
+    config:
+      dir: "{{.InterfaceDir}}"
+      pkgname: "{{.SrcPackageName}}"
+      structname: "{{.Mock}}{{.InterfaceName | firstUpper}}"
+      filename: "mock_reconcilers_test.go"
+    interfaces:
+      gatewayReconciler:
+      targetAllocatorReconciler:
+      scraperReconciler:
   github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder:
     config:
       dir: "{{.InterfaceDir}}"

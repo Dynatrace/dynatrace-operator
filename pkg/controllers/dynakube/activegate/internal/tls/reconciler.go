@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package tls
 
 import (
@@ -25,7 +28,7 @@ import (
 const (
 	activeGateSelfSignedTLSCommonNameSuffix = "activegate"
 
-	tlsCrtDataName = "server.crt"
+	conditionType = "TLSSecret"
 )
 
 type Reconciler struct {
@@ -126,9 +129,9 @@ func (r *Reconciler) createSelfSignedTLSSecret(ctx context.Context, dk *dynakube
 
 	coreLabels := k8slabel.NewCoreLabels(dk.Name, k8slabel.ActiveGateComponentLabel)
 	secretData := map[string][]byte{
-		consts.TLSCrtDataName: pemCert,
-		consts.TLSKeyDataName: pemPk,
-		tlsCrtDataName:        pemCert,
+		consts.TLSCrtDataName:       pemCert,
+		consts.TLSKeyDataName:       pemPk,
+		consts.TLSServerCrtDataName: pemCert,
 	}
 
 	secret, err := k8ssecret.Build(dk, dk.ActiveGate().GetTLSSecretName(), secretData, k8ssecret.SetLabels(coreLabels.BuildLabels()))

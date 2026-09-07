@@ -1,16 +1,5 @@
-# Copyright 2021 Dynatrace LLC
-
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-
-#     http://www.apache.org/licenses/LICENSE-2.0
-
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# Copyright Dynatrace LLC
+# SPDX-License-Identifier: Apache-2.0
 
 # special handling for "openshift" and "gke-autopilot" (deprecated)
 platform: ""
@@ -68,7 +57,7 @@ operator:
   startupProbe: {} # configurable: periodSeconds, timeoutSeconds, failureThreshold
   requeueAfter: "" # requeue period for the controller, defaults to 15m
   clientCacheCleanupInterval: "" # defined in the Golang time.Duration format, like "30m" == 30 minutes. Defaults to 1h
-  kubemonEnableOperand: false # temporary gate; set to true to enable kubemon in dev/test. Remove when kubemon is complete.
+  clientConnectionTimeout: "" # defined in the Golang time.Duration format, like "30m" == 30 minutes. Defaults to 30s
 
 webhook:
   hostNetwork: false
@@ -79,7 +68,7 @@ webhook:
   nodeSelector: {}
   tolerations: []
   labels: {}
-  annotations: {}
+  annotations: {} # applied to the webhook deployment, its pods and the dynatrace-webhook service
   apparmor: false
   securityContext:
     privileged: false
@@ -140,6 +129,7 @@ webhook:
     certsDir:
       sizeLimit: 10Mi
   startupProbe: {} # configurable: periodSeconds, timeoutSeconds, failureThreshold
+  metadataSizeLimit: "" # size limit for the metadata annotation, defaults to 24576 bytes
 
 csidriver:
   enabled: true
@@ -149,6 +139,7 @@ csidriver:
   existingPriorityClassName: "" # if defined, use this priorityclass instead of creating a new one
   priorityClassValue: "1000000"
   cleanupPeriod: "" # defined in the Golang time.Duration format, like "30m" == 30 minutes
+  clientConnectionTimeout: "" # defined in the Golang time.Duration format, like "30m" == 30 minutes. Defaults to 15m. Too small value can cause failures when downloading large OneAgent packages (~1GB).
   tolerations:
     - effect: NoSchedule
       key: node-role.kubernetes.io/master
@@ -293,8 +284,6 @@ rbac:
   extensions:
     create: true
     annotations: {}
-    prometheus:
-      create: true
     database:
       create: true
   telemetryIngest:
@@ -309,4 +298,10 @@ rbac:
   kspm:
     create: true
     annotations: {}
+  prometheus:
+    create: true
   supportability: true
+
+experimental:
+  enableKubemonOperand: false # temporary gate; set to true to enable kubemon in dev/test. Remove when kubemon is complete.
+  enablePrometheus: false # temporary gate; set to true to enable prometheus integration in dev/test. Remove when prometheus integration is complete.

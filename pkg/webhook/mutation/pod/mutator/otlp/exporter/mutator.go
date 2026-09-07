@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package exporter
 
 import (
@@ -24,6 +27,8 @@ const (
 	// ActiveGateTrustedCertVolumeName is the name of the volume holding the ActiveGate trusted certificates mounted into instrumented containers.
 	ActiveGateTrustedCertVolumeName = "otlp-dynatrace-certs"
 	exporterCertsMountPath          = "/etc/dynatrace/ssl"
+
+	CouldNotGetIngestEndpointReason = "IngestEndpointUnavailable"
 )
 
 type Mutator struct{}

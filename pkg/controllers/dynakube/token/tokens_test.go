@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package token
 
 import (
@@ -7,11 +10,13 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
 	tokenclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	tokenclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/token"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -69,24 +74,24 @@ func TestTokens(t *testing.T) {
 		fakeTokenAllTelemetryIngestPermissions       = "all-telemetry-ingest-permissions"
 	)
 
-	createFakeClient := func(t *testing.T) *tokenclientmock.Client {
+	scopesByToken := map[string][]string{
+		fakeTokenNoPermissions:                       {},
+		fakeTokenAllAPITokenPermissions:              getAllScopesForAPIToken(),
+		fakeTokenAllAPITokenPermissionsIncludingPaaS: append(getAllScopesForAPIToken(), getAllScopesForPaaSToken()...),
+		fakeTokenPaas:                                getAllScopesForPaaSToken(),
+		fakeTokenAllDataIngestPermissions:            getAllScopesForDataIngest(),
+		fakeTokenAllOTLPExporterPermissions:          getAllScopesForOTLPExporter(),
+		fakeTokenAllTelemetryIngestPermissions:       getAllScopesForTelemetryIngest(),
+	}
+
+	// createFakeClient provisions GetScopes only for the tokens the test case actually verifies,
+	// so every expectation is exercised exactly once.
+	createFakeClient := func(t *testing.T, usedTokens ...string) *tokenclientmock.Client {
+		t.Helper()
+
 		mockedTokenClient := tokenclientmock.NewClient(t)
-
-		tokenScopes := []struct {
-			token  string
-			scopes []string
-		}{
-			{fakeTokenNoPermissions, []string{}},
-			{fakeTokenAllAPITokenPermissions, getAllScopesForAPIToken()},
-			{fakeTokenAllAPITokenPermissionsIncludingPaaS, append(getAllScopesForAPIToken(), getAllScopesForPaaSToken()...)},
-			{fakeTokenPaas, getAllScopesForPaaSToken()},
-			{fakeTokenAllDataIngestPermissions, getAllScopesForDataIngest()},
-			{fakeTokenAllOTLPExporterPermissions, getAllScopesForOTLPExporter()},
-			{fakeTokenAllTelemetryIngestPermissions, getAllScopesForTelemetryIngest()},
-		}
-
-		for _, tokenScope := range tokenScopes {
-			mockedTokenClient.EXPECT().GetScopes(anyCtx, tokenScope.token).Return(tokenScope.scopes, nil).Maybe()
+		for _, usedToken := range usedTokens {
+			mockedTokenClient.EXPECT().GetScopes(anyCtx, usedToken).Return(scopesByToken[usedToken], nil).Once()
 		}
 
 		return mockedTokenClient
@@ -102,14 +107,13 @@ func TestTokens(t *testing.T) {
 	}
 
 	t.Run("empty dynakube, all permissions in api token, but paas => should fail", func(t *testing.T) {
-		apiToken := newToken(APIKey, fakeTokenAllAPITokenPermissions)
 		tokens := Tokens{
-			APIKey: &apiToken,
+			APIKey: new(newToken(APIKey, fakeTokenAllAPITokenPermissions)),
 		}
 		tokens = tokens.AddFeatureScopesToTokens()
-		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t), dynakube.DynaKube{})
+		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t, fakeTokenAllAPITokenPermissions), dynakube.DynaKube{})
 
-		assert.Len(t, tokens.APIToken().Features, 10)
+		assert.Len(t, tokens.APIToken().Features, 9)
 		assert.Empty(t, tokens.PaasToken().Features)
 		assert.Empty(t, tokens.DataIngestToken().Features)
 
@@ -117,29 +121,26 @@ func TestTokens(t *testing.T) {
 		assert.EqualError(t, err, "token 'apiToken' has scope errors: [feature 'Download Installer' is missing scope 'InstallerDownload']")
 	})
 	t.Run("empty dynakube, all permissions in api token, but paas + paas token => should work", func(t *testing.T) {
-		apiToken := newToken(APIKey, fakeTokenAllAPITokenPermissions)
-		paasToken := newToken(PaaSKey, fakeTokenPaas)
 		tokens := Tokens{
-			APIKey:  &apiToken,
-			PaaSKey: &paasToken,
+			APIKey:  new(newToken(APIKey, fakeTokenAllAPITokenPermissions)),
+			PaaSKey: new(newToken(PaaSKey, fakeTokenPaas)),
 		}
 		tokens = tokens.AddFeatureScopesToTokens()
-		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t), dynakube.DynaKube{})
+		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t, fakeTokenAllAPITokenPermissions, fakeTokenPaas), dynakube.DynaKube{})
 
-		assert.Len(t, tokens.APIToken().Features, 10)
+		assert.Len(t, tokens.APIToken().Features, 9)
 		assert.Len(t, tokens.PaasToken().Features, 1)
 		assert.Empty(t, tokens.DataIngestToken().Features)
 		assert.NoError(t, err)
 	})
 	t.Run("empty dynakube, all permissions in api token => should work", func(t *testing.T) {
-		apiToken := newToken(APIKey, fakeTokenAllAPITokenPermissionsIncludingPaaS)
 		tokens := Tokens{
-			APIKey: &apiToken,
+			APIKey: new(newToken(APIKey, fakeTokenAllAPITokenPermissionsIncludingPaaS)),
 		}
 		tokens = tokens.AddFeatureScopesToTokens()
-		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t), dynakube.DynaKube{})
+		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t, fakeTokenAllAPITokenPermissionsIncludingPaaS), dynakube.DynaKube{})
 
-		assert.Len(t, tokens.APIToken().Features, 10)
+		assert.Len(t, tokens.APIToken().Features, 9)
 		assert.Empty(t, tokens.PaasToken().Features)
 		assert.Empty(t, tokens.DataIngestToken().Features)
 		assert.NoError(t, err)
@@ -150,49 +151,44 @@ func TestTokens(t *testing.T) {
 			activegate.KubeMonCapability.DisplayName,
 		}
 
-		apiToken := newToken(APIKey, fakeTokenNoPermissions)
 		tokens := Tokens{
-			APIKey: &apiToken,
+			APIKey: new(newToken(APIKey, fakeTokenNoPermissions)),
 		}
 		tokens = tokens.AddFeatureScopesToTokens()
-		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t), dk)
+		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t, fakeTokenNoPermissions), dk)
 
-		assert.Len(t, tokens.APIToken().Features, 10)
+		assert.Len(t, tokens.APIToken().Features, 9)
 		assert.Empty(t, tokens.PaasToken().Features)
 		assert.Empty(t, tokens.DataIngestToken().Features)
-		assert.Equal(t, []string{"DataExport", "activeGateTokenManagement.create", "InstallerDownload"}, GetMissingScopes(err))
+		assert.Equal(t, []string{"DataExport", "InstallerDownload", "activeGateTokenManagement.create"}, GetMissingScopes(err))
 		assert.EqualError(t, err, "token 'apiToken' has scope errors: [feature 'Access problem and event feed, metrics, and topology' is missing scope 'DataExport' feature 'Automatic ActiveGate Token Creation' is missing scope 'activeGateTokenManagement.create' feature 'Download Installer' is missing scope 'InstallerDownload']")
 	})
 	t.Run("data ingest enabled => dataingest token missing rights => fail", func(t *testing.T) {
 		dk := dynakube.DynaKube{}
 		enableKubernetesMonitoringAndMetricsIngest(&dk)
 
-		apiToken := newToken(APIKey, fakeTokenAllAPITokenPermissionsIncludingPaaS)
-		dataingestToken := newToken(DataIngestKey, fakeTokenNoPermissions)
 		tokens := Tokens{
-			APIKey:        &apiToken,
-			DataIngestKey: &dataingestToken,
+			APIKey:        new(newToken(APIKey, fakeTokenAllAPITokenPermissionsIncludingPaaS)),
+			DataIngestKey: new(newToken(DataIngestKey, fakeTokenNoPermissions)),
 		}
 		tokens = tokens.AddFeatureScopesToTokens()
-		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t), dk)
+		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t, fakeTokenAllAPITokenPermissionsIncludingPaaS, fakeTokenNoPermissions), dk)
 
-		assert.Len(t, tokens.APIToken().Features, 10)
+		assert.Len(t, tokens.APIToken().Features, 9)
 		assert.Empty(t, tokens.PaasToken().Features)
 		assert.Len(t, tokens.DataIngestToken().Features, 8)
 		assert.Equal(t, []string{"metrics.ingest"}, GetMissingScopes(err))
 		assert.EqualError(t, err, "token 'dataIngestToken' has scope errors: [feature 'Data Ingest' is missing scope 'metrics.ingest']")
 	})
 	t.Run("data ingest enabled => dataingest token has rights => success", func(t *testing.T) {
-		apiToken := newToken(APIKey, fakeTokenAllAPITokenPermissionsIncludingPaaS)
-		dataingestToken := newToken(DataIngestKey, fakeTokenAllDataIngestPermissions)
 		tokens := Tokens{
-			APIKey:        &apiToken,
-			DataIngestKey: &dataingestToken,
+			APIKey:        new(newToken(APIKey, fakeTokenAllAPITokenPermissionsIncludingPaaS)),
+			DataIngestKey: new(newToken(DataIngestKey, fakeTokenAllDataIngestPermissions)),
 		}
 		tokens = tokens.AddFeatureScopesToTokens()
-		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t), dynakube.DynaKube{})
+		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t, fakeTokenAllAPITokenPermissionsIncludingPaaS, fakeTokenAllDataIngestPermissions), dynakube.DynaKube{})
 
-		assert.Len(t, tokens.APIToken().Features, 10)
+		assert.Len(t, tokens.APIToken().Features, 9)
 		assert.Empty(t, tokens.PaasToken().Features)
 		assert.Len(t, tokens.DataIngestToken().Features, 8)
 		assert.NoError(t, err)
@@ -210,19 +206,17 @@ func TestTokens(t *testing.T) {
 			},
 		}
 
-		apiToken := newToken(APIKey, fakeTokenAllAPITokenPermissionsIncludingPaaS)
-		dataingestToken := newToken(DataIngestKey, fakeTokenNoPermissions)
 		tokens := Tokens{
-			APIKey:        &apiToken,
-			DataIngestKey: &dataingestToken,
+			APIKey:        new(newToken(APIKey, fakeTokenAllAPITokenPermissionsIncludingPaaS)),
+			DataIngestKey: new(newToken(DataIngestKey, fakeTokenNoPermissions)),
 		}
 		tokens = tokens.AddFeatureScopesToTokens()
-		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t), dk)
+		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t, fakeTokenAllAPITokenPermissionsIncludingPaaS, fakeTokenNoPermissions), dk)
 
-		assert.Len(t, tokens.APIToken().Features, 10)
+		assert.Len(t, tokens.APIToken().Features, 9)
 		assert.Empty(t, tokens.PaasToken().Features)
 		assert.Len(t, tokens.DataIngestToken().Features, 8)
-		assert.Equal(t, []string{"openTelemetryTrace.ingest", "logs.ingest", "metrics.ingest"}, GetMissingScopes(err))
+		assert.Equal(t, []string{"logs.ingest", "metrics.ingest", "openTelemetryTrace.ingest"}, GetMissingScopes(err))
 		assert.EqualError(t, err, "token 'dataIngestToken' has scope errors: [feature 'OTLP trace exporter configuration' is missing scope 'openTelemetryTrace.ingest' feature 'OTLP logs exporter configuration' is missing scope 'logs.ingest' feature 'OTLP metrics exporter configuration' is missing scope 'metrics.ingest']")
 	})
 	t.Run("otlp exporter configuration enabled => dataingest token has rights => success", func(t *testing.T) {
@@ -238,16 +232,14 @@ func TestTokens(t *testing.T) {
 			},
 		}
 
-		apiToken := newToken(APIKey, fakeTokenAllAPITokenPermissionsIncludingPaaS)
-		dataingestToken := newToken(DataIngestKey, fakeTokenAllOTLPExporterPermissions)
 		tokens := Tokens{
-			APIKey:        &apiToken,
-			DataIngestKey: &dataingestToken,
+			APIKey:        new(newToken(APIKey, fakeTokenAllAPITokenPermissionsIncludingPaaS)),
+			DataIngestKey: new(newToken(DataIngestKey, fakeTokenAllOTLPExporterPermissions)),
 		}
 		tokens = tokens.AddFeatureScopesToTokens()
-		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t), dk)
+		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t, fakeTokenAllAPITokenPermissionsIncludingPaaS, fakeTokenAllOTLPExporterPermissions), dk)
 
-		assert.Len(t, tokens.APIToken().Features, 10)
+		assert.Len(t, tokens.APIToken().Features, 9)
 		assert.Empty(t, tokens.PaasToken().Features)
 		assert.Len(t, tokens.DataIngestToken().Features, 8)
 		assert.NoError(t, err)
@@ -349,6 +341,41 @@ func TestTokens_VerifyScopes(t *testing.T) {
 			shouldError: false,
 		},
 		{
+			title: "kubernetesMonitoring operand with registration enabled, optional scopes present",
+			dk: dynakube.DynaKube{
+				Spec: dynakube.DynaKubeSpec{
+					KubernetesMonitoring: &kubemon.Spec{
+						Registration: &kubemon.Registration{},
+					},
+				},
+			},
+			availableScopes: []string{
+				tokenclient.ScopeDataExport,
+				tokenclient.ScopeSettingsRead,
+				tokenclient.ScopeSettingsWrite,
+				tokenclient.ScopeInstallerDownload,
+			},
+			expectedOptional: map[string]bool{
+				tokenclient.ScopeSettingsRead:  true,
+				tokenclient.ScopeSettingsWrite: true,
+			},
+			shouldError: false,
+		},
+		{
+			title: "kubernetesMonitoring operand without registration, optional scopes missing",
+			dk: dynakube.DynaKube{
+				Spec: dynakube.DynaKubeSpec{
+					KubernetesMonitoring: &kubemon.Spec{},
+				},
+			},
+			availableScopes: []string{
+				tokenclient.ScopeDataExport,
+				tokenclient.ScopeInstallerDownload,
+			},
+			expectedOptional: map[string]bool{},
+			shouldError:      false,
+		},
+		{
 			title: "metadataEnrichment - all scopes present",
 			dk: dynakube.DynaKube{
 				Spec: dynakube.DynaKubeSpec{
@@ -443,13 +470,16 @@ func TestTokens_VerifyScopes(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.title, func(t *testing.T) {
+			if c.dk.KubernetesMonitoring().IsEnabled() {
+				t.Setenv(k8senv.ExperimentalEnableKubemonOperand, "true")
+			}
+
 			tokenValue := "test-token"
 			mockedTokenClient := tokenclientmock.NewClient(t)
 			mockedTokenClient.EXPECT().GetScopes(anyCtx, tokenValue).Return(c.availableScopes, nil).Once()
 
-			apiToken := newToken(APIKey, tokenValue)
 			tokens := Tokens{
-				APIKey: &apiToken,
+				APIKey: new(newToken(APIKey, tokenValue)),
 			}
 			tokens = tokens.AddFeatureScopesToTokens()
 			optionalScopes, err := tokens.VerifyScopes(t.Context(), mockedTokenClient, c.dk)
@@ -461,14 +491,11 @@ func TestTokens_VerifyScopes(t *testing.T) {
 }
 
 func TestTokens_VerifyValues(t *testing.T) {
-	validToken := newToken(APIKey, "valid-value")
-	invalidToken := newToken(APIKey, " invalid-value ")
-
 	validTokens := Tokens{
-		APIKey: &validToken,
+		APIKey: new(newToken(APIKey, "valid-value")),
 	}
 	invalidTokens := Tokens{
-		APIKey: &invalidToken,
+		APIKey: new(newToken(APIKey, " invalid-value ")),
 	}
 
 	require.NoError(t, validTokens.VerifyValues())
@@ -577,6 +604,20 @@ func TestGetMissingScopes(t *testing.T) {
 				},
 				ScopeError{
 					Token:         PaaSKey,
+					MissingScopes: []string{"InstallerDownload"},
+				},
+			),
+			want: []string{"DataExport", "InstallerDownload"},
+		},
+		{
+			name: "missing scopes are only reported once, even across ScopeErrors",
+			err: errors.Join(
+				ScopeError{
+					Token:         APIKey,
+					MissingScopes: []string{"DataExport", "DataExport", "InstallerDownload"},
+				},
+				ScopeError{
+					Token:         DataIngestKey,
 					MissingScopes: []string{"InstallerDownload"},
 				},
 			),

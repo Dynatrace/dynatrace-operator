@@ -1,21 +1,12 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package logmonitoring
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	corev1 "k8s.io/api/core/v1"
 )
-
-type dependencies struct {
-	hostAgents bool
-}
-
-type LogMonitoring struct {
-	*Spec
-	*TemplateSpec
-
-	name                string
-	enabledDependencies dependencies
-}
 
 // +kubebuilder:object:generate=true
 

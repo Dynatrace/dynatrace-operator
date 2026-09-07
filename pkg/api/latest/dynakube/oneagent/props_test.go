@@ -1,18 +1,5 @@
-/*
-Copyright 2021 Dynatrace LLC.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
 
 package oneagent
 
@@ -102,18 +89,18 @@ func TestCustomOneAgentImage(t *testing.T) {
 
 func TestGetOneAgentImagePullPolicy(t *testing.T) {
 	t.Run("hostmonitoring", func(t *testing.T) {
-		oneAgent := OneAgent{Spec: &Spec{ClassicFullStack: &HostInjectSpec{ImagePullPolicy: "foo"}}}
-		assert.EqualValues(t, "foo", oneAgent.GetImagePullPolicy())
+		oneAgent := OneAgent{Spec: &Spec{ClassicFullStack: &HostInjectSpec{ImagePullPolicy: corev1.PullAlways}}}
+		assert.Equal(t, corev1.PullAlways, oneAgent.GetImagePullPolicy())
 	})
 
 	t.Run("CFS", func(t *testing.T) {
-		oneAgent := OneAgent{Spec: &Spec{HostMonitoring: &HostInjectSpec{ImagePullPolicy: "foo"}}}
-		assert.EqualValues(t, "foo", oneAgent.GetImagePullPolicy())
+		oneAgent := OneAgent{Spec: &Spec{HostMonitoring: &HostInjectSpec{ImagePullPolicy: corev1.PullAlways}}}
+		assert.Equal(t, corev1.PullAlways, oneAgent.GetImagePullPolicy())
 	})
 
 	t.Run("CNFS", func(t *testing.T) {
-		oneAgent := OneAgent{Spec: &Spec{CloudNativeFullStack: &CloudNativeFullStackSpec{HostInjectSpec: HostInjectSpec{ImagePullPolicy: "foo"}}}}
-		assert.EqualValues(t, "foo", oneAgent.GetImagePullPolicy())
+		oneAgent := OneAgent{Spec: &Spec{CloudNativeFullStack: &CloudNativeFullStackSpec{HostInjectSpec: HostInjectSpec{ImagePullPolicy: corev1.PullAlways}}}}
+		assert.Equal(t, corev1.PullAlways, oneAgent.GetImagePullPolicy())
 	})
 }
 

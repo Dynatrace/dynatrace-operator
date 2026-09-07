@@ -1,22 +1,12 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package extensions
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	corev1 "k8s.io/api/core/v1"
 )
-
-type Extensions struct {
-	*ExecutionControllerSpec
-
-	name      string
-	namespace string
-	enabled   bool
-}
-
-// +kubebuilder:object:generate=true
-
-type Spec struct {
-}
 
 // +kubebuilder:object:generate=true
 
@@ -61,5 +51,5 @@ type ExecutionControllerSpec struct {
 	TopologySpreadConstraints []corev1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
 	// Selects EmptyDir volume to be storage device
 	// +kubebuilder:validation:Optional
-	UseEphemeralVolume bool `json:"useEphemeralVolume,omitempty"`
+	UseEphemeralVolume *bool `json:"useEphemeralVolume,omitempty"`
 }

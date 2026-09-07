@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package validation
 
 import (
@@ -6,7 +9,6 @@ import (
 	"fmt"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	v1beta4 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta4/dynakube"
 	v1beta5 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/validation"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
@@ -36,6 +38,8 @@ var (
 		isInvalidAPIURL,
 		invalidActiveGateCapabilities,
 		mutuallyExclusiveActiveGatePVsettings,
+		activeGateHasConflictingVolumes,
+		activeGateHasDisallowedVolumeType,
 		invalidActiveGateProxyURL,
 		conflictingOneAgentConfiguration,
 		conflictingOneAgentNodeSelector,
@@ -43,13 +47,15 @@ var (
 		isIstioNotInstalled,
 		conflictingOneAgentVolumeStorageSettings,
 		nameInvalid,
-		namespaceSelectorViolateLabelSpec,
+		invalidOneAgentNamespaceSelector,
+		invalidMetadataNamespaceSelectors,
+		invalidOTLPExporterNamespaceSelector,
 		imageFieldHasTenantImage,
 		extensionControllerImage,
 		extensionControllerPVCStorageDevice,
-		tooManyAGReplicas,
+		tooManyKubernetesMonitoringReplicas,
 		missingKSPMImage,
-		kspmWithoutK8SMonitoring,
+		kspmWithoutKubernetesMonitoringRegistration,
 		mappedHostPathsWithRootPath,
 		relativeMappedHostPaths,
 		missingLogMonitoringImage,
@@ -58,7 +64,7 @@ var (
 		invalidTelemetryIngestName,
 		forbiddenTelemetryIngestServiceNameSuffix,
 		conflictingTelemetryIngestServiceNames,
-		missingOtelCollectorImage,
+		missingOTelCollectorImage,
 		missingDatabaseExecutorImage,
 		conflictingOrInvalidDatabasesVolumeMounts,
 		unusedDatabasesVolume,
@@ -76,6 +82,9 @@ var (
 		invalidOneAgentArguments,
 		invalidLogmonArguments,
 		missingCodeModulesImage,
+		mutualExclusiveKubernetesMonitoring,
+		kubemonMutualExclusiveCustomPropertiesValue,
+		conflictingImageMode,
 	}
 	validatorWarningFuncs = []validatorFunc{
 		missingActiveGateMemoryLimit,
@@ -86,7 +95,7 @@ var (
 		deprecatedOneAgentVersionField,
 		deprecatedFeatureFlag,
 		unknownFeatureFlag,
-		ignoredOtelCollectorTemplate,
+		ignoredOTelCollectorTemplate,
 		ignoredLogMonitoringTemplate,
 		conflictingAPIURLForExtensions,
 		noMappedHostPaths,
@@ -203,8 +212,6 @@ func getDynakube(obj runtime.Object) (dk *dynakube.DynaKube, err error) {
 	case *dynakube.DynaKube:
 		dk = v
 	case *v1beta5.DynaKube:
-		err = v.ConvertTo(dk)
-	case *v1beta4.DynaKube:
 		err = v.ConvertTo(dk)
 	default:
 		if gvk := obj.GetObjectKind().GroupVersionKind(); !gvk.Empty() {

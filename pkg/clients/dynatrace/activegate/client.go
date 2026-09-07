@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package activegate
 
 import (
@@ -77,6 +80,10 @@ type connectionInfoJSONResponse struct {
 	TenantUUID             string `json:"tenantUUID"`
 	TenantToken            string `json:"tenantToken"`
 	CommunicationEndpoints string `json:"communicationEndpoints"`
+}
+
+func (cinf *connectionInfoJSONResponse) IsEmpty() bool {
+	return cinf.TenantUUID == "" || cinf.TenantToken == "" || cinf.CommunicationEndpoints == ""
 }
 
 func (c *ClientImpl) GetConnectionInfo(ctx context.Context) (ConnectionInfo, error) {

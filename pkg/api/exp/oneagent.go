@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package exp
 
 const (
@@ -9,8 +12,9 @@ const (
 	OAInitialConnectRetryKey = FFPrefix + "oneagent-initial-connect-retry-ms"
 	OAPrivilegedKey          = FFPrefix + "oneagent-privileged"
 	OASkipLivenessProbeKey   = FFPrefix + "oneagent-skip-liveness-probe"
-
-	OANodeImagePullKey = FFPrefix + "node-image-pull"
+	OAClassicNonRootKey      = FFPrefix + "oneagent-classic-nonroot"
+	OAImageVolumeKey         = FFPrefix + "mount-code-modules-via-image-volume"
+	OANodeImagePullKey       = FFPrefix + "node-image-pull"
 	// OANodeImagePullTechnologiesKey can be set on a Pod or DynaKube to configure which code module technologies to download. It's set to
 	// "all" if not set.
 	OANodeImagePullTechnologiesKey = "oneagent.dynatrace.com/technologies"
@@ -49,8 +53,16 @@ func (ff *FeatureFlags) IsOneAgentPrivileged() bool {
 	return ff.getBoolWithDefault(OAPrivilegedKey, false)
 }
 
+func (ff *FeatureFlags) IsClassicOneAgentNonRoot() bool {
+	return ff.getBoolWithDefault(OAClassicNonRootKey, false)
+}
+
 func (ff *FeatureFlags) SkipOneAgentLivenessProbe() bool {
 	return ff.getBoolWithDefault(OASkipLivenessProbeKey, false)
+}
+
+func (ff *FeatureFlags) IsCodeModuleImageVolume() bool {
+	return ff.getBoolWithDefault(OAImageVolumeKey, false)
 }
 
 func (ff *FeatureFlags) IsNodeImagePull() bool {

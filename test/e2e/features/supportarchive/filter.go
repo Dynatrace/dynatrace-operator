@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package supportarchive
 
 func filter[T any](arr []T, predicate func(val T) bool) []T {

@@ -1,3 +1,6 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package modifiers
 
 import (
@@ -57,7 +60,7 @@ func TestDeploymentPropertiesModifierModify(t *testing.T) {
 
 		mounts := mod.getVolumeMounts()
 		require.Len(t, mounts, 1)
-		assert.Equal(t, getMountPath(), mounts[0].MountPath)
+		assert.Equal(t, consts.DeploymentPropertiesMountPath, mounts[0].MountPath)
 		assert.Equal(t, consts.DeploymentPropertiesFileName, mounts[0].SubPath)
 		assert.True(t, mounts[0].ReadOnly)
 	})

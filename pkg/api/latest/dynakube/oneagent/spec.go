@@ -1,7 +1,9 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
 package oneagent
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -92,7 +94,8 @@ type HostInjectSpec struct {
 	Image string `json:"image,omitempty"`
 
 	// Define an image pull policy for the OneAgent image.
-	ImagePullPolicy image.PullPolicy `json:"imagePullPolicy,omitempty"`
+	// +kubebuilder:validation:Enum=IfNotPresent;Always;Never
+	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
 
 	// Set the DNS Policy for OneAgent pods. For details, see Pods DNS Policy (https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy).
 	// +kubebuilder:validation:Optional
@@ -118,7 +121,7 @@ type HostInjectSpec struct {
 	// Note: resource.requests shows the values needed to run; resource.limits shows the maximum limits for the pod.
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Resource Requirements",order=20,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:resourceRequirements"}
-	OneAgentResources corev1.ResourceRequirements `json:"oneAgentResources,omitempty"`
+	OneAgentResources corev1.ResourceRequirements `json:"oneAgentResources,omitzero"`
 
 	// Rolling update settings for the OneAgent DaemonSet.
 	// +kubebuilder:validation:Optional
@@ -180,12 +183,14 @@ type AppInjectionSpec struct {
 	CodeModulesImage string `json:"codeModulesImage,omitempty"`
 
 	// Define an image pull policy for the CodeModule image.
-	CodeModulesImagePullPolicy image.PullPolicy `json:"codeModulesImagePullPolicy,omitempty"`
+	// +kubebuilder:validation:Enum=IfNotPresent;Always;Never
+	CodeModulesImagePullPolicy corev1.PullPolicy `json:"codeModulesImagePullPolicy,omitempty"`
 
 	// Applicable only for applicationMonitoring or cloudNativeFullStack configuration types. The namespaces where you want Dynatrace Operator to inject.
 	// For more information, see Configure monitoring for namespaces and pods (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring/dto-config-options-k8s#annotate).
+	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Namespace Selector",order=17,xDescriptors="urn:alm:descriptor:com.tectonic.ui:selector:core:v1:Namespace"
-	NamespaceSelector metav1.LabelSelector `json:"namespaceSelector,omitempty"`
+	NamespaceSelector metav1.LabelSelector `json:"namespaceSelector,omitzero"`
 }
 
 // +kubebuilder:object:generate=true
