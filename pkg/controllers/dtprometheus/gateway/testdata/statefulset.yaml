@@ -48,11 +48,6 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.podIP
-        - name: DT_API_TOKEN
-          valueFrom:
-            secretKeyRef:
-              key: dataIngestToken
-              name: dk
         - name: K8S_CLUSTER_NAME
           value: "prometheus"
         - name: GOMEMLIMIT

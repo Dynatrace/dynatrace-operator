@@ -328,10 +328,6 @@ func buildEnv(s *reconcileScope) []corev1.EnvVar {
 				FieldRef: &corev1.ObjectFieldSelector{APIVersion: "v1", FieldPath: "status.podIP"},
 			},
 		},
-		{Name: "DT_API_TOKEN", ValueFrom: &corev1.EnvVarSource{SecretKeyRef: &corev1.SecretKeySelector{
-			LocalObjectReference: corev1.LocalObjectReference{Name: dk.Tokens()},
-			Key:                  token.DataIngestKey,
-		}}},
 		{Name: "K8S_CLUSTER_NAME", Value: dk.Status.KubernetesClusterName},
 	}, s.Spec.Resources)
 
