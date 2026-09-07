@@ -11,9 +11,6 @@ import (
 )
 
 const (
-	defaultImageRepo = "public.ecr.aws/dynatrace/dynatrace-k8s-node-config-collector"
-	defaultImageTag  = "latest"
-
 	containerName       = "node-config-collector"
 	runAs         int64 = 65532
 )
@@ -24,7 +21,7 @@ func getContainer(dk dynakube.DynaKube, tenantUUID string) corev1.Container {
 
 	container := corev1.Container{
 		Name:            containerName,
-		Image:           dk.KSPM().ImageRef.StringWithDefaults(defaultImageRepo, defaultImageTag),
+		Image:           dk.Status.KSPM.ResolvedImage,
 		ImagePullPolicy: dk.KSPM().ImageRef.PullPolicy,
 		VolumeMounts:    getMounts(dk),
 		Env:             getEnvs(dk, tenantUUID),
