@@ -291,10 +291,6 @@ func newDTPrometheusFromDynaKubeMapper(c client.Client) handler.MapFunc {
 }
 
 // Create [predicate.Funcs] that return true when DynaKube changed in a way that's relevant for a DTPrometheus.
-//   - status.phase changed
-//   - spec.token changed
-//   - spec.resourceAttributes changed
-//   - object deleted
 func newDynaKubeChangedPredicate() predicate.Funcs {
 	return predicate.Funcs{
 		CreateFunc: func(event.TypedCreateEvent[client.Object]) bool {
