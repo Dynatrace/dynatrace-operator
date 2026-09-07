@@ -256,11 +256,10 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 			// Map requests from DynaKube to DTPrometheus
 			handler.EnqueueRequestsFromMapFunc(newDTPrometheusFromDynaKubeMapper(mgr.GetClient())),
 			// Filter out DynaKube changes that are neither a phase change nor a resource-attributes change
-			builder.WithPredicates(predicate.Or(
-				newDynaKubePredicate(phaseChecker),
-				newDynaKubePredicate(resourceAttributesChecker),
-				newDynaKubePredicate(resourceTokenNameChangedChecker),
-			)),
+			builder.WithPredicates(newDynaKubePredicate(
+				phaseChecker,
+				resourceAttributesChecker,
+				resourceTokenNameChangedChecker)),
 		).
 		Named("dtprometheus").
 		Complete(r)
@@ -294,7 +293,7 @@ func newDTPrometheusFromDynaKubeMapper(c client.Client) handler.MapFunc {
 	}
 }
 
-func newDynaKubePredicate(check func(oldDK, newDK *dynakube.DynaKube) bool) predicate.Funcs {
+func newDynaKubePredicate(checker ...func(oldDK, newDK *dynakube.DynaKube) bool) predicate.Funcs {
 	return predicate.Funcs{
 		CreateFunc: func(event.TypedCreateEvent[client.Object]) bool {
 			return false
@@ -313,7 +312,11 @@ func newDynaKubePredicate(check func(oldDK, newDK *dynakube.DynaKube) bool) pred
 				return false
 			}
 
-			return check(oldDK, newDK)
+			checked := false
+			for _, check := range checker {
+				checked = checked || check(oldDK, newDK)
+			}
+			return checked
 		},
 		GenericFunc: func(event.TypedGenericEvent[client.Object]) bool {
 			return false
