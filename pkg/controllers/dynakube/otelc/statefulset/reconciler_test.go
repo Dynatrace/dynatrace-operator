@@ -241,6 +241,61 @@ func TestDataIngestTokenHashAnnotation(t *testing.T) {
 	})
 }
 
+func TestConfigConfigMapHashAnnotation(t *testing.T) {
+	t.Run("annotation is set when TelemetryIngest is enabled", func(t *testing.T) {
+		t.Cleanup(version.DisableCacheForTest(123))
+
+		dk := getTestDynakubeWithTelemetryIngest()
+		clt := fake.NewClient(dk)
+
+		tokenSecret := getTokens(dk.Tokens(), dk.Namespace)
+		require.NoError(t, clt.Create(t.Context(), &tokenSecret))
+
+		configMap := getConfigConfigMap(dk.Name, dk.Namespace)
+		require.NoError(t, clt.Create(t.Context(), &configMap))
+
+		imageClient := imageclientmock.NewClient(t)
+		require.NoError(t, NewReconciler(clt, clt).Reconcile(t.Context(), imageClient, dk))
+
+		sts := &appsv1.StatefulSet{}
+		require.NoError(t, clt.Get(t.Context(), client.ObjectKey{Name: dk.OTelCollectorStatefulsetName(), Namespace: dk.Namespace}, sts))
+
+		assert.NotEmpty(t, sts.Spec.Template.Annotations[annotationTelemetryIngestConfigurationConfigMapHash])
+	})
+
+	t.Run("annotation changes when configmap content changes (e.g. spec.resourceAttributes update), triggering a rolling restart", func(t *testing.T) {
+		t.Cleanup(version.DisableCacheForTest(123))
+
+		dk := getTestDynakubeWithTelemetryIngest()
+		clt := fake.NewClient(dk)
+
+		tokenSecret := getTokens(dk.Tokens(), dk.Namespace)
+		require.NoError(t, clt.Create(t.Context(), &tokenSecret))
+
+		configMap := getConfigConfigMap(dk.Name, dk.Namespace)
+		require.NoError(t, clt.Create(t.Context(), &configMap))
+
+		reconciler := NewReconciler(clt, clt)
+		imageClient := imageclientmock.NewClient(t)
+		require.NoError(t, reconciler.Reconcile(t.Context(), imageClient, dk))
+
+		sts := &appsv1.StatefulSet{}
+		require.NoError(t, clt.Get(t.Context(), client.ObjectKey{Name: dk.OTelCollectorStatefulsetName(), Namespace: dk.Namespace}, sts))
+		originalHash := sts.Spec.Template.Annotations[annotationTelemetryIngestConfigurationConfigMapHash]
+		require.NotEmpty(t, originalHash)
+
+		configMap.Data[otelcconsts.ConfigFieldName] = "test-with-resource-attributes"
+		require.NoError(t, clt.Update(t.Context(), &configMap))
+
+		require.NoError(t, reconciler.Reconcile(t.Context(), imageClient, dk))
+
+		sts = &appsv1.StatefulSet{}
+		require.NoError(t, clt.Get(t.Context(), client.ObjectKey{Name: dk.OTelCollectorStatefulsetName(), Namespace: dk.Namespace}, sts))
+
+		assert.NotEqual(t, originalHash, sts.Spec.Template.Annotations[annotationTelemetryIngestConfigurationConfigMapHash])
+	})
+}
+
 func TestStatefulsetBase(t *testing.T) {
 	t.Run("replicas", func(t *testing.T) {
 		statefulSet := getWorkload(t, getTestDynakubeWithTelemetryIngest())

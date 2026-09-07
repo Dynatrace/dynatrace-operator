@@ -51,6 +51,15 @@ func create(t *testing.T, clt client.Client, obj client.Object) {
 
 	t.Cleanup(func() {
 		// t.Context() is no longer valid on cleanup
+		ctx := context.Background()
 		require.NoError(t, client.IgnoreNotFound(clt.Delete(context.Background(), obj)))
+
+		// Special handling for namespace deletion
+		if ns, ok := obj.(*corev1.Namespace); ok {
+			require.NoError(t, client.IgnoreNotFound(clt.Delete(ctx, ns)))
+			require.NoError(t, clt.Get(ctx, client.ObjectKeyFromObject(ns), ns))
+			ns.Spec.Finalizers = nil
+			require.NoError(t, clt.SubResource("finalize").Update(ctx, ns))
+		}
 	})
 }

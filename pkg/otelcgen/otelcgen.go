@@ -88,6 +88,9 @@ type Config struct {
 	endpoint string
 	apiToken string
 
+	// resourceAttributes holds static resource attributes from spec.resourceAttributes.
+	resourceAttributes map[string]string
+
 	Service   ServiceConfig `mapstructure:"service"`
 	protocols Protocols
 
@@ -257,6 +260,15 @@ func WithAPIToken(apiToken string) Option {
 func WithExportersEndpoint(endpoint string) Option {
 	return func(c *Config) error {
 		c.endpoint = endpoint
+
+		return nil
+	}
+}
+
+// WithResourceAttributes sets the static resource attributes injected into the pipeline.
+func WithResourceAttributes(attrs map[string]string) Option {
+	return func(c *Config) error {
+		c.resourceAttributes = attrs
 
 		return nil
 	}
