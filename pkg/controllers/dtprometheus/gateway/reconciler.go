@@ -73,12 +73,11 @@ type Reconciler struct {
 
 type reconcileScope struct {
 	// Required for reconcile
-	Owner       *dtprometheus.DTPrometheus
-	DynaKube    *dynakube.DynaKube
-	Spec        *dtprometheus.Gateway
-	AppLabels   *k8slabel.Labels
-	ImageClient image.Client
-	// Computed during reconcile
+	Owner         *dtprometheus.DTPrometheus
+	DynaKube      *dynakube.DynaKube
+	Spec          *dtprometheus.Gateway
+	AppLabels     *k8slabel.Labels
+	ImageClient   image.Client
 	ConfigMapHash string
 	StatefulSet   *appsv1.StatefulSet
 }
@@ -115,15 +114,15 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtp *dtprometheus.DTPromethe
 // resolveImage uses the explicit image from .spec.gateway.image when set, otherwise resolves
 // the latest gateway image from the fleet management API.
 func (r *Reconciler) resolveImage(ctx context.Context, s *reconcileScope) error {
-	imageURI := s.Spec.Image
+	if s.Spec.Image != "" {
+		s.Owner.Status.Gateway.ResolvedImage = s.Spec.Image
 
-	if imageURI == "" {
-		var err error
+		return nil
+	}
 
-		imageURI, err = registry.ResolveImage(ctx, s.ImageClient, s.Owner.Spec.PublicRegistryOverride, image.Gateway)
-		if err != nil {
-			return err
-		}
+	imageURI, err := registry.ResolveImage(ctx, s.ImageClient, s.Owner.Spec.PublicRegistryOverride, image.Gateway)
+	if err != nil {
+		return err
 	}
 
 	s.Owner.Status.Gateway.ResolvedImage = imageURI
