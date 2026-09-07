@@ -122,6 +122,7 @@ func (r *Reconciler) getData(dk *dynakube.DynaKube) (map[string]string, error) {
 	}
 
 	options = append(options,
+		otelcgen.WithResourceAttributes(dk.Spec.ResourceAttributes),
 		otelcgen.WithExporters(),
 		otelcgen.WithProcessors(),
 		otelcgen.WithReceivers(),

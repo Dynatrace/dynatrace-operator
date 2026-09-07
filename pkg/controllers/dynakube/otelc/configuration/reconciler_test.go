@@ -49,10 +49,30 @@ func TestConfigurationConfigMap(t *testing.T) {
 
 		_, ok := configMap.Data[consts.ConfigFieldName]
 		assert.True(t, ok)
+		assert.NotContains(t, configMap.Data[consts.ConfigFieldName], "resource/staticAttrs")
 
 		require.Len(t, dk.Status.Conditions, 1)
 		assert.Equal(t, conditionType, dk.Status.Conditions[0].Type)
 		assert.Equal(t, k8sconditions.ConfigMapCreatedOrUpdatedReason, dk.Status.Conditions[0].Reason)
 		assert.Equal(t, metav1.ConditionTrue, dk.Status.Conditions[0].Status)
+	})
+
+	t.Run("configmap contains static resource attributes processor when spec.resourceAttributes is set", func(t *testing.T) {
+		mockK8sClient := fake.NewFakeClient()
+		dk := getTestDynakube(&telemetryingest.Spec{})
+		dk.Spec.ResourceAttributes = map[string]string{"team": "shopping-cart"}
+
+		err := NewReconciler(mockK8sClient, mockK8sClient).Reconcile(t.Context(), dk)
+		require.NoError(t, err)
+
+		configMap := &corev1.ConfigMap{}
+		err = mockK8sClient.Get(t.Context(), client.ObjectKey{Name: GetConfigMapName(dk.Name), Namespace: dk.Namespace}, configMap)
+		require.NoError(t, err)
+
+		configData := configMap.Data[consts.ConfigFieldName]
+		assert.Contains(t, configData, "resource/staticAttrs")
+		assert.Contains(t, configData, "key: team")
+		assert.Contains(t, configData, "value: shopping-cart")
+		assert.Contains(t, configData, "action: insert")
 	})
 }
