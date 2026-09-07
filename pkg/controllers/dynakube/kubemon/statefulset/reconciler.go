@@ -176,6 +176,10 @@ func buildEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 		envs = append(envs, corev1.EnvVar{Name: agconsts.EnvDTGroup, Value: dk.Spec.KubernetesMonitoring.Group})
 	}
 
+	if dk.Spec.NetworkZone != "" {
+		envs = append(envs, corev1.EnvVar{Name: agconsts.EnvDTNetworkZone, Value: dk.Spec.NetworkZone})
+	}
+
 	return append(envs, dk.KubernetesMonitoring().Env...)
 }
 
