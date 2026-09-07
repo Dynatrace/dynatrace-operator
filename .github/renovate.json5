@@ -64,6 +64,15 @@
         "# ?renovate datasource=(?<datasource>.*?) depName=(?<depName>[^\\s]+)[^\\n]*\\n[ \\t]*[^:]*:\\s*\"?(?<currentValue>[^\"\\s]+)\"?",
       ],
     },
+    {
+      fileMatch: [
+        "(^|/)hack/kind/setup\\.sh$",
+      ],
+      matchStrings: [
+        "KIND_IMAGE_K8S_\\d+=docker\\.io/(?<depName>[^:]+):(?<currentValue>v[^@\\s]+)@(?<currentDigest>sha256:[^\\s]+)",
+      ],
+      datasourceTemplate: "docker",
+    },
   ],
   packageRules: [
     {
@@ -229,6 +238,12 @@
     {
       matchManagers: ["dockerfile"],
       groupName: "Dockerfile base images",
+    },
+    {
+      matchPackageNames: ["kindest/node"],
+      groupName: "kind node images",
+      commitMessagePrefix: "Kind:",
+      automerge: true,
     },
     {
       matchManagers: ["pip_requirements", "npm", "regex"],

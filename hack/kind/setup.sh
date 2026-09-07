@@ -13,9 +13,8 @@ end="\033[0m" # E is the "end" marker.
 warn="⚠️  "
 redcross="❌  "
 
-# TODO: we can use renovate to update these image versions
-# DAQ-15444
 # based on release page https://github.com/kubernetes-sigs/kind/releases
+# renovate updates these via regexManager in .github/renovate.json5
 KIND_IMAGE_K8S_129=docker.io/kindest/node:v1.29.14@sha256:8703bd94ee24e51b778d5556ae310c6c0fa67d761fae6379c8e0bb480e6fea29
 KIND_IMAGE_K8S_130=docker.io/kindest/node:v1.30.13@sha256:397209b3d947d154f6641f2d0ce8d473732bd91c87d9575ade99049aa33cd648
 KIND_IMAGE_K8S_131=docker.io/kindest/node:v1.31.14@sha256:6f86cf509dbb42767b6e79debc3f2c32e4ee01386f0489b3b2be24b0a55aac2b
