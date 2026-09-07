@@ -17,6 +17,7 @@ manifests/crd/uninstall: prerequisites/kustomize manifests/crd/generate
 manifests/crd/helm: prerequisites/kustomize helm/version manifests/crd/generate
 	./hack/helm/generate-crd.sh $(KUSTOMIZE) $(HELM_CRD_DIR) $(MANIFESTS_DIR) config/crd dynatrace-operator-crd.yaml
 	./hack/helm/generate-crd.sh $(KUSTOMIZE) $(HELM_CRD_DIR) $(MANIFESTS_DIR) config/crd/dtprometheus dynatrace-operator-dtprometheus-crd.yaml enablePrometheus
+	./hack/helm/update-prometheus-crds.sh $(PROMETHEUS_OPERATOR_VERSION)
 
 ## Builds a CRD for the release
 manifests/crd/release: manifests/crd/helm

@@ -223,6 +223,15 @@
       groupName: "Prometheus",
     },
     {
+      matchPackageNames: ["github.com/prometheus-operator/prometheus-operator"],
+      groupName: "Prometheus CRDs",
+      postUpgradeTasks: {
+        commands: ["make manifests/crd/helm"],
+        fileFilters: ["config/helm/chart/default/templates/Common/crd/prometheus/*"],
+        executionMode: "branch",
+      },
+    },
+    {
       matchPackageNames: ["go.uber.org/**"],
       groupName: "go.uber.org",
     },
