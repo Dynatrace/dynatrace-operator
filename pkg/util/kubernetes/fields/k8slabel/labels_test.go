@@ -141,15 +141,14 @@ func TestLabels(t *testing.T) {
 			},
 		},
 		{
-			name:            "long versions",
-			appVersion:      strings.Repeat("a", 64),
-			operatorVersion: new(strings.Repeat("b", 64)),
+			name:       "long versions",
+			appVersion: strings.Repeat("a", 64),
 			expectedLabels: map[string]string{
 				AppNameLabel:         labelsName,
 				AppInstanceLabel:     labelsInstance,
 				AppManagedByLabel:    version.AppName,
 				AppVersionLabel:      strings.Repeat("a", 63),
-				OperatorVersionLabel: strings.Repeat("b", 63),
+				OperatorVersionLabel: version.Version,
 			},
 			expectedMatch: map[string]string{
 				AppNameLabel:      labelsName,
