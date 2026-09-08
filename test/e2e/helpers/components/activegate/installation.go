@@ -19,16 +19,16 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-func GetActiveGateStateFulSetName(dk *dynakube.DynaKube, component string) string {
-	return fmt.Sprintf("%s-%s", dk.Name, component)
+func GetActiveGateStateFulSetName(dk *dynakube.DynaKube) string {
+	return fmt.Sprintf("%s-%s", dk.Name, consts.MultiActiveGateName)
 }
 
-func GetActiveGatePodName(dk *dynakube.DynaKube, component string) string {
-	return fmt.Sprintf("%s-0", GetActiveGateStateFulSetName(dk, component))
+func GetActiveGatePodName(dk *dynakube.DynaKube) string {
+	return fmt.Sprintf("%s-0", GetActiveGateStateFulSetName(dk))
 }
 
-func ReadActiveGateLog(ctx context.Context, t *testing.T, envConfig *envconf.Config, dk *dynakube.DynaKube, component string) string {
-	return logs.ReadLog(ctx, t, envConfig, dk.Namespace, GetActiveGatePodName(dk, component), consts.ActiveGateContainerName)
+func ReadActiveGateLog(ctx context.Context, t *testing.T, envConfig *envconf.Config, dk *dynakube.DynaKube) string {
+	return logs.ReadLog(ctx, t, envConfig, dk.Namespace, GetActiveGatePodName(dk), consts.ActiveGateContainerName)
 }
 
 func CheckContainer(dk *dynakube.DynaKube) features.Func {
@@ -36,7 +36,7 @@ func CheckContainer(dk *dynakube.DynaKube) features.Func {
 		resources := envConfig.Client().Resources()
 
 		var activeGatePod corev1.Pod
-		require.NoError(t, resources.WithNamespace(dk.Namespace).Get(ctx, GetActiveGatePodName(dk, "activegate"), dk.Namespace, &activeGatePod))
+		require.NoError(t, resources.WithNamespace(dk.Namespace).Get(ctx, GetActiveGatePodName(dk), dk.Namespace, &activeGatePod))
 
 		require.NotNil(t, activeGatePod.Spec)
 		require.NotEmpty(t, activeGatePod.Spec.Containers)

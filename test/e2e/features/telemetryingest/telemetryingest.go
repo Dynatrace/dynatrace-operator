@@ -40,7 +40,6 @@ import (
 )
 
 const (
-	activeGateComponent   = "activegate"
 	TelemetryIngestTLSCrt = "custom-cas/tls-telemetry-ingest.crt"
 	TelemetryIngestTLSKey = "custom-cas/tls-telemetry-ingest.key"
 )
@@ -220,7 +219,7 @@ func assertTelemetryIngestActiveGateModulesAreActive(ctx context.Context, t *tes
 	var expectedModules = []string{"log_analytics_collector", "otlp_ingest"}
 	var expectedServices = []string{"generic_ingest"}
 
-	log := componentActiveGate.ReadActiveGateLog(ctx, t, envConfig, dk, activeGateComponent)
+	log := componentActiveGate.ReadActiveGateLog(ctx, t, envConfig, dk)
 
 	/* componentActiveGate 2025-03-24 15:08:02 UTC INFO    [<exq67461>] [<collector.services>, ServicesManager] Services active: [generic_filecache, local_support_archive, generic_ingest] */
 	servicesLog := logs.FindLineContainingText(log, "Services active:")

@@ -114,7 +114,7 @@ func feature(t *testing.T, featureName, sampleNS string, imageOpts []dynakube.Op
 	builder.Assess("install sample app", sampleApp.Install())
 	cloudnative.AssessSampleInitContainers(builder, sampleApp)
 
-	agStatefulSetName := activegate.GetActiveGateStateFulSetName(&testDynakube, "activegate")
+	agStatefulSetName := activegate.GetActiveGateStateFulSetName(&testDynakube)
 	builder.Assess("ActiveGate started", k8sstatefulset.IsReady(agStatefulSetName, testDynakube.Namespace))
 	builder.Assess("EEC started", k8sstatefulset.IsReady(testDynakube.Extensions().GetExecutionControllerStatefulsetName(), testDynakube.Namespace))
 	builder.Assess("KSPM node config collector started", k8sdaemonset.IsReady(testDynakube.KSPM().GetDaemonSetName(), testDynakube.Namespace))
