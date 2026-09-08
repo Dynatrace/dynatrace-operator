@@ -79,29 +79,27 @@ func TestLongVersion(t *testing.T) {
 
 func TestLabels(t *testing.T) {
 	const (
-		labelsName            = "labels-test-app"
-		labelsInstance        = "labels-test-instance"
-		labelsVersion         = "labels-test-version"
-		labelsOperatorVersion = "labels-test-operator-version"
+		labelsName     = "labels-test-app"
+		labelsInstance = "labels-test-instance"
+		labelsVersion  = "labels-test-version"
 	)
 
 	tests := []struct {
 		name            string
 		appVersion      string
-		operatorVersion string
+		operatorVersion *string
 		expectedLabels  map[string]string
 		expectedMatch   map[string]string
 	}{
 		{
-			name:            "all labels",
-			appVersion:      labelsVersion,
-			operatorVersion: labelsOperatorVersion,
+			name:       "all labels",
+			appVersion: labelsVersion,
 			expectedLabels: map[string]string{
 				AppNameLabel:         labelsName,
 				AppInstanceLabel:     labelsInstance,
 				AppManagedByLabel:    version.AppName,
 				AppVersionLabel:      labelsVersion,
-				OperatorVersionLabel: labelsOperatorVersion,
+				OperatorVersionLabel: version.Version,
 			},
 			expectedMatch: map[string]string{
 				AppNameLabel:      labelsName,
@@ -110,14 +108,13 @@ func TestLabels(t *testing.T) {
 			},
 		},
 		{
-			name:            "empty workload version",
-			appVersion:      "",
-			operatorVersion: labelsOperatorVersion,
+			name:       "empty workload version",
+			appVersion: "",
 			expectedLabels: map[string]string{
 				AppNameLabel:         labelsName,
 				AppInstanceLabel:     labelsInstance,
 				AppManagedByLabel:    version.AppName,
-				OperatorVersionLabel: labelsOperatorVersion,
+				OperatorVersionLabel: version.Version,
 			},
 			expectedMatch: map[string]string{
 				AppNameLabel:      labelsName,
@@ -128,7 +125,7 @@ func TestLabels(t *testing.T) {
 		{
 			name:            "empty operator version",
 			appVersion:      labelsVersion,
-			operatorVersion: "",
+			operatorVersion: new(""),
 			expectedLabels: map[string]string{
 				AppNameLabel:      labelsName,
 				AppInstanceLabel:  labelsInstance,
@@ -144,7 +141,7 @@ func TestLabels(t *testing.T) {
 		{
 			name:            "long versions",
 			appVersion:      strings.Repeat("a", 64),
-			operatorVersion: strings.Repeat("b", 64),
+			operatorVersion: new(strings.Repeat("b", 64)),
 			expectedLabels: map[string]string{
 				AppNameLabel:         labelsName,
 				AppInstanceLabel:     labelsInstance,
@@ -159,13 +156,13 @@ func TestLabels(t *testing.T) {
 			},
 		},
 		{
-			name:            "versions with invalid character",
-			appVersion:      "_debug",
-			operatorVersion: "debug_",
+			name:       "app version with invalid character",
+			appVersion: "_debug",
 			expectedLabels: map[string]string{
-				AppNameLabel:      labelsName,
-				AppInstanceLabel:  labelsInstance,
-				AppManagedByLabel: version.AppName,
+				AppNameLabel:         labelsName,
+				AppInstanceLabel:     labelsInstance,
+				AppManagedByLabel:    version.AppName,
+				OperatorVersionLabel: version.Version,
 			},
 			expectedMatch: map[string]string{
 				AppNameLabel:      labelsName,
@@ -174,13 +171,13 @@ func TestLabels(t *testing.T) {
 			},
 		},
 		{
-			name:            "versions invalid after truncation",
-			appVersion:      strings.Repeat("a", 62) + "-suffix",
-			operatorVersion: strings.Repeat("a", 62) + "-suffix",
+			name:       "app version invalid after truncation",
+			appVersion: strings.Repeat("a", 62) + "-suffix",
 			expectedLabels: map[string]string{
-				AppNameLabel:      labelsName,
-				AppInstanceLabel:  labelsInstance,
-				AppManagedByLabel: version.AppName,
+				AppNameLabel:         labelsName,
+				AppInstanceLabel:     labelsInstance,
+				AppManagedByLabel:    version.AppName,
+				OperatorVersionLabel: version.Version,
 			},
 			expectedMatch: map[string]string{
 				AppNameLabel:      labelsName,
@@ -192,11 +189,13 @@ func TestLabels(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			oldVersion := version.Version
-			t.Cleanup(func() {
-				version.Version = oldVersion
-			})
-			version.Version = tt.operatorVersion
+			if tt.operatorVersion != nil {
+				oldVersion := version.Version
+				t.Cleanup(func() {
+					version.Version = oldVersion
+				})
+				version.Version = *tt.operatorVersion
+			}
 
 			labels := New(labelsName, labelsInstance, tt.appVersion)
 
