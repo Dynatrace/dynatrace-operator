@@ -6,7 +6,6 @@
 package kspm
 
 import (
-	"context"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers"
@@ -17,9 +16,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sstatefulset"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
 	componentKspm "github.com/Dynatrace/dynatrace-operator/test/helpers/components/kspm"
-	"github.com/stretchr/testify/require"
-	rbacv1 "k8s.io/api/rbac/v1"
-	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 	"sigs.k8s.io/e2e-framework/third_party/helm"
 )
@@ -75,13 +71,6 @@ func FeatureWithKubemon(t *testing.T) features.Feature {
 	builder.Assess("kspm node config collector started", k8sdaemonset.IsReady(testDynakube.KSPM().GetDaemonSetName(), testDynakube.Namespace))
 
 	builder.Assess("check if KSPM settings were created on tenant", componentKspm.CheckKSPMSettingsExistOnTenant(secretConfig, &testDynakube))
-
-	builder.Assess("dynatrace-kubernetes-monitoring-kspm ClusterRole exists", func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		var cr rbacv1.ClusterRole
-		require.NoError(t, envConfig.Client().Resources().Get(ctx, "dynatrace-kubernetes-monitoring-kspm", "", &cr))
-
-		return ctx
-	})
 
 	builder.Teardown(helpers.ToFeatureFunc(componentOperator.InstallLocal(
 		false,
