@@ -43,7 +43,7 @@ func TestReconcile(t *testing.T) {
 		r := deploymentproperties.NewReconciler(clt)
 		require.NoError(t, r.Reconcile(t.Context(), dk))
 
-		assertDeploymentPropertiesConfigMapAbsent(t, clt, dk)
+		assertDeploymentPropertiesSecretAbsent(t, clt, dk)
 	})
 
 	t.Run("does not create configMap if resourceAttributes property is empty", func(t *testing.T) {
@@ -53,7 +53,7 @@ func TestReconcile(t *testing.T) {
 		r := deploymentproperties.NewReconciler(clt)
 		require.NoError(t, r.Reconcile(t.Context(), dk))
 
-		assertDeploymentPropertiesConfigMapAbsent(t, clt, dk)
+		assertDeploymentPropertiesSecretAbsent(t, clt, dk)
 	})
 
 	t.Run("creates configMap", func(t *testing.T) {
@@ -63,8 +63,8 @@ func TestReconcile(t *testing.T) {
 		r := deploymentproperties.NewReconciler(clt)
 		require.NoError(t, r.Reconcile(t.Context(), dk))
 
-		configMap := getDeploymentPropertiesConfigMap(t, clt, dk)
-		assert.Equal(t, testDataValue, configMap.Data[agconsts.DeploymentPropertiesFileName])
+		configMap := getDeploymentPropertiesSecret(t, clt, dk)
+		assert.Equal(t, testDataValue, string(configMap.Data[agconsts.DeploymentPropertiesFileName]))
 	})
 
 	t.Run("updates configMap", func(t *testing.T) {
@@ -74,8 +74,8 @@ func TestReconcile(t *testing.T) {
 		r := deploymentproperties.NewReconciler(clt)
 		require.NoError(t, r.Reconcile(t.Context(), dk))
 
-		configMap := getDeploymentPropertiesConfigMap(t, clt, dk)
-		assert.Equal(t, testDataValue, configMap.Data[agconsts.DeploymentPropertiesFileName])
+		configMap := getDeploymentPropertiesSecret(t, clt, dk)
+		assert.Equal(t, testDataValue, string(configMap.Data[agconsts.DeploymentPropertiesFileName]))
 
 		dk.Spec.ResourceAttributes = map[string]string{
 			testResourceAttributeKey2: testResourceAttributeValue2,
@@ -83,8 +83,8 @@ func TestReconcile(t *testing.T) {
 
 		require.NoError(t, r.Reconcile(t.Context(), dk))
 
-		configMap = getDeploymentPropertiesConfigMap(t, clt, dk)
-		assert.Equal(t, testDataValue2, configMap.Data[agconsts.DeploymentPropertiesFileName])
+		configMap = getDeploymentPropertiesSecret(t, clt, dk)
+		assert.Equal(t, testDataValue2, string(configMap.Data[agconsts.DeploymentPropertiesFileName]))
 	})
 
 	t.Run("deletes configMap if resourceAttributes property is empty", func(t *testing.T) {
@@ -94,14 +94,14 @@ func TestReconcile(t *testing.T) {
 		r := deploymentproperties.NewReconciler(clt)
 		require.NoError(t, r.Reconcile(t.Context(), dk))
 
-		configMap := getDeploymentPropertiesConfigMap(t, clt, dk)
-		assert.Equal(t, testDataValue, configMap.Data[agconsts.DeploymentPropertiesFileName])
+		configMap := getDeploymentPropertiesSecret(t, clt, dk)
+		assert.Equal(t, testDataValue, string(configMap.Data[agconsts.DeploymentPropertiesFileName]))
 
 		dk.Spec.ResourceAttributes = nil
 
 		require.NoError(t, r.Reconcile(t.Context(), dk))
 
-		assertDeploymentPropertiesConfigMapAbsent(t, clt, dk)
+		assertDeploymentPropertiesSecretAbsent(t, clt, dk)
 	})
 
 	t.Run("deletes configMap if KubeMon disabled", func(t *testing.T) {
@@ -111,14 +111,14 @@ func TestReconcile(t *testing.T) {
 		r := deploymentproperties.NewReconciler(clt)
 		require.NoError(t, r.Reconcile(t.Context(), dk))
 
-		configMap := getDeploymentPropertiesConfigMap(t, clt, dk)
-		assert.Equal(t, testDataValue, configMap.Data[agconsts.DeploymentPropertiesFileName])
+		configMap := getDeploymentPropertiesSecret(t, clt, dk)
+		assert.Equal(t, testDataValue, string(configMap.Data[agconsts.DeploymentPropertiesFileName]))
 
 		dk.Spec.KubernetesMonitoring = nil
 
 		require.NoError(t, r.Reconcile(t.Context(), dk))
 
-		assertDeploymentPropertiesConfigMapAbsent(t, clt, dk)
+		assertDeploymentPropertiesSecretAbsent(t, clt, dk)
 	})
 }
 
@@ -128,7 +128,7 @@ func TestReconcileK8SAPIFailures(t *testing.T) {
 		errCreate := errors.New("kube api error")
 		clt := fake.NewClientWithInterceptors(interceptor.Funcs{
 			Create: func(ctx context.Context, c client.WithWatch, obj client.Object, opts ...client.CreateOption) error {
-				if _, ok := obj.(*corev1.ConfigMap); ok {
+				if _, ok := obj.(*corev1.Secret); ok {
 					return errCreate
 				}
 
@@ -146,39 +146,39 @@ func TestReconcileK8SAPIFailures(t *testing.T) {
 		errUpdate := errors.New("kube api error")
 		clt := fake.NewClientWithInterceptors(interceptor.Funcs{
 			Update: func(ctx context.Context, c client.WithWatch, obj client.Object, opts ...client.UpdateOption) error {
-				if _, ok := obj.(*corev1.ConfigMap); ok {
+				if _, ok := obj.(*corev1.Secret); ok {
 					return errUpdate
 				}
 
 				return c.Update(ctx, obj, opts...)
 			},
-		}, dk, newExistingDeploymentPropertiesConfigMap(dk))
+		}, dk, newExistingDeploymentPropertiesSecret(dk))
 
 		r := deploymentproperties.NewReconciler(clt)
 
 		require.ErrorIs(t, r.Reconcile(t.Context(), dk), errUpdate)
 	})
 
-	t.Run("returns error when configMap deletion fails", func(t *testing.T) {
+	t.Run("returns error when secret deletion fails", func(t *testing.T) {
 		dk := newTestDynaKube(withoutKubernetesMonitoring(), withoutResourceAttributes())
 		errDelete := errors.New("kube api error")
 		clt := fake.NewClientWithInterceptors(interceptor.Funcs{
 			Delete: func(ctx context.Context, c client.WithWatch, obj client.Object, opts ...client.DeleteOption) error {
 				return errDelete
 			},
-		}, dk, newExistingDeploymentPropertiesConfigMap(dk))
+		}, dk, newExistingDeploymentPropertiesSecret(dk))
 
 		r := deploymentproperties.NewReconciler(clt)
 
 		require.ErrorIs(t, r.Reconcile(t.Context(), dk), errDelete)
 	})
 
-	t.Run("returns error when reading ConfigMap fails with a non-NotFound error", func(t *testing.T) {
+	t.Run("returns error when reading secret fails with a non-NotFound error", func(t *testing.T) {
 		dk := newTestDynaKube()
 		errGet := errors.New("kube api error")
 		clt := fake.NewClientWithInterceptors(interceptor.Funcs{
 			Get: func(ctx context.Context, c client.WithWatch, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
-				if _, ok := obj.(*corev1.ConfigMap); ok && key.Name == dk.KubernetesMonitoring().GetDeploymentPropertiesConfigMapName() {
+				if _, ok := obj.(*corev1.Secret); ok && key.Name == dk.KubernetesMonitoring().GetDeploymentPropertiesSecretName() {
 					return errGet
 				}
 
@@ -226,34 +226,34 @@ func withoutKubernetesMonitoring() func(*dynakube.DynaKube) {
 	}
 }
 
-func getDeploymentPropertiesConfigMap(t *testing.T, clt client.Client, dk *dynakube.DynaKube) *corev1.ConfigMap {
+func getDeploymentPropertiesSecret(t *testing.T, clt client.Client, dk *dynakube.DynaKube) *corev1.Secret {
 	t.Helper()
 
-	configMap := &corev1.ConfigMap{}
+	secret := &corev1.Secret{}
 	require.NoError(t, clt.Get(t.Context(), types.NamespacedName{
-		Name:      dk.KubernetesMonitoring().GetDeploymentPropertiesConfigMapName(),
+		Name:      dk.KubernetesMonitoring().GetDeploymentPropertiesSecretName(),
 		Namespace: dk.Namespace,
-	}, configMap))
+	}, secret))
 
-	return configMap
+	return secret
 }
 
-func assertDeploymentPropertiesConfigMapAbsent(t *testing.T, clt client.Client, dk *dynakube.DynaKube) {
+func assertDeploymentPropertiesSecretAbsent(t *testing.T, clt client.Client, dk *dynakube.DynaKube) {
 	t.Helper()
 
 	err := clt.Get(t.Context(), types.NamespacedName{
-		Name:      dk.KubernetesMonitoring().GetDeploymentPropertiesConfigMapName(),
+		Name:      dk.KubernetesMonitoring().GetDeploymentPropertiesSecretName(),
 		Namespace: dk.Namespace,
-	}, &corev1.ConfigMap{})
+	}, &corev1.Secret{})
 	assert.True(t, k8serrors.IsNotFound(err), "expected NotFound, got %v", err)
 }
 
-func newExistingDeploymentPropertiesConfigMap(dk *dynakube.DynaKube) *corev1.ConfigMap {
-	return &corev1.ConfigMap{
+func newExistingDeploymentPropertiesSecret(dk *dynakube.DynaKube) *corev1.Secret {
+	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      dk.KubernetesMonitoring().GetDeploymentPropertiesConfigMapName(),
+			Name:      dk.KubernetesMonitoring().GetDeploymentPropertiesSecretName(),
 			Namespace: dk.Namespace,
 		},
-		Data: map[string]string{agconsts.DeploymentPropertiesFileName: "[resource_attributes]\na=b"},
+		Data: map[string][]byte{agconsts.DeploymentPropertiesFileName: []byte("[resource_attributes]\na=b")},
 	}
 }

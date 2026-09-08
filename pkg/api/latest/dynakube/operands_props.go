@@ -64,6 +64,7 @@ func (dk *DynaKube) KubernetesMonitoring() *kubemon.KubeMon {
 	}
 	km.SetName(dk.Name)
 	km.SetAPIURLHost(dk.APIURLHost())
+	km.SetNeedsDeploymentProperties(len(dk.GetResourceAttributes()) > 0)
 
 	return km
 }

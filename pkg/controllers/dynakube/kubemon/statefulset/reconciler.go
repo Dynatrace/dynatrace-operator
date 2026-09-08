@@ -20,7 +20,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	kubemonauthtoken "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/authtoken"
 	kubemoncustomproperties "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/customproperties"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/deploymentproperties"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
@@ -291,14 +290,13 @@ func buildVolumes(dk *dynakube.DynaKube) []corev1.Volume {
 			})
 	}
 
-	if len(dk.GetResourceAttributes()) > 0 {
+	if dk.KubernetesMonitoring().NeedsDeploymentProperties() {
 		volumes = append(volumes, corev1.Volume{
 			Name: agconsts.DeploymentPropertiesVolumeName,
 			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: dk.KubernetesMonitoring().GetDeploymentPropertiesConfigMapName(),
-					},
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  dk.KubernetesMonitoring().GetDeploymentPropertiesSecretName(),
+					DefaultMode: new(int32(0o640)),
 					Items: []corev1.KeyToPath{
 						{
 							Key:  agconsts.DeploymentPropertiesFileName,
@@ -389,7 +387,7 @@ func buildVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 			})
 	}
 
-	if len(dk.GetResourceAttributes()) > 0 {
+	if dk.KubernetesMonitoring().NeedsDeploymentProperties() {
 		mounts = append(mounts, corev1.VolumeMount{
 			ReadOnly:  true,
 			Name:      agconsts.DeploymentPropertiesVolumeName,
@@ -488,7 +486,7 @@ func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.D
 		return nil, err
 	}
 
-	deploymentPropertiesHash, err := r.getDeploymentPropertiesHash(dk)
+	deploymentPropertiesHash, err := r.getDeploymentPropertiesHash(ctx, dk)
 	if err != nil {
 		return nil, err
 	}
@@ -646,14 +644,31 @@ func buildPodSecurityContext() *corev1.PodSecurityContext {
 	return &sc
 }
 
-func (r *Reconciler) getDeploymentPropertiesHash(dk *dynakube.DynaKube) (string, error) {
-	if len(dk.Spec.ResourceAttributes) == 0 {
+func (r *Reconciler) getDeploymentPropertiesHash(ctx context.Context, dk *dynakube.DynaKube) (string, error) {
+	// protection against maliciously created secret -> unauthorized restarts
+	if !dk.KubernetesMonitoring().NeedsDeploymentProperties() {
 		return "", nil
 	}
 
-	hash, err := hasher.GenerateHash(deploymentproperties.ConfigMapData(dk))
+	var secret corev1.Secret
+
+	err := r.kubeClient.Get(ctx, client.ObjectKey{Name: dk.KubernetesMonitoring().GetDeploymentPropertiesSecretName(), Namespace: dk.Namespace}, &secret)
+	if k8serrors.IsNotFound(err) {
+		return "", nil
+	}
+
 	if err != nil {
-		return "", errors.Wrap(err, "failed to hash deployment.properties configMap")
+		return "", errors.WithStack(err)
+	}
+
+	data := secret.Data[agconsts.DeploymentPropertiesFileName]
+	if len(data) == 0 {
+		return "", nil
+	}
+
+	hash, err := hasher.GenerateSecureHash(string(data))
+	if err != nil {
+		return "", errors.Wrap(err, "failed to hash deployment properties secret")
 	}
 
 	return hash, nil
