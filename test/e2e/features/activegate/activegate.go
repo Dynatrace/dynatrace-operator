@@ -31,8 +31,6 @@ import (
 )
 
 var (
-	agComponentName = "activegate"
-
 	agContainers = map[string]bool{
 		consts.ActiveGateContainerName: false,
 	}
@@ -82,7 +80,7 @@ func Feature(t *testing.T, proxySpec *value.Source) features.Feature {
 }
 
 func assessActiveGate(builder *features.FeatureBuilder, dk *dynakube.DynaKube) {
-	builder.Assess("ActiveGate started", k8sstatefulset.IsReady(activegate.GetActiveGateStateFulSetName(dk, "activegate"), dk.Namespace))
+	builder.Assess("ActiveGate started", k8sstatefulset.IsReady(activegate.GetActiveGateStateFulSetName(dk), dk.Namespace))
 	builder.Assess("ActiveGate has required containers", checkIfAgHasContainers(dk))
 	builder.Assess("ActiveGate modules are active", checkActiveModules(dk))
 	if dk.Spec.Proxy != nil {
@@ -107,7 +105,7 @@ func checkIfAgHasContainers(dk *dynakube.DynaKube) features.Func {
 		kubeResources := envConfig.Client().Resources()
 
 		var activeGatePod corev1.Pod
-		require.NoError(t, kubeResources.WithNamespace(dk.Namespace).Get(ctx, activegate.GetActiveGatePodName(dk, agComponentName), dk.Namespace, &activeGatePod))
+		require.NoError(t, kubeResources.WithNamespace(dk.Namespace).Get(ctx, activegate.GetActiveGatePodName(dk), dk.Namespace, &activeGatePod))
 
 		require.NotNil(t, activeGatePod.Spec)
 		require.NotEmpty(t, activeGatePod.Spec.InitContainers)
@@ -122,7 +120,7 @@ func checkIfAgHasContainers(dk *dynakube.DynaKube) features.Func {
 
 func checkActiveModules(dk *dynakube.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		log := activegate.ReadActiveGateLog(ctx, t, envConfig, dk, agComponentName)
+		log := activegate.ReadActiveGateLog(ctx, t, envConfig, dk)
 		assertExpectedModulesAreActive(t, log)
 
 		return ctx
@@ -131,7 +129,7 @@ func checkActiveModules(dk *dynakube.DynaKube) features.Func {
 
 func checkIfProxyUsed(dk *dynakube.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		log := activegate.ReadActiveGateLog(ctx, t, envConfig, dk, agComponentName)
+		log := activegate.ReadActiveGateLog(ctx, t, envConfig, dk)
 		assertProxyUsed(t, log, dk.Spec.Proxy.Value)
 
 		return ctx
@@ -143,7 +141,7 @@ func checkMountPoints(dk *dynakube.DynaKube) features.Func {
 		kubeResources := envConfig.Client().Resources()
 
 		var activeGatePod corev1.Pod
-		require.NoError(t, kubeResources.Get(ctx, activegate.GetActiveGatePodName(dk, agComponentName), dk.Namespace, &activeGatePod))
+		require.NoError(t, kubeResources.Get(ctx, activegate.GetActiveGatePodName(dk), dk.Namespace, &activeGatePod))
 
 		for name, mountPoints := range agMounts {
 			assertMountPointsExist(ctx, t, kubeResources, activeGatePod, name, mountPoints)
@@ -246,7 +244,7 @@ func checkReadOnlySettings(dk *dynakube.DynaKube) features.Func {
 		kubeResources := envConfig.Client().Resources()
 
 		var activeGatePod corev1.Pod
-		require.NoError(t, kubeResources.WithNamespace(dk.Namespace).Get(ctx, activegate.GetActiveGatePodName(dk, agComponentName), dk.Namespace, &activeGatePod))
+		require.NoError(t, kubeResources.WithNamespace(dk.Namespace).Get(ctx, activegate.GetActiveGatePodName(dk), dk.Namespace, &activeGatePod))
 
 		require.NotNil(t, activeGatePod.Spec)
 		require.NotEmpty(t, activeGatePod.Spec.InitContainers)
