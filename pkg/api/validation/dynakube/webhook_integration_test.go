@@ -4,7 +4,6 @@
 package validation_test
 
 import (
-	"context"
 	"os"
 	"path/filepath"
 	"testing"
@@ -155,11 +154,7 @@ func compareWebhookResult(t *testing.T, clt client.Client, version, name string,
 	t.Helper()
 	oldObj := readTestData(t, version, name)
 
-	require.NoError(t, clt.Create(t.Context(), oldObj))
-	t.Cleanup(func() {
-		// t.Context is no longer valid during cleanup
-		assert.NoError(t, clt.Delete(context.Background(), oldObj))
-	})
+	integrationtests.CreateKubernetesObject(t, clt, oldObj)
 
 	// Sanity check to reduce chances of human error
 	require.NotContains(t, seen, oldObj.GroupVersionKind().String(), "duplicate entry")

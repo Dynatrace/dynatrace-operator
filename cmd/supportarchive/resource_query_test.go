@@ -13,7 +13,7 @@ const namespace = "dynatrace"
 
 func TestObjectQuerySyntax(t *testing.T) {
 	queries := getQueries(namespace, defaultOperatorAppName)
-	assert.Len(t, queries, 20)
+	assert.Len(t, queries, 21)
 
 	for _, query := range queries {
 		assert.NotEmpty(t, query.groupVersionKind.Kind)

@@ -55,24 +55,23 @@ const (
 	// Env variable values
 	envExtensionsModuleExecPath = "/opt/dynatrace/remotepluginmodule/agent/lib64/extensionsmodule"
 	envDsInstallDir             = "/opt/dynatrace/remotepluginmodule/agent/datasources"
-	envActiveGateTrustedCert    = activeGateTrustedCertMountPath + "/" + activeGateTrustedCertSecretKeyPath
+	envActiveGateTrustedCert    = activeGateTrustedCertMountPath + "/" + consts.TLSServerCrtDataName
 	envEECHTTPSCertPathPem      = httpsCertMountPath + "/" + consts.TLSCrtDataName
 	envEECHTTPSPrivKeyPathPem   = httpsCertMountPath + "/" + consts.TLSKeyDataName
 	// Volume names and paths
-	eecTokenMountPath                  = "/secrets/tokens"
-	customCertificateMountPath         = "/secrets/extensions"
-	customCertificateVolumeName        = "extension-custom-certs"
-	runtimeVolumeName                  = "agent-runtime"
-	runtimeMountPath                   = "/var/lib/dynatrace/remotepluginmodule"
-	customConfigVolumeName             = "custom-config"
-	customConfigMountPath              = "/secrets/config"
-	activeGateTrustedCertVolumeName    = "server-certs"
-	activeGateTrustedCertMountPath     = "/secrets/ag"
-	activeGateTrustedCertSecretKeyPath = "server.crt"
-	httpsCertVolumeName                = "https-certs"
-	httpsCertMountPath                 = "/secrets/https"
-	runtimeConfigurationFilename       = "runtimeConfiguration"
-	serviceURLScheme                   = "https://"
+	eecTokenMountPath               = "/secrets/tokens"
+	customCertificateMountPath      = "/secrets/extensions"
+	customCertificateVolumeName     = "extension-custom-certs"
+	runtimeVolumeName               = "agent-runtime"
+	runtimeMountPath                = "/var/lib/dynatrace/remotepluginmodule"
+	customConfigVolumeName          = "custom-config"
+	customConfigMountPath           = "/secrets/config"
+	activeGateTrustedCertVolumeName = "server-certs"
+	activeGateTrustedCertMountPath  = "/secrets/ag"
+	httpsCertVolumeName             = "https-certs"
+	httpsCertMountPath              = "/secrets/https"
+	runtimeConfigurationFilename    = "runtimeConfiguration"
+	serviceURLScheme                = "https://"
 
 	legacyConfigurationVolumeName = "runtime-configuration"
 	legacyConfigurationMountPath  = "/var/lib/dynatrace/remotepluginmodule/agent/conf"
@@ -462,8 +461,8 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 						SecretName:  dk.ActiveGate().GetTLSSecretName(),
 						Items: []corev1.KeyToPath{
 							{
-								Key:  activeGateTrustedCertSecretKeyPath,
-								Path: activeGateTrustedCertSecretKeyPath,
+								Key:  consts.TLSServerCrtDataName,
+								Path: consts.TLSServerCrtDataName,
 							},
 						},
 					},

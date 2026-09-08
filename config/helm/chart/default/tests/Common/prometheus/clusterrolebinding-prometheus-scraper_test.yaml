@@ -6,6 +6,8 @@ templates:
   - Common/prometheus/clusterrolebinding-prometheus-scraper.yaml
 tests:
   - it: should exist with correct name and labels
+    set:
+      experimental.enablePrometheus: true
     asserts:
       - isKind:
           of: ClusterRoleBinding
@@ -16,6 +18,8 @@ tests:
           path: metadata.labels
 
   - it: should reference the correct ClusterRole
+    set:
+      experimental.enablePrometheus: true
     asserts:
       - equal:
           path: roleRef
@@ -25,6 +29,8 @@ tests:
             name: dynatrace-prometheus-scraper
 
   - it: should reference the correct ServiceAccount
+    set:
+      experimental.enablePrometheus: true
     asserts:
       - contains:
           path: subjects
@@ -36,6 +42,14 @@ tests:
   - it: shouldn't exist if prometheus rbac is turned off
     set:
       rbac.prometheus.create: false
+      experimental.enablePrometheus: true
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: shouldn't exist if experimental.enablePrometheus is off
+    set:
+      experimental.enablePrometheus: false
     asserts:
       - hasDocuments:
           count: 0

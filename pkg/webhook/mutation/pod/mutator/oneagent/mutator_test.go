@@ -12,7 +12,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/stretchr/testify/assert"
@@ -197,89 +196,6 @@ func TestIsEnabled(t *testing.T) {
 	}
 }
 
-func TestIsSelfExtractingImage(t *testing.T) {
-	type testCase struct {
-		title        string
-		podMods      func(*corev1.Pod)
-		dkMods       func(*dynakube.DynaKube)
-		isCSIPresent bool
-		enabled      bool
-	}
-
-	cases := []testCase{
-		{
-			title:        "nothing enabled => not enabled",
-			podMods:      func(p *corev1.Pod) {},
-			dkMods:       func(dk *dynakube.DynaKube) {},
-			enabled:      false,
-			isCSIPresent: false,
-		},
-
-		{
-			title:   "only OA enabled => not enabled",
-			podMods: func(p *corev1.Pod) {},
-			dkMods: func(dk *dynakube.DynaKube) {
-				dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
-			},
-			enabled:      false,
-			isCSIPresent: false,
-		},
-
-		{
-			title:   "OA + image set + no-csi => enabled",
-			podMods: func(p *corev1.Pod) {},
-			dkMods: func(dk *dynakube.DynaKube) {
-				dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
-				dk.Status.CodeModules.ImageID = "testImage"
-			},
-			enabled:      true,
-			isCSIPresent: false,
-		},
-
-		{
-			title:   "OA + image set + csi => not enabled",
-			podMods: func(p *corev1.Pod) {},
-			dkMods: func(dk *dynakube.DynaKube) {
-				dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
-				dk.Status.CodeModules.ImageID = "testImage"
-			},
-			enabled:      false,
-			isCSIPresent: true,
-		},
-
-		{
-			title: "OA + image set + csi + pod annotation => enabled",
-			podMods: func(p *corev1.Pod) {
-				p.Annotations = map[string]string{
-					AnnotationVolumeType: EphemeralVolumeType,
-				}
-			},
-			dkMods: func(dk *dynakube.DynaKube) {
-				dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
-				dk.Status.CodeModules.ImageID = "testImage"
-			},
-			enabled:      true,
-			isCSIPresent: true,
-		},
-	}
-	for _, test := range cases {
-		t.Run(test.title, func(t *testing.T) {
-			ns := &corev1.Namespace{}
-			pod := &corev1.Pod{}
-			dk := &dynakube.DynaKube{}
-
-			test.dkMods(dk)
-			test.podMods(pod)
-
-			req := &dtwebhook.MutationRequest{BaseRequest: &dtwebhook.BaseRequest{Pod: pod, DynaKube: *dk, Namespace: *ns}}
-
-			installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: test.isCSIPresent})
-
-			assert.Equal(t, test.enabled, IsSelfExtractingImage(req.BaseRequest))
-		})
-	}
-}
-
 func TestValidateInstallPath(t *testing.T) {
 	t.Run("can't be just root", func(t *testing.T) {
 		require.Error(t, validateInstallPath("/"))
@@ -365,7 +281,7 @@ func TestMutate(t *testing.T) {
 	t.Run("no change => no update", func(t *testing.T) {
 		request := createTestMutationRequestWithoutInjectedContainers(t)
 		for i := range request.Pod.Spec.Containers {
-			addVolumeMounts(&request.Pod.Spec.Containers[i], "test")
+			addVolumeMounts(&request.Pod.Spec.Containers[i], "test", false)
 		}
 
 		err := mut.Mutate(request)
@@ -464,7 +380,7 @@ func TestReinvoke(t *testing.T) {
 	t.Run("no change => no update", func(t *testing.T) {
 		request := createTestMutationRequestWithoutInjectedContainers(t)
 		for i := range request.Pod.Spec.Containers {
-			addVolumeMounts(&request.Pod.Spec.Containers[i], "test")
+			addVolumeMounts(&request.Pod.Spec.Containers[i], "test", false)
 		}
 
 		updated := mut.Reinvoke(t.Context(), request.ToReinvocationRequest())
@@ -489,17 +405,20 @@ func TestAddOneAgentToContainer(t *testing.T) {
 
 	t.Run("add everything", func(t *testing.T) {
 		container := corev1.Container{}
-		dk := dynakube.DynaKube{
-			Spec: dynakube.DynaKubeSpec{
-				OneAgent:    oneagent.Spec{ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{}},
-				NetworkZone: networkZone,
-			},
-			Status: dynakube.DynaKubeStatus{
-				KubeSystemUUID: kubeSystemUUID,
+
+		baseReq := &dtwebhook.BaseRequest{
+			DynaKube: dynakube.DynaKube{
+				Spec: dynakube.DynaKubeSpec{
+					OneAgent:    oneagent.Spec{ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{}},
+					NetworkZone: networkZone,
+				},
+				Status: dynakube.DynaKubeStatus{
+					KubeSystemUUID: kubeSystemUUID,
+				},
 			},
 		}
-
-		addOneAgentToContainer(dk, &container, corev1.Namespace{}, installPath, logd.Get())
+		addVolumeMounts(&container, installPath, isImageVolume(baseReq))
+		addOneAgentEnvsToContainer(baseReq.DynaKube, &container, corev1.Namespace{}, installPath, logd.Get())
 
 		assert.Len(t, container.VolumeMounts, 2) // preload,bin
 
@@ -577,7 +496,7 @@ func createTestMutationRequestWithInjectedContainers(t *testing.T) *dtwebhook.Mu
 	request := createTestMutationRequestWithoutInjectedContainers(t)
 
 	i := 0
-	addVolumeMounts(&request.Pod.Spec.Containers[i], "test")
+	addVolumeMounts(&request.Pod.Spec.Containers[i], "test", false)
 
 	return request
 }

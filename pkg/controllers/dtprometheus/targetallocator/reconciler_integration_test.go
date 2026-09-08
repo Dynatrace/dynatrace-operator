@@ -5,6 +5,7 @@ package targetallocator_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -12,7 +13,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/dtprometheus"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dtprometheus/targetallocator"
 	"github.com/Dynatrace/dynatrace-operator/test/integrationtests"
+	imagemock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/image"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -43,13 +46,13 @@ type lifecycleDeps struct {
 // TestReconcileLifecycle walks the phases in order: missing image -> provision -> stabilize -> update.
 func TestReconcileLifecycle(t *testing.T) {
 	clt := integrationtests.SetupTestEnvironment(t)
-	integrationtests.CreateNamespace(t, t.Context(), clt, integrationNamespace)
+	integrationtests.CreateNamespace(t, clt, integrationNamespace)
 
 	dtp := &dtprometheus.DTPrometheus{
 		ObjectMeta: metav1.ObjectMeta{Name: integrationDTPName, Namespace: integrationNamespace},
 		Spec:       dtprometheus.DTPrometheusSpec{DynaKubeName: integrationDynaKubeName},
 	}
-	integrationtests.CreateKubernetesObject(t, t.Context(), clt, dtp)
+	integrationtests.CreateKubernetesObject(t, clt, dtp)
 
 	deps := &lifecycleDeps{
 		clt:        clt,
@@ -64,12 +67,16 @@ func TestReconcileLifecycle(t *testing.T) {
 	t.Run("update", func(t *testing.T) { runUpdatePhase(t, deps) })
 }
 
-// runMissingImagePhase reconciles before an image is configured. The ConfigMap has no image dependency and is created;
-// the Deployment and Service are never attempted because the reconcile loop breaks on the first error.
+// runMissingImagePhase reconciles when no image is configured, simulating a fleet API failure. The ConfigMap has no
+// image dependency and is created; the Deployment and Service are never attempted because the reconcile loop breaks on
+// the first error.
 func runMissingImagePhase(t *testing.T, deps *lifecycleDeps) {
 	t.Helper()
 
-	require.Error(t, deps.reconciler.Reconcile(t.Context(), deps.dtp, deps.dk, nil))
+	imageClient := imagemock.NewClient(t)
+	imageClient.EXPECT().GetComponentLatestInfo(mock.Anything, mock.Anything, mock.Anything).Return(nil, errors.New("fleet API unavailable"))
+
+	require.Error(t, deps.reconciler.Reconcile(t.Context(), deps.dtp, deps.dk, imageClient))
 
 	getConfigMap(t, deps)
 	assertDeploymentAbsent(t, deps)

@@ -60,6 +60,7 @@ var (
 		exp.OAPrivilegedKey,
 		exp.OAClassicNonRootKey,
 		exp.OASkipLivenessProbeKey,
+		exp.OAImageVolumeKey,
 		exp.OANodeImagePullKey,
 		exp.OANodeImagePullTechnologiesKey,
 		// otlp.go

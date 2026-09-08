@@ -6,14 +6,17 @@ manifests/crd/generate: prerequisites/controller-gen
 ## Generates a CRD in config/crd and then applies it to a cluster using kubectl
 manifests/crd/install: prerequisites/kustomize manifests/crd/generate
 	$(KUSTOMIZE) build config/crd | kubectl apply -f -
+	$(KUSTOMIZE) build config/crd/dtprometheus | kubectl apply -f -
 
 ## Generates a CRD in config/crd to remove it from a cluster using kubectl
 manifests/crd/uninstall: prerequisites/kustomize manifests/crd/generate
 	$(KUSTOMIZE) build config/crd | kubectl delete -f -
+	$(KUSTOMIZE) build config/crd/dtprometheus | kubectl delete -f -
 
 ## Builds a CRD and puts it with the Helm charts
 manifests/crd/helm: prerequisites/kustomize helm/version manifests/crd/generate
-	./hack/helm/generate-crd.sh $(KUSTOMIZE) $(HELM_CRD_DIR) $(MANIFESTS_DIR)
+	./hack/helm/generate-crd.sh $(KUSTOMIZE) $(HELM_CRD_DIR) $(MANIFESTS_DIR) config/crd dynatrace-operator-crd.yaml
+	./hack/helm/generate-crd.sh $(KUSTOMIZE) $(HELM_CRD_DIR) $(MANIFESTS_DIR) config/crd/dtprometheus dynatrace-operator-dtprometheus-crd.yaml enablePrometheus
 
 ## Builds a CRD for the release
 manifests/crd/release: manifests/crd/helm

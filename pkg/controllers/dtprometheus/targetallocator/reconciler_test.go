@@ -8,16 +8,19 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
-	"fmt"
 	"testing"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/dtprometheus"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
+	imagemock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/image"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -53,48 +56,51 @@ func newTestDTP(name, namespace string) *dtprometheus.DTPrometheus {
 func newTestScope(dtp *dtprometheus.DTPrometheus) *reconcileScope {
 	return &reconcileScope{
 		Owner:     dtp,
+		DynaKube:  &dynakube.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: "dk", Namespace: "dynatrace"}},
 		Spec:      dtp.TargetAllocator(),
 		AppLabels: k8slabel.OTelTargetAllocator(),
 	}
 }
 
+// The condition branch logic is covered by the condition package. What matters here is
+// that the target allocator wires itself to the right condition type, component name and
+// rollout check.
 func TestReconcileCondition(t *testing.T) {
-	boom := fmt.Errorf("wrap: %w", errors.New("boom"))
+	t.Run("freshly created deployment with no ready replicas -> pending", func(t *testing.T) {
+		dtp := newTestDTP("dtp", "dynatrace")
+		dtp.Spec.TargetAllocator.Image = "registry.example.com/target-allocator:1.2.3"
+		dtp.Spec.TargetAllocator.Replicas = new(int32(2))
 
-	completeDeployment := &appsv1.Deployment{
-		Spec:   appsv1.DeploymentSpec{Replicas: new(int32(2))},
-		Status: appsv1.DeploymentStatus{ReadyReplicas: 2},
-	}
+		r := &Reconciler{Client: fake.NewClient()}
+		require.NoError(t, r.Reconcile(t.Context(), dtp, &dynakube.DynaKube{}, nil))
 
-	tests := []struct {
-		name        string
-		err         error
-		deployment  *appsv1.Deployment
-		wantStatus  metav1.ConditionStatus
-		wantReason  string
-		wantMessage string
-	}{
-		{"deployment not rolled out -> reconciling", nil, nil, metav1.ConditionFalse, status.ReasonReconciling, "target allocator is pending"},
-		{"rollout complete -> available", nil, completeDeployment, metav1.ConditionTrue, status.ReasonAvailable, "target allocator is ready"},
-		{"error -> error", boom, nil, metav1.ConditionFalse, status.ReasonError, "boom"},
-		{"error takes precedence over complete rollout", boom, completeDeployment, metav1.ConditionFalse, status.ReasonError, "boom"},
-	}
+		condition := meta.FindStatusCondition(dtp.Status.Conditions, dtprometheus.TargetAllocatorAvailable)
+		require.NotNil(t, condition)
+		assert.Equal(t, metav1.ConditionFalse, condition.Status)
+		assert.Equal(t, status.ReasonReconciling, condition.Reason)
+		assert.Equal(t, "target allocator is pending", condition.Message)
+	})
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			dtp := newTestDTP("dtp", "dynatrace")
-			s := &reconcileScope{Owner: dtp, Deployment: test.deployment}
-			r := &Reconciler{}
+	t.Run("reconcile error -> error, with unwrapped message", func(t *testing.T) {
+		dtp := newTestDTP("dtp", "dynatrace")
+		dtp.Spec.TargetAllocator.Image = "registry.example.com/target-allocator:1.2.3"
 
-			r.reconcileCondition(s, test.err)
-
-			condition := meta.FindStatusCondition(dtp.Status.Conditions, dtprometheus.TargetAllocatorAvailable)
-			require.NotNil(t, condition)
-			assert.Equal(t, test.wantStatus, condition.Status)
-			assert.Equal(t, test.wantReason, condition.Reason)
-			assert.Equal(t, test.wantMessage, condition.Message)
+		boom := errors.New("boom")
+		clt := fake.NewClientWithInterceptors(interceptor.Funcs{
+			Create: func(context.Context, client.WithWatch, client.Object, ...client.CreateOption) error {
+				return boom
+			},
 		})
-	}
+
+		r := &Reconciler{Client: clt}
+		require.Error(t, r.Reconcile(t.Context(), dtp, &dynakube.DynaKube{}, nil))
+
+		condition := meta.FindStatusCondition(dtp.Status.Conditions, dtprometheus.TargetAllocatorAvailable)
+		require.NotNil(t, condition)
+		assert.Equal(t, metav1.ConditionFalse, condition.Status)
+		assert.Equal(t, status.ReasonError, condition.Reason)
+		assert.Equal(t, boom.Error(), condition.Message)
+	})
 }
 
 func TestReconcileConfigMap(t *testing.T) {
@@ -145,9 +151,12 @@ func TestReconcileConfigMap(t *testing.T) {
 }
 
 func TestReconcileDeployment(t *testing.T) {
-	t.Run("missing image", func(t *testing.T) {
+	t.Run("fleet resolve fails when no imageRef set", func(t *testing.T) {
 		dtp := newTestDTP("dtp", "dynatrace")
 		s := newTestScope(dtp)
+		imageClient := imagemock.NewClient(t)
+		imageClient.EXPECT().GetComponentLatestInfo(mock.Anything, mock.Anything, mock.Anything).Return(nil, errors.New("no image found"))
+		s.ImageClient = imageClient
 		c := fake.NewClient()
 		r := &Reconciler{Client: c}
 
@@ -158,6 +167,43 @@ func TestReconcileDeployment(t *testing.T) {
 
 		getErr := c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetDeploymentName(), Namespace: dtp.Namespace}, &appsv1.Deployment{})
 		assert.True(t, k8serrors.IsNotFound(getErr))
+	})
+
+	t.Run("resolves image from fleet API when no imageRef set", func(t *testing.T) {
+		dtp := newTestDTP("dtp", "dynatrace")
+		s := newTestScope(dtp)
+		imageClient := imagemock.NewClient(t)
+		imageClient.EXPECT().GetComponentLatestInfo(mock.Anything, image.TargetAllocator, "").Return(&image.Info{URI: "registry.example.com/fleet-ta:latest"}, nil)
+		s.ImageClient = imageClient
+		c := fake.NewClient()
+		r := &Reconciler{Client: c}
+
+		require.NoError(t, r.reconcileDeployment(t.Context(), s))
+		require.NotNil(t, s.Deployment)
+
+		deploy := &appsv1.Deployment{}
+		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetDeploymentName(), Namespace: dtp.Namespace}, deploy))
+		assert.Equal(t, "registry.example.com/fleet-ta:latest", deploy.Spec.Template.Spec.Containers[0].Image)
+		assert.Equal(t, "registry.example.com/fleet-ta:latest", dtp.Status.TargetAllocator.ResolvedImage)
+	})
+
+	t.Run("resolves image from fleet API with publicRegistryOverride", func(t *testing.T) {
+		dtp := newTestDTP("dtp", "dynatrace")
+		dtp.Spec.PublicRegistryOverride = "custom.registry.example.com"
+		s := newTestScope(dtp)
+		imageClient := imagemock.NewClient(t)
+		imageClient.EXPECT().GetComponentLatestInfo(mock.Anything, image.TargetAllocator, "custom.registry.example.com").Return(&image.Info{URI: "custom.registry.example.com/fleet-ta:latest"}, nil)
+		s.ImageClient = imageClient
+		c := fake.NewClient()
+		r := &Reconciler{Client: c}
+
+		require.NoError(t, r.reconcileDeployment(t.Context(), s))
+		require.NotNil(t, s.Deployment)
+
+		deploy := &appsv1.Deployment{}
+		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetDeploymentName(), Namespace: dtp.Namespace}, deploy))
+		assert.Equal(t, "custom.registry.example.com/fleet-ta:latest", deploy.Spec.Template.Spec.Containers[0].Image)
+		assert.Equal(t, "custom.registry.example.com/fleet-ta:latest", dtp.Status.TargetAllocator.ResolvedImage)
 	})
 
 	t.Run("apply spec", func(t *testing.T) {

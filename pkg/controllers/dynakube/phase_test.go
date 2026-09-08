@@ -183,7 +183,7 @@ func TestExtensionsExecutionControllerPhaseChanges(t *testing.T) {
 			Namespace: testNamespace,
 		},
 		Spec: dynakube.DynaKubeSpec{
-			Extensions: &extensions.Spec{Prometheus: &extensions.PrometheusSpec{}},
+			Extensions: &extensions.Spec{Databases: []extensions.DatabaseSpec{{ID: "test"}}},
 		},
 	}
 
@@ -228,64 +228,6 @@ func TestExtensionsExecutionControllerPhaseChanges(t *testing.T) {
 }
 
 func TestOTelCollectorPhaseChanges(t *testing.T) {
-	t.Run("prometheus enabled", func(t *testing.T) {
-		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-			},
-			Spec: dynakube.DynaKubeSpec{
-				Extensions: &extensions.Spec{Prometheus: &extensions.PrometheusSpec{}},
-			},
-		}
-
-		t.Run("no otelc statefulsets in cluster -> deploying", func(t *testing.T) {
-			fakeClient := fake.NewClient()
-			controller := &Controller{
-				client:    fakeClient,
-				apiReader: fakeClient,
-			}
-			phase := controller.determineOTelCollectorPhase(t.Context(), dk)
-			assert.Equal(t, status.Deploying, phase)
-		})
-		t.Run("error accessing k8s api -> error", func(t *testing.T) {
-			fakeClient := errorClient{}
-			controller := &Controller{
-				client:    fakeClient,
-				apiReader: fakeClient,
-			}
-			phase := controller.determineOTelCollectorPhase(t.Context(), dk)
-			assert.Equal(t, status.Error, phase)
-		})
-		t.Run("otelc pods not ready -> deploying", func(t *testing.T) {
-			fakeClient := fake.NewClient(createStatefulset(testNamespace, dk.OTelCollectorStatefulsetName(), 2, 1))
-			controller := &Controller{
-				client:    fakeClient,
-				apiReader: fakeClient,
-			}
-			phase := controller.determineOTelCollectorPhase(t.Context(), dk)
-			assert.Equal(t, status.Deploying, phase)
-		})
-		t.Run("otelc deployed -> running", func(t *testing.T) {
-			fakeClient := fake.NewClient(createStatefulset(testNamespace, dk.OTelCollectorStatefulsetName(), 2, 2))
-			controller := &Controller{
-				client:    fakeClient,
-				apiReader: fakeClient,
-			}
-			phase := controller.determineOTelCollectorPhase(t.Context(), dk)
-			assert.Equal(t, status.Running, phase)
-		})
-		t.Run("otelc pods ready but generation outdated -> deploying", func(t *testing.T) {
-			fakeClient := fake.NewClient(createOutdatedStatefulset(testNamespace, dk.OTelCollectorStatefulsetName(), 2))
-			controller := &Controller{
-				client:    fakeClient,
-				apiReader: fakeClient,
-			}
-			phase := controller.determineOTelCollectorPhase(t.Context(), dk)
-			assert.Equal(t, status.Deploying, phase)
-		})
-	})
-
 	t.Run("telemetryingest enabled", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
@@ -344,7 +286,7 @@ func TestOTelCollectorPhaseChanges(t *testing.T) {
 		})
 	})
 
-	t.Run("neither prometheus nor telemetryingest enabled -> running", func(t *testing.T) {
+	t.Run("telemetryingest not enabled -> running", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{Name: testName, Namespace: testNamespace},
 		}
@@ -563,7 +505,8 @@ func TestDynakubePhaseChanges(t *testing.T) {
 
 			KSPM: &kspm.Spec{},
 
-			Extensions: &extensions.Spec{Prometheus: &extensions.PrometheusSpec{}},
+			Extensions:      &extensions.Spec{Databases: []extensions.DatabaseSpec{{ID: "test"}}},
+			TelemetryIngest: &telemetryingest.Spec{},
 		},
 	}
 
@@ -579,81 +522,82 @@ func TestDynakubePhaseChanges(t *testing.T) {
 	logAgentNotReady := createDaemonSet(testNamespace, dk.LogMonitoring().GetDaemonSetName(), 3, 2)
 	kspmReady := createDaemonSet(testNamespace, dk.KSPM().GetDaemonSetName(), 3, 3)
 	kspmNotReady := createDaemonSet(testNamespace, dk.KSPM().GetDaemonSetName(), 3, 2)
+	dbReady := createDeployment(dk, 1, 1)
 
 	tests := []struct {
 		clt   client.Client
 		phase status.DeploymentPhase
 	}{
 		{
-			clt:   fake.NewClient(agNotReady, oaNotReady, eecNotReady, otelcNotReady),
+			clt:   fake.NewClient(dbReady, agNotReady, oaNotReady, eecNotReady, otelcNotReady),
 			phase: status.Deploying,
 		},
 		{
-			clt:   fake.NewClient(agNotReady, oaNotReady, eecNotReady, otelcReady),
+			clt:   fake.NewClient(dbReady, agNotReady, oaNotReady, eecNotReady, otelcReady),
 			phase: status.Deploying,
 		},
 		{
-			clt:   fake.NewClient(agNotReady, oaNotReady, eecReady, otelcNotReady),
+			clt:   fake.NewClient(dbReady, agNotReady, oaNotReady, eecReady, otelcNotReady),
 			phase: status.Deploying,
 		},
 		{
-			clt:   fake.NewClient(agNotReady, oaNotReady, eecReady, otelcReady),
+			clt:   fake.NewClient(dbReady, agNotReady, oaNotReady, eecReady, otelcReady),
 			phase: status.Deploying,
 		},
 		{
-			clt:   fake.NewClient(agNotReady, oaReady, eecNotReady, otelcNotReady),
+			clt:   fake.NewClient(dbReady, agNotReady, oaReady, eecNotReady, otelcNotReady),
 			phase: status.Deploying,
 		},
 		{
-			clt:   fake.NewClient(agNotReady, oaReady, eecNotReady, otelcReady),
+			clt:   fake.NewClient(dbReady, agNotReady, oaReady, eecNotReady, otelcReady),
 			phase: status.Deploying,
 		},
 		{
-			clt:   fake.NewClient(agNotReady, oaReady, eecReady, otelcNotReady),
+			clt:   fake.NewClient(dbReady, agNotReady, oaReady, eecReady, otelcNotReady),
 			phase: status.Deploying,
 		},
 		{
-			clt:   fake.NewClient(agNotReady, oaReady, eecReady, otelcReady),
+			clt:   fake.NewClient(dbReady, agNotReady, oaReady, eecReady, otelcReady),
 			phase: status.Deploying,
 		},
 		{
-			clt:   fake.NewClient(agReady, oaNotReady, eecNotReady, otelcNotReady),
+			clt:   fake.NewClient(dbReady, agReady, oaNotReady, eecNotReady, otelcNotReady),
 			phase: status.Deploying,
 		},
 		{
-			clt:   fake.NewClient(agReady, oaNotReady, eecNotReady, otelcReady),
+			clt:   fake.NewClient(dbReady, agReady, oaNotReady, eecNotReady, otelcReady),
 			phase: status.Deploying,
 		},
 		{
-			clt:   fake.NewClient(agReady, oaNotReady, eecReady, otelcNotReady),
+			clt:   fake.NewClient(dbReady, agReady, oaNotReady, eecReady, otelcNotReady),
 			phase: status.Deploying,
 		},
 		{
-			clt:   fake.NewClient(agReady, oaNotReady, eecReady, otelcReady),
+			clt:   fake.NewClient(dbReady, agReady, oaNotReady, eecReady, otelcReady),
 			phase: status.Deploying,
 		},
 		{
-			clt:   fake.NewClient(agReady, oaReady, eecNotReady, otelcNotReady),
+			clt:   fake.NewClient(dbReady, agReady, oaReady, eecNotReady, otelcNotReady),
 			phase: status.Deploying,
 		},
 		{
-			clt:   fake.NewClient(agReady, oaReady, eecNotReady, otelcReady),
+			clt:   fake.NewClient(dbReady, agReady, oaReady, eecNotReady, otelcReady),
 			phase: status.Deploying,
 		},
 		{
-			clt:   fake.NewClient(agReady, oaReady, eecReady, otelcNotReady),
+			clt:   fake.NewClient(dbReady, agReady, oaReady, eecReady, otelcNotReady),
 			phase: status.Deploying,
 		},
 		{
-			clt:   fake.NewClient(agReady, oaReady, eecReady, otelcReady, logAgentReady, kspmReady),
+			clt:   fake.NewClient(dbReady, agReady, oaReady, eecReady, otelcReady, logAgentReady, kspmReady),
 			phase: status.Running,
 		},
 		{
-			clt:   fake.NewClient(agReady, oaNotReady, eecReady, otelcReady, logAgentNotReady, kspmReady),
+			clt:   fake.NewClient(dbReady, agReady, oaNotReady, eecReady, otelcReady, logAgentNotReady, kspmReady),
 			phase: status.Deploying,
 		},
 		{
-			clt:   fake.NewClient(agReady, oaReady, eecReady, otelcReady, logAgentReady, kspmNotReady),
+			clt:   fake.NewClient(dbReady, agReady, oaReady, eecReady, otelcReady, logAgentReady, kspmNotReady),
 			phase: status.Deploying,
 		},
 	}

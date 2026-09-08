@@ -137,18 +137,6 @@ func TestConvertFrom(t *testing.T) {
 		compareBase(t, to, from)
 	})
 
-	t.Run("migrate extensions from latest to v1beta5", func(t *testing.T) {
-		from := getNewDynakubeBase()
-		from.Spec.Extensions = &extensionslatest.Spec{}
-		to := DynaKube{}
-
-		err := to.ConvertFrom(&from)
-		require.NoError(t, err)
-
-		assert.NotNil(t, to.Spec.Extensions)
-		compareBase(t, to, from)
-	})
-
 	t.Run("migrate log-monitoring from latest to v1beta5", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		from.Spec.LogMonitoring = getNewLogMonitoringSpec()
@@ -585,7 +573,7 @@ func getNewDynakubeBase() dynakubelatest.DynaKube {
 
 func getNewHostInjectSpec() oneagentlatest.HostInjectSpec {
 	return oneagentlatest.HostInjectSpec{
-		Version: "host-inject-version",
+		Version: "host-inject-version", //nolint:staticcheck
 		Image:   "host-inject-image",
 		Tolerations: []corev1.Toleration{
 			{Key: "host-inject-toleration-key", Operator: "In", Value: "host-inject-toleration-value"},
@@ -646,7 +634,7 @@ func getNewCloudNativeSpec() oneagentlatest.CloudNativeFullStackSpec {
 func getNewApplicationMonitoringSpec() oneagentlatest.ApplicationMonitoringSpec {
 	return oneagentlatest.ApplicationMonitoringSpec{
 		AppInjectionSpec: getNewAppInjectionSpec(),
-		Version:          "app-monitoring-version",
+		Version:          "app-monitoring-version", //nolint:staticcheck
 	}
 }
 

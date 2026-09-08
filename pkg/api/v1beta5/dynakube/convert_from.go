@@ -29,7 +29,6 @@ func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
 	dst.fromMetadataEnrichment(src)
 	dst.fromLogMonitoringSpec(src)
 	dst.fromKSPMSpec(src)
-	dst.fromExtensionsSpec(src)
 	dst.fromOneAgentSpec(src)
 	dst.fromActiveGateSpec(src)
 	dst.fromTemplatesSpec(src)
@@ -76,12 +75,6 @@ func (dst *DynaKube) fromKSPMSpec(src *dynakubelatest.DynaKube) {
 		dst.Spec.KSPM = &kspm.Spec{
 			MappedHostPaths: src.Spec.KSPM.MappedHostPaths,
 		}
-	}
-}
-
-func (dst *DynaKube) fromExtensionsSpec(src *dynakubelatest.DynaKube) {
-	if src.Spec.Extensions != nil {
-		dst.Spec.Extensions = &extensions.Spec{}
 	}
 }
 

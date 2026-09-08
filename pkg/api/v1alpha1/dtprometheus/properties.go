@@ -7,12 +7,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// IsDynatracePresetEnabled reports whether the built-in annotation-based
-// ScrapeConfig should be created. Disabled unless the section is explicitly present.
-func (dtp *DTPrometheus) IsDynatracePresetEnabled() bool {
-	return dtp.Spec.DynatracePreset != nil
-}
-
 // Conditions returns a pointer to the status conditions slice so callers can
 // use meta.SetStatusCondition and friends.
 func (dtp *DTPrometheus) Conditions() *[]metav1.Condition {

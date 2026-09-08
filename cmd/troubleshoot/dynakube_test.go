@@ -148,10 +148,11 @@ func TestPullSecret(t *testing.T) {
 				dk,
 				testBuildNamespace(testNamespace),
 				testNewSecretBuilder(testNamespace, testSecretName).build(),
+				testNewSecretBuilder(testNamespace, testDynakube+dynakube.PullSecretSuffix).build(),
 			).
 			Build()
 
-		_, err := checkPullSecretExists(t.Context(), getNullLogger(t), clt, dk)
+		_, err := checkPullSecretsExist(t.Context(), getNullLogger(t), clt, dk)
 		require.NoErrorf(t, err, "custom pull secret not found")
 	})
 	t.Run("custom pull secret does not exist", func(t *testing.T) {
@@ -164,14 +165,14 @@ func TestPullSecret(t *testing.T) {
 			).
 			Build()
 
-		_, err := checkPullSecretExists(t.Context(), getNullLogger(t), clt, dk)
+		_, err := checkPullSecretsExist(t.Context(), getNullLogger(t), clt, dk)
 		require.Errorf(t, err, "custom pull secret found")
 	})
 	t.Run("custom pull secret has required tokens", func(t *testing.T) {
-		require.NoErrorf(t, checkPullSecretHasRequiredTokens(getNullLogger(t), nil, *testNewSecretBuilder(testNamespace, testSecretName).dataAppend(".dockerconfigjson", testCustomPullSecretToken).build()), "custom pull secret does not have required tokens")
+		require.NoErrorf(t, checkPullSecretHasRequiredTokens(getNullLogger(t), testNewSecretBuilder(testNamespace, testSecretName).dataAppend(".dockerconfigjson", testCustomPullSecretToken).build()), "custom pull secret does not have required tokens")
 	})
 	t.Run("custom pull secret does not have required tokens", func(t *testing.T) {
-		require.Errorf(t, checkPullSecretHasRequiredTokens(getNullLogger(t), &dynakube.DynaKube{}, *testNewSecretBuilder(testNamespace, testSecretName).build()), "custom pull secret has required tokens")
+		require.Errorf(t, checkPullSecretHasRequiredTokens(getNullLogger(t), testNewSecretBuilder(testNamespace, testSecretName).build()), "custom pull secret has required tokens")
 	})
 }
 

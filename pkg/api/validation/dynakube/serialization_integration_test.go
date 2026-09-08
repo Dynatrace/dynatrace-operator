@@ -4,7 +4,6 @@
 package validation_test
 
 import (
-	"context"
 	"flag"
 	"os"
 	"path/filepath"
@@ -75,7 +74,7 @@ func TestSerialization(t *testing.T) {
 				APIURL:             "https://partial.dev.dynatracelabs.com/api",
 				MetadataEnrichment: metadataenrichment.Spec{Enabled: new(true)},
 				OneAgent: oneagent.Spec{
-					HostMonitoring: &oneagent.HostInjectSpec{Version: "1.0.0.20240101-000000"},
+					HostMonitoring: &oneagent.HostInjectSpec{Version: "1.0.0.20240101-000000"}, //nolint:staticcheck
 				},
 			},
 		},
@@ -138,11 +137,7 @@ func TestSerialization(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{Name: tt.name, Namespace: metav1.NamespaceDefault},
 				Spec:       tt.spec,
 			}
-			require.NoError(t, clt.Create(t.Context(), dk))
-			t.Cleanup(func() {
-				// t.Context is no longer valid during cleanup
-				assert.NoError(t, clt.Delete(context.Background(), dk))
-			})
+			integrationtests.CreateKubernetesObject(t, clt, dk)
 
 			// Status is not persisted on create; set it via the subresource.
 			if tt.status != nil {

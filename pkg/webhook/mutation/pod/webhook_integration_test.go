@@ -4,11 +4,9 @@
 package pod_test
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"maps"
-	"net/url"
 	"strings"
 	"testing"
 
@@ -20,6 +18,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	otlpspec "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
@@ -48,6 +47,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 )
 
@@ -61,6 +61,7 @@ const (
 	testClusterName              = "test-cluster"
 	testClusterUUID              = "123e4567-e89b-12d3-a456-426614174000"
 	overrideNamespaceName        = "override-namespace"
+	apiURL                       = "https://example.live.dynatrace.com"
 )
 
 var (
@@ -101,12 +102,9 @@ var (
 	}
 )
 
-func buildArgument(attr string, value string) string {
-	return fmt.Sprintf("--%s=%s=%s", podattr.Flag, attr, value)
-}
-
-func TestWebhook(t *testing.T) {
-	clt := integrationtests.SetupWebhookTestEnvironment(t,
+func TestWebhook(t *testing.T) { //nolint:revive // Function too long
+	clt := integrationtests.SetupWebhookTestEnvironment(
+		t,
 		getWebhookInstallOptions(),
 
 		func(mgr ctrl.Manager) error {
@@ -124,176 +122,733 @@ func TestWebhook(t *testing.T) {
 		},
 	)
 
-	// shared between test cases
-	bootstrapperSecret := getBoostrapperSecret(testNamespace)
-	createObject(t, clt, bootstrapperSecret)
-
-	otlpExporterSecret := getOTLPExporterSecret(testNamespace)
-	createObject(t, clt, otlpExporterSecret)
-
-	t.Run("success incl. enrichment rules, custom metadata and metadata annotation propagation", func(t *testing.T) {
-		t.Run("with deprecated annotations", func(t *testing.T) {
-			PropagationTest(t, clt, false)
-		})
-		t.Run("without deprecated annotations", func(t *testing.T) {
-			PropagationTest(t, clt, true)
-		})
-	})
-
-	t.Run("success with proper precedence", func(t *testing.T) {
-		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "dynakube",
-				Namespace: testNamespace,
-				Annotations: map[string]string{
-					exp.InjectionAutomaticKey: "true",
-				},
-			},
-			Spec: dynakube.DynaKubeSpec{
-				OneAgent: oneagent.Spec{
-					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
-				},
-				MetadataEnrichment: metadataenrichment.Spec{
-					Enabled: new(true),
-				},
-			},
-			Status: dynakube.DynaKubeStatus{
-				KubernetesClusterMEID: testMEID,
-				KubernetesClusterName: testClusterName,
-				MetadataEnrichment:    metadataEnrichmentRules,
-				KubeSystemUUID:        testClusterUUID,
-				OneAgent: oneagent.Status{
-					ConnectionInfo: communication.ConnectionInfo{
-						TenantUUID: uuid.NewString(),
-					},
-				},
-				CodeModules: oneagent.CodeModulesStatus{
-					VersionStatus: status.VersionStatus{
-						Version: "1.2.3",
-					},
-				},
-			},
-		}
-		createDynaKube(t, clt, dk)
-
-		overrideNamespace := getNamespace(overrideNamespaceName)
-		overrideNamespace.Name = overrideNamespaceName
-		overrideNamespace.Annotations = map[string]string{
-			"metadata.dynatrace.com/dt.entity.kubernetes_cluster": "ns-meid",
-			"metadata.dynatrace.com/k8s.cluster.name":             "override-cluster-name",
-		}
-
-		createObject(t, clt, overrideNamespace)
-		createObject(t, clt, getBoostrapperSecret(overrideNamespaceName))
-		createObject(t, clt, getOTLPExporterSecret(overrideNamespaceName))
-
-		pod := createPod(t, clt, func(pod *corev1.Pod) {
-			pod.Namespace = overrideNamespaceName
-			maps.Copy(pod.Annotations, map[string]string{
-				"metadata.dynatrace.com/dt.entity.kubernetes_cluster": "pod-meid",
-				"metadata.dynatrace.com/k8s.pod.name":                 "override-pod-name",
-			})
-		})
-
-		require.True(t, maputils.GetFieldBool(pod.Annotations, podmutator.AnnotationDynatraceInjected, false))
-		require.True(t, maputils.GetFieldBool(pod.Annotations, metadatamutator.AnnotationInjected, false))
-		require.True(t, maputils.GetFieldBool(pod.Annotations, oneagentmutator.AnnotationInjected, false))
-
-		// verify precedence
-		require.Len(t, pod.Spec.InitContainers, 1)
-		assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("k8s.pod.name", "override-pod-name"))
-		assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("dt.entity.kubernetes_cluster", "pod-meid"))
-		assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("k8s.cluster.name", "override-cluster-name"))
-	})
-
-	t.Run("oneagent mutator failure", func(t *testing.T) {
-		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "dynakube",
-				Namespace: testNamespace,
-			},
-			Spec: dynakube.DynaKubeSpec{
-				OneAgent: oneagent.Spec{
-					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
-				},
-			},
-			Status: dynakube.DynaKubeStatus{
-				CodeModules: oneagent.CodeModulesStatus{
-					VersionStatus: status.VersionStatus{
-						Version: "1.2.3",
-					},
-				},
-			},
-		}
-		createDynaKube(t, clt, dk)
-
-		pod := createPod(t, clt, func(pod *corev1.Pod) {
-			pod.Annotations[oneagentmutator.AnnotationInject] = "true"
-		})
-
-		assert.Contains(t, pod.Annotations, oneagentmutator.AnnotationReason)
-	})
-
-	t.Run("oneagent mutator failure -> status not ready", func(t *testing.T) {
-		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "dynakube",
-				Namespace: testNamespace,
-			},
-			Spec: dynakube.DynaKubeSpec{
-				OneAgent: oneagent.Spec{
-					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
-				},
-			},
-			Status: dynakube.DynaKubeStatus{
-				CodeModules: oneagent.CodeModulesStatus{
-					VersionStatus: status.VersionStatus{},
-				},
-			},
-		}
-		createDynaKube(t, clt, dk)
-
-		pod := createPod(t, clt, func(pod *corev1.Pod) {
-			pod.Annotations[oneagentmutator.AnnotationInject] = "true"
-		})
-
-		require.Contains(t, pod.Annotations, oneagentmutator.AnnotationReason)
-		assert.Contains(t, pod.Annotations[oneagentmutator.AnnotationReason], oneagentmutator.DynaKubeStatusNotReadyReason)
-	})
-
-	t.Run("metadata mutator failure", func(t *testing.T) {
-		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "dynakube",
-				Namespace: testNamespace,
-			},
-			Spec: dynakube.DynaKubeSpec{
-				MetadataEnrichment: metadataenrichment.Spec{
-					Enabled: new(true),
-				},
-			},
-		}
-		createDynaKube(t, clt, dk)
-
-		pod := createPod(t, clt, func(pod *corev1.Pod) {
-			pod.Annotations[metadatamutator.AnnotationInject] = "true"
-			pod.OwnerReferences = []metav1.OwnerReference{
-				{
-					APIVersion: "apps/v1",
-					Kind:       "Deployment",
-					Name:       "missing",
-					UID:        types.UID(uuid.NewString()),
-					Controller: new(true),
-				},
+	t.Run("reject", func(t *testing.T) {
+		// a volume with a source the mutators would never produce
+		hostPathVolume := func(name string) corev1.Volume {
+			return corev1.Volume{
+				Name:         name,
+				VolumeSource: corev1.VolumeSource{HostPath: &corev1.HostPathVolumeSource{Path: "/"}},
 			}
+		}
+
+		tests := []struct {
+			name      string
+			dk        *dynakube.DynaKube
+			podMutate func(*corev1.Pod)
+			expect    map[string]string
+		}{
+			{
+				"success",
+				getReadyCNFSDynaKube(),
+				nil,
+				map[string]string{podmutator.AnnotationDynatraceInjected: "true", metadatamutator.AnnotationInjected: "true", oneagentmutator.AnnotationInjected: "true"},
+			},
+			{
+				"oneagent missing tenant UUID",
+				func() *dynakube.DynaKube {
+					dk := getReadyCNFSDynaKube()
+					dk.Status.OneAgent.ConnectionInfo.TenantUUID = ""
+
+					return dk
+				}(),
+				nil,
+				map[string]string{oneagentmutator.AnnotationReason: oneagentmutator.MissingTenantUUIDReason},
+			},
+			{
+				"oneagent version not ready",
+				func() *dynakube.DynaKube {
+					dk := getReadyCNFSDynaKube()
+					dk.Status.CodeModules.Version = ""
+
+					return dk
+				}(),
+				nil,
+				map[string]string{oneagentmutator.AnnotationReason: oneagentmutator.DynaKubeStatusNotReadyReason},
+			},
+			{
+				"metadata owner lookup",
+				&dynakube.DynaKube{
+					ObjectMeta: metav1.ObjectMeta{Name: "dynakube", Namespace: testNamespace},
+					Spec:       dynakube.DynaKubeSpec{MetadataEnrichment: metadataenrichment.Spec{Enabled: new(true)}},
+				},
+				func(pod *corev1.Pod) {
+					pod.Annotations[metadatamutator.AnnotationInject] = "true"
+					pod.OwnerReferences = []metav1.OwnerReference{
+						{
+							APIVersion: "apps/v1",
+							Kind:       "Deployment",
+							Name:       "missing",
+							UID:        types.UID(uuid.NewString()),
+							Controller: new(true),
+						},
+					}
+				},
+				map[string]string{metadatamutator.AnnotationReason: metadatamutator.OwnerLookupFailedReason},
+			},
+			{
+				"data ingest token secret missing",
+				getReadyOTLPDynaKube(),
+				nil,
+				map[string]string{podmutator.AnnotationOTLPInjected: "false", podmutator.AnnotationOTLPReason: otlp.NoOTLPExporterConfigSecretReason},
+			},
+			{
+				"conflicting config volume",
+				getReadyCNFSDynaKube(),
+				func(pod *corev1.Pod) {
+					pod.Spec.Volumes = append(pod.Spec.Volumes, hostPathVolume(volumes.ConfigVolumeName))
+				},
+				map[string]string{volumes.AnnotationReason: volumes.ConflictingVolumeTypeReason},
+			},
+			{
+				"conflicting input volume",
+				getReadyCNFSDynaKube(),
+				func(pod *corev1.Pod) {
+					pod.Spec.Volumes = append(pod.Spec.Volumes, hostPathVolume(volumes.ConfigVolumeName))
+				},
+				map[string]string{volumes.AnnotationReason: volumes.ConflictingVolumeTypeReason},
+			},
+			{
+				"conflicting oneagent-bin emptyDir volume",
+				func() *dynakube.DynaKube {
+					dk := getReadyCNFSDynaKube()
+					dk.Status.CodeModules.ImageID = "registry.example.com/codemodules@sha256:" + strings.Repeat("a", 64)
+
+					return dk
+				}(),
+				func(pod *corev1.Pod) {
+					pod.Annotations[oneagentmutator.AnnotationVolumeType] = oneagentmutator.EphemeralVolumeType
+					pod.Spec.Volumes = append(pod.Spec.Volumes, hostPathVolume(oneagentmutator.BinVolumeName))
+				},
+				map[string]string{oneagentmutator.AnnotationReason: volumes.ConflictingVolumeTypeReason},
+			},
+			{
+				"conflicting oneagent-bin CSI volume",
+				func() *dynakube.DynaKube {
+					dk := getReadyCNFSDynaKube()
+					dk.Status.CodeModules.ImageID = "registry.example.com/codemodules@sha256:" + strings.Repeat("a", 64)
+
+					return dk
+				}(),
+				func(pod *corev1.Pod) {
+					pod.Annotations[oneagentmutator.AnnotationVolumeType] = oneagentmutator.CSIVolumeType
+					pod.Spec.Volumes = append(pod.Spec.Volumes, hostPathVolume(oneagentmutator.BinVolumeName))
+				},
+				map[string]string{oneagentmutator.AnnotationReason: volumes.ConflictingVolumeTypeReason},
+			},
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				integrationtests.CreateDynakube(t, clt, tt.dk)
+				integrationtests.CreateKubernetesObject(t, clt, getBoostrapperSecret(testNamespace))
+
+				pod := createPod(t, clt, tt.podMutate)
+
+				assert.Subset(t, pod.Annotations, tt.expect)
+			})
+		}
+
+		t.Run("conflicting otlp activegate cert volume", func(t *testing.T) {
+			dk := getReadyOTLPDynaKube()
+			dk.Spec.ActiveGate.Capabilities = []activegate.CapabilityDisplayName{activegate.RoutingCapability.DisplayName}
+			dk.Status.OneAgent.ConnectionInfo.TenantUUID = uuid.NewString()
+
+			integrationtests.CreateDynakube(t, clt, dk)
+			integrationtests.CreateKubernetesObject(t, clt, getOTLPExporterSecret(testNamespace))
+			integrationtests.CreateKubernetesObject(t, clt, getOTLPExporterCertsSecret(testNamespace))
+
+			pod := createPod(t, clt, func(pod *corev1.Pod) {
+				pod.Spec.Volumes = append(pod.Spec.Volumes, hostPathVolume(exporter.ActiveGateTrustedCertVolumeName))
+			})
+
+			assert.Equal(t, volumes.ConflictingVolumeTypeReason, pod.Annotations[podmutator.AnnotationOTLPReason])
 		})
 
-		assert.Contains(t, pod.Annotations, metadatamutator.AnnotationReason)
+		t.Run("otlp exporter activegate certificate secret missing", func(t *testing.T) {
+			dk := getReadyOTLPDynaKube()
+			dk.Spec.ActiveGate.Capabilities = []activegate.CapabilityDisplayName{activegate.RoutingCapability.DisplayName}
+			dk.Status.OneAgent.ConnectionInfo.TenantUUID = uuid.NewString()
+			integrationtests.CreateDynakube(t, clt, dk)
+			integrationtests.CreateKubernetesObject(t, clt, getOTLPExporterSecret(testNamespace))
+
+			pod := createPod(t, clt, nil)
+
+			assert.False(t, maputils.GetFieldBool(pod.Annotations, podmutator.AnnotationOTLPInjected, false))
+			assert.Equal(t, otlp.NoOTLPExporterActiveGateCertSecretReason, pod.Annotations[podmutator.AnnotationOTLPReason])
+		})
+	})
+
+	t.Run("metadata JSON", func(t *testing.T) {
+		tests := []metadataJSONTestCase{
+			// general functionality: one case per rule type/source
+			{
+				name:            "legacy LABEL rule without target uses namespace-label key",
+				rules:           []metadataenrichment.Rule{{Type: metadataenrichment.LabelRule, Source: "team"}},
+				namespaceLabels: map[string]string{"team": "payments"},
+				expect:          map[string]string{"k8s.namespace.label.team": "payments"},
+			},
+			{
+				name:                 "legacy ANNOTATION rule without target uses namespace-annotation key",
+				rules:                []metadataenrichment.Rule{{Type: metadataenrichment.AnnotationRule, Source: "cost-center"}},
+				namespaceAnnotations: map[string]string{"cost-center": "42"},
+				expect:               map[string]string{"k8s.namespace.annotation.cost-center": "42"},
+			},
+			{
+				name:            "LABEL rule with explicit target reads namespace label",
+				rules:           []metadataenrichment.Rule{{Type: metadataenrichment.LabelRule, Source: "env", Target: "custom.env"}},
+				namespaceLabels: map[string]string{"env": "prod"},
+				expect:          map[string]string{"custom.env": "prod"},
+			},
+			{
+				name:                 "ANNOTATION rule with explicit target reads namespace annotation",
+				rules:                []metadataenrichment.Rule{{Type: metadataenrichment.AnnotationRule, Source: "owner", Target: "custom.owner"}},
+				namespaceAnnotations: map[string]string{"owner": "team-a"},
+				expect:               map[string]string{"custom.owner": "team-a"},
+			},
+			{
+				name:            "K8S_NAMESPACE_LABEL rule reads namespace label",
+				rules:           []metadataenrichment.Rule{{Type: metadataenrichment.K8sNamespaceLabelRule, Source: "tier", Target: "custom.tier"}},
+				namespaceLabels: map[string]string{"tier": "gold"},
+				expect:          map[string]string{"custom.tier": "gold"},
+			},
+			{
+				name:                 "K8S_NAMESPACE_ANNOTATION rule reads namespace annotation",
+				rules:                []metadataenrichment.Rule{{Type: metadataenrichment.K8sNamespaceAnnotationRule, Source: "region", Target: "custom.region"}},
+				namespaceAnnotations: map[string]string{"region": "eu-west-1"},
+				expect:               map[string]string{"custom.region": "eu-west-1"},
+			},
+			{
+				name:           "K8S_WORKLOAD_LABEL rule reads workload label",
+				rules:          []metadataenrichment.Rule{{Type: metadataenrichment.K8sWorkloadLabelRule, Source: "team", Target: "custom.team"}},
+				workloadLabels: map[string]string{"team": "checkout"},
+				expect:         map[string]string{"custom.team": "checkout"},
+			},
+			{
+				name:                "K8S_WORKLOAD_ANNOTATION rule reads workload annotation",
+				rules:               []metadataenrichment.Rule{{Type: metadataenrichment.K8sWorkloadAnnotationRule, Source: "release", Target: "custom.release"}},
+				workloadAnnotations: map[string]string{"release": "7"},
+				expect:              map[string]string{"custom.release": "7"},
+			},
+			{
+				name:      "K8S_POD_LABEL rule reads pod label",
+				rules:     []metadataenrichment.Rule{{Type: metadataenrichment.K8sPodLabelRule, Source: "version", Target: "custom.version"}},
+				podLabels: map[string]string{"version": "v2"},
+				expect:    map[string]string{"custom.version": "v2"},
+			},
+			{
+				name:           "K8S_POD_ANNOTATION rule reads pod annotation",
+				rules:          []metadataenrichment.Rule{{Type: metadataenrichment.K8sPodAnnotationRule, Source: "build", Target: "custom.build"}},
+				podAnnotations: map[string]string{"build": "123"},
+				expect:         map[string]string{"custom.build": "123"},
+			},
+			{
+				name:   "CUSTOM rule resolves to its literal source value",
+				rules:  []metadataenrichment.Rule{{Type: metadataenrichment.CustomRule, Source: "static-value", Target: "custom.literal"}},
+				expect: map[string]string{"custom.literal": "static-value"},
+			},
+			{
+				name:  "rule with unresolved source does not produce an attribute",
+				rules: []metadataenrichment.Rule{{Type: metadataenrichment.K8sWorkloadLabelRule, Source: "missing", Target: "custom.missing"}},
+			},
+			{
+				name: "rules with different targets and source types do not interfere with each other",
+				rules: []metadataenrichment.Rule{
+					{Type: metadataenrichment.K8sNamespaceLabelRule, Source: "env", Target: "custom.env"},
+					{Type: metadataenrichment.K8sWorkloadAnnotationRule, Source: "release", Target: "custom.release"},
+					{Type: metadataenrichment.K8sPodLabelRule, Source: "version", Target: "custom.version"},
+				},
+				namespaceLabels:     map[string]string{"env": "prod"},
+				workloadAnnotations: map[string]string{"release": "7"},
+				podLabels:           map[string]string{"version": "v3"},
+				expect:              map[string]string{"custom.env": "prod", "custom.release": "7", "custom.version": "v3"},
+			},
+
+			// inter-rule precedence: first rule (in definition order) that resolves to a value wins
+			{
+				name: "first rule wins",
+				rules: []metadataenrichment.Rule{
+					{Type: metadataenrichment.CustomRule, Source: "first", Target: "key"},
+					{Type: metadataenrichment.CustomRule, Source: "second", Target: "key"},
+					{Type: metadataenrichment.CustomRule, Source: "third", Target: "key"},
+				},
+				expect: map[string]string{"key": "first"},
+			},
+			{
+				name: "first rule wins across types",
+				rules: []metadataenrichment.Rule{
+					{Type: metadataenrichment.K8sWorkloadLabelRule, Source: "tier", Target: "key"},
+					{Type: metadataenrichment.K8sNamespaceAnnotationRule, Source: "tier", Target: "key"},
+					{Type: metadataenrichment.K8sPodLabelRule, Source: "tier", Target: "key"},
+				},
+				namespaceAnnotations: map[string]string{"tier": "namespace"},
+				workloadLabels:       map[string]string{"tier": "workload"},
+				podLabels:            map[string]string{"tier": "pod"},
+				expect:               map[string]string{"key": "workload"},
+			},
+			{
+				name: "unresolved rule is skipped",
+				rules: []metadataenrichment.Rule{
+					{Type: metadataenrichment.K8sPodLabelRule, Source: "missing", Target: "key"},
+					{Type: metadataenrichment.CustomRule, Source: "fallback", Target: "key"},
+				},
+				expect: map[string]string{"key": "fallback"},
+			},
+
+			// hand-written metadata.dynatrace.com/ annotations: namespace < workload < pod, and the
+			// annotation layers as a whole take precedence over config rules
+			{
+				name:                 "namespace annotation",
+				namespaceAnnotations: map[string]string{"metadata.dynatrace.com/tier": "namespace"},
+				expect:               map[string]string{"tier": "namespace"},
+			},
+			{
+				name:                "workload annotation",
+				workloadAnnotations: map[string]string{"metadata.dynatrace.com/tier": "workload"},
+				expect:              map[string]string{"tier": "workload"},
+			},
+			{
+				name:                 "workload annotation overrides namespace",
+				namespaceAnnotations: map[string]string{"metadata.dynatrace.com/tier": "namespace"},
+				workloadAnnotations:  map[string]string{"metadata.dynatrace.com/tier": "workload"},
+				expect:               map[string]string{"tier": "workload"},
+			},
+			{
+				name:                "pod annotation overrides workload",
+				workloadAnnotations: map[string]string{"metadata.dynatrace.com/tier": "workload"},
+				podAnnotations:      map[string]string{"metadata.dynatrace.com/tier": "pod"},
+				expect:              map[string]string{"tier": "pod"},
+			},
+			{
+				name:                 "pod annotation overrides namespace and workload",
+				namespaceAnnotations: map[string]string{"metadata.dynatrace.com/tier": "namespace"},
+				workloadAnnotations:  map[string]string{"metadata.dynatrace.com/tier": "workload"},
+				podAnnotations:       map[string]string{"metadata.dynatrace.com/tier": "pod"},
+				expect:               map[string]string{"tier": "pod"},
+			},
+			{
+				name:                 "annotation overrides rule",
+				rules:                []metadataenrichment.Rule{{Type: metadataenrichment.CustomRule, Source: "rule", Target: "tier"}},
+				namespaceAnnotations: map[string]string{"metadata.dynatrace.com/tier": "annotation"},
+				expect:               map[string]string{"tier": "annotation"},
+			},
+			{
+				name:                 "annotation overrides attribute",
+				namespaceAnnotations: map[string]string{"metadata.dynatrace.com/foo": "annotation"},
+				resourceAttributes:   map[string]string{"foo": "global"},
+				expect:               map[string]string{"foo": "annotation"},
+			},
+
+			{
+				name:               "resource attributes",
+				resourceAttributes: map[string]string{"foo": "global"},
+				expect:             map[string]string{"foo": "global"},
+			},
+			{
+				name:               "oneagent attributes override",
+				resourceAttributes: map[string]string{"foo": "global"},
+				oaAttributes:       map[string]string{"foo": "oneagent"},
+				expect:             map[string]string{"foo": "oneagent"},
+			},
+			{
+				name:               "otlp attributes override",
+				resourceAttributes: map[string]string{"foo": "global"},
+				otlpAttributes:     map[string]string{"foo": "otlp"},
+				expect:             map[string]string{"foo": "otlp"},
+			},
+
+			{
+				name: "resource attributes override rule",
+				rules: []metadataenrichment.Rule{
+					{Type: metadataenrichment.K8sNamespaceLabelRule, Source: "tier", Target: "foo"},
+				},
+				namespaceAnnotations: map[string]string{"tier": "namespace"},
+				resourceAttributes:   map[string]string{"foo": "global"},
+				expect:               map[string]string{"foo": "global"},
+			},
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				testMetadataJSON(t, clt, tt)
+			})
+		}
+	})
+
+	t.Run("bootstrapper args", func(t *testing.T) {
+		tests := []bootstrapperArgsTestCase{
+			{
+				name:                 "enrichment rules",
+				rules:                metadataEnrichmentRules.Rules,
+				namespaceLabels:      map[string]string{testSecContextLabel: "high", testCustomMetadataLabel: "custom-label"},
+				namespaceAnnotations: map[string]string{testCostCenterAnnotation: "sales", testCustomMetadataAnnotation: "custom-annotation"},
+				expect: map[string]string{
+					"dt.security_context":                                      "high",
+					"dt.cost.costcenter":                                       "sales",
+					"k8s.namespace.label." + testCustomMetadataLabel:           "custom-label",
+					"k8s.namespace.annotation." + testCustomMetadataAnnotation: "custom-annotation",
+				},
+			},
+			{
+				name:                 "user-provided annotations",
+				namespaceAnnotations: map[string]string{"metadata.dynatrace.com/ns-key": "ns-value"},
+				workloadAnnotations:  map[string]string{"metadata.dynatrace.com/workload-key": "workload-value"},
+				podAnnotations:       podMetadataAnnotations,
+				expect: map[string]string{
+					"ns-key":       "ns-value",
+					"workload-key": "workload-value",
+					"service.name": "checkout service",
+					"custom.key":   "value:with/special chars",
+				},
+			},
+			{
+				name:               "resource attributes",
+				resourceAttributes: map[string]string{"global": "global", "shared": "global"},
+				oaAttributes:       map[string]string{"shared": "oneagent"},
+				expect:             map[string]string{"global": "global", "shared": "oneagent"},
+			},
+			{
+				name:              "without deprecated fields",
+				withoutDeprecated: true,
+			},
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				testBootstrapperArgs(t, clt, tt)
+			})
+		}
+	})
+
+	t.Run("OTLP", func(t *testing.T) {
+		tests := []otlpTestCase{
+			{
+				name:                  "without deprecated keys",
+				withoutDeprecatedKeys: true,
+			},
+			{
+				name:                 "user-provided annotations",
+				namespaceAnnotations: map[string]string{"metadata.dynatrace.com/ns-key": "ns-value", "ignore-namespace": "foo"},
+				workloadAnnotations:  map[string]string{"metadata.dynatrace.com/workload-key": "workload-value", "ignore-workload": "bar"},
+				podAnnotations:       map[string]string{"metadata.dynatrace.com/pod-key": "pod-value", "ignore-pod": "baz"},
+				expectAttributes:     map[string]string{"ns-key": "ns-value", "workload-key": "workload-value", "pod-key": "pod-value"},
+			},
+			{
+				name:                 "values are escaped",
+				namespaceAnnotations: map[string]string{"metadata.dynatrace.com/ns-key": "ns/value"},
+				workloadAnnotations:  map[string]string{"metadata.dynatrace.com/workload-key": "workload:value"},
+				podAnnotations:       map[string]string{"metadata.dynatrace.com/pod-key": "pod value"},
+				expectAttributes:     map[string]string{"ns-key": "ns%2Fvalue", "workload-key": "workload%3Avalue", "pod-key": "pod+value"},
+			},
+			{
+				name: "first rule wins",
+				rules: []metadataenrichment.Rule{
+					{Type: metadataenrichment.K8sNamespaceLabelRule, Source: "lookup", Target: "key"},
+					{Type: metadataenrichment.K8sWorkloadLabelRule, Source: "lookup", Target: "key"},
+					{Type: metadataenrichment.K8sPodLabelRule, Source: "lookup", Target: "key"},
+				},
+				namespaceLabels:  map[string]string{"lookup": "namespace"},
+				workloadLabels:   map[string]string{"lookup": "workload"},
+				podLabels:        map[string]string{"lookup": "pod"},
+				expectAttributes: map[string]string{"key": "namespace"},
+			},
+			{
+				name:               "resource attributes",
+				resourceAttributes: map[string]string{"global": "global", "shared": "global"},
+				otlpAttributes:     map[string]string{"shared": "otlp", "foo": "bar"},
+				expectAttributes:   map[string]string{"global": "global", "shared": "otlp", "foo": "bar"},
+			},
+			{
+				name:             "existing env",
+				podEnvs:          []corev1.EnvVar{{Name: resourceattributes.OTelResourceAttributesEnv, Value: "foo=bar"}},
+				expectAttributes: map[string]string{"foo": "bar"},
+			},
+
+			{
+				name: "rules override cluster info",
+				rules: []metadataenrichment.Rule{
+					{Type: metadataenrichment.K8sNamespaceLabelRule, Source: "lookup", Target: "k8s.namespace.name"},
+					{Type: metadataenrichment.K8sWorkloadLabelRule, Source: "lookup", Target: "k8s.workload.name"},
+					{Type: metadataenrichment.K8sPodLabelRule, Source: "lookup", Target: "k8s.pod.name"},
+				},
+				namespaceLabels:  map[string]string{"lookup": "namespace-value"},
+				workloadLabels:   map[string]string{"lookup": "workload-value"},
+				podLabels:        map[string]string{"lookup": "pod-value"},
+				expectAttributes: map[string]string{"k8s.namespace.name": "namespace-value", "k8s.workload.name": "workload-value", "k8s.pod.name": "pod-value"},
+			},
+			{
+				name: "resource attributes override rules",
+				rules: []metadataenrichment.Rule{
+					{Type: metadataenrichment.K8sNamespaceLabelRule, Source: "lookup", Target: "namespace-key"},
+					{Type: metadataenrichment.K8sWorkloadLabelRule, Source: "lookup", Target: "workload-key"},
+					{Type: metadataenrichment.K8sPodLabelRule, Source: "lookup", Target: "pod-key"},
+				},
+				namespaceLabels:    map[string]string{"lookup": "base"},
+				workloadLabels:     map[string]string{"lookup": "base"},
+				podLabels:          map[string]string{"lookup": "base"},
+				resourceAttributes: map[string]string{"namespace-key": "override", "workload-key": "override"},
+				otlpAttributes:     map[string]string{"pod-key": "override"},
+				expectAttributes:   map[string]string{"namespace-key": "override", "workload-key": "override", "pod-key": "override"},
+			},
+			{
+				name: "annotations override rules",
+				rules: []metadataenrichment.Rule{
+					{Type: metadataenrichment.K8sNamespaceLabelRule, Source: "lookup", Target: "namespace-key"},
+					{Type: metadataenrichment.K8sWorkloadLabelRule, Source: "lookup", Target: "workload-key"},
+					{Type: metadataenrichment.K8sPodLabelRule, Source: "lookup", Target: "pod-key"},
+				},
+				namespaceLabels:      map[string]string{"lookup": "namespace"},
+				workloadLabels:       map[string]string{"lookup": "workload"},
+				podLabels:            map[string]string{"lookup": "pod"},
+				namespaceAnnotations: map[string]string{"metadata.dynatrace.com/namespace-key": "override"},
+				workloadAnnotations:  map[string]string{"metadata.dynatrace.com/workload-key": "override"},
+				podAnnotations:       map[string]string{"metadata.dynatrace.com/pod-key": "override"},
+				expectAttributes:     map[string]string{"namespace-key": "override", "workload-key": "override", "pod-key": "override"},
+			},
+			{
+				name:                 "annotations override resource attributes",
+				namespaceAnnotations: map[string]string{"metadata.dynatrace.com/namespace-key": "override"},
+				workloadAnnotations:  map[string]string{"metadata.dynatrace.com/workload-key": "override"},
+				podAnnotations:       map[string]string{"metadata.dynatrace.com/pod-key": "override"},
+				resourceAttributes:   map[string]string{"namespace-key": "base", "workload-key": "base", "pod-key": "base"},
+				expectAttributes:     map[string]string{"namespace-key": "override", "workload-key": "override", "pod-key": "override"},
+			},
+			{
+				name:                 "existing env overrides annotations",
+				podEnvs:              []corev1.EnvVar{{Name: resourceattributes.OTelResourceAttributesEnv, Value: "namespace-key=override,workload-key=override,pod-key=override"}},
+				namespaceAnnotations: map[string]string{"metadata.dynatrace.com/namespace-key": "base"},
+				workloadAnnotations:  map[string]string{"metadata.dynatrace.com/workload-key": "base"},
+				podAnnotations:       map[string]string{"metadata.dynatrace.com/pod-key": "base"},
+				expectAttributes:     map[string]string{"namespace-key": "override", "workload-key": "override", "pod-key": "override"},
+			},
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				testOTLP(t, clt, tt)
+			})
+		}
+
+		t.Run("otlp exporter activegate", func(t *testing.T) {
+			tenantUUID := uuid.NewString()
+
+			dk := getReadyOTLPDynaKube()
+			dk.Spec.ActiveGate.Capabilities = []activegate.CapabilityDisplayName{activegate.RoutingCapability.DisplayName}
+			dk.Status.OneAgent.ConnectionInfo.TenantUUID = tenantUUID
+			integrationtests.CreateDynakube(t, clt, dk)
+			integrationtests.CreateKubernetesObject(t, clt, getOTLPExporterSecret(testNamespace))
+			integrationtests.CreateKubernetesObject(t, clt, getOTLPExporterCertsSecret(testNamespace))
+
+			pod := createPod(t, clt, nil)
+
+			expectedService := fmt.Sprintf("%s-%s.%s", dk.Name, agconsts.MultiActiveGateName, testNamespace)
+			expectedBase := fmt.Sprintf("https://%s/e/%s/api/v2/otlp", expectedService, tenantUUID)
+
+			assert.Subset(
+				t,
+				pod.Spec.Containers[0].Env,
+				[]corev1.EnvVar{
+					{Name: exporter.OTLPMetricsEndpointEnv, Value: expectedBase + "/v1/metrics"},
+					{Name: exporter.OTLPLogsEndpointEnv, Value: expectedBase + "/v1/logs"},
+					{Name: exporter.OTLPTraceEndpointEnv, Value: expectedBase + "/v1/traces"},
+				},
+			)
+		})
+
+		t.Run("ignore unknown environment variables", func(t *testing.T) {
+			dk := getReadyOTLPDynaKube()
+			integrationtests.CreateDynakube(t, clt, dk)
+			integrationtests.CreateKubernetesObject(t, clt, getOTLPExporterSecret(testNamespace))
+
+			pod := createPod(t, clt, func(p *corev1.Pod) {
+				p.Spec.Containers[0].Env = append(
+					p.Spec.Containers[0].Env,
+					corev1.EnvVar{Name: "OTLP_EXPORTER_OTLP_ENDPOINT", Value: "https://my-collector.example.com/otlp"},
+					corev1.EnvVar{Name: "OTLP_EXPORTER_OTLP_PROTOCOL", Value: "http/protobuf"},
+				)
+			})
+
+			assertContainsEnvs(
+				t,
+				pod.Spec.Containers[0].Env,
+				exporter.DynatraceAPITokenEnv,
+				exporter.OTLPTraceEndpointEnv,
+				exporter.OTLPLogsEndpointEnv,
+				exporter.OTLPMetricsEndpointEnv,
+				exporter.OTLPTraceHeadersEnv,
+				exporter.OTLPLogsHeadersEnv,
+				exporter.OTLPMetricsHeadersEnv,
+				"OTLP_EXPORTER_OTLP_ENDPOINT",
+				"OTLP_EXPORTER_OTLP_PROTOCOL",
+			)
+		})
+
+		t.Run("skip when known environment variables present", func(t *testing.T) {
+			dk := getReadyOTLPDynaKube()
+			integrationtests.CreateDynakube(t, clt, dk)
+			integrationtests.CreateKubernetesObject(t, clt, getOTLPExporterSecret(testNamespace))
+
+			pod := createPod(t, clt, func(p *corev1.Pod) {
+				p.Spec.Containers[0].Env = append(
+					p.Spec.Containers[0].Env,
+					corev1.EnvVar{Name: exporter.OTLPExporterEndpointEnv, Value: "https://my-collector.example.com/otlp"},
+					corev1.EnvVar{Name: exporter.OTLPExporterProtocolEnv, Value: "http/protobuf"},
+				)
+			})
+
+			assert.Contains(t, pod.Spec.Containers[0].Env, corev1.EnvVar{Name: exporter.OTLPExporterEndpointEnv, Value: "https://my-collector.example.com/otlp"})
+			assert.Contains(t, pod.Spec.Containers[0].Env, corev1.EnvVar{Name: exporter.OTLPExporterProtocolEnv, Value: "http/protobuf"})
+			assertNotContainsEnvs(
+				t,
+				pod.Spec.Containers[0].Env,
+				exporter.DynatraceAPITokenEnv,
+				exporter.OTLPTraceEndpointEnv,
+				exporter.OTLPLogsEndpointEnv,
+				exporter.OTLPMetricsEndpointEnv,
+				exporter.OTLPTraceHeadersEnv,
+				exporter.OTLPLogsHeadersEnv,
+				exporter.OTLPMetricsHeadersEnv,
+			)
+		})
+
+		t.Run("override known environment variables", func(t *testing.T) {
+			dk := getReadyOTLPDynaKube()
+			dk.Spec.OTLPExporterConfiguration.OverrideEnvVars = new(true)
+			integrationtests.CreateDynakube(t, clt, dk)
+			integrationtests.CreateKubernetesObject(t, clt, getOTLPExporterSecret(testNamespace))
+
+			pod := createPod(t, clt, func(p *corev1.Pod) {
+				p.Spec.Containers[0].Env = append(
+					p.Spec.Containers[0].Env,
+					corev1.EnvVar{Name: exporter.OTLPExporterEndpointEnv, Value: "https://my-collector.example.com/otlp"},
+					corev1.EnvVar{Name: exporter.OTLPExporterProtocolEnv, Value: "http/protobuf"},
+				)
+			})
+
+			assert.Contains(t, pod.Spec.Containers[0].Env, corev1.EnvVar{Name: exporter.OTLPExporterEndpointEnv, Value: "https://my-collector.example.com/otlp"})
+			assert.Contains(t, pod.Spec.Containers[0].Env, corev1.EnvVar{Name: exporter.OTLPExporterProtocolEnv, Value: "http/protobuf"})
+			assertContainsEnvs(
+				t,
+				pod.Spec.Containers[0].Env,
+				exporter.DynatraceAPITokenEnv,
+				exporter.OTLPTraceEndpointEnv,
+				exporter.OTLPLogsEndpointEnv,
+				exporter.OTLPMetricsEndpointEnv,
+				exporter.OTLPTraceHeadersEnv,
+				exporter.OTLPLogsHeadersEnv,
+				exporter.OTLPMetricsHeadersEnv,
+			)
+			assertNotContainsEnvs(
+				t,
+				pod.Spec.Containers[0].Env,
+				"OTLP_EXPORTER_OTLP_ENDPOINT",
+				"OTLP_EXPORTER_OTLP_PROTOCOL",
+			)
+		})
 	})
 }
 
-func PropagationTest(t *testing.T, clt client.Client, withoutDeprecatedAnnotations bool) {
+type metadataJSONTestCase struct {
+	name                 string
+	rules                []metadataenrichment.Rule
+	resourceAttributes   map[string]string
+	oaAttributes         map[string]string
+	otlpAttributes       map[string]string
+	namespaceLabels      map[string]string
+	namespaceAnnotations map[string]string
+	workloadLabels       map[string]string
+	workloadAnnotations  map[string]string
+	podLabels            map[string]string
+	podAnnotations       map[string]string
+	expect               map[string]string
+}
+
+func testMetadataJSON(t *testing.T, clt client.Client, tt metadataJSONTestCase) {
 	t.Helper()
+
+	ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "test"}}
+	ns.Labels = maputils.MergeMap(tt.namespaceLabels, map[string]string{podmutator.InjectionInstanceLabel: "dynakube"})
+	ns.Annotations = tt.namespaceAnnotations
+	integrationtests.CreateKubernetesObject(t, clt, ns)
+
+	dk := &dynakube.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{Name: "dynakube", Namespace: testNamespace},
+		Spec: dynakube.DynaKubeSpec{
+			ResourceAttributes: tt.resourceAttributes,
+			MetadataEnrichment: metadataenrichment.Spec{Enabled: new(true)},
+		},
+		Status: dynakube.DynaKubeStatus{
+			KubernetesClusterMEID: testMEID,
+			KubernetesClusterName: testClusterName,
+			KubeSystemUUID:        testClusterUUID,
+			MetadataEnrichment:    metadataenrichment.Status{Rules: tt.rules},
+		},
+	}
+	if len(tt.oaAttributes) > 0 {
+		dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{AdditionalResourceAttributes: tt.oaAttributes}
+		dk.Status.OneAgent.ConnectionInfo.TenantUUID = uuid.NewString()
+		dk.Status.CodeModules.Version = "1.2.3"
+	}
+	if len(tt.otlpAttributes) > 0 {
+		dk.Spec.OTLPExporterConfiguration = &otlpspec.ExporterConfigurationSpec{
+			AdditionalResourceAttributes: tt.otlpAttributes,
+			Signals:                      otlpspec.SignalConfiguration{Metrics: &otlpspec.MetricsSignal{}},
+		}
+		integrationtests.CreateKubernetesObject(t, clt, getOTLPExporterSecret("test"))
+	}
+	integrationtests.CreateDynakube(t, clt, dk)
+	integrationtests.CreateKubernetesObject(t, clt, getBoostrapperSecret("test"))
+
+	owner := getOwnerDeployment()
+	owner.Namespace = ns.Name
+	owner.Labels = tt.workloadLabels
+	owner.Annotations = tt.workloadAnnotations
+	integrationtests.CreateKubernetesObject(t, clt, owner)
+
+	pod := createPod(t, clt, func(pod *corev1.Pod) {
+		pod.Namespace = ns.Name
+		pod.Labels = tt.podLabels
+		pod.Annotations = tt.podAnnotations
+		// this should never show up in the JSON annotation
+		pod.Spec.Containers[0].Env = append(pod.Spec.Containers[0].Env, corev1.EnvVar{Name: resourceattributes.OTelResourceAttributesEnv, Value: "ignore=me"})
+		require.NoError(t, controllerutil.SetControllerReference(owner, pod, scheme.Scheme))
+	})
+
+	var metadataJSON map[string]string
+	require.NoError(t, json.Unmarshal([]byte(pod.Annotations["metadata.dynatrace.com"]), &metadataJSON))
+
+	// present in the "metadata.dynatrace.com" JSON annotation regardless of test case, since every
+	// test case uses the same pod/owner shape; merged with each test case's expect below.
+	commonExpected := map[string]string{
+		"k8s.workload.kind": "deployment",
+		"k8s.workload.name": "test-deployment",
+	}
+	assert.Equal(t, maputils.MergeMap(commonExpected, tt.expect), metadataJSON)
+}
+
+type bootstrapperArgsTestCase struct {
+	name                 string
+	rules                []metadataenrichment.Rule
+	resourceAttributes   map[string]string
+	oaAttributes         map[string]string
+	namespaceLabels      map[string]string
+	namespaceAnnotations map[string]string
+	workloadLabels       map[string]string
+	workloadAnnotations  map[string]string
+	podLabels            map[string]string
+	podAnnotations       map[string]string
+	withoutDeprecated    bool
+	expect               map[string]string
+}
+
+func testBootstrapperArgs(t *testing.T, clt client.Client, tt bootstrapperArgsTestCase) {
+	t.Helper()
+
+	ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "bootstrapper-args-test"}}
+	ns.Labels = maputils.MergeMap(tt.namespaceLabels, map[string]string{podmutator.InjectionInstanceLabel: "dynakube"})
+	ns.Annotations = tt.namespaceAnnotations
+	integrationtests.CreateKubernetesObject(t, clt, ns)
+	integrationtests.CreateKubernetesObject(t, clt, getBoostrapperSecret(ns.Name))
+
 	dk := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "dynakube",
@@ -304,17 +859,20 @@ func PropagationTest(t *testing.T, clt client.Client, withoutDeprecatedAnnotatio
 		},
 		Spec: dynakube.DynaKubeSpec{
 			OneAgent: oneagent.Spec{
-				CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
+				CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
+					HostInjectSpec: oneagent.HostInjectSpec{
+						AdditionalResourceAttributes: tt.oaAttributes,
+					},
+				},
 			},
-			MetadataEnrichment: metadataenrichment.Spec{
-				Enabled: new(true),
-			},
+			MetadataEnrichment: metadataenrichment.Spec{Enabled: new(true)},
+			ResourceAttributes: tt.resourceAttributes,
 		},
 		Status: dynakube.DynaKubeStatus{
 			KubernetesClusterMEID: testMEID,
 			KubernetesClusterName: testClusterName,
-			MetadataEnrichment:    metadataEnrichmentRules,
 			KubeSystemUUID:        testClusterUUID,
+			MetadataEnrichment:    metadataenrichment.Status{Rules: tt.rules},
 			OneAgent: oneagent.Status{
 				ConnectionInfo: communication.ConnectionInfo{
 					TenantUUID: uuid.NewString(),
@@ -327,800 +885,213 @@ func PropagationTest(t *testing.T, clt client.Client, withoutDeprecatedAnnotatio
 			},
 		},
 	}
-
-	if withoutDeprecatedAnnotations {
+	if tt.withoutDeprecated {
 		dk.Annotations[exp.EnrichmentEnableAttributesDTKubernetes] = "false"
 	}
+	integrationtests.CreateDynakube(t, clt, dk)
 
-	createDynaKube(t, clt, dk)
+	owner := getOwnerDeployment()
+	owner.Namespace = ns.Name
+	owner.Labels = tt.workloadLabels
+	owner.Annotations = tt.workloadAnnotations
+	integrationtests.CreateKubernetesObject(t, clt, owner)
 
-	dummyOwner, ownerReference := getDummyOwnerDeployment()
-	createObject(t, clt, dummyOwner)
 	pod := createPod(t, clt, func(pod *corev1.Pod) {
-		pod.Annotations = podMetadataAnnotations
-		pod.OwnerReferences = ownerReference
+		pod.Namespace = ns.Name
+		pod.Labels = tt.podLabels
+		pod.Annotations = tt.podAnnotations
+		require.NoError(t, controllerutil.SetControllerReference(owner, pod, scheme.Scheme))
 	})
 
-	require.True(t, maputils.GetFieldBool(pod.Annotations, podmutator.AnnotationDynatraceInjected, false))
-	require.True(t, maputils.GetFieldBool(pod.Annotations, metadatamutator.AnnotationInjected, false))
-	require.True(t, maputils.GetFieldBool(pod.Annotations, oneagentmutator.AnnotationInjected, false))
-	jsonAnnotation := pod.Annotations["metadata.dynatrace.com"]
-	require.NotEmpty(t, jsonAnnotation, "metadata.dynatrace.com JSON annotation must be set")
-	var jsonAttrs map[string]string
-	require.NoError(t, json.Unmarshal([]byte(jsonAnnotation), &jsonAttrs))
-	assert.Equal(t, "sales", jsonAttrs["dt.cost.costcenter"])
-	assert.Equal(t, "high", jsonAttrs["dt.security_context"])
-	assert.Equal(t, "custom-ns-meta-value", jsonAttrs["custom.ns-meta"])
 	require.Len(t, pod.Spec.InitContainers, 1)
-	assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("k8s.workload.kind", strings.ToLower(pod.OwnerReferences[0].Kind)))
-	assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("k8s.workload.name", strings.ToLower(pod.OwnerReferences[0].Name)))
-	assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("custom.ns-meta", "custom-ns-meta-value"))
-	assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("dt.security_context", "high"))
-	assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("dt.cost.costcenter", "sales"))
-	assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("k8s.namespace.label."+testCustomMetadataLabel, "custom-label"))
-	assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("k8s.namespace.annotation."+testCustomMetadataAnnotation, "custom-annotation"))
-	assert.Contains(t, pod.Spec.InitContainers[0].Args, "--"+bootstrapper.MetadataEnrichmentFlag)
-	assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("k8s.pod.uid", "$(K8S_PODUID)"))
-	assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("k8s.pod.name", "$(K8S_PODNAME)"))
-	assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("k8s.node.name", "$(K8S_NODE_NAME)"))
-	assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("k8s.namespace.name", pod.Namespace))
-	assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("k8s.cluster.uid", testClusterUUID))
-	assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("k8s.cluster.name", testClusterName))
-	assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument("dt.entity.kubernetes_cluster", testMEID))
+	args := pod.Spec.InitContainers[0].Args
 
-	if withoutDeprecatedAnnotations {
-		assert.NotContains(t, pod.Spec.InitContainers[0].Args, buildArgument(attributes.DeprecatedWorkloadKindKey, strings.ToLower(pod.OwnerReferences[0].Kind)))
-		assert.NotContains(t, pod.Spec.InitContainers[0].Args, buildArgument(attributes.DeprecatedWorkloadNameKey, strings.ToLower(pod.OwnerReferences[0].Name)))
-		assert.NotContains(t, pod.Spec.InitContainers[0].Args, buildArgument(attributes.DeprecatedClusterIDKey, testClusterUUID))
-	} else {
-		assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument(attributes.DeprecatedWorkloadKindKey, strings.ToLower(pod.OwnerReferences[0].Kind)))
-		assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument(attributes.DeprecatedWorkloadNameKey, strings.ToLower(pod.OwnerReferences[0].Name)))
-		assert.Contains(t, pod.Spec.InitContainers[0].Args, buildArgument(attributes.DeprecatedClusterIDKey, testClusterUUID))
+	commonDefaults := map[string]string{
+		"k8s.workload.kind":            strings.ToLower(pod.OwnerReferences[0].Kind),
+		"k8s.workload.name":            strings.ToLower(pod.OwnerReferences[0].Name),
+		"k8s.pod.uid":                  "$(K8S_PODUID)",
+		"k8s.pod.name":                 "$(K8S_PODNAME)",
+		"k8s.node.name":                "$(K8S_NODE_NAME)",
+		"k8s.namespace.name":           pod.Namespace,
+		"k8s.cluster.uid":              testClusterUUID,
+		"k8s.cluster.name":             testClusterName,
+		"dt.entity.kubernetes_cluster": testMEID,
+	}
+	if !tt.withoutDeprecated {
+		commonDefaults[attributes.DeprecatedWorkloadKindKey] = commonDefaults["k8s.workload.kind"]
+		commonDefaults[attributes.DeprecatedWorkloadNameKey] = commonDefaults["k8s.workload.name"]
+		commonDefaults[attributes.DeprecatedClusterIDKey] = testClusterUUID
 	}
 
-	assert.Contains(t, pod.Spec.InitContainers[0].Args, "--attribute-container={\"container_image.registry\":\"docker.io\",\"container_image.repository\":\"myapp\",\"container_image.tags\":\"1.2.3\",\"k8s.container.name\":\"app\"}")
+	assert.Equal(t, maputils.MergeMap(commonDefaults, tt.expect), attributeArgsToMap(t, args))
+
+	assert.Contains(t, args, "--"+bootstrapper.MetadataEnrichmentFlag)
+	assert.Contains(t, args, "--attribute-container={\"container_image.registry\":\"docker.io\",\"container_image.repository\":\"myapp\",\"container_image.tags\":\"1.2.3\",\"k8s.container.name\":\"app\"}")
 }
 
-// TestConflictingVolumeType verifies that the webhook refuses to inject when a pod pre-defines one of the
-// operator-managed volumes with a source that conflicts with the one the mutators would add, and that the
-// corresponding not-injected reason is exposed on the pod. See ICP-6182.
-func TestConflictingVolumeType(t *testing.T) {
-	clt := integrationtests.SetupWebhookTestEnvironment(t,
-		getWebhookInstallOptions(),
+func attributeArgsToMap(t *testing.T, args []string) map[string]string {
+	t.Helper()
 
-		func(mgr ctrl.Manager) error {
-			require.NoError(t, mgr.GetClient().Create(t.Context(), getNamespace(testNamespace)))
+	prefix := "--" + podattr.Flag + "="
+	result := make(map[string]string)
 
-			dummyWebhookPod := getDummyWebhookPod()
-			require.NoError(t, mgr.GetClient().Create(t.Context(), dummyWebhookPod))
-			t.Setenv(k8senv.PodName, dummyWebhookPod.Name)
-			t.Setenv(k8senv.DTOperatorImageEnvName, dummyWebhookPod.Spec.Containers[0].Image)
+	for _, a := range args {
+		rest, ok := strings.CutPrefix(a, prefix)
+		if !ok {
+			continue
+		}
 
-			return podmutation.AddWebhookToManager(t.Context(), mgr, testNamespace, false)
+		key, value, found := strings.Cut(rest, "=")
+		require.True(t, found, "malformed attribute arg: %s", a)
+		result[key] = value
+	}
+
+	return result
+}
+
+type otlpTestCase struct {
+	name                  string
+	rules                 []metadataenrichment.Rule
+	resourceAttributes    map[string]string
+	otlpAttributes        map[string]string
+	namespaceLabels       map[string]string
+	namespaceAnnotations  map[string]string
+	workloadLabels        map[string]string
+	workloadAnnotations   map[string]string
+	podLabels             map[string]string
+	podAnnotations        map[string]string
+	podEnvs               []corev1.EnvVar
+	withoutDeprecatedKeys bool
+	expectAttributes      map[string]string
+}
+
+func testOTLP(t *testing.T, clt client.Client, tt otlpTestCase) {
+	t.Helper()
+
+	integrationtests.CreateKubernetesObject(t, clt, getOTLPExporterSecret(testNamespace))
+
+	ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "otlp-test"}}
+	ns.Labels = maputils.MergeMap(tt.namespaceLabels, map[string]string{podmutator.InjectionInstanceLabel: "dynakube"})
+	ns.Annotations = tt.namespaceAnnotations
+	integrationtests.CreateKubernetesObject(t, clt, ns)
+	integrationtests.CreateKubernetesObject(t, clt, getOTLPExporterSecret(ns.Name))
+
+	dk := getReadyOTLPDynaKube()
+	if tt.withoutDeprecatedKeys {
+		dk.Annotations[exp.EnrichmentEnableAttributesDTKubernetes] = "false"
+	}
+	dk.Spec.ResourceAttributes = tt.resourceAttributes
+	dk.Spec.OTLPExporterConfiguration.AdditionalResourceAttributes = tt.otlpAttributes
+	dk.Status.MetadataEnrichment.Rules = tt.rules
+	// this should never show up the OTEL_RESOURCE_ATTRIBUTES environment variable
+	dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{AdditionalResourceAttributes: map[string]string{"ignore": "me"}}
+	integrationtests.CreateDynakube(t, clt, dk)
+
+	owner := getOwnerDeployment()
+	owner.Namespace = ns.Name
+	owner.Labels = tt.workloadLabels
+	owner.Annotations = tt.workloadAnnotations
+	integrationtests.CreateKubernetesObject(t, clt, owner)
+
+	pod := createPod(t, clt, func(pod *corev1.Pod) {
+		pod.Namespace = ns.Name
+		pod.Annotations = tt.podAnnotations
+		pod.Labels = tt.podLabels
+		pod.Spec.Containers[0].Env = append(pod.Spec.Containers[0].Env, tt.podEnvs...)
+		require.NoError(t, controllerutil.SetControllerReference(owner, pod, scheme.Scheme))
+	})
+
+	dtTokenEnv := k8senv.Find(pod.Spec.Containers[0].Env, exporter.DynatraceAPITokenEnv)
+	require.NotNil(t, dtTokenEnv, "DT_API_TOKEN missing")
+	require.NotNil(t, dtTokenEnv.ValueFrom)
+	require.NotNil(t, dtTokenEnv.ValueFrom.SecretKeyRef)
+	assert.Equal(t, consts.OTLPExporterSecretName, dtTokenEnv.ValueFrom.SecretKeyRef.Name)
+	assert.Equal(t, token.DataIngestKey, dtTokenEnv.ValueFrom.SecretKeyRef.Key)
+
+	baseEndpoint := apiURL + "/v2/otlp"
+	assert.Subset(
+		t,
+		pod.Spec.Containers[0].Env,
+		[]corev1.EnvVar{
+			// Headers env vars should reference DT_API_TOKEN via authorization header literal
+			{Name: exporter.OTLPMetricsHeadersEnv, Value: exporter.OTLPAuthorizationHeader},
+			{Name: exporter.OTLPLogsHeadersEnv, Value: exporter.OTLPAuthorizationHeader},
+			{Name: exporter.OTLPTraceHeadersEnv, Value: exporter.OTLPAuthorizationHeader},
+			// Endpoint base constructed by BuildOTLPEndpoint(apiURL) => apiURL + /v2/otlp plus per-signal suffix
+			{Name: exporter.OTLPMetricsEndpointEnv, Value: baseEndpoint + "/v1/metrics"},
+			{Name: exporter.OTLPLogsEndpointEnv, Value: baseEndpoint + "/v1/logs"},
+			{Name: exporter.OTLPTraceEndpointEnv, Value: baseEndpoint + "/v1/traces"},
+			// metrics temporality preference should be set to delta
+			{Name: exporter.OTLPMetricsExporterTemporalityPreference, Value: exporter.OTLPMetricsExporterAggregationTemporalityDelta},
+			{
+				Name: "K8S_PODUID",
+				ValueFrom: &corev1.EnvVarSource{
+					FieldRef: &corev1.ObjectFieldSelector{
+						APIVersion: "v1",
+						FieldPath:  "metadata.uid",
+					},
+				},
+			},
+			{
+				Name: "K8S_PODNAME",
+				ValueFrom: &corev1.EnvVarSource{
+					FieldRef: &corev1.ObjectFieldSelector{
+						APIVersion: "v1",
+						FieldPath:  "metadata.name",
+					},
+				},
+			},
+			{
+				Name: "K8S_NODE_NAME",
+				ValueFrom: &corev1.EnvVarSource{
+					FieldRef: &corev1.ObjectFieldSelector{
+						APIVersion: "v1",
+						FieldPath:  "spec.nodeName",
+					},
+				},
+			},
 		},
 	)
 
-	// shared between test cases
-	createObject(t, clt, getBoostrapperSecret(testNamespace))
-	createObject(t, clt, getOTLPExporterSecret(testNamespace))
-	createObject(t, clt, getOTLPExporterCertsSecret(testNamespace))
-
-	// a volume with a source the mutators would never produce
-	hostPathVolume := func(name string) corev1.Volume {
-		return corev1.Volume{
-			Name:         name,
-			VolumeSource: corev1.VolumeSource{HostPath: &corev1.HostPathVolumeSource{Path: "/"}},
-		}
+	expectAttributes := map[string]string{
+		// workload info
+		"k8s.namespace.name":           ns.Name,
+		"k8s.pod.uid":                  "$(K8S_PODUID)",
+		"k8s.pod.name":                 "$(K8S_PODNAME)",
+		"k8s.node.name":                "$(K8S_NODE_NAME)",
+		"k8s.cluster.name":             testClusterName,
+		"k8s.cluster.uid":              testClusterUUID,
+		"k8s.container.name":           "app",
+		"k8s.workload.name":            owner.Name,
+		"k8s.workload.kind":            "deployment",
+		"dt.entity.kubernetes_cluster": testMEID,
 	}
-
-	// a fully ready cloud-native DynaKube so injection proceeds up to the conflicting volume
-	oneAgentDynaKube := func() *dynakube.DynaKube {
-		return &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "dynakube",
-				Namespace: testNamespace,
-				Annotations: map[string]string{
-					exp.InjectionAutomaticKey: "true",
-				},
-			},
-			Spec: dynakube.DynaKubeSpec{
-				OneAgent: oneagent.Spec{
-					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
-				},
-			},
-			Status: dynakube.DynaKubeStatus{
-				OneAgent: oneagent.Status{
-					ConnectionInfo: communication.ConnectionInfo{
-						TenantUUID: uuid.NewString(),
-					},
-				},
-				CodeModules: oneagent.CodeModulesStatus{
-					VersionStatus: status.VersionStatus{
-						Version: "1.2.3",
-					},
-				},
-			},
-		}
+	if !tt.withoutDeprecatedKeys {
+		expectAttributes[attributes.DeprecatedClusterIDKey] = expectAttributes["k8s.cluster.uid"]
+		expectAttributes[attributes.DeprecatedWorkloadNameKey] = expectAttributes["k8s.workload.name"]
+		expectAttributes[attributes.DeprecatedWorkloadKindKey] = expectAttributes["k8s.workload.kind"]
 	}
+	maps.Copy(expectAttributes, tt.expectAttributes)
 
-	t.Run("config volume", func(t *testing.T) {
-		createDynaKube(t, clt, oneAgentDynaKube())
-
-		pod := createPod(t, clt, func(pod *corev1.Pod) {
-			pod.Spec.Volumes = append(pod.Spec.Volumes, hostPathVolume(volumes.ConfigVolumeName))
-		})
-
-		assert.Equal(t, volumes.ConflictingVolumeTypeReason, pod.Annotations[volumes.AnnotationReason])
-	})
-
-	t.Run("input volume", func(t *testing.T) {
-		createDynaKube(t, clt, oneAgentDynaKube())
-
-		pod := createPod(t, clt, func(pod *corev1.Pod) {
-			pod.Spec.Volumes = append(pod.Spec.Volumes, hostPathVolume(volumes.InputVolumeName))
-		})
-
-		assert.Equal(t, volumes.ConflictingVolumeTypeReason, pod.Annotations[volumes.AnnotationReason])
-	})
-
-	t.Run("oneagent-bin emptyDir volume", func(t *testing.T) {
-		dk := oneAgentDynaKube()
-		// a code modules image lets the pod-level volume-type annotation force the emptyDir bin volume path
-		dk.Status.CodeModules.ImageID = "registry.example.com/codemodules@sha256:" + strings.Repeat("a", 64)
-		createDynaKube(t, clt, dk)
-
-		pod := createPod(t, clt, func(pod *corev1.Pod) {
-			pod.Annotations[oneagentmutator.AnnotationVolumeType] = oneagentmutator.EphemeralVolumeType
-			pod.Spec.Volumes = append(pod.Spec.Volumes, hostPathVolume(oneagentmutator.BinVolumeName))
-		})
-
-		assert.Equal(t, volumes.ConflictingVolumeTypeReason, pod.Annotations[oneagentmutator.AnnotationReason])
-	})
-
-	t.Run("oneagent-bin CSI volume", func(t *testing.T) {
-		dk := oneAgentDynaKube()
-		// a code modules image lets the pod-level volume-type annotation force the CSI bin volume path
-		dk.Status.CodeModules.ImageID = "registry.example.com/codemodules@sha256:" + strings.Repeat("a", 64)
-		createDynaKube(t, clt, dk)
-
-		pod := createPod(t, clt, func(pod *corev1.Pod) {
-			pod.Annotations[oneagentmutator.AnnotationVolumeType] = oneagentmutator.CSIVolumeType
-			pod.Spec.Volumes = append(pod.Spec.Volumes, hostPathVolume(oneagentmutator.BinVolumeName))
-		})
-
-		assert.Equal(t, volumes.ConflictingVolumeTypeReason, pod.Annotations[oneagentmutator.AnnotationReason])
-	})
-
-	t.Run("otlp activegate cert volume", func(t *testing.T) {
-		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "dynakube",
-				Namespace: testNamespace,
-				Annotations: map[string]string{
-					exp.InjectionAutomaticKey: "true",
-				},
-			},
-			Spec: dynakube.DynaKubeSpec{
-				APIURL: "https://example.live.dynatrace.com",
-				ActiveGate: activegate.Spec{
-					Capabilities: []activegate.CapabilityDisplayName{
-						activegate.RoutingCapability.DisplayName,
-					},
-				},
-				OTLPExporterConfiguration: &otlpspec.ExporterConfigurationSpec{
-					NamespaceSelector: metav1.LabelSelector{
-						MatchExpressions: []metav1.LabelSelectorRequirement{
-							{Key: podmutator.InjectionInstanceLabel, Operator: metav1.LabelSelectorOpExists},
-						},
-					},
-					Signals: otlpspec.SignalConfiguration{
-						Metrics: &otlpspec.MetricsSignal{},
-						Logs:    &otlpspec.LogsSignal{},
-						Traces:  &otlpspec.TracesSignal{},
-					},
-				},
-			},
-			Status: dynakube.DynaKubeStatus{
-				OneAgent: oneagent.Status{
-					ConnectionInfo: communication.ConnectionInfo{
-						TenantUUID: uuid.NewString(),
-					},
-				},
-			},
-		}
-		createDynaKube(t, clt, dk)
-
-		pod := createPod(t, clt, func(pod *corev1.Pod) {
-			pod.Spec.Volumes = append(pod.Spec.Volumes, hostPathVolume(exporter.ActiveGateTrustedCertVolumeName))
-		})
-
-		assert.Equal(t, volumes.ConflictingVolumeTypeReason, pod.Annotations[podmutator.AnnotationOTLPReason])
-	})
+	gotAttributes, envVarFound := resourceattributes.NewAttributesFromEnv(pod.Spec.Containers[0].Env, resourceattributes.OTelResourceAttributesEnv)
+	require.True(t, envVarFound, "OTEL_RESOURCE_ATTRIBUTES missing")
+	assert.Equal(t, expectAttributes, gotAttributes)
 }
 
-func TestOTLPWebhook(t *testing.T) { //nolint:revive
-	clt := integrationtests.SetupWebhookTestEnvironment(t,
-		getWebhookInstallOptions(),
-
-		func(mgr ctrl.Manager) error {
-			ns := &corev1.Namespace{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: testNamespace,
-					Labels: map[string]string{
-						podmutator.InjectionInstanceLabel: "dynakube",
-					},
-					Annotations: nsMetadataAnnotations,
-				},
-			}
-			maps.Copy(ns.Labels, nsMetadataLabels)
-			require.NoError(t, mgr.GetClient().Create(t.Context(), ns))
-
-			dummyWebhookPod := getDummyWebhookPod()
-			require.NoError(t, mgr.GetClient().Create(t.Context(), dummyWebhookPod))
-			t.Setenv(k8senv.PodName, dummyWebhookPod.Name)
-			t.Setenv(k8senv.DTOperatorImageEnvName, dummyWebhookPod.Spec.Containers[0].Image)
-
-			return podmutation.AddWebhookToManager(t.Context(), mgr, testNamespace, false)
-		},
-	)
-
-	t.Run("otlp exporter with ns metadata propagation and custom enrichment rules", func(t *testing.T) {
-		apiURL := "https://example.live.dynatrace.com"
-		type testCase struct {
-			name                     string
-			annotations              map[string]string
-			withDeprecatedAttributes bool
-		}
-
-		testCases := []testCase{
-			{
-				name:                     "without deprecated annotations",
-				annotations:              map[string]string{exp.EnrichmentEnableAttributesDTKubernetes: "false"},
-				withDeprecatedAttributes: false,
-			},
-			{
-				name:                     "with deprecated annotations",
-				annotations:              map[string]string{},
-				withDeprecatedAttributes: true,
-			},
-		}
-
-		for _, tc := range testCases {
-			annotations := map[string]string{exp.InjectionAutomaticKey: "true"}
-			t.Run(tc.name, func(t *testing.T) {
-				maps.Copy(annotations, tc.annotations)
-				dk := &dynakube.DynaKube{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:        "dynakube",
-						Namespace:   testNamespace,
-						Annotations: annotations,
-					},
-					Spec: dynakube.DynaKubeSpec{
-						APIURL: apiURL,
-						OTLPExporterConfiguration: &otlpspec.ExporterConfigurationSpec{
-							NamespaceSelector: metav1.LabelSelector{ // match test namespace label applied earlier
-								MatchExpressions: []metav1.LabelSelectorRequirement{
-									{Key: podmutator.InjectionInstanceLabel, Operator: metav1.LabelSelectorOpExists},
-								},
-							},
-							Signals: otlpspec.SignalConfiguration{
-								Metrics: &otlpspec.MetricsSignal{},
-								Logs:    &otlpspec.LogsSignal{},
-								Traces:  &otlpspec.TracesSignal{},
-							},
-						},
-					},
-					Status: dynakube.DynaKubeStatus{
-						KubernetesClusterMEID: testMEID,
-						KubernetesClusterName: testClusterName,
-						MetadataEnrichment:    metadataEnrichmentRules,
-					},
-				}
-
-				apiTokenSecret := getOTLPExporterSecret(testNamespace)
-				createObject(t, clt, apiTokenSecret)
-
-				createDynaKube(t, clt, dk)
-
-				dummyOwner, ownerReference := getDummyOwnerDeployment()
-				createObject(t, clt, dummyOwner)
-				pod := createPod(t, clt, func(pod *corev1.Pod) {
-					pod.Annotations = podMetadataAnnotations
-					pod.OwnerReferences = ownerReference
-				})
-
-				// verify mutation occurred by presence of OTLP env vars (annotation may not be set when no OneAgent injection)
-
-				appContainer := pod.Spec.Containers[0]
-				// Expect DT_API_TOKEN env var via secret ref
-				var dtTokenEnv *corev1.EnvVar
-				for i := range appContainer.Env {
-					if appContainer.Env[i].Name == exporter.DynatraceAPITokenEnv {
-						dtTokenEnv = &appContainer.Env[i]
-
-						break
-					}
-				}
-
-				require.NotNil(t, dtTokenEnv, "expected DT_API_TOKEN env var to be injected")
-				require.NotNil(t, dtTokenEnv.ValueFrom)
-				require.NotNil(t, dtTokenEnv.ValueFrom.SecretKeyRef)
-				assert.Equal(t, consts.OTLPExporterSecretName, dtTokenEnv.ValueFrom.SecretKeyRef.Name)
-				assert.Equal(t, token.DataIngestKey, dtTokenEnv.ValueFrom.SecretKeyRef.Key)
-
-				// Headers env vars should reference DT_API_TOKEN via authorization header literal
-				assert.Contains(t, appContainer.Env, corev1.EnvVar{Name: exporter.OTLPMetricsHeadersEnv, Value: exporter.OTLPAuthorizationHeader})
-				assert.Contains(t, appContainer.Env, corev1.EnvVar{Name: exporter.OTLPLogsHeadersEnv, Value: exporter.OTLPAuthorizationHeader})
-				assert.Contains(t, appContainer.Env, corev1.EnvVar{Name: exporter.OTLPTraceHeadersEnv, Value: exporter.OTLPAuthorizationHeader})
-
-				// Endpoint base constructed by BuildOTLPEndpoint(apiURL) => apiURL + /v2/otlp plus per-signal suffix
-				baseEndpoint := apiURL + "/v2/otlp"
-				assert.Contains(t, appContainer.Env, corev1.EnvVar{Name: exporter.OTLPMetricsEndpointEnv, Value: baseEndpoint + "/v1/metrics"})
-				assert.Contains(t, appContainer.Env, corev1.EnvVar{Name: exporter.OTLPLogsEndpointEnv, Value: baseEndpoint + "/v1/logs"})
-				assert.Contains(t, appContainer.Env, corev1.EnvVar{Name: exporter.OTLPTraceEndpointEnv, Value: baseEndpoint + "/v1/traces"})
-
-				// metrics temporality preference should be set to delta
-				assert.Contains(t, appContainer.Env, corev1.EnvVar{Name: exporter.OTLPMetricsExporterTemporalityPreference, Value: exporter.OTLPMetricsExporterAggregationTemporalityDelta})
-
-				raEnv := k8senv.Find(appContainer.Env, resourceattributes.OTelResourceAttributesEnv)
-
-				require.NotNil(t, raEnv, "OTEL_RESOURCE_ATTRIBUTES missing")
-
-				gotResourceAttributes, envVarFound := resourceattributes.NewAttributesFromEnv(appContainer.Env, resourceattributes.OTelResourceAttributesEnv)
-				require.True(t, envVarFound, "OTEL_RESOURCE_ATTRIBUTES missing")
-
-				assert.Equal(t, testNamespace, gotResourceAttributes["k8s.namespace.name"])
-				assert.Equal(t, "$(K8S_PODUID)", gotResourceAttributes["k8s.pod.uid"])
-				assert.Equal(t, "$(K8S_PODNAME)", gotResourceAttributes["k8s.pod.name"])
-				assert.Equal(t, "$(K8S_NODE_NAME)", gotResourceAttributes["k8s.node.name"])
-				assert.Contains(t, appContainer.Env, corev1.EnvVar{
-					Name: "K8S_PODUID",
-					ValueFrom: &corev1.EnvVarSource{
-						FieldRef: &corev1.ObjectFieldSelector{
-							APIVersion: "v1",
-							FieldPath:  "metadata.uid",
-						},
-					},
-				})
-				assert.Contains(t, appContainer.Env, corev1.EnvVar{
-					Name: "K8S_PODNAME",
-					ValueFrom: &corev1.EnvVarSource{
-						FieldRef: &corev1.ObjectFieldSelector{
-							APIVersion: "v1",
-							FieldPath:  "metadata.name",
-						},
-					},
-				})
-				assert.Contains(t, appContainer.Env, corev1.EnvVar{
-					Name: "K8S_NODE_NAME",
-					ValueFrom: &corev1.EnvVarSource{
-						FieldRef: &corev1.ObjectFieldSelector{
-							APIVersion: "v1",
-							FieldPath:  "spec.nodeName",
-						},
-					},
-				})
-				assert.Contains(t, appContainer.Env, corev1.EnvVar{Name: exporter.OTLPLogsEndpointEnv, Value: baseEndpoint + "/v1/logs"})
-				assert.Contains(t, appContainer.Env, corev1.EnvVar{Name: exporter.OTLPTraceEndpointEnv, Value: baseEndpoint + "/v1/traces"})
-				assert.Equal(t, dk.Status.KubernetesClusterName, gotResourceAttributes["k8s.cluster.name"])
-				assert.Equal(t, pod.Spec.Containers[0].Name, gotResourceAttributes["k8s.container.name"])
-				assert.Equal(t, pod.OwnerReferences[0].Name, gotResourceAttributes["k8s.workload.name"])
-				assert.Equal(t, strings.ToLower(pod.OwnerReferences[0].Kind), gotResourceAttributes["k8s.workload.kind"])
-				assert.Equal(t, dk.Status.KubernetesClusterMEID, gotResourceAttributes["dt.entity.kubernetes_cluster"])
-
-				if tc.withDeprecatedAttributes {
-					assert.Equal(t, dk.Status.KubeSystemUUID, gotResourceAttributes[attributes.DeprecatedClusterIDKey])
-					assert.Equal(t, pod.OwnerReferences[0].Name, gotResourceAttributes[attributes.DeprecatedWorkloadNameKey])
-					assert.Equal(t, strings.ToLower(pod.OwnerReferences[0].Kind), gotResourceAttributes[attributes.DeprecatedWorkloadKindKey])
-				}
-
-				assert.Equal(t, url.QueryEscape(nsMetadataAnnotations["metadata.dynatrace.com/custom.ns-meta"]), gotResourceAttributes["custom.ns-meta"])
-				assert.Equal(t, url.QueryEscape(podMetadataAnnotations["metadata.dynatrace.com/service.name"]), gotResourceAttributes["service.name"])
-				assert.Equal(t, url.QueryEscape(podMetadataAnnotations["metadata.dynatrace.com/custom.key"]), gotResourceAttributes["custom.key"])
-				assert.Equal(t, url.QueryEscape(nsMetadataAnnotations[testCustomMetadataAnnotation]), gotResourceAttributes["k8s.namespace.annotation."+testCustomMetadataAnnotation])
-				assert.Equal(t, url.QueryEscape(nsMetadataAnnotations[testCostCenterAnnotation]), gotResourceAttributes["dt.cost.costcenter"])
-				assert.Equal(t, url.QueryEscape(nsMetadataLabels[testSecContextLabel]), gotResourceAttributes["dt.security_context"])
-				assert.Equal(t, url.QueryEscape(nsMetadataLabels[testCustomMetadataLabel]), gotResourceAttributes["k8s.namespace.label."+testCustomMetadataLabel])
-			})
-		}
-	})
-
-	t.Run("otlp exporter attribute precedence", func(t *testing.T) {
-		apiURL := "https://example.live.dynatrace.com"
-		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "dynakube",
-				Namespace: testNamespace,
-				Annotations: map[string]string{
-					exp.InjectionAutomaticKey: "true",
-				},
-			},
-			Spec: dynakube.DynaKubeSpec{
-				APIURL: apiURL,
-				OTLPExporterConfiguration: &otlpspec.ExporterConfigurationSpec{
-					NamespaceSelector: metav1.LabelSelector{ // match test namespace label applied earlier
-						MatchExpressions: []metav1.LabelSelectorRequirement{
-							{Key: podmutator.InjectionInstanceLabel, Operator: metav1.LabelSelectorOpExists},
-						},
-					},
-					Signals: otlpspec.SignalConfiguration{
-						Metrics: &otlpspec.MetricsSignal{},
-						Logs:    &otlpspec.LogsSignal{},
-						Traces:  &otlpspec.TracesSignal{},
-					},
-				},
-			},
-			Status: dynakube.DynaKubeStatus{
-				KubernetesClusterMEID: testMEID,
-				KubernetesClusterName: testClusterName,
-				MetadataEnrichment:    metadataEnrichmentRules,
-			},
-		}
-
-		createDynaKube(t, clt, dk)
-
-		overrideNamespace := getNamespace(overrideNamespaceName)
-		overrideNamespace.Annotations = map[string]string{
-			"metadata.dynatrace.com/dt.entity.kubernetes_cluster": "ns-meid",
-			"metadata.dynatrace.com/k8s.cluster.name":             "override-cluster-name",
-		}
-		createObject(t, clt, overrideNamespace)
-
-		apiTokenSecret := getOTLPExporterSecret(overrideNamespaceName)
-		createObject(t, clt, apiTokenSecret)
-
-		pod := createPod(t, clt, func(pod *corev1.Pod) {
-			pod.Namespace = overrideNamespaceName
-			pod.Annotations = map[string]string{
-				"metadata.dynatrace.com/dt.entity.kubernetes_cluster": "pod-meid",
-				"metadata.dynatrace.com/k8s.pod.name":                 "override-pod-name",
-			}
-		})
-
-		// verify mutation occurred by presence of OTLP env vars (annotation may not be set when no OneAgent injection)
-
-		appContainer := pod.Spec.Containers[0]
-		// Expect DT_API_TOKEN env var via secret ref
-		dtTokenEnv := k8senv.Find(appContainer.Env, exporter.DynatraceAPITokenEnv)
-
-		require.NotNil(t, dtTokenEnv, "expected DT_API_TOKEN env var to be injected")
-		require.NotNil(t, dtTokenEnv.ValueFrom)
-		require.NotNil(t, dtTokenEnv.ValueFrom.SecretKeyRef)
-		assert.Equal(t, consts.OTLPExporterSecretName, dtTokenEnv.ValueFrom.SecretKeyRef.Name)
-		assert.Equal(t, token.DataIngestKey, dtTokenEnv.ValueFrom.SecretKeyRef.Key)
-
-		raEnv := k8senv.Find(appContainer.Env, resourceattributes.OTelResourceAttributesEnv)
-		require.NotNil(t, raEnv, "OTEL_RESOURCE_ATTRIBUTES missing")
-
-		gotResourceAttributes, envVarFound := resourceattributes.NewAttributesFromEnv(appContainer.Env, resourceattributes.OTelResourceAttributesEnv)
-		require.True(t, envVarFound, "OTEL_RESOURCE_ATTRIBUTES missing")
-
-		assert.Equal(t, overrideNamespaceName, gotResourceAttributes["k8s.namespace.name"])
-		assert.Equal(t, "override-pod-name", gotResourceAttributes["k8s.pod.name"])
-		assert.Equal(t, "override-cluster-name", gotResourceAttributes["k8s.cluster.name"])
-		assert.Equal(t, "pod-meid", gotResourceAttributes["dt.entity.kubernetes_cluster"])
-	})
-
-	t.Run("resource attribute full precedence chain", func(t *testing.T) {
-		// Precedence order low→high for OTEL_RESOURCE_ATTRIBUTES:
-		//   enrichment rules
-		//   < dynakube.resourceAttributes
-		//   < dynakube.otlpExporterConfiguration.additionalResourceAttributes
-		//   < namespace metadata.dynatrace.com/ annotations
-		//   < pod metadata.dynatrace.com/ annotations
-		//   < existing OTEL_RESOURCE_ATTRIBUTES
-		//
-		// For the JSON annotation at "metadata.dynatrace.com" (caseJSONAnnotation):
-		//   enrichment rules < dynakube < namespaceAnnotations < podAnnotations (existing OTEL_RA not included)
-		const raPrecedenceNs = "ra-precedence-ns"
-
-		raNS := getNamespace(raPrecedenceNs)
-		raNS.Annotations = map[string]string{
-			// wins over dynakube in all combine cases
-			"metadata.dynatrace.com/conflict.ns.vs.dynakube": "from-ns",
-			// will be overridden by pod annotation in OTEL_RA and JSON, but preserved via SetAnnotationIfNotExists
-			"metadata.dynatrace.com/conflict.pod.vs.ns": "from-ns",
-		}
-		// label picked up by the enrichment rule below; dynakube layer must win over the rule result
-		raNS.Labels["conflict-rule-label"] = "from-rule"
-		createObject(t, clt, raNS)
-		createObject(t, clt, getOTLPExporterSecret(raPrecedenceNs))
-
-		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "dynakube",
-				Namespace: testNamespace,
-				Annotations: map[string]string{
-					exp.InjectionAutomaticKey: "true",
-				},
-			},
-			Spec: dynakube.DynaKubeSpec{
-				APIURL: "https://example.live.dynatrace.com",
-				ResourceAttributes: map[string]string{
-					// overridden by additionalResourceAttributes within the dynakube layer
-					"conflict.additional.vs.global": "from-global",
-					// overridden by namespace annotation in every combine case
-					"conflict.ns.vs.dynakube": "from-dynakube",
-					// wins over enrichment-rule result for the same key (dynakube layer 7 > rules layer 6)
-					"conflict.dynakube.vs.rules": "from-dynakube",
-				},
-				OTLPExporterConfiguration: &otlpspec.ExporterConfigurationSpec{
-					NamespaceSelector: metav1.LabelSelector{
-						MatchExpressions: []metav1.LabelSelectorRequirement{
-							{Key: podmutator.InjectionInstanceLabel, Operator: metav1.LabelSelectorOpExists},
-						},
-					},
-					Signals: otlpspec.SignalConfiguration{
-						Metrics: &otlpspec.MetricsSignal{},
-					},
-					AdditionalResourceAttributes: map[string]string{
-						// wins over the same key in resourceAttributes
-						"conflict.additional.vs.global": "from-additional",
-					},
-				},
-			},
-			Status: dynakube.DynaKubeStatus{
-				KubernetesClusterMEID: testMEID,
-				KubernetesClusterName: testClusterName,
-				MetadataEnrichment: metadataenrichment.Status{
-					Rules: []metadataenrichment.Rule{
-						{
-							Type:   "LABEL",
-							Source: "conflict-rule-label",
-							Target: "conflict.dynakube.vs.rules",
-						},
-					},
-				},
-			},
-		}
-		createDynaKube(t, clt, dk)
-
-		pod := createPod(t, clt, func(pod *corev1.Pod) {
-			pod.Namespace = raPrecedenceNs
-			pod.Annotations = map[string]string{
-				// wins over ns annotation in OTEL_RA and JSON annotation
-				"metadata.dynatrace.com/conflict.pod.vs.ns": "from-pod",
-				// wins over this same-keyed existing OTEL_RA value in JSON and metadata annotations,
-				// but the existing OTEL_RA wins in the OTEL_RESOURCE_ATTRIBUTES env var
-				"metadata.dynatrace.com/conflict.existing.vs.pod": "from-pod",
-			}
-			pod.Spec.Containers[0].Env = []corev1.EnvVar{
-				// existing OTEL_RESOURCE_ATTRIBUTES has highest precedence in the env var
-				{Name: resourceattributes.OTelResourceAttributesEnv, Value: "conflict.existing.vs.pod=from-existing"},
-			}
-		})
-
-		appContainer := pod.Spec.Containers[0]
-		gotRA, found := resourceattributes.NewAttributesFromEnv(appContainer.Env, resourceattributes.OTelResourceAttributesEnv)
-		require.True(t, found, "OTEL_RESOURCE_ATTRIBUTES missing")
-
-		// additionalResourceAttributes wins over resourceAttributes (both merged into dynakube layer)
-		assert.Equal(t, "from-additional", gotRA["conflict.additional.vs.global"], "additionalResourceAttributes must win over resourceAttributes")
-		// dynakube.resourceAttributes wins over enrichment-rule result (dynakube layer 7 > rules layer 6)
-		assert.Equal(t, "from-dynakube", gotRA["conflict.dynakube.vs.rules"], "dynakube must win over enrichment rules")
-		// namespace metadata.dynatrace.com/ annotation wins over dynakube layer
-		assert.Equal(t, "from-ns", gotRA["conflict.ns.vs.dynakube"], "namespace annotation must win over dynakube layer")
-		// pod metadata.dynatrace.com/ annotation wins over namespace annotation
-		assert.Equal(t, "from-pod", gotRA["conflict.pod.vs.ns"], "pod annotation must win over namespace annotation")
-		// existing OTEL_RESOURCE_ATTRIBUTES wins over pod annotation
-		assert.Equal(t, "from-existing", gotRA["conflict.existing.vs.pod"], "existing OTEL_RESOURCE_ATTRIBUTES must win over pod annotation")
-
-		// pre-seeded pod annotations are preserved
-		assert.Equal(t, "from-pod", pod.Annotations["metadata.dynatrace.com/conflict.pod.vs.ns"],
-			"pre-existing pod annotation must be preserved")
-		assert.Equal(t, "from-pod", pod.Annotations["metadata.dynatrace.com/conflict.existing.vs.pod"],
-			"pre-existing pod annotation must be preserved")
-
-		// JSON annotation at "metadata.dynatrace.com" (caseJSONAnnotation: dynakube + namespaceAnnotations + podAnnotations, no custom/existing OTEL_RA)
-		jsonAnnotation := pod.Annotations["metadata.dynatrace.com"]
-		require.NotEmpty(t, jsonAnnotation, "JSON metadata annotation missing")
-
-		var jsonAttrs map[string]string
-		require.NoError(t, json.Unmarshal([]byte(jsonAnnotation), &jsonAttrs))
-
-		assert.Equal(t, "from-additional", jsonAttrs["conflict.additional.vs.global"],
-			"dynakube value must appear in JSON annotation")
-		// dynakube wins over enrichment rules in the JSON annotation too (caseJSONAnnotation includes both layers)
-		assert.Equal(t, "from-dynakube", jsonAttrs["conflict.dynakube.vs.rules"],
-			"dynakube must win over enrichment rules in JSON annotation")
-		assert.Equal(t, "from-ns", jsonAttrs["conflict.ns.vs.dynakube"],
-			"namespace annotation must win over dynakube in JSON annotation")
-		assert.Equal(t, "from-pod", jsonAttrs["conflict.pod.vs.ns"],
-			"pod annotation must win over namespace annotation in JSON annotation")
-		// existing OTEL_RESOURCE_ATTRIBUTES (custom layer) is NOT included in the JSON annotation
-		assert.Equal(t, "from-pod", jsonAttrs["conflict.existing.vs.pod"],
-			"JSON annotation must reflect pod annotation, not the existing OTEL_RESOURCE_ATTRIBUTES value")
-	})
-
-	t.Run("data ingest token secret missing", func(t *testing.T) {
-		apiURL := "https://example.live.dynatrace.com"
-		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "dynakube",
-				Namespace: testNamespace,
-				Annotations: map[string]string{
-					exp.InjectionAutomaticKey: "true",
-				},
-			},
-			Spec: dynakube.DynaKubeSpec{
-				APIURL: apiURL,
-				OTLPExporterConfiguration: &otlpspec.ExporterConfigurationSpec{
-					NamespaceSelector: metav1.LabelSelector{ // match test namespace label applied earlier
-						MatchExpressions: []metav1.LabelSelectorRequirement{
-							{Key: podmutator.InjectionInstanceLabel, Operator: metav1.LabelSelectorOpExists},
-						},
-					},
-					Signals: otlpspec.SignalConfiguration{
-						Metrics: &otlpspec.MetricsSignal{},
-						Logs:    &otlpspec.LogsSignal{},
-						Traces:  &otlpspec.TracesSignal{},
-					},
-				},
-			},
-		}
-
-		createDynaKube(t, clt, dk)
-
-		pod := createPod(t, clt, nil)
-
-		assert.False(t, maputils.GetFieldBool(pod.Annotations, podmutator.AnnotationOTLPInjected, false))
-		assert.Equal(t, otlp.NoOTLPExporterConfigSecretReason, pod.Annotations[podmutator.AnnotationOTLPReason])
-	})
-
-	t.Run("otlp exporter activegate", func(t *testing.T) {
-		const dataIngestToken = "test-token"
-		const agCertData = "ag-cert-data"
-
-		apiURL := "https://example.live.dynatrace.com"
-		tenantUUID := uuid.NewString()
-
-		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "dynakube",
-				Namespace: testNamespace,
-				Annotations: map[string]string{
-					exp.InjectionAutomaticKey: "true",
-				},
-			},
-			Spec: dynakube.DynaKubeSpec{
-				APIURL: apiURL,
-				ActiveGate: activegate.Spec{
-					Capabilities: []activegate.CapabilityDisplayName{
-						activegate.RoutingCapability.DisplayName,
-					},
-				},
-				OTLPExporterConfiguration: &otlpspec.ExporterConfigurationSpec{
-					NamespaceSelector: metav1.LabelSelector{
-						MatchExpressions: []metav1.LabelSelectorRequirement{
-							{Key: podmutator.InjectionInstanceLabel, Operator: metav1.LabelSelectorOpExists},
-						},
-					},
-					Signals: otlpspec.SignalConfiguration{
-						Metrics: &otlpspec.MetricsSignal{},
-						Logs:    &otlpspec.LogsSignal{},
-						Traces:  &otlpspec.TracesSignal{},
-					},
-				},
-			},
-			Status: dynakube.DynaKubeStatus{
-				OneAgent: oneagent.Status{
-					ConnectionInfo: communication.ConnectionInfo{
-						TenantUUID: tenantUUID,
-					},
-				},
-			},
-		}
-
-		apiTokenSecret := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      consts.OTLPExporterSecretName,
-				Namespace: testNamespace,
-			},
-			Data: map[string][]byte{
-				token.APIKey:        []byte(dataIngestToken),
-				token.DataIngestKey: []byte(dataIngestToken),
-			},
-		}
-		createObject(t, clt, apiTokenSecret)
-
-		agCertSecret := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      consts.OTLPExporterCertsSecretName,
-				Namespace: testNamespace,
-			},
-			Data: map[string][]byte{
-				dynakube.TLSCertKey: []byte(agCertData),
-			},
-		}
-		createObject(t, clt, agCertSecret)
-
-		createDynaKube(t, clt, dk)
-
-		pod := createPod(t, clt, nil)
-		appContainer := pod.Spec.Containers[0]
-
-		envMap := map[string]corev1.EnvVar{}
-		for _, e := range appContainer.Env {
-			envMap[e.Name] = e
-		}
-
-		dtTokenEnv, ok := envMap[exporter.DynatraceAPITokenEnv]
-		require.True(t, ok, "DT_API_TOKEN missing")
-		require.NotNil(t, dtTokenEnv.ValueFrom)
-		require.NotNil(t, dtTokenEnv.ValueFrom.SecretKeyRef)
-		assert.Equal(t, consts.OTLPExporterSecretName, dtTokenEnv.ValueFrom.SecretKeyRef.Name)
-		assert.Equal(t, token.DataIngestKey, dtTokenEnv.ValueFrom.SecretKeyRef.Key)
-
-		expectedService := fmt.Sprintf("%s-%s.%s", dk.Name, agconsts.MultiActiveGateName, testNamespace)
-		expectedBase := fmt.Sprintf("https://%s/e/%s/api/v2/otlp", expectedService, tenantUUID)
-
-		assert.Equal(t, expectedBase+"/v1/metrics", envMap[exporter.OTLPMetricsEndpointEnv].Value)
-		assert.Equal(t, expectedBase+"/v1/logs", envMap[exporter.OTLPLogsEndpointEnv].Value)
-		assert.Equal(t, expectedBase+"/v1/traces", envMap[exporter.OTLPTraceEndpointEnv].Value)
-	})
-
-	t.Run("otlp exporter activegate - certificate secret missing", func(t *testing.T) {
-		const dataIngestToken = "test-token"
-
-		apiURL := "https://example.live.dynatrace.com"
-		tenantUUID := uuid.NewString()
-
-		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "dynakube",
-				Namespace: testNamespace,
-				Annotations: map[string]string{
-					exp.InjectionAutomaticKey: "true",
-				},
-			},
-			Spec: dynakube.DynaKubeSpec{
-				APIURL: apiURL,
-				ActiveGate: activegate.Spec{
-					Capabilities: []activegate.CapabilityDisplayName{
-						activegate.RoutingCapability.DisplayName,
-					},
-				},
-				OTLPExporterConfiguration: &otlpspec.ExporterConfigurationSpec{
-					NamespaceSelector: metav1.LabelSelector{
-						MatchExpressions: []metav1.LabelSelectorRequirement{
-							{Key: podmutator.InjectionInstanceLabel, Operator: metav1.LabelSelectorOpExists},
-						},
-					},
-					Signals: otlpspec.SignalConfiguration{
-						Metrics: &otlpspec.MetricsSignal{},
-						Logs:    &otlpspec.LogsSignal{},
-						Traces:  &otlpspec.TracesSignal{},
-					},
-				},
-			},
-			Status: dynakube.DynaKubeStatus{
-				OneAgent: oneagent.Status{
-					ConnectionInfo: communication.ConnectionInfo{
-						TenantUUID: tenantUUID,
-					},
-				},
-			},
-		}
-
-		apiTokenSecret := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      consts.OTLPExporterSecretName,
-				Namespace: testNamespace,
-			},
-			Data: map[string][]byte{
-				token.APIKey:        []byte(dataIngestToken),
-				token.DataIngestKey: []byte(dataIngestToken),
-			},
-		}
-		createObject(t, clt, apiTokenSecret)
-
-		createDynaKube(t, clt, dk)
-
-		pod := createPod(t, clt, nil)
-
-		assert.False(t, maputils.GetFieldBool(pod.Annotations, podmutator.AnnotationOTLPInjected, false))
-		assert.Equal(t, otlp.NoOTLPExporterActiveGateCertSecretReason, pod.Annotations[podmutator.AnnotationOTLPReason])
-	})
+func assertContainsEnvs(t *testing.T, envs []corev1.EnvVar, names ...string) {
+	t.Helper()
+
+	for _, name := range names {
+		assert.Truef(t, k8senv.Contains(envs, name), "should contain %s", name)
+	}
+}
+
+func assertNotContainsEnvs(t *testing.T, envs []corev1.EnvVar, names ...string) {
+	t.Helper()
+
+	for _, name := range names {
+		assert.Falsef(t, k8senv.Contains(envs, name), "should not contain %s", name)
+	}
 }
 
 func getWebhookInstallOptions() envtest.WebhookInstallOptions {
@@ -1173,143 +1144,6 @@ func getWebhookInstallOptions() envtest.WebhookInstallOptions {
 	}
 }
 
-func setupOTLPWebhookEnv(t *testing.T) client.Client {
-	t.Helper()
-
-	return integrationtests.SetupWebhookTestEnvironment(t,
-		getWebhookInstallOptions(),
-
-		func(mgr ctrl.Manager) error {
-			ns := &corev1.Namespace{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: testNamespace,
-					Labels: map[string]string{
-						podmutator.InjectionInstanceLabel: "dynakube",
-					},
-					Annotations: nsMetadataAnnotations,
-				},
-			}
-			maps.Copy(ns.Labels, nsMetadataLabels)
-			require.NoError(t, mgr.GetClient().Create(t.Context(), ns))
-
-			dummyWebhookPod := getDummyWebhookPod()
-			require.NoError(t, mgr.GetClient().Create(t.Context(), dummyWebhookPod))
-			t.Setenv(k8senv.PodName, dummyWebhookPod.Name)
-			t.Setenv(k8senv.DTOperatorImageEnvName, dummyWebhookPod.Spec.Containers[0].Image)
-
-			return podmutation.AddWebhookToManager(t.Context(), mgr, testNamespace, false)
-		},
-	)
-}
-
-func TestOTLPExporterSkipWhenGeneralOTELPreset(t *testing.T) {
-	clt := setupOTLPWebhookEnv(t)
-
-	apiURL := "https://example.live.dynatrace.com"
-	dk := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "dynakube",
-			Namespace: testNamespace,
-			Annotations: map[string]string{
-				exp.InjectionAutomaticKey: "true",
-			},
-		},
-		Spec: dynakube.DynaKubeSpec{
-			APIURL: apiURL,
-			OTLPExporterConfiguration: &otlpspec.ExporterConfigurationSpec{
-				NamespaceSelector: metav1.LabelSelector{
-					MatchExpressions: []metav1.LabelSelectorRequirement{
-						{Key: podmutator.InjectionInstanceLabel, Operator: metav1.LabelSelectorOpExists},
-					},
-				},
-				Signals: otlpspec.SignalConfiguration{
-					Metrics: &otlpspec.MetricsSignal{},
-					Logs:    &otlpspec.LogsSignal{},
-					Traces:  &otlpspec.TracesSignal{},
-				},
-			},
-		},
-	}
-
-	createDynaKube(t, clt, dk)
-
-	pod := createPod(t, clt, func(p *corev1.Pod) {
-		p.Spec.Containers[0].Env = append(p.Spec.Containers[0].Env,
-			corev1.EnvVar{Name: exporter.OTLPExporterEndpointEnv, Value: "https://my-collector.example.com/otlp"},
-			corev1.EnvVar{Name: exporter.OTLPExporterProtocolEnv, Value: "http/protobuf"},
-		)
-	})
-
-	app := pod.Spec.Containers[0]
-	assert.Contains(t, app.Env, corev1.EnvVar{Name: exporter.OTLPExporterEndpointEnv, Value: "https://my-collector.example.com/otlp"})
-	assert.Contains(t, app.Env, corev1.EnvVar{Name: exporter.OTLPExporterProtocolEnv, Value: "http/protobuf"})
-
-	assert.False(t, k8senv.Contains(app.Env, exporter.DynatraceAPITokenEnv))
-	assert.False(t, k8senv.Contains(app.Env, exporter.OTLPTraceEndpointEnv))
-	assert.False(t, k8senv.Contains(app.Env, exporter.OTLPLogsEndpointEnv))
-	assert.False(t, k8senv.Contains(app.Env, exporter.OTLPMetricsEndpointEnv))
-	assert.False(t, k8senv.Contains(app.Env, exporter.OTLPTraceHeadersEnv))
-	assert.False(t, k8senv.Contains(app.Env, exporter.OTLPLogsHeadersEnv))
-	assert.False(t, k8senv.Contains(app.Env, exporter.OTLPMetricsHeadersEnv))
-}
-
-func TestOTLPExporterInjectWhenInvalidGeneralEnvPreset(t *testing.T) {
-	clt := setupOTLPWebhookEnv(t)
-
-	apiURL := "https://example.live.dynatrace.com"
-	dk := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "dynakube",
-			Namespace: testNamespace,
-			Annotations: map[string]string{
-				exp.InjectionAutomaticKey: "true",
-			},
-		},
-		Spec: dynakube.DynaKubeSpec{
-			APIURL: apiURL,
-			OTLPExporterConfiguration: &otlpspec.ExporterConfigurationSpec{
-				NamespaceSelector: metav1.LabelSelector{
-					MatchExpressions: []metav1.LabelSelectorRequirement{
-						{Key: podmutator.InjectionInstanceLabel, Operator: metav1.LabelSelectorOpExists},
-					},
-				},
-				Signals: otlpspec.SignalConfiguration{
-					Metrics: &otlpspec.MetricsSignal{},
-					Logs:    &otlpspec.LogsSignal{},
-					Traces:  &otlpspec.TracesSignal{},
-				},
-			},
-		},
-	}
-
-	apiTokenSecret := getOTLPExporterSecret(testNamespace)
-	createObject(t, clt, apiTokenSecret)
-
-	createDynaKube(t, clt, dk)
-
-	pod := createPod(t, clt, func(p *corev1.Pod) {
-		p.Spec.Containers[0].Env = append(p.Spec.Containers[0].Env,
-			corev1.EnvVar{Name: "OTLP_EXPORTER_OTLP_ENDPOINT", Value: "https://my-collector.example.com/otlp"},
-			corev1.EnvVar{Name: "OTLP_EXPORTER_OTLP_PROTOCOL", Value: "http/protobuf"},
-		)
-	})
-
-	app := pod.Spec.Containers[0]
-
-	dtTokenEnv := k8senv.Find(app.Env, exporter.DynatraceAPITokenEnv)
-	require.NotNil(t, dtTokenEnv, "expected DT_API_TOKEN env var to be injected")
-
-	assert.True(t, k8senv.Contains(app.Env, exporter.OTLPTraceEndpointEnv))
-	assert.True(t, k8senv.Contains(app.Env, exporter.OTLPLogsEndpointEnv))
-	assert.True(t, k8senv.Contains(app.Env, exporter.OTLPMetricsEndpointEnv))
-	assert.True(t, k8senv.Contains(app.Env, exporter.OTLPTraceHeadersEnv))
-	assert.True(t, k8senv.Contains(app.Env, exporter.OTLPLogsHeadersEnv))
-	assert.True(t, k8senv.Contains(app.Env, exporter.OTLPMetricsHeadersEnv))
-
-	assert.True(t, k8senv.Contains(app.Env, "OTLP_EXPORTER_OTLP_ENDPOINT"))
-	assert.True(t, k8senv.Contains(app.Env, "OTLP_EXPORTER_OTLP_PROTOCOL"))
-}
-
 func createPod(t *testing.T, clt client.Client, mutateFn func(*corev1.Pod)) *corev1.Pod {
 	t.Helper()
 
@@ -1334,29 +1168,11 @@ func createPod(t *testing.T, clt client.Client, mutateFn func(*corev1.Pod)) *cor
 		mutateFn(pod)
 	}
 
-	createObject(t, clt, pod)
+	integrationtests.CreateKubernetesObject(t, clt, pod)
 
 	return pod
 }
 
-func createObject(t *testing.T, clt client.Client, obj client.Object) {
-	t.Helper()
-	err := clt.Create(t.Context(), obj)
-	require.NoError(t, err)
-	t.Cleanup(func() {
-		// t.Context is no longer valid during cleanup
-		assert.NoError(t, clt.Delete(context.Background(), obj))
-	})
-}
-
-func createDynaKube(t *testing.T, clt client.Client, dk *dynakube.DynaKube) {
-	t.Helper()
-
-	status := dk.Status
-	createObject(t, clt, dk)
-	dk.Status = status
-	require.NoError(t, dk.UpdateStatus(t.Context(), clt))
-}
 func getDummyWebhookPod() *corev1.Pod {
 	return &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1373,12 +1189,9 @@ func getDummyWebhookPod() *corev1.Pod {
 		},
 	}
 }
-func getDummyOwnerDeployment() (*appsv1.Deployment, []metav1.OwnerReference) {
-	deploy := &appsv1.Deployment{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "Deployment",
-			APIVersion: "apps/v1",
-		},
+
+func getOwnerDeployment() *appsv1.Deployment {
+	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test-deployment",
 			Namespace: testNamespace,
@@ -1401,19 +1214,7 @@ func getDummyOwnerDeployment() (*appsv1.Deployment, []metav1.OwnerReference) {
 				},
 			},
 		},
-		Status: appsv1.DeploymentStatus{},
 	}
-	ownerReference := []metav1.OwnerReference{
-		{
-			Name:       deploy.Name,
-			APIVersion: deploy.APIVersion,
-			Kind:       deploy.Kind,
-			Controller: new(true),
-			UID:        types.UID(uuid.NewString()),
-		},
-	}
-
-	return deploy, ownerReference
 }
 
 func getNamespace(name string) *corev1.Namespace {
@@ -1423,6 +1224,70 @@ func getNamespace(name string) *corev1.Namespace {
 			Labels: map[string]string{
 				podmutator.InjectionInstanceLabel: "dynakube",
 			},
+		},
+	}
+}
+
+func getReadyCNFSDynaKube() *dynakube.DynaKube {
+	return &dynakube.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "dynakube",
+			Namespace: testNamespace,
+			Annotations: map[string]string{
+				exp.InjectionAutomaticKey: "true",
+			},
+		},
+		Spec: dynakube.DynaKubeSpec{
+			OneAgent: oneagent.Spec{
+				CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
+			},
+		},
+		Status: dynakube.DynaKubeStatus{
+			KubernetesClusterMEID: testMEID,
+			KubernetesClusterName: testClusterName,
+			KubeSystemUUID:        testClusterUUID,
+			OneAgent: oneagent.Status{
+				ConnectionInfo: communication.ConnectionInfo{
+					TenantUUID: uuid.NewString(),
+				},
+			},
+			CodeModules: oneagent.CodeModulesStatus{
+				VersionStatus: status.VersionStatus{
+					Version: "1.2.3",
+				},
+			},
+		},
+	}
+}
+
+func getReadyOTLPDynaKube() *dynakube.DynaKube {
+	return &dynakube.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "dynakube",
+			Namespace: testNamespace,
+			Annotations: map[string]string{
+				exp.InjectionAutomaticKey: "true",
+			},
+		},
+		Spec: dynakube.DynaKubeSpec{
+			APIURL: apiURL,
+			OTLPExporterConfiguration: &otlpspec.ExporterConfigurationSpec{
+				NamespaceSelector: metav1.LabelSelector{
+					MatchExpressions: []metav1.LabelSelectorRequirement{
+						{Key: podmutator.InjectionInstanceLabel, Operator: metav1.LabelSelectorOpExists},
+					},
+				},
+				Signals: otlpspec.SignalConfiguration{
+					Metrics: &otlpspec.MetricsSignal{},
+					Logs:    &otlpspec.LogsSignal{},
+					Traces:  &otlpspec.TracesSignal{},
+				},
+			},
+		},
+		Status: dynakube.DynaKubeStatus{
+			KubernetesClusterMEID: testMEID,
+			KubernetesClusterName: testClusterName,
+			KubeSystemUUID:        testClusterUUID,
 		},
 	}
 }
@@ -1458,7 +1323,7 @@ func getOTLPExporterCertsSecret(namespace string) *corev1.Secret {
 			Namespace: namespace,
 		},
 		Data: map[string][]byte{
-			dynakube.TLSCertKey: []byte("ag-cert-data"),
+			consts.TLSCrtDataName: []byte("ag-cert-data"),
 		},
 	}
 }

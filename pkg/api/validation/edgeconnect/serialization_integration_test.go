@@ -4,7 +4,6 @@
 package validation_test
 
 import (
-	"context"
 	"flag"
 	"os"
 	"path/filepath"
@@ -105,11 +104,7 @@ func TestSerialization(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{Name: tt.name, Namespace: metav1.NamespaceDefault},
 				Spec:       tt.spec,
 			}
-			require.NoError(t, clt.Create(t.Context(), ec))
-			t.Cleanup(func() {
-				// t.Context is no longer valid during cleanup
-				assert.NoError(t, clt.Delete(context.Background(), ec))
-			})
+			integrationtests.CreateKubernetesObject(t, clt, ec)
 
 			// Status is not persisted on create; set it via the subresource.
 			if tt.status != nil {

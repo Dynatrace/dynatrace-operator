@@ -10,11 +10,6 @@ import (
 
 // +kubebuilder:object:generate=true
 
-type Spec struct {
-}
-
-// +kubebuilder:object:generate=true
-
 type ExecutionControllerSpec struct {
 
 	// Defines storage device

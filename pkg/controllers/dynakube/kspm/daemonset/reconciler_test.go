@@ -129,7 +129,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		assert.NotEmpty(t, daemonset.Spec.Template.Spec.Affinity)
 		assert.Subset(t, daemonset.Spec.Template.Labels, daemonset.Spec.Selector.MatchLabels)
 		require.Empty(t, daemonset.Annotations)
-		require.Len(t, daemonset.Spec.Template.Annotations, 1)
+		require.Len(t, daemonset.Spec.Template.Annotations, 2)
 		assert.Contains(t, daemonset.Spec.Template.Annotations, tokenSecretHashAnnotation)
 		assert.Equal(t, serviceAccountName, daemonset.Spec.Template.Spec.ServiceAccountName)
 		assert.Empty(t, daemonset.Spec.Template.Spec.DNSPolicy)

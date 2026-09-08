@@ -15,8 +15,8 @@ func TestStatefulSet(t *testing.T) {
 
 	dk := getTestDynakube()
 
-	integrationtests.CreateNamespace(t, t.Context(), clt, testNamespaceName)
-	integrationtests.CreateDynakube(t, t.Context(), clt, dk)
+	integrationtests.CreateNamespace(t, clt, testNamespaceName)
+	integrationtests.CreateDynakube(t, clt, dk)
 	mockTLSSecret(t, clt, dk)
 
 	reconciler := NewReconciler(clt, clt)

@@ -4,7 +4,6 @@
 package validation_test
 
 import (
-	"context"
 	"os"
 	"path/filepath"
 	"testing"
@@ -112,11 +111,7 @@ func compareWebhookResult(t *testing.T, clt client.Client, version, name string,
 	oldObj := &unstructured.Unstructured{}
 	require.NoError(t, yaml.Unmarshal(oldData, &oldObj.Object))
 
-	require.NoError(t, clt.Create(t.Context(), oldObj))
-	t.Cleanup(func() {
-		// t.Context is no longer valid during cleanup
-		assert.NoError(t, clt.Delete(context.Background(), oldObj))
-	})
+	integrationtests.CreateKubernetesObject(t, clt, oldObj)
 
 	expectData, err := os.ReadFile(filepath.Join("testdata", "latest-"+name+".yaml"))
 	require.NoError(t, err)

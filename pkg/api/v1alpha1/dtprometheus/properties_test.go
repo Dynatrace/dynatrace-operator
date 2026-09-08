@@ -10,24 +10,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestDTPrometheus_IsDynatracePresetEnabled(t *testing.T) {
-	tests := []struct {
-		name     string
-		preset   *DynatracePresetSpec
-		expected bool
-	}{
-		{"disabled when unset", nil, false},
-		{"enabled when present", &DynatracePresetSpec{}, true},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			dtp := &DTPrometheus{Spec: DTPrometheusSpec{DynatracePreset: tt.preset}}
-			assert.Equal(t, tt.expected, dtp.IsDynatracePresetEnabled())
-		})
-	}
-}
-
 func TestDTPrometheus_Conditions(t *testing.T) {
 	dtp := &DTPrometheus{}
 

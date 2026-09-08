@@ -4,12 +4,10 @@
 package edgeconnect_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/test/integrationtests"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -81,20 +79,11 @@ func buildCondition() metav1.Condition {
 	}
 }
 
-func createObject(t *testing.T, clt client.Client, obj client.Object) {
-	t.Helper()
-	require.NoError(t, clt.Create(t.Context(), obj))
-	t.Cleanup(func() {
-		// t.Context is no longer valid during cleanup
-		assert.NoError(t, clt.Delete(context.Background(), obj))
-	})
-}
-
 func createEdgeConnect(t *testing.T, clt client.Client, ec *edgeconnect.EdgeConnect) {
 	t.Helper()
 
 	status := ec.Status
-	createObject(t, clt, ec)
+	integrationtests.CreateKubernetesObject(t, clt, ec)
 	ec.Status = status
 	err := ec.UpdateStatus(t.Context(), clt)
 	require.NoError(t, err)

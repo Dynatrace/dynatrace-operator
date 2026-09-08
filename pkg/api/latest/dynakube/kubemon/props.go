@@ -66,6 +66,20 @@ func (km *KubeMon) GetCustomPropertiesSecretName() string {
 	return km.name + NameSuffix + "-custom-properties"
 }
 
+// GetTLSSecretName returns the name of the KubeMon TLS secret.
+func (km *KubeMon) GetTLSSecretName() string {
+	if km.TLSCertsRef != nil && km.TLSCertsRef.SecretName != "" {
+		return km.TLSCertsRef.SecretName
+	}
+
+	return km.GetAutoTLSSecretName()
+}
+
+// GetAutoTLSSecretName returns the name of the automatically created KubeMon TLS secret.
+func (km *KubeMon) GetAutoTLSSecretName() string {
+	return km.name + NameSuffix + "-tls-secret"
+}
+
 // GetCustomImage returns the user-provided image override, or "" if unset.
 func (km *Spec) GetCustomImage() string {
 	if km == nil {

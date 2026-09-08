@@ -9,6 +9,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"k8s.io/apimachinery/pkg/api/validate/content"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/validation"
 )
 
@@ -144,6 +145,18 @@ func (labels *Labels) AsMap() map[string]string {
 	}
 
 	return labelsMap
+}
+
+// MergeInto merges the labels from AsMap into obj, keeping any labels obj already
+// has that are not part of this set.
+func (labels *Labels) MergeInto(obj metav1.Object) {
+	objLabels := obj.GetLabels()
+	if objLabels == nil {
+		objLabels = make(map[string]string)
+	}
+
+	maps.Copy(objLabels, labels.AsMap())
+	obj.SetLabels(objLabels)
 }
 
 // AsSelector returns the stable labels used to select resources

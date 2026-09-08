@@ -9,6 +9,8 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/dtprometheus"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
@@ -97,6 +99,7 @@ func getCustomResourcesQueryGroup(namespace string) resourceQueryGroup {
 		resources: []schema.GroupVersionKind{
 			toGroupVersionKind(latest.GroupVersion, dynakube.DynaKube{}),
 			toGroupVersionKind(v1alpha2.GroupVersion, edgeconnect.EdgeConnect{}),
+			toGroupVersionKind(v1alpha1.GroupVersion, dtprometheus.DTPrometheus{}),
 		},
 		filters: []client.ListOption{
 			client.InNamespace(namespace),

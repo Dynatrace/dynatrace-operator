@@ -4,13 +4,11 @@
 package dynakube_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/test/integrationtests"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -39,7 +37,7 @@ func TestStatus(t *testing.T) {
 
 	t.Run("can't add duplicated conditions", func(t *testing.T) {
 		dk := buildDynaKube()
-		createDynaKube(t, clt, dk)
+		integrationtests.CreateDynakube(t, clt, dk)
 		dummyCondition := buildCondition()
 
 		// append first condition
@@ -84,21 +82,4 @@ func buildCondition() metav1.Condition {
 		Message:            dummyConditionMessage,
 		LastTransitionTime: metav1.Now(),
 	}
-}
-
-func createObject(t *testing.T, clt client.Client, obj client.Object) {
-	t.Helper()
-	require.NoError(t, clt.Create(t.Context(), obj))
-	t.Cleanup(func() {
-		// t.Context is no longer valid during cleanup
-		assert.NoError(t, clt.Delete(context.Background(), obj))
-	})
-}
-
-func createDynaKube(t *testing.T, clt client.Client, dk *dynakube.DynaKube) {
-	status := dk.Status
-	createObject(t, clt, dk)
-	dk.Status = status
-	err := dk.UpdateStatus(t.Context(), clt)
-	require.NoError(t, err)
 }

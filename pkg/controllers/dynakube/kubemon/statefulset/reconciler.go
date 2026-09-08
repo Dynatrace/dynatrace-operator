@@ -23,6 +23,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8ssecuritycontext"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
 	maputil "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
@@ -40,6 +41,7 @@ const (
 	AnnotationAuthTokenHash        = api.InternalFlagPrefix + "kubemon-authtoken-hash"
 	AnnotationCustomPropertiesHash = api.InternalFlagPrefix + "kubemon-customproperties-hash"
 	AnnotationKSPMTokenHash        = api.InternalFlagPrefix + "kubemon-kspm-token-hash"
+	AnnotationTLSSecretHash        = api.InternalFlagPrefix + "kubemon-tls-secret-hash"
 	StorageVolumeName              = "kubemon-storage"
 	AuthTokenVolumeName            = "kubemon-authtoken-secret"
 	kspmTokenVolumeName            = "kspm-token"
@@ -113,6 +115,7 @@ func buildPodAnnotations(dk *dynakube.DynaKube, tokenHash, authTokenHash, custom
 
 	if dk.KSPM().IsEnabled() {
 		annotations[AnnotationKSPMTokenHash] = dk.KSPM().TokenSecretHash
+		annotations[AnnotationTLSSecretHash] = dk.KubernetesMonitoring().TLSSecretHash
 	}
 
 	return annotations
@@ -173,6 +176,10 @@ func buildEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 		envs = append(envs, corev1.EnvVar{Name: agconsts.EnvDTGroup, Value: dk.Spec.KubernetesMonitoring.Group})
 	}
 
+	if dk.Spec.NetworkZone != "" {
+		envs = append(envs, corev1.EnvVar{Name: agconsts.EnvDTNetworkZone, Value: dk.Spec.NetworkZone})
+	}
+
 	return append(envs, dk.KubernetesMonitoring().Env...)
 }
 
@@ -204,6 +211,46 @@ func buildVolumes(dk *dynakube.DynaKube) []corev1.Volume {
 			Name:         StorageVolumeName,
 			VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}},
 		},
+		{
+			Name: agconsts.GatewayLibTempVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+		},
+		{
+			Name: agconsts.GatewayDataVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+		},
+		{
+			Name: agconsts.GatewayLogVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+		},
+		{
+			Name: agconsts.GatewayConfigVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+		},
+		{
+			Name: agconsts.TrustStoreVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+		},
+		{
+			Name: agconsts.GatewaySslVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+		},
+		{
+			Name:         agconsts.InitCertLoaderWorkDirVolumeName,
+			VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}},
+		},
 	}
 
 	if km.CustomProperties != nil {
@@ -220,15 +267,25 @@ func buildVolumes(dk *dynakube.DynaKube) []corev1.Volume {
 	}
 
 	if dk.KSPM().IsEnabled() {
-		volumes = append(volumes, corev1.Volume{
-			Name: kspmTokenVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName:  dk.KSPM().GetTokenSecretName(),
-					DefaultMode: new(int32(0o640)),
+		volumes = append(volumes,
+			corev1.Volume{
+				Name: kspmTokenVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName:  dk.KSPM().GetTokenSecretName(),
+						DefaultMode: new(int32(0o640)),
+					},
 				},
 			},
-		})
+			corev1.Volume{
+				Name: agconsts.CertsVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName:  dk.KubernetesMonitoring().GetTLSSecretName(),
+						DefaultMode: new(int32(0o640)),
+					},
+				},
+			})
 	}
 
 	return volumes
@@ -253,6 +310,37 @@ func buildVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 			Name:      StorageVolumeName,
 			MountPath: agconsts.GatewayTmpMountPath,
 		},
+		{
+			ReadOnly:  false,
+			Name:      agconsts.GatewaySslVolumeName,
+			MountPath: agconsts.GatewaySslMountPath,
+		},
+		{
+			ReadOnly:  false,
+			Name:      agconsts.GatewayLibTempVolumeName,
+			MountPath: agconsts.GatewayLibTempMountPath,
+		},
+		{
+			ReadOnly:  false,
+			Name:      agconsts.GatewayDataVolumeName,
+			MountPath: agconsts.GatewayDataMountPath,
+		},
+		{
+			ReadOnly:  false,
+			Name:      agconsts.GatewayLogVolumeName,
+			MountPath: agconsts.GatewayLogMountPath,
+		},
+		{
+			ReadOnly:  false,
+			Name:      agconsts.GatewayConfigVolumeName,
+			MountPath: agconsts.GatewayConfigMountPath,
+		},
+		{
+			ReadOnly:  true,
+			Name:      agconsts.TrustStoreVolumeName,
+			MountPath: agconsts.TrustStoreCacertsMountPath,
+			SubPath:   agconsts.K8sCertificateFile,
+		},
 	}
 
 	if dk.KubernetesMonitoring().CustomProperties != nil {
@@ -265,15 +353,36 @@ func buildVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 	}
 
 	if dk.KSPM().IsEnabled() {
-		mounts = append(mounts, corev1.VolumeMount{
-			Name:      kspmTokenVolumeName,
-			ReadOnly:  true,
-			MountPath: kspmTokenMountPath,
-			SubPath:   kspm.TokenSecretKey,
-		})
+		mounts = append(mounts,
+			corev1.VolumeMount{
+				Name:      kspmTokenVolumeName,
+				ReadOnly:  true,
+				MountPath: kspmTokenMountPath,
+				SubPath:   kspm.TokenSecretKey,
+			},
+			corev1.VolumeMount{
+				Name:      agconsts.CertsVolumeName,
+				ReadOnly:  true,
+				MountPath: agconsts.CertsMountPath,
+			})
 	}
 
 	return mounts
+}
+
+func buildInitVolumeMounts() []corev1.VolumeMount {
+	return []corev1.VolumeMount{
+		{
+			ReadOnly:  false,
+			Name:      agconsts.TrustStoreVolumeName,
+			MountPath: agconsts.GatewaySslMountPath,
+		},
+		{
+			ReadOnly:  false,
+			Name:      agconsts.InitCertLoaderWorkDirVolumeName,
+			MountPath: agconsts.InitCertLoaderWorkDirMountPath,
+		},
+	}
 }
 
 func (r *Reconciler) delete(ctx context.Context, dk *dynakube.DynaKube) error {
@@ -348,6 +457,20 @@ func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.D
 		return nil, err
 	}
 
+	km := dk.KubernetesMonitoring()
+
+	initContainer := corev1.Container{
+		Name:            agconsts.InitContainerName,
+		Image:           imageURI,
+		ImagePullPolicy: dk.KubernetesMonitoring().ImagePullPolicy,
+		WorkingDir:      agconsts.InitCertLoaderWorkDirMountPath,
+		Command:         []string{"/bin/bash"},
+		Args:            []string{"-c", agconsts.K8scrt2jksPath},
+		VolumeMounts:    buildInitVolumeMounts(),
+		Resources:       dk.KubernetesMonitoring().Resources,
+		SecurityContext: buildSecurityContext(km.Annotations, agconsts.InitContainerName),
+	}
+
 	container := corev1.Container{
 		Name:            ContainerName,
 		Image:           imageURI,
@@ -361,9 +484,10 @@ func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.D
 			{Name: agconsts.HTTPSServicePortName, ContainerPort: agconsts.HTTPSContainerPort},
 			{Name: agconsts.HTTPServicePortName, ContainerPort: agconsts.HTTPContainerPort},
 		},
+		SecurityContext: buildSecurityContext(km.Annotations, ContainerName),
 	}
 
-	km := dk.KubernetesMonitoring()
+	km.Annotations = k8ssecuritycontext.RemoveAppArmorAnnotation(km.Annotations, agconsts.InitContainerName, ContainerName)
 
 	labels := k8slabel.New(k8slabel.KubeMonComponentLabel, dk.GetName(), "")
 
@@ -382,6 +506,8 @@ func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.D
 		k8sstatefulset.SetTerminationGracePeriodSeconds(km.TerminationGracePeriodSeconds),
 		k8sstatefulset.SetImagePullSecrets(dk.ImagePullSecretReferences()),
 		k8sstatefulset.SetAutomountServiceAccountToken(true),
+		k8sstatefulset.SetSecurityContext(buildPodSecurityContext()),
+		k8sstatefulset.SetInitContainer(initContainer),
 	}
 
 	return k8sstatefulset.Build(dk, km.GetStatefulSetName(), container, opts...)
@@ -450,4 +576,36 @@ func (r *Reconciler) getCustomPropertiesHash(ctx context.Context, dk *dynakube.D
 	}
 
 	return hash, nil
+}
+
+func buildSecurityContext(annotations map[string]string, containerName string) *corev1.SecurityContext {
+	return &corev1.SecurityContext{
+		Privileged:               new(false),
+		AllowPrivilegeEscalation: new(false),
+		RunAsNonRoot:             new(true),
+		RunAsUser:                new(agconsts.DockerImageUser),
+		RunAsGroup:               new(agconsts.DockerImageGroup),
+		Capabilities: &corev1.Capabilities{
+			Drop: []corev1.Capability{
+				"ALL",
+			},
+		},
+		SeccompProfile: &corev1.SeccompProfile{
+			Type: corev1.SeccompProfileTypeRuntimeDefault,
+		},
+		ReadOnlyRootFilesystem: new(true),
+		AppArmorProfile:        k8ssecuritycontext.GetAppArmorProfile(annotations, containerName),
+	}
+}
+
+func buildPodSecurityContext() *corev1.PodSecurityContext {
+	sc := corev1.PodSecurityContext{
+		SeccompProfile: &corev1.SeccompProfile{
+			Type: corev1.SeccompProfileTypeRuntimeDefault,
+		},
+	}
+
+	sc.FSGroup = new(agconsts.DockerImageGroup)
+
+	return &sc
 }

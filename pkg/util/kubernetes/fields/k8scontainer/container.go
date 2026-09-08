@@ -31,6 +31,18 @@ func FindInPodSpec(podSpec *corev1.PodSpec, containerName string) *corev1.Contai
 	return nil
 }
 
+// GetFirstInPodSpec returns the first container of the given pod spec, or the zero
+// Container when the pod spec has none. Useful when reconciling a workload whose
+// pod template holds exactly one container and the stored, apiserver-defaulted
+// container is needed to avoid spurious diffs.
+func GetFirstInPodSpec(podSpec *corev1.PodSpec) corev1.Container {
+	if len(podSpec.Containers) > 0 {
+		return podSpec.Containers[0]
+	}
+
+	return corev1.Container{}
+}
+
 func FindInitInPodSpec(podSpec *corev1.PodSpec, containerName string) *corev1.Container {
 	for i := range podSpec.InitContainers {
 		container := &podSpec.InitContainers[i]

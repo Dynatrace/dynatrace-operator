@@ -57,6 +57,13 @@ func TestGetEntityIDForIP(t *testing.T) {
 		require.ErrorAs(t, err, new(EntityNotFoundError))
 	})
 
+	t.Run("no ip provided", func(t *testing.T) {
+		// deliberately not setupClient: no request is expected to be sent at all
+		coreClient := NewClient(coremock.NewClient(t), "")
+		_, err := coreClient.GetEntityIDForIP(t.Context(), "")
+		require.EqualError(t, err, "must provide IP")
+	})
+
 	t.Run("api error 404", func(t *testing.T) {
 		coreClient := setupClient(t, &core.HTTPError{StatusCode: 404, Message: "nope"})
 		_, err := coreClient.GetEntityIDForIP(t.Context(), "1.1.1.1")

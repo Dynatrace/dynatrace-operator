@@ -7,6 +7,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/pkg/errors"
@@ -17,6 +18,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 func TestFindRootOwnerOfPod(t *testing.T) {
@@ -269,6 +271,50 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 		workloadInfo, err := FindRootOwnerOfPod(ctx, client, request)
 		require.NoError(t, err)
 		assert.Equal(t, resourceName, workloadInfo.Name)
+	})
+
+	t.Run("should return the labels and annotations of the root owner", func(t *testing.T) {
+		deployment := &appsv1.Deployment{
+			TypeMeta: metav1.TypeMeta{Kind: "Deployment", APIVersion: "apps/v1"},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:        resourceName,
+				Namespace:   namespaceName,
+				UID:         "deployment-uid",
+				Labels:      map[string]string{"env": "production"},
+				Annotations: map[string]string{"metadata.dynatrace.com/my.attr": "workload-value"},
+			},
+		}
+
+		replicaSet := &appsv1.ReplicaSet{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:        resourceName,
+				Namespace:   namespaceName,
+				UID:         "replicaset-uid",
+				Labels:      map[string]string{"replicaset-label": "replicaset-value"},
+				Annotations: map[string]string{"replicaset-annotation": "replicaset-value"},
+			},
+		}
+		require.NoError(t, controllerutil.SetControllerReference(deployment, replicaSet, scheme.Scheme))
+
+		pod := &corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:        resourceName,
+				Namespace:   namespaceName,
+				Labels:      map[string]string{"pod-label": "pod-value"},
+				Annotations: map[string]string{"pod-annotation": "pod-value"},
+			},
+		}
+		require.NoError(t, controllerutil.SetControllerReference(replicaSet, pod, scheme.Scheme))
+
+		request := mutator.BaseRequest{Pod: pod, Namespace: corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: namespaceName}}}
+
+		client := fake.NewClient(deployment, replicaSet, pod)
+
+		workloadInfo, err := FindRootOwnerOfPod(ctx, client, request)
+		require.NoError(t, err)
+		assert.Equal(t, "deployment", workloadInfo.Kind)
+		assert.Equal(t, deployment.Labels, workloadInfo.Labels)
+		assert.Equal(t, deployment.Annotations, workloadInfo.Annotations)
 	})
 
 	t.Run("should add annotation if owner lookup failed", func(t *testing.T) {

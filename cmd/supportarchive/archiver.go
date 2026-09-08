@@ -5,6 +5,7 @@ package supportarchive
 
 import (
 	"io"
+	"time"
 
 	"github.com/klauspost/compress/zip"
 	"github.com/pkg/errors"
@@ -32,7 +33,11 @@ type zipArchive struct {
 }
 
 func (z zipArchive) addFile(fileName string, reader io.Reader) error {
-	w, err := z.writer.Create(fileName)
+	w, err := z.writer.CreateHeader(&zip.FileHeader{
+		Name:     fileName,
+		Method:   zip.Deflate,
+		Modified: time.Now(),
+	})
 	if err != nil {
 		return errors.WithMessagef(err, "could not create file '%s' in zip archive", fileName)
 	}

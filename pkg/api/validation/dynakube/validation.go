@@ -82,6 +82,9 @@ var (
 		invalidOneAgentArguments,
 		invalidLogmonArguments,
 		missingCodeModulesImage,
+		mutualExclusiveKubernetesMonitoring,
+		kubemonMutualExclusiveCustomPropertiesValue,
+		conflictingImageMode,
 	}
 	validatorWarningFuncs = []validatorFunc{
 		missingActiveGateMemoryLimit,

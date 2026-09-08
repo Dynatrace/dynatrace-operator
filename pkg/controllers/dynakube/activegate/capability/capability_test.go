@@ -38,7 +38,7 @@ var capabilities = []activegate.CapabilityDisplayName{
 }
 
 func buildDynakube(capabilities []activegate.CapabilityDisplayName, enableExtensions bool, enableTelemetryIngest bool) *dynakube.DynaKube {
-	extensionsSpec := &extensions.Spec{Prometheus: &extensions.PrometheusSpec{}}
+	extensionsSpec := &extensions.Spec{Databases: []extensions.DatabaseSpec{{ID: "test"}}}
 	if !enableExtensions {
 		extensionsSpec = nil
 	}

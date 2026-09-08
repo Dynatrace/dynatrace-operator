@@ -3,11 +3,12 @@
 
 suite: test DtPrometheus CRD deployment
 templates:
-  - Common/crd/dynatrace-operator-crd.yaml
+  - Common/crd/dynatrace-operator-dtprometheus-crd.yaml
 tests:
   - it: DtPrometheus CRD should render when installCRD is true
     set:
       installCRD: true
+      experimental.enablePrometheus: true
     documentIndex: 0
     asserts:
       - isKind:
@@ -19,15 +20,12 @@ tests:
   - it: CRDs should be absent when installCRD is false
     set:
       installCRD: false
+      experimental.enablePrometheus: true
     asserts:
       - hasDocuments:
           count: 0
 
-  - it: DtPrometheus CRD should render with default values
-    documentIndex: 0
+  - it: DtPrometheus CRD should be absent with default values
     asserts:
-      - isKind:
-          of: CustomResourceDefinition
-      - equal:
-          path: metadata.name
-          value: dtprometheuses.dynatrace.com
+      - hasDocuments:
+          count: 0

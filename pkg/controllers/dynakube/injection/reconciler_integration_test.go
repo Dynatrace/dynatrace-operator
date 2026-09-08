@@ -44,9 +44,9 @@ const (
 func TestReconcileSecretReplicationLifecycle(t *testing.T) {
 	clt := integrationtests.SetupTestEnvironment(t)
 
-	integrationtests.CreateNamespace(t, t.Context(), clt, lifecycleNamespace)
-	integrationtests.CreateNamespace(t, t.Context(), clt, lifecycleNamespaceA)
-	integrationtests.CreateNamespace(t, t.Context(), clt, lifecycleNamespaceB)
+	integrationtests.CreateNamespace(t, clt, lifecycleNamespace)
+	integrationtests.CreateNamespace(t, clt, lifecycleNamespaceA)
+	integrationtests.CreateNamespace(t, clt, lifecycleNamespaceB)
 	labelNamespace(t, clt, lifecycleNamespaceA, "a")
 	labelNamespace(t, clt, lifecycleNamespaceB, "b")
 
@@ -75,9 +75,9 @@ func TestReconcileSecretReplicationLifecycle(t *testing.T) {
 	*dk.Spec.MetadataEnrichment.Enabled = true
 	*dk.Status.APIToken.Platform = true
 
-	integrationtests.CreateDynakube(t, t.Context(), clt, dk)
+	integrationtests.CreateDynakube(t, clt, dk)
 
-	integrationtests.CreateKubernetesObject(t, t.Context(), clt, &corev1.Secret{
+	integrationtests.CreateKubernetesObject(t, clt, &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{Name: dk.Tokens(), Namespace: dk.Namespace},
 		Data: map[string][]byte{
 			token.APIKey:        []byte("test-api-token"),

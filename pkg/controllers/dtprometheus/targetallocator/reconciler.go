@@ -7,22 +7,22 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
-	"errors"
 	"fmt"
 	"maps"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/dtprometheus"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dtprometheus/condition"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8scontainer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	k8sobject "github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sdeployment"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
@@ -39,6 +39,8 @@ const (
 	configFile   = "targetallocator.yaml"
 
 	serviceAccount = "dynatrace-target-allocator"
+
+	configHashAnnotation = "internal.operator.dynatrace.com/allocator-config-hash"
 )
 
 type Reconciler struct {
@@ -81,12 +83,11 @@ type ScrapeConfig struct {
 
 type reconcileScope struct {
 	// Required for reconcile
-	Owner       *dtprometheus.DTPrometheus
-	DynaKube    *dynakube.DynaKube
-	Spec        *dtprometheus.TargetAllocator
-	AppLabels   *k8slabel.Labels
-	ImageClient image.Client
-	// Computed during reconcile
+	Owner         *dtprometheus.DTPrometheus
+	DynaKube      *dynakube.DynaKube
+	Spec          *dtprometheus.TargetAllocator
+	AppLabels     *k8slabel.Labels
+	ImageClient   image.Client
 	ConfigMapHash string
 	Deployment    *appsv1.Deployment
 }
@@ -114,32 +115,10 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtp *dtprometheus.DTPromethe
 		}
 	}
 
-	r.reconcileCondition(scope, err)
+	condition.Set(&scope.Owner.Status.Conditions, dtprometheus.TargetAllocatorAvailable, "target allocator",
+		func() bool { return k8sdeployment.IsRolloutComplete(scope.Deployment) }, err)
 
 	return err
-}
-
-func (r *Reconciler) reconcileCondition(s *reconcileScope, err error) {
-	condition := metav1.Condition{
-		Type: dtprometheus.TargetAllocatorAvailable,
-	}
-
-	switch {
-	case err != nil:
-		condition.Status = metav1.ConditionFalse
-		condition.Reason = status.ReasonError
-		condition.Message = safeUnwrap(err).Error()
-	case k8sdeployment.IsRolloutComplete(s.Deployment):
-		condition.Status = metav1.ConditionTrue
-		condition.Reason = status.ReasonAvailable
-		condition.Message = "target allocator is ready"
-	default:
-		condition.Status = metav1.ConditionFalse
-		condition.Reason = status.ReasonReconciling
-		condition.Message = "target allocator is pending"
-	}
-
-	_ = meta.SetStatusCondition(&s.Owner.Status.Conditions, condition)
 }
 
 func (r *Reconciler) reconcileConfigMap(ctx context.Context, s *reconcileScope) error {
@@ -180,30 +159,36 @@ func (r *Reconciler) reconcileConfigMap(ctx context.Context, s *reconcileScope) 
 
 	cm := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: s.Spec.GetDeploymentName(), Namespace: s.Owner.Namespace}}
 
-	result, err := k8sobject.RetryCreateOrUpdate(ctx, r, cm, func() error {
-		if cm.Labels == nil {
-			cm.Labels = make(map[string]string)
-		}
-
-		maps.Copy(cm.Labels, s.AppLabels.AsMap())
+	err = k8sobject.RetryCreateOrUpdate(ctx, r, cm, func() error {
+		s.AppLabels.MergeInto(cm)
 
 		cm.Data = map[string]string{configFile: string(data)}
 
 		return controllerutil.SetControllerReference(s.Owner, cm, r.Scheme())
 	})
 	if err != nil {
-		return fmt.Errorf("reconcile configmap: %w", err)
+		return err
 	}
 
 	checksum := sha256.Sum256(data)
 	s.ConfigMapHash = hex.EncodeToString(checksum[:])
 
-	switch result {
-	case controllerutil.OperationResultCreated:
-		log.Info("created configmap")
-	case controllerutil.OperationResultUpdated:
-		log.Info("updated configmap")
+	return nil
+}
+
+func (r *Reconciler) resolveImage(ctx context.Context, s *reconcileScope) error {
+	if s.Spec.Image != "" {
+		s.Owner.Status.TargetAllocator.ResolvedImage = s.Spec.Image
+
+		return nil
 	}
+
+	imageURI, err := registry.ResolveImage(ctx, s.ImageClient, s.Owner.Spec.PublicRegistryOverride, image.TargetAllocator)
+	if err != nil {
+		return err
+	}
+
+	s.Owner.Status.TargetAllocator.ResolvedImage = imageURI
 
 	return nil
 }
@@ -212,28 +197,19 @@ func (r *Reconciler) reconcileDeployment(ctx context.Context, s *reconcileScope)
 	log := logd.FromContext(ctx)
 	log.Debug("reconciling deployment")
 
-	if s.Spec.Image == "" {
-		// TODO: fix this once the target allocator images are available
-		// imageURI, err := registry.ResolveImage(ctx, s.Image, s.Owner.Spec.PublicRegistryOverride, image.TargetAllocator)
-		return errors.New("missing image")
+	if err := r.resolveImage(ctx, s); err != nil {
+		return fmt.Errorf("resolve image: %w", err)
 	}
 
 	deploy := &appsv1.Deployment{ObjectMeta: metav1.ObjectMeta{Name: s.Spec.GetDeploymentName(), Namespace: s.Owner.Namespace}}
 
-	result, err := k8sobject.RetryCreateOrUpdate(ctx, r, deploy, func() error {
+	err := k8sobject.RetryCreateOrUpdate(ctx, r, deploy, func() error {
 		mutateDeployment(deploy, s)
 
 		return controllerutil.SetControllerReference(s.Owner, deploy, r.Scheme())
 	})
 	if err != nil {
-		return fmt.Errorf("reconcile deployment: %w", err)
-	}
-
-	switch result {
-	case controllerutil.OperationResultCreated:
-		log.Info("created deployment")
-	case controllerutil.OperationResultUpdated:
-		log.Info("updated deployment")
+		return err
 	}
 
 	s.Deployment = deploy
@@ -247,12 +223,8 @@ func (r *Reconciler) reconcileService(ctx context.Context, s *reconcileScope) er
 
 	svc := &corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: s.Spec.GetDeploymentName(), Namespace: s.Owner.Namespace}}
 
-	result, err := k8sobject.RetryCreateOrUpdate(ctx, r, svc, func() error {
-		if svc.Labels == nil {
-			svc.Labels = make(map[string]string)
-		}
-
-		maps.Copy(svc.Labels, s.AppLabels.AsMap())
+	return k8sobject.RetryCreateOrUpdate(ctx, r, svc, func() error {
+		s.AppLabels.MergeInto(svc)
 
 		svc.Spec.Selector = s.AppLabels.AsSelector()
 		svc.Spec.Ports = []corev1.ServicePort{
@@ -272,40 +244,24 @@ func (r *Reconciler) reconcileService(ctx context.Context, s *reconcileScope) er
 
 		return controllerutil.SetControllerReference(s.Owner, svc, r.Scheme())
 	})
-	if err != nil {
-		return fmt.Errorf("reconcile service: %w", err)
-	}
-
-	switch result {
-	case controllerutil.OperationResultCreated:
-		log.Info("created service")
-	case controllerutil.OperationResultUpdated:
-		log.Info("updated service")
-	}
-
-	return nil
 }
 
 func mutateDeployment(deploy *appsv1.Deployment, s *reconcileScope) {
-	if deploy.Labels == nil {
-		deploy.Labels = make(map[string]string)
-	}
+	s.AppLabels.MergeInto(deploy)
 
-	maps.Copy(deploy.Labels, s.AppLabels.AsMap())
-
-	deploy.Spec.Template.Labels = s.Spec.Labels
+	deploy.Spec.Template.Labels = maps.Clone(s.Spec.Labels)
 	if s.Spec.Labels == nil {
 		deploy.Spec.Template.Labels = make(map[string]string)
 	}
 
 	maps.Copy(deploy.Spec.Template.Labels, s.AppLabels.AsMap())
 
-	deploy.Spec.Template.Annotations = s.Spec.Annotations
+	deploy.Spec.Template.Annotations = maps.Clone(s.Spec.Annotations)
 	if deploy.Spec.Template.Annotations == nil {
 		deploy.Spec.Template.Annotations = make(map[string]string)
 	}
 
-	deploy.Spec.Template.Annotations["config/checksum"] = s.ConfigMapHash
+	deploy.Spec.Template.Annotations[configHashAnnotation] = s.ConfigMapHash
 
 	if s.Spec.Replicas != nil {
 		deploy.Spec.Replicas = s.Spec.Replicas
@@ -321,12 +277,12 @@ func mutateDeployment(deploy *appsv1.Deployment, s *reconcileScope) {
 	deploy.Spec.Template.Spec.TopologySpreadConstraints = s.Spec.TopologySpreadConstraints
 	deploy.Spec.Template.Spec.Volumes = buildVolumes(s.Spec)
 	deploy.Spec.Template.Spec.Containers = []corev1.Container{
-		buildContainer(s.Spec, s.Owner.Namespace, getContainer(deploy)),
+		buildContainer(s.Spec, s.Owner.Status.TargetAllocator.ResolvedImage, s.Owner.Namespace, k8scontainer.GetFirstInPodSpec(&deploy.Spec.Template.Spec)),
 	}
 }
 
 // Build the container for the target allocator. The created container should only cause an update if a mandated value changed.
-func buildContainer(spec *dtprometheus.TargetAllocator, namespace string, current corev1.Container) corev1.Container {
+func buildContainer(spec *dtprometheus.TargetAllocator, imageURI string, namespace string, current corev1.Container) corev1.Container {
 	currentLivenessProbe := ptr.Deref(current.LivenessProbe, corev1.Probe{})
 	currentReadinessProbe := ptr.Deref(current.ReadinessProbe, corev1.Probe{})
 
@@ -337,7 +293,7 @@ func buildContainer(spec *dtprometheus.TargetAllocator, namespace string, curren
 
 	return corev1.Container{
 		Name:            "targetallocator",
-		Image:           spec.Image, // TODO: allow using image from fleetmanagement API
+		Image:           imageURI,
 		ImagePullPolicy: imagePullPolicy,
 		Args:            spec.SanitizedArgs(),
 		Ports: []corev1.ContainerPort{
@@ -422,20 +378,4 @@ func buildVolumes(spec *dtprometheus.TargetAllocator) []corev1.Volume {
 	// TODO: TLS volume
 
 	return volumes
-}
-
-func getContainer(deploy *appsv1.Deployment) corev1.Container {
-	if len(deploy.Spec.Template.Spec.Containers) > 0 {
-		return deploy.Spec.Template.Spec.Containers[0]
-	}
-
-	return corev1.Container{}
-}
-
-func safeUnwrap(err error) error {
-	if u := errors.Unwrap(err); u != nil {
-		return u
-	}
-
-	return err
 }

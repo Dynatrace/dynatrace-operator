@@ -21,5 +21,5 @@ func TestNewTargetAllocator(t *testing.T) {
 func TestTargetAllocator_GetDeploymentName(t *testing.T) {
 	ta := NewTargetAllocator(&TargetAllocatorSpec{}, "dtprom")
 
-	assert.Equal(t, "dtprom-prometheus-allocator", ta.GetDeploymentName())
+	assert.Equal(t, "dtprom-allocator", ta.GetDeploymentName())
 }

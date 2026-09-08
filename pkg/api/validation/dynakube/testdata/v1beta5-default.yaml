@@ -127,8 +127,6 @@ spec:
           - matcher2
           - matcher3
 
-  extensions: {}
-
   telemetryIngest:
     serviceName: telemetry-ingest-service-name
     tlsRefName: telemetry-ingest-tls-secret-name

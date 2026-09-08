@@ -16,7 +16,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/cloudnative"
 	cloudnativeStandard "github.com/Dynatrace/dynatrace-operator/test/e2e/features/cloudnative/standard"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/edgeconnect"
-	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/extensions"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/extensions/dbexecutor"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/hostmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/kspm"
@@ -86,10 +85,6 @@ func TestNoCSI_enrichment_rules(t *testing.T) {
 	testEnv.Test(t, applicationmonitoring.EnrichmentRules(t))
 }
 
-func TestNoCSI_metadata_enrichment_without_deprecated_attributes(t *testing.T) {
-	testEnv.Test(t, applicationmonitoring.MetadataEnrichmentWithoutDeprecatedAttributes(t))
-}
-
 func TestNoCSI_otlp_exporter_configuration(t *testing.T) {
 	testEnv.Test(t, applicationmonitoring.OTLPExporterConfiguration(t))
 }
@@ -120,10 +115,6 @@ func TestNoCSI_labelversion(t *testing.T) {
 
 func TestNoCSI_app_monitoring_without_csi(t *testing.T) {
 	testEnv.Test(t, applicationmonitoring.WithoutCSI(t))
-}
-
-func TestNoCSI_extensions(t *testing.T) {
-	testEnv.Test(t, extensions.Feature(t))
 }
 
 func TestNoCSI_edgeconnect_install(t *testing.T) {

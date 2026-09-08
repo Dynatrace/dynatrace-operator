@@ -9,7 +9,6 @@ package dynakube
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/extensions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/telemetryingest"
@@ -99,11 +98,6 @@ func (in *DynaKubeSpec) DeepCopyInto(out *DynaKubeSpec) {
 	if in.DynatraceAPIRequestThreshold != nil {
 		in, out := &in.DynatraceAPIRequestThreshold, &out.DynatraceAPIRequestThreshold
 		*out = new(uint16)
-		**out = **in
-	}
-	if in.Extensions != nil {
-		in, out := &in.Extensions, &out.Extensions
-		*out = new(extensions.Spec)
 		**out = **in
 	}
 	if in.TelemetryIngest != nil {

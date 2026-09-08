@@ -11,7 +11,7 @@ import (
 
 func TestApplyDeprecatedAttributes(t *testing.T) {
 	t.Run("copies workload kind, workload name, and cluster UID to deprecated keys", func(t *testing.T) {
-		attrs := newTestPodAttributes()
+		attrs := newPodAttrs()
 		attrs.workloadInfo[K8sWorkloadKindAttr] = "deployment"
 		attrs.workloadInfo[K8sWorkloadNameAttr] = "my-deployment"
 		attrs.clusterInfo[K8sClusterUIDAttr] = "cluster-uid-123"
@@ -24,7 +24,7 @@ func TestApplyDeprecatedAttributes(t *testing.T) {
 	})
 
 	t.Run("uses empty string when workload info is not set", func(t *testing.T) {
-		attrs := newTestPodAttributes()
+		attrs := newPodAttrs()
 
 		attrs.applyDeprecatedAttributes()
 

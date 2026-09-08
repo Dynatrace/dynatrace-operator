@@ -12,16 +12,6 @@ spec:
   # Overrides the default registry from which Dynatrace images are pulled.
   # publicRegistryOverride: my.custom.registry.com
 
-  # Dynatrace preset
-  # When enabled, the operator creates a built-in ScrapeConfig that discovers
-  # pods annotated with metrics.dynatrace.com/scrape: "true" and reads the
-  # port, path, and secure annotations to construct scrape targets.
-  # This provides backwards compatibility with the ActiveGate Kubernetes
-  # module annotation-based discovery workflow.
-  # The ScrapeConfig is labeled `prometheus.dynatrace.com: "true"` so it is
-  # automatically picked up by the Target Allocator without any extra config.
-  dynatracePreset: {}
-
   # Target Allocator
   # The TA holds all Prometheus service discovery metadata in memory and
   # distributes targets across the scraper pool via consistent hashing.
@@ -53,7 +43,7 @@ spec:
     # Overrides the default Target Allocator image (full reference including tag or digest).
     # When omitted the operator uses the image configured in the tenant.
     image: docker.io/dynatrace/otel-target-allocator:latest
-    pullPolicy: IfNotPresent
+    imagePullPolicy: IfNotPresent
 
     # Extra command-line flags for the Target Allocator.
     # The operator owns the config file mounted at /conf/targetallocator.yaml, and
@@ -138,7 +128,7 @@ spec:
     # Overrides the default scraper (OTel Collector) image (full reference including tag or digest).
     # When omitted the operator uses the image provided via the image endpoint.
     image: docker.io/dynatrace/dynatrace-otel-collector:latest
-    pullPolicy: IfNotPresent
+    imagePullPolicy: IfNotPresent
 
     # Extra command-line flags for the collector.
     # The only flags accepted are --config, --set and --feature-gates.
@@ -219,7 +209,7 @@ spec:
     # Overrides the default gateway (OTel Collector) image (full reference including tag or digest).
     # When omitted the operator uses the image provided via the image endpoint.
     image: docker.io/dynatrace/dynatrace-otel-collector:latest
-    pullPolicy: IfNotPresent
+    imagePullPolicy: IfNotPresent
 
     # Extra command-line flags for the collector.
     # The only flags accepted are --config, --set and --feature-gates.
