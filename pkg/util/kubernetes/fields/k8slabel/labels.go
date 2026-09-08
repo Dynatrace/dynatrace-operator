@@ -89,7 +89,7 @@ func New(appName, instanceName, appVersion string) *Labels {
 		Instance:        instanceName,
 		ManagedBy:       version.AppName,
 		Version:         sanitizeVersion(appVersion),
-		OperatorVersion: version.Version,
+		OperatorVersion: truncateVersion(version.Version),
 	}
 }
 
@@ -213,10 +213,16 @@ func NotEqual(currentLabels, desiredLabels map[string]string) bool {
 	return !maps.Equal(currentLabels, desiredLabels)
 }
 
-func sanitizeVersion(ver string) string {
+func truncateVersion(ver string) string {
 	if len(ver) > validation.DNS1035LabelMaxLength {
 		ver = ver[:validation.DNS1035LabelMaxLength]
 	}
+
+	return ver
+}
+
+func sanitizeVersion(ver string) string {
+	ver = truncateVersion(ver)
 
 	if errs := content.IsLabelValue(ver); len(errs) > 0 {
 		log.Info("omitting invalid app version label", "version", ver, "errors", errs)
