@@ -110,6 +110,7 @@ packages:
       authTokenReconciler:
       connectionInfoReconciler:
       customPropertiesReconciler:
+      deploymentPropertiesReconciler:
       pullSecretReconciler:
       gatewayReconciler:
       statefulsetReconciler:
