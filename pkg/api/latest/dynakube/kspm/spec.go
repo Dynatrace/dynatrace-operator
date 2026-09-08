@@ -34,6 +34,10 @@ type Status struct {
 	// TokenSecretHash contains the hash of the token that is passed to both the ActiveGate and Node-Configuration-Collector.
 	// Meant to keep the two in sync.
 	TokenSecretHash string `json:"tokenSecretHash,omitempty"`
+
+	// The resolved NodeConfigurationCollector image that is currently deployed.
+	// The JSON tag uses "image" while the Go field name is ResolvedImage to distinguish it from the ImageRef in the spec.
+	ResolvedImage string `json:"image,omitempty"`
 }
 
 // +kubebuilder:object:generate=true

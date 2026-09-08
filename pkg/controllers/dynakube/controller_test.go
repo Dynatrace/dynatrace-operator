@@ -360,7 +360,7 @@ func TestReconcileComponents(t *testing.T) {
 		mockLogMonitoringReconciler := newMockLogMonitoringReconciler(t)
 
 		mockExtensionReconciler := newMockExtensionReconciler(t)
-		mockKSPMReconciler := newMockDtSettingReconciler(t)
+		mockKSPMReconciler := newMockKspmReconciler(t)
 		mockK8sEntityReconciler := newMockDtSettingReconciler(t)
 		mockOTelColReconciler := newMockOTelColReconciler(t)
 		mockIstioReconciler := newMockIstioReconciler(t)
@@ -391,7 +391,7 @@ func TestReconcileComponents(t *testing.T) {
 		expectReconcileError(t, mockLogMonitoringReconciler, &err, dtClient, dk)
 		expectReconcileError(t, mockExtensionReconciler, &err, dtClient.Images, dk)
 		expectReconcileError(t, mockOTelColReconciler, &err, dtClient.Images, dk)
-		expectReconcileError(t, mockKSPMReconciler, &err, dtClient.Settings, dk)
+		expectReconcileError(t, mockKSPMReconciler, &err, dtClient, dk)
 		expectReconcileError(t, mockK8sEntityReconciler, &err, dtClient.Settings, dk)
 
 		err = controller.reconcileComponents(ctx, dtClient, dk)
@@ -434,7 +434,7 @@ func TestReconcileComponents(t *testing.T) {
 		expectReconcileError(t, mockExtensionReconciler, &err, dtClient.Images, dk)
 		expectReconcileError(t, mockOTelColReconciler, &err, dtClient.Images, dk)
 		expectReconcileError(t, k8sEntityReconciler, &err, dtClient.Settings, dk)
-		expectReconcileError(t, mockKSPMReconciler, &err, dtClient.Settings, dk)
+		expectReconcileError(t, mockKSPMReconciler, &err, dtClient, dk)
 
 		err = controller.reconcileComponents(ctx, dtClient, dk)
 		require.Error(t, err)
@@ -450,7 +450,7 @@ func TestReconcileComponents(t *testing.T) {
 		mockInjectionReconciler := newMockInjectionReconciler(t)
 		mockLogMonitoringReconciler := newMockLogMonitoringReconciler(t)
 		mockExtensionReconciler := newMockExtensionReconciler(t)
-		mockKSPMReconciler := newMockDtSettingReconciler(t)
+		mockKSPMReconciler := newMockKspmReconciler(t)
 		mockK8sEntityReconciler := newMockDtSettingReconciler(t)
 		mockOTelColReconciler := newMockOTelColReconciler(t)
 
@@ -477,7 +477,7 @@ func TestReconcileComponents(t *testing.T) {
 		mockKubemonReconciler.EXPECT().Reconcile(anyCtx, dk, dtClient, token.Tokens(nil)).Return(k8sstatefulset.ErrRolloutInProgress).Once()
 		mockExtensionReconciler.EXPECT().Reconcile(anyCtx, dtClient.Images, dk).Return(nil).Once()
 		mockOTelColReconciler.EXPECT().Reconcile(anyCtx, dtClient.Images, dk).Return(nil).Once()
-		mockKSPMReconciler.EXPECT().Reconcile(anyCtx, dtClient.Settings, dk).Return(nil).Once()
+		mockKSPMReconciler.EXPECT().Reconcile(anyCtx, dtClient, dk).Return(nil).Once()
 		mockLogMonitoringReconciler.EXPECT().Reconcile(anyCtx, dtClient, dk).Return(nil).Once()
 		mockInjectionReconciler.EXPECT().Reconcile(anyCtx, dtClient, dk).Return(nil).Once()
 		mockOneAgentReconciler.EXPECT().Reconcile(anyCtx, dk, dtClient, token.Tokens(nil)).Return(nil).Once()
@@ -497,7 +497,7 @@ func TestReconcileComponents(t *testing.T) {
 		mockInjectionReconciler := newMockInjectionReconciler(t)
 		mockLogMonitoringReconciler := newMockLogMonitoringReconciler(t)
 		mockExtensionReconciler := newMockExtensionReconciler(t)
-		mockKSPMReconciler := newMockDtSettingReconciler(t)
+		mockKSPMReconciler := newMockKspmReconciler(t)
 		mockK8sEntityReconciler := newMockDtSettingReconciler(t)
 		mockOTelColReconciler := newMockOTelColReconciler(t)
 
@@ -524,7 +524,7 @@ func TestReconcileComponents(t *testing.T) {
 		mockKubemonReconciler.EXPECT().Reconcile(anyCtx, dk, dtClient, token.Tokens(nil)).Return(kubemonconnectioninfo.ErrConnectionInfoNotReady).Once()
 		mockExtensionReconciler.EXPECT().Reconcile(anyCtx, dtClient.Images, dk).Return(nil).Once()
 		mockOTelColReconciler.EXPECT().Reconcile(anyCtx, dtClient.Images, dk).Return(nil).Once()
-		mockKSPMReconciler.EXPECT().Reconcile(anyCtx, dtClient.Settings, dk).Return(nil).Once()
+		mockKSPMReconciler.EXPECT().Reconcile(anyCtx, dtClient, dk).Return(nil).Once()
 		mockLogMonitoringReconciler.EXPECT().Reconcile(anyCtx, dtClient, dk).Return(nil).Once()
 		mockInjectionReconciler.EXPECT().Reconcile(anyCtx, dtClient, dk).Return(nil).Once()
 		mockOneAgentReconciler.EXPECT().Reconcile(anyCtx, dk, dtClient, token.Tokens(nil)).Return(nil).Once()
@@ -588,8 +588,8 @@ func TestReconcileDynaKube(t *testing.T) {
 	mockIstioReconciler := newMockIstioReconciler(t)
 	mockIstioReconciler.EXPECT().ReconcileAPIURL(anyCtx, anyDynaKube).Return(nil)
 
-	mockKSPMReconciler := newMockDtSettingReconciler(t)
-	mockKSPMReconciler.EXPECT().Reconcile(anyCtx, dtClient.Settings, anyDynaKube).Return(nil)
+	mockKSPMReconciler := newMockKspmReconciler(t)
+	mockKSPMReconciler.EXPECT().Reconcile(anyCtx, dtClient, anyDynaKube).Return(nil)
 
 	mockK8sEntityReconciler := newMockDtSettingReconciler(t)
 	mockK8sEntityReconciler.EXPECT().Reconcile(anyCtx, dtClient.Settings, anyDynaKube).Return(nil)

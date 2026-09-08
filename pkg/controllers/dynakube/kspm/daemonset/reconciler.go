@@ -8,6 +8,8 @@ import (
 	"maps"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	dtimage "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8saffinity"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
@@ -38,7 +40,26 @@ func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 	}
 }
 
-func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
+// resolveImage records the image to deploy in the status. The templates section takes
+// precedence over the image reported by the public registry.
+func resolveImage(ctx context.Context, imageClient dtimage.Client, dk *dynakube.DynaKube) error {
+	if ref := dk.KSPM().ImageRef; ref.HasImage() {
+		dk.Status.KSPM.ResolvedImage = ref.String()
+
+		return nil
+	}
+
+	imageURI, err := registry.ResolveImage(ctx, imageClient, dk.PublicRegistryOverride(), dtimage.NCC)
+	if err != nil {
+		return err
+	}
+
+	dk.Status.KSPM.ResolvedImage = imageURI
+
+	return nil
+}
+
+func (r *Reconciler) Reconcile(ctx context.Context, imageClient dtimage.Client, dk *dynakube.DynaKube) error {
 	ctx, log := logd.NewFromContext(ctx, "daemonset")
 
 	if !dk.KSPM().IsEnabled() {
@@ -54,6 +75,11 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 		}
 
 		return nil // clean-up shouldn't cause a failure
+	}
+
+	// has to run before the daemonset is generated, the container image is taken from the status
+	if err := resolveImage(ctx, imageClient, dk); err != nil {
+		return err
 	}
 
 	ds, err := r.generateDaemonSet(dk)
