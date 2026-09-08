@@ -193,9 +193,8 @@ func activeGateFeature(t *testing.T, featureName, dkName, override string) featu
 
 	dynakubeComponents.Install(builder, &secretConfig, testDynakube)
 
-	const agComponent = "activegate"
 	builder.Assess("ActiveGate StatefulSet ready",
-		k8sstatefulset.IsReady(activegate.GetActiveGateStateFulSetName(&testDynakube, agComponent), testDynakube.Namespace))
+		k8sstatefulset.IsReady(activegate.GetActiveGateStateFulSetName(&testDynakube), testDynakube.Namespace))
 	builder.Assess("ActiveGate status reports public-registry source",
 		statusSourceIsPublicRegistry(testDynakube, image.ActiveGate))
 
@@ -456,7 +455,7 @@ func allFeaturesWithImageOverridesFeature(t *testing.T, featureName, dkName stri
 
 	testDynakube := *dynakubeComponents.New(options...)
 
-	agStatefulSetName := activegate.GetActiveGateStateFulSetName(&testDynakube, "activegate")
+	agStatefulSetName := activegate.GetActiveGateStateFulSetName(&testDynakube)
 
 	dynakubeComponents.Install(builder, &secretConfig, testDynakube)
 

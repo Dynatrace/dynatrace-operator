@@ -440,6 +440,70 @@ func TestMissingKSPMImage(t *testing.T) {
 				},
 			})
 	})
+
+	t.Run("no image ref and public registry enabled, image comes from fleet management", func(t *testing.T) {
+		assertAllowed(t,
+			&dynakube.DynaKube{
+				ObjectMeta: publicRegistryDynakubeObjectMeta(),
+				Spec: dynakube.DynaKubeSpec{
+					APIURL: testAPIURL,
+					KSPM:   &kspm.Spec{},
+					ActiveGate: activegate.Spec{
+						Capabilities: []activegate.CapabilityDisplayName{
+							activegate.KubeMonCapability.DisplayName,
+						},
+					},
+				},
+			})
+	})
+
+	t.Run("no image ref and public registry enabled with override, image comes from the override registry", func(t *testing.T) {
+		assertAllowed(t,
+			&dynakube.DynaKube{
+				ObjectMeta: publicRegistryDynakubeObjectMeta(),
+				Spec: dynakube.DynaKubeSpec{
+					APIURL:                 testAPIURL,
+					KSPM:                   &kspm.Spec{},
+					PublicRegistryOverride: "my.registry.example.com",
+					ActiveGate: activegate.Spec{
+						Capabilities: []activegate.CapabilityDisplayName{
+							activegate.KubeMonCapability.DisplayName,
+						},
+					},
+				},
+			})
+	})
+
+	t.Run("image ref set and public registry enabled, the custom image wins", func(t *testing.T) {
+		assertAllowed(t,
+			&dynakube.DynaKube{
+				ObjectMeta: publicRegistryDynakubeObjectMeta(),
+				Spec: dynakube.DynaKubeSpec{
+					APIURL: testAPIURL,
+					KSPM:   &kspm.Spec{},
+					ActiveGate: activegate.Spec{
+						Capabilities: []activegate.CapabilityDisplayName{
+							activegate.KubeMonCapability.DisplayName,
+						},
+					},
+					Templates: dynakube.TemplatesSpec{
+						KSPMNodeConfigurationCollector: kspm.NodeConfigurationCollectorSpec{
+							ImageRef: image.Ref{
+								Repository: "repo/image",
+								Tag:        "version",
+							},
+						},
+					},
+				},
+			})
+	})
+}
+
+func publicRegistryDynakubeObjectMeta() metav1.ObjectMeta {
+	objectMeta := *defaultDynakubeObjectMeta.DeepCopy()
+	objectMeta.Annotations = map[string]string{exp.UsePublicRegistryKey: "true"}
+
+	return objectMeta
 }
 
 func TestMappedHostPath(t *testing.T) {

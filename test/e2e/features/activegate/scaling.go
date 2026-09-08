@@ -33,7 +33,7 @@ func WithHPA(t *testing.T) features.Feature {
 
 	dynakubeComponents.Install(builder, &secretConfig, testDynakube)
 
-	activeGateSSName := activegate.GetActiveGateStateFulSetName(&testDynakube, "activegate")
+	activeGateSSName := activegate.GetActiveGateStateFulSetName(&testDynakube)
 
 	testHPA := &autoscalingv1.HorizontalPodAutoscaler{
 		ObjectMeta: metav1.ObjectMeta{
@@ -69,7 +69,7 @@ func EnforceReplicas(t *testing.T) features.Feature {
 
 	dynakubeComponents.Install(builder, &secretConfig, testDynakube)
 
-	activeGateSSName := activegate.GetActiveGateStateFulSetName(&testDynakube, "activegate")
+	activeGateSSName := activegate.GetActiveGateStateFulSetName(&testDynakube)
 
 	builder.Assess("scale AG statefulset replicas to 3", k8sstatefulset.Update(activeGateSSName, testDynakube.Namespace, func(ss *appsv1.StatefulSet) {
 		ss.Spec.Replicas = scaleReplicas

@@ -168,7 +168,7 @@ type activeGateReconciler interface {
 }
 
 type kspmReconciler interface {
-	Reconcile(ctx context.Context, dtClient settings.Client, dk *dynakube.DynaKube) error
+	Reconcile(ctx context.Context, dtClient *dynatrace.Client, dk *dynakube.DynaKube) error
 }
 
 type injectionReconciler interface {
@@ -438,7 +438,7 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dtClient 
 
 	log.Info("start reconciling KSPM")
 
-	if err := controller.kspmReconciler.Reconcile(ctx, dtClient.Settings, dk); err != nil {
+	if err := controller.kspmReconciler.Reconcile(ctx, dtClient, dk); err != nil {
 		log.Info("could not reconcile kspm")
 
 		componentErrors = append(componentErrors, err)

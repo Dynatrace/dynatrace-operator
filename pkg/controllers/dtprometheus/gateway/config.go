@@ -22,10 +22,10 @@ var (
 	otlpID              = component.MustNewID("otlp")
 	memoryLimiterID     = component.MustNewID("memory_limiter")
 	metricStartTimeID   = component.MustNewID("metric_start_time")
-	cumulativeToDeltaID = component.MustNewID("cumulativetodelta")
-	k8sAttributesID     = component.MustNewID("k8sattributes")
+	cumulativeToDeltaID = component.MustNewID("cumulative_to_delta")
+	k8sAttributesID     = component.MustNewID("k8s_attributes")
 	transformID         = component.MustNewID("transform")
-	otlphttpID          = component.MustNewID("otlphttp")
+	otlpHTTPID          = component.MustNewID("otlp_http")
 	healthCheckID       = component.MustNewID("health_check")
 	bearerAuthID        = component.MustNewID("bearertokenauth")
 	metricsSignalID     = pipeline.NewID(pipeline.SignalMetrics)
@@ -48,7 +48,7 @@ func buildGatewayOTelConfig(data gatewayConfigData) *otelcgen.Config {
 		},
 		Processors: processors,
 		Exporters: map[component.ID]component.Config{
-			otlphttpID: buildOTLPHTTPExporter(data),
+			otlpHTTPID: buildOTLPHTTPExporter(data),
 		},
 		Extensions: map[component.ID]component.Config{
 			healthCheckID: map[string]any{
@@ -66,7 +66,7 @@ func buildGatewayOTelConfig(data gatewayConfigData) *otelcgen.Config {
 				metricsSignalID: &pipelines.PipelineConfig{
 					Receivers:  []component.ID{otlpID},
 					Processors: processorIDs,
-					Exporters:  []component.ID{otlphttpID},
+					Exporters:  []component.ID{otlpHTTPID},
 				},
 			},
 		},
@@ -80,7 +80,7 @@ func buildProcessorMap(data gatewayConfigData) (map[component.ID]component.Confi
 			"limit_percentage":       95,
 			"spike_limit_percentage": 5,
 		},
-		metricStartTimeID: nil,
+		metricStartTimeID: map[string]any{},
 		cumulativeToDeltaID: map[string]any{
 			"initial_value": "drop",
 			"max_staleness": "10m",
@@ -162,11 +162,6 @@ func buildK8sAttributesConfig() component.Config {
 		"pod_association": []map[string]any{
 			{
 				"sources": []map[string]any{
-					{"from": "resource_attribute", "name": "server.address"},
-				},
-			},
-			{
-				"sources": []map[string]any{
 					{"from": "resource_attribute", "name": "k8s.pod.name"},
 					{"from": "resource_attribute", "name": "k8s.namespace.name"},
 				},
@@ -221,20 +216,20 @@ func buildTransformConfig(resourceAttributes map[string]string) component.Config
 		{
 			"context": "resource",
 			"statements": []string{
-				`set(attributes["k8s.workload.name"], attributes["k8s.statefulset.name"]) where IsString(attributes["k8s.statefulset.name"])`,
 				`set(attributes["k8s.workload.name"], attributes["k8s.replicaset.name"]) where IsString(attributes["k8s.replicaset.name"])`,
+				`set(attributes["k8s.workload.name"], attributes["k8s.statefulset.name"]) where IsString(attributes["k8s.statefulset.name"])`,
 				`set(attributes["k8s.workload.name"], attributes["k8s.job.name"]) where IsString(attributes["k8s.job.name"])`,
 				`set(attributes["k8s.workload.name"], attributes["k8s.deployment.name"]) where IsString(attributes["k8s.deployment.name"])`,
 				`set(attributes["k8s.workload.name"], attributes["k8s.daemonset.name"]) where IsString(attributes["k8s.daemonset.name"])`,
 				`set(attributes["k8s.workload.name"], attributes["k8s.cronjob.name"]) where IsString(attributes["k8s.cronjob.name"])`,
-				`set(attributes["k8s.workload.kind"], "statefulset") where IsString(attributes["k8s.statefulset.name"])`,
 				`set(attributes["k8s.workload.kind"], "replicaset") where IsString(attributes["k8s.replicaset.name"])`,
+				`set(attributes["k8s.workload.kind"], "statefulset") where IsString(attributes["k8s.statefulset.name"])`,
 				`set(attributes["k8s.workload.kind"], "job") where IsString(attributes["k8s.job.name"])`,
 				`set(attributes["k8s.workload.kind"], "deployment") where IsString(attributes["k8s.deployment.name"])`,
 				`set(attributes["k8s.workload.kind"], "daemonset") where IsString(attributes["k8s.daemonset.name"])`,
 				`set(attributes["k8s.workload.kind"], "cronjob") where IsString(attributes["k8s.cronjob.name"])`,
-				`set(attributes["k8s.workload.uid"], attributes["k8s.statefulset.uid"]) where IsString(attributes["k8s.statefulset.uid"])`,
 				`set(attributes["k8s.workload.uid"], attributes["k8s.replicaset.uid"]) where IsString(attributes["k8s.replicaset.uid"])`,
+				`set(attributes["k8s.workload.uid"], attributes["k8s.statefulset.uid"]) where IsString(attributes["k8s.statefulset.uid"])`,
 				`set(attributes["k8s.workload.uid"], attributes["k8s.job.uid"]) where IsString(attributes["k8s.job.uid"])`,
 				`set(attributes["k8s.workload.uid"], attributes["k8s.deployment.uid"]) where IsString(attributes["k8s.deployment.uid"])`,
 				`set(attributes["k8s.workload.uid"], attributes["k8s.daemonset.uid"]) where IsString(attributes["k8s.daemonset.uid"])`,
@@ -260,6 +255,12 @@ func buildTransformConfig(resourceAttributes map[string]string) component.Config
 				`delete_key(attributes, "otel.signal")`,
 				`delete_key(attributes, "otel.scope.name")`,
 				`delete_key(attributes, "otel.scope.version")`,
+			},
+		},
+		{
+			"context": "resource",
+			"statements": []string{
+				`set(attributes["k8s.cluster.name"], "${env:K8S_CLUSTER_NAME}") where attributes["k8s.cluster.name"] == nil and Len("${env:K8S_CLUSTER_NAME}") > 0`,
 			},
 		},
 	}

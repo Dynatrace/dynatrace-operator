@@ -12,12 +12,16 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
+	sharedimage "github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
+	dtimage "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/version"
+	imageclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/image"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -32,6 +36,11 @@ import (
 const (
 	dkName      = "test-name"
 	dkNamespace = "test-namespace"
+
+	testImageRepo         = "test-repo/dynatrace-k8s-node-config-collector"
+	testImageTag          = "1.289.0"
+	testFleetMgmtImageURI = "registry.example.com/dynatrace-k8s-node-config-collector:1.300.0"
+	testRegistryOverride  = "my.registry.example.com"
 )
 
 func TestReconcile(t *testing.T) {
@@ -44,7 +53,7 @@ func TestReconcile(t *testing.T) {
 		mockK8sClient := fake.NewClient()
 
 		reconciler := NewReconciler(mockK8sClient, mockK8sClient)
-		err := reconciler.Reconcile(ctx, dk)
+		err := reconciler.Reconcile(ctx, imageclientmock.NewClient(t), dk)
 		require.NoError(t, err)
 
 		condition := meta.FindStatusCondition(*dk.Conditions(), conditionType)
@@ -54,7 +63,7 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, k8sconditions.DaemonSetSetCreatedReason, condition.Reason)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
 
-		err = reconciler.Reconcile(t.Context(), dk)
+		err = reconciler.Reconcile(t.Context(), imageclientmock.NewClient(t), dk)
 		require.NoError(t, err)
 
 		var daemonset appsv1.DaemonSet
@@ -77,7 +86,7 @@ func TestReconcile(t *testing.T) {
 		k8sconditions.SetDaemonSetCreated(dk.Conditions(), conditionType, "this is a test")
 
 		reconciler := NewReconciler(mockK8sClient, mockK8sClient)
-		err := reconciler.Reconcile(ctx, dk)
+		err := reconciler.Reconcile(ctx, imageclientmock.NewClient(t), dk)
 
 		require.NoError(t, err)
 		assert.Empty(t, *dk.Conditions())
@@ -97,13 +106,94 @@ func TestReconcile(t *testing.T) {
 
 		reconciler := NewReconciler(boomClient, boomClient)
 
-		err := reconciler.Reconcile(t.Context(), dk)
+		err := reconciler.Reconcile(t.Context(), imageclientmock.NewClient(t), dk)
 
 		require.Error(t, err)
 		require.Len(t, *dk.Conditions(), 1)
 		condition := meta.FindStatusCondition(*dk.Conditions(), conditionType)
 		assert.Equal(t, k8sconditions.KubeAPIErrorReason, condition.Reason)
 		assert.Equal(t, metav1.ConditionFalse, condition.Status)
+	})
+}
+
+func TestImageResolution(t *testing.T) {
+	t.Cleanup(version.DisableCacheForTest(123))
+
+	ctx := t.Context()
+	anyCtx := mock.MatchedBy(func(context.Context) bool { return true })
+
+	reconcileDaemonSet := func(t *testing.T, dk *dynakube.DynaKube, imageClient *imageclientmock.Client) (appsv1.DaemonSet, error) {
+		t.Helper()
+
+		mockK8sClient := fake.NewClient()
+
+		err := NewReconciler(mockK8sClient, mockK8sClient).Reconcile(ctx, imageClient, dk)
+		if err != nil {
+			return appsv1.DaemonSet{}, err
+		}
+
+		var daemonset appsv1.DaemonSet
+
+		err = mockK8sClient.Get(ctx, types.NamespacedName{Name: dk.KSPM().GetDaemonSetName(), Namespace: dk.Namespace}, &daemonset)
+		require.NoError(t, err)
+
+		return daemonset, nil
+	}
+
+	t.Run("custom image-ref is used as-is, fleet management is not called", func(t *testing.T) {
+		dk := createDynakube(true)
+
+		// a mock without expectations fails the test if fleet management gets called
+		daemonset, err := reconcileDaemonSet(t, dk, imageclientmock.NewClient(t))
+		require.NoError(t, err)
+
+		assert.Equal(t, testImageRepo+":"+testImageTag, dk.Status.KSPM.ResolvedImage)
+		assert.Equal(t, testImageRepo+":"+testImageTag, daemonset.Spec.Template.Spec.Containers[0].Image)
+	})
+
+	t.Run("no image-ref takes the image from fleet management using the default registry", func(t *testing.T) {
+		dk := createDynakube(true)
+		dk.Spec.Templates.KSPMNodeConfigurationCollector.ImageRef = sharedimage.Ref{}
+
+		imageClient := imageclientmock.NewClient(t)
+		imageClient.EXPECT().GetComponentLatestInfo(anyCtx, dtimage.NCC, "").
+			Return(&dtimage.Info{URI: testFleetMgmtImageURI}, nil).Once()
+
+		daemonset, err := reconcileDaemonSet(t, dk, imageClient)
+		require.NoError(t, err)
+
+		assert.Equal(t, testFleetMgmtImageURI, dk.Status.KSPM.ResolvedImage)
+		assert.Equal(t, testFleetMgmtImageURI, daemonset.Spec.Template.Spec.Containers[0].Image)
+	})
+
+	t.Run("no image-ref takes the image from fleet management using the override registry", func(t *testing.T) {
+		dk := createDynakube(true)
+		dk.Spec.Templates.KSPMNodeConfigurationCollector.ImageRef = sharedimage.Ref{}
+		dk.Spec.PublicRegistryOverride = testRegistryOverride
+
+		imageClient := imageclientmock.NewClient(t)
+		imageClient.EXPECT().GetComponentLatestInfo(anyCtx, dtimage.NCC, testRegistryOverride).
+			Return(&dtimage.Info{URI: testFleetMgmtImageURI}, nil).Once()
+
+		daemonset, err := reconcileDaemonSet(t, dk, imageClient)
+		require.NoError(t, err)
+
+		assert.Equal(t, testFleetMgmtImageURI, daemonset.Spec.Template.Spec.Containers[0].Image)
+	})
+
+	t.Run("failing image resolution is propagated and leaves the status empty", func(t *testing.T) {
+		dk := createDynakube(true)
+		dk.Spec.Templates.KSPMNodeConfigurationCollector.ImageRef = sharedimage.Ref{}
+
+		expectedErr := errors.New("fleet management is unreachable")
+
+		imageClient := imageclientmock.NewClient(t)
+		imageClient.EXPECT().GetComponentLatestInfo(anyCtx, dtimage.NCC, "").Return(nil, expectedErr).Once()
+
+		_, err := reconcileDaemonSet(t, dk, imageClient)
+		require.ErrorIs(t, err, expectedErr)
+
+		assert.Empty(t, dk.Status.KSPM.ResolvedImage)
 	})
 }
 
@@ -311,6 +401,11 @@ func createDynakube(isEnabled bool) *dynakube.DynaKube {
 			ActiveGate: activegate.Spec{
 				Capabilities: []activegate.CapabilityDisplayName{
 					activegate.KubeMonCapability.DisplayName,
+				},
+			},
+			Templates: dynakube.TemplatesSpec{
+				KSPMNodeConfigurationCollector: kspm.NodeConfigurationCollectorSpec{
+					ImageRef: sharedimage.Ref{Repository: testImageRepo, Tag: testImageTag},
 				},
 			},
 		},
