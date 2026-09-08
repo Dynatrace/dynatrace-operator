@@ -773,4 +773,3 @@ So here are some basic guidelines:
   // ✗ unnecessary method — no receiver state used
   func (h *Helper) WaitForReplicas(name string, replicas int) features.Func { ... }
   ```
-
