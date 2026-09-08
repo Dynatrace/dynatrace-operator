@@ -134,6 +134,7 @@ func FeatureRestartTriggers(t *testing.T) features.Feature {
 	testDynakube := *componentDynakube.New(
 		componentDynakube.WithAPIURL(secretConfig.APIURL),
 		componentDynakube.WithKubernetesMonitoringRegistration(),
+		componentDynakube.WithUsePublicRegistryFF(),
 	)
 
 	componentDynakube.Install(builder, &secretConfig, testDynakube)
@@ -147,8 +148,8 @@ func FeatureRestartTriggers(t *testing.T) features.Feature {
 	builder.Assess("rotate authtoken secret",
 		k8ssecret.Delete(k8ssecret.New(testDynakube.KubernetesMonitoring().GetAuthTokenSecretName(), testDynakube.Namespace, nil)))
 
-	builder.Assess("kubemon statefulset re-rolls after secret rotation",
-		k8sstatefulset.WaitFor(testDynakube.KubernetesMonitoring().GetStatefulSetName(), testDynakube.Namespace))
+	builder.Assess("KubernetesMonitoringAvailable condition is False immediately after secret rotation",
+		componentDynakube.WaitForCondition(testDynakube, kubemon.KubeMonAvailableConditionType, metav1.ConditionFalse))
 
 	builder.Assess("KubernetesMonitoringAvailable condition is True after rotation",
 		componentDynakube.WaitForCondition(testDynakube, kubemon.KubeMonAvailableConditionType, metav1.ConditionTrue))
