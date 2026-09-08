@@ -56,7 +56,7 @@ func FeatureSplitAG(t *testing.T) features.Feature {
 		k8ssecret.Exists(testDynakube.KubernetesMonitoring().GetTenantSecretName(), testDynakube.Namespace))
 
 	builder.Assess("KubernetesMonitoringAvailable condition is True",
-		componentDynakube.WaitForCondition(testDynakube, kubemon.KubeMonAvailableConditionType, metav1.ConditionTrue))
+		componentDynakube.CheckCondition(testDynakube, kubemon.KubeMonAvailableConditionType, metav1.ConditionTrue))
 
 	// remove kubemon from dynakube and make sure it was cleaned up properly.
 	// Fetch the live cluster state first so fields like CustomPullSecret that were
@@ -98,7 +98,6 @@ func FeatureRestartTriggers(t *testing.T) features.Feature {
 	testDynakube := *componentDynakube.New(
 		componentDynakube.WithAPIURL(secretConfig.APIURL),
 		componentDynakube.WithKubernetesMonitoringRegistration(),
-		componentDynakube.WithUsePublicRegistryFF(),
 	)
 
 	componentDynakube.Install(builder, &secretConfig, testDynakube)
@@ -107,7 +106,7 @@ func FeatureRestartTriggers(t *testing.T) features.Feature {
 		k8sstatefulset.IsReady(testDynakube.KubernetesMonitoring().GetStatefulSetName(), testDynakube.Namespace))
 
 	builder.Assess("KubernetesMonitoringAvailable condition is True",
-		componentDynakube.WaitForCondition(testDynakube, kubemon.KubeMonAvailableConditionType, metav1.ConditionTrue))
+		componentDynakube.CheckCondition(testDynakube, kubemon.KubeMonAvailableConditionType, metav1.ConditionTrue))
 
 	builder.Assess("rotate authtoken secret",
 		k8ssecret.Delete(k8ssecret.New(testDynakube.KubernetesMonitoring().GetAuthTokenSecretName(), testDynakube.Namespace, nil)))

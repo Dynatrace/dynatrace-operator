@@ -109,18 +109,33 @@ func VerifyStartup(builder *features.FeatureBuilder, level features.Level, dk dy
 		WaitForPhase(dk, status.Running))
 }
 
+func conditionStatusMatch(condType string, expectedStatus metav1.ConditionStatus) func(k8s.Object) bool {
+	return func(object k8s.Object) bool {
+		d, ok := object.(*dynakube.DynaKube)
+		if !ok {
+			return false
+		}
+		cond := meta.FindStatusCondition(d.Status.Conditions, condType)
+
+		return cond != nil && cond.Status == expectedStatus
+	}
+}
+
+func CheckCondition(dk dynakube.DynaKube, condType string, expectedStatus metav1.ConditionStatus) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resources := envConfig.Client().Resources()
+		done, err := conditions.New(resources).ResourceMatch(&dk, conditionStatusMatch(condType, expectedStatus))(ctx)
+		require.NoError(t, err)
+		require.True(t, done)
+
+		return ctx
+	}
+}
+
 func WaitForCondition(dk dynakube.DynaKube, condType string, expectedStatus metav1.ConditionStatus) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resources := envConfig.Client().Resources()
-		err := wait.For(conditions.New(resources).ResourceMatch(&dk, func(object k8s.Object) bool {
-			d, ok := object.(*dynakube.DynaKube)
-			if !ok {
-				return false
-			}
-			cond := meta.FindStatusCondition(d.Status.Conditions, condType)
-
-			return cond != nil && cond.Status == expectedStatus
-		}), wait.WithTimeout(5*time.Minute))
+		err := wait.For(conditions.New(resources).ResourceMatch(&dk, conditionStatusMatch(condType, expectedStatus)), wait.WithTimeout(5*time.Minute))
 		require.NoError(t, err)
 
 		return ctx
