@@ -11,11 +11,13 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/dtprometheus"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -218,6 +220,33 @@ func Test_setPhase(t *testing.T) {
 			} else {
 				require.ErrorIs(t, gotErr, tt.expectedErr)
 			}
+		})
+	}
+}
+
+func Test_dynaKubeProxyChanged(t *testing.T) {
+	tests := []struct {
+		name     string
+		oldProxy *value.Source
+		newProxy *value.Source
+		expect   bool
+	}{
+		{"both nil", nil, nil, false},
+		{"old nil", nil, &value.Source{Value: "test"}, true},
+		{"new nil", &value.Source{Value: "test"}, nil, true},
+		{"value equal", &value.Source{Value: "test"}, &value.Source{Value: "test"}, false},
+		{"value diff", &value.Source{Value: "foo"}, &value.Source{Value: "bar"}, true},
+		{"valueFrom equal", &value.Source{ValueFrom: "test"}, &value.Source{ValueFrom: "test"}, false},
+		{"valueFrom diff", &value.Source{ValueFrom: "foo"}, &value.Source{ValueFrom: "bar"}, true},
+		{"field diff", &value.Source{Value: "test"}, &value.Source{ValueFrom: "test"}, true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := dynaKubeProxyChanged(
+				&dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{Proxy: tt.oldProxy}},
+				&dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{Proxy: tt.newProxy}},
+			)
+			assert.Equal(t, tt.expect, got)
 		})
 	}
 }

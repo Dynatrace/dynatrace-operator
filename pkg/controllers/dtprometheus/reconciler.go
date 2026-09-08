@@ -255,11 +255,8 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 			&dynakube.DynaKube{},
 			// Map requests from DynaKube to DTPrometheus
 			handler.EnqueueRequestsFromMapFunc(newDTPrometheusFromDynaKubeMapper(mgr.GetClient())),
-			// Filter out DynaKube changes that are neither a phase change nor a resource-attributes change
-			builder.WithPredicates(newDynaKubePredicate(
-				phaseChecker,
-				resourceAttributesChecker,
-				resourceTokenNameChangedChecker)),
+			// Filter out any DynaKube changes that are not relevant for DTPrometheus
+			builder.WithPredicates(newDynaKubeChangedPredicate()),
 		).
 		Named("dtprometheus").
 		Complete(r)
@@ -293,7 +290,8 @@ func newDTPrometheusFromDynaKubeMapper(c client.Client) handler.MapFunc {
 	}
 }
 
-func newDynaKubePredicate(checker ...func(oldDK, newDK *dynakube.DynaKube) bool) predicate.Funcs {
+// Create [predicate.Funcs] that return true when DynaKube changed in a way that's relevant for a DTPrometheus.
+func newDynaKubeChangedPredicate() predicate.Funcs {
 	return predicate.Funcs{
 		CreateFunc: func(event.TypedCreateEvent[client.Object]) bool {
 			return false
@@ -312,11 +310,12 @@ func newDynaKubePredicate(checker ...func(oldDK, newDK *dynakube.DynaKube) bool)
 				return false
 			}
 
-			checked := false
-			for _, check := range checker {
-				checked = checked || check(oldDK, newDK)
-			}
-			return checked
+			return oldDK.Status.Phase != newDK.Status.Phase ||
+				oldDK.Tokens() != newDK.Tokens() ||
+				oldDK.Spec.TrustedCAs != newDK.Spec.TrustedCAs ||
+				oldDK.GetDynatraceAPIRequestThreshold() != newDK.GetDynatraceAPIRequestThreshold() ||
+				dynaKubeProxyChanged(oldDK, newDK) ||
+				!maps.Equal(oldDK.Spec.ResourceAttributes, newDK.Spec.ResourceAttributes)
 		},
 		GenericFunc: func(event.TypedGenericEvent[client.Object]) bool {
 			return false
@@ -324,14 +323,14 @@ func newDynaKubePredicate(checker ...func(oldDK, newDK *dynakube.DynaKube) bool)
 	}
 }
 
-func phaseChecker(oldDK, newDK *dynakube.DynaKube) bool {
-	return oldDK.Status.Phase != newDK.Status.Phase
-}
+ffunc dynaKubeProxyChanged(oldDK, newDK *dynakube.DynaKube) bool {
+	if (oldDK.Spec.Proxy != nil) != (newDK.Spec.Proxy != nil) {
+		return true
+	}
 
-func resourceAttributesChecker(oldDK, newDK *dynakube.DynaKube) bool {
-	return !maps.Equal(oldDK.Spec.ResourceAttributes, newDK.Spec.ResourceAttributes)
-}
+	if oldDK.Spec.Proxy != nil {
+		return *oldDK.Spec.Proxy != *newDK.Spec.Proxy
+	}
 
-func resourceTokenNameChangedChecker(oldDK, newDK *dynakube.DynaKube) bool {
-	return oldDK.Tokens() != newDK.Tokens()
+	return false
 }
