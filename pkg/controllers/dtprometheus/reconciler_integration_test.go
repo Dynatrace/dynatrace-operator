@@ -279,7 +279,7 @@ func TestSetupWithManager(t *testing.T) {
 	})
 
 	t.Run("DynaKube resource attributes change triggers reconcile", func(t *testing.T) {
-		dtprom, key := createDTPrometheus(t, "dtprom-dynakube-resattrs", "dk-resattrs")
+		dtprom, key := createDTPrometheus(t)
 
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{Name: dtprom.Spec.DynaKubeName, Namespace: dtprom.Namespace},

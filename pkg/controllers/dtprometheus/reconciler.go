@@ -323,7 +323,7 @@ func newDynaKubeChangedPredicate() predicate.Funcs {
 	}
 }
 
-ffunc dynaKubeProxyChanged(oldDK, newDK *dynakube.DynaKube) bool {
+func dynaKubeProxyChanged(oldDK, newDK *dynakube.DynaKube) bool {
 	if (oldDK.Spec.Proxy != nil) != (newDK.Spec.Proxy != nil) {
 		return true
 	}
