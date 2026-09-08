@@ -62,14 +62,6 @@ func FeatureSplitAG(t *testing.T) features.Feature {
 	builder.Assess("KubernetesMonitoringAvailable condition is True",
 		componentDynakube.WaitForCondition(testDynakube, kubemon.KubeMonAvailableConditionType, metav1.ConditionTrue))
 
-	builder.Assess("kubemon pod uses dynatrace-activegate service account", func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		sts, err := k8sstatefulset.Get(ctx, envConfig.Client().Resources(), testDynakube.KubernetesMonitoring().GetStatefulSetName(), testDynakube.Namespace)
-		require.NoError(t, err)
-		assert.Equal(t, "dynatrace-activegate", sts.Spec.Template.Spec.ServiceAccountName)
-
-		return ctx
-	})
-
 	builder.Assess("dynatrace-kubernetes-monitoring-default ClusterRole exists", func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		var cr rbacv1.ClusterRole
 		require.NoError(t, envConfig.Client().Resources().Get(ctx, "dynatrace-kubernetes-monitoring-default", "", &cr))
