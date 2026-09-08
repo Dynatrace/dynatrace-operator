@@ -9,6 +9,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/resourceattributes"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/sanitize"
 	corev1 "k8s.io/api/core/v1"
@@ -57,7 +58,7 @@ func (b *builder) initContainerArguments() []string {
 
 	resourceAttrs := b.dk.OneAgent().GetResourceAttributes()
 	for _, k := range slices.Sorted(maps.Keys(resourceAttrs)) {
-		attributes = append(attributes, k+"="+resourceAttrs[k])
+		attributes = append(attributes, resourceattributes.SanitizeKey(k)+"="+sanitize.CommandLineArg(resourceAttrs[k]))
 	}
 
 	initArgs := []string{

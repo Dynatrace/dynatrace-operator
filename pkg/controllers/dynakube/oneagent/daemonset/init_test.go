@@ -256,7 +256,7 @@ func TestInitContainerArguments(t *testing.T) {
 		}
 		dsBuilder := builder{dk: dk}
 		attributes := strings.Split(dsBuilder.initContainerArguments()[4], ",")
-		assert.Contains(t, attributes, "key=value")
+		assert.Contains(t, attributes, "ke_y=value")
 	})
 }
 

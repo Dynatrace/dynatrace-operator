@@ -117,7 +117,7 @@ func Test_getInitArgs(t *testing.T) {
 			name:        "sanitize args",
 			expectedLen: expectedBaseInitArgsLen,
 			resourceAttrs: map[string]string{
-				"foo": "a\ntest",
+				"foo_": "a\ntest",
 			},
 			templateArgs: []string{
 				"-p bar=b\ntest",

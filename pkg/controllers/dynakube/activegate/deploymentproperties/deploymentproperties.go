@@ -8,6 +8,9 @@ import (
 	"maps"
 	"slices"
 	"strings"
+
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/resourceattributes"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/sanitize"
 )
 
 func BuildContent(attrs map[string]string) string {
@@ -23,7 +26,7 @@ func BuildContent(attrs map[string]string) string {
 	sb.WriteString("[resource_attributes]\n")
 
 	for _, k := range keys {
-		fmt.Fprintf(&sb, "%s = %s\n", k, attrs[k])
+		fmt.Fprintf(&sb, "%s = %s\n", resourceattributes.SanitizeKey(k), sanitize.CommandLineArg(attrs[k]))
 	}
 
 	return sb.String()

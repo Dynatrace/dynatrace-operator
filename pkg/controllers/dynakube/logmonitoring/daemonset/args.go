@@ -9,6 +9,7 @@ import (
 	"slices"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/resourceattributes"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/sanitize"
 )
 
@@ -32,7 +33,7 @@ func getInitArgs(dk dynakube.DynaKube) []string {
 
 	attrs := dk.GetResourceAttributes()
 	for _, key := range slices.Sorted(maps.Keys(attrs)) {
-		baseArgs = append(baseArgs, fmt.Sprintf("-p %s=%s", sanitize.CommandLineArg(key), sanitize.CommandLineArg(attrs[key])))
+		baseArgs = append(baseArgs, fmt.Sprintf("-p %s=%s", resourceattributes.SanitizeKey(key), sanitize.CommandLineArg(attrs[key])))
 	}
 
 	return append(baseArgs, sanitize.CommandLineArgs(dk.LogMonitoring().Template().Args)...)

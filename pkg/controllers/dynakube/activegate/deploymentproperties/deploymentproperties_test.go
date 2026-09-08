@@ -34,4 +34,12 @@ func TestBuildContent(t *testing.T) {
 		content := BuildContent(attrs)
 		assert.Equal(t, "[resource_attributes]\naaa = first\nmmm = middle\nzzz = last\n", content)
 	})
+
+	t.Run("sanitize input", func(t *testing.T) {
+		attrs := map[string]string{
+			"foo\nbar": "sa\nnit\riz\ted",
+		}
+		content := BuildContent(attrs)
+		assert.Equal(t, "[resource_attributes]\nfoo_bar = sanitized\n", content)
+	})
 }
