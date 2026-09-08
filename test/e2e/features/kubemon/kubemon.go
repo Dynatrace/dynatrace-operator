@@ -51,7 +51,7 @@ func FeatureSplitAG(t *testing.T) features.Feature {
 		k8sstatefulset.IsReady(agHelper.GetActiveGateStateFulSetName(&testDynakube), testDynakube.Namespace))
 
 	builder.Assess("kubemon statefulset is ready",
-		k8sstatefulset.WaitFor(testDynakube.KubernetesMonitoring().GetStatefulSetName(), testDynakube.Namespace))
+		k8sstatefulset.IsReady(testDynakube.KubernetesMonitoring().GetStatefulSetName(), testDynakube.Namespace))
 
 	builder.Assess("kubemon authtoken secret exists",
 		k8ssecret.Exists(testDynakube.KubernetesMonitoring().GetAuthTokenSecretName(), testDynakube.Namespace))
@@ -147,7 +147,7 @@ func FeatureRestartTriggers(t *testing.T) features.Feature {
 	componentDynakube.Install(builder, &secretConfig, testDynakube)
 
 	builder.Assess("kubemon statefulset is ready",
-		k8sstatefulset.WaitFor(testDynakube.KubernetesMonitoring().GetStatefulSetName(), testDynakube.Namespace))
+		k8sstatefulset.IsReady(testDynakube.KubernetesMonitoring().GetStatefulSetName(), testDynakube.Namespace))
 
 	builder.Assess("KubernetesMonitoringAvailable condition is True",
 		componentDynakube.WaitForCondition(testDynakube, kubemon.KubeMonAvailableConditionType, metav1.ConditionTrue))
