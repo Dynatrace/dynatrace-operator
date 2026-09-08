@@ -62,6 +62,30 @@ If the bug flew under the radar and was discovered later:
 - Cherry-picking 1 commit is easier than cherry-picking 2 commits where the 2nd commit is the bugfix for the 1st commit, but you have several unrelated commits between them.
 - Linking related changes is always nicer for tracking, and helps with cherry-picks for cases where using `revert` would have been an overkill.
 
+### Code Review
+
+[Common guidelines](https://go.dev/wiki/CodeReviewComments)
+
+#### CODEOWNERS flow
+
+CI enforces that the relevant owners approve before merge.
+
+- **(CODEOWNER)** You will be automatically requested — this is your primary responsibility. Be prompt; if you cannot review soon, flag it to the author early so they are not left waiting. If you are one of multiple CODEOWNER groups, you only need to review the files you own.
+- **(Non-CODEOWNER)** Feel free to review, but prioritize PRs where you are a CODEOWNER.
+- **(PR author)** Wait for all CODEOWNERs — 1 approval unblocks CI, but all owners reviewing is the goal and everyone learns from it. Give reviewers time. If a CODEOWNER is unavailable and the merge cannot wait, you may merge — they will still see the notifications and can comment on the merged PR if they spot something. You can also manually request additional reviewers if you feel a specific person's input is needed.
+- **(Wrong CODEOWNER mapping)** File-to-area ownership is still evolving — if you receive a request for files you should not own, open a PR updating `CODEOWNERS` and ask a maintainer to review.
+
+#### General guidelines
+
+- (✅) Resolving a comment is the duty of the commenter. (after the comment was addressed)
+- (😬) When nitpicking/complaining always provide possible solutions, otherwise avoid commenting about it.
+- (🧑‍💻) Run the PR locally/on-your-environment if possible.
+  - (🚨) If testing steps not-clear/not-provided notify the creator to improve them
+  - (🚦) After running it "locally" notify the creator by commenting `Ran it, practically LGTM` (or something similar) or `Found possible issue ...`
+- (📝) Enforce the [coding style guide](doc/coding-style-guide.md), by linking to it. (to the specific line)
+  - (🙋) If you feel something is missing/wrong in the style-guide, discuss it with the team, and create PR for it if it was accepted.
+- (💥) The `Update branch` button should be pressed only by the creator of the PR, so the reviewer does not cause unexpected `Push rejected` for the creator.
+
 ## Quick Start
 
 > [!IMPORTANT]
