@@ -34,7 +34,7 @@ RUN cyclonedx-gomod app -licenses -assert-licenses -json -main cmd/ -output ./bu
 
 # platform is required, otherwise the copy command will copy the wrong architecture files, don't trust GitHub Actions linting warnings
 FROM --platform=$TARGETPLATFORM registry.access.redhat.com/ubi9-micro:9.8-1787778798@sha256:f332c99eb8f798a8486821c91937f10ad64ee83d7e739303be2df051040918f6 AS base
-FROM --platform=$TARGETPLATFORM registry.access.redhat.com/ubi9:9.8-1788245065@sha256:25a147defd01e19674714f55d17538c8dbe55d8c305fa157ecc3f9c8977b05b6 AS dependency
+FROM --platform=$TARGETPLATFORM registry.access.redhat.com/ubi9:9.8-1788921549@sha256:3c7750aeb6914536fcd45db3da04e707ab770de6681d450e0bab178c4cf5bea0 AS dependency
 RUN mkdir -p /tmp/rootfs-dependency
 COPY --from=base / /tmp/rootfs-dependency
 RUN dnf install --installroot /tmp/rootfs-dependency \
