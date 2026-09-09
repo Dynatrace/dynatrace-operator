@@ -785,7 +785,7 @@ func TestReconcileBuildsStatefulSetVolumes(t *testing.T) {
 		proxyMount, err := k8smount.Find(container.VolumeMounts, agconsts.ProxySecretVolumeName)
 		require.NoError(t, err)
 		assert.True(t, proxyMount.ReadOnly)
-		assert.Equal(t, agconsts.ProxySecretMountPath, proxyMount.SubPath)
+		assert.Equal(t, agconsts.ProxySecretMountPath, proxyMount.MountPath)
 	})
 }
 

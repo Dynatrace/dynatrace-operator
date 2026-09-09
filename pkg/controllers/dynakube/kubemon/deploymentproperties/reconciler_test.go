@@ -134,7 +134,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, r.Reconcile(t.Context(), dk))
 
 		secret := getDeploymentPropertiesSecret(t, clt, dk)
-		expectedContent := agconsts.PropertiesClientInternalSection + "\n" + agconsts.PropertiesNoProxyFieldName + "=" + testNoProxyValue
+		expectedContent := agconsts.PropertiesClientInternalSection + "\n" + agconsts.PropertiesNoProxyFieldName + "=" + testNoProxyValue + "\n"
 		assert.Equal(t, expectedContent, string(secret.Data[agconsts.DeploymentPropertiesFileName]))
 	})
 
@@ -146,7 +146,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, r.Reconcile(t.Context(), dk))
 
 		secret := getDeploymentPropertiesSecret(t, clt, dk)
-		expectedContent := testDataValue + agconsts.PropertiesClientInternalSection + "\n" + agconsts.PropertiesNoProxyFieldName + "=" + testNoProxyValue
+		expectedContent := testDataValue + agconsts.PropertiesClientInternalSection + "\n" + agconsts.PropertiesNoProxyFieldName + "=" + testNoProxyValue + "\n"
 		assert.Equal(t, expectedContent, string(secret.Data[agconsts.DeploymentPropertiesFileName]))
 	})
 
@@ -158,7 +158,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, r.Reconcile(t.Context(), dk))
 
 		secret := getDeploymentPropertiesSecret(t, clt, dk)
-		expectedContent := agconsts.PropertiesClientInternalSection + "\n" + agconsts.PropertiesNoProxyFieldName + "=svc.cluster.local|10.0.0.0/8"
+		expectedContent := agconsts.PropertiesClientInternalSection + "\n" + agconsts.PropertiesNoProxyFieldName + "=svc.cluster.local|10.0.0.0/8\n"
 		assert.Equal(t, expectedContent, string(secret.Data[agconsts.DeploymentPropertiesFileName]))
 	})
 
