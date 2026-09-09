@@ -30,7 +30,7 @@ func FeatureSplitAG(t *testing.T) features.Feature {
 
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
-	builder.Setup(helpers.ToFeatureFunc(componentOperator.InstallLocal(false, componentOperator.EnableKubemonOperand()...), true))
+	builder.Setup(helpers.ToFeatureFunc(componentOperator.InstallLocal(false, componentOperator.EnableKubemonOperand()), true))
 
 	testDynakube := *componentDynakube.New(
 		componentDynakube.WithAPIURL(secretConfig.APIURL),
@@ -85,7 +85,7 @@ func FeatureSplitAG(t *testing.T) features.Feature {
 	builder.Assess("generic activegate statefulset is still ready",
 		k8sstatefulset.IsReady(agHelper.GetActiveGateStateFulSetName(&testDynakube), testDynakube.Namespace))
 
-	builder.Teardown(helpers.ToFeatureFunc(componentOperator.InstallLocal(false, componentOperator.DisableKubemonOperand()...), false))
+	builder.Teardown(helpers.ToFeatureFunc(componentOperator.InstallLocal(false, componentOperator.DisableKubemonOperand()), false))
 
 	return builder.Feature()
 }
@@ -95,7 +95,7 @@ func FeatureRestartTriggers(t *testing.T) features.Feature {
 
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
-	builder.Setup(helpers.ToFeatureFunc(componentOperator.InstallLocal(false, componentOperator.EnableKubemonOperand()...), true))
+	builder.Setup(helpers.ToFeatureFunc(componentOperator.InstallLocal(false, componentOperator.EnableKubemonOperand()), true))
 
 	testDynakube := *componentDynakube.New(
 		componentDynakube.WithAPIURL(secretConfig.APIURL),
@@ -119,7 +119,7 @@ func FeatureRestartTriggers(t *testing.T) features.Feature {
 	builder.Assess("KubernetesMonitoringAvailable condition is True after rotation",
 		componentDynakube.WaitForCondition(testDynakube, kubemon.KubeMonAvailableConditionType, metav1.ConditionTrue))
 
-	builder.Teardown(helpers.ToFeatureFunc(componentOperator.InstallLocal(false, componentOperator.DisableKubemonOperand()...), false))
+	builder.Teardown(helpers.ToFeatureFunc(componentOperator.InstallLocal(false, componentOperator.DisableKubemonOperand()), false))
 
 	return builder.Feature()
 }

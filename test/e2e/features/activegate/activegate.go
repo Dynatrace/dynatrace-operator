@@ -73,7 +73,7 @@ func Feature(t *testing.T, proxySpec *value.Source) features.Feature {
 	proxy.CutOffDynatraceNamespace(builder, proxySpec)
 	proxy.IsDynatraceNamespaceCutOff(builder, testDynakube)
 
-	builder.Setup(helpers.ToFeatureFunc(componentOperator.InstallLocal(false, componentOperator.EnableKubemonOperand()...), true))
+	builder.Setup(helpers.ToFeatureFunc(componentOperator.InstallLocal(false, componentOperator.EnableKubemonOperand()), true))
 
 	// Register actual test
 	dynakubeComponents.Install(builder, &secretConfig, testDynakube)
