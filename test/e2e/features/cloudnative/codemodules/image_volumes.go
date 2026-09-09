@@ -36,5 +36,4 @@ func ImageVolume(t *testing.T) features.Feature {
 	builder.Teardown(sampleApp.Uninstall())
 
 	return builder.Feature()
-
 }
