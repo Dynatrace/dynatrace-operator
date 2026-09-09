@@ -64,12 +64,12 @@ func secretData(dk *dynakube.DynaKube) map[string][]byte {
 	if len(dk.GetResourceAttributes()) > 0 {
 		data += deploymentproperties.BuildContent(dk.GetResourceAttributes())
 	}
-data += "\n"
+
 	if dk.NeedsCustomNoProxy() {
 		noProxyValue := strings.ReplaceAll(dk.FF().GetNoProxy(), ",", "|")
-		data += fmt.Sprintf("%s\n%s=%s", agconsts.PropertiesClientInternalSection, agconsts.PropertiesNoProxyFieldName, noProxyValue)
+		data += fmt.Sprintf("%s\n%s=%s\n", agconsts.PropertiesClientInternalSection, agconsts.PropertiesNoProxyFieldName, noProxyValue)
 	}
-data += "\n"
+
 	return map[string][]byte{
 		agconsts.DeploymentPropertiesFileName: []byte(data),
 	}
