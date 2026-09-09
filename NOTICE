@@ -1,0 +1,16 @@
+Dynatrace Operator
+Copyright Dynatrace LLC
+
+This product bundles third-party components. The required attributions for those
+components are reproduced below.
+
+-------------------------------------------------------------------------------
+
+Prometheus Operator (https://github.com/prometheus-operator/prometheus-operator)
+Applies to: config/helm/chart/default/templates/Common/prometheus/crd-prometheus-operator.yaml
+
+CoreOS Project
+Copyright 2015 CoreOS, Inc
+
+This product includes software developed at CoreOS, Inc.
+(http://www.coreos.com/).

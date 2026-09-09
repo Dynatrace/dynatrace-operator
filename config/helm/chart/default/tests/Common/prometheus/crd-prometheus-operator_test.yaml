@@ -1,0 +1,77 @@
+# Copyright Dynatrace LLC
+# SPDX-License-Identifier: Apache-2.0
+
+suite: test rollout of the Prometheus Operator CRDs
+templates:
+  - Common/prometheus/crd-prometheus-operator.yaml
+tests:
+  - it: Prometheus Operator CRDs should be absent with default values
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: Prometheus Operator CRDs should be absent when installCRDs is false
+    set:
+      prometheus.installCRDs: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: all four Prometheus Operator CRDs should render when installCRDs is true
+    set:
+      prometheus.installCRDs: true
+    asserts:
+      - hasDocuments:
+          count: 4
+
+  - it: PodMonitor CRD should render when installCRDs is true
+    set:
+      prometheus.installCRDs: true
+    documentIndex: 0
+    asserts:
+      - isKind:
+          of: CustomResourceDefinition
+      - equal:
+          path: metadata.name
+          value: podmonitors.monitoring.coreos.com
+
+  - it: Probe CRD should render when installCRDs is true
+    set:
+      prometheus.installCRDs: true
+    documentIndex: 1
+    asserts:
+      - isKind:
+          of: CustomResourceDefinition
+      - equal:
+          path: metadata.name
+          value: probes.monitoring.coreos.com
+
+  - it: ScrapeConfig CRD should render when installCRDs is true
+    set:
+      prometheus.installCRDs: true
+    documentIndex: 2
+    asserts:
+      - isKind:
+          of: CustomResourceDefinition
+      - equal:
+          path: metadata.name
+          value: scrapeconfigs.monitoring.coreos.com
+
+  - it: ServiceMonitor CRD should render when installCRDs is true
+    set:
+      prometheus.installCRDs: true
+    documentIndex: 3
+    asserts:
+      - isKind:
+          of: CustomResourceDefinition
+      - equal:
+          path: metadata.name
+          value: servicemonitors.monitoring.coreos.com
+
+  - it: Prometheus Operator CRDs should be independent of the global installCRD switch
+    set:
+      prometheus.installCRDs: true
+      installCRD: false
+    asserts:
+      - hasDocuments:
+          count: 4

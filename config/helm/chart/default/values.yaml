@@ -302,6 +302,12 @@ rbac:
     create: true
   supportability: true
 
+# Installs the Prometheus Operator CRDs (ServiceMonitor, PodMonitor, ScrapeConfig, Probe) that are
+# required for Prometheus scraping. Off by default, because a cluster may already have a Prometheus
+# Operator managing these CRDs.
+prometheus:
+  installCRDs: false
+
 experimental:
   enableKubemonOperand: false # temporary gate; set to true to enable kubemon in dev/test. Remove when kubemon is complete.
   enablePrometheus: false # temporary gate; set to true to enable prometheus integration in dev/test. Remove when prometheus integration is complete.
