@@ -418,11 +418,11 @@ test/e2e/kubemon:
 
 ## Runs Kubernetes Monitoring split-AG provisioning, RBAC and cleanup e2e test
 test/e2e/kubemon/split-ag:
-	$(GOTESTCMD) -timeout 30m ./test/e2e/scenarios/nocsi -run "kubemon_SplitAG" $(SKIPCLEANUP)
+	$(GOTESTCMD) -timeout 30m ./test/e2e/scenarios/nocsi -run "kubemon_split_ag" $(SKIPCLEANUP)
 
 ## Runs Kubernetes Monitoring restart-triggers e2e test
 test/e2e/kubemon/restart-triggers:
-	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "kubemon_RestartTriggers" $(SKIPCLEANUP)
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "kubemon_kubemon_restart_triggers" $(SKIPCLEANUP)
 
 test/e2e/token/migration:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "token_migration" $(SKIPCLEANUP)
