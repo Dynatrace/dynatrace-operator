@@ -22,9 +22,11 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8scrd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/oci/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	edgeconnectmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/edgeconnect"
 	imagemock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/image"
+	registrymock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/util/oci/registry"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -864,11 +866,18 @@ func createFakeClientAndReconciler(t *testing.T, mockImageClient *imagemock.Clie
 		return mockEdgeConnectClient, nil
 	}
 
+	// No expectations — panics if the OCI path is unexpectedly taken.
+	mockRegistryClient := registrymock.NewImageGetter(t)
+	mockRegistryClientBuilder := func(options ...func(*registry.Client)) (registry.ImageGetter, error) {
+		return mockRegistryClient, nil
+	}
+
 	controller := &Controller{
 		client:                   fakeClient,
 		apiReader:                fakeClient,
 		timeProvider:             timeprovider.New(),
 		imageClientBuilder:       mockImageClientBuilder,
+		registryClientBuilder:    mockRegistryClientBuilder,
 		edgeConnectClientBuilder: mockEdgeConnectClientBuilder,
 		secrets:                  k8ssecret.Query(fakeClient, fakeClient),
 	}
@@ -890,11 +899,18 @@ func createFakeClientAndReconcilerForProvisioner(t *testing.T, mockImageClient *
 		return mockImageClient, nil
 	}
 
+	// No expectations — panics if the OCI path is unexpectedly taken.
+	mockRegistryClient := registrymock.NewImageGetter(t)
+	mockRegistryClientBuilder := func(options ...func(*registry.Client)) (registry.ImageGetter, error) {
+		return mockRegistryClient, nil
+	}
+
 	controller := &Controller{
 		client:                   fakeClient,
 		apiReader:                fakeClient,
 		timeProvider:             timeprovider.New(),
 		imageClientBuilder:       mockImageClientBuilder,
+		registryClientBuilder:    mockRegistryClientBuilder,
 		edgeConnectClientBuilder: builder,
 		secrets:                  k8ssecret.Query(fakeClient, fakeClient),
 	}
@@ -1188,6 +1204,7 @@ func mockController(t *testing.T) *Controller {
 		client:                   fake.NewClient(),
 		apiReader:                fake.NewClient(),
 		imageClientBuilder:       newImageClient(),
+		registryClientBuilder:    registry.NewClient,
 		config:                   &rest.Config{},
 		timeProvider:             timeprovider.New(),
 		edgeConnectClientBuilder: newEdgeConnectClient(),

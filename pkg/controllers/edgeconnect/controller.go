@@ -5,6 +5,7 @@ package edgeconnect
 
 import (
 	"context"
+	"net/http"
 	"slices"
 	"time"
 
@@ -28,6 +29,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sevent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/system"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/oci/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	"golang.org/x/oauth2/clientcredentials"
@@ -78,6 +80,7 @@ type Controller struct {
 	apiReader                client.Reader
 	eventRecorder            events.EventRecorder
 	imageClientBuilder       imageClientBuilderType
+	registryClientBuilder    registry.ClientBuilder
 	config                   *rest.Config
 	timeProvider             *timeprovider.Provider
 	edgeConnectClientBuilder edgeConnectClientBuilderType
@@ -94,6 +97,7 @@ func NewController(mgr manager.Manager) *Controller {
 		apiReader:                mgr.GetAPIReader(),
 		eventRecorder:            mgr.GetEventRecorder(controllerName),
 		imageClientBuilder:       newImageClient(),
+		registryClientBuilder:    registry.NewClient,
 		config:                   mgr.GetConfig(),
 		timeProvider:             timeprovider.New(),
 		edgeConnectClientBuilder: newEdgeConnectClient(),
@@ -344,7 +348,7 @@ func (controller *Controller) updateVersionInfo(ctx context.Context, ec *edgecon
 
 	log.Info("updating version info")
 
-	versionReconciler := version.NewReconciler(controller.apiReader, controller.imageClientProvider(ec), timeprovider.New(), ec)
+	versionReconciler := version.NewReconciler(controller.apiReader, controller.imageClientProvider(ec), controller.registryClientProvider(ec), timeprovider.New(), ec)
 	if err := versionReconciler.Reconcile(ctx); err != nil {
 		log.Debug("reconciliation of EdgeConnect version failed")
 
@@ -372,6 +376,32 @@ func (controller *Controller) imageClientProvider(ec *edgeconnect.EdgeConnect) v
 		}
 
 		return controller.imageClientBuilder(ctx, ec, oauthCredentials, customCA)
+	}
+}
+
+// registryClientProvider defers building the OCI registry client until the fleet management
+// fallback actually has to resolve an image. Building it reads the pull secret, which the fleet
+// management path does not need, so an unreadable pull secret must not fail the version reconcile.
+func (controller *Controller) registryClientProvider(ec *edgeconnect.EdgeConnect) version.RegistryClientProvider {
+	return func(ctx context.Context) (registry.ImageGetter, error) {
+		log := logd.FromContext(ctx)
+
+		transport := http.DefaultTransport.(*http.Transport).Clone()
+		keyChainSecret := ec.EmptyPullSecret()
+
+		registryClient, err := controller.registryClientBuilder(
+			registry.WithContext(ctx),
+			registry.WithAPIReader(controller.apiReader),
+			registry.WithTransport(transport),
+			registry.WithKeyChainSecret(&keyChainSecret),
+		)
+		if err != nil {
+			log.Debug("failed to create registry client", "secretName", keyChainSecret.Name)
+
+			return nil, errors.WithStack(err)
+		}
+
+		return registryClient, nil
 	}
 }
 

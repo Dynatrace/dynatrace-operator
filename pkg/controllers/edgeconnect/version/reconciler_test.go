@@ -16,11 +16,12 @@ import (
 
 func Test_Reconciler_Reconcile(t *testing.T) {
 	edgeConnect := createBasicEdgeConnect(t)
+
 	fakeImageClient := imagemock.NewClient(t)
 	fakeImageClient.EXPECT().GetComponentLatestInfo(anyCtx, dtimage.EdgeConnect, mock.Anything).
 		Return(&dtimage.Info{URI: fakeImageURI}, nil)
 
-	reconciler := NewReconciler(fake.NewClient(), staticImageClientProvider(fakeImageClient), timeprovider.New(), edgeConnect)
+	reconciler := NewReconciler(fake.NewClient(), staticImageClientProvider(fakeImageClient), failingRegistryClientProvider(t), timeprovider.New(), edgeConnect)
 
 	require.NotNil(t, reconciler)
 	require.NoError(t, reconciler.Reconcile(t.Context()))
