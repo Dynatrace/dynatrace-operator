@@ -36,6 +36,7 @@ deploy: manifests/crd/helm
 			--create-namespace \
 			--atomic \
 			--set installCRD=true \
+			--set prometheus.installCRDs=true \
 			--set csidriver.enabled=$(ENABLE_CSI) \
 			--set csidriver.migrationMode=$(CSI_MIGRATION_MODE) \
 			--set webhook.replicas=$(WEBHOOK_REPLICAS) \
