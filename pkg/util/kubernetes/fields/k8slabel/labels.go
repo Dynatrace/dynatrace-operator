@@ -7,10 +7,14 @@ import (
 	"maps"
 	"strings"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
+	"k8s.io/apimachinery/pkg/api/validate/content"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/validation"
 )
+
+var log = logd.Get().WithName("k8slabel")
 
 const (
 	AppNameLabel     = "app.kubernetes.io/name"
@@ -84,7 +88,7 @@ func New(appName, instanceName, appVersion string) *Labels {
 		Name:            appName,
 		Instance:        instanceName,
 		ManagedBy:       version.AppName,
-		Version:         truncateVersion(appVersion),
+		Version:         sanitizeVersion(appVersion),
 		OperatorVersion: truncateVersion(version.Version),
 	}
 }
@@ -211,7 +215,19 @@ func NotEqual(currentLabels, desiredLabels map[string]string) bool {
 
 func truncateVersion(ver string) string {
 	if len(ver) > validation.DNS1035LabelMaxLength {
-		return ver[:validation.DNS1035LabelMaxLength]
+		ver = ver[:validation.DNS1035LabelMaxLength]
+	}
+
+	return ver
+}
+
+func sanitizeVersion(ver string) string {
+	ver = truncateVersion(ver)
+
+	if errs := content.IsLabelValue(ver); len(errs) > 0 {
+		log.Info("omitting invalid app version label", "version", ver, "errors", errs)
+
+		return ""
 	}
 
 	return ver

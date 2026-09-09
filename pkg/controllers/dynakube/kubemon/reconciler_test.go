@@ -47,16 +47,18 @@ func TestReconcileDisabled(t *testing.T) {
 		statefulSetReconciler := newMockStatefulsetReconciler(t)
 		pullSecretReconciler := newMockPullSecretReconciler(t)
 		customPropertiesReconciler := newMockCustomPropertiesReconciler(t)
+		deploymentPropertiesReconciler := newMockDeploymentPropertiesReconciler(t)
 		gatewayReconciler := newMockGatewayReconciler(t)
 		istioRec := newMockIstioReconciler(t)
 		reconciler := &Reconciler{
-			connectionInfoReconciler:   connInfoReconciler,
-			authTokenReconciler:        authTokenReconciler,
-			statefulsetReconciler:      statefulSetReconciler,
-			pullSecretReconciler:       pullSecretReconciler,
-			customPropertiesReconciler: customPropertiesReconciler,
-			gatewayReconciler:          gatewayReconciler,
-			istioReconciler:            istioRec,
+			connectionInfoReconciler:       connInfoReconciler,
+			authTokenReconciler:            authTokenReconciler,
+			statefulsetReconciler:          statefulSetReconciler,
+			pullSecretReconciler:           pullSecretReconciler,
+			customPropertiesReconciler:     customPropertiesReconciler,
+			deploymentPropertiesReconciler: deploymentPropertiesReconciler,
+			gatewayReconciler:              gatewayReconciler,
+			istioReconciler:                istioRec,
 		}
 		dk := newTestDynaKube()
 		dk.Spec.KubernetesMonitoring = nil
@@ -67,6 +69,7 @@ func TestReconcileDisabled(t *testing.T) {
 		authTokenReconciler.EXPECT().Reconcile(mock.Anything, mock.Anything, dk).Return(nil).Once()
 		pullSecretReconciler.EXPECT().Reconcile(mock.Anything, dk, mock.Anything).Return(nil).Once()
 		customPropertiesReconciler.EXPECT().Reconcile(mock.Anything, dk).Return(nil).Once()
+		deploymentPropertiesReconciler.EXPECT().Reconcile(mock.Anything, dk).Return(nil).Once()
 		gatewayReconciler.EXPECT().Reconcile(mock.Anything, dk).Return(nil).Once()
 		statefulSetReconciler.EXPECT().Reconcile(mock.Anything, dk, mock.Anything, mock.Anything).Return(nil).Once()
 
@@ -84,35 +87,38 @@ func TestReconcileConditionMapping(t *testing.T) {
 	t.Setenv(k8senv.ExperimentalEnableKubemonOperand, "true") // remove with gate
 
 	type reconcilerMocks struct {
-		reconciler       *Reconciler
-		connInfo         *mockConnectionInfoReconciler
-		authToken        *mockAuthTokenReconciler
-		pullSecret       *mockPullSecretReconciler
-		customProperties *mockCustomPropertiesReconciler
-		gateway          *mockGatewayReconciler
-		statefulSet      *mockStatefulsetReconciler
-		istio            *mockIstioReconciler
+		reconciler           *Reconciler
+		connInfo             *mockConnectionInfoReconciler
+		authToken            *mockAuthTokenReconciler
+		pullSecret           *mockPullSecretReconciler
+		customProperties     *mockCustomPropertiesReconciler
+		deploymentProperties *mockDeploymentPropertiesReconciler
+		gateway              *mockGatewayReconciler
+		statefulSet          *mockStatefulsetReconciler
+		istio                *mockIstioReconciler
 	}
 
 	newMocks := func(t *testing.T) reconcilerMocks {
 		t.Helper()
 		m := reconcilerMocks{
-			connInfo:         newMockConnectionInfoReconciler(t),
-			authToken:        newMockAuthTokenReconciler(t),
-			pullSecret:       newMockPullSecretReconciler(t),
-			customProperties: newMockCustomPropertiesReconciler(t),
-			gateway:          newMockGatewayReconciler(t),
-			statefulSet:      newMockStatefulsetReconciler(t),
-			istio:            newMockIstioReconciler(t),
+			connInfo:             newMockConnectionInfoReconciler(t),
+			authToken:            newMockAuthTokenReconciler(t),
+			pullSecret:           newMockPullSecretReconciler(t),
+			customProperties:     newMockCustomPropertiesReconciler(t),
+			deploymentProperties: newMockDeploymentPropertiesReconciler(t),
+			gateway:              newMockGatewayReconciler(t),
+			statefulSet:          newMockStatefulsetReconciler(t),
+			istio:                newMockIstioReconciler(t),
 		}
 		m.reconciler = &Reconciler{
-			connectionInfoReconciler:   m.connInfo,
-			authTokenReconciler:        m.authToken,
-			pullSecretReconciler:       m.pullSecret,
-			customPropertiesReconciler: m.customProperties,
-			gatewayReconciler:          m.gateway,
-			statefulsetReconciler:      m.statefulSet,
-			istioReconciler:            m.istio,
+			connectionInfoReconciler:       m.connInfo,
+			authTokenReconciler:            m.authToken,
+			pullSecretReconciler:           m.pullSecret,
+			customPropertiesReconciler:     m.customProperties,
+			deploymentPropertiesReconciler: m.deploymentProperties,
+			gatewayReconciler:              m.gateway,
+			statefulsetReconciler:          m.statefulSet,
+			istioReconciler:                m.istio,
 		}
 
 		return m
@@ -136,6 +142,7 @@ func TestReconcileConditionMapping(t *testing.T) {
 		mocks.authToken.EXPECT().Reconcile(mock.Anything, mock.Anything, dk).Return(nil).Once()
 		mocks.pullSecret.EXPECT().Reconcile(mock.Anything, dk, mock.Anything).Return(nil).Once()
 		mocks.customProperties.EXPECT().Reconcile(mock.Anything, dk).Return(nil).Once()
+		mocks.deploymentProperties.EXPECT().Reconcile(mock.Anything, dk).Return(nil).Once()
 		mocks.gateway.EXPECT().Reconcile(mock.Anything, dk).Return(nil).Once()
 		mocks.statefulSet.EXPECT().Reconcile(mock.Anything, dk, mock.Anything, mock.Anything).Return(nil).Once()
 
@@ -153,6 +160,7 @@ func TestReconcileConditionMapping(t *testing.T) {
 		mocks.authToken.EXPECT().Reconcile(mock.Anything, mock.Anything, dk).Return(nil).Once()
 		mocks.pullSecret.EXPECT().Reconcile(mock.Anything, dk, mock.Anything).Return(nil).Once()
 		mocks.customProperties.EXPECT().Reconcile(mock.Anything, dk).Return(nil).Once()
+		mocks.deploymentProperties.EXPECT().Reconcile(mock.Anything, dk).Return(nil).Once()
 		mocks.gateway.EXPECT().Reconcile(mock.Anything, dk).Return(nil).Once()
 		mocks.statefulSet.EXPECT().Reconcile(mock.Anything, dk, mock.Anything, mock.Anything).Return(nil).Once()
 
@@ -229,6 +237,7 @@ func TestReconcileConditionMapping(t *testing.T) {
 		mocks.authToken.EXPECT().Reconcile(mock.Anything, mock.Anything, dk).Return(nil).Once()
 		mocks.pullSecret.EXPECT().Reconcile(mock.Anything, dk, mock.Anything).Return(nil).Once()
 		mocks.customProperties.EXPECT().Reconcile(mock.Anything, dk).Return(nil).Once()
+		mocks.deploymentProperties.EXPECT().Reconcile(mock.Anything, dk).Return(nil).Once()
 		mocks.gateway.EXPECT().Reconcile(mock.Anything, dk).Return(nil).Once()
 		mocks.statefulSet.EXPECT().Reconcile(mock.Anything, dk, mock.Anything, mock.Anything).Return(k8sstatefulset.ErrRolloutInProgress).Once()
 
@@ -248,6 +257,7 @@ func TestReconcileConditionMapping(t *testing.T) {
 		mocks.authToken.EXPECT().Reconcile(mock.Anything, mock.Anything, dk).Return(nil).Once()
 		mocks.pullSecret.EXPECT().Reconcile(mock.Anything, dk, mock.Anything).Return(nil).Once()
 		mocks.customProperties.EXPECT().Reconcile(mock.Anything, dk).Return(nil).Once()
+		mocks.deploymentProperties.EXPECT().Reconcile(mock.Anything, dk).Return(nil).Once()
 		mocks.gateway.EXPECT().Reconcile(mock.Anything, dk).Return(nil).Once()
 		mocks.statefulSet.EXPECT().Reconcile(mock.Anything, dk, mock.Anything, mock.Anything).Return(boomErr).Once()
 
