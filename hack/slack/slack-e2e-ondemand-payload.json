@@ -83,7 +83,7 @@
                 "elements": [
                   {
                     "type": "text",
-                    "text": "k8s_1-30 (platform token) (phase 3)"
+                    "text": "k8s_1-31"
                   }
                 ]
               }
@@ -97,12 +97,12 @@
                 "elements": [
                   {
                     "type": "link",
-                    "url": "${{ env.K8S_1_30_RUN_ID_URL }}",
+                    "url": "${{ env.K8S_1_31_RUN_ID_URL }}",
                     "text": "tests "
                   },
                   {
                     "type": "emoji",
-                    "name": "${{ env.K8S_1_30_EMOJI }}"
+                    "name": "${{ env.K8S_1_31_EMOJI }}"
                   }
                 ]
               }
@@ -151,7 +151,7 @@
                 "elements": [
                   {
                     "type": "text",
-                    "text": "k8s_1-31"
+                    "text": "k8s_1-32 (platform token)"
                   }
                 ]
               }
@@ -165,12 +165,12 @@
                 "elements": [
                   {
                     "type": "link",
-                    "url": "${{ env.K8S_1_31_RUN_ID_URL }}",
+                    "url": "${{ env.K8S_1_32_RUN_ID_URL }}",
                     "text": "tests "
                   },
                   {
                     "type": "emoji",
-                    "name": "${{ env.K8S_1_31_EMOJI }}"
+                    "name": "${{ env.K8S_1_32_EMOJI }}"
                   }
                 ]
               }
@@ -219,7 +219,7 @@
                 "elements": [
                   {
                     "type": "text",
-                    "text": "k8s_1-32 (platform token)"
+                    "text": "k8s_1-33"
                   }
                 ]
               }
@@ -233,12 +233,12 @@
                 "elements": [
                   {
                     "type": "link",
-                    "url": "${{ env.K8S_1_32_RUN_ID_URL }}",
+                    "url": "${{ env.K8S_1_33_RUN_ID_URL }}",
                     "text": "tests "
                   },
                   {
                     "type": "emoji",
-                    "name": "${{ env.K8S_1_32_EMOJI }}"
+                    "name": "${{ env.K8S_1_33_EMOJI }}"
                   }
                 ]
               }
@@ -287,7 +287,7 @@
                 "elements": [
                   {
                     "type": "text",
-                    "text": "k8s_1-33"
+                    "text": "k8s_1-34 (platform token) (phase 3)"
                   }
                 ]
               }
@@ -301,12 +301,12 @@
                 "elements": [
                   {
                     "type": "link",
-                    "url": "${{ env.K8S_1_33_RUN_ID_URL }}",
+                    "url": "${{ env.K8S_1_34_RUN_ID_URL }}",
                     "text": "tests "
                   },
                   {
                     "type": "emoji",
-                    "name": "${{ env.K8S_1_33_EMOJI }}"
+                    "name": "${{ env.K8S_1_34_EMOJI }}"
                   }
                 ]
               }
@@ -355,7 +355,7 @@
                 "elements": [
                   {
                     "type": "text",
-                    "text": "k8s_1-34 (platform token) (phase 3)"
+                    "text": "k8s_1-35"
                   }
                 ]
               }
@@ -369,12 +369,12 @@
                 "elements": [
                   {
                     "type": "link",
-                    "url": "${{ env.K8S_1_34_RUN_ID_URL }}",
+                    "url": "${{ env.K8S_1_35_RUN_ID_URL }}",
                     "text": "tests "
                   },
                   {
                     "type": "emoji",
-                    "name": "${{ env.K8S_1_34_EMOJI }}"
+                    "name": "${{ env.K8S_1_35_EMOJI }}"
                   }
                 ]
               }
@@ -423,7 +423,7 @@
                 "elements": [
                   {
                     "type": "text",
-                    "text": "k8s_1-35"
+                    "text": "k8s_1-36 (platform token)"
                   }
                 ]
               }
@@ -437,12 +437,12 @@
                 "elements": [
                   {
                     "type": "link",
-                    "url": "${{ env.K8S_1_35_RUN_ID_URL }}",
+                    "url": "${{ env.K8S_1_36_RUN_ID_URL }}",
                     "text": "tests "
                   },
                   {
                     "type": "emoji",
-                    "name": "${{ env.K8S_1_35_EMOJI }}"
+                    "name": "${{ env.K8S_1_36_EMOJI }}"
                   }
                 ]
               }
@@ -491,7 +491,7 @@
                 "elements": [
                   {
                     "type": "text",
-                    "text": "k8s_1-36 (platform token)"
+                    "text": "k8s_1-37"
                   }
                 ]
               }
@@ -505,12 +505,12 @@
                 "elements": [
                   {
                     "type": "link",
-                    "url": "${{ env.K8S_1_36_RUN_ID_URL }}",
+                    "url": "${{ env.K8S_1_37_RUN_ID_URL }}",
                     "text": "tests "
                   },
                   {
                     "type": "emoji",
-                    "name": "${{ env.K8S_1_36_EMOJI }}"
+                    "name": "${{ env.K8S_1_37_EMOJI }}"
                   }
                 ]
               }
