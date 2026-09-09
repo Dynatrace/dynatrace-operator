@@ -327,3 +327,10 @@ func EnableKubemonOperand() []helm.Option {
 		helm.WithArgs("--set", "experimental.enableKubemonOperand=true"),
 	}
 }
+
+func DisableKubemonOperand() []helm.Option {
+	return []helm.Option{
+		helm.WithArgs("--reuse-values"),
+		helm.WithArgs("--set", "experimental.enableKubemonOperand=false"),
+	}
+}
