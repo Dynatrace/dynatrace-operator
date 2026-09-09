@@ -20,6 +20,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	kubemonauthtoken "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/authtoken"
 	kubemoncustomproperties "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/customproperties"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
@@ -308,6 +309,18 @@ func buildVolumes(dk *dynakube.DynaKube) []corev1.Volume {
 		})
 	}
 
+	if dk.HasProxy() {
+		volumes = append(volumes, corev1.Volume{
+			Name: agconsts.ProxySecretVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  proxy.BuildSecretName(dk.Name),
+					DefaultMode: new(int32(0o640)),
+				},
+			},
+		})
+	}
+
 	return volumes
 }
 
@@ -393,6 +406,14 @@ func buildVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 			Name:      agconsts.DeploymentPropertiesVolumeName,
 			MountPath: agconsts.DeploymentPropertiesMountPath,
 			SubPath:   agconsts.DeploymentPropertiesFileName,
+		})
+	}
+
+	if dk.HasProxy() {
+		mounts = append(mounts, corev1.VolumeMount{
+			ReadOnly: true,
+			Name:     agconsts.ProxySecretVolumeName,
+			SubPath:  agconsts.ProxySecretMountPath,
 		})
 	}
 
