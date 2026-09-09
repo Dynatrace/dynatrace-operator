@@ -141,15 +141,8 @@ func (u updater) usePublicRegistry(ctx context.Context) error {
 		return nil
 	}
 
-	// the fallback can only resolve the default EdgeConnect image, so taking it would silently
-	// ignore the registry the user explicitly asked for
-	if registryOverride := u.edgeConnect.Spec.PublicRegistryOverride; registryOverride != "" {
-		log.Info("no OCI registry fallback because a public registry override is set", "registry", registryOverride)
-
-		return errors.WithMessagef(fleetErr, "cannot resolve the EdgeConnect image from the overridden registry %q", registryOverride)
-	}
-
-	log.Info("falling back to the OCI registry")
+	log.Info("falling back to the OCI registry",
+		"image", u.edgeConnect.Image())
 
 	if err := u.useOCIRegistry(ctx); err != nil {
 		return errors.WithMessagef(err, "OCI registry fallback failed after fleet management error (%v)", fleetErr)

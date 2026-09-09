@@ -173,7 +173,7 @@ func Test_updater_Update(t *testing.T) {
 		require.NotNil(t, ec.Status.Version.LastProbeTimestamp)
 	})
 
-	t.Run("publicRegistryOverride set and fleet management fails => no OCI registry fallback", func(t *testing.T) {
+	t.Run("publicRegistryOverride set and fleet management fails => falls back to the default registry", func(t *testing.T) {
 		ctx := t.Context()
 		ec := createBasicEdgeConnect(t)
 		ec.Spec.PublicRegistryOverride = "my.registry.io"
@@ -182,12 +182,18 @@ func Test_updater_Update(t *testing.T) {
 		fakeImageClient.EXPECT().GetComponentLatestInfo(anyCtx, dtimage.EdgeConnect, "my.registry.io").
 			Return(nil, errors.New("fleet management unavailable"))
 
-		// the fallback would resolve the default image and silently ignore the override
-		updater := newUpdater(fake.NewClient(), timeprovider.New(), staticImageClientProvider(fakeImageClient), failingRegistryClientProvider(t), ec)
+		// the fallback can only resolve the default image, so the override is not taken into accoutn
+		fakeRegistry := registrymock.NewImageGetter(t)
+		fakeRegistry.EXPECT().GetImageVersion(anyCtx, ec.Image()).
+			Return(fakeRegistryImageVersion(), nil)
 
-		require.ErrorContains(t, updater.Update(ctx), "my.registry.io")
-		require.Empty(t, ec.Status.Version.ImageID)
-		require.Nil(t, ec.Status.Version.LastProbeTimestamp)
+		updater := newUpdater(fake.NewClient(), timeprovider.New(), staticImageClientProvider(fakeImageClient), staticRegistryClientProvider(fakeRegistry), ec)
+
+		require.NoError(t, updater.Update(ctx))
+		require.Equal(t, fakeImageURI, ec.Status.Version.ImageID)
+		require.NotContains(t, ec.Status.Version.ImageID, "my.registry.io")
+		require.Equal(t, status.PublicRegistryVersionSource, ec.Status.Version.Source)
+		require.NotNil(t, ec.Status.Version.LastProbeTimestamp)
 	})
 
 	t.Run("both fleet management and OCI registry fail => error", func(t *testing.T) {
