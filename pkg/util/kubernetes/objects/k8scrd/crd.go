@@ -67,16 +67,9 @@ func IsInstalled(ctx context.Context, apiReader client.Reader, gvk schema.GroupV
 	obj := &unstructured.Unstructured{}
 	obj.SetGroupVersionKind(gvk)
 
-	err := apiReader.Get(ctx, client.ObjectKey{Namespace: "default", Name: "default"}, obj)
-	if err == nil {
-		return true
+	if err := apiReader.Get(ctx, client.ObjectKey{Namespace: "default", Name: "default"}, obj); err != nil {
+		return !meta.IsNoMatchError(err)
 	}
-
-	if meta.IsNoMatchError(err) {
-		return false
-	}
-
-	logd.FromContext(ctx).Debug("failed to check if CRD is installed, assuming it is present", "gvk", gvk.String(), "err", err.Error())
 
 	return true
 }

@@ -19,27 +19,23 @@ const (
 	warningMissingPrometheusCRDs = "Required Prometheus Operator CRDs are not installed on this cluster: %s. Related functionality will not work until they are installed."
 )
 
-type prometheusCRD struct {
-	schema.GroupVersionKind
-	resource string
-}
-
-var requiredPrometheusCRDs = []prometheusCRD{
-	{GroupVersionKind: schema.GroupVersionKind{Group: prometheusOperatorGroup, Version: "v1", Kind: "ServiceMonitor"}, resource: "servicemonitors"},
-	{GroupVersionKind: schema.GroupVersionKind{Group: prometheusOperatorGroup, Version: "v1", Kind: "PodMonitor"}, resource: "podmonitors"},
-	{GroupVersionKind: schema.GroupVersionKind{Group: prometheusOperatorGroup, Version: "v1", Kind: "Probe"}, resource: "probes"},
-	{GroupVersionKind: schema.GroupVersionKind{Group: prometheusOperatorGroup, Version: "v1alpha1", Kind: "ScrapeConfig"}, resource: "scrapeconfigs"},
+var requiredPrometheusCRDs = []schema.GroupVersionKind{
+	{Group: prometheusOperatorGroup, Version: "v1", Kind: "ServiceMonitor"},
+	{Group: prometheusOperatorGroup, Version: "v1", Kind: "PodMonitor"},
+	{Group: prometheusOperatorGroup, Version: "v1", Kind: "Probe"},
+	{Group: prometheusOperatorGroup, Version: "v1alpha1", Kind: "ScrapeConfig"},
 }
 
 func missingPrometheusCRDs(ctx context.Context, apiReader client.Reader) string {
 	missing := []string{}
 
-	for _, crd := range requiredPrometheusCRDs {
-		if k8scrd.IsInstalled(ctx, apiReader, crd.GroupVersionKind) {
+	for _, gvk := range requiredPrometheusCRDs {
+		if k8scrd.IsInstalled(ctx, apiReader, gvk) {
 			continue
 		}
 
-		missing = append(missing, fmt.Sprintf("%s.%s", crd.resource, crd.Group))
+		resource := strings.ToLower(gvk.Kind) + "s"
+		missing = append(missing, fmt.Sprintf("%s.%s", resource, gvk.Group))
 	}
 
 	if len(missing) == 0 {
