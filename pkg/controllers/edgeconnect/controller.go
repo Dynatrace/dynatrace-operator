@@ -420,7 +420,7 @@ func newImageClient() imageClientBuilderType {
 				ClientID:     oauthCredentials.clientID,
 				ClientSecret: oauthCredentials.clientSecret,
 				TokenURL:     ec.Spec.OAuth.Endpoint,
-				Scopes:       buildOAuthScopes(ec.IsK8SAutomationEnabled()),
+				Scopes:       buildImageOAuthScopes(),
 			},
 			dynatrace.WithBaseURL(environmentAPIURL(ec)),
 			dynatrace.WithCerts(customCA),
@@ -973,11 +973,20 @@ func buildOAuthScopes(k8sAutomationEnabled bool) []string {
 		"app-engine:edge-connects:write",
 		"app-engine:edge-connects:delete",
 		"oauth2:clients:manage",
-		"fleet-management:container-images:read",
 	}
 	if k8sAutomationEnabled {
 		oAuthScopes = append(oAuthScopes, "settings:objects:read", "settings:objects:write")
 	}
 
 	return oAuthScopes
+}
+
+// TODO: the scope cannot be granted on a tenant yet, so this list has never been verified against
+// a live fleet management endpoint. Until then every EdgeConnect resolves its image through the
+// OCI registry fallback. Once the scope is grantable, check that an EdgeConnect with only this
+// scope resolves its image without the fallback, and extend the list if the endpoint asks for more.
+func buildImageOAuthScopes() []string {
+	return []string{
+		"fleet-management:container-images:read",
+	}
 }
