@@ -413,7 +413,7 @@ func buildVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 		mounts = append(mounts, corev1.VolumeMount{
 			ReadOnly: true,
 			Name:     agconsts.ProxySecretVolumeName,
-			SubPath:  agconsts.ProxySecretMountPath,
+			MountPath:  agconsts.ProxySecretMountPath,
 		})
 	}
 
