@@ -15,6 +15,7 @@ import (
 	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8snamespace"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8spod"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/registry"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/sample"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/shell"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
@@ -33,7 +34,7 @@ func PGCWithCloudNativeFullStack(t *testing.T) features.Feature {
 			Image: "",
 		},
 		AppInjectionSpec: oneagent.AppInjectionSpec{
-			CodeModulesImage: bootstrapperImage,
+			CodeModulesImage: registry.GetLatestCodeModulesImageTagURI(t),
 		},
 	}
 
