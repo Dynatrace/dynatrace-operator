@@ -414,15 +414,15 @@ test/e2e/kspm/optionalscopes:
 
 ## Runs all Kubernetes Monitoring e2e tests
 test/e2e/kubemon:
-	$(GOTESTCMD) -timeout 30m ./test/e2e/scenarios/nocsi -run "Kubemon" $(SKIPCLEANUP)
+	$(GOTESTCMD) -timeout 30m ./test/e2e/scenarios/nocsi -run "kubemon" $(SKIPCLEANUP)
 
 ## Runs Kubernetes Monitoring split-AG provisioning, RBAC and cleanup e2e test
 test/e2e/kubemon/split-ag:
-	$(GOTESTCMD) -timeout 30m ./test/e2e/scenarios/nocsi -run "Kubemon_SplitAG" $(SKIPCLEANUP)
+	$(GOTESTCMD) -timeout 30m ./test/e2e/scenarios/nocsi -run "kubemon_SplitAG" $(SKIPCLEANUP)
 
 ## Runs Kubernetes Monitoring restart-triggers e2e test
 test/e2e/kubemon/restart-triggers:
-	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "Kubemon_RestartTriggers" $(SKIPCLEANUP)
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "kubemon_RestartTriggers" $(SKIPCLEANUP)
 
 test/e2e/token/migration:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "token_migration" $(SKIPCLEANUP)

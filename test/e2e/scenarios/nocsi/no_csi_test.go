@@ -255,11 +255,11 @@ func TestNoCSI_kspm_with_kubemon(t *testing.T) {
 	testEnv.Test(t, kspm.FeatureWithKubemon(t))
 }
 
-func TestNoCSI_Kubemon_SplitAG(t *testing.T) {
+func TestNoCSI_kubemon_SplitAG(t *testing.T) {
 	testEnv.Test(t, kubemon.FeatureSplitAG(t))
 }
 
-func TestNoCSI_Kubemon_RestartTriggers(t *testing.T) {
+func TestNoCSI_kubemon_RestartTriggers(t *testing.T) {
 	testEnv.Test(t, kubemon.FeatureRestartTriggers(t))
 }
 
