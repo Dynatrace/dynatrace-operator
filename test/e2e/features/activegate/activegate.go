@@ -84,7 +84,7 @@ func Feature(t *testing.T, proxySpec *value.Source) features.Feature {
 	// only activegate capabilities are used in this test
 	// make sure that if separate kubemon activegate is not used - it does not create separate statefulset and secret
 	builder.Assess("kubemon statefulset does not exist", func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		_, err := k8sstatefulset.Get(ctx, envConfig.Client().Resources(), testDynakube.Name+"-kubemon", testDynakube.Namespace)
+		_, err := k8sstatefulset.Get(ctx, envConfig.Client().Resources(), testDynakube.KubernetesMonitoring().GetStatefulSetName(), testDynakube.Namespace)
 		require.Truef(t, k8serrors.IsNotFound(err), "expected NotFound, got: %v", err)
 
 		return ctx
@@ -92,7 +92,7 @@ func Feature(t *testing.T, proxySpec *value.Source) features.Feature {
 
 	builder.Assess("kubemon authtoken secret does not exist", func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		var secret corev1.Secret
-		err := envConfig.Client().Resources().Get(ctx, testDynakube.Name+"-kubemon-authtoken-secret", testDynakube.Namespace, &secret)
+		err := envConfig.Client().Resources().Get(ctx, testDynakube.KubernetesMonitoring().GetAuthTokenSecretName(), testDynakube.Namespace, &secret)
 		require.Truef(t, k8serrors.IsNotFound(err), "expected NotFound, got: %v", err)
 
 		return ctx
