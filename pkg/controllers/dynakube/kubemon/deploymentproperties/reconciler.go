@@ -69,7 +69,7 @@ data += "\n"
 		noProxyValue := strings.ReplaceAll(dk.FF().GetNoProxy(), ",", "|")
 		data += fmt.Sprintf("%s\n%s=%s", agconsts.PropertiesClientInternalSection, agconsts.PropertiesNoProxyFieldName, noProxyValue)
 	}
-
+data += "\n"
 	return map[string][]byte{
 		agconsts.DeploymentPropertiesFileName: []byte(data),
 	}
