@@ -7,6 +7,7 @@ PROFILING ?= true
 PLATFORM ?= "kubernetes"
 HELM_CHART ?= config/helm/chart/default
 IMAGE_PULL_POLICY ?= Always
+PROMETHEUS_INSTALL_CRDS ?= false
 
 ## Display the image name used to deploy the helm chart
 deploy/show-image-ref:
@@ -28,6 +29,11 @@ deploy/csi-migration:
 deploy/fips:
 	@make IMAGE_URI="$(IMAGE_URI)"-fips $(@D)
 
+## Deploy the operator with the Prometheus Operator CRDs
+deploy/prometheus-crds:
+	@make PROMETHEUS_INSTALL_CRDS=true $(@D)
+
+
 ## Deploy the operator with csi-driver
 deploy: manifests/crd/helm
 	helm upgrade dynatrace-operator $(HELM_CHART) \
@@ -47,7 +53,8 @@ deploy: manifests/crd/helm
 			--set dtClientLogLevel=$(DT_CLIENT_LOG_LEVEL) \
 			--set imageRef.pullPolicy=$(IMAGE_PULL_POLICY) \
 			--set experimental.enableKubemonOperand=true \
-			--set experimental.enablePrometheus=true
+			--set experimental.enablePrometheus=true \
+  			--set prometheus.installCRDs=$(PROMETHEUS_INSTALL_CRDS)
 
 ## Undeploy the current operator installation
 undeploy:
