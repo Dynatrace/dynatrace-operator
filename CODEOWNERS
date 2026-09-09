@@ -16,7 +16,6 @@
 
 # ── Testing — shared harness and cross-operand feature tests ─────────────────
 /test/                                                     @Dynatrace/kubernetes-operator-commanders
-/.mockery.yaml
 /.testcoverage.yml                                         @Dynatrace/kubernetes-operator-commanders
 
 # ── Deployment — helm chart, OLM bundles ─────────────────────────────────────
@@ -143,3 +142,8 @@
 /.gitignore                                                @Incredible-O @waodim @jokuniew @Dynatrace/kubernetes-operator-commanders
 /.git-blame-ignore-revs                                    @Incredible-O @waodim @jokuniew @Dynatrace/kubernetes-operator-commanders
 /CODEOWNERS                                                @jdanieck @andriisoldatenko @StefanHauth @Dynatrace/kubernetes-operator-commanders
+
+# ── Mocks ─────────────────────────────────────────────────────────────────────
+/.mockery.yaml
+/test/mocks/
+mock_*_test.go
