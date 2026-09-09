@@ -73,12 +73,11 @@ type Reconciler struct {
 
 type reconcileScope struct {
 	// Required for reconcile
-	Owner       *dtprometheus.DTPrometheus
-	DynaKube    *dynakube.DynaKube
-	Spec        *dtprometheus.Gateway
-	AppLabels   *k8slabel.Labels
-	ImageClient image.Client
-	// Computed during reconcile
+	Owner         *dtprometheus.DTPrometheus
+	DynaKube      *dynakube.DynaKube
+	Spec          *dtprometheus.Gateway
+	AppLabels     *k8slabel.Labels
+	ImageClient   image.Client
 	ConfigMapHash string
 	StatefulSet   *appsv1.StatefulSet
 }
@@ -115,15 +114,15 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtp *dtprometheus.DTPromethe
 // resolveImage uses the explicit image from .spec.gateway.image when set, otherwise resolves
 // the latest gateway image from the fleet management API.
 func (r *Reconciler) resolveImage(ctx context.Context, s *reconcileScope) error {
-	imageURI := s.Spec.Image
+	if s.Spec.Image != "" {
+		s.Owner.Status.Gateway.ResolvedImage = s.Spec.Image
 
-	if imageURI == "" {
-		var err error
+		return nil
+	}
 
-		imageURI, err = registry.ResolveImage(ctx, s.ImageClient, s.Owner.Spec.PublicRegistryOverride, image.Gateway)
-		if err != nil {
-			return err
-		}
+	imageURI, err := registry.ResolveImage(ctx, s.ImageClient, s.Owner.Spec.PublicRegistryOverride, image.Gateway)
+	if err != nil {
+		return err
 	}
 
 	s.Owner.Status.Gateway.ResolvedImage = imageURI
@@ -262,7 +261,7 @@ func buildContainer(s *reconcileScope, current corev1.Container) corev1.Containe
 		Image:           s.Owner.Status.Gateway.ResolvedImage,
 		ImagePullPolicy: imagePullPolicy,
 		Command:         []string{"/dynatrace-otel-collector"},
-		Args:            []string{"--config=" + configMountDir + "/" + relayConfigFile},
+		Args:            buildArgs(s),
 		Ports: []corev1.ContainerPort{
 			{Name: otlpPortName, ContainerPort: otlpPort, Protocol: corev1.ProtocolTCP},
 		},
@@ -306,6 +305,17 @@ func buildContainer(s *reconcileScope, current corev1.Container) corev1.Containe
 	}
 }
 
+// buildArgs puts the operator-managed config flag first and appends any user-supplied
+// args from .spec.gateway.args after it.
+func buildArgs(s *reconcileScope) []string {
+	userArgs := s.Spec.SanitizedArgs()
+
+	args := make([]string, 0, 1+len(userArgs))
+	args = append(args, "--config="+configMountDir+"/"+relayConfigFile)
+
+	return append(args, userArgs...)
+}
+
 func buildEnv(s *reconcileScope) []corev1.EnvVar {
 	dk := s.DynaKube
 
@@ -318,6 +328,7 @@ func buildEnv(s *reconcileScope) []corev1.EnvVar {
 				FieldRef: &corev1.ObjectFieldSelector{APIVersion: "v1", FieldPath: "status.podIP"},
 			},
 		},
+		{Name: "K8S_CLUSTER_NAME", Value: dk.Status.KubernetesClusterName},
 	}, s.Spec.Resources)
 
 	if dk.HasProxy() {

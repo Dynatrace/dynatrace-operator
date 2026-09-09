@@ -6,7 +6,7 @@
 #   knowledge and ramp people up. Revisit and reassign periodically.
 # - The whole team stays as fallback owner: if an area turns out to be
 #   uncovered or misassigned, fix it as we go.
-# - Admins can always approve and override CODEOWNERS if all 3 owners of an
+# - Commanders (@Dynatrace/kubernetes-operator-commanders )can always approve and override CODEOWNERS if all 3 owners of an
 #   area are out of office.
 # - Anyone can comment on any PR or request a specific reviewer, regardless of
 #   ownership; in a technical disagreement, the area's CODEOWNERS decide.
@@ -15,107 +15,131 @@
 *                                                          @Dynatrace/kubernetes-operator
 
 # ── Testing — shared harness and cross-operand feature tests ─────────────────
-/test/                                                     @0sewa0 @andriisoldatenko @avorima
+/test/                                                     @Dynatrace/kubernetes-operator-commanders
 /.mockery.yaml
-/.testcoverage.yml                                         @0sewa0 @andriisoldatenko @avorima
+/.testcoverage.yml                                         @Dynatrace/kubernetes-operator-commanders
+
+# ── Deployment — helm chart, OLM bundles ─────────────────────────────────────
+/config/                                                   @Incredible-O @waodim @jokuniew @Dynatrace/kubernetes-operator-commanders
+/assets/                                                   @Incredible-O @waodim @jokuniew @Dynatrace/kubernetes-operator-commanders
 
 # ── Core — CRD API, DT clients, shared libs, and cross-cutting controllers ───
 # Older API versions (e.g. v1beta5) are frozen and stay here, not split per operand.
-/pkg/                                                      @0sewa0 @andriisoldatenko @avorima
-/cmd/                                                      @0sewa0 @andriisoldatenko @avorima
+/pkg/                                                      @Dynatrace/kubernetes-operator-commanders
+/cmd/                                                      @Dynatrace/kubernetes-operator-commanders
+/config/helm/chart/default/templates/Common/operator       @Dynatrace/kubernetes-operator-commanders
+/config/helm/chart/default/tests/Common/operator           @Dynatrace/kubernetes-operator-commanders
+/config/helm/chart/default/templates/Common/webhook        @Dynatrace/kubernetes-operator-commanders
+/config/helm/chart/default/tests/Common/webhook            @Dynatrace/kubernetes-operator-commanders
 
 # ── Generic AG operand ───────────────────────────────────────────────────────
-/pkg/api/latest/dynakube/activegate/                       @aorcholski @jdanieck @svfoxat
-/pkg/api/validation/dynakube/activegate*                   @aorcholski @jdanieck @svfoxat
-/pkg/controllers/dynakube/activegate/                      @aorcholski @jdanieck @svfoxat
-/test/e2e/features/activegate/                             @aorcholski @jdanieck @svfoxat
+/pkg/api/latest/dynakube/activegate/                       @aorcholski @jdanieck @svfoxat @Dynatrace/kubernetes-operator-commanders
+/pkg/api/validation/dynakube/activegate*                   @aorcholski @jdanieck @svfoxat @Dynatrace/kubernetes-operator-commanders
+/pkg/controllers/dynakube/activegate/                      @aorcholski @jdanieck @svfoxat @Dynatrace/kubernetes-operator-commanders
+/test/e2e/features/activegate/                             @aorcholski @jdanieck @svfoxat @Dynatrace/kubernetes-operator-commanders
+/config/helm/chart/default/templates/Common/activegate     @aorcholski @jdanieck @svfoxat @Dynatrace/kubernetes-operator-commanders
+/config/helm/chart/default/tests/Common/activegate         @aorcholski @jdanieck @svfoxat @Dynatrace/kubernetes-operator-commanders
 
 # ── Kubemon AG operand ───────────────────────────────────────────────────────
-/pkg/api/latest/dynakube/kubemon/                          @0sewa0 @jdanieck @Incredible-O
-/pkg/controllers/dynakube/kubemon/                         @0sewa0 @jdanieck @Incredible-O
+/pkg/api/latest/dynakube/kubemon/                                                  @0sewa0 @jdanieck @Incredible-O @Dynatrace/kubernetes-operator-commanders
+/pkg/controllers/dynakube/kubemon/                                                 @0sewa0 @jdanieck @Incredible-O @Dynatrace/kubernetes-operator-commanders
+/config/helm/chart/default/templates/Common/activegate/kubernetes-monitoring       @0sewa0 @jdanieck @Incredible-O @Dynatrace/kubernetes-operator-commanders
+/config/helm/chart/default/tests/Common/activegate/kubernetes-monitoring           @0sewa0 @jdanieck @Incredible-O @Dynatrace/kubernetes-operator-commanders
 
 # ── OneAgent operand ─────────────────────────────────────────────────────────
-/pkg/api/latest/dynakube/oneagent/                         @gkrenn @andriisoldatenko @jokuniew
-/pkg/api/validation/dynakube/oneagent*                     @gkrenn @andriisoldatenko @jokuniew
-/pkg/controllers/dynakube/oneagent/                        @gkrenn @andriisoldatenko @jokuniew
-/test/e2e/features/classic/                                @gkrenn @andriisoldatenko @jokuniew
-/test/e2e/features/hostmonitoring/                         @gkrenn @andriisoldatenko @jokuniew
+/pkg/api/latest/dynakube/oneagent/                         @gkrenn @andriisoldatenko @jokuniew @Dynatrace/kubernetes-operator-commanders
+/pkg/api/validation/dynakube/oneagent*                     @gkrenn @andriisoldatenko @jokuniew @Dynatrace/kubernetes-operator-commanders
+/pkg/controllers/dynakube/oneagent/                        @gkrenn @andriisoldatenko @jokuniew @Dynatrace/kubernetes-operator-commanders
+/test/e2e/features/classic/                                @gkrenn @andriisoldatenko @jokuniew @Dynatrace/kubernetes-operator-commanders
+/test/e2e/features/hostmonitoring/                         @gkrenn @andriisoldatenko @jokuniew @Dynatrace/kubernetes-operator-commanders
+/config/helm/chart/default/templates/Common/oneagent/      @gkrenn @andriisoldatenko @jokuniew @Dynatrace/kubernetes-operator-commanders
+/config/helm/chart/default/tests/Common/oneagent/          @gkrenn @andriisoldatenko @jokuniew @Dynatrace/kubernetes-operator-commanders
 
 # ── OTel collector operand ───────────────────────────────────────────────────
-/pkg/api/latest/dynakube/telemetryingest/                  @StefanHauth @avorima @Edivion
-/pkg/api/latest/dynakube/otlp/                             @StefanHauth @avorima @Edivion
-/pkg/api/validation/dynakube/telemetryservice*             @StefanHauth @avorima @Edivion
-/pkg/controllers/dynakube/otelc/                           @StefanHauth @avorima @Edivion
-/pkg/otelcgen/                                             @StefanHauth @avorima @Edivion
-/pkg/injection/otlp/                                       @StefanHauth @avorima @Edivion
-/pkg/webhook/mutation/pod/handler/otlp/                    @StefanHauth @avorima @Edivion
-/pkg/webhook/mutation/pod/mutator/otlp/                    @StefanHauth @avorima @Edivion
-/test/e2e/features/telemetryingest/                        @StefanHauth @avorima @Edivion
+/pkg/api/latest/dynakube/telemetryingest/                            @StefanHauth @avorima @Edivion @Dynatrace/kubernetes-operator-commanders
+/pkg/api/latest/dynakube/otlp/                                       @StefanHauth @avorima @Edivion @Dynatrace/kubernetes-operator-commanders
+/pkg/api/validation/dynakube/telemetryservice*                       @StefanHauth @avorima @Edivion @Dynatrace/kubernetes-operator-commanders
+/pkg/controllers/dynakube/otelc/                                     @StefanHauth @avorima @Edivion @Dynatrace/kubernetes-operator-commanders
+/pkg/otelcgen/                                                       @StefanHauth @avorima @Edivion @Dynatrace/kubernetes-operator-commanders
+/pkg/injection/otlp/                                                 @StefanHauth @avorima @Edivion @Dynatrace/kubernetes-operator-commanders
+/pkg/webhook/mutation/pod/handler/otlp/                              @StefanHauth @avorima @Edivion @Dynatrace/kubernetes-operator-commanders
+/pkg/webhook/mutation/pod/mutator/otlp/                              @StefanHauth @avorima @Edivion @Dynatrace/kubernetes-operator-commanders
+/test/e2e/features/telemetryingest/                                  @StefanHauth @avorima @Edivion @Dynatrace/kubernetes-operator-commanders
+/config/helm/chart/default/templates/Common/otel-collector/          @StefanHauth @avorima @Edivion @Dynatrace/kubernetes-operator-commanders
+/config/helm/chart/default/tests/Common/otel-collector/              @StefanHauth @avorima @Edivion @Dynatrace/kubernetes-operator-commanders
 
 # ── Log monitoring operand ───────────────────────────────────────────────────
-/pkg/api/latest/dynakube/logmonitoring/                    @0sewa0 @waodim @mihaitanasedt
-/pkg/api/validation/dynakube/logmonitoring*                @0sewa0 @waodim @mihaitanasedt
-/pkg/controllers/dynakube/logmonitoring/                   @0sewa0 @waodim @mihaitanasedt
-/test/e2e/features/logmonitoring/                          @0sewa0 @waodim @mihaitanasedt
+/pkg/api/latest/dynakube/logmonitoring/                             @0sewa0 @waodim @mihaitanasedt @Dynatrace/kubernetes-operator-commanders
+/pkg/api/validation/dynakube/logmonitoring*                         @0sewa0 @waodim @mihaitanasedt @Dynatrace/kubernetes-operator-commanders
+/pkg/controllers/dynakube/logmonitoring/                            @0sewa0 @waodim @mihaitanasedt @Dynatrace/kubernetes-operator-commanders
+/test/e2e/features/logmonitoring/                                   @0sewa0 @waodim @mihaitanasedt @Dynatrace/kubernetes-operator-commanders
+/config/helm/chart/default/templates/Common/logmonitoring/          @0sewa0 @waodim @mihaitanasedt @Dynatrace/kubernetes-operator-commanders
+/config/helm/chart/default/tests/Common/logmonitoring/              @0sewa0 @waodim @mihaitanasedt @Dynatrace/kubernetes-operator-commanders
 
 # ── KSPM operand ─────────────────────────────────────────────────────────────
-/pkg/api/latest/dynakube/kspm/                             @0sewa0 @aorcholski @svfoxat
-/pkg/api/validation/dynakube/kspm*                         @0sewa0 @aorcholski @svfoxat
-/pkg/controllers/dynakube/kspm/                            @0sewa0 @aorcholski @svfoxat
-/test/e2e/features/kspm/                                   @0sewa0 @aorcholski @svfoxat
+/pkg/api/latest/dynakube/kspm/                             @0sewa0 @aorcholski @svfoxat @Dynatrace/kubernetes-operator-commanders
+/pkg/api/validation/dynakube/kspm*                         @0sewa0 @aorcholski @svfoxat @Dynatrace/kubernetes-operator-commanders
+/pkg/controllers/dynakube/kspm/                            @0sewa0 @aorcholski @svfoxat @Dynatrace/kubernetes-operator-commanders
+/test/e2e/features/kspm/                                   @0sewa0 @aorcholski @svfoxat @Dynatrace/kubernetes-operator-commanders
+/config/helm/chart/default/templates/Common/kspm/          @0sewa0 @aorcholski @svfoxat @Dynatrace/kubernetes-operator-commanders
+/config/helm/chart/default/tests/Common/kspm/              @0sewa0 @aorcholski @svfoxat @Dynatrace/kubernetes-operator-commanders
 
 # ── Extensions operands (EEC, SQL executor) ───────────────────────────────────────
-/pkg/api/latest/dynakube/extensions/                       @avorima @aorcholski @waodim
-/pkg/api/validation/dynakube/eec*                          @avorima @aorcholski @waodim
-/pkg/api/validation/dynakube/databases*                    @avorima @aorcholski @waodim
-/pkg/api/validation/dynakube/extensions*                   @avorima @aorcholski @waodim
-/pkg/controllers/dynakube/extension/                       @avorima @aorcholski @waodim
-/test/e2e/features/extensions/                             @avorima @aorcholski @waodim
+/pkg/api/latest/dynakube/extensions/                              @avorima @aorcholski @waodim @Dynatrace/kubernetes-operator-commanders
+/pkg/api/validation/dynakube/eec*                                 @avorima @aorcholski @waodim @Dynatrace/kubernetes-operator-commanders
+/pkg/api/validation/dynakube/databases*                           @avorima @aorcholski @waodim @Dynatrace/kubernetes-operator-commanders
+/pkg/api/validation/dynakube/extensions*                          @avorima @aorcholski @waodim @Dynatrace/kubernetes-operator-commanders
+/pkg/controllers/dynakube/extension/                              @avorima @aorcholski @waodim @Dynatrace/kubernetes-operator-commanders
+/test/e2e/features/extensions/                                    @avorima @aorcholski @waodim @Dynatrace/kubernetes-operator-commanders
+/config/helm/chart/default/templates/Common/extensions/           @avorima @aorcholski @waodim @Dynatrace/kubernetes-operator-commanders
+/config/helm/chart/default/tests/Common/extensions/               @avorima @aorcholski @waodim @Dynatrace/kubernetes-operator-commanders
 
 # ── Edge Connect operand ─────────────────────────────────────────────────────
-/pkg/api/validation/edgeconnect/                           @andriisoldatenko @gkrenn @mihaitanasedt
-/pkg/controllers/edgeconnect/                              @andriisoldatenko @gkrenn @mihaitanasedt
-/test/e2e/features/edgeconnect/                            @andriisoldatenko @gkrenn @mihaitanasedt
+/pkg/api/validation/edgeconnect/                                  @andriisoldatenko @gkrenn @mihaitanasedt @Dynatrace/kubernetes-operator-commanders
+/pkg/controllers/edgeconnect/                                     @andriisoldatenko @gkrenn @mihaitanasedt @Dynatrace/kubernetes-operator-commanders
+/test/e2e/features/edgeconnect/                                   @andriisoldatenko @gkrenn @mihaitanasedt @Dynatrace/kubernetes-operator-commanders
+/config/helm/chart/default/templates/Common/edge-connect/         @andriisoldatenko @gkrenn @mihaitanasedt @Dynatrace/kubernetes-operator-commanders
+/config/helm/chart/default/tests/Common/edgeconnect/              @andriisoldatenko @gkrenn @mihaitanasedt @Dynatrace/kubernetes-operator-commanders
 
 # ── Code Modules (injection) operand ─────────────────────────────────────────
-/pkg/api/latest/dynakube/metadataenrichment/               @0sewa0 @andriisoldatenko @jdanieck
-/pkg/api/validation/dynakube/metadata_enrichment*          @0sewa0 @andriisoldatenko @jdanieck
-/pkg/webhook/mutation/pod/handler/injection                @0sewa0 @andriisoldatenko @jdanieck
-/pkg/webhook/mutation/pod/mutator/oneagent/                @0sewa0 @andriisoldatenko @jdanieck
-/pkg/injection/codemodule/                                 @0sewa0 @andriisoldatenko @jdanieck
-/pkg/injection/namespace/                                  @0sewa0 @andriisoldatenko @jdanieck
-/pkg/controllers/dynakube/injection/                       @0sewa0 @andriisoldatenko @jdanieck
-/pkg/controllers/csi/                                      @0sewa0 @andriisoldatenko @jdanieck
-/test/e2e/features/applicationmonitoring/                  @0sewa0 @andriisoldatenko @jdanieck
-/test/e2e/features/bootstrapper/                           @0sewa0 @andriisoldatenko @jdanieck
+/pkg/api/latest/dynakube/metadataenrichment/               @0sewa0 @andriisoldatenko @jdanieck @Dynatrace/kubernetes-operator-commanders
+/pkg/api/validation/dynakube/metadata_enrichment*          @0sewa0 @andriisoldatenko @jdanieck @Dynatrace/kubernetes-operator-commanders
+/pkg/webhook/mutation/pod/handler/injection                @0sewa0 @andriisoldatenko @jdanieck @Dynatrace/kubernetes-operator-commanders
+/pkg/webhook/mutation/pod/mutator/oneagent/                @0sewa0 @andriisoldatenko @jdanieck @Dynatrace/kubernetes-operator-commanders
+/pkg/injection/codemodule/                                 @0sewa0 @andriisoldatenko @jdanieck @Dynatrace/kubernetes-operator-commanders
+/pkg/injection/namespace/                                  @0sewa0 @andriisoldatenko @jdanieck @Dynatrace/kubernetes-operator-commanders
+/pkg/controllers/dynakube/injection/                       @0sewa0 @andriisoldatenko @jdanieck @Dynatrace/kubernetes-operator-commanders
+/pkg/controllers/csi/                                      @0sewa0 @andriisoldatenko @jdanieck @Dynatrace/kubernetes-operator-commanders
+/test/e2e/features/applicationmonitoring/                  @0sewa0 @andriisoldatenko @jdanieck @Dynatrace/kubernetes-operator-commanders
+/test/e2e/features/bootstrapper/                           @0sewa0 @andriisoldatenko @jdanieck @Dynatrace/kubernetes-operator-commanders
+/config/helm/chart/default/templates/Common/csi            @0sewa0 @andriisoldatenko @jdanieck @Dynatrace/kubernetes-operator-commanders
+/config/helm/chart/default/tests/Common/csi                @0sewa0 @andriisoldatenko @jdanieck @Dynatrace/kubernetes-operator-commanders
 
 # ── Prometheus operand ───────────────────────────────────────────────────────
-/pkg/api/v1alpha1/dtprometheus/                            @StefanHauth @gkrenn @meibensteiner
-/pkg/controllers/dtprometheus/                             @StefanHauth @gkrenn @meibensteiner
-
-# ── Deployment — helm chart, OLM bundles ─────────────────────────────────────
-/config/                                                   @Incredible-O @waodim @jokuniew
-/assets/                                                   @Incredible-O @waodim @jokuniew
+/pkg/api/v1alpha1/dtprometheus/                                   @StefanHauth @gkrenn @meibensteiner @Dynatrace/kubernetes-operator-commanders
+/pkg/controllers/dtprometheus/                                    @StefanHauth @gkrenn @meibensteiner @Dynatrace/kubernetes-operator-commanders
+/config/helm/chart/default/templates/Common/prometheus/           @StefanHauth @gkrenn @meibensteiner @Dynatrace/kubernetes-operator-commanders
+/config/helm/chart/default/tests/Common/prometheus/               @StefanHauth @gkrenn @meibensteiner @Dynatrace/kubernetes-operator-commanders
 
 # ── Docs ─────────────────────────────────────────────────────────────────────
-/doc/                                                      @Incredible-O @waodim @jokuniew
-/*.md                                                      @Incredible-O @waodim @jokuniew
+/doc/                                                      @Incredible-O @waodim @jokuniew @Dynatrace/kubernetes-operator-commanders
+/*.md                                                      @Incredible-O @waodim @jokuniew @Dynatrace/kubernetes-operator-commanders
 
 # ── Repo & CI — build, deps, workflows, linters, scanners, metadata ──────────
-/.github/                                                  @Incredible-O @Dynatrace/kubernetes-operator-release @jokuniew
-/api/                                                      @Incredible-O @waodim @jokuniew
-/hack/                                                     @Incredible-O @waodim @jokuniew
-/Dockerfile                                                @Incredible-O @waodim @jokuniew
-/Makefile                                                  @Incredible-O @waodim @jokuniew
+/.github/                                                  @Incredible-O @Dynatrace/kubernetes-operator-release @jokuniew @Dynatrace/kubernetes-operator-commanders
+/api/                                                      @Incredible-O @waodim @jokuniew @Dynatrace/kubernetes-operator-commanders
+/Makefile                                                  @Incredible-O @waodim @jokuniew @Dynatrace/kubernetes-operator-commanders
+/hack
+/Dockerfile
 /go.mod
 /go.sum
-/.golangci.yml                                             @Incredible-O @waodim @jokuniew
-/.markdownlint.json                                        @Incredible-O @waodim @jokuniew
-/.markdownlintignore                                       @Incredible-O @waodim @jokuniew
-/.snyk                                                     @Incredible-O @waodim @jokuniew @aorcholski
-/PROJECT                                                   @Incredible-O @waodim @jokuniew
-/LICENSE                                                   @Incredible-O @waodim @jokuniew
-/.editorconfig                                             @Incredible-O @waodim @jokuniew
-/.gitignore                                                @Incredible-O @waodim @jokuniew
-/.git-blame-ignore-revs                                    @Incredible-O @waodim @jokuniew
-/CODEOWNERS                                                @jdanieck @andriisoldatenko @StefanHauth
+/.golangci.yml                                             @Dynatrace/kubernetes-operator
+/.markdownlint.json                                        @Dynatrace/kubernetes-operator
+/.markdownlintignore                                       @Dynatrace/kubernetes-operator
+/.snyk                                                     @Incredible-O @waodim @jokuniew @aorcholski @Dynatrace/kubernetes-operator-commanders
+/PROJECT                                                   @Incredible-O @waodim @jokuniew @Dynatrace/kubernetes-operator-commanders
+/LICENSE                                                   @Incredible-O @waodim @jokuniew @Dynatrace/kubernetes-operator-commanders
+/.editorconfig                                             @Incredible-O @waodim @jokuniew @Dynatrace/kubernetes-operator-commanders
+/.gitignore                                                @Incredible-O @waodim @jokuniew @Dynatrace/kubernetes-operator-commanders
+/.git-blame-ignore-revs                                    @Incredible-O @waodim @jokuniew @Dynatrace/kubernetes-operator-commanders
+/CODEOWNERS                                                @jdanieck @andriisoldatenko @StefanHauth @Dynatrace/kubernetes-operator-commanders

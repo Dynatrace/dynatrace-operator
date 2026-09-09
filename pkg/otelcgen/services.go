@@ -51,7 +51,7 @@ func (c *Config) buildServices() ServiceConfig {
 	if len(tracesReceivers) != 0 {
 		pipelinesCfg[traces] = &pipelines.PipelineConfig{
 			Receivers:  tracesReceivers,
-			Processors: append(buildProcessors(), batchTraces),
+			Processors: append(c.buildPipelineProcessors(), batchTraces),
 			Exporters:  buildExporters(),
 		}
 	}
@@ -61,7 +61,7 @@ func (c *Config) buildServices() ServiceConfig {
 	if len(metricsReceivers) != 0 {
 		pipelinesCfg[metrics] = &pipelines.PipelineConfig{
 			Receivers:  metricsReceivers,
-			Processors: append(buildProcessors(), cumulativeToDelta, batchMetrics),
+			Processors: append(c.buildPipelineProcessors(), cumulativeToDelta, batchMetrics),
 			Exporters:  buildExporters(),
 		}
 	}
@@ -71,7 +71,7 @@ func (c *Config) buildServices() ServiceConfig {
 	if len(logsReceivers) != 0 {
 		pipelinesCfg[logs] = &pipelines.PipelineConfig{
 			Receivers:  logsReceivers,
-			Processors: append(buildProcessors(), batchLogs),
+			Processors: append(c.buildPipelineProcessors(), batchLogs),
 			Exporters:  buildExporters(),
 		}
 	}
@@ -94,10 +94,21 @@ func buildExporters() []component.ID {
 	}
 }
 
-func buildProcessors() []component.ID {
-	return []component.ID{
-		memoryLimiter, transformPodIP, k8sattributes, transform,
+func (c *Config) buildPipelineProcessors() []component.ID {
+	// k8sattributesAnnotations must run before staticResourceAttrs so per-pod annotations claim
+	// their keys first (k8sattributesprocessor never overwrites an already-set attribute, so this
+	// is the only way for it to win); staticResourceAttrs must in turn run before
+	// k8sattributesFacts so the static DynaKube default can claim a key before the built-in fact
+	// extraction would. transform runs last: its merge_maps statement unpacks the
+	// metadata.dynatrace.com JSON blob (written by the enrichment webhook, which already resolves
+	// the full precedence chain) with "upsert", so that blob always wins over both static and facts.
+	processors := []component.ID{memoryLimiter, transformPodIP, k8sattributesAnnotations}
+
+	if len(c.resourceAttributes) > 0 {
+		processors = append(processors, staticResourceAttrs)
 	}
+
+	return append(processors, k8sattributesFacts, transform)
 }
 
 func filter(componentIDs []component.ID, f func(component.ID) bool) []component.ID {

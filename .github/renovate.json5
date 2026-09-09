@@ -36,6 +36,7 @@
   automergeType: "pr",
   automerge: true,
   branchNameStrict: true,
+  branchPrefix: "rnv/",
   prConcurrentLimit: 10,
   hashedBranchLength: 27, // 63 character limit for label values with space for "dynatrace-operator.v0.0.0-snapshot-" prefix
   "osvVulnerabilityAlerts": true,
@@ -233,6 +234,10 @@
     {
       matchManagers: ["pip_requirements", "npm", "regex"],
       groupName: "Dev tooling",
+    },
+    {
+      matchPackageNames: ["gcr.io/cloud-marketplace-tools/**"],
+      enabled: false,
     },
   ],
   platformAutomerge: true,

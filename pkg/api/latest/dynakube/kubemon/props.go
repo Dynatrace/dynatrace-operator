@@ -15,6 +15,8 @@ const (
 
 	NameSuffix = "-kubemon"
 
+	DeploymentPropertiesConfigMapSuffix = "-deployment-properties"
+
 	ServiceAccountName = "dynatrace-activegate"
 
 	TenantRegistrySubPath = "/linux/activegate"
@@ -25,8 +27,9 @@ type KubeMon struct {
 	*Spec
 	*Status
 
-	name       string
-	apiURLHost string
+	name                      string
+	apiURLHost                string
+	needsDeploymentProperties bool
 }
 
 func (km *Spec) IsEnabled() bool {
@@ -40,6 +43,14 @@ func (km *KubeMon) SetName(name string) {
 
 func (km *KubeMon) SetAPIURLHost(apiURLHost string) {
 	km.apiURLHost = apiURLHost
+}
+
+func (km *KubeMon) SetNeedsDeploymentProperties(needsDeploymentProperties bool) {
+	km.needsDeploymentProperties = needsDeploymentProperties
+}
+
+func (km *KubeMon) NeedsDeploymentProperties() bool {
+	return km.needsDeploymentProperties
 }
 
 func (km *Spec) GetServiceAccountName() string {
@@ -64,6 +75,10 @@ func (km *KubeMon) GetAuthTokenSecretName() string {
 
 func (km *KubeMon) GetCustomPropertiesSecretName() string {
 	return km.name + NameSuffix + "-custom-properties"
+}
+
+func (km *KubeMon) GetDeploymentPropertiesSecretName() string {
+	return km.name + NameSuffix + DeploymentPropertiesConfigMapSuffix
 }
 
 // GetTLSSecretName returns the name of the KubeMon TLS secret.

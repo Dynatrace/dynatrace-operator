@@ -7,7 +7,7 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	dtsettings "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kspm/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kspm/kspmsettings"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kspm/token"
@@ -29,7 +29,7 @@ func NewReconciler(client client.Client, apiReader client.Reader) *Reconciler {
 	}
 }
 
-func (r *Reconciler) Reconcile(ctx context.Context, dtClient dtsettings.Client, dk *dynakube.DynaKube) error {
+func (r *Reconciler) Reconcile(ctx context.Context, dtClient *dynatrace.Client, dk *dynakube.DynaKube) error {
 	ctx, log := logd.NewFromContext(ctx, "kspm")
 
 	err := r.tokenReconciler.Reconcile(ctx, dk)
@@ -39,14 +39,14 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtClient dtsettings.Client, 
 		return err
 	}
 
-	err = r.settingsReconciler.Reconcile(ctx, dtClient, dk)
+	err = r.settingsReconciler.Reconcile(ctx, dtClient.Settings, dk)
 	if err != nil {
 		log.Info("failed to reconcile KSPM Settings")
 
 		return err
 	}
 
-	err = r.daemonSetReconciler.Reconcile(ctx, dk)
+	err = r.daemonSetReconciler.Reconcile(ctx, dtClient.Images, dk)
 	if err != nil {
 		log.Info("failed to reconcile Dynatrace KSPM DaemonSet")
 
