@@ -42,10 +42,10 @@ func TestMissingPrometheusCRDs(t *testing.T) {
 
 		msg := missingPrometheusCRDs(t.Context(), clt)
 
-		assert.Contains(t, msg, "servicemonitors.monitoring.coreos.com")
-		assert.Contains(t, msg, "podmonitors.monitoring.coreos.com")
-		assert.Contains(t, msg, "probes.monitoring.coreos.com")
-		assert.Contains(t, msg, "scrapeconfigs.monitoring.coreos.com")
+		assert.Contains(t, msg, "ServiceMonitor.monitoring.coreos.com")
+		assert.Contains(t, msg, "PodMonitor.monitoring.coreos.com")
+		assert.Contains(t, msg, "Probe.monitoring.coreos.com")
+		assert.Contains(t, msg, "ScrapeConfig.monitoring.coreos.com")
 	})
 
 	t.Run("only some CRDs missing lists just those", func(t *testing.T) {
@@ -62,10 +62,10 @@ func TestMissingPrometheusCRDs(t *testing.T) {
 
 		msg := missingPrometheusCRDs(t.Context(), clt)
 
-		assert.Contains(t, msg, "scrapeconfigs.monitoring.coreos.com")
-		assert.NotContains(t, msg, "servicemonitors.monitoring.coreos.com")
-		assert.NotContains(t, msg, "podmonitors.monitoring.coreos.com")
-		assert.NotContains(t, msg, "probes.monitoring.coreos.com")
+		assert.Contains(t, msg, "ScrapeConfig.monitoring.coreos.com")
+		assert.NotContains(t, msg, "ServiceMonitor.monitoring.coreos.com")
+		assert.NotContains(t, msg, "PodMonitor.monitoring.coreos.com")
+		assert.NotContains(t, msg, "Probe.monitoring.coreos.com")
 	})
 
 	t.Run("all CRDs present produces no warning", func(t *testing.T) {

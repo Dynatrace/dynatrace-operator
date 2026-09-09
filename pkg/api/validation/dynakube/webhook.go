@@ -6,16 +6,21 @@ package validation
 import (
 	latest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	v1beta5 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/validation"
+	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
+
+func setupWebhookWithManager(mgr ctrl.Manager, obj runtime.Object, validator admission.Validator[runtime.Object]) error {
+	return ctrl.NewWebhookManagedBy(mgr, obj).WithCustomValidator(validator).Complete() //nolint
+}
 
 func SetupWebhookWithManager(mgr ctrl.Manager) error {
 	validator := New(mgr.GetAPIReader())
 
-	if err := validation.SetupWebhookForType(mgr, &v1beta5.DynaKube{}, validator); err != nil {
+	if err := setupWebhookWithManager(mgr, &v1beta5.DynaKube{}, validator); err != nil {
 		return err
 	}
 
-	return validation.SetupWebhookForType(mgr, &latest.DynaKube{}, validator)
+	return setupWebhookWithManager(mgr, &latest.DynaKube{}, validator)
 }

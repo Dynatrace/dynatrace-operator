@@ -114,10 +114,10 @@ func assertMissingCRDWarning(t *testing.T, warnings []string) {
 	t.Helper()
 
 	require.Len(t, warnings, 1)
-	assert.Contains(t, warnings[0], "servicemonitors.monitoring.coreos.com")
-	assert.Contains(t, warnings[0], "podmonitors.monitoring.coreos.com")
-	assert.Contains(t, warnings[0], "probes.monitoring.coreos.com")
-	assert.Contains(t, warnings[0], "scrapeconfigs.monitoring.coreos.com")
+	assert.Contains(t, warnings[0], "ServiceMonitor.monitoring.coreos.com")
+	assert.Contains(t, warnings[0], "PodMonitor.monitoring.coreos.com")
+	assert.Contains(t, warnings[0], "Probe.monitoring.coreos.com")
+	assert.Contains(t, warnings[0], "ScrapeConfig.monitoring.coreos.com")
 }
 
 // installMonitoringCRDs registers minimal stand-ins for the Prometheus Operator CRDs

@@ -34,8 +34,7 @@ func missingPrometheusCRDs(ctx context.Context, apiReader client.Reader) string 
 			continue
 		}
 
-		resource := strings.ToLower(gvk.Kind) + "s"
-		missing = append(missing, fmt.Sprintf("%s.%s", resource, gvk.Group))
+		missing = append(missing, gvk.GroupKind().String())
 	}
 
 	if len(missing) == 0 {
