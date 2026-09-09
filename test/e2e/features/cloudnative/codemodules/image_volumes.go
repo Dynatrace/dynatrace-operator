@@ -11,6 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/codemodules"
 	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/nodes"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/sample"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
 	"sigs.k8s.io/e2e-framework/pkg/features"
@@ -18,6 +19,9 @@ import (
 
 // ImageVolume feature using image volumes deployment
 func ImageVolume(t *testing.T) features.Feature {
+	if !nodes.IsImageVolumesSupported(t) {
+		t.Skip("image volume is not supported")
+	}
 	builder := features.New("cnfs-codemodules-with-image-volumes")
 	secretConfig := tenant.GetSingleTenantSecret(t)
 	cnfsSpec := codeModulesCloudNativeSpec(t)
