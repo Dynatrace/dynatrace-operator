@@ -42,12 +42,17 @@ CRD_BASE_DIR=${SCRIPT_DIR}/../../config/helm/chart/default/templates/Common/crd/
 mkdir -p "${CRD_BASE_DIR}"
 
 for file in "${FILES[@]}"; do
-  URL="https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/${VERSION}/example/prometheus-operator-crd/${file}"
+    URL="https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/${VERSION}/example/prometheus-operator-crd/${file}"
+    if grep -q "${VERSION}" "${CRD_BASE_DIR}/${file}" 2>/dev/null; then
+        echo "Prometheus Operator CRD ${file} is up-to-date"
+        continue
+    fi
 
-  echo -e "Downloading Prometheus Operator CRD with Version ${VERSION}:\n${URL}\n"
+    echo -e "Downloading Prometheus Operator CRD with Version ${VERSION}:\n${URL}\n"
 
-  if ! create_crd_file "${URL}" "${CRD_BASE_DIR}/${file}"; then
-    echo -e "Failed to download ${URL}!"
-    exit 1
-  fi
+    if ! create_crd_file "${URL}" "${CRD_BASE_DIR}/${file}"; then
+        echo "Failed to download ${URL}!"
+        rm -f "${CRD_BASE_DIR}/${file}"
+        exit 1
+    fi
 done
