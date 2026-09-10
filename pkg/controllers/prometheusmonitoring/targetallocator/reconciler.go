@@ -1,0 +1,381 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
+package targetallocator
+
+import (
+	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"fmt"
+	"maps"
+
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/prometheusmonitoring"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/prometheusmonitoring/condition"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/registry"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8scontainer"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
+	k8sobject "github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sdeployment"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/yaml"
+)
+
+const (
+	insecurePortName = "http-port"
+	securePortName   = "https-port"
+
+	configVolume = "config"
+	configFile   = "targetallocator.yaml"
+
+	serviceAccount = "dynatrace-target-allocator"
+
+	configHashAnnotation = "internal.operator.dynatrace.com/allocator-config-hash"
+)
+
+type Reconciler struct {
+	client.Client
+}
+
+// Config is the subset of configurations that can be configured by the operator.
+//
+// https://github.com/open-telemetry/opentelemetry-operator/blob/v0.157.0/cmd/otel-allocator/internal/config/config.go
+type Config struct {
+	ListenAddr         string                `json:"listen_addr"`
+	AllocationStrategy string                `json:"allocation_strategy"`
+	CollectorNamespace string                `json:"collector_namespace"`
+	CollectorSelector  *metav1.LabelSelector `json:"collector_selector,omitempty"`
+	FilterStrategy     string                `json:"filter_strategy"`
+	HTTPS              *HTTPSConfig          `json:"https,omitempty"`
+	PrometheusCR       ScrapeConfig          `json:"prometheus_cr"`
+}
+
+type HTTPSConfig struct {
+	Enabled         bool   `json:"enabled"`
+	ListenAddr      string `json:"listen_addr"`
+	TLSCertFilePath string `json:"tls_cert_file_path"`
+	TLSKeyFilePath  string `json:"tls_keyt_file_path"`
+	CAFilePath      string `json:"ca_cert_file_path"`
+}
+
+type ScrapeConfig struct {
+	Enabled                         bool                  `json:"enabled"`
+	ScrapeInterval                  metav1.Duration       `json:"scrape_interval"`
+	PodMonitorSelector              *metav1.LabelSelector `json:"pod_monitor_selector,omitempty"`
+	PodMonitorNamespaceSelector     *metav1.LabelSelector `json:"pod_monitor_namespace_selector,omitempty"`
+	ServiceMonitorSelector          *metav1.LabelSelector `json:"service_monitor_selector,omitempty"`
+	ServiceMonitorNamespaceSelector *metav1.LabelSelector `json:"service_monitor_namespace_selector,omitempty"`
+	ScrapeConfigSelector            *metav1.LabelSelector `json:"scrape_config_selector,omitempty"`
+	ScrapeConfigNamespaceSelector   *metav1.LabelSelector `json:"scrape_config_namespace_selector,omitempty"`
+	ProbeSelector                   *metav1.LabelSelector `json:"probe_selector,omitempty"`
+	ProbeNamespaceSelector          *metav1.LabelSelector `json:"probe_namespace_selector,omitempty"`
+}
+
+type reconcileScope struct {
+	// Required for reconcile
+	Owner         *prometheusmonitoring.PrometheusMonitoring
+	DynaKube      *dynakube.DynaKube
+	Spec          *prometheusmonitoring.TargetAllocator
+	AppLabels     *k8slabel.Labels
+	ImageClient   image.Client
+	ConfigMapHash string
+	Deployment    *appsv1.Deployment
+}
+
+func (r *Reconciler) Reconcile(ctx context.Context, dtp *prometheusmonitoring.PrometheusMonitoring, dk *dynakube.DynaKube, imageClient image.Client) error {
+	ctx, _ = logd.NewFromContext(ctx, "targetallocator")
+
+	scope := &reconcileScope{
+		Owner:       dtp,
+		DynaKube:    dk,
+		Spec:        dtp.TargetAllocator(),
+		AppLabels:   k8slabel.OTelTargetAllocator(),
+		ImageClient: imageClient,
+	}
+
+	var err error
+
+	for _, f := range []func(context.Context, *reconcileScope) error{
+		r.reconcileConfigMap,
+		r.reconcileDeployment,
+		r.reconcileService,
+	} {
+		if err = f(ctx, scope); err != nil {
+			break
+		}
+	}
+
+	condition.Set(&scope.Owner.Status.Conditions, prometheusmonitoring.TargetAllocatorAvailable, "target allocator",
+		func() bool { return k8sdeployment.IsRolloutComplete(scope.Deployment) }, err)
+
+	return err
+}
+
+func (r *Reconciler) reconcileConfigMap(ctx context.Context, s *reconcileScope) error {
+	log := logd.FromContext(ctx)
+	log.Debug("reconciling configmap")
+
+	cfg := Config{
+		ListenAddr:         ":8080",
+		AllocationStrategy: "consistent-hashing",
+		CollectorNamespace: s.Owner.Namespace,
+		CollectorSelector: &metav1.LabelSelector{
+			MatchLabels: k8slabel.OTelScraper().AsSelector(),
+		},
+		FilterStrategy: "relabel-config",
+		HTTPS: &HTTPSConfig{
+			Enabled:    false,
+			ListenAddr: ":8443",
+			// TODO: add cert mounts
+		},
+		PrometheusCR: ScrapeConfig{
+			Enabled:                         true,
+			ScrapeInterval:                  s.Spec.ScrapeInterval,
+			PodMonitorSelector:              s.Spec.CustomResourceSelector,
+			PodMonitorNamespaceSelector:     s.Spec.CustomResourceNamespaceSelector,
+			ServiceMonitorSelector:          s.Spec.CustomResourceSelector,
+			ServiceMonitorNamespaceSelector: s.Spec.CustomResourceNamespaceSelector,
+			ScrapeConfigSelector:            s.Spec.CustomResourceSelector,
+			ScrapeConfigNamespaceSelector:   s.Spec.CustomResourceNamespaceSelector,
+			ProbeSelector:                   s.Spec.CustomResourceSelector,
+			ProbeNamespaceSelector:          s.Spec.CustomResourceNamespaceSelector,
+		},
+	}
+
+	data, err := yaml.Marshal(cfg)
+	if err != nil {
+		return err
+	}
+
+	cm := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: s.Spec.GetDeploymentName(), Namespace: s.Owner.Namespace}}
+
+	err = k8sobject.RetryCreateOrUpdate(ctx, r, cm, func() error {
+		s.AppLabels.MergeInto(cm)
+
+		cm.Data = map[string]string{configFile: string(data)}
+
+		return controllerutil.SetControllerReference(s.Owner, cm, r.Scheme())
+	})
+	if err != nil {
+		return err
+	}
+
+	checksum := sha256.Sum256(data)
+	s.ConfigMapHash = hex.EncodeToString(checksum[:])
+
+	return nil
+}
+
+func (r *Reconciler) resolveImage(ctx context.Context, s *reconcileScope) error {
+	if s.Spec.Image != "" {
+		s.Owner.Status.TargetAllocator.ResolvedImage = s.Spec.Image
+
+		return nil
+	}
+
+	imageURI, err := registry.ResolveImage(ctx, s.ImageClient, s.Owner.Spec.PublicRegistryOverride, image.TargetAllocator)
+	if err != nil {
+		return err
+	}
+
+	s.Owner.Status.TargetAllocator.ResolvedImage = imageURI
+
+	return nil
+}
+
+func (r *Reconciler) reconcileDeployment(ctx context.Context, s *reconcileScope) error {
+	log := logd.FromContext(ctx)
+	log.Debug("reconciling deployment")
+
+	if err := r.resolveImage(ctx, s); err != nil {
+		return fmt.Errorf("resolve image: %w", err)
+	}
+
+	deploy := &appsv1.Deployment{ObjectMeta: metav1.ObjectMeta{Name: s.Spec.GetDeploymentName(), Namespace: s.Owner.Namespace}}
+
+	err := k8sobject.RetryCreateOrUpdate(ctx, r, deploy, func() error {
+		mutateDeployment(deploy, s)
+
+		return controllerutil.SetControllerReference(s.Owner, deploy, r.Scheme())
+	})
+	if err != nil {
+		return err
+	}
+
+	s.Deployment = deploy
+
+	return nil
+}
+
+func (r *Reconciler) reconcileService(ctx context.Context, s *reconcileScope) error {
+	log := logd.FromContext(ctx)
+	log.Debug("reconciling service")
+
+	svc := &corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: s.Spec.GetDeploymentName(), Namespace: s.Owner.Namespace}}
+
+	return k8sobject.RetryCreateOrUpdate(ctx, r, svc, func() error {
+		s.AppLabels.MergeInto(svc)
+
+		svc.Spec.Selector = s.AppLabels.AsSelector()
+		svc.Spec.Ports = []corev1.ServicePort{
+			{
+				Name:       securePortName,
+				Protocol:   corev1.ProtocolTCP,
+				Port:       443,
+				TargetPort: intstr.FromString(securePortName),
+			},
+			{
+				Name:       insecurePortName,
+				Protocol:   corev1.ProtocolTCP,
+				Port:       80,
+				TargetPort: intstr.FromString(insecurePortName),
+			},
+		}
+
+		return controllerutil.SetControllerReference(s.Owner, svc, r.Scheme())
+	})
+}
+
+func mutateDeployment(deploy *appsv1.Deployment, s *reconcileScope) {
+	s.AppLabels.MergeInto(deploy)
+
+	deploy.Spec.Template.Labels = maps.Clone(s.Spec.Labels)
+	if s.Spec.Labels == nil {
+		deploy.Spec.Template.Labels = make(map[string]string)
+	}
+
+	maps.Copy(deploy.Spec.Template.Labels, s.AppLabels.AsMap())
+
+	deploy.Spec.Template.Annotations = maps.Clone(s.Spec.Annotations)
+	if deploy.Spec.Template.Annotations == nil {
+		deploy.Spec.Template.Annotations = make(map[string]string)
+	}
+
+	deploy.Spec.Template.Annotations[configHashAnnotation] = s.ConfigMapHash
+
+	if s.Spec.Replicas != nil {
+		deploy.Spec.Replicas = s.Spec.Replicas
+	}
+
+	deploy.Spec.Selector = &metav1.LabelSelector{MatchLabels: s.AppLabels.AsSelector()}
+	deploy.Spec.Template.Spec.ServiceAccountName = serviceAccount
+	deploy.Spec.Template.Spec.AutomountServiceAccountToken = new(true)
+	deploy.Spec.Template.Spec.Affinity = s.Spec.Affinity
+	deploy.Spec.Template.Spec.NodeSelector = s.Spec.NodeSelector
+	deploy.Spec.Template.Spec.PriorityClassName = s.Spec.PriorityClassName
+	deploy.Spec.Template.Spec.Tolerations = s.Spec.Tolerations
+	deploy.Spec.Template.Spec.TopologySpreadConstraints = s.Spec.TopologySpreadConstraints
+	deploy.Spec.Template.Spec.Volumes = buildVolumes(s.Spec)
+	deploy.Spec.Template.Spec.Containers = []corev1.Container{
+		buildContainer(s.Spec, s.Owner.Status.TargetAllocator.ResolvedImage, s.Owner.Namespace, k8scontainer.GetFirstInPodSpec(&deploy.Spec.Template.Spec)),
+	}
+}
+
+// Build the container for the target allocator. The created container should only cause an update if a mandated value changed.
+func buildContainer(spec *prometheusmonitoring.TargetAllocator, imageURI string, namespace string, current corev1.Container) corev1.Container {
+	currentLivenessProbe := ptr.Deref(current.LivenessProbe, corev1.Probe{})
+	currentReadinessProbe := ptr.Deref(current.ReadinessProbe, corev1.Probe{})
+
+	imagePullPolicy := spec.ImagePullPolicy
+	if imagePullPolicy == "" {
+		imagePullPolicy = current.ImagePullPolicy
+	}
+
+	return corev1.Container{
+		Name:            "targetallocator",
+		Image:           imageURI,
+		ImagePullPolicy: imagePullPolicy,
+		Args:            spec.SanitizedArgs(),
+		Ports: []corev1.ContainerPort{
+			{Name: insecurePortName, ContainerPort: 8080, Protocol: corev1.ProtocolTCP},
+			{Name: securePortName, ContainerPort: 8443, Protocol: corev1.ProtocolTCP},
+		},
+		VolumeMounts: []corev1.VolumeMount{
+			{Name: configVolume, MountPath: "/conf", ReadOnly: true},
+			// TODO: TLS volume
+		},
+		Env:       k8senv.AppendGoMemoryLimit([]corev1.EnvVar{{Name: "OTELCOL_NAMESPACE", Value: namespace}}, spec.Resources),
+		Resources: spec.Resources,
+		SecurityContext: &corev1.SecurityContext{
+			Privileged:               new(false),
+			AllowPrivilegeEscalation: new(false),
+			RunAsNonRoot:             new(true),
+			RunAsUser:                new(int64(65532)),
+			RunAsGroup:               new(int64(65532)),
+			ReadOnlyRootFilesystem:   new(true),
+			SeccompProfile: &corev1.SeccompProfile{
+				Type: corev1.SeccompProfileTypeRuntimeDefault,
+			},
+			Capabilities: &corev1.Capabilities{
+				Drop: []corev1.Capability{
+					"ALL",
+				},
+			},
+		},
+		LivenessProbe: &corev1.Probe{
+			ProbeHandler: corev1.ProbeHandler{
+				HTTPGet: &corev1.HTTPGetAction{
+					Scheme: corev1.URISchemeHTTP,
+					Path:   "/livez",
+					Port:   intstr.FromString(insecurePortName),
+				},
+			},
+			InitialDelaySeconds:           15,
+			PeriodSeconds:                 20,
+			TimeoutSeconds:                currentLivenessProbe.TimeoutSeconds,
+			SuccessThreshold:              currentLivenessProbe.SuccessThreshold,
+			FailureThreshold:              currentLivenessProbe.FailureThreshold,
+			TerminationGracePeriodSeconds: currentLivenessProbe.TerminationGracePeriodSeconds,
+		},
+		ReadinessProbe: &corev1.Probe{
+			ProbeHandler: corev1.ProbeHandler{
+				HTTPGet: &corev1.HTTPGetAction{
+					Scheme: corev1.URISchemeHTTP,
+					Path:   "/readyz",
+					Port:   intstr.FromString(insecurePortName),
+				},
+			},
+			InitialDelaySeconds:           5,
+			PeriodSeconds:                 10,
+			TimeoutSeconds:                currentReadinessProbe.TimeoutSeconds,
+			SuccessThreshold:              currentReadinessProbe.SuccessThreshold,
+			FailureThreshold:              currentReadinessProbe.FailureThreshold,
+			TerminationGracePeriodSeconds: currentReadinessProbe.TerminationGracePeriodSeconds,
+		},
+		TerminationMessagePath:   current.TerminationMessagePath,
+		TerminationMessagePolicy: current.TerminationMessagePolicy,
+	}
+}
+
+func buildVolumes(spec *prometheusmonitoring.TargetAllocator) []corev1.Volume {
+	volumes := []corev1.Volume{
+		{
+			Name: configVolume,
+			VolumeSource: corev1.VolumeSource{
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: spec.GetDeploymentName(),
+					},
+					Items: []corev1.KeyToPath{
+						{Key: configFile, Path: configFile},
+					},
+					DefaultMode: new(int32(0o644)),
+				},
+			},
+		},
+	}
+
+	// TODO: TLS volume
+
+	return volumes
+}

@@ -7,8 +7,8 @@
 package v1alpha1
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/dtprometheus"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/prometheusmonitoring"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -28,7 +28,7 @@ var (
 func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(GroupVersion,
 		&edgeconnect.EdgeConnect{}, &edgeconnect.EdgeConnectList{},
-		&dtprometheus.PrometheusMonitoring{}, &dtprometheus.PrometheusMonitoringList{},
+		&prometheusmonitoring.PrometheusMonitoring{}, &prometheusmonitoring.PrometheusMonitoringList{},
 	)
 	metav1.AddToGroupVersion(scheme, GroupVersion)
 

@@ -13,7 +13,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/dtprometheus"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/prometheusmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	webhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
@@ -101,7 +101,7 @@ func TestManifestCollector_Success(t *testing.T) {
 			TypeMeta:   typeMeta("EdgeConnect"),
 			ObjectMeta: objectMeta("edgeconnect1"),
 		},
-		&dtprometheus.PrometheusMonitoring{
+		&prometheusmonitoring.PrometheusMonitoring{
 			TypeMeta:   typeMeta("PrometheusMonitoring"),
 			ObjectMeta: objectMeta("dtprometheus1"),
 		},
