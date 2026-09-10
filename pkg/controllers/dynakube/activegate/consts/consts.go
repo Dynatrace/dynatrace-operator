@@ -25,6 +25,9 @@ const (
 	AnnotationActiveGateTenantTokenHash   = api.InternalFlagPrefix + "activegate-tenant-token-hash"
 	AnnotationActiveGateContainerAppArmor = corev1.DeprecatedAppArmorBetaContainerAnnotationKeyPrefix + ActiveGateContainerName
 
+	PropertiesClientInternalSection = "[http.client.internal]"
+	PropertiesNoProxyFieldName      = "proxy-non-proxy-hosts"
+
 	EnvDTCapabilities    = "DT_CAPABILITIES"
 	EnvDTIDSeedNamespace = "DT_ID_SEED_NAMESPACE"
 	EnvDTIDSeedClusterID = "DT_ID_SEED_K8S_CLUSTER_ID"

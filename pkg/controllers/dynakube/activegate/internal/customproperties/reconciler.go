@@ -10,6 +10,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
@@ -24,9 +25,6 @@ const (
 	Suffix   = "custom-properties"
 	DataKey  = "customProperties"
 	DataPath = "custom.properties"
-
-	clientInternalSection = "[http.client.internal]"
-	noProxyFieldName      = "proxy-non-proxy-hosts"
 
 	customPropertiesConditionType string = "CustomPropertiesSecret"
 )
@@ -122,12 +120,12 @@ func (r *Reconciler) buildCustomPropertiesValue(ctx context.Context, dk *dynakub
 
 func (r *Reconciler) addNonProxyHostsSettingsToValue(ffNoProxy string, lines []string) []string {
 	noProxyValue := strings.ReplaceAll(ffNoProxy, ",", "|")
-	proxySettings := fmt.Sprintf("%s\n%s=%s", clientInternalSection, noProxyFieldName, noProxyValue)
+	proxySettings := fmt.Sprintf("%s\n%s=%s", consts.PropertiesClientInternalSection, consts.PropertiesNoProxyFieldName, noProxyValue)
 
 	found := false
 
 	for i, line := range lines {
-		if strings.Contains(line, clientInternalSection) {
+		if strings.Contains(line, consts.PropertiesClientInternalSection) {
 			found = true
 			lines[i] = proxySettings
 
