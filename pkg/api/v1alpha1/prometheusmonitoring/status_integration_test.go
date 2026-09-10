@@ -15,14 +15,14 @@ import (
 )
 
 const (
-	testPrometheusMonitoringName = "dtprometheus"
+	testPrometheusMonitoringName = "prometheusmonitoring"
 	testNamespaceDtp             = "dynatrace"
 
 	dummyConditionTypeDtp    = "dummyType"
 	dummyConditionReasonDtp  = "dummyReason"
 	dummyConditionMessageDtp = "dummyMessage"
 
-	duplicatedConditionErrorMessageDtp = `PrometheusMonitoring.dynatrace.com "dtprometheus" is invalid: status.conditions[1]: Duplicate value: {"type":"dummyType"}`
+	duplicatedConditionErrorMessageDtp = `PrometheusMonitoring.dynatrace.com "prometheusmonitoring" is invalid: status.conditions[1]: Duplicate value: {"type":"dummyType"}`
 )
 
 func TestPrometheusMonitoringUpdateStatus(t *testing.T) {

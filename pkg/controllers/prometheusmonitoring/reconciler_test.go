@@ -29,7 +29,7 @@ import (
 )
 
 func TestReconcile(t *testing.T) {
-	req := ctrl.Request{NamespacedName: types.NamespacedName{Name: "dtprometheus", Namespace: "dynatrace"}}
+	req := ctrl.Request{NamespacedName: types.NamespacedName{Name: "prometheusmonitoring", Namespace: "dynatrace"}}
 
 	assertReconcileDone := func(t *testing.T, r *Reconciler, req ctrl.Request) {
 		t.Helper()

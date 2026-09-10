@@ -88,7 +88,7 @@ func TestSetupWithManager(t *testing.T) {
 		t.Helper()
 
 		dtprom := &prometheusmonitoring.PrometheusMonitoring{
-			ObjectMeta: metav1.ObjectMeta{GenerateName: "dtprometheus", Namespace: metav1.NamespaceDefault},
+			ObjectMeta: metav1.ObjectMeta{GenerateName: "prometheusmonitoring", Namespace: metav1.NamespaceDefault},
 			Spec:       prometheusmonitoring.PrometheusMonitoringSpec{DynaKubeRef: "dynakube"},
 		}
 		integrationtests.CreateKubernetesObject(t, clt, dtprom)
