@@ -38,12 +38,7 @@ type ContainerRuntime struct {
 // Input:
 // v1.30.14
 func parseKubeletVersion(kubeletVersion string) (*version.Version, error) {
-	v := kubeletVersion
-	if idx := strings.Index(v, "-"); idx != -1 {
-		v = v[:idx]
-	}
-
-	parsed, err := version.ParseSemantic(v)
+	parsed, err := version.ParseSemantic(kubeletVersion)
 	if err != nil {
 		return nil, fmt.Errorf("parse kubelet version %q: %w", kubeletVersion, err)
 	}
@@ -54,19 +49,17 @@ func parseKubeletVersion(kubeletVersion string) (*version.Version, error) {
 // parseContainerRuntime splits "containerd://2.2.2" or "cri-o://1.28.0" into
 // runtime type and version.
 func parseContainerRuntime(runtimeVersion string) (*ContainerRuntime, error) {
-	const expectedParts = 2
-	parts := strings.SplitN(runtimeVersion, "://", expectedParts)
-	if len(parts) != expectedParts {
+	before, after, found := strings.Cut(runtimeVersion, "://")
+	if !found {
 		return nil, fmt.Errorf("unexpected container runtime format: %q", runtimeVersion)
 	}
 
-	// version.ParseSemantic requires a "v" prefix
-	parsed, err := version.ParseSemantic("v" + parts[1])
+	parsed, err := version.ParseSemantic(after)
 	if err != nil {
-		return nil, fmt.Errorf("parse runtime version %q: %w", parts[1], err)
+		return nil, fmt.Errorf("parse runtime version %q: %w", after, err)
 	}
 
-	return &ContainerRuntime{Type: parts[0], Version: parsed}, nil
+	return &ContainerRuntime{Type: before, Version: parsed}, nil
 }
 
 // nodeSupportsImageVolumes returns true when both the kubelet and the container
