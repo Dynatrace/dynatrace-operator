@@ -16,6 +16,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/volumes"
 	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/platform"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/registry"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/sample"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
 	"github.com/stretchr/testify/require"
@@ -29,7 +30,7 @@ func NoCSI(t *testing.T) features.Feature {
 	secretConfig := tenant.GetSingleTenantSecret(t)
 	dk := *dynakubeComponents.New(
 		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
-		dynakubeComponents.WithApplicationMonitoringSpec(&oneagent.ApplicationMonitoringSpec{AppInjectionSpec: oneagent.AppInjectionSpec{CodeModulesImage: bootstrapperImage}}),
+		dynakubeComponents.WithApplicationMonitoringSpec(&oneagent.ApplicationMonitoringSpec{AppInjectionSpec: oneagent.AppInjectionSpec{CodeModulesImage: registry.GetLatestCodeModulesImageTagURI(t)}}),
 		dynakubeComponents.WithAnnotations(map[string]string{
 			exp.OANodeImagePullTechnologiesKey: "php",
 		}),

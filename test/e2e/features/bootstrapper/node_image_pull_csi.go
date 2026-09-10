@@ -13,25 +13,16 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/cloudnative/codemodules"
-	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers"
 	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sjob"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8snamespace"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8spod"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/registry"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/sample"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
 	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
-)
-
-const (
-	defaultCodeModulesImage = "ghcr.io/dynatrace/dynatrace-bootstrapper:snapshot"
-	codeModulesImageEnvVar  = "E2E_CODEMODULES_IMAGE"
-)
-
-var (
-	bootstrapperImage = helpers.EnvOrDefault(codeModulesImageEnvVar, defaultCodeModulesImage)
 )
 
 func InstallWithCSI(t *testing.T) features.Feature {
@@ -40,7 +31,7 @@ func InstallWithCSI(t *testing.T) features.Feature {
 
 	appMonDynakube := *dynakubeComponents.New(
 		dynakubeComponents.WithName("app-codemodules"),
-		dynakubeComponents.WithApplicationMonitoringSpec(&oneagent.ApplicationMonitoringSpec{AppInjectionSpec: oneagent.AppInjectionSpec{CodeModulesImage: bootstrapperImage}}),
+		dynakubeComponents.WithApplicationMonitoringSpec(&oneagent.ApplicationMonitoringSpec{AppInjectionSpec: oneagent.AppInjectionSpec{CodeModulesImage: registry.GetLatestCodeModulesImageTagURI(t)}}),
 		dynakubeComponents.WithAnnotations(map[string]string{exp.OANodeImagePullKey: "true"}),
 		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
 	)

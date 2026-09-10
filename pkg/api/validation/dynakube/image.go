@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	errorUnparsableImageRef = `Custom %s image can't be parsed, make sure it's a valid image reference.`
+	errorUnparsableImageRef = `Custom %s image can't be parsed, make sure it's a valid image reference (remove 'http://' or 'https://' prefix).`
 )
 
 func imageFieldHasTenantImage(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {

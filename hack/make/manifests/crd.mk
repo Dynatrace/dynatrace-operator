@@ -14,9 +14,13 @@ manifests/crd/uninstall: prerequisites/kustomize manifests/crd/generate
 	$(KUSTOMIZE) build config/crd/dtprometheus | kubectl delete -f -
 
 ## Builds a CRD and puts it with the Helm charts
-manifests/crd/helm: prerequisites/kustomize helm/version manifests/crd/generate
+manifests/crd/helm: prerequisites/kustomize helm/version manifests/crd/generate manifests/crd/prometheus
 	./hack/helm/generate-crd.sh $(KUSTOMIZE) $(HELM_CRD_DIR) $(MANIFESTS_DIR) config/crd dynatrace-operator-crd.yaml
 	./hack/helm/generate-crd.sh $(KUSTOMIZE) $(HELM_CRD_DIR) $(MANIFESTS_DIR) config/crd/dtprometheus dynatrace-operator-dtprometheus-crd.yaml enablePrometheus
+
+## Updates Prometheus Operator CRDs in the helm chart
+manifests/crd/prometheus:
+	./hack/helm/update-prometheus-crds.sh $(PROMETHEUS_OPERATOR_VERSION)
 
 ## Builds a CRD for the release
 manifests/crd/release: manifests/crd/helm

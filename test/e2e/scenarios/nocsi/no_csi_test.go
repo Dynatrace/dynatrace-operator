@@ -78,6 +78,10 @@ func TestNoCSI_activegate_scaling_enforce_replicas(t *testing.T) {
 	testEnv.Test(t, activegate.EnforceReplicas(t))
 }
 
+func TestNoCSI_image_volume_injection(t *testing.T) {
+	testEnv.Test(t, applicationmonitoring.ImageVolumeNoCSI(t))
+}
+
 func TestNoCSI_metadata_enrichment(t *testing.T) {
 	testEnv.Test(t, applicationmonitoring.MetadataEnrichment(t))
 }

@@ -13,9 +13,12 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	webhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
+	oaMutator "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/csi"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sdaemonset"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8spod"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/sample"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/shell"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -63,6 +66,37 @@ func CheckRuxitAgentProcFileHasNoConnInfo(testDynakube dynakube.DynaKube) featur
 		})
 
 		require.NoError(t, err)
+
+		return ctx
+	}
+}
+
+func CheckImageVolumeInjection(deployment *sample.App, imageURI string) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resource := envConfig.Client().Resources()
+		samplePods := deployment.ListPods(ctx, t, resource)
+
+		require.NotEmpty(t, samplePods.Items)
+
+		for _, item := range samplePods.Items {
+			require.NotEmpty(t, item.Spec.InitContainers)
+			require.Equal(t, webhook.InstallContainerName, item.Spec.InitContainers[0].Name)
+			require.Contains(t, item.Spec.Volumes, corev1.Volume{
+				Name: oaMutator.BinVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					Image: &corev1.ImageVolumeSource{
+						Reference:  imageURI,
+						PullPolicy: corev1.PullIfNotPresent, // default since we don't override
+					},
+				},
+			})
+
+			// the only reliable way to test if codemodules works is to check
+			ifNotEmptyCommand := shell.Shell(shell.CheckIfNotEmpty("/var/lib/dynatrace/oneagent/log/php/"))
+			executionResult, err := k8spod.Exec(ctx, resource, item, deployment.ContainerName(), ifNotEmptyCommand...)
+			require.NoError(t, err)
+			require.NotEmpty(t, executionResult)
+		}
 
 		return ctx
 	}

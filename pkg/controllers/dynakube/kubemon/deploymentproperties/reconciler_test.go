@@ -8,9 +8,11 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	kubemonapi "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	agconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/deploymentproperties"
 	"github.com/stretchr/testify/assert"
@@ -33,6 +35,9 @@ const (
 	testResourceAttributeKey2   = "key2"
 	testResourceAttributeValue2 = "value2"
 	testDataValue2              = "[resource_attributes]\n" + testResourceAttributeKey2 + " = " + testResourceAttributeValue2 + "\n"
+
+	testNoProxyValue     = "svc.cluster.local"
+	testNoProxyWithComma = "svc.cluster.local,10.0.0.0/8"
 )
 
 func TestReconcile(t *testing.T) {
@@ -115,6 +120,58 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, testDataValue, string(configMap.Data[agconsts.DeploymentPropertiesFileName]))
 
 		dk.Spec.KubernetesMonitoring = nil
+
+		require.NoError(t, r.Reconcile(t.Context(), dk))
+
+		assertDeploymentPropertiesSecretAbsent(t, clt, dk)
+	})
+
+	t.Run("creates secret when only no-proxy is set (no resource attributes)", func(t *testing.T) {
+		dk := newTestDynaKube(withoutResourceAttributes(), withNoProxy(testNoProxyValue))
+		clt := fake.NewClient(dk)
+
+		r := deploymentproperties.NewReconciler(clt)
+		require.NoError(t, r.Reconcile(t.Context(), dk))
+
+		secret := getDeploymentPropertiesSecret(t, clt, dk)
+		expectedContent := agconsts.PropertiesClientInternalSection + "\n" + agconsts.PropertiesNoProxyFieldName + "=" + testNoProxyValue + "\n"
+		assert.Equal(t, expectedContent, string(secret.Data[agconsts.DeploymentPropertiesFileName]))
+	})
+
+	t.Run("creates secret with both resource attributes and no-proxy section", func(t *testing.T) {
+		dk := newTestDynaKube(withNoProxy(testNoProxyValue))
+		clt := fake.NewClient(dk)
+
+		r := deploymentproperties.NewReconciler(clt)
+		require.NoError(t, r.Reconcile(t.Context(), dk))
+
+		secret := getDeploymentPropertiesSecret(t, clt, dk)
+		expectedContent := testDataValue + agconsts.PropertiesClientInternalSection + "\n" + agconsts.PropertiesNoProxyFieldName + "=" + testNoProxyValue + "\n"
+		assert.Equal(t, expectedContent, string(secret.Data[agconsts.DeploymentPropertiesFileName]))
+	})
+
+	t.Run("replaces commas with pipes in no-proxy value", func(t *testing.T) {
+		dk := newTestDynaKube(withoutResourceAttributes(), withNoProxy(testNoProxyWithComma))
+		clt := fake.NewClient(dk)
+
+		r := deploymentproperties.NewReconciler(clt)
+		require.NoError(t, r.Reconcile(t.Context(), dk))
+
+		secret := getDeploymentPropertiesSecret(t, clt, dk)
+		expectedContent := agconsts.PropertiesClientInternalSection + "\n" + agconsts.PropertiesNoProxyFieldName + "=svc.cluster.local|10.0.0.0/8\n"
+		assert.Equal(t, expectedContent, string(secret.Data[agconsts.DeploymentPropertiesFileName]))
+	})
+
+	t.Run("deletes secret when no-proxy removed and no resource attributes", func(t *testing.T) {
+		dk := newTestDynaKube(withoutResourceAttributes(), withNoProxy(testNoProxyValue))
+		clt := fake.NewClient(dk)
+
+		r := deploymentproperties.NewReconciler(clt)
+		require.NoError(t, r.Reconcile(t.Context(), dk))
+
+		getDeploymentPropertiesSecret(t, clt, dk)
+
+		delete(dk.Annotations, exp.NoProxyKey)
 
 		require.NoError(t, r.Reconcile(t.Context(), dk))
 
@@ -223,6 +280,18 @@ func withoutResourceAttributes() func(*dynakube.DynaKube) {
 func withoutKubernetesMonitoring() func(*dynakube.DynaKube) {
 	return func(dk *dynakube.DynaKube) {
 		dk.Spec.KubernetesMonitoring = nil
+	}
+}
+
+func withNoProxy(noProxy string) func(*dynakube.DynaKube) {
+	return func(dk *dynakube.DynaKube) {
+		dk.Spec.Proxy = &value.Source{Value: "http://proxy:8080"}
+
+		if dk.Annotations == nil {
+			dk.Annotations = make(map[string]string)
+		}
+
+		dk.Annotations[exp.NoProxyKey] = noProxy
 	}
 }
 

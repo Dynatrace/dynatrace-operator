@@ -25,6 +25,7 @@ import (
 	kubemonauthtoken "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/authtoken"
 	kubemoncustomproperties "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/statefulset"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8smount"
@@ -752,6 +753,39 @@ func TestReconcileBuildsStatefulSetVolumes(t *testing.T) {
 		for _, volume := range volumes {
 			assert.Contains(t, sts.Spec.Template.Spec.Volumes, volume, "valid %s volume not found", volume.Name)
 		}
+	})
+
+	t.Run("no proxy volume or mount when proxy is not configured", func(t *testing.T) {
+		dk := newTestDynaKube()
+		sts := reconcileAndGetSTS(t, dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t))
+
+		assert.False(t, slices.ContainsFunc(sts.Spec.Template.Spec.Volumes, func(v corev1.Volume) bool {
+			return v.Name == agconsts.ProxySecretVolumeName
+		}), "proxy volume should not be present when proxy is not configured")
+
+		container := sts.Spec.Template.Spec.Containers[0]
+		assert.False(t, slices.ContainsFunc(container.VolumeMounts, func(m corev1.VolumeMount) bool {
+			return m.Name == agconsts.ProxySecretVolumeName
+		}), "proxy volume mount should not be present when proxy is not configured")
+	})
+
+	t.Run("proxy volume and mount are added when proxy is configured", func(t *testing.T) {
+		dk := newTestDynaKube()
+		dk.Spec.Proxy = &value.Source{Value: "http://proxy.example.com:8080"}
+		sts := reconcileAndGetSTS(t, dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t))
+
+		proxyVolume := k8svolume.FindByName(sts.Spec.Template.Spec.Volumes, agconsts.ProxySecretVolumeName)
+		require.NotNil(t, proxyVolume, "proxy volume not found")
+		require.NotNil(t, proxyVolume.Secret)
+		assert.Equal(t, proxy.BuildSecretName(dk.Name), proxyVolume.Secret.SecretName)
+		require.NotNil(t, proxyVolume.Secret.DefaultMode)
+		assert.EqualValues(t, 0o640, *proxyVolume.Secret.DefaultMode)
+
+		container := sts.Spec.Template.Spec.Containers[0]
+		proxyMount, err := k8smount.Find(container.VolumeMounts, agconsts.ProxySecretVolumeName)
+		require.NoError(t, err)
+		assert.True(t, proxyMount.ReadOnly)
+		assert.Equal(t, agconsts.ProxySecretMountPath, proxyMount.MountPath)
 	})
 }
 
