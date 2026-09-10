@@ -106,7 +106,7 @@ func IsImageVolumesSupported(t *testing.T) bool {
 			return false
 		}
 
-		t.Logf("detected node %-40s  k8s=%s  runtime=%s runtime version=%s",
+		t.Logf("detected node %-40s k8s=%s runtime=%s version=%s",
 			node.Name, k8sVer, rt.Type, rt.Version)
 
 		ok, err := nodeSupportsImageVolumes(k8sVer, rt)
