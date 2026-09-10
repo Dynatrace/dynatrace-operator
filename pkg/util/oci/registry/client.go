@@ -48,7 +48,9 @@ type Client struct {
 }
 
 const (
-	TypeLabel       = "com.dynatrace.type"
+	// TypeLabel is the name of the label that indicates if image is immutable or mutable.
+	TypeLabel = "com.dynatrace.type"
+	// VersionLabel is the name of the label used on ActiveGate-provided images.
 	VersionLabel    = "com.dynatrace.build-version"
 	DigestDelimiter = "@"
 )

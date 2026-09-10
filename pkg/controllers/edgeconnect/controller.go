@@ -411,20 +411,27 @@ func environmentAPIURL(ec *edgeconnect.EdgeConnect) string {
 	return "https://" + ec.Spec.APIServer + environmentAPIPathPrefix
 }
 
+// buildOAuthClients exchanges the OAuth credentials for the set of Dynatrace API clients. Only the
+// client the scopes and the base URL were built for may be used, because the base URL resolves the
+// paths of a single API.
+func buildOAuthClients(ec *edgeconnect.EdgeConnect, oauthCredentials oauthCredentialsType, customCA []byte, scopes []string, baseURL string) (*dynatrace.OAuthClient, error) {
+	return dynatrace.NewOAuthClient(
+		clientcredentials.Config{
+			ClientID:     oauthCredentials.clientID,
+			ClientSecret: oauthCredentials.clientSecret,
+			TokenURL:     ec.Spec.OAuth.Endpoint,
+			Scopes:       scopes,
+		},
+		dynatrace.WithBaseURL(baseURL),
+		dynatrace.WithCerts(customCA),
+	)
+}
+
 func newImageClient() imageClientBuilderType {
 	return func(ctx context.Context, ec *edgeconnect.EdgeConnect, oauthCredentials oauthCredentialsType, customCA []byte) (dtimage.Client, error) {
-		// only the Images client of the returned OAuthClient may be used, the base URL is scoped to
-		// the classic environment API and does not resolve the platform paths of the other clients
-		oAuthClients, err := dynatrace.NewOAuthClient(
-			clientcredentials.Config{
-				ClientID:     oauthCredentials.clientID,
-				ClientSecret: oauthCredentials.clientSecret,
-				TokenURL:     ec.Spec.OAuth.Endpoint,
-				Scopes:       buildImageOAuthScopes(),
-			},
-			dynatrace.WithBaseURL(environmentAPIURL(ec)),
-			dynatrace.WithCerts(customCA),
-		)
+		// the base URL is scoped to the classic environment API, which does not resolve the platform
+		// paths the EdgeConnect client needs
+		oAuthClients, err := buildOAuthClients(ec, oauthCredentials, customCA, buildImageOAuthScopes(), environmentAPIURL(ec))
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create image client")
 		}
@@ -588,19 +595,13 @@ func (controller *Controller) getOauthCredentials(ctx context.Context, ec *edgec
 	return oauthCredentialsType{clientID: oauthClientID, clientSecret: oauthClientSecret}, nil
 }
 
-func newEdgeConnectClient() func(context.Context, *edgeconnect.EdgeConnect, oauthCredentialsType, []byte) (edgeconnectClient.Client, error) {
+func newEdgeConnectClient() edgeConnectClientBuilderType {
 	return func(ctx context.Context, ec *edgeconnect.EdgeConnect, oauthCredentials oauthCredentialsType, customCA []byte) (edgeconnectClient.Client, error) {
-		oAuthClients, err := dynatrace.NewOAuthClient(
-			clientcredentials.Config{
-				ClientID:     oauthCredentials.clientID,
-				ClientSecret: oauthCredentials.clientSecret,
-				TokenURL:     ec.Spec.OAuth.Endpoint,
-				Scopes:       buildOAuthScopes(ec.IsK8SAutomationEnabled()),
-			},
-			dynatrace.WithBaseURL("https://"+ec.Spec.APIServer),
-			dynatrace.WithCerts(customCA))
+		scopes := buildEdgeConnectOAuthScopes(ec.IsK8SAutomationEnabled())
+
+		oAuthClients, err := buildOAuthClients(ec, oauthCredentials, customCA, scopes, "https://"+ec.Spec.APIServer)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed tot create edge connect client")
+			return nil, errors.Wrap(err, "failed to create edge connect client")
 		}
 
 		return oAuthClients.EdgeConnect, nil
@@ -967,7 +968,7 @@ func GetConnectionSetting(ctx context.Context, edgeConnectClient edgeconnectClie
 	return edgeconnectClient.EnvironmentSetting{}, nil
 }
 
-func buildOAuthScopes(k8sAutomationEnabled bool) []string {
+func buildEdgeConnectOAuthScopes(k8sAutomationEnabled bool) []string {
 	oAuthScopes := []string{
 		"app-engine:edge-connects:read",
 		"app-engine:edge-connects:write",

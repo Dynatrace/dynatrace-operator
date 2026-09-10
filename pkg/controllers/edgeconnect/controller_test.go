@@ -1179,18 +1179,18 @@ func Test_buildOAuthScopes(t *testing.T) {
 	}
 
 	t.Run("k8s automation disabled returns only base scopes", func(t *testing.T) {
-		scopes := buildOAuthScopes(false)
+		scopes := buildEdgeConnectOAuthScopes(false)
 		assert.Equal(t, baseScopes, scopes)
 	})
 
 	t.Run("k8s automation enabled appends settings scopes", func(t *testing.T) {
-		scopes := buildOAuthScopes(true)
+		scopes := buildEdgeConnectOAuthScopes(true)
 		expected := slices.Concat(baseScopes, []string{"settings:objects:read", "settings:objects:write"})
 		assert.Equal(t, expected, scopes)
 	})
 
 	t.Run("k8s automation disabled does not include settings scopes", func(t *testing.T) {
-		scopes := buildOAuthScopes(false)
+		scopes := buildEdgeConnectOAuthScopes(false)
 		assert.NotContains(t, scopes, "settings:objects:read")
 		assert.NotContains(t, scopes, "settings:objects:write")
 	})
@@ -1198,8 +1198,8 @@ func Test_buildOAuthScopes(t *testing.T) {
 	// requesting a scope that is not granted makes the token service reject the whole request, so
 	// the EdgeConnect client must not ask for the fleet management scope it never uses
 	t.Run("fleet management scope is not requested for the EdgeConnect client", func(t *testing.T) {
-		assert.NotContains(t, buildOAuthScopes(false), "fleet-management:container-images:read")
-		assert.NotContains(t, buildOAuthScopes(true), "fleet-management:container-images:read")
+		assert.NotContains(t, buildEdgeConnectOAuthScopes(false), "fleet-management:container-images:read")
+		assert.NotContains(t, buildEdgeConnectOAuthScopes(true), "fleet-management:container-images:read")
 	})
 }
 
