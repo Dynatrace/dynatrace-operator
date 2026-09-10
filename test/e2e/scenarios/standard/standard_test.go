@@ -75,6 +75,10 @@ func TestStandard_cloudnative_codemodules_migrate_to_node_image_pull(t *testing.
 	testEnv.Test(t, codemodules.MigrateToNodeImagePull(t))
 }
 
+func TestStandard_cloudnative_image_volume_injection(t *testing.T) {
+	testEnv.Test(t, codemodules.ImageVolume(t))
+}
+
 func TestStandard_public_registry_images_tag(t *testing.T) {
 	testEnv.Test(t, publicregistry.Feature(t))
 }

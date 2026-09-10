@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -67,7 +68,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		assert.NotEmpty(t, customPropertiesSecret.Data)
 		assert.Contains(t, customPropertiesSecret.Data, DataKey)
 
-		expectedValue := "\n" + clientInternalSection + "\n" + noProxyFieldName + "=" + testValue
+		expectedValue := "\n" + consts.PropertiesClientInternalSection + "\n" + consts.PropertiesNoProxyFieldName + "=" + testValue
 
 		assert.Equal(t, []byte(expectedValue), customPropertiesSecret.Data[DataKey])
 
@@ -105,7 +106,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		assert.NotEmpty(t, customPropertiesSecret.Data)
 		assert.Contains(t, customPropertiesSecret.Data, DataKey)
 
-		expectedValue := testValue + "\n" + clientInternalSection + "\n" + noProxyFieldName + "=" + testValue
+		expectedValue := testValue + "\n" + consts.PropertiesClientInternalSection + "\n" + consts.PropertiesNoProxyFieldName + "=" + testValue
 
 		assert.Equal(t, []byte(expectedValue), customPropertiesSecret.Data[DataKey])
 	})

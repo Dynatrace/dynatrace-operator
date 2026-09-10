@@ -121,7 +121,7 @@ func TestCheckImageField(t *testing.T) {
 		{
 			title:    "uri with protocol",
 			imageURI: "https://my.images.com/test:tag",
-			isError:  false,
+			isError:  true,
 		},
 		{
 			title:    "uri with port no protocol",
@@ -131,7 +131,7 @@ func TestCheckImageField(t *testing.T) {
 		{
 			title:    "uri with protocol:ip",
 			imageURI: "https://127.0.0.1/test:tag",
-			isError:  false,
+			isError:  true,
 		},
 		{
 			title:    "uri with ip:port no protocol",
