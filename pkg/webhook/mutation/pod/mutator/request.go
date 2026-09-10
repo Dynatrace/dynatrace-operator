@@ -12,6 +12,15 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
+const (
+	// plaholderContainerImageName is the container image used by service meshes (e.g. Istio) as a
+	// placeholder/template entry in a pod spec that gets replaced during sidecar injection.
+	// Containers with this image must not be mutated, because they are not real workload containers
+	// and maybe converted into native-sidecars (ie.: init-containers) which can break our injection.
+	// See: https://istio.io/latest/docs/setup/additional-setup/sidecar-injection/#customizing-injection
+	plaholderContainerImageName = "auto"
+)
+
 func NewMutationRequest(ctx context.Context, namespace corev1.Namespace, installContainer *corev1.Container, pod *corev1.Pod, dk dynakube.DynaKube) *MutationRequest {
 	return &MutationRequest{
 		BaseRequest:      newBaseRequest(pod, namespace, dk),
@@ -92,6 +101,10 @@ func (req *BaseRequest) NewContainers(isInjected func(corev1.Container, *BaseReq
 	for i := range req.Pod.Spec.Containers {
 		container := &req.Pod.Spec.Containers[i]
 		if IsContainerExcludedFromInjection(req.DynaKube.Annotations, req.Pod.Annotations, container.Name) {
+			continue
+		}
+
+		if container.Image == plaholderContainerImageName {
 			continue
 		}
 

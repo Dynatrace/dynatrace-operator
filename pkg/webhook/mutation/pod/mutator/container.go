@@ -20,6 +20,6 @@ func checkInjectionAnnotation(annotations map[string]string, name string) bool {
 	return false
 }
 
-func IsContainerExcludedFromInjection(dkAnnotations, podAnnotations map[string]string, name string) bool {
-	return checkInjectionAnnotation(dkAnnotations, name) || checkInjectionAnnotation(podAnnotations, name)
+func IsContainerExcludedFromInjection(dkAnnotations, podAnnotations map[string]string, containerName string) bool {
+	return checkInjectionAnnotation(dkAnnotations, containerName) || checkInjectionAnnotation(podAnnotations, containerName)
 }
