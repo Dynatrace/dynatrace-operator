@@ -36,16 +36,17 @@ import (
 )
 
 const (
-	ContainerName                  = "kubemon"
-	AnnotationTenantTokenHash      = api.InternalFlagPrefix + "kubemon-tenant-token-hash"
-	AnnotationAuthTokenHash        = api.InternalFlagPrefix + "kubemon-authtoken-hash"
-	AnnotationCustomPropertiesHash = api.InternalFlagPrefix + "kubemon-customproperties-hash"
-	AnnotationKSPMTokenHash        = api.InternalFlagPrefix + "kubemon-kspm-token-hash"
-	AnnotationTLSSecretHash        = api.InternalFlagPrefix + "kubemon-tls-secret-hash"
-	StorageVolumeName              = "kubemon-storage"
-	AuthTokenVolumeName            = "kubemon-authtoken-secret"
-	kspmTokenVolumeName            = "kspm-token"
-	kspmTokenMountPath             = operatorconsts.DTComponentsSecretsRootDir + "/tokens/kspm/node-configuration-collector"
+	ContainerName                      = "kubemon"
+	AnnotationTenantTokenHash          = api.InternalFlagPrefix + "kubemon-tenant-token-hash"
+	AnnotationAuthTokenHash            = api.InternalFlagPrefix + "kubemon-authtoken-hash"
+	AnnotationCustomPropertiesHash     = api.InternalFlagPrefix + "kubemon-customproperties-hash"
+	AnnotationKSPMTokenHash            = api.InternalFlagPrefix + "kubemon-kspm-token-hash"
+	AnnotationTLSSecretHash            = api.InternalFlagPrefix + "kubemon-tls-secret-hash"
+	AnnotationDeploymentPropertiesHash = api.InternalFlagPrefix + "kubemon-deploymentproperties-hash"
+	StorageVolumeName                  = "kubemon-storage"
+	AuthTokenVolumeName                = "kubemon-authtoken-secret"
+	kspmTokenVolumeName                = "kspm-token"
+	kspmTokenMountPath                 = operatorconsts.DTComponentsSecretsRootDir + "/tokens/kspm/node-configuration-collector"
 )
 
 var (
@@ -105,17 +106,18 @@ func ensureReady(dk *dynakube.DynaKube) error {
 	return nil
 }
 
-func buildPodAnnotations(dk *dynakube.DynaKube, tokenHash, authTokenHash, customPropertiesHash string) map[string]string {
+func buildPodAnnotations(dk *dynakube.DynaKube, tokenHash, authTokenHash, customPropertiesHash, deploymentPropertiesHash, tlsSecretHash string) map[string]string { //nolint:revive
 	annotations := map[string]string{
 		AnnotationTenantTokenHash:              tokenHash,
 		AnnotationAuthTokenHash:                authTokenHash,
 		AnnotationCustomPropertiesHash:         customPropertiesHash,
+		AnnotationDeploymentPropertiesHash:     deploymentPropertiesHash,
 		mutator.AnnotationInjectionSplitMounts: "true",
 	}
 
 	if dk.KSPM().IsEnabled() {
 		annotations[AnnotationKSPMTokenHash] = dk.KSPM().TokenSecretHash
-		annotations[AnnotationTLSSecretHash] = dk.KubernetesMonitoring().TLSSecretHash
+		annotations[AnnotationTLSSecretHash] = tlsSecretHash
 	}
 
 	return annotations
@@ -288,6 +290,24 @@ func buildVolumes(dk *dynakube.DynaKube) []corev1.Volume {
 			})
 	}
 
+	if dk.KubernetesMonitoring().NeedsDeploymentProperties() {
+		volumes = append(volumes, corev1.Volume{
+			Name: agconsts.DeploymentPropertiesVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  dk.KubernetesMonitoring().GetDeploymentPropertiesSecretName(),
+					DefaultMode: new(int32(0o640)),
+					Items: []corev1.KeyToPath{
+						{
+							Key:  agconsts.DeploymentPropertiesFileName,
+							Path: agconsts.DeploymentPropertiesFileName,
+						},
+					},
+				},
+			},
+		})
+	}
+
 	return volumes
 }
 
@@ -365,6 +385,15 @@ func buildVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 				ReadOnly:  true,
 				MountPath: agconsts.CertsMountPath,
 			})
+	}
+
+	if dk.KubernetesMonitoring().NeedsDeploymentProperties() {
+		mounts = append(mounts, corev1.VolumeMount{
+			ReadOnly:  true,
+			Name:      agconsts.DeploymentPropertiesVolumeName,
+			MountPath: agconsts.DeploymentPropertiesMountPath,
+			SubPath:   agconsts.DeploymentPropertiesFileName,
+		})
 	}
 
 	return mounts
@@ -457,6 +486,16 @@ func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.D
 		return nil, err
 	}
 
+	deploymentPropertiesHash, err := r.getDeploymentPropertiesHash(ctx, dk)
+	if err != nil {
+		return nil, err
+	}
+
+	tlsSecretHash, err := r.getTLSSecretHash(ctx, dk)
+	if err != nil {
+		return nil, err
+	}
+
 	km := dk.KubernetesMonitoring()
 
 	initContainer := corev1.Container{
@@ -494,7 +533,7 @@ func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.D
 	opts := []k8sstatefulset.Option{
 		k8sstatefulset.SetReplicas(replicas),
 		k8sstatefulset.SetAllLabels(labels.AsMap(), labels.AsSelector(), labels.AsMap(), km.Labels),
-		k8sstatefulset.SetAllAnnotations(nil, maputil.MergeMap(km.Annotations, buildPodAnnotations(dk, tokenHash, authTokenHash, customPropertiesHash))),
+		k8sstatefulset.SetAllAnnotations(nil, maputil.MergeMap(km.Annotations, buildPodAnnotations(dk, tokenHash, authTokenHash, customPropertiesHash, deploymentPropertiesHash, tlsSecretHash))),
 		k8sstatefulset.SetServiceAccount(km.GetServiceAccountName()),
 		k8sstatefulset.SetNodeSelector(km.NodeSelector),
 		k8sstatefulset.SetTolerations(km.Tolerations),
@@ -608,4 +647,62 @@ func buildPodSecurityContext() *corev1.PodSecurityContext {
 	sc.FSGroup = new(agconsts.DockerImageGroup)
 
 	return &sc
+}
+
+func (r *Reconciler) getDeploymentPropertiesHash(ctx context.Context, dk *dynakube.DynaKube) (string, error) {
+	// protection against maliciously created secret -> unauthorized restarts
+	if !dk.KubernetesMonitoring().NeedsDeploymentProperties() {
+		return "", nil
+	}
+
+	var secret corev1.Secret
+
+	err := r.kubeClient.Get(ctx, client.ObjectKey{Name: dk.KubernetesMonitoring().GetDeploymentPropertiesSecretName(), Namespace: dk.Namespace}, &secret)
+	if k8serrors.IsNotFound(err) {
+		return "", nil
+	}
+
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+
+	data := secret.Data[agconsts.DeploymentPropertiesFileName]
+	if len(data) == 0 {
+		return "", nil
+	}
+
+	hash, err := hasher.GenerateSecureHash(string(data))
+	if err != nil {
+		return "", errors.Wrap(err, "failed to hash deployment properties secret")
+	}
+
+	return hash, nil
+}
+
+func (r *Reconciler) getTLSSecretHash(ctx context.Context, dk *dynakube.DynaKube) (string, error) {
+	if !dk.KSPM().IsEnabled() {
+		return "", nil
+	}
+
+	var secret corev1.Secret
+
+	err := r.kubeClient.Get(ctx, client.ObjectKey{Name: dk.KubernetesMonitoring().GetTLSSecretName(), Namespace: dk.Namespace}, &secret)
+	if k8serrors.IsNotFound(err) {
+		return "", nil
+	}
+
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+
+	if len(secret.Data) == 0 {
+		return "", nil
+	}
+
+	hash, err := hasher.GenerateSecureHash(secret.Data)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to hash TLS secret")
+	}
+
+	return hash, nil
 }

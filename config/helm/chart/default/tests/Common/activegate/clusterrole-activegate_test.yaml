@@ -1,0 +1,103 @@
+# Copyright Dynatrace LLC
+# SPDX-License-Identifier: Apache-2.0
+
+suite: test activegate clusterrole for openshift and OLM
+templates:
+  - Common/activegate/clusterrole-activegate.yaml
+tests:
+  - it: ClusterRole should exist on OpenShift
+    documentIndex: 0
+    set:
+      platform: openshift
+    asserts:
+      - isKind:
+          of: ClusterRole
+      - equal:
+          path: metadata.name
+          value: dynatrace-activegate
+      - isNotEmpty:
+          path: metadata.labels
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - security.openshift.io
+            resourceNames:
+              - privileged
+              - nonroot-v2
+            resources:
+              - securitycontextconstraints
+            verbs:
+              - use
+
+  - it: ClusterRoleBinding should exist on OpenShift
+    documentIndex: 1
+    set:
+      platform: openshift
+    asserts:
+      - isKind:
+          of: ClusterRoleBinding
+      - equal:
+          path: metadata.name
+          value: dynatrace-activegate
+      - isNotEmpty:
+          path: metadata.labels
+      - equal:
+          path: roleRef
+          value:
+            apiGroup: rbac.authorization.k8s.io
+            kind: ClusterRole
+            name: dynatrace-activegate
+      - contains:
+          path: subjects
+          content:
+            kind: ServiceAccount
+            name: dynatrace-activegate
+            namespace: NAMESPACE
+
+  - it: ClusterRole should exist on OLM
+    documentIndex: 0
+    set:
+      olm: true
+    asserts:
+      - isKind:
+          of: ClusterRole
+      - equal:
+          path: metadata.name
+          value: dynatrace-activegate
+
+  - it: ClusterRoleBinding should exist on OLM
+    documentIndex: 1
+    set:
+      olm: true
+    asserts:
+      - isKind:
+          of: ClusterRoleBinding
+      - equal:
+          path: metadata.name
+          value: dynatrace-activegate
+      - equal:
+          path: roleRef
+          value:
+            apiGroup: rbac.authorization.k8s.io
+            kind: ClusterRole
+            name: dynatrace-activegate
+      - contains:
+          path: subjects
+          content:
+            kind: ServiceAccount
+            name: dynatrace-activegate
+            namespace: NAMESPACE
+
+  - it: shouldn't exist on plain Kubernetes
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: shouldn't exist if rbac.activeGate.create is false
+    set:
+      platform: openshift
+      rbac.activeGate.create: false
+    asserts:
+      - hasDocuments:
+          count: 0

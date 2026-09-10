@@ -33,10 +33,6 @@ jobs:
       max-parallel: 10
       matrix:
         include:
-          - version: 1-30
-            platform: k8s
-            token: platform
-            tenantPhase: 3
           - version: 1-31
             platform: k8s
           - version: 1-32
@@ -53,6 +49,8 @@ jobs:
           - version: 1-36
             platform: k8s
             token: platform
+          - version: 1-37
+            platform: k8s
           - version: 4-14
             platform: ocp
           - version: 4-15

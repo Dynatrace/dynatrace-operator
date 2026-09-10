@@ -760,6 +760,8 @@ So here are some basic guidelines:
   - Reason: Most things that the operator deploys (name of services and pods, contents of labels, should CSI be used, etc...) depend on the `DynaKube`
   - Also the namespace of the `DynaKube` should be the same as the operator, so it can help how the operator should be deployed
   - This eliminates lots of hardcoded strings and such
+- **E2E test function names use snake_case** for the test identifier after the prefix (e.g., `TestNoCSI_activegate`, `TestNoCSI_app_monitoring_without_csi`)
+  - Reason: The snake_case identifiers are used in `-run` patterns in `hack/make/tests/e2e.mk` to run specific tests via make targets (e.g., `test/e2e/activegate`, `test/e2e/applicationmonitoring/withoutcsi`), ensuring consistency between test names and makefile targets.
 - Don't reinvent the wheel, try to use what is already there.
   - If a helper function is almost fits your use case then first just try to "renovate the wheel" and make what is already there better :)
 - **Use Makefile defaults for versions and image tags** in E2E helpers — do not hardcode values like `0.0.1` or a specific image digest inline when the Makefile already defines a sensible default. Hardcoded values get forgotten and drift from reality.

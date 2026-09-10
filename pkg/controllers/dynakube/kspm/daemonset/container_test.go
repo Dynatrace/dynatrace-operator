@@ -12,6 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
 )
 
 func TestGetContainer(t *testing.T) {
@@ -24,13 +25,16 @@ func TestGetContainer(t *testing.T) {
 			Spec: dynakube.DynaKubeSpec{
 				KSPM: &kspm.Spec{},
 			},
+			Status: dynakube.DynaKubeStatus{
+				KSPM: kspm.Status{ResolvedImage: "test-repo/test-image:test-tag"},
+			},
 		}
 		mainContainer := getContainer(dk, tenant)
 
 		require.NotEmpty(t, mainContainer)
 
 		assert.NotEmpty(t, mainContainer.Name)
-		assert.NotEmpty(t, mainContainer.Image)
+		assert.Equal(t, "test-repo/test-image:test-tag", mainContainer.Image)
 		assert.Empty(t, mainContainer.ImagePullPolicy)
 		assert.NotEmpty(t, mainContainer.VolumeMounts)
 		assert.Len(t, mainContainer.VolumeMounts, expectedMountLen)
@@ -40,22 +44,21 @@ func TestGetContainer(t *testing.T) {
 		assert.NotEmpty(t, mainContainer.SecurityContext.SeccompProfile)
 	})
 
-	t.Run("image-ref is respected", func(t *testing.T) {
-		expectedRepo := "my-test-repo"
-		expectedTag := "my-test-tag"
+	// the image itself comes from the status, see TestImageResolution
+	t.Run("pull policy is taken from the image-ref", func(t *testing.T) {
 		dk := dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				KSPM: &kspm.Spec{},
 			},
 		}
 		dk.KSPM().ImageRef = image.Ref{
-			Repository: expectedRepo,
-			Tag:        expectedTag,
+			Repository: "my-test-repo",
+			Tag:        "my-test-tag",
+			PullPolicy: corev1.PullAlways,
 		}
 		mainContainer := getContainer(dk, tenant)
 
 		require.NotEmpty(t, mainContainer)
-		assert.NotEmpty(t, mainContainer.Image)
-		assert.Equal(t, expectedRepo+":"+expectedTag, mainContainer.Image)
+		assert.Equal(t, corev1.PullAlways, mainContainer.ImagePullPolicy)
 	})
 }

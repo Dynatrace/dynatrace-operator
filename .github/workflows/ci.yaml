@@ -147,7 +147,7 @@ jobs:
         uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
         with:
           # renovate datasource=github-releases depName=helm/helm
-          version: v4.2.4
+          version: v4.3.0
       - name: Run Unit tests
         id: helm-unittest
         run: |
@@ -167,7 +167,7 @@ jobs:
         uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
         with:
           # renovate datasource=github-releases depName=helm/helm
-          version: v4.2.4
+          version: v4.3.0
       - name: Run Linting
         id: helm-linting
         run: |
@@ -175,7 +175,7 @@ jobs:
 
   tests:
     needs: [detect-changes]
-    if: needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.prerequisites_changed || needs.detect-changes.outputs.ci_changed
+    if: needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.prerequisites_changed || needs.detect-changes.outputs.ci_changed || needs.detect-changes.outputs.docker_changed
     name: Run unit tests
     runs-on: ubuntu-24.04
     steps:
@@ -200,7 +200,7 @@ jobs:
 
   linting:
     needs: [detect-changes]
-    if: needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.prerequisites_changed || needs.detect-changes.outputs.ci_changed
+    if: needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.prerequisites_changed || needs.detect-changes.outputs.ci_changed || needs.detect-changes.outputs.docker_changed
     name: Run linting
     runs-on: ubuntu-24.04
     steps:

@@ -24,10 +24,19 @@ func newMockIstioReconciler(t interface {
 	mock.TestingT
 	Cleanup(func())
 }) *mockIstioReconciler {
+	if helper, ok := t.(interface{ Helper() }); ok {
+		helper.Helper()
+	}
+
 	mock := &mockIstioReconciler{}
 	mock.Mock.Test(t)
 
-	t.Cleanup(func() { mock.AssertExpectations(t) })
+	t.Cleanup(func() {
+		if helper, ok := t.(interface{ Helper() }); ok {
+			helper.Helper()
+		}
+		mock.AssertExpectations(t)
+	})
 
 	return mock
 }
@@ -108,10 +117,19 @@ func newMockDynakubeReconciler(t interface {
 	mock.TestingT
 	Cleanup(func())
 }) *mockDynakubeReconciler {
+	if helper, ok := t.(interface{ Helper() }); ok {
+		helper.Helper()
+	}
+
 	mock := &mockDynakubeReconciler{}
 	mock.Mock.Test(t)
 
-	t.Cleanup(func() { mock.AssertExpectations(t) })
+	t.Cleanup(func() {
+		if helper, ok := t.(interface{ Helper() }); ok {
+			helper.Helper()
+		}
+		mock.AssertExpectations(t)
+	})
 
 	return mock
 }
@@ -192,10 +210,19 @@ func newMockExtensionReconciler(t interface {
 	mock.TestingT
 	Cleanup(func())
 }) *mockExtensionReconciler {
+	if helper, ok := t.(interface{ Helper() }); ok {
+		helper.Helper()
+	}
+
 	mock := &mockExtensionReconciler{}
 	mock.Mock.Test(t)
 
-	t.Cleanup(func() { mock.AssertExpectations(t) })
+	t.Cleanup(func() {
+		if helper, ok := t.(interface{ Helper() }); ok {
+			helper.Helper()
+		}
+		mock.AssertExpectations(t)
+	})
 
 	return mock
 }
@@ -282,10 +309,19 @@ func newMockOTelColReconciler(t interface {
 	mock.TestingT
 	Cleanup(func())
 }) *mockOTelColReconciler {
+	if helper, ok := t.(interface{ Helper() }); ok {
+		helper.Helper()
+	}
+
 	mock := &mockOTelColReconciler{}
 	mock.Mock.Test(t)
 
-	t.Cleanup(func() { mock.AssertExpectations(t) })
+	t.Cleanup(func() {
+		if helper, ok := t.(interface{ Helper() }); ok {
+			helper.Helper()
+		}
+		mock.AssertExpectations(t)
+	})
 
 	return mock
 }
@@ -372,10 +408,19 @@ func newMockDtSettingReconciler(t interface {
 	mock.TestingT
 	Cleanup(func())
 }) *mockDtSettingReconciler {
+	if helper, ok := t.(interface{ Helper() }); ok {
+		helper.Helper()
+	}
+
 	mock := &mockDtSettingReconciler{}
 	mock.Mock.Test(t)
 
-	t.Cleanup(func() { mock.AssertExpectations(t) })
+	t.Cleanup(func() {
+		if helper, ok := t.(interface{ Helper() }); ok {
+			helper.Helper()
+		}
+		mock.AssertExpectations(t)
+	})
 
 	return mock
 }
@@ -462,10 +507,19 @@ func newMockLogMonitoringReconciler(t interface {
 	mock.TestingT
 	Cleanup(func())
 }) *mockLogMonitoringReconciler {
+	if helper, ok := t.(interface{ Helper() }); ok {
+		helper.Helper()
+	}
+
 	mock := &mockLogMonitoringReconciler{}
 	mock.Mock.Test(t)
 
-	t.Cleanup(func() { mock.AssertExpectations(t) })
+	t.Cleanup(func() {
+		if helper, ok := t.(interface{ Helper() }); ok {
+			helper.Helper()
+		}
+		mock.AssertExpectations(t)
+	})
 
 	return mock
 }
@@ -552,10 +606,19 @@ func newMockOneAgentReconciler(t interface {
 	mock.TestingT
 	Cleanup(func())
 }) *mockOneAgentReconciler {
+	if helper, ok := t.(interface{ Helper() }); ok {
+		helper.Helper()
+	}
+
 	mock := &mockOneAgentReconciler{}
 	mock.Mock.Test(t)
 
-	t.Cleanup(func() { mock.AssertExpectations(t) })
+	t.Cleanup(func() {
+		if helper, ok := t.(interface{ Helper() }); ok {
+			helper.Helper()
+		}
+		mock.AssertExpectations(t)
+	})
 
 	return mock
 }
@@ -648,10 +711,19 @@ func newMockActiveGateReconciler(t interface {
 	mock.TestingT
 	Cleanup(func())
 }) *mockActiveGateReconciler {
+	if helper, ok := t.(interface{ Helper() }); ok {
+		helper.Helper()
+	}
+
 	mock := &mockActiveGateReconciler{}
 	mock.Mock.Test(t)
 
-	t.Cleanup(func() { mock.AssertExpectations(t) })
+	t.Cleanup(func() {
+		if helper, ok := t.(interface{ Helper() }); ok {
+			helper.Helper()
+		}
+		mock.AssertExpectations(t)
+	})
 
 	return mock
 }
@@ -744,10 +816,19 @@ func newMockKspmReconciler(t interface {
 	mock.TestingT
 	Cleanup(func())
 }) *mockKspmReconciler {
+	if helper, ok := t.(interface{ Helper() }); ok {
+		helper.Helper()
+	}
+
 	mock := &mockKspmReconciler{}
 	mock.Mock.Test(t)
 
-	t.Cleanup(func() { mock.AssertExpectations(t) })
+	t.Cleanup(func() {
+		if helper, ok := t.(interface{ Helper() }); ok {
+			helper.Helper()
+		}
+		mock.AssertExpectations(t)
+	})
 
 	return mock
 }
@@ -766,7 +847,7 @@ func (_m *mockKspmReconciler) EXPECT() *mockKspmReconciler_Expecter {
 }
 
 // Reconcile provides a mock function for the type mockKspmReconciler
-func (_mock *mockKspmReconciler) Reconcile(ctx context.Context, dtClient settings.Client, dk *dynakube.DynaKube) error {
+func (_mock *mockKspmReconciler) Reconcile(ctx context.Context, dtClient *dynatrace.Client, dk *dynakube.DynaKube) error {
 	ret := _mock.Called(ctx, dtClient, dk)
 
 	if len(ret) == 0 {
@@ -774,7 +855,7 @@ func (_mock *mockKspmReconciler) Reconcile(ctx context.Context, dtClient setting
 	}
 
 	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, settings.Client, *dynakube.DynaKube) error); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *dynatrace.Client, *dynakube.DynaKube) error); ok {
 		r0 = returnFunc(ctx, dtClient, dk)
 	} else {
 		r0 = ret.Error(0)
@@ -789,21 +870,21 @@ type mockKspmReconciler_Reconcile_Call struct {
 
 // Reconcile is a helper method to define mock.On call
 //   - ctx context.Context
-//   - dtClient settings.Client
+//   - dtClient *dynatrace.Client
 //   - dk *dynakube.DynaKube
 func (_e *mockKspmReconciler_Expecter) Reconcile(ctx any, dtClient any, dk any) *mockKspmReconciler_Reconcile_Call {
 	return &mockKspmReconciler_Reconcile_Call{Call: _e.mock.On("Reconcile", ctx, dtClient, dk)}
 }
 
-func (_c *mockKspmReconciler_Reconcile_Call) Run(run func(ctx context.Context, dtClient settings.Client, dk *dynakube.DynaKube)) *mockKspmReconciler_Reconcile_Call {
+func (_c *mockKspmReconciler_Reconcile_Call) Run(run func(ctx context.Context, dtClient *dynatrace.Client, dk *dynakube.DynaKube)) *mockKspmReconciler_Reconcile_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 settings.Client
+		var arg1 *dynatrace.Client
 		if args[1] != nil {
-			arg1 = args[1].(settings.Client)
+			arg1 = args[1].(*dynatrace.Client)
 		}
 		var arg2 *dynakube.DynaKube
 		if args[2] != nil {
@@ -823,7 +904,7 @@ func (_c *mockKspmReconciler_Reconcile_Call) Return(err error) *mockKspmReconcil
 	return _c
 }
 
-func (_c *mockKspmReconciler_Reconcile_Call) RunAndReturn(run func(ctx context.Context, dtClient settings.Client, dk *dynakube.DynaKube) error) *mockKspmReconciler_Reconcile_Call {
+func (_c *mockKspmReconciler_Reconcile_Call) RunAndReturn(run func(ctx context.Context, dtClient *dynatrace.Client, dk *dynakube.DynaKube) error) *mockKspmReconciler_Reconcile_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -834,10 +915,19 @@ func newMockInjectionReconciler(t interface {
 	mock.TestingT
 	Cleanup(func())
 }) *mockInjectionReconciler {
+	if helper, ok := t.(interface{ Helper() }); ok {
+		helper.Helper()
+	}
+
 	mock := &mockInjectionReconciler{}
 	mock.Mock.Test(t)
 
-	t.Cleanup(func() { mock.AssertExpectations(t) })
+	t.Cleanup(func() {
+		if helper, ok := t.(interface{ Helper() }); ok {
+			helper.Helper()
+		}
+		mock.AssertExpectations(t)
+	})
 
 	return mock
 }
@@ -924,10 +1014,19 @@ func newMockKubemonReconciler(t interface {
 	mock.TestingT
 	Cleanup(func())
 }) *mockKubemonReconciler {
+	if helper, ok := t.(interface{ Helper() }); ok {
+		helper.Helper()
+	}
+
 	mock := &mockKubemonReconciler{}
 	mock.Mock.Test(t)
 
-	t.Cleanup(func() { mock.AssertExpectations(t) })
+	t.Cleanup(func() {
+		if helper, ok := t.(interface{ Helper() }); ok {
+			helper.Helper()
+		}
+		mock.AssertExpectations(t)
+	})
 
 	return mock
 }

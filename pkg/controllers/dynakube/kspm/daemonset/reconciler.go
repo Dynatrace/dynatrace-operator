@@ -8,14 +8,19 @@ import (
 	"maps"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	dtimage "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8saffinity"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8ssecuritycontext"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sdaemonset"
+	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -29,16 +34,37 @@ const (
 )
 
 type Reconciler struct {
-	daemonset k8sdaemonset.QueryObject
+	kubeClient client.Client
+	daemonset  k8sdaemonset.QueryObject
 }
 
 func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 	return &Reconciler{
-		daemonset: k8sdaemonset.Query(clt, apiReader),
+		kubeClient: clt,
+		daemonset:  k8sdaemonset.Query(clt, apiReader),
 	}
 }
 
-func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
+// resolveImage records the image to deploy in the status. The templates section takes
+// precedence over the image reported by the public registry.
+func resolveImage(ctx context.Context, imageClient dtimage.Client, dk *dynakube.DynaKube) error {
+	if ref := dk.KSPM().ImageRef; ref.HasImage() {
+		dk.Status.KSPM.ResolvedImage = ref.String()
+
+		return nil
+	}
+
+	imageURI, err := registry.ResolveImage(ctx, imageClient, dk.PublicRegistryOverride(), dtimage.NCC)
+	if err != nil {
+		return err
+	}
+
+	dk.Status.KSPM.ResolvedImage = imageURI
+
+	return nil
+}
+
+func (r *Reconciler) Reconcile(ctx context.Context, imageClient dtimage.Client, dk *dynakube.DynaKube) error {
 	ctx, log := logd.NewFromContext(ctx, "daemonset")
 
 	if !dk.KSPM().IsEnabled() {
@@ -56,7 +82,17 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 		return nil // clean-up shouldn't cause a failure
 	}
 
-	ds, err := r.generateDaemonSet(dk)
+	// has to run before the daemonset is generated, the container image is taken from the status
+	if err := resolveImage(ctx, imageClient, dk); err != nil {
+		return err
+	}
+
+	tlsSecretHash, err := r.getTLSSecretHash(ctx, dk)
+	if err != nil {
+		return err
+	}
+
+	ds, err := r.generateDaemonSet(dk, tlsSecretHash)
 	if err != nil {
 		return err
 	}
@@ -76,7 +112,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 	return nil
 }
 
-func (r *Reconciler) generateDaemonSet(dk *dynakube.DynaKube) (*appsv1.DaemonSet, error) {
+func (r *Reconciler) generateDaemonSet(dk *dynakube.DynaKube, tlsSecretHash string) (*appsv1.DaemonSet, error) {
 	tenantUUID, err := dk.TenantUUID()
 	if err != nil {
 		return nil, err
@@ -85,7 +121,7 @@ func (r *Reconciler) generateDaemonSet(dk *dynakube.DynaKube) (*appsv1.DaemonSet
 	labels := k8slabel.NewAppLabels(k8slabel.KSPMComponentLabel, dk.Name, k8slabel.KSPMComponentLabel, dk.Spec.Templates.KSPMNodeConfigurationCollector.ImageRef.Tag)
 	templateAnnotations := map[string]string{
 		tokenSecretHashAnnotation: dk.KSPM().TokenSecretHash,
-		tlsSecretHashAnnotation:   dk.KubernetesMonitoring().TLSSecretHash,
+		tlsSecretHashAnnotation:   tlsSecretHash,
 	}
 	maps.Copy(templateAnnotations, k8ssecuritycontext.RemoveAppArmorAnnotation(dk.KSPM().Annotations, containerName))
 
@@ -148,4 +184,44 @@ func buildPodSecurityContext() *corev1.PodSecurityContext {
 	return &corev1.PodSecurityContext{
 		FSGroup: new(runAs),
 	}
+}
+
+func (r *Reconciler) getTLSSecretHash(ctx context.Context, dk *dynakube.DynaKube) (string, error) {
+	var secret corev1.Secret
+
+	var tlsSecretName string
+
+	switch {
+	case dk.IsKubemonEnabled():
+		tlsSecretName = dk.KubernetesMonitoring().GetTLSSecretName()
+	case dk.ActiveGate().IsEnabled():
+		tlsSecretName = dk.ActiveGate().GetTLSSecretName()
+		if tlsSecretName == "" {
+			return "", nil
+		}
+	default:
+		return "", nil
+	}
+
+	err := r.kubeClient.Get(ctx, client.ObjectKey{Name: tlsSecretName, Namespace: dk.Namespace}, &secret)
+	if k8serrors.IsNotFound(err) {
+		return "", nil
+	}
+
+	if err != nil {
+		k8sconditions.SetKubeAPIError(dk.Conditions(), conditionType, err)
+
+		return "", errors.WithStack(err)
+	}
+
+	if len(secret.Data) == 0 {
+		return "", nil
+	}
+
+	hash, err := hasher.GenerateSecureHash(secret.Data)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to hash TLS secret")
+	}
+
+	return hash, nil
 }

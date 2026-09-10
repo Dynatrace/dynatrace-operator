@@ -85,7 +85,7 @@ func checkActiveGateContainer(dk *dynakube.DynaKube, trustedCAs []byte) features
 		resources := envConfig.Client().Resources()
 
 		var activeGatePod corev1.Pod
-		require.NoError(t, resources.WithNamespace(dk.Namespace).Get(ctx, activegate.GetActiveGatePodName(dk, "activegate"), dk.Namespace, &activeGatePod))
+		require.NoError(t, resources.WithNamespace(dk.Namespace).Get(ctx, activegate.GetActiveGatePodName(dk), dk.Namespace, &activeGatePod))
 
 		require.NotNil(t, activeGatePod.Spec)
 		require.NotEmpty(t, activeGatePod.Spec.Containers)

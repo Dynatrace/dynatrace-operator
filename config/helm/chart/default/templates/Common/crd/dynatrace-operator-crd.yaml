@@ -6747,6 +6747,8 @@ spec:
                 x-kubernetes-list-type: map
               kspm:
                 properties:
+                  image:
+                    type: string
                   tokenSecretHash:
                     type: string
                 type: object
@@ -6771,8 +6773,6 @@ spec:
                         type: string
                     type: object
                   image:
-                    type: string
-                  tlsSecretHash:
                     type: string
                 type: object
               metadataEnrichment:

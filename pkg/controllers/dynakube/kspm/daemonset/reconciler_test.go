@@ -7,17 +7,23 @@ import (
 	"context"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
+	sharedimage "github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
+	dtimage "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/version"
+	imageclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/image"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -32,6 +38,11 @@ import (
 const (
 	dkName      = "test-name"
 	dkNamespace = "test-namespace"
+
+	testImageRepo         = "test-repo/dynatrace-k8s-node-config-collector"
+	testImageTag          = "1.289.0"
+	testFleetMgmtImageURI = "registry.example.com/dynatrace-k8s-node-config-collector:1.300.0"
+	testRegistryOverride  = "my.registry.example.com"
 )
 
 func TestReconcile(t *testing.T) {
@@ -44,7 +55,7 @@ func TestReconcile(t *testing.T) {
 		mockK8sClient := fake.NewClient()
 
 		reconciler := NewReconciler(mockK8sClient, mockK8sClient)
-		err := reconciler.Reconcile(ctx, dk)
+		err := reconciler.Reconcile(ctx, imageclientmock.NewClient(t), dk)
 		require.NoError(t, err)
 
 		condition := meta.FindStatusCondition(*dk.Conditions(), conditionType)
@@ -54,7 +65,7 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, k8sconditions.DaemonSetSetCreatedReason, condition.Reason)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
 
-		err = reconciler.Reconcile(t.Context(), dk)
+		err = reconciler.Reconcile(t.Context(), imageclientmock.NewClient(t), dk)
 		require.NoError(t, err)
 
 		var daemonset appsv1.DaemonSet
@@ -77,7 +88,7 @@ func TestReconcile(t *testing.T) {
 		k8sconditions.SetDaemonSetCreated(dk.Conditions(), conditionType, "this is a test")
 
 		reconciler := NewReconciler(mockK8sClient, mockK8sClient)
-		err := reconciler.Reconcile(ctx, dk)
+		err := reconciler.Reconcile(ctx, imageclientmock.NewClient(t), dk)
 
 		require.NoError(t, err)
 		assert.Empty(t, *dk.Conditions())
@@ -97,13 +108,94 @@ func TestReconcile(t *testing.T) {
 
 		reconciler := NewReconciler(boomClient, boomClient)
 
-		err := reconciler.Reconcile(t.Context(), dk)
+		err := reconciler.Reconcile(t.Context(), imageclientmock.NewClient(t), dk)
 
 		require.Error(t, err)
 		require.Len(t, *dk.Conditions(), 1)
 		condition := meta.FindStatusCondition(*dk.Conditions(), conditionType)
 		assert.Equal(t, k8sconditions.KubeAPIErrorReason, condition.Reason)
 		assert.Equal(t, metav1.ConditionFalse, condition.Status)
+	})
+}
+
+func TestImageResolution(t *testing.T) {
+	t.Cleanup(version.DisableCacheForTest(123))
+
+	ctx := t.Context()
+	anyCtx := mock.MatchedBy(func(context.Context) bool { return true })
+
+	reconcileDaemonSet := func(t *testing.T, dk *dynakube.DynaKube, imageClient *imageclientmock.Client) (appsv1.DaemonSet, error) {
+		t.Helper()
+
+		mockK8sClient := fake.NewClient()
+
+		err := NewReconciler(mockK8sClient, mockK8sClient).Reconcile(ctx, imageClient, dk)
+		if err != nil {
+			return appsv1.DaemonSet{}, err
+		}
+
+		var daemonset appsv1.DaemonSet
+
+		err = mockK8sClient.Get(ctx, types.NamespacedName{Name: dk.KSPM().GetDaemonSetName(), Namespace: dk.Namespace}, &daemonset)
+		require.NoError(t, err)
+
+		return daemonset, nil
+	}
+
+	t.Run("custom image-ref is used as-is, fleet management is not called", func(t *testing.T) {
+		dk := createDynakube(true)
+
+		// a mock without expectations fails the test if fleet management gets called
+		daemonset, err := reconcileDaemonSet(t, dk, imageclientmock.NewClient(t))
+		require.NoError(t, err)
+
+		assert.Equal(t, testImageRepo+":"+testImageTag, dk.Status.KSPM.ResolvedImage)
+		assert.Equal(t, testImageRepo+":"+testImageTag, daemonset.Spec.Template.Spec.Containers[0].Image)
+	})
+
+	t.Run("no image-ref takes the image from fleet management using the default registry", func(t *testing.T) {
+		dk := createDynakube(true)
+		dk.Spec.Templates.KSPMNodeConfigurationCollector.ImageRef = sharedimage.Ref{}
+
+		imageClient := imageclientmock.NewClient(t)
+		imageClient.EXPECT().GetComponentLatestInfo(anyCtx, dtimage.NCC, "").
+			Return(&dtimage.Info{URI: testFleetMgmtImageURI}, nil).Once()
+
+		daemonset, err := reconcileDaemonSet(t, dk, imageClient)
+		require.NoError(t, err)
+
+		assert.Equal(t, testFleetMgmtImageURI, dk.Status.KSPM.ResolvedImage)
+		assert.Equal(t, testFleetMgmtImageURI, daemonset.Spec.Template.Spec.Containers[0].Image)
+	})
+
+	t.Run("no image-ref takes the image from fleet management using the override registry", func(t *testing.T) {
+		dk := createDynakube(true)
+		dk.Spec.Templates.KSPMNodeConfigurationCollector.ImageRef = sharedimage.Ref{}
+		dk.Spec.PublicRegistryOverride = testRegistryOverride
+
+		imageClient := imageclientmock.NewClient(t)
+		imageClient.EXPECT().GetComponentLatestInfo(anyCtx, dtimage.NCC, testRegistryOverride).
+			Return(&dtimage.Info{URI: testFleetMgmtImageURI}, nil).Once()
+
+		daemonset, err := reconcileDaemonSet(t, dk, imageClient)
+		require.NoError(t, err)
+
+		assert.Equal(t, testFleetMgmtImageURI, daemonset.Spec.Template.Spec.Containers[0].Image)
+	})
+
+	t.Run("failing image resolution is propagated and leaves the status empty", func(t *testing.T) {
+		dk := createDynakube(true)
+		dk.Spec.Templates.KSPMNodeConfigurationCollector.ImageRef = sharedimage.Ref{}
+
+		expectedErr := errors.New("fleet management is unreachable")
+
+		imageClient := imageclientmock.NewClient(t)
+		imageClient.EXPECT().GetComponentLatestInfo(anyCtx, dtimage.NCC, "").Return(nil, expectedErr).Once()
+
+		_, err := reconcileDaemonSet(t, dk, imageClient)
+		require.ErrorIs(t, err, expectedErr)
+
+		assert.Empty(t, dk.Status.KSPM.ResolvedImage)
 	})
 }
 
@@ -116,7 +208,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		dk := createDynakube(true)
 
 		reconciler := NewReconciler(nil, nil)
-		daemonset, err := reconciler.generateDaemonSet(dk)
+		daemonset, err := reconciler.generateDaemonSet(dk, "")
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -153,7 +245,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		dk.KSPM().Labels = customLabels
 
 		reconciler := NewReconciler(nil, nil)
-		daemonset, err := reconciler.generateDaemonSet(dk)
+		daemonset, err := reconciler.generateDaemonSet(dk, "")
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -169,7 +261,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		dk.KSPM().Annotations = customAnnotations
 
 		reconciler := NewReconciler(nil, nil)
-		daemonset, err := reconciler.generateDaemonSet(dk)
+		daemonset, err := reconciler.generateDaemonSet(dk, "")
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -184,7 +276,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		dk.KSPM().PriorityClassName = customClass
 
 		reconciler := NewReconciler(nil, nil)
-		daemonset, err := reconciler.generateDaemonSet(dk)
+		daemonset, err := reconciler.generateDaemonSet(dk, "")
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -198,7 +290,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		dk.Spec.CustomPullSecret = customPullSecret
 
 		reconciler := NewReconciler(nil, nil)
-		daemonset, err := reconciler.generateDaemonSet(dk)
+		daemonset, err := reconciler.generateDaemonSet(dk, "")
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -219,7 +311,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		dk := createDynakube(true)
 		dk.KSPM().Tolerations = customTolerations
 		reconciler := NewReconciler(nil, nil)
-		daemonset, err := reconciler.generateDaemonSet(dk)
+		daemonset, err := reconciler.generateDaemonSet(dk, "")
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -233,7 +325,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		dk := createDynakube(true)
 		dk.KSPM().NodeSelector = customNodeSelector
 		reconciler := NewReconciler(nil, nil)
-		daemonset, err := reconciler.generateDaemonSet(dk)
+		daemonset, err := reconciler.generateDaemonSet(dk, "")
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -250,7 +342,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		dk := createDynakube(true)
 		dk.KSPM().NodeAffinity = customNodeAffinity
 		reconciler := NewReconciler(nil, nil)
-		daemonset, err := reconciler.generateDaemonSet(dk)
+		daemonset, err := reconciler.generateDaemonSet(dk, "")
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -267,7 +359,7 @@ func TestAppArmorAnnotationHandling(t *testing.T) {
 		dk := createDynakube(true)
 		dk.Spec.Templates.KSPMNodeConfigurationCollector.Annotations = map[string]string{appArmorAnnotationKey: corev1.DeprecatedAppArmorBetaProfileRuntimeDefault}
 
-		ds, err := NewReconciler(nil, nil).generateDaemonSet(dk)
+		ds, err := NewReconciler(nil, nil).generateDaemonSet(dk, "")
 		require.NoError(t, err)
 
 		return ds
@@ -294,6 +386,89 @@ func TestAppArmorAnnotationHandling(t *testing.T) {
 	})
 }
 
+func TestTlsSecretHashAnnotationHandling(t *testing.T) {
+	t.Run("no AG TLS secret", func(t *testing.T) {
+		dk := createDynakube(true)
+		dk.Annotations = map[string]string{
+			exp.AGAutomaticTLSCertificateKey: "false",
+		}
+
+		kubeClient := fake.NewClientWithInterceptors(interceptor.Funcs{
+			Get: func(ctx context.Context, c client.WithWatch, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
+				if _, ok := obj.(*corev1.Secret); ok {
+					return errors.New("secret should not be read")
+				}
+
+				return c.Get(ctx, key, obj, opts...)
+			},
+		})
+
+		reconciler := NewReconciler(kubeClient, nil)
+		hash, err := reconciler.getTLSSecretHash(t.Context(), dk)
+		require.NoError(t, err)
+		assert.Empty(t, hash)
+	})
+
+	t.Run("generic AG TLS secret used", func(t *testing.T) {
+		dk := createDynakube(true)
+
+		kubeClient := fake.NewClientWithInterceptors(interceptor.Funcs{
+			Get: func(ctx context.Context, c client.WithWatch, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
+				if _, ok := obj.(*corev1.Secret); ok {
+					if key.Name != dk.ActiveGate().GetTLSSecretName() {
+						return errors.New("wrong secret is read")
+					}
+				}
+
+				return c.Get(ctx, key, obj, opts...)
+			},
+		}, &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      dk.ActiveGate().GetTLSSecretName(),
+				Namespace: dk.Namespace,
+			},
+			Data: map[string][]byte{
+				"tls.key": []byte("foo"),
+			},
+		})
+		reconciler := NewReconciler(kubeClient, nil)
+		hash, err := reconciler.getTLSSecretHash(t.Context(), dk)
+		require.NoError(t, err)
+		assert.NotEmpty(t, hash)
+	})
+
+	t.Run("kubemon AG preferred", func(t *testing.T) {
+		t.Setenv(k8senv.ExperimentalEnableKubemonOperand, "true")
+
+		dk := createDynakube(true)
+		dk.Spec.KubernetesMonitoring = &kubemon.Spec{}
+
+		kubeClient := fake.NewClientWithInterceptors(interceptor.Funcs{
+			Get: func(ctx context.Context, c client.WithWatch, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
+				if _, ok := obj.(*corev1.Secret); ok {
+					if key.Name != dk.KubernetesMonitoring().GetTLSSecretName() {
+						return errors.New("wrong secret is read")
+					}
+				}
+
+				return c.Get(ctx, key, obj, opts...)
+			},
+		}, &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      dk.KubernetesMonitoring().GetTLSSecretName(),
+				Namespace: dk.Namespace,
+			},
+			Data: map[string][]byte{
+				"tls.key": []byte("foo"),
+			},
+		})
+		reconciler := NewReconciler(kubeClient, nil)
+		hash, err := reconciler.getTLSSecretHash(t.Context(), dk)
+		require.NoError(t, err)
+		assert.NotEmpty(t, hash)
+	})
+}
+
 func createDynakube(isEnabled bool) *dynakube.DynaKube {
 	var kspmSpec *kspm.Spec
 	if isEnabled {
@@ -311,6 +486,11 @@ func createDynakube(isEnabled bool) *dynakube.DynaKube {
 			ActiveGate: activegate.Spec{
 				Capabilities: []activegate.CapabilityDisplayName{
 					activegate.KubeMonCapability.DisplayName,
+				},
+			},
+			Templates: dynakube.TemplatesSpec{
+				KSPMNodeConfigurationCollector: kspm.NodeConfigurationCollectorSpec{
+					ImageRef: sharedimage.Ref{Repository: testImageRepo, Tag: testImageTag},
 				},
 			},
 		},

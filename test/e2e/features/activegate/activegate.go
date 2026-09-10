@@ -15,8 +15,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/activegate"
 	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
+	componentOperator "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8spod"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sstatefulset"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/proxy"
@@ -25,14 +27,13 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
 var (
-	agComponentName = "activegate"
-
 	agContainers = map[string]bool{
 		consts.ActiveGateContainerName: false,
 	}
@@ -72,17 +73,36 @@ func Feature(t *testing.T, proxySpec *value.Source) features.Feature {
 	proxy.CutOffDynatraceNamespace(builder, proxySpec)
 	proxy.IsDynatraceNamespaceCutOff(builder, testDynakube)
 
+	builder.Setup(helpers.ToFeatureFunc(componentOperator.InstallLocal(false, componentOperator.EnableKubemonOperand()), true))
+
 	// Register actual test
 	dynakubeComponents.Install(builder, &secretConfig, testDynakube)
 	assessActiveGate(builder, &testDynakube)
 
 	assessReadOnlyActiveGate(builder, &testDynakube)
 
+	// only activegate capabilities are used in this test
+	// make sure that if separate kubemon activegate is not used - it does not create separate statefulset and secret
+	builder.Assess("kubemon statefulset does not exist", func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		_, err := k8sstatefulset.Get(ctx, envConfig.Client().Resources(), testDynakube.KubernetesMonitoring().GetStatefulSetName(), testDynakube.Namespace)
+		require.Truef(t, k8serrors.IsNotFound(err), "expected NotFound, got: %v", err)
+
+		return ctx
+	})
+
+	builder.Assess("kubemon authtoken secret does not exist", func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		var secret corev1.Secret
+		err := envConfig.Client().Resources().Get(ctx, testDynakube.KubernetesMonitoring().GetAuthTokenSecretName(), testDynakube.Namespace, &secret)
+		require.Truef(t, k8serrors.IsNotFound(err), "expected NotFound, got: %v", err)
+
+		return ctx
+	})
+
 	return builder.Feature()
 }
 
 func assessActiveGate(builder *features.FeatureBuilder, dk *dynakube.DynaKube) {
-	builder.Assess("ActiveGate started", k8sstatefulset.IsReady(activegate.GetActiveGateStateFulSetName(dk, "activegate"), dk.Namespace))
+	builder.Assess("ActiveGate started", k8sstatefulset.IsReady(activegate.GetActiveGateStateFulSetName(dk), dk.Namespace))
 	builder.Assess("ActiveGate has required containers", checkIfAgHasContainers(dk))
 	builder.Assess("ActiveGate modules are active", checkActiveModules(dk))
 	if dk.Spec.Proxy != nil {
@@ -107,7 +127,7 @@ func checkIfAgHasContainers(dk *dynakube.DynaKube) features.Func {
 		kubeResources := envConfig.Client().Resources()
 
 		var activeGatePod corev1.Pod
-		require.NoError(t, kubeResources.WithNamespace(dk.Namespace).Get(ctx, activegate.GetActiveGatePodName(dk, agComponentName), dk.Namespace, &activeGatePod))
+		require.NoError(t, kubeResources.WithNamespace(dk.Namespace).Get(ctx, activegate.GetActiveGatePodName(dk), dk.Namespace, &activeGatePod))
 
 		require.NotNil(t, activeGatePod.Spec)
 		require.NotEmpty(t, activeGatePod.Spec.InitContainers)
@@ -122,7 +142,7 @@ func checkIfAgHasContainers(dk *dynakube.DynaKube) features.Func {
 
 func checkActiveModules(dk *dynakube.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		log := activegate.ReadActiveGateLog(ctx, t, envConfig, dk, agComponentName)
+		log := activegate.ReadActiveGateLog(ctx, t, envConfig, dk)
 		assertExpectedModulesAreActive(t, log)
 
 		return ctx
@@ -131,7 +151,7 @@ func checkActiveModules(dk *dynakube.DynaKube) features.Func {
 
 func checkIfProxyUsed(dk *dynakube.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		log := activegate.ReadActiveGateLog(ctx, t, envConfig, dk, agComponentName)
+		log := activegate.ReadActiveGateLog(ctx, t, envConfig, dk)
 		assertProxyUsed(t, log, dk.Spec.Proxy.Value)
 
 		return ctx
@@ -143,7 +163,7 @@ func checkMountPoints(dk *dynakube.DynaKube) features.Func {
 		kubeResources := envConfig.Client().Resources()
 
 		var activeGatePod corev1.Pod
-		require.NoError(t, kubeResources.Get(ctx, activegate.GetActiveGatePodName(dk, agComponentName), dk.Namespace, &activeGatePod))
+		require.NoError(t, kubeResources.Get(ctx, activegate.GetActiveGatePodName(dk), dk.Namespace, &activeGatePod))
 
 		for name, mountPoints := range agMounts {
 			assertMountPointsExist(ctx, t, kubeResources, activeGatePod, name, mountPoints)
@@ -246,7 +266,7 @@ func checkReadOnlySettings(dk *dynakube.DynaKube) features.Func {
 		kubeResources := envConfig.Client().Resources()
 
 		var activeGatePod corev1.Pod
-		require.NoError(t, kubeResources.WithNamespace(dk.Namespace).Get(ctx, activegate.GetActiveGatePodName(dk, agComponentName), dk.Namespace, &activeGatePod))
+		require.NoError(t, kubeResources.WithNamespace(dk.Namespace).Get(ctx, activegate.GetActiveGatePodName(dk), dk.Namespace, &activeGatePod))
 
 		require.NotNil(t, activeGatePod.Spec)
 		require.NotEmpty(t, activeGatePod.Spec.InitContainers)

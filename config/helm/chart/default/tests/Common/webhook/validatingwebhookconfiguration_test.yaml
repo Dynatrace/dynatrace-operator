@@ -103,6 +103,27 @@ tests:
               timeoutSeconds: 10
               sideEffects: None
               matchPolicy: Exact
+            - admissionReviewVersions:
+                - v1
+              clientConfig:
+                service:
+                  name: dynatrace-webhook
+                  namespace: NAMESPACE
+                  path: /validate-dynatrace-com-v1alpha1-dtprometheus
+              rules:
+                - operations:
+                    - CREATE
+                    - UPDATE
+                  apiGroups:
+                    - dynatrace.com
+                  apiVersions:
+                    - v1alpha1
+                  resources:
+                    - dtprometheuses
+              name: v1alpha1.dtprometheus.webhook.dynatrace.com
+              timeoutSeconds: 10
+              sideEffects: None
+              matchPolicy: Exact
   - it: should change timeoutSeconds
     set:
       platform: kubernetes
