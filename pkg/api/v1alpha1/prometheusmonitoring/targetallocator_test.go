@@ -12,14 +12,14 @@ import (
 func TestNewTargetAllocator(t *testing.T) {
 	spec := &TargetAllocatorSpec{}
 
-	ta := NewTargetAllocator(spec, "dtprom")
+	ta := NewTargetAllocator(spec, "dtp")
 
 	assert.Same(t, spec, ta.TargetAllocatorSpec)
-	assert.Equal(t, "dtprom"+TargetAllocatorNameSuffix, ta.GetDeploymentName())
+	assert.Equal(t, "dtp"+TargetAllocatorNameSuffix, ta.GetDeploymentName())
 }
 
 func TestTargetAllocator_GetDeploymentName(t *testing.T) {
-	ta := NewTargetAllocator(&TargetAllocatorSpec{}, "dtprom")
+	ta := NewTargetAllocator(&TargetAllocatorSpec{}, "dtp")
 
-	assert.Equal(t, "dtprom-allocator", ta.GetDeploymentName())
+	assert.Equal(t, "dtp-allocator", ta.GetDeploymentName())
 }

@@ -87,16 +87,16 @@ func TestSetupWithManager(t *testing.T) {
 	createPrometheusMonitoring := func(t *testing.T) (*prometheusmonitoring.PrometheusMonitoring, client.ObjectKey) {
 		t.Helper()
 
-		dtprom := &prometheusmonitoring.PrometheusMonitoring{
+		dtp := &prometheusmonitoring.PrometheusMonitoring{
 			ObjectMeta: metav1.ObjectMeta{GenerateName: "prometheusmonitoring", Namespace: metav1.NamespaceDefault},
 			Spec:       prometheusmonitoring.PrometheusMonitoringSpec{DynaKubeRef: "dynakube"},
 		}
-		integrationtests.CreateKubernetesObject(t, clt, dtprom)
+		integrationtests.CreateKubernetesObject(t, clt, dtp)
 
-		key := client.ObjectKeyFromObject(dtprom)
+		key := client.ObjectKeyFromObject(dtp)
 		require.Eventually(t, func() bool { return recorder.count(key) > 0 }, eventuallyTimeout, eventuallyInterval)
 
-		return dtprom, key
+		return dtp, key
 	}
 
 	// assertReconcileTriggered resets the recorder for key, runs action, and asserts
@@ -123,10 +123,10 @@ func TestSetupWithManager(t *testing.T) {
 	}
 
 	t.Run("update to an owned ConfigMap triggers reconcile", func(t *testing.T) {
-		dtprom, key := createPrometheusMonitoring(t)
+		dtp, key := createPrometheusMonitoring(t)
 
-		cm := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "owned-configmap", Namespace: dtprom.Namespace}}
-		require.NoError(t, controllerutil.SetControllerReference(dtprom, cm, scheme.Scheme))
+		cm := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "owned-configmap", Namespace: dtp.Namespace}}
+		require.NoError(t, controllerutil.SetControllerReference(dtp, cm, scheme.Scheme))
 
 		assertReconcileTriggered(t, key, func() {
 			require.NoError(t, clt.Create(t.Context(), cm))
@@ -134,10 +134,10 @@ func TestSetupWithManager(t *testing.T) {
 	})
 
 	t.Run("update to an owned Deployment triggers reconcile", func(t *testing.T) {
-		dtprom, key := createPrometheusMonitoring(t)
+		dtp, key := createPrometheusMonitoring(t)
 
 		dep := &appsv1.Deployment{
-			ObjectMeta: metav1.ObjectMeta{Name: "owned-deployment", Namespace: dtprom.Namespace},
+			ObjectMeta: metav1.ObjectMeta{Name: "owned-deployment", Namespace: dtp.Namespace},
 			Spec: appsv1.DeploymentSpec{
 				Selector: &metav1.LabelSelector{MatchLabels: map[string]string{"app": "owned-deployment"}},
 				Template: corev1.PodTemplateSpec{
@@ -148,7 +148,7 @@ func TestSetupWithManager(t *testing.T) {
 				},
 			},
 		}
-		require.NoError(t, controllerutil.SetControllerReference(dtprom, dep, scheme.Scheme))
+		require.NoError(t, controllerutil.SetControllerReference(dtp, dep, scheme.Scheme))
 
 		assertReconcileTriggered(t, key, func() {
 			require.NoError(t, clt.Create(t.Context(), dep))
@@ -156,13 +156,13 @@ func TestSetupWithManager(t *testing.T) {
 	})
 
 	t.Run("update to an owned Service triggers reconcile", func(t *testing.T) {
-		dtprom, key := createPrometheusMonitoring(t)
+		dtp, key := createPrometheusMonitoring(t)
 
 		svc := &corev1.Service{
-			ObjectMeta: metav1.ObjectMeta{Name: "owned-service", Namespace: dtprom.Namespace},
+			ObjectMeta: metav1.ObjectMeta{Name: "owned-service", Namespace: dtp.Namespace},
 			Spec:       corev1.ServiceSpec{Ports: []corev1.ServicePort{{Port: 80}}},
 		}
-		require.NoError(t, controllerutil.SetControllerReference(dtprom, svc, scheme.Scheme))
+		require.NoError(t, controllerutil.SetControllerReference(dtp, svc, scheme.Scheme))
 
 		assertReconcileTriggered(t, key, func() {
 			require.NoError(t, clt.Create(t.Context(), svc))
@@ -170,10 +170,10 @@ func TestSetupWithManager(t *testing.T) {
 	})
 
 	t.Run("DynaKube phase change triggers reconcile", func(t *testing.T) {
-		dtprom, key := createPrometheusMonitoring(t)
+		dtp, key := createPrometheusMonitoring(t)
 
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{Name: dtprom.Spec.DynaKubeRef, Namespace: dtprom.Namespace},
+			ObjectMeta: metav1.ObjectMeta{Name: dtp.Spec.DynaKubeRef, Namespace: dtp.Namespace},
 			Spec:       dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
 			Status:     dynakube.DynaKubeStatus{Phase: status.Running},
 		}
@@ -186,10 +186,10 @@ func TestSetupWithManager(t *testing.T) {
 	})
 
 	t.Run("DynaKube tokens change triggers reconcile", func(t *testing.T) {
-		dtprom, key := createPrometheusMonitoring(t)
+		dtp, key := createPrometheusMonitoring(t)
 
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{Name: dtprom.Spec.DynaKubeRef, Namespace: dtprom.Namespace},
+			ObjectMeta: metav1.ObjectMeta{Name: dtp.Spec.DynaKubeRef, Namespace: dtp.Namespace},
 			Spec:       dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api", Tokens: "old-token-secret"},
 		}
 		integrationtests.CreateDynakube(t, clt, dk)
@@ -201,10 +201,10 @@ func TestSetupWithManager(t *testing.T) {
 	})
 
 	t.Run("DynaKube resource attributes change triggers reconcile", func(t *testing.T) {
-		dtprom, key := createPrometheusMonitoring(t)
+		dtp, key := createPrometheusMonitoring(t)
 
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{Name: dtprom.Spec.DynaKubeRef, Namespace: dtprom.Namespace},
+			ObjectMeta: metav1.ObjectMeta{Name: dtp.Spec.DynaKubeRef, Namespace: dtp.Namespace},
 			Spec:       dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
 		}
 		integrationtests.CreateDynakube(t, clt, dk)
@@ -216,10 +216,10 @@ func TestSetupWithManager(t *testing.T) {
 	})
 
 	t.Run("DynaKube trusted CAs change triggers reconcile", func(t *testing.T) {
-		dtprom, key := createPrometheusMonitoring(t)
+		dtp, key := createPrometheusMonitoring(t)
 
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{Name: dtprom.Spec.DynaKubeRef, Namespace: dtprom.Namespace},
+			ObjectMeta: metav1.ObjectMeta{Name: dtp.Spec.DynaKubeRef, Namespace: dtp.Namespace},
 			Spec:       dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
 		}
 		integrationtests.CreateDynakube(t, clt, dk)
@@ -231,10 +231,10 @@ func TestSetupWithManager(t *testing.T) {
 	})
 
 	t.Run("DynaKube proxy change triggers reconcile", func(t *testing.T) {
-		dtprom, key := createPrometheusMonitoring(t)
+		dtp, key := createPrometheusMonitoring(t)
 
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{Name: dtprom.Spec.DynaKubeRef, Namespace: dtprom.Namespace},
+			ObjectMeta: metav1.ObjectMeta{Name: dtp.Spec.DynaKubeRef, Namespace: dtp.Namespace},
 			Spec:       dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
 		}
 		integrationtests.CreateDynakube(t, clt, dk)
@@ -246,10 +246,10 @@ func TestSetupWithManager(t *testing.T) {
 	})
 
 	t.Run("DynaKube API request threshold triggers reconcile", func(t *testing.T) {
-		dtprom, key := createPrometheusMonitoring(t)
+		dtp, key := createPrometheusMonitoring(t)
 
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{Name: dtprom.Spec.DynaKubeRef, Namespace: dtprom.Namespace},
+			ObjectMeta: metav1.ObjectMeta{Name: dtp.Spec.DynaKubeRef, Namespace: dtp.Namespace},
 			Spec:       dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
 		}
 		integrationtests.CreateDynakube(t, clt, dk)
@@ -261,10 +261,10 @@ func TestSetupWithManager(t *testing.T) {
 	})
 
 	t.Run("DynaKube update without a phase change does not trigger reconcile", func(t *testing.T) {
-		dtprom, key := createPrometheusMonitoring(t)
+		dtp, key := createPrometheusMonitoring(t)
 
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{Name: dtprom.Spec.DynaKubeRef, Namespace: dtprom.Namespace},
+			ObjectMeta: metav1.ObjectMeta{Name: dtp.Spec.DynaKubeRef, Namespace: dtp.Namespace},
 			Spec:       dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
 			Status:     dynakube.DynaKubeStatus{Phase: status.Running},
 		}
@@ -279,10 +279,10 @@ func TestSetupWithManager(t *testing.T) {
 	})
 
 	t.Run("DynaKube resource attributes change triggers reconcile", func(t *testing.T) {
-		dtprom, key := createPrometheusMonitoring(t)
+		dtp, key := createPrometheusMonitoring(t)
 
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{Name: dtprom.Spec.DynaKubeRef, Namespace: dtprom.Namespace},
+			ObjectMeta: metav1.ObjectMeta{Name: dtp.Spec.DynaKubeRef, Namespace: dtp.Namespace},
 			Spec:       dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
 			Status:     dynakube.DynaKubeStatus{Phase: status.Running},
 		}
@@ -311,10 +311,10 @@ func TestSetupWithManager(t *testing.T) {
 	})
 
 	t.Run("DynaKube deletion triggers reconcile", func(t *testing.T) {
-		dtprom, key := createPrometheusMonitoring(t)
+		dtp, key := createPrometheusMonitoring(t)
 
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{Name: dtprom.Spec.DynaKubeRef, Namespace: dtprom.Namespace},
+			ObjectMeta: metav1.ObjectMeta{Name: dtp.Spec.DynaKubeRef, Namespace: dtp.Namespace},
 			Spec:       dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
 			Status:     dynakube.DynaKubeStatus{Phase: status.Running},
 		}

@@ -12,14 +12,14 @@ import (
 func TestNewGateway(t *testing.T) {
 	spec := &GatewaySpec{}
 
-	gateway := NewGateway(spec, "dtprom")
+	gateway := NewGateway(spec, "dtp")
 
 	assert.Same(t, spec, gateway.GatewaySpec)
-	assert.Equal(t, "dtprom"+GatewayNameSuffix, gateway.GetStatefulSetName())
+	assert.Equal(t, "dtp"+GatewayNameSuffix, gateway.GetStatefulSetName())
 }
 
 func TestGateway_GetStatefulSetName(t *testing.T) {
-	gateway := NewGateway(&GatewaySpec{}, "dtprom")
+	gateway := NewGateway(&GatewaySpec{}, "dtp")
 
-	assert.Equal(t, "dtprom-gateway", gateway.GetStatefulSetName())
+	assert.Equal(t, "dtp-gateway", gateway.GetStatefulSetName())
 }

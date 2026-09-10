@@ -107,7 +107,7 @@ webhooks:
         apiVersions:
           - v1alpha1
         resources:
-                    - prometheusmonitorings
+          - prometheusmonitorings
     name: v1alpha1.prometheusmonitoring.webhook.dynatrace.com
     timeoutSeconds: {{.Values.webhook.validatingWebhook.timeoutSeconds}}
     sideEffects: None

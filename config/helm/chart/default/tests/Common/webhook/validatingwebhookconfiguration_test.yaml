@@ -119,7 +119,7 @@ tests:
                   apiVersions:
                     - v1alpha1
                   resources:
-                                        - prometheusmonitorings
+                    - prometheusmonitorings
               name: v1alpha1.prometheusmonitoring.webhook.dynatrace.com
               timeoutSeconds: 10
               sideEffects: None
