@@ -414,3 +414,7 @@ test/e2e/kspm/optionalscopes:
 
 test/e2e/token/migration:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "token_migration" $(SKIPCLEANUP)
+
+test/e2e/imagevolumes:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "TestNoCSI_image_volume_injection" $(SKIPCLEANUP)
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/standard -run "TestStandard_cloudnative_image_volume_injection" $(SKIPCLEANUP)
