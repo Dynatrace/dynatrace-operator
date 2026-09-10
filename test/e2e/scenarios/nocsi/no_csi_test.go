@@ -19,6 +19,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/extensions/dbexecutor"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/hostmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/kspm"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/kubemon"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/resourceattributes"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/telemetryingest"
@@ -256,6 +257,14 @@ func TestNoCSI_kspm_with_optional_scopes(t *testing.T) {
 
 func TestNoCSI_kspm_with_kubemon(t *testing.T) {
 	testEnv.Test(t, kspm.FeatureWithKubemon(t))
+}
+
+func TestNoCSI_kubemon_split_ag(t *testing.T) {
+	testEnv.Test(t, kubemon.FeatureSplitAG(t))
+}
+
+func TestNoCSI_kubemon_restart_triggers(t *testing.T) {
+	testEnv.Test(t, kubemon.FeatureRestartTriggers(t))
 }
 
 func TestNoCSI_extensions_db_executor(t *testing.T) {

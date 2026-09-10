@@ -12,7 +12,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/pkg/errors"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -57,6 +60,18 @@ func IsLatestVersion(ctx context.Context, apiReader client.Reader, crdName strin
 	}
 
 	return true, nil
+}
+
+// IsInstalled reports whether a CRD for the given GroupVersionKind is installed on the cluster.
+func IsInstalled(ctx context.Context, apiReader client.Reader, gvk schema.GroupVersionKind) bool {
+	obj := &unstructured.Unstructured{}
+	obj.SetGroupVersionKind(gvk)
+
+	if err := apiReader.Get(ctx, client.ObjectKey{Namespace: "default", Name: "default"}, obj); err != nil {
+		return !meta.IsNoMatchError(err)
+	}
+
+	return true
 }
 
 func GetLatestStorageVersion(crd *apiextensionsv1.CustomResourceDefinition) string {

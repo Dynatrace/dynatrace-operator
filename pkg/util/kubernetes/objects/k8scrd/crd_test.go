@@ -4,14 +4,20 @@
 package k8scrd
 
 import (
+	"context"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
 
 func TestIsLatestVersion(t *testing.T) {
@@ -131,6 +137,43 @@ func TestGetLatestStorageVersion(t *testing.T) {
 
 		latestVersion := GetLatestStorageVersion(crd)
 		assert.Empty(t, latestVersion)
+	})
+}
+
+func TestIsInstalled(t *testing.T) {
+	testGVK := schema.GroupVersionKind{Group: "networking.istio.io", Version: "v1beta1", Kind: "VirtualService"}
+
+	createErrorClient := func(kindMissing bool) client.Client {
+		return fake.NewClientWithInterceptors(interceptor.Funcs{
+			Get: func(_ context.Context, _ client.WithWatch, _ client.ObjectKey, _ client.Object, _ ...client.GetOption) error {
+				if kindMissing {
+					return new(meta.NoResourceMatchError)
+				}
+
+				return errors.New("BOOM")
+			},
+		})
+	}
+
+	t.Run("CRD is installed => returns true", func(t *testing.T) {
+		fakeClient := fake.NewClient()
+
+		installed := IsInstalled(t.Context(), fakeClient, testGVK)
+		assert.True(t, installed)
+	})
+
+	t.Run("CRD is not installed => returns false", func(t *testing.T) {
+		fakeClient := createErrorClient(true)
+
+		installed := IsInstalled(t.Context(), fakeClient, testGVK)
+		assert.False(t, installed)
+	})
+
+	t.Run("unknown client err => returns true (no discovery fail == CRD is present)", func(t *testing.T) {
+		fakeClient := createErrorClient(false)
+
+		installed := IsInstalled(t.Context(), fakeClient, testGVK)
+		assert.True(t, installed)
 	})
 }
 

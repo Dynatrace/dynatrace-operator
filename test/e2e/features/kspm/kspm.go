@@ -17,7 +17,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
 	componentKspm "github.com/Dynatrace/dynatrace-operator/test/helpers/components/kspm"
 	"sigs.k8s.io/e2e-framework/pkg/features"
-	"sigs.k8s.io/e2e-framework/third_party/helm"
 )
 
 func Feature(t *testing.T) features.Feature {
@@ -53,11 +52,7 @@ func FeatureWithKubemon(t *testing.T) features.Feature {
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
 	builder.Setup(componentKspm.DeleteKSPMSettingsFromTenant(secretConfig))
-	builder.Setup(helpers.ToFeatureFunc(componentOperator.InstallLocal(
-		false,
-		helm.WithArgs("--reuse-values"),
-		helm.WithArgs("--set", "experimental.enableKubemonOperand=true"),
-	), true))
+	builder.Setup(helpers.ToFeatureFunc(componentOperator.InstallLocal(false, componentOperator.EnableKubemonOperand()), true))
 
 	options := []componentDynakube.Option{
 		componentDynakube.WithAPIURL(secretConfig.APIURL),
@@ -74,11 +69,9 @@ func FeatureWithKubemon(t *testing.T) features.Feature {
 
 	builder.Assess("kspm node config collector started", k8sdaemonset.IsReady(testDynakube.KSPM().GetDaemonSetName(), testDynakube.Namespace))
 
-	builder.Teardown(helpers.ToFeatureFunc(componentOperator.InstallLocal(
-		false,
-		helm.WithArgs("--reuse-values"),
-		helm.WithArgs("--set", "experimental.enableKubemonOperand=false"),
-	), false))
+	builder.Assess("check if KSPM settings were created on tenant", componentKspm.CheckKSPMSettingsExistOnTenant(secretConfig, &testDynakube))
+
+	builder.Teardown(helpers.ToFeatureFunc(componentOperator.InstallLocal(false, componentOperator.DisableKubemonOperand()), false))
 
 	return builder.Feature()
 }

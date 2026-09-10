@@ -94,6 +94,21 @@ func WaitFor(name string, namespace string) features.Func {
 	}
 }
 
+func WaitForAbsence(name, namespace string) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resources := envConfig.Client().Resources()
+		err := wait.For(conditions.New(resources).ResourceDeleted(&appsv1.StatefulSet{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      name,
+				Namespace: namespace,
+			},
+		}), wait.WithTimeout(5*time.Minute))
+		require.NoError(t, err)
+
+		return ctx
+	}
+}
+
 func WaitForReplicas(name, namespace string, replicas int32) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resource := envConfig.Client().Resources()

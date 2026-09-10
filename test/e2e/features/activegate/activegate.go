@@ -15,8 +15,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/activegate"
 	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
+	componentOperator "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8spod"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sstatefulset"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/proxy"
@@ -25,6 +27,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
@@ -70,11 +73,30 @@ func Feature(t *testing.T, proxySpec *value.Source) features.Feature {
 	proxy.CutOffDynatraceNamespace(builder, proxySpec)
 	proxy.IsDynatraceNamespaceCutOff(builder, testDynakube)
 
+	builder.Setup(helpers.ToFeatureFunc(componentOperator.InstallLocal(false, componentOperator.EnableKubemonOperand()), true))
+
 	// Register actual test
 	dynakubeComponents.Install(builder, &secretConfig, testDynakube)
 	assessActiveGate(builder, &testDynakube)
 
 	assessReadOnlyActiveGate(builder, &testDynakube)
+
+	// only activegate capabilities are used in this test
+	// make sure that if separate kubemon activegate is not used - it does not create separate statefulset and secret
+	builder.Assess("kubemon statefulset does not exist", func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		_, err := k8sstatefulset.Get(ctx, envConfig.Client().Resources(), testDynakube.KubernetesMonitoring().GetStatefulSetName(), testDynakube.Namespace)
+		require.Truef(t, k8serrors.IsNotFound(err), "expected NotFound, got: %v", err)
+
+		return ctx
+	})
+
+	builder.Assess("kubemon authtoken secret does not exist", func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		var secret corev1.Secret
+		err := envConfig.Client().Resources().Get(ctx, testDynakube.KubernetesMonitoring().GetAuthTokenSecretName(), testDynakube.Namespace, &secret)
+		require.Truef(t, k8serrors.IsNotFound(err), "expected NotFound, got: %v", err)
+
+		return ctx
+	})
 
 	return builder.Feature()
 }

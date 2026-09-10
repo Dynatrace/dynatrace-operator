@@ -21,6 +21,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/projectpath"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
@@ -72,7 +73,7 @@ func SetupTestEnvironment(tb testing.TB, opts ...TestEnvOpt) client.Client {
 	return clt
 }
 
-func SetupWebhookTestEnvironment(t *testing.T, webhookOptions envtest.WebhookInstallOptions, webhookSetup func(ctrl.Manager) error) client.Client {
+func SetupWebhookTestEnvironment(t *testing.T, webhookOptions envtest.WebhookInstallOptions, webhookSetup func(ctrl.Manager) error, configOpts ...func(*rest.Config)) client.Client {
 	setupBaseTestEnv(t)
 
 	testEnv.WebhookInstallOptions = webhookOptions
@@ -90,6 +91,10 @@ func SetupWebhookTestEnvironment(t *testing.T, webhookOptions envtest.WebhookIns
 			t.Error(err, "stop env")
 		}
 	})
+
+	for _, opt := range configOpts {
+		opt(cfg)
+	}
 
 	clt, err := client.New(cfg, client.Options{})
 	if err != nil {
