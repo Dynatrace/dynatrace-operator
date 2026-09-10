@@ -14,8 +14,8 @@ spec:
     listKind: PrometheusMonitoringList
     plural: prometheusmonitorings
     shortNames:
-    - pm
-    - pms
+    - dtp
+    - dtps
     singular: prometheusmonitoring
   scope: Namespaced
   versions:

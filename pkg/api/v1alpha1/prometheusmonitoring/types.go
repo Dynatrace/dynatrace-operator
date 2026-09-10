@@ -47,7 +47,7 @@ type PrometheusMonitoringSpec struct { //nolint:revive
 // +kubebuilder:object:root=true
 // +kubebuilder:storageversion
 // +kubebuilder:subresource:status
-// +kubebuilder:resource:path=prometheusmonitorings,scope=Namespaced,categories=dynatrace,shortName={pm,pms}
+// +kubebuilder:resource:path=prometheusmonitorings,scope=Namespaced,categories=dynatrace,shortName={dtp,dtps}
 // +kubebuilder:printcolumn:name="DynaKube",type=string,JSONPath=`.spec.dynaKubeRef`
 // +kubebuilder:printcolumn:name="Status",type=string,JSONPath=`.status.phase`
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
