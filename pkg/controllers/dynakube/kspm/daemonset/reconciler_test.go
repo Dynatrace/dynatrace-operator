@@ -7,9 +7,11 @@ import (
 	"context"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	sharedimage "github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
@@ -206,7 +208,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		dk := createDynakube(true)
 
 		reconciler := NewReconciler(nil, nil)
-		daemonset, err := reconciler.generateDaemonSet(dk)
+		daemonset, err := reconciler.generateDaemonSet(dk, "")
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -243,7 +245,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		dk.KSPM().Labels = customLabels
 
 		reconciler := NewReconciler(nil, nil)
-		daemonset, err := reconciler.generateDaemonSet(dk)
+		daemonset, err := reconciler.generateDaemonSet(dk, "")
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -259,7 +261,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		dk.KSPM().Annotations = customAnnotations
 
 		reconciler := NewReconciler(nil, nil)
-		daemonset, err := reconciler.generateDaemonSet(dk)
+		daemonset, err := reconciler.generateDaemonSet(dk, "")
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -274,7 +276,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		dk.KSPM().PriorityClassName = customClass
 
 		reconciler := NewReconciler(nil, nil)
-		daemonset, err := reconciler.generateDaemonSet(dk)
+		daemonset, err := reconciler.generateDaemonSet(dk, "")
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -288,7 +290,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		dk.Spec.CustomPullSecret = customPullSecret
 
 		reconciler := NewReconciler(nil, nil)
-		daemonset, err := reconciler.generateDaemonSet(dk)
+		daemonset, err := reconciler.generateDaemonSet(dk, "")
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -309,7 +311,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		dk := createDynakube(true)
 		dk.KSPM().Tolerations = customTolerations
 		reconciler := NewReconciler(nil, nil)
-		daemonset, err := reconciler.generateDaemonSet(dk)
+		daemonset, err := reconciler.generateDaemonSet(dk, "")
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -323,7 +325,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		dk := createDynakube(true)
 		dk.KSPM().NodeSelector = customNodeSelector
 		reconciler := NewReconciler(nil, nil)
-		daemonset, err := reconciler.generateDaemonSet(dk)
+		daemonset, err := reconciler.generateDaemonSet(dk, "")
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -340,7 +342,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 		dk := createDynakube(true)
 		dk.KSPM().NodeAffinity = customNodeAffinity
 		reconciler := NewReconciler(nil, nil)
-		daemonset, err := reconciler.generateDaemonSet(dk)
+		daemonset, err := reconciler.generateDaemonSet(dk, "")
 		require.NoError(t, err)
 		require.NotNil(t, daemonset)
 
@@ -357,7 +359,7 @@ func TestAppArmorAnnotationHandling(t *testing.T) {
 		dk := createDynakube(true)
 		dk.Spec.Templates.KSPMNodeConfigurationCollector.Annotations = map[string]string{appArmorAnnotationKey: corev1.DeprecatedAppArmorBetaProfileRuntimeDefault}
 
-		ds, err := NewReconciler(nil, nil).generateDaemonSet(dk)
+		ds, err := NewReconciler(nil, nil).generateDaemonSet(dk, "")
 		require.NoError(t, err)
 
 		return ds
@@ -381,6 +383,89 @@ func TestAppArmorAnnotationHandling(t *testing.T) {
 		require.NotNil(t, sts.Spec.Template.Spec.Containers[0].SecurityContext)
 		assert.NotNil(t, sts.Spec.Template.Spec.Containers[0].SecurityContext.AppArmorProfile)
 		assert.NotContains(t, sts.Spec.Template.Annotations, appArmorAnnotationKey)
+	})
+}
+
+func TestTlsSecretHashAnnotationHandling(t *testing.T) {
+	t.Run("no AG TLS secret", func(t *testing.T) {
+		dk := createDynakube(true)
+		dk.Annotations = map[string]string{
+			exp.AGAutomaticTLSCertificateKey: "false",
+		}
+
+		kubeClient := fake.NewClientWithInterceptors(interceptor.Funcs{
+			Get: func(ctx context.Context, c client.WithWatch, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
+				if _, ok := obj.(*corev1.Secret); ok {
+					return errors.New("secret should not be read")
+				}
+
+				return c.Get(ctx, key, obj, opts...)
+			},
+		})
+
+		reconciler := NewReconciler(kubeClient, nil)
+		hash, err := reconciler.getTLSSecretHash(t.Context(), dk)
+		require.NoError(t, err)
+		assert.Empty(t, hash)
+	})
+
+	t.Run("generic AG TLS secret used", func(t *testing.T) {
+		dk := createDynakube(true)
+
+		kubeClient := fake.NewClientWithInterceptors(interceptor.Funcs{
+			Get: func(ctx context.Context, c client.WithWatch, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
+				if _, ok := obj.(*corev1.Secret); ok {
+					if key.Name != dk.ActiveGate().GetTLSSecretName() {
+						return errors.New("wrong secret is read")
+					}
+				}
+
+				return c.Get(ctx, key, obj, opts...)
+			},
+		}, &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      dk.ActiveGate().GetTLSSecretName(),
+				Namespace: dk.Namespace,
+			},
+			Data: map[string][]byte{
+				"tls.key": []byte("foo"),
+			},
+		})
+		reconciler := NewReconciler(kubeClient, nil)
+		hash, err := reconciler.getTLSSecretHash(t.Context(), dk)
+		require.NoError(t, err)
+		assert.NotEmpty(t, hash)
+	})
+
+	t.Run("kubemon AG preferred", func(t *testing.T) {
+		t.Setenv(k8senv.ExperimentalEnableKubemonOperand, "true")
+
+		dk := createDynakube(true)
+		dk.Spec.KubernetesMonitoring = &kubemon.Spec{}
+
+		kubeClient := fake.NewClientWithInterceptors(interceptor.Funcs{
+			Get: func(ctx context.Context, c client.WithWatch, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
+				if _, ok := obj.(*corev1.Secret); ok {
+					if key.Name != dk.KubernetesMonitoring().GetTLSSecretName() {
+						return errors.New("wrong secret is read")
+					}
+				}
+
+				return c.Get(ctx, key, obj, opts...)
+			},
+		}, &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      dk.KubernetesMonitoring().GetTLSSecretName(),
+				Namespace: dk.Namespace,
+			},
+			Data: map[string][]byte{
+				"tls.key": []byte("foo"),
+			},
+		})
+		reconciler := NewReconciler(kubeClient, nil)
+		hash, err := reconciler.getTLSSecretHash(t.Context(), dk)
+		require.NoError(t, err)
+		assert.NotEmpty(t, hash)
 	})
 }
 

@@ -6774,8 +6774,6 @@ spec:
                     type: object
                   image:
                     type: string
-                  tlsSecretHash:
-                    type: string
                 type: object
               metadataEnrichment:
                 properties:

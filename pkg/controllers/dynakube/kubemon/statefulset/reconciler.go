@@ -106,7 +106,7 @@ func ensureReady(dk *dynakube.DynaKube) error {
 	return nil
 }
 
-func buildPodAnnotations(dk *dynakube.DynaKube, tokenHash, authTokenHash, customPropertiesHash, deploymentPropertiesHash string) map[string]string {
+func buildPodAnnotations(dk *dynakube.DynaKube, tokenHash, authTokenHash, customPropertiesHash, deploymentPropertiesHash, tlsSecretHash string) map[string]string { //nolint:revive
 	annotations := map[string]string{
 		AnnotationTenantTokenHash:              tokenHash,
 		AnnotationAuthTokenHash:                authTokenHash,
@@ -117,7 +117,7 @@ func buildPodAnnotations(dk *dynakube.DynaKube, tokenHash, authTokenHash, custom
 
 	if dk.KSPM().IsEnabled() {
 		annotations[AnnotationKSPMTokenHash] = dk.KSPM().TokenSecretHash
-		annotations[AnnotationTLSSecretHash] = dk.KubernetesMonitoring().TLSSecretHash
+		annotations[AnnotationTLSSecretHash] = tlsSecretHash
 	}
 
 	return annotations
@@ -491,6 +491,11 @@ func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.D
 		return nil, err
 	}
 
+	tlsSecretHash, err := r.getTLSSecretHash(ctx, dk)
+	if err != nil {
+		return nil, err
+	}
+
 	km := dk.KubernetesMonitoring()
 
 	initContainer := corev1.Container{
@@ -528,7 +533,7 @@ func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.D
 	opts := []k8sstatefulset.Option{
 		k8sstatefulset.SetReplicas(replicas),
 		k8sstatefulset.SetAllLabels(labels.AsMap(), labels.AsSelector(), labels.AsMap(), km.Labels),
-		k8sstatefulset.SetAllAnnotations(nil, maputil.MergeMap(km.Annotations, buildPodAnnotations(dk, tokenHash, authTokenHash, customPropertiesHash, deploymentPropertiesHash))),
+		k8sstatefulset.SetAllAnnotations(nil, maputil.MergeMap(km.Annotations, buildPodAnnotations(dk, tokenHash, authTokenHash, customPropertiesHash, deploymentPropertiesHash, tlsSecretHash))),
 		k8sstatefulset.SetServiceAccount(km.GetServiceAccountName()),
 		k8sstatefulset.SetNodeSelector(km.NodeSelector),
 		k8sstatefulset.SetTolerations(km.Tolerations),
@@ -669,6 +674,34 @@ func (r *Reconciler) getDeploymentPropertiesHash(ctx context.Context, dk *dynaku
 	hash, err := hasher.GenerateSecureHash(string(data))
 	if err != nil {
 		return "", errors.Wrap(err, "failed to hash deployment properties secret")
+	}
+
+	return hash, nil
+}
+
+func (r *Reconciler) getTLSSecretHash(ctx context.Context, dk *dynakube.DynaKube) (string, error) {
+	if !dk.KSPM().IsEnabled() {
+		return "", nil
+	}
+
+	var secret corev1.Secret
+
+	err := r.kubeClient.Get(ctx, client.ObjectKey{Name: dk.KubernetesMonitoring().GetTLSSecretName(), Namespace: dk.Namespace}, &secret)
+	if k8serrors.IsNotFound(err) {
+		return "", nil
+	}
+
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+
+	if len(secret.Data) == 0 {
+		return "", nil
+	}
+
+	hash, err := hasher.GenerateSecureHash(secret.Data)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to hash TLS secret")
 	}
 
 	return hash, nil

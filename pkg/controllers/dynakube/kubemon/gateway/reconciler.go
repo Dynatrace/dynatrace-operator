@@ -12,16 +12,13 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/certificates"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	k8sobject "github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -44,8 +41,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 	ctx, _ = logd.NewFromContext(ctx, "gateway")
 
 	if !dk.KubernetesMonitoring().IsEnabled() || !dk.KSPM().IsEnabled() {
-		dk.KubernetesMonitoring().TLSSecretHash = ""
-
 		if err := client.IgnoreNotFound(r.client.Delete(ctx, kubemonService(dk))); err != nil {
 			return err
 		}
@@ -66,7 +61,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 		_ = r.client.Delete(ctx, tlsSecretSpec(dk, nil))
 	}
 
-	return r.setStatusTLSSecretHash(ctx, dk)
+	return nil
 }
 
 func (r *Reconciler) createService(ctx context.Context, dk *dynakube.DynaKube) error {
@@ -198,37 +193,4 @@ func tlsSecretSpec(dk *dynakube.DynaKube, data map[string][]byte) *corev1.Secret
 		Data: data,
 		Type: corev1.SecretTypeOpaque,
 	}
-}
-
-func (r *Reconciler) setStatusTLSSecretHash(ctx context.Context, dk *dynakube.DynaKube) error {
-	var secret corev1.Secret
-
-	// retry because a Secret created by the preceding createOrUpdate call may not be immediately visible in the API.
-	err := retry.OnError(retry.DefaultBackoff, k8serrors.IsNotFound, func() error {
-		err := r.client.Get(ctx, client.ObjectKey{Name: dk.KubernetesMonitoring().GetTLSSecretName(), Namespace: dk.Namespace}, &secret)
-		if err != nil {
-			return errors.WithStack(err)
-		}
-
-		return nil
-	})
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	if len(secret.Data) == 0 {
-		dk.KubernetesMonitoring().TLSSecretHash = ""
-
-		return nil
-	}
-
-	// custom secret may contain server.p12 field or tls.crt, tls.key fields
-	hash, err := hasher.GenerateSecureHash(secret.Data)
-	if err != nil {
-		return errors.Wrap(err, "failed to hash TLS secret")
-	}
-
-	dk.KubernetesMonitoring().TLSSecretHash = hash
-
-	return nil
 }
