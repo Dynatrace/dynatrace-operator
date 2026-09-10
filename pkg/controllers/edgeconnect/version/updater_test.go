@@ -106,7 +106,7 @@ func Test_updater_Update(t *testing.T) {
 		require.NoError(t, updater.Update(ctx))
 		require.Equal(t, overrideURI, ec.Status.Version.ImageID)
 		require.Equal(t, fakeImageVersion, ec.Status.Version.Version)
-		require.Equal(t, status.PublicRegistryVersionSource, ec.Status.Version.Source)
+		require.Equal(t, status.PublicRegistryWithOverrideVersionSource, ec.Status.Version.Source)
 		require.NotNil(t, ec.Status.Version.LastProbeTimestamp)
 	})
 
@@ -192,7 +192,7 @@ func Test_updater_Update(t *testing.T) {
 		require.NoError(t, updater.Update(ctx))
 		require.Equal(t, fakeImageURI, ec.Status.Version.ImageID)
 		require.NotContains(t, ec.Status.Version.ImageID, "my.registry.io")
-		require.Equal(t, status.PublicRegistryVersionSource, ec.Status.Version.Source)
+		require.Equal(t, status.PublicRegistryWithOverrideVersionSource, ec.Status.Version.Source)
 		require.NotNil(t, ec.Status.Version.LastProbeTimestamp)
 	})
 
@@ -326,6 +326,32 @@ func Test_updater_RequiresReconcile(t *testing.T) {
 		assert.True(t, updater.RequiresReconcile())
 	})
 
+	t.Run("reconcile if publicRegistryOverride was removed, even without auto update", func(t *testing.T) {
+		ec := createBasicEdgeConnect(t)
+		updater := newUpdater(fake.NewClient(), currentTime, failingImageClientProvider(t), failingRegistryClientProvider(t), ec)
+
+		ec.Status.Version.LastProbeTimestamp = new(metav1.Now())
+		ec.Spec.AutoUpdate = new(false)
+		ec.Spec.PublicRegistryOverride = ""
+		ec.Status.Version.ImageID = "my.registry.io/dynatrace/edgeconnect:1.2.3"
+		ec.Status.Version.Source = status.PublicRegistryWithOverrideVersionSource
+
+		assert.True(t, updater.RequiresReconcile())
+	})
+
+	t.Run("reconcile if publicRegistryOverride was switched to another registry, even without auto update", func(t *testing.T) {
+		ec := createBasicEdgeConnect(t)
+		updater := newUpdater(fake.NewClient(), currentTime, failingImageClientProvider(t), failingRegistryClientProvider(t), ec)
+
+		ec.Status.Version.LastProbeTimestamp = new(metav1.Now())
+		ec.Spec.AutoUpdate = new(false)
+		ec.Spec.PublicRegistryOverride = "other.registry.io"
+		ec.Status.Version.ImageID = "my.registry.io/dynatrace/edgeconnect:1.2.3"
+		ec.Status.Version.Source = status.PublicRegistryWithOverrideVersionSource
+
+		assert.True(t, updater.RequiresReconcile())
+	})
+
 	t.Run("no reconcile if the image already comes from publicRegistryOverride", func(t *testing.T) {
 		ec := createBasicEdgeConnect(t)
 		updater := newUpdater(fake.NewClient(), currentTime, failingImageClientProvider(t), failingRegistryClientProvider(t), ec)
@@ -334,7 +360,7 @@ func Test_updater_RequiresReconcile(t *testing.T) {
 		ec.Spec.AutoUpdate = new(false)
 		ec.Spec.PublicRegistryOverride = "my.registry.io"
 		ec.Status.Version.ImageID = "my.registry.io/dynatrace/edgeconnect:1.2.3"
-		ec.Status.Version.Source = status.PublicRegistryVersionSource
+		ec.Status.Version.Source = status.PublicRegistryWithOverrideVersionSource
 
 		assert.False(t, updater.RequiresReconcile())
 	})

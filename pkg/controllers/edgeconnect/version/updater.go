@@ -53,6 +53,12 @@ func (u updater) determineSource() status.VersionSource {
 		return status.CustomImageVersionSource
 	}
 
+	// an override gets its own source so that adding and removing it both show up as a source change,
+	// which is what makes them applicable without auto update
+	if u.edgeConnect.Spec.PublicRegistryOverride != "" {
+		return status.PublicRegistryWithOverrideVersionSource
+	}
+
 	return status.PublicRegistryVersionSource
 }
 
@@ -73,7 +79,7 @@ func (u updater) RequiresReconcile() bool {
 		return !strings.HasPrefix(version.ImageID, u.edgeConnect.Image())
 	}
 
-	// a different public registry has to be applied right away, otherwise the image is only
+	// a different override registry has to be applied right away, otherwise the image is only
 	// refreshed if auto update is enabled
 	if u.hasPublicRegistryChanged(version.ImageID) {
 		return true
@@ -82,9 +88,9 @@ func (u updater) RequiresReconcile() bool {
 	return u.timeProvider.IsOutdated(version.LastProbeTimestamp, minRequestThreshold) && u.IsAutoUpdateEnabled()
 }
 
-// hasPublicRegistryChanged reports whether the image in the status was pulled from a registry other
-// than the one currently requested. Without an override the registry is chosen by fleet management,
-// so there is nothing to compare the status against.
+// hasPublicRegistryChanged reports whether the override registry changed between reconciles. Adding
+// and removing an override is already covered by the source, so only a switch from one override to
+// another is left to detect.
 func (u updater) hasPublicRegistryChanged(imageID string) bool {
 	registryOverride := u.edgeConnect.Spec.PublicRegistryOverride
 	if registryOverride == "" {
