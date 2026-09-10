@@ -79,7 +79,7 @@ func CheckImageVolumeInjection(deployment *sample.App, imageURI string) features
 		require.NotEmpty(t, samplePods)
 
 		for _, item := range samplePods.Items {
-			require.NotNil(t, item.Spec.InitContainers)
+			require.NotEmpty(t, item.Spec.InitContainers)
 			require.Equal(t, webhook.InstallContainerName, item.Spec.InitContainers[0].Name)
 			require.Contains(t, item.Spec.Volumes, corev1.Volume{
 				Name: oaMutator.BinVolumeName,
