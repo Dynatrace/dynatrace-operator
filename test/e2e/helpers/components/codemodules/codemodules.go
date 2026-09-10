@@ -76,7 +76,7 @@ func CheckImageVolumeInjection(deployment *sample.App, imageURI string) features
 		resource := envConfig.Client().Resources()
 		samplePods := deployment.ListPods(ctx, t, resource)
 
-		require.NotEmpty(t, samplePods)
+		require.NotEmpty(t, samplePods.Items)
 
 		for _, item := range samplePods.Items {
 			require.NotEmpty(t, item.Spec.InitContainers)

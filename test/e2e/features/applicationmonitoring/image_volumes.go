@@ -27,7 +27,7 @@ func ImageVolumeNoCSI(t *testing.T) features.Feature {
 
 	builder := features.New("app-monitoring-with-image-volumes-without-csi")
 	secretConfig := tenant.GetSingleTenantSecret(t)
-	codeModuleImage := registry.GetLatestOneAgentImageTagURI(t)
+	codeModuleImage := registry.GetLatestCodeModulesImageTagURI(t)
 	appOnlyDynakube := *dynakubeComponents.New(
 		dynakubeComponents.WithAnnotations(map[string]string{exp.OAImageVolumeKey: "true"}),
 		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
