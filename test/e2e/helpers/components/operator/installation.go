@@ -320,3 +320,11 @@ func getImageRef(rootDir string, fips140 bool) (string, error) {
 
 	return imageRef, nil
 }
+
+func EnableKubemonOperand() helm.Option {
+	return helm.WithArgs("--reuse-values", "--set", "experimental.enableKubemonOperand=true")
+}
+
+func DisableKubemonOperand() helm.Option {
+	return helm.WithArgs("--reuse-values", "--set", "experimental.enableKubemonOperand=false")
+}
