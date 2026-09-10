@@ -226,7 +226,7 @@
       matchPackageNames: ["github.com/prometheus-operator/prometheus-operator"],
       groupName: "Prometheus CRDs",
       postUpgradeTasks: {
-        commands: ["make manifests/crd/prometheus"],
+        commands: ["./hack/helm/update-prometheus-crds.sh {{{newVersion}}}"],
         fileFilters: ["config/helm/chart/default/templates/Common/crd/prometheus/*"],
         executionMode: "branch",
       },
