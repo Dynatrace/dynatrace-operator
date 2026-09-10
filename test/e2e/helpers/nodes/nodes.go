@@ -33,10 +33,7 @@ type ContainerRuntime struct {
 	Version *version.Version
 }
 
-// parseKubeletVersion strips distro suffixes (e.g. "-gke.2064000") and parses
-// the semantic version.
-// Input:
-// v1.30.14
+// parseKubeletVersion strips parses the semantic version.
 func parseKubeletVersion(kubeletVersion string) (*version.Version, error) {
 	parsed, err := version.ParseSemantic(kubeletVersion)
 	if err != nil {
