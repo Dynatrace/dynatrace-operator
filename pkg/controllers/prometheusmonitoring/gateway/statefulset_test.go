@@ -130,6 +130,30 @@ func TestReconcileStatefulSet(t *testing.T) {
 		assert.Equal(t, new(int32(5)), sts.Spec.Replicas)
 	})
 
+	t.Run("apply update strategy", func(t *testing.T) {
+		dtp := newTestDTP("dtp", "dynatrace")
+		dtp.Spec.Gateway.Image = "img:1"
+		dtp.Spec.Gateway.UpdateStrategy = appsv1.StatefulSetUpdateStrategy{Type: appsv1.OnDeleteStatefulSetStrategyType}
+		s := newTestScopeWithDynaKube(dtp, newTestDynaKube())
+		existing := &appsv1.StatefulSet{
+			ObjectMeta: metav1.ObjectMeta{Name: s.Spec.GetStatefulSetName(), Namespace: dtp.Namespace},
+			Spec: appsv1.StatefulSetSpec{
+				UpdateStrategy: appsv1.StatefulSetUpdateStrategy{
+					Type:          appsv1.RollingUpdateStatefulSetStrategyType,
+					RollingUpdate: &appsv1.RollingUpdateStatefulSetStrategy{Partition: new(int32(0))},
+				},
+			},
+		}
+		c := fake.NewClient(existing)
+		r := &Reconciler{Client: c}
+
+		require.NoError(t, r.reconcileStatefulset(t.Context(), s))
+
+		sts := &appsv1.StatefulSet{}
+		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetStatefulSetName(), Namespace: dtp.Namespace}, sts))
+		assert.Equal(t, dtp.Spec.Gateway.UpdateStrategy, sts.Spec.UpdateStrategy)
+	})
+
 	t.Run("propagate error", func(t *testing.T) {
 		pm := newTestPM("pm", "dynatrace")
 		pm.Spec.Gateway.Image = "img:1"
