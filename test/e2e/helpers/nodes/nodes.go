@@ -96,7 +96,7 @@ func IsImageVolumesSupported(t *testing.T) bool {
 	clientset, err := kubernetes.NewForConfig(restCfg)
 	require.NoError(t, err, "create k8s clientset")
 
-	nodeList, err := clientset.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
+	nodeList, err := clientset.CoreV1().Nodes().List(t.Context(), metav1.ListOptions{})
 	require.NoError(t, err, "list nodes")
 
 	for _, node := range nodeList.Items {
