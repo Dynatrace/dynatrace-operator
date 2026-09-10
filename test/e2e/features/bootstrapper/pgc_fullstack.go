@@ -9,12 +9,14 @@ import (
 	"context"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/bootstrapperconfig"
 	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8snamespace"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8spod"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/registry"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/sample"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/shell"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
@@ -29,16 +31,15 @@ func PGCWithCloudNativeFullStack(t *testing.T) features.Feature {
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
 	fullStackSpec := &oneagent.CloudNativeFullStackSpec{
-		HostInjectSpec: oneagent.HostInjectSpec{
-			Image: "",
-		},
 		AppInjectionSpec: oneagent.AppInjectionSpec{
-			CodeModulesImage: bootstrapperImage,
+			CodeModulesImage: registry.GetLatestCodeModulesImageTagURI(t),
 		},
 	}
 
 	dk := *dynakubeComponents.New(
 		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
+		// we need kubernetesClusterMEID to PGC work
+		dynakubeComponents.WithActiveGateModules(activegate.KubeMonCapability.DisplayName),
 		dynakubeComponents.WithCloudNativeSpec(fullStackSpec),
 	)
 
