@@ -11,7 +11,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/stretchr/testify/assert"
@@ -418,7 +417,7 @@ func TestAddOneAgentToContainer(t *testing.T) {
 			},
 		}
 		addVolumeMounts(&container, installPath, isImageVolume(baseReq))
-		addOneAgentEnvsToContainer(baseReq.DynaKube, &container, corev1.Namespace{}, installPath, logd.Get())
+		addOneAgentEnvsToContainer(baseReq.DynaKube, &container, corev1.Namespace{}, installPath, "")
 
 		assert.Len(t, container.VolumeMounts, 2) // preload,bin
 
@@ -438,7 +437,26 @@ func TestAddOneAgentToContainer(t *testing.T) {
 		require.NotNil(t, storageEnv)
 		assert.Contains(t, storageEnv.Value, DTStoragePath)
 
+		runtimeClassEnv := k8senv.Find(container.Env, PodRuntimeClassEnv)
+		assert.Nil(t, runtimeClassEnv)
+
 		assert.True(t, containerIsInjected(container, nil))
+	})
+
+	t.Run("add runtime class env when runtimeClassName is set", func(t *testing.T) {
+		container := corev1.Container{}
+		dk := dynakube.DynaKube{
+			Spec: dynakube.DynaKubeSpec{
+				OneAgent: oneagent.Spec{ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{}},
+			},
+		}
+		runtimeClassName := "gvisor"
+
+		addOneAgentEnvsToContainer(dk, &container, corev1.Namespace{}, installPath, runtimeClassName)
+
+		runtimeClassEnv := k8senv.Find(container.Env, PodRuntimeClassEnv)
+		require.NotNil(t, runtimeClassEnv)
+		assert.Equal(t, runtimeClassName, runtimeClassEnv.Value)
 	})
 }
 
