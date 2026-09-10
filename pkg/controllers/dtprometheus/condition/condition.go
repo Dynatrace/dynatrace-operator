@@ -1,7 +1,7 @@
 // Copyright Dynatrace LLC
 // SPDX-License-Identifier: Apache-2.0
 
-// Package condition centralizes how the DTPrometheus component reconcilers report
+// Package condition centralizes how the PrometheusMonitoring component reconcilers report
 // their availability, so every component surfaces the same condition shape.
 package condition
 
@@ -13,7 +13,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// Set writes the availability condition for a DTPrometheus component based on the
+// Set writes the availability condition for a PrometheusMonitoring component based on the
 // outcome of its reconcile.
 //
 // The ready and pending messages are derived from component so all components

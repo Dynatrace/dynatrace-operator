@@ -8,8 +8,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// DTPrometheusStatus defines the observed state of DTPrometheus.
-type DTPrometheusStatus struct { //nolint:revive
+// PrometheusMonitoringStatus defines the observed state of PrometheusMonitoring.
+type PrometheusMonitoringStatus struct { //nolint:revive
 	// Defines the current state (Running, Deploying, Error, ...)
 	Phase status.DeploymentPhase `json:"phase,omitempty"`
 
@@ -38,8 +38,8 @@ type TargetAllocatorStatus struct {
 	ResolvedImage string `json:"image,omitempty"`
 }
 
-// SetPhase sets the status phase on the DTPrometheus object.
-func (dtps *DTPrometheusStatus) SetPhase(phase status.DeploymentPhase) bool {
+// SetPhase sets the status phase on the PrometheusMonitoring object.
+func (dtps *PrometheusMonitoringStatus) SetPhase(phase status.DeploymentPhase) bool {
 	upd := phase != dtps.Phase
 	dtps.Phase = phase
 

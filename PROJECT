@@ -36,7 +36,7 @@ resources:
     namespaced: true
   group: dynatrace
   domain: com
-  kind: DTPrometheus
+  kind: PrometheusMonitoring
   path: github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/dtprometheus
   version: v1alpha1
 version: "3"

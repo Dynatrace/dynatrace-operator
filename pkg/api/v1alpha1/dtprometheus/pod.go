@@ -8,7 +8,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-// PodSpec holds the parts of the corev1.PodTemplateSpec that DTPrometheus
+// PodSpec holds the parts of the corev1.PodTemplateSpec that PrometheusMonitoring
 // components surface for users to configure. The full corev1 spec is not
 // exposed, to limit conflicts with what the operator needs to configure for
 // proper functioning.

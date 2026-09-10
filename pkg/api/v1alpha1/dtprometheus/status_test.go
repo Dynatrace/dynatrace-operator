@@ -10,9 +10,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestDTPrometheusStatus_SetPhase(t *testing.T) {
+func TestPrometheusMonitoringStatus_SetPhase(t *testing.T) {
 	t.Run("sets the phase and reports a change", func(t *testing.T) {
-		dtpStatus := &DTPrometheusStatus{}
+		dtpStatus := &PrometheusMonitoringStatus{}
 
 		changed := dtpStatus.SetPhase(status.Running)
 
@@ -21,7 +21,7 @@ func TestDTPrometheusStatus_SetPhase(t *testing.T) {
 	})
 
 	t.Run("reports no change when the phase is unchanged", func(t *testing.T) {
-		dtpStatus := &DTPrometheusStatus{Phase: status.Running}
+		dtpStatus := &PrometheusMonitoringStatus{Phase: status.Running}
 
 		changed := dtpStatus.SetPhase(status.Running)
 

@@ -34,10 +34,10 @@ import (
 
 const testImage = "registry.example.com/scraper:1.2.3"
 
-func newTestDTP(name, namespace string) *dtprometheus.DTPrometheus {
-	return &dtprometheus.DTPrometheus{
+func newTestDTP(name, namespace string) *dtprometheus.PrometheusMonitoring {
+	return &dtprometheus.PrometheusMonitoring{
 		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace, UID: types.UID("dtp-uid")},
-		Spec: dtprometheus.DTPrometheusSpec{
+		Spec: dtprometheus.PrometheusMonitoringSpec{
 			Scraper: dtprometheus.ScraperSpec{
 				PodSpec: dtprometheus.PodSpec{
 					Resources: corev1.ResourceRequirements{
@@ -55,7 +55,7 @@ func newTestDTP(name, namespace string) *dtprometheus.DTPrometheus {
 	}
 }
 
-func newTestScope(dtp *dtprometheus.DTPrometheus) *reconcileScope {
+func newTestScope(dtp *dtprometheus.PrometheusMonitoring) *reconcileScope {
 	return &reconcileScope{
 		Owner:     dtp,
 		Spec:      dtp.Scraper(),

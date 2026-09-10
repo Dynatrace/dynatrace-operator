@@ -99,7 +99,7 @@ func getCustomResourcesQueryGroup(namespace string) resourceQueryGroup {
 		resources: []schema.GroupVersionKind{
 			toGroupVersionKind(latest.GroupVersion, dynakube.DynaKube{}),
 			toGroupVersionKind(v1alpha2.GroupVersion, edgeconnect.EdgeConnect{}),
-			toGroupVersionKind(v1alpha1.GroupVersion, dtprometheus.DTPrometheus{}),
+			toGroupVersionKind(v1alpha1.GroupVersion, dtprometheus.PrometheusMonitoring{}),
 		},
 		filters: []client.ListOption{
 			client.InNamespace(namespace),

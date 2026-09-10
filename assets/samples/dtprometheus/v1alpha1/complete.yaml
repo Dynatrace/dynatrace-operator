@@ -1,5 +1,5 @@
 apiVersion: dynatrace.com/v1alpha1
-kind: DTPrometheus
+kind: PrometheusMonitoring
 metadata:
   name: dtprometheus
   namespace: dynatrace
@@ -7,7 +7,7 @@ spec:
   # DynaKube reference
   # Name of the DynaKube in the same namespace that provides all connection
   # settings (apiUrl, tokens, proxy, networkZone, trustedCAs, ActiveGate, etc.).
-  dynaKubeName: dynakube
+  dynaKubeRef: dynakube
 
   # Overrides the default registry from which Dynatrace images are pulled.
   # publicRegistryOverride: my.custom.registry.com
@@ -31,14 +31,14 @@ spec:
     #     prometheus.dynatrace.com: "true"
     #
     # To make the TA pick up all CRDs regardless of labels:
-    #   scrapeCRSelector: {}
-    scrapeCRSelector:
+    #   customResourceSelector: {}
+    customResourceSelector:
       matchLabels:
         prometheus.dynatrace.com: "true"
 
     # Restricts which namespaces the TA watches for Prometheus CRs.
     # An empty selector {} matches all namespaces.
-    scrapeCRNamespaceSelector: {}
+    customResourceNamespaceSelector: {}
 
     # Overrides the default Target Allocator image (full reference including tag or digest).
     # When omitted the operator uses the image configured in the tenant.

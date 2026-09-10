@@ -10,8 +10,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestDTPrometheus_Conditions(t *testing.T) {
-	dtp := &DTPrometheus{}
+func TestPrometheusMonitoring_Conditions(t *testing.T) {
+	dtp := &PrometheusMonitoring{}
 
 	conditions := dtp.Conditions()
 	*conditions = append(*conditions, metav1.Condition{Type: "Ready"})

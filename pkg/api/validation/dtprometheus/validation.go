@@ -37,7 +37,7 @@ func (v *Validator) ValidateDelete(_ context.Context, _ runtime.Object) (admissi
 func (v *Validator) validate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
 	ctx, _ = logd.NewFromContext(ctx, "validation")
 
-	if _, err := getDTPrometheus(obj); err != nil {
+	if _, err := getPrometheusMonitoring(obj); err != nil {
 		return nil, err
 	}
 
@@ -49,9 +49,9 @@ func (v *Validator) validate(ctx context.Context, obj runtime.Object) (admission
 	return warnings, nil
 }
 
-func getDTPrometheus(obj runtime.Object) (dtp *dtprometheus.DTPrometheus, err error) {
+func getPrometheusMonitoring(obj runtime.Object) (dtp *dtprometheus.PrometheusMonitoring, err error) {
 	switch v := obj.(type) {
-	case *dtprometheus.DTPrometheus:
+	case *dtprometheus.PrometheusMonitoring:
 		dtp = v
 	default:
 		return nil, fmt.Errorf("unknown object %T", obj)

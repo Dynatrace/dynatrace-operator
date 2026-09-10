@@ -24,22 +24,22 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// Integration tests for the target allocator reconciler against a real API server. Drive one DTPrometheus through
+// Integration tests for the target allocator reconciler against a real API server. Drive one PrometheusMonitoring through
 // ordered, state-sharing phases and call only the public Reconcile method. Assertions stay high-level (existence,
 // absence, resourceVersion change) — exact resource shape and defaulting/label-merge branch logic are covered by the
 // unit test and its golden files.
 
 const (
-	integrationNamespace    = "dynatrace"
-	integrationDTPName      = "lifecycle"
-	integrationDynaKubeName = "dk"
-	integrationImage        = "registry.example.com/target-allocator:1.2.3"
+	integrationNamespace   = "dynatrace"
+	integrationDTPName     = "lifecycle"
+	integrationDynaKubeRef = "dk"
+	integrationImage       = "registry.example.com/target-allocator:1.2.3"
 )
 
 type lifecycleDeps struct {
 	clt        client.Client
 	reconciler *targetallocator.Reconciler
-	dtp        *dtprometheus.DTPrometheus
+	dtp        *dtprometheus.PrometheusMonitoring
 	dk         *dynakube.DynaKube
 }
 
@@ -48,9 +48,9 @@ func TestReconcileLifecycle(t *testing.T) {
 	clt := integrationtests.SetupTestEnvironment(t)
 	integrationtests.CreateNamespace(t, clt, integrationNamespace)
 
-	dtp := &dtprometheus.DTPrometheus{
+	dtp := &dtprometheus.PrometheusMonitoring{
 		ObjectMeta: metav1.ObjectMeta{Name: integrationDTPName, Namespace: integrationNamespace},
-		Spec:       dtprometheus.DTPrometheusSpec{DynaKubeName: integrationDynaKubeName},
+		Spec:       dtprometheus.PrometheusMonitoringSpec{DynaKubeRef: integrationDynaKubeRef},
 	}
 	integrationtests.CreateKubernetesObject(t, clt, dtp)
 
@@ -83,7 +83,7 @@ func runMissingImagePhase(t *testing.T, deps *lifecycleDeps) {
 	assertServiceAbsent(t, deps)
 }
 
-// runProvisionPhase sets an image and reconciles. All three resources must now exist, owned by the DTPrometheus.
+// runProvisionPhase sets an image and reconciles. All three resources must now exist, owned by the PrometheusMonitoring.
 func runProvisionPhase(t *testing.T, deps *lifecycleDeps) {
 	t.Helper()
 
@@ -173,7 +173,7 @@ func runUpdatePhase(t *testing.T, deps *lifecycleDeps) {
 	})
 }
 
-func targetAllocatorKey(dtp *dtprometheus.DTPrometheus) client.ObjectKey {
+func targetAllocatorKey(dtp *dtprometheus.PrometheusMonitoring) client.ObjectKey {
 	return client.ObjectKey{Name: dtp.TargetAllocator().GetDeploymentName(), Namespace: dtp.Namespace}
 }
 

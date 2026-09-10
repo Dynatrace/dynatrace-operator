@@ -12,7 +12,7 @@ metadata:
   - apiVersion: dynatrace.com/v1alpha1
     blockOwnerDeletion: true
     controller: true
-    kind: DTPrometheus
+    kind: PrometheusMonitoring
     name: dtp
     uid: dtp-uid
 spec:

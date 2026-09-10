@@ -20,13 +20,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
 
-var testDTPrometheus = &dtprometheus.DTPrometheus{
+var testPrometheusMonitoring = &dtprometheus.PrometheusMonitoring{
 	ObjectMeta: metav1.ObjectMeta{
 		Name:      "test-name",
 		Namespace: "test-namespace",
 	},
-	Spec: dtprometheus.DTPrometheusSpec{
-		DynaKubeName: "test-dynakube",
+	Spec: dtprometheus.PrometheusMonitoringSpec{
+		DynaKubeRef: "test-dynakube",
 	},
 }
 
@@ -95,14 +95,14 @@ func TestValidateCreateAndUpdateSurfaceWarning(t *testing.T) {
 	validator := &Validator{apiReader: clt}
 
 	t.Run("ValidateCreate", func(t *testing.T) {
-		warnings, err := validator.ValidateCreate(t.Context(), testDTPrometheus)
+		warnings, err := validator.ValidateCreate(t.Context(), testPrometheusMonitoring)
 
 		require.NoError(t, err)
 		require.Len(t, warnings, 1)
 	})
 
 	t.Run("ValidateUpdate", func(t *testing.T) {
-		warnings, err := validator.ValidateUpdate(t.Context(), testDTPrometheus, testDTPrometheus)
+		warnings, err := validator.ValidateUpdate(t.Context(), testPrometheusMonitoring, testPrometheusMonitoring)
 
 		require.NoError(t, err)
 		require.Len(t, warnings, 1)
@@ -113,11 +113,11 @@ func TestValidateCreateAndUpdateWithAllCRDsPresent(t *testing.T) {
 	clt := fake.NewClient()
 	validator := &Validator{apiReader: clt}
 
-	warnings, err := validator.ValidateCreate(t.Context(), testDTPrometheus)
+	warnings, err := validator.ValidateCreate(t.Context(), testPrometheusMonitoring)
 	require.NoError(t, err)
 	assert.Empty(t, warnings)
 
-	warnings, err = validator.ValidateUpdate(t.Context(), testDTPrometheus, testDTPrometheus)
+	warnings, err = validator.ValidateUpdate(t.Context(), testPrometheusMonitoring, testPrometheusMonitoring)
 	require.NoError(t, err)
 	assert.Empty(t, warnings)
 }
@@ -133,7 +133,7 @@ func TestNew(t *testing.T) {
 
 func TestValidateDelete(t *testing.T) {
 	validator := &Validator{}
-	warnings, err := validator.ValidateDelete(t.Context(), testDTPrometheus)
+	warnings, err := validator.ValidateDelete(t.Context(), testPrometheusMonitoring)
 	assert.Nil(t, warnings)
 	assert.NoError(t, err)
 }
@@ -153,6 +153,6 @@ func TestValidateCreateAndUpdateWithWrongType(t *testing.T) {
 	_, err = validator.ValidateCreate(t.Context(), withGVK)
 	require.Error(t, err)
 
-	_, err = validator.ValidateUpdate(t.Context(), testDTPrometheus, noGVK)
+	_, err = validator.ValidateUpdate(t.Context(), testPrometheusMonitoring, noGVK)
 	require.Error(t, err)
 }

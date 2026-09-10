@@ -73,7 +73,7 @@ type Reconciler struct {
 
 type reconcileScope struct {
 	// Required for reconcile
-	Owner         *dtprometheus.DTPrometheus
+	Owner         *dtprometheus.PrometheusMonitoring
 	DynaKube      *dynakube.DynaKube
 	Spec          *dtprometheus.Gateway
 	AppLabels     *k8slabel.Labels
@@ -82,7 +82,7 @@ type reconcileScope struct {
 	StatefulSet   *appsv1.StatefulSet
 }
 
-func (r *Reconciler) Reconcile(ctx context.Context, dtp *dtprometheus.DTPrometheus, dk *dynakube.DynaKube, imageClient image.Client) error {
+func (r *Reconciler) Reconcile(ctx context.Context, dtp *dtprometheus.PrometheusMonitoring, dk *dynakube.DynaKube, imageClient image.Client) error {
 	ctx, _ = logd.NewFromContext(ctx, "gateway")
 
 	scope := &reconcileScope{

@@ -1,63 +1,46 @@
 # Copyright Dynatrace LLC
 # SPDX-License-Identifier: Apache-2.0
 
-suite: test Role and RoleBinding for DtPrometheus operator
+suite: test ClusterRole and ClusterRoleBinding for PrometheusMonitoring operator
 templates:
-  - Common/prometheus/role-dtprometheus-operator.yaml
+  - Common/prometheus/clusterrole-prometheusmonitoring-operator.yaml
 tests:
-  - it: Role should exist with correct verbs and resources
+  - it: ClusterRole should exist with correct verbs and resourceNames
     documentIndex: 0
     set:
       experimental.enablePrometheus: true
     asserts:
       - isKind:
-          of: Role
+          of: ClusterRole
       - equal:
           path: metadata.name
-          value: dynatrace-dtprometheus-operator
-      - equal:
-          path: metadata.namespace
-          value: NAMESPACE
+          value: dynatrace-prometheusmonitoring-operator
       - isNotEmpty:
           path: metadata.labels
       - equal:
           path: rules
           value:
             - apiGroups:
-                - dynatrace.com
+                - apiextensions.k8s.io
               resources:
-                - dtprometheuses
+                - customresourcedefinitions
+                - customresourcedefinitions/status
+              resourceNames:
+                - prometheusmonitorings.dynatrace.com
               verbs:
                 - get
-                - list
                 - update
-                - watch
-            - apiGroups:
-                - dynatrace.com
-              resources:
-                - dtprometheuses/finalizers
-              verbs:
-                - update
-            - apiGroups:
-                - dynatrace.com
-              resources:
-                - dtprometheuses/status
-              verbs:
-                - patch
 
-  - it: RoleBinding should exist with correct subjects and roleRef
+  - it: ClusterRoleBinding should exist with correct subjects and roleRef
     documentIndex: 1
     set:
       experimental.enablePrometheus: true
     asserts:
       - isKind:
-          of: RoleBinding
+          of: ClusterRoleBinding
       - equal:
           path: metadata.name
-          value: dynatrace-dtprometheus-operator
-      - equal:
-          path: metadata.namespace
-          value: NAMESPACE
+          value: dynatrace-prometheusmonitoring-operator
       - isNotEmpty:
           path: metadata.labels
       - contains:
@@ -65,11 +48,12 @@ tests:
           content:
             kind: ServiceAccount
             name: dynatrace-operator
+            namespace: NAMESPACE
       - equal:
           path: roleRef
           value:
-            kind: Role
-            name: dynatrace-dtprometheus-operator
+            kind: ClusterRole
+            name: dynatrace-prometheusmonitoring-operator
             apiGroup: rbac.authorization.k8s.io
 
   - it: shouldn't exist if prometheus rbac is turned off

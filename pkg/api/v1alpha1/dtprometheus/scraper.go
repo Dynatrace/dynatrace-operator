@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	// ScraperNameSuffix is appended to the owning DTPrometheus name to derive the base
+	// ScraperNameSuffix is appended to the owning PrometheusMonitoring name to derive the base
 	// name of the scraper's Kubernetes resources.
 	ScraperNameSuffix = "-scraper"
 
@@ -19,7 +19,7 @@ const (
 
 // +kubebuilder:object:generate=false
 
-// Scraper wraps the scraper Spec together with the owning DTPrometheus name so
+// Scraper wraps the scraper Spec together with the owning PrometheusMonitoring name so
 // derived state (such as Kubernetes resource names) can be computed.
 type Scraper struct {
 	*ScraperSpec
@@ -43,7 +43,7 @@ type ScraperSpec struct {
 	UpdateStrategy appsv1.DeploymentStrategy `json:"updateStrategy,omitzero"`
 }
 
-// NewScraper wraps the given Spec together with the owning DTPrometheus name.
+// NewScraper wraps the given Spec together with the owning PrometheusMonitoring name.
 func NewScraper(spec *ScraperSpec, name string) *Scraper {
 	return &Scraper{
 		ScraperSpec: spec,

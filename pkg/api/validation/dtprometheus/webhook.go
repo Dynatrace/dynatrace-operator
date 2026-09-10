@@ -17,5 +17,5 @@ func setupWebhookWithManager(mgr ctrl.Manager, obj runtime.Object, validator adm
 func SetupWebhookWithManager(mgr ctrl.Manager) error {
 	validator := New(mgr.GetAPIReader())
 
-	return setupWebhookWithManager(mgr, &dtprometheus.DTPrometheus{}, validator)
+	return setupWebhookWithManager(mgr, &dtprometheus.PrometheusMonitoring{}, validator)
 }

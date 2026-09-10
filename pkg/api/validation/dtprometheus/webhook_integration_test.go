@@ -35,10 +35,10 @@ func TestWebhook(t *testing.T) {
 					},
 					Webhooks: []admissionregistrationv1.ValidatingWebhook{
 						{
-							Name: "v1alpha1.dtprometheus.webhook.dynatrace.com",
+							Name: "v1alpha1.prometheusmonitoring.webhook.dynatrace.com",
 							ClientConfig: admissionregistrationv1.WebhookClientConfig{
 								Service: &admissionregistrationv1.ServiceReference{
-									Path: new("/validate-dynatrace-com-v1alpha1-dtprometheus"),
+									Path: new("/validate-dynatrace-com-v1alpha1-prometheusmonitoring"),
 								},
 							},
 							Rules: []admissionregistrationv1.RuleWithOperations{
@@ -50,7 +50,7 @@ func TestWebhook(t *testing.T) {
 									Rule: admissionregistrationv1.Rule{
 										APIGroups:   []string{"dynatrace.com"},
 										APIVersions: []string{"v1alpha1"},
-										Resources:   []string{"dtprometheuses"},
+										Resources:   []string{"prometheusmonitorings"},
 									},
 								},
 							},
@@ -70,7 +70,7 @@ func TestWebhook(t *testing.T) {
 	)
 
 	t.Run("prometheus CRDs missing", func(t *testing.T) {
-		dtp := newTestDTPrometheus("missing-crds")
+		dtp := newTestPrometheusMonitoring("missing-crds")
 
 		recorder.reset()
 		integrationtests.CreateKubernetesObject(t, clt, dtp)
@@ -85,7 +85,7 @@ func TestWebhook(t *testing.T) {
 	t.Run("prometheus CRDs present", func(t *testing.T) {
 		installMonitoringCRDs(t, clt)
 
-		dtp := newTestDTPrometheus("crds-present")
+		dtp := newTestPrometheusMonitoring("crds-present")
 
 		recorder.reset()
 		integrationtests.CreateKubernetesObject(t, clt, dtp)
@@ -98,14 +98,14 @@ func TestWebhook(t *testing.T) {
 	})
 }
 
-func newTestDTPrometheus(name string) *dtprometheus.DTPrometheus {
-	return &dtprometheus.DTPrometheus{
+func newTestPrometheusMonitoring(name string) *dtprometheus.PrometheusMonitoring {
+	return &dtprometheus.PrometheusMonitoring{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: metav1.NamespaceDefault,
 		},
-		Spec: dtprometheus.DTPrometheusSpec{
-			DynaKubeName: "test-dynakube",
+		Spec: dtprometheus.PrometheusMonitoringSpec{
+			DynaKubeRef: "test-dynakube",
 		},
 	}
 }
@@ -121,7 +121,7 @@ func assertMissingCRDWarning(t *testing.T, warnings []string) {
 }
 
 // installMonitoringCRDs registers minimal stand-ins for the Prometheus Operator CRDs
-// required by the DTPrometheus validator, so tests can exercise the "CRDs present" path
+// required by the PrometheusMonitoring validator, so tests can exercise the "CRDs present" path
 // without depending on the real prometheus-operator CRDs being vendored into the repo.
 func installMonitoringCRDs(t *testing.T, clt client.Client) {
 	t.Helper()

@@ -15,17 +15,17 @@ import (
 )
 
 const (
-	testDTPrometheusName = "dtprometheus"
-	testNamespaceDtp     = "dynatrace"
+	testPrometheusMonitoringName = "dtprometheus"
+	testNamespaceDtp             = "dynatrace"
 
 	dummyConditionTypeDtp    = "dummyType"
 	dummyConditionReasonDtp  = "dummyReason"
 	dummyConditionMessageDtp = "dummyMessage"
 
-	duplicatedConditionErrorMessageDtp = `DTPrometheus.dynatrace.com "dtprometheus" is invalid: status.conditions[1]: Duplicate value: {"type":"dummyType"}`
+	duplicatedConditionErrorMessageDtp = `PrometheusMonitoring.dynatrace.com "dtprometheus" is invalid: status.conditions[1]: Duplicate value: {"type":"dummyType"}`
 )
 
-func TestDTPrometheusUpdateStatus(t *testing.T) {
+func TestPrometheusMonitoringUpdateStatus(t *testing.T) {
 	clt := integrationtests.SetupTestEnvironment(t)
 	clt.Create(t.Context(), &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
@@ -35,9 +35,9 @@ func TestDTPrometheusUpdateStatus(t *testing.T) {
 	})
 
 	t.Run("can't add duplicated conditions", func(t *testing.T) {
-		dtp := buildDTPrometheus()
-		createDTPrometheus(t, clt, dtp)
-		dummyCondition := buildDTPrometheusCondition()
+		dtp := buildPrometheusMonitoring()
+		createPrometheusMonitoring(t, clt, dtp)
+		dummyCondition := buildPrometheusMonitoringCondition()
 
 		// append first condition
 		*dtp.Conditions() = append(*dtp.Conditions(), dummyCondition)
@@ -57,19 +57,19 @@ func TestDTPrometheusUpdateStatus(t *testing.T) {
 	})
 }
 
-func buildDTPrometheus() *dtprometheus.DTPrometheus {
-	return &dtprometheus.DTPrometheus{
+func buildPrometheusMonitoring() *dtprometheus.PrometheusMonitoring {
+	return &dtprometheus.PrometheusMonitoring{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        testDTPrometheusName,
+			Name:        testPrometheusMonitoringName,
 			Namespace:   testNamespaceDtp,
 			Annotations: map[string]string{},
 		},
-		Spec:   dtprometheus.DTPrometheusSpec{DynaKubeName: "dynakube"},
-		Status: dtprometheus.DTPrometheusStatus{},
+		Spec:   dtprometheus.PrometheusMonitoringSpec{DynaKubeRef: "dynakube"},
+		Status: dtprometheus.PrometheusMonitoringStatus{},
 	}
 }
 
-func buildDTPrometheusCondition() metav1.Condition {
+func buildPrometheusMonitoringCondition() metav1.Condition {
 	return metav1.Condition{
 		Type:               dummyConditionTypeDtp,
 		Status:             metav1.ConditionTrue,
@@ -79,7 +79,7 @@ func buildDTPrometheusCondition() metav1.Condition {
 	}
 }
 
-func createDTPrometheus(t *testing.T, clt client.Client, dtp *dtprometheus.DTPrometheus) {
+func createPrometheusMonitoring(t *testing.T, clt client.Client, dtp *dtprometheus.PrometheusMonitoring) {
 	t.Helper()
 	status := dtp.Status
 	integrationtests.CreateKubernetesObject(t, clt, dtp)

@@ -83,7 +83,7 @@ type ScrapeConfig struct {
 
 type reconcileScope struct {
 	// Required for reconcile
-	Owner         *dtprometheus.DTPrometheus
+	Owner         *dtprometheus.PrometheusMonitoring
 	DynaKube      *dynakube.DynaKube
 	Spec          *dtprometheus.TargetAllocator
 	AppLabels     *k8slabel.Labels
@@ -92,7 +92,7 @@ type reconcileScope struct {
 	Deployment    *appsv1.Deployment
 }
 
-func (r *Reconciler) Reconcile(ctx context.Context, dtp *dtprometheus.DTPrometheus, dk *dynakube.DynaKube, imageClient image.Client) error {
+func (r *Reconciler) Reconcile(ctx context.Context, dtp *dtprometheus.PrometheusMonitoring, dk *dynakube.DynaKube, imageClient image.Client) error {
 	ctx, _ = logd.NewFromContext(ctx, "targetallocator")
 
 	scope := &reconcileScope{
@@ -141,14 +141,14 @@ func (r *Reconciler) reconcileConfigMap(ctx context.Context, s *reconcileScope) 
 		PrometheusCR: ScrapeConfig{
 			Enabled:                         true,
 			ScrapeInterval:                  s.Spec.ScrapeInterval,
-			PodMonitorSelector:              s.Spec.ScrapeCRSelector,
-			PodMonitorNamespaceSelector:     s.Spec.ScrapeCRNamespaceSelector,
-			ServiceMonitorSelector:          s.Spec.ScrapeCRSelector,
-			ServiceMonitorNamespaceSelector: s.Spec.ScrapeCRNamespaceSelector,
-			ScrapeConfigSelector:            s.Spec.ScrapeCRSelector,
-			ScrapeConfigNamespaceSelector:   s.Spec.ScrapeCRNamespaceSelector,
-			ProbeSelector:                   s.Spec.ScrapeCRSelector,
-			ProbeNamespaceSelector:          s.Spec.ScrapeCRNamespaceSelector,
+			PodMonitorSelector:              s.Spec.CustomResourceSelector,
+			PodMonitorNamespaceSelector:     s.Spec.CustomResourceNamespaceSelector,
+			ServiceMonitorSelector:          s.Spec.CustomResourceSelector,
+			ServiceMonitorNamespaceSelector: s.Spec.CustomResourceNamespaceSelector,
+			ScrapeConfigSelector:            s.Spec.CustomResourceSelector,
+			ScrapeConfigNamespaceSelector:   s.Spec.CustomResourceNamespaceSelector,
+			ProbeSelector:                   s.Spec.CustomResourceSelector,
+			ProbeNamespaceSelector:          s.Spec.CustomResourceNamespaceSelector,
 		},
 	}
 

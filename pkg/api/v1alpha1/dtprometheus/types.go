@@ -11,13 +11,13 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// DTPrometheusSpec defines the desired state of DTPrometheus.
-type DTPrometheusSpec struct { //nolint:revive
+// PrometheusMonitoringSpec defines the desired state of PrometheusMonitoring.
+type PrometheusMonitoringSpec struct { //nolint:revive
 	// Name of the DynaKube in the same namespace that provides all connection
 	// settings (apiUrl, tokens, proxy, networkZone, trustedCAs, ActiveGate, etc.).
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:MinLength=1
-	DynaKubeName string `json:"dynaKubeName"`
+	DynaKubeRef string `json:"dynaKubeRef"`
 
 	// Configures the Target Allocator, which holds all Prometheus service
 	// discovery metadata and distributes scrape targets across the scraper pool.
@@ -47,35 +47,35 @@ type DTPrometheusSpec struct { //nolint:revive
 // +kubebuilder:object:root=true
 // +kubebuilder:storageversion
 // +kubebuilder:subresource:status
-// +kubebuilder:resource:path=dtprometheuses,scope=Namespaced,categories=dynatrace,shortName={dtp,dtps}
-// +kubebuilder:printcolumn:name="DynaKube",type=string,JSONPath=`.spec.dynaKubeName`
+// +kubebuilder:resource:path=prometheusmonitorings,scope=Namespaced,categories=dynatrace,shortName={pm,pms}
+// +kubebuilder:printcolumn:name="DynaKube",type=string,JSONPath=`.spec.dynaKubeRef`
 // +kubebuilder:printcolumn:name="Status",type=string,JSONPath=`.status.phase`
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
 
-// DTPrometheus is the Schema for the DTPrometheus API.
-type DTPrometheus struct { //nolint:revive
+// PrometheusMonitoring is the Schema for the PrometheusMonitoring API.
+type PrometheusMonitoring struct { //nolint:revive
 	metav1.TypeMeta `json:",inline"`
 
 	// metadata is a standard object metadata
 	// +kubebuilder:validation:Optional
 	metav1.ObjectMeta `json:"metadata,omitzero"`
 
-	// spec defines the desired state of DTPrometheus
+	// spec defines the desired state of PrometheusMonitoring
 	// +kubebuilder:validation:Required
-	Spec DTPrometheusSpec `json:"spec"`
+	Spec PrometheusMonitoringSpec `json:"spec"`
 
-	// status defines the observed state of DTPrometheus
+	// status defines the observed state of PrometheusMonitoring
 	// +kubebuilder:validation:Optional
-	Status DTPrometheusStatus `json:"status,omitzero"`
+	Status PrometheusMonitoringStatus `json:"status,omitzero"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +k8s:openapi-gen=true
 // +kubebuilder:object:root=true
 
-// DTPrometheusList contains a list of DTPrometheus.
-type DTPrometheusList struct { //nolint:revive
+// PrometheusMonitoringList contains a list of PrometheusMonitoring.
+type PrometheusMonitoringList struct { //nolint:revive
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitzero"`
-	Items           []DTPrometheus `json:"items"`
+	Items           []PrometheusMonitoring `json:"items"`
 }

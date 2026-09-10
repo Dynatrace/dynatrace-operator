@@ -27,15 +27,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
 
-func newTestDTP(name, namespace string) *dtprometheus.DTPrometheus {
-	return &dtprometheus.DTPrometheus{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace, UID: types.UID("dtp-uid")}}
+func newTestDTP(name, namespace string) *dtprometheus.PrometheusMonitoring {
+	return &dtprometheus.PrometheusMonitoring{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace, UID: types.UID("dtp-uid")}}
 }
 
-func newTestScope(dtp *dtprometheus.DTPrometheus) *reconcileScope {
+func newTestScope(dtp *dtprometheus.PrometheusMonitoring) *reconcileScope {
 	return newTestScopeWithDynaKube(dtp, &dynakube.DynaKube{})
 }
 
-func newTestScopeWithDynaKube(dtp *dtprometheus.DTPrometheus, dk *dynakube.DynaKube) *reconcileScope {
+func newTestScopeWithDynaKube(dtp *dtprometheus.PrometheusMonitoring, dk *dynakube.DynaKube) *reconcileScope {
 	return &reconcileScope{
 		Owner:     dtp,
 		DynaKube:  dk,

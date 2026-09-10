@@ -1,5 +1,5 @@
 apiVersion: dynatrace.com/v1alpha1
-kind: DTPrometheus
+kind: PrometheusMonitoring
 metadata:
   name: dtprometheus
   namespace: dynatrace
@@ -9,4 +9,4 @@ spec:
   # ActiveGate, etc.).
   #
   # All other fields default. See complete.yaml for the full set of options.
-  dynaKubeName: dynakube
+  dynaKubeRef: dynakube

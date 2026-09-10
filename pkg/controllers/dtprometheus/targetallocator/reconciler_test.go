@@ -33,10 +33,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
 
-func newTestDTP(name, namespace string) *dtprometheus.DTPrometheus {
-	return &dtprometheus.DTPrometheus{
+func newTestDTP(name, namespace string) *dtprometheus.PrometheusMonitoring {
+	return &dtprometheus.PrometheusMonitoring{
 		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace, UID: types.UID("dtp-uid")},
-		Spec: dtprometheus.DTPrometheusSpec{
+		Spec: dtprometheus.PrometheusMonitoringSpec{
 			TargetAllocator: dtprometheus.TargetAllocatorSpec{
 				PodSpec: dtprometheus.PodSpec{
 					Resources: corev1.ResourceRequirements{
@@ -53,7 +53,7 @@ func newTestDTP(name, namespace string) *dtprometheus.DTPrometheus {
 	}
 }
 
-func newTestScope(dtp *dtprometheus.DTPrometheus) *reconcileScope {
+func newTestScope(dtp *dtprometheus.PrometheusMonitoring) *reconcileScope {
 	return &reconcileScope{
 		Owner:     dtp,
 		DynaKube:  &dynakube.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: "dk", Namespace: "dynatrace"}},
@@ -107,8 +107,8 @@ func TestReconcileConfigMap(t *testing.T) {
 	t.Run("apply spec", func(t *testing.T) {
 		dtp := newTestDTP("dtp", "dynatrace")
 		dtp.Spec.TargetAllocator.ScrapeInterval = metav1.Duration{Duration: 5 * time.Minute}
-		dtp.Spec.TargetAllocator.ScrapeCRNamespaceSelector = &metav1.LabelSelector{MatchLabels: map[string]string{"bar": "foo"}}
-		dtp.Spec.TargetAllocator.ScrapeCRSelector = &metav1.LabelSelector{MatchLabels: map[string]string{"foo": "bar"}}
+		dtp.Spec.TargetAllocator.CustomResourceNamespaceSelector = &metav1.LabelSelector{MatchLabels: map[string]string{"bar": "foo"}}
+		dtp.Spec.TargetAllocator.CustomResourceSelector = &metav1.LabelSelector{MatchLabels: map[string]string{"foo": "bar"}}
 		s := newTestScope(dtp)
 		c := fake.NewClient()
 		r := &Reconciler{Client: c}

@@ -5,7 +5,7 @@ package dtprometheus
 
 import appsv1 "k8s.io/api/apps/v1"
 
-// GatewayNameSuffix is appended to the owning DTPrometheus name to derive the base
+// GatewayNameSuffix is appended to the owning PrometheusMonitoring name to derive the base
 // name of the gateway's Kubernetes resources.
 const GatewayNameSuffix = "-gateway"
 
@@ -13,7 +13,7 @@ const GatewayAvailable = "GatewayAvailable"
 
 // +kubebuilder:object:generate=false
 
-// Gateway wraps the gateway Spec together with the owning DTPrometheus name so
+// Gateway wraps the gateway Spec together with the owning PrometheusMonitoring name so
 // derived state (such as Kubernetes resource names) can be computed.
 type Gateway struct {
 	*GatewaySpec
@@ -33,7 +33,7 @@ type GatewaySpec struct {
 	UpdateStrategy appsv1.StatefulSetUpdateStrategy `json:"updateStrategy"`
 }
 
-// NewGateway wraps the given Spec together with the owning DTPrometheus name.
+// NewGateway wraps the given Spec together with the owning PrometheusMonitoring name.
 func NewGateway(spec *GatewaySpec, name string) *Gateway {
 	return &Gateway{
 		GatewaySpec: spec,

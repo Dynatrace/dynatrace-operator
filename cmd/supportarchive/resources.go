@@ -159,12 +159,12 @@ func (collector k8sResourceCollector) readCustomResourceDefinitions() (*unstruct
 	resourceList.Items = append(resourceList.Items, collector.getCRD(dynaKube), collector.getCRD(edgeConnect))
 
 	var dtPrometheus apiextensionsv1.CustomResourceDefinition
-	if err := collector.apiReader.Get(collector.context, client.ObjectKey{Name: "dtprometheuses.dynatrace.com"}, &dtPrometheus); err != nil {
+	if err := collector.apiReader.Get(collector.context, client.ObjectKey{Name: "prometheusmonitorings.dynatrace.com"}, &dtPrometheus); err != nil {
 		if !k8serrors.IsForbidden(err) && !k8serrors.IsNotFound(err) {
 			return nil, err
 		}
 
-		logInfof(collector.log, "skipping dtprometheuses.dynatrace.com CRD")
+		logInfof(collector.log, "skipping prometheusmonitorings.dynatrace.com CRD")
 	} else {
 		resourceList.Items = append(resourceList.Items, collector.getCRD(dtPrometheus))
 	}

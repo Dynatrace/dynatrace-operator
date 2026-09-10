@@ -9,13 +9,13 @@ import (
 )
 
 const (
-	// TargetAllocatorNameSuffix is appended to the owning DTPrometheus name to derive
+	// TargetAllocatorNameSuffix is appended to the owning PrometheusMonitoring name to derive
 	// the base name of the Target Allocator's Kubernetes resources.
 	TargetAllocatorNameSuffix = "-allocator"
 
-	// DefaultScrapeCRSelectorLabel is the label key the Target Allocator matches
-	// on Prometheus CRDs when no explicit scrapeCRSelector is configured.
-	DefaultScrapeCRSelectorLabel = "prometheus.dynatrace.com"
+	// DefaultCustomResourceSelectorLabel is the label key the Target Allocator matches
+	// on Prometheus CRDs when no explicit customResourceSelector is configured.
+	DefaultCustomResourceSelectorLabel = "prometheus.dynatrace.com"
 
 	// TargetAllocatorAvailable indicates whether the Target Allocator is available.
 	TargetAllocatorAvailable = "TargetAllocatorAvailable"
@@ -24,7 +24,7 @@ const (
 // +kubebuilder:object:generate=false
 
 // TargetAllocator wraps the Target Allocator Spec together with the owning
-// DTPrometheus name so derived state (such as Kubernetes resource names) can be
+// PrometheusMonitoring name so derived state (such as Kubernetes resource names) can be
 // computed.
 type TargetAllocator struct {
 	*TargetAllocatorSpec
@@ -51,19 +51,19 @@ type TargetAllocatorSpec struct {
 	// prometheus.dynatrace.com: "true". An empty selector {} matches all CRDs.
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default={"matchLabels":{"prometheus.dynatrace.com":"true"}}
-	ScrapeCRSelector *metav1.LabelSelector `json:"scrapeCRSelector,omitempty"`
+	CustomResourceSelector *metav1.LabelSelector `json:"customResourceSelector,omitempty"`
 
 	// Restricts which namespaces the TA watches for CRDs. An empty selector {}
 	// matches all namespaces.
 	// +kubebuilder:validation:Optional
-	ScrapeCRNamespaceSelector *metav1.LabelSelector `json:"scrapeCRNamespaceSelector,omitempty"`
+	CustomResourceNamespaceSelector *metav1.LabelSelector `json:"customResourceNamespaceSelector,omitempty"`
 
 	// Deployment update strategy for the Target Allocator.
 	// +kubebuilder:validation:Optional
 	UpdateStrategy appsv1.DeploymentStrategy `json:"updateStrategy,omitzero"`
 }
 
-// NewTargetAllocator wraps the given Spec together with the owning DTPrometheus name.
+// NewTargetAllocator wraps the given Spec together with the owning PrometheusMonitoring name.
 func NewTargetAllocator(spec *TargetAllocatorSpec, name string) *TargetAllocator {
 	return &TargetAllocator{
 		TargetAllocatorSpec: spec,

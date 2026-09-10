@@ -65,21 +65,21 @@ type Reconciler struct {
 }
 
 type targetAllocatorReconciler interface {
-	Reconcile(ctx context.Context, dtp *dtprometheus.DTPrometheus, dk *dynakube.DynaKube, imageClient image.Client) error
+	Reconcile(ctx context.Context, dtp *dtprometheus.PrometheusMonitoring, dk *dynakube.DynaKube, imageClient image.Client) error
 }
 
 type gatewayReconciler interface {
-	Reconcile(ctx context.Context, dtp *dtprometheus.DTPrometheus, dk *dynakube.DynaKube, imageClient image.Client) error
+	Reconcile(ctx context.Context, dtp *dtprometheus.PrometheusMonitoring, dk *dynakube.DynaKube, imageClient image.Client) error
 }
 
 type scraperReconciler interface {
-	Reconcile(ctx context.Context, dtp *dtprometheus.DTPrometheus, dk *dynakube.DynaKube, imageClient image.Client) error
+	Reconcile(ctx context.Context, dtp *dtprometheus.PrometheusMonitoring, dk *dynakube.DynaKube, imageClient image.Client) error
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ctrl.Result, reterr error) {
 	log := logd.FromContext(ctx)
 
-	dtp := &dtprometheus.DTPrometheus{}
+	dtp := &dtprometheus.PrometheusMonitoring{}
 	if err := r.Get(ctx, req.NamespacedName, dtp); err != nil {
 		if !k8serrors.IsNotFound(err) {
 			return ctrl.Result{}, fmt.Errorf("get dtprometheus: %w", err)
@@ -105,12 +105,12 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ct
 		}
 	}()
 
-	log = log.WithValues("dynaKubeName", dtp.Spec.DynaKubeName)
+	log = log.WithValues("dynaKubeRef", dtp.Spec.DynaKubeRef)
 
 	dk := &dynakube.DynaKube{}
-	if err := r.Get(ctx, client.ObjectKey{Name: dtp.Spec.DynaKubeName, Namespace: dtp.Namespace}, dk); err != nil {
+	if err := r.Get(ctx, client.ObjectKey{Name: dtp.Spec.DynaKubeRef, Namespace: dtp.Namespace}, dk); err != nil {
 		if !k8serrors.IsNotFound(err) {
-			return ctrl.Result{}, fmt.Errorf("get dynakube %s: %w", dtp.Spec.DynaKubeName, err)
+			return ctrl.Result{}, fmt.Errorf("get dynakube %s: %w", dtp.Spec.DynaKubeRef, err)
 		}
 
 		log.Info("skipping reconcile due to missing DynaKube")
@@ -175,7 +175,7 @@ func (r *Reconciler) buildDynatraceClient(ctx context.Context, dk *dynakube.Dyna
 //   - Reconciliation successful: condition status True
 //   - Reconciliation ongoing: condition status False/Unknown and reason Reconciling
 //   - Reconciliation failed: anything that does not fit the above
-func setPhase(dtp *dtprometheus.DTPrometheus, err error) error {
+func setPhase(dtp *dtprometheus.PrometheusMonitoring, err error) error {
 	if errors.Is(errDynaKubeNotFound, err) {
 		if len(dtp.Status.Conditions) == 0 {
 			dtp.Status.Phase = status.Deploying
@@ -233,37 +233,37 @@ func setPhase(dtp *dtprometheus.DTPrometheus, err error) error {
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
-	// Add an index for the dynaKubeName to allow using MatchingFields
-	if err := mgr.GetFieldIndexer().IndexField(context.TODO(), &dtprometheus.DTPrometheus{}, "spec.dynaKubeName", func(obj client.Object) []string {
-		dtp, ok := obj.(*dtprometheus.DTPrometheus)
+	// Add an index for the dynaKubeRef to allow using MatchingFields
+	if err := mgr.GetFieldIndexer().IndexField(context.TODO(), &dtprometheus.PrometheusMonitoring{}, "spec.dynaKubeRef", func(obj client.Object) []string {
+		dtp, ok := obj.(*dtprometheus.PrometheusMonitoring)
 		if !ok {
 			return nil
 		}
 
-		return []string{dtp.Spec.DynaKubeName}
+		return []string{dtp.Spec.DynaKubeRef}
 	}); err != nil {
-		return fmt.Errorf("add dynaKubeName index: %w", err)
+		return fmt.Errorf("add dynaKubeRef index: %w", err)
 	}
 
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&dtprometheus.DTPrometheus{}).
+		For(&dtprometheus.PrometheusMonitoring{}).
 		Owns(&appsv1.Deployment{}).
 		Owns(&appsv1.StatefulSet{}).
 		Owns(&corev1.ConfigMap{}).
 		Owns(&corev1.Service{}).
 		Watches(
 			&dynakube.DynaKube{},
-			// Map requests from DynaKube to DTPrometheus
-			handler.EnqueueRequestsFromMapFunc(newDTPrometheusFromDynaKubeMapper(mgr.GetClient())),
-			// Filter out any DynaKube changes that are not relevant for DTPrometheus
+			// Map requests from DynaKube to PrometheusMonitoring
+			handler.EnqueueRequestsFromMapFunc(newPrometheusMonitoringFromDynaKubeMapper(mgr.GetClient())),
+			// Filter out any DynaKube changes that are not relevant for PrometheusMonitoring
 			builder.WithPredicates(newDynaKubeChangedPredicate()),
 		).
 		Named("dtprometheus").
 		Complete(r)
 }
 
-// Create a [handler.MapFunc] for DynaKubes that returns requests for DTPrometheus objects whose spec.dynaKubeName matches the DynaKube name.
-func newDTPrometheusFromDynaKubeMapper(c client.Client) handler.MapFunc {
+// Create a [handler.MapFunc] for DynaKubes that returns requests for PrometheusMonitoring objects whose spec.dynaKubeRef matches the DynaKube name.
+func newPrometheusMonitoringFromDynaKubeMapper(c client.Client) handler.MapFunc {
 	return func(ctx context.Context, obj client.Object) []ctrl.Request {
 		_, log := logd.NewFromContext(ctx, "dtprometheus-mapper")
 
@@ -274,9 +274,9 @@ func newDTPrometheusFromDynaKubeMapper(c client.Client) handler.MapFunc {
 			return nil
 		}
 
-		dtpromList := &dtprometheus.DTPrometheusList{}
-		if err := c.List(ctx, dtpromList, client.InNamespace(dk.Namespace), client.MatchingFields{"spec.dynaKubeName": dk.Name}); err != nil {
-			log.Error(err, "failed listing dtprometheus objects", "dynaKubeName", dk.Name)
+		dtpromList := &dtprometheus.PrometheusMonitoringList{}
+		if err := c.List(ctx, dtpromList, client.InNamespace(dk.Namespace), client.MatchingFields{"spec.dynaKubeRef": dk.Name}); err != nil {
+			log.Error(err, "failed listing dtprometheus objects", "dynaKubeRef", dk.Name)
 
 			return nil
 		}
@@ -290,7 +290,7 @@ func newDTPrometheusFromDynaKubeMapper(c client.Client) handler.MapFunc {
 	}
 }
 
-// Create [predicate.Funcs] that return true when DynaKube changed in a way that's relevant for a DTPrometheus.
+// Create [predicate.Funcs] that return true when DynaKube changed in a way that's relevant for a PrometheusMonitoring.
 func newDynaKubeChangedPredicate() predicate.Funcs {
 	return predicate.Funcs{
 		CreateFunc: func(event.TypedCreateEvent[client.Object]) bool {

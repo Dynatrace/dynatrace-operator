@@ -1,4 +1,4 @@
-# DTPrometheus is still gated behind the experimental.enablePrometheus Helm flag, so it
+# PrometheusMonitoring is still gated behind the experimental.enablePrometheus Helm flag, so it
 # is built separately from the other two CRDs (see config/crd/kustomization.yaml, which
 # excludes it from the main build with a matching delete-patch). Remove this directory
 # once that flag goes away, and merge dtprometheus back into the main build normally.

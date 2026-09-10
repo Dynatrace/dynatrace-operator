@@ -28,7 +28,7 @@ var (
 func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(GroupVersion,
 		&edgeconnect.EdgeConnect{}, &edgeconnect.EdgeConnectList{},
-		&dtprometheus.DTPrometheus{}, &dtprometheus.DTPrometheusList{},
+		&dtprometheus.PrometheusMonitoring{}, &dtprometheus.PrometheusMonitoringList{},
 	)
 	metav1.AddToGroupVersion(scheme, GroupVersion)
 

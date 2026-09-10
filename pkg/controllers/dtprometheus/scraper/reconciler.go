@@ -61,7 +61,7 @@ type Reconciler struct {
 
 type reconcileScope struct {
 	// Required for reconcile
-	Owner       *dtprometheus.DTPrometheus
+	Owner       *dtprometheus.PrometheusMonitoring
 	Spec        *dtprometheus.Scraper
 	AppLabels   *k8slabel.Labels
 	ImageClient image.Client
@@ -70,12 +70,12 @@ type reconcileScope struct {
 	Deployment    *appsv1.Deployment
 }
 
-// Reconcile brings the scraper pool in line with the DTPrometheus spec.
+// Reconcile brings the scraper pool in line with the PrometheusMonitoring spec.
 //
 // The scraper gets no Service: nothing connects to it. The target allocator finds
 // its scrapers by listing pods matching AppLabels, and every other connection the
 // scraper makes is outbound.
-func (r *Reconciler) Reconcile(ctx context.Context, dtp *dtprometheus.DTPrometheus, dk *dynakube.DynaKube, imageClient image.Client) error {
+func (r *Reconciler) Reconcile(ctx context.Context, dtp *dtprometheus.PrometheusMonitoring, dk *dynakube.DynaKube, imageClient image.Client) error {
 	ctx, _ = logd.NewFromContext(ctx, "scraper")
 
 	scope := &reconcileScope{
@@ -150,7 +150,7 @@ func (r *Reconciler) reconcileConfigMap(ctx context.Context, s *reconcileScope) 
 
 // buildScraperConfigData resolves the owner-derived inputs to the scraper config. The
 // target allocator and gateway both expose Services named after their workload, so
-// their endpoints follow from the owning DTPrometheus name.
+// their endpoints follow from the owning PrometheusMonitoring name.
 func buildScraperConfigData(s *reconcileScope) scraperConfigData {
 	namespace := s.Owner.Namespace
 

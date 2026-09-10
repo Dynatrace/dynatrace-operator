@@ -22,7 +22,7 @@ var (
 )
 
 // scraperConfigData holds the inputs to the scraper's OTel Collector config that are
-// derived from the owning DTPrometheus.
+// derived from the owning PrometheusMonitoring.
 type scraperConfigData struct {
 	// TargetAllocatorEndpoint is the URL the Prometheus receiver polls for its share
 	// of the scrape targets.
