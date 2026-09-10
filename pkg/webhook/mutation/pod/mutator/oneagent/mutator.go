@@ -19,6 +19,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/utils/ptr"
 )
 
 const (
@@ -148,15 +149,15 @@ func mutateUserContainers(request *dtwebhook.BaseRequest, installPath string, lo
 
 	newContainers := request.NewContainers(containerIsInjected)
 	for _, container := range newContainers {
+		log.Info("adding OneAgent to container", "name", container.Name)
 		addVolumeMounts(container, installPath, isImageVolumeEnabled)
-		addOneAgentEnvsToContainer(request.DynaKube, container, request.Namespace, installPath, log)
+		addOneAgentEnvsToContainer(request.DynaKube, container, request.Namespace, installPath, ptr.Deref(request.Pod.Spec.RuntimeClassName, ""))
 	}
 
 	return len(newContainers) > 0
 }
 
-func addOneAgentEnvsToContainer(dk dynakube.DynaKube, container *corev1.Container, namespace corev1.Namespace, installPath string, log logd.Logger) {
-	log.Info("adding OneAgent envs to container", "name", container.Name)
+func addOneAgentEnvsToContainer(dk dynakube.DynaKube, container *corev1.Container, namespace corev1.Namespace, installPath string, runtimeClassName string) {
 	addDeploymentMetadataEnv(container, dk)
 	addPreloadEnv(container, installPath)
 	addDTStorageEnv(container)
@@ -167,6 +168,10 @@ func addOneAgentEnvsToContainer(dk dynakube.DynaKube, container *corev1.Containe
 
 	if dk.FF().IsLabelVersionDetection() {
 		addVersionDetectionEnvs(container, namespace)
+	}
+
+	if runtimeClassName != "" {
+		addPodRuntimeClassEnv(container, runtimeClassName)
 	}
 }
 
