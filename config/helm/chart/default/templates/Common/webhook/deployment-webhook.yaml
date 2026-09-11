@@ -77,10 +77,6 @@ spec:
             - name: DT_EXTRACT_CODEMODULES_IMAGE_LINKS
               value: "true"
             {{- end }}
-            {{- if (.Values.experimental).enableKubemonOperand }}
-            - name: EXPERIMENTAL_ENABLE_KUBEMON_OPERAND
-              value: "true"
-            {{- end }}
             {{- if (.Values.experimental).enablePrometheus }}
             - name: EXPERIMENTAL_ENABLE_PROMETHEUS
               value: "true"

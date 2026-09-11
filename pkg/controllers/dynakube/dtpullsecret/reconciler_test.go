@@ -15,7 +15,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -326,8 +325,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 
 		assert.True(t, k8serrors.IsNotFound(err))
 	})
-	t.Run("Create with standalone kubemon when operand env is set", func(t *testing.T) {
-		t.Setenv(k8senv.ExperimentalEnableKubemonOperand, "true")
+	t.Run("Create with standalone kubemon", func(t *testing.T) {
 		dk := createTestKubemonDynakube()
 		fakeClient := fake.NewClient()
 		r := NewReconciler(fakeClient, fakeClient)
@@ -347,26 +345,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		require.NoError(t, err)
 		assert.NotEmpty(t, pullSecret.Data)
 	})
-	t.Run("Don't create with standalone kubemon when operand env is not set", func(t *testing.T) {
-		// EXPERIMENTAL_ENABLE_KUBEMON_OPERAND is not set; kubemon spec is present but the operand is disabled
-		dk := createTestKubemonDynakube()
-		fakeClient := fake.NewClient()
-		r := NewReconciler(fakeClient, fakeClient)
-
-		err := r.Reconcile(t.Context(), dk, nil)
-		require.NoError(t, err)
-
-		assert.Empty(t, meta.FindStatusCondition(*dk.Conditions(), PullSecretConditionType))
-
-		var pullSecret corev1.Secret
-		err = fakeClient.Get(t.Context(),
-			client.ObjectKey{Name: testName + "-pull-secret", Namespace: testNamespace},
-			&pullSecret)
-
-		assert.True(t, k8serrors.IsNotFound(err))
-	})
-	t.Run("Don't create when operand env is set but kubemon is not configured", func(t *testing.T) {
-		t.Setenv(k8senv.ExperimentalEnableKubemonOperand, "true")
+	t.Run("Don't create when kubemon is not configured", func(t *testing.T) {
 		dk := addFakeTenantUUID(&dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: testNamespace,
@@ -393,7 +372,6 @@ func TestReconciler_Reconcile(t *testing.T) {
 		assert.True(t, k8serrors.IsNotFound(err))
 	})
 	t.Run("Cleanup when standalone kubemon is disabled", func(t *testing.T) {
-		t.Setenv(k8senv.ExperimentalEnableKubemonOperand, "true")
 		dk := createTestKubemonDynakube()
 		fakeClient := fake.NewClient()
 		tokens := token.Tokens{

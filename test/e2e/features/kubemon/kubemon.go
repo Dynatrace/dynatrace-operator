@@ -12,10 +12,8 @@ import (
 	dynakubeapi "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
-	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers"
 	agHelper "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/activegate"
 	componentDynakube "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
-	componentOperator "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8ssecret"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sstatefulset"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
@@ -29,8 +27,6 @@ func FeatureSplitAG(t *testing.T) features.Feature {
 	builder := features.New("kubemon-split-ag-mode")
 
 	secretConfig := tenant.GetSingleTenantSecret(t)
-
-	builder.Setup(helpers.ToFeatureFunc(componentOperator.InstallLocal(false, componentOperator.EnableKubemonOperand()), true))
 
 	testDynakube := *componentDynakube.New(
 		componentDynakube.WithAPIURL(secretConfig.APIURL),
@@ -85,8 +81,6 @@ func FeatureSplitAG(t *testing.T) features.Feature {
 	builder.Assess("generic activegate statefulset is still ready",
 		k8sstatefulset.IsReady(agHelper.GetActiveGateStateFulSetName(&testDynakube), testDynakube.Namespace))
 
-	builder.Teardown(helpers.ToFeatureFunc(componentOperator.InstallLocal(false, componentOperator.DisableKubemonOperand()), false))
-
 	return builder.Feature()
 }
 
@@ -94,8 +88,6 @@ func FeatureRestartTriggers(t *testing.T) features.Feature {
 	builder := features.New("kubemon-restart-triggers")
 
 	secretConfig := tenant.GetSingleTenantSecret(t)
-
-	builder.Setup(helpers.ToFeatureFunc(componentOperator.InstallLocal(false, componentOperator.EnableKubemonOperand()), true))
 
 	testDynakube := *componentDynakube.New(
 		componentDynakube.WithAPIURL(secretConfig.APIURL),
@@ -118,8 +110,6 @@ func FeatureRestartTriggers(t *testing.T) features.Feature {
 
 	builder.Assess("KubernetesMonitoringAvailable condition is True after rotation",
 		componentDynakube.WaitForCondition(testDynakube, kubemon.KubeMonAvailableConditionType, metav1.ConditionTrue))
-
-	builder.Teardown(helpers.ToFeatureFunc(componentOperator.InstallLocal(false, componentOperator.DisableKubemonOperand()), false))
 
 	return builder.Feature()
 }

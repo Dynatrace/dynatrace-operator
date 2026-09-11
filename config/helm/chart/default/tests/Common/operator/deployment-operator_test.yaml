@@ -1060,40 +1060,6 @@ tests:
             name: DT_DEFAULT_REQUEUE_AFTER
           any: true
 
-  - it: should have EXPERIMENTAL_ENABLE_KUBEMON_OPERAND if experimental.enableKubemonOperand is true
-    set:
-      platform: kubernetes
-      experimental.enableKubemonOperand: true
-    asserts:
-      - contains:
-          path: spec.template.spec.containers[0].env
-          content:
-            name: EXPERIMENTAL_ENABLE_KUBEMON_OPERAND
-            value: "true"
-          count: 1
-          any: true
-
-  - it: should not have EXPERIMENTAL_ENABLE_KUBEMON_OPERAND by default
-    set:
-      platform: kubernetes
-    asserts:
-      - notContains:
-          path: spec.template.spec.containers[0].env
-          content:
-            name: EXPERIMENTAL_ENABLE_KUBEMON_OPERAND
-          any: true
-
-  - it: should render without error and omit EXPERIMENTAL_ENABLE_KUBEMON_OPERAND when experimental is null
-    set:
-      platform: kubernetes
-      experimental: null
-    asserts:
-      - notContains:
-          path: spec.template.spec.containers[0].env
-          content:
-            name: EXPERIMENTAL_ENABLE_KUBEMON_OPERAND
-          any: true
-
   - it: should have EXPERIMENTAL_ENABLE_PROMETHEUS if experimental.enablePrometheus is true
     set:
       platform: kubernetes

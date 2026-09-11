@@ -10,7 +10,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	kubemonapi "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -140,24 +139,7 @@ func TestReconcile(t *testing.T) {
 		assert.NotEmpty(t, actualConfigMap.Data[ActiveGateMetadataKey])
 	})
 
-	t.Run("don't add kubemon metadata, if the operand gate is disabled", func(t *testing.T) {
-		dk := createTestDynakube(
-			&dynakube.DynaKubeSpec{
-				KubernetesMonitoring: &kubemonapi.Spec{},
-			})
-
-		fakeClient := fake.NewClientBuilder().Build()
-		r := NewReconciler(fakeClient, fakeClient, clusterID)
-		err := r.Reconcile(t.Context(), dk)
-		require.NoError(t, err)
-
-		var actualConfigMap corev1.ConfigMap
-		err = fakeClient.Get(t.Context(), client.ObjectKey{Name: GetDeploymentMetadataConfigMapName(testName), Namespace: testNamespace}, &actualConfigMap)
-		require.Error(t, err)
-	})
-	t.Run("add kubemon metadata, if the operand gate is enabled and kubemon is enabled", func(t *testing.T) {
-		t.Setenv(k8senv.ExperimentalEnableKubemonOperand, "true") // remove with gate
-
+	t.Run("add kubemon metadata, if kubemon is enabled", func(t *testing.T) {
 		dk := createTestDynakube(
 			&dynakube.DynaKubeSpec{
 				KubernetesMonitoring: &kubemonapi.Spec{},

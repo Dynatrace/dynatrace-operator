@@ -9,7 +9,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 )
 
 func getDynaKubeWithCerts(t *testing.T) dynakube.DynaKube {
@@ -34,8 +33,6 @@ func getDynaKubeWithAutomaticCerts(t *testing.T) dynakube.DynaKube {
 func getDynaKubeWithKubemonCerts(t *testing.T) dynakube.DynaKube {
 	t.Helper()
 
-	t.Setenv(k8senv.ExperimentalEnableKubemonOperand, "true")
-
 	dk := dynakube.DynaKube{
 		Spec: dynakube.DynaKubeSpec{
 			KubernetesMonitoring: &kubemon.Spec{
@@ -51,8 +48,6 @@ func getDynaKubeWithKubemonCerts(t *testing.T) dynakube.DynaKube {
 
 func getDynaKubeWithKubemonAutomaticCerts(t *testing.T) dynakube.DynaKube {
 	t.Helper()
-
-	t.Setenv(k8senv.ExperimentalEnableKubemonOperand, "true")
 
 	dk := dynakube.DynaKube{
 		Spec: dynakube.DynaKubeSpec{
