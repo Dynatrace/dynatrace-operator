@@ -97,6 +97,9 @@ func TestReconcileStatefulSet(t *testing.T) {
 		pm.Spec.Gateway.Resources = corev1.ResourceRequirements{
 			Limits: corev1.ResourceList{corev1.ResourceMemory: resource.MustParse("500Mi")},
 		}
+		pm.Spec.Gateway.UpdateStrategy = appsv1.StatefulSetUpdateStrategy{
+			RollingUpdate: &appsv1.RollingUpdateStatefulSetStrategy{Partition: new(int32(1))},
+		}
 		s := newTestScopeWithDynaKube(pm, newTestDynaKube())
 		s.ConfigMapHash = "deadbeef"
 		s.DynaKube.Status.KubernetesClusterName = "prometheus"

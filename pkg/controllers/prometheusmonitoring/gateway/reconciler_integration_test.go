@@ -92,6 +92,10 @@ func runProvisionPhase(t *testing.T, deps *lifecycleDeps) {
 	t.Helper()
 
 	deps.pm.Spec.Gateway.Image = integrationImage
+	// Only rollingUpdate is set, no type: the apiserver defaults the type to RollingUpdate on its own.
+	deps.pm.Spec.Gateway.UpdateStrategy = appsv1.StatefulSetUpdateStrategy{
+		RollingUpdate: &appsv1.RollingUpdateStatefulSetStrategy{Partition: new(int32(1))},
+	}
 	require.NoError(t, deps.reconciler.Reconcile(t.Context(), deps.pm, deps.dk, deps.imageClient))
 
 	cm := getConfigMap(t, deps)
@@ -104,6 +108,12 @@ func runProvisionPhase(t *testing.T, deps *lifecycleDeps) {
 
 	require.Len(t, sts.Spec.Template.Spec.Containers, 1)
 	assert.Equal(t, integrationImage, sts.Spec.Template.Spec.Containers[0].Image)
+
+	// MaxUnavailable isn't asserted: whether the apiserver defaults it depends on the
+	// MaxUnavailableStatefulSet feature gate.
+	assert.Equal(t, appsv1.RollingUpdateStatefulSetStrategyType, sts.Spec.UpdateStrategy.Type)
+	require.NotNil(t, sts.Spec.UpdateStrategy.RollingUpdate)
+	assert.Equal(t, new(int32(1)), sts.Spec.UpdateStrategy.RollingUpdate.Partition)
 }
 
 // runStabilizePhase reconciles repeatedly with unchanged input. None of the three resources may be rewritten.
@@ -173,6 +183,23 @@ func runUpdatePhase(t *testing.T, deps *lifecycleDeps) {
 
 		assert.Equal(t, cmRV, getConfigMap(t, deps).ResourceVersion)
 		assert.NotEqual(t, stsRV, getStatefulSet(t, deps).ResourceVersion)
+		assert.Equal(t, svcRV, getService(t, deps).ResourceVersion)
+	})
+
+	// Switching to a non-rolling strategy must clear the stale rollingUpdate block and leave the
+	// ConfigMap and Service alone.
+	t.Run("switching to OnDelete clears rollingUpdate, service and configmap untouched", func(t *testing.T) {
+		cmRV := getConfigMap(t, deps).ResourceVersion
+		svcRV := getService(t, deps).ResourceVersion
+
+		deps.pm.Spec.Gateway.UpdateStrategy = appsv1.StatefulSetUpdateStrategy{Type: appsv1.OnDeleteStatefulSetStrategyType}
+		require.NoError(t, deps.reconciler.Reconcile(t.Context(), deps.pm, deps.dk, deps.imageClient))
+
+		sts := getStatefulSet(t, deps)
+		assert.Equal(t, appsv1.OnDeleteStatefulSetStrategyType, sts.Spec.UpdateStrategy.Type)
+		assert.Nil(t, sts.Spec.UpdateStrategy.RollingUpdate)
+
+		assert.Equal(t, cmRV, getConfigMap(t, deps).ResourceVersion)
 		assert.Equal(t, svcRV, getService(t, deps).ResourceVersion)
 	})
 }

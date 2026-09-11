@@ -180,6 +180,7 @@ func TestReconcileDeployment(t *testing.T) {
 		pm.Spec.Scraper.Annotations = map[string]string{"custom": "annotation"}
 		pm.Spec.Scraper.Labels = map[string]string{"custom": "label"}
 		pm.Spec.Scraper.Args = []string{"--foo=bar"}
+		pm.Spec.Scraper.UpdateStrategy = appsv1.DeploymentStrategy{Type: appsv1.RecreateDeploymentStrategyType}
 		s := newTestScope(pm)
 		s.ConfigMapHash = "deadbeef"
 		c := fake.NewClient()
