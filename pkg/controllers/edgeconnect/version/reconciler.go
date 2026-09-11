@@ -7,6 +7,7 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
+	dtimage "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/oci/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
@@ -19,20 +20,31 @@ type versionStatusUpdater interface {
 	Update(ctx context.Context) error
 }
 
+// ImageClientProvider builds the fleet management image client on demand. Building it requires an
+// OAuth token exchange, so it is only invoked once an image actually has to be resolved.
+type ImageClientProvider func(ctx context.Context) (dtimage.Client, error)
+
+// RegistryClientProvider builds the OCI registry client on demand. Building it reads the pull
+// secret, which the fleet management path does not need, so it is only invoked once the fallback
+// actually has to be used.
+type RegistryClientProvider func(ctx context.Context) (registry.ImageGetter, error)
+
 type Reconciler struct {
 	edgeConnect  *edgeconnect.EdgeConnect
 	timeProvider *timeprovider.Provider
 
-	apiReader      client.Reader
-	registryClient registry.ImageGetter
+	apiReader              client.Reader
+	imageClientProvider    ImageClientProvider
+	registryClientProvider RegistryClientProvider
 }
 
-func NewReconciler(apiReader client.Reader, registryClient registry.ImageGetter, timeProvider *timeprovider.Provider, ec *edgeconnect.EdgeConnect) *Reconciler {
+func NewReconciler(apiReader client.Reader, imageClientProvider ImageClientProvider, registryClientProvider RegistryClientProvider, timeProvider *timeprovider.Provider, ec *edgeconnect.EdgeConnect) *Reconciler {
 	return &Reconciler{
-		edgeConnect:    ec,
-		apiReader:      apiReader,
-		timeProvider:   timeProvider,
-		registryClient: registryClient,
+		edgeConnect:            ec,
+		apiReader:              apiReader,
+		timeProvider:           timeProvider,
+		imageClientProvider:    imageClientProvider,
+		registryClientProvider: registryClientProvider,
 	}
 }
 
@@ -40,7 +52,7 @@ func (reconciler *Reconciler) Reconcile(ctx context.Context) error {
 	ctx, log := logd.NewFromContext(ctx, "version")
 
 	updaters := []versionStatusUpdater{
-		newUpdater(reconciler.apiReader, reconciler.timeProvider, reconciler.registryClient, reconciler.edgeConnect),
+		newUpdater(reconciler.apiReader, reconciler.timeProvider, reconciler.imageClientProvider, reconciler.registryClientProvider, reconciler.edgeConnect),
 	}
 
 	for _, updater := range updaters {

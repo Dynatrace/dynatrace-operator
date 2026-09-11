@@ -167,9 +167,6 @@ packages:
   github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer:
     interfaces:
       Installer:
-  github.com/Dynatrace/dynatrace-operator/pkg/util/oci/registry:
-    interfaces:
-      ImageGetter:
   github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/handler:
     interfaces:
       Handler:
@@ -182,6 +179,9 @@ packages:
       include-auto-generated: true
     interfaces:
       PodInterface:
+  github.com/Dynatrace/dynatrace-operator/pkg/util/oci/registry:
+    interfaces:
+      ImageGetter:
   github.com/container-storage-interface/spec/lib/go/csi:
     config:
       include-auto-generated: true

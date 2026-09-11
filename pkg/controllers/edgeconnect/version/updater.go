@@ -10,6 +10,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
+	dtimage "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/oci/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
@@ -22,10 +23,11 @@ import (
 const minRequestThreshold = 15 * time.Minute
 
 type updater struct {
-	edgeConnect    *edgeconnect.EdgeConnect
-	apiReader      client.Reader
-	timeProvider   *timeprovider.Provider
-	registryClient registry.ImageGetter
+	edgeConnect            *edgeconnect.EdgeConnect
+	apiReader              client.Reader
+	timeProvider           *timeprovider.Provider
+	imageClientProvider    ImageClientProvider
+	registryClientProvider RegistryClientProvider
 }
 
 var _ versionStatusUpdater = updater{}
@@ -33,70 +35,159 @@ var _ versionStatusUpdater = updater{}
 func newUpdater(
 	apiReader client.Reader,
 	timeprovider *timeprovider.Provider,
-	registryClient registry.ImageGetter,
+	imageClientProvider ImageClientProvider,
+	registryClientProvider RegistryClientProvider,
 	ec *edgeconnect.EdgeConnect,
 ) *updater {
 	return &updater{
-		edgeConnect:    ec,
-		apiReader:      apiReader,
-		timeProvider:   timeprovider,
-		registryClient: registryClient,
+		edgeConnect:            ec,
+		apiReader:              apiReader,
+		timeProvider:           timeprovider,
+		imageClientProvider:    imageClientProvider,
+		registryClientProvider: registryClientProvider,
 	}
+}
+
+func (u updater) determineSource() status.VersionSource {
+	if u.edgeConnect.IsCustomImage() {
+		return status.CustomImageVersionSource
+	}
+
+	// an override gets its own source so that adding and removing it both show up as a source change,
+	// which is what makes them applicable without auto update
+	if u.edgeConnect.Spec.PublicRegistryOverride != "" {
+		return status.PublicRegistryWithOverrideVersionSource
+	}
+
+	return status.PublicRegistryVersionSource
 }
 
 func (u updater) RequiresReconcile() bool {
 	version := u.edgeConnect.Status.Version
 
-	isRequestOutdated := u.timeProvider.IsOutdated(version.LastProbeTimestamp, minRequestThreshold)
-	didCustomImageChange := !strings.HasPrefix(version.ImageID, u.edgeConnect.Image())
-
-	if didCustomImageChange || version.ImageID == "" {
+	if version.ImageID == "" {
 		return true
 	}
 
-	return isRequestOutdated && u.IsAutoUpdateEnabled()
+	// switching between a custom image and the public registry has to be applied right away
+	if version.Source != u.determineSource() {
+		return true
+	}
+
+	if u.edgeConnect.IsCustomImage() {
+		// a custom image is taken over as-is, so any change of the image field has to be applied right away
+		return !strings.HasPrefix(version.ImageID, u.edgeConnect.Image())
+	}
+
+	// a different override registry has to be applied right away, otherwise the image is only
+	// refreshed if auto update is enabled
+	if u.hasPublicRegistryChanged(version.ImageID) {
+		return true
+	}
+
+	return u.timeProvider.IsOutdated(version.LastProbeTimestamp, minRequestThreshold) && u.IsAutoUpdateEnabled()
+}
+
+// hasPublicRegistryChanged reports whether the override registry changed between reconciles. Adding
+// and removing an override is already covered by the source, so only a switch from one override to
+// another is left to detect.
+func (u updater) hasPublicRegistryChanged(imageID string) bool {
+	registryOverride := u.edgeConnect.Spec.PublicRegistryOverride
+	if registryOverride == "" {
+		return false
+	}
+
+	return !strings.HasPrefix(imageID, registryOverride+"/")
 }
 
 func (u updater) Update(ctx context.Context) error {
 	log := logd.FromContext(ctx)
+	currentSource := u.determineSource()
 
 	var err error
 
 	defer func() {
 		if err == nil {
+			u.Target().Source = currentSource
 			u.Target().LastProbeTimestamp = u.timeProvider.Now()
 		}
 	}()
 
-	image := u.edgeConnect.Image()
-	target := u.Target()
+	if currentSource == status.CustomImageVersionSource {
+		log.Debug("updating version status according to custom image")
+		setImageIDToCustomImage(ctx, u.Target(), u.edgeConnect.Image())
 
-	if !u.edgeConnect.IsCustomImage() {
-		log.Debug("EdgeConnect public registry image used")
-
-		imageVersion, err := u.registryClient.GetImageVersion(ctx, image)
-		if err != nil {
-			return err
-		}
-
-		image, err = u.combineImageWithDigest(ctx, imageVersion.Digest)
-		if err != nil {
-			return err
-		}
-
-		target.Source = status.PublicRegistryVersionSource
-	} else {
-		log.Debug("EdgeConnect custom image used")
-
-		target.Source = status.CustomImageVersionSource
+		return nil
 	}
 
-	target.ImageID = image
+	log.Debug("updating version status according to the public registry")
+
+	err = u.usePublicRegistry(ctx)
+
+	return err
+}
+
+// usePublicRegistry resolves the image through fleet management and falls back to querying the
+// public OCI registry directly, because fleet management is not generally available yet.
+func (u updater) usePublicRegistry(ctx context.Context) error {
+	log := logd.FromContext(ctx)
+
+	imageInfo, fleetErr := u.latestImageInfo(ctx)
+
+	switch {
+	case fleetErr != nil:
+		log.Info("fleet management image resolution failed", "error", fleetErr)
+	case imageInfo == nil:
+		fleetErr = errors.New("fleet management returned no image")
+
+		log.Info("fleet management returned no image")
+	default:
+		setImageFromImageInfo(ctx, u.Target(), imageInfo)
+
+		return nil
+	}
+
+	log.Info("falling back to the OCI registry",
+		"image", u.edgeConnect.Image())
+
+	if err := u.useOCIRegistry(ctx); err != nil {
+		return errors.WithMessagef(err, "OCI registry fallback failed after fleet management error (%v)", fleetErr)
+	}
 
 	return nil
 }
 
-func (u updater) combineImageWithDigest(ctx context.Context, digest digest.Digest) (string, error) {
+func (u updater) latestImageInfo(ctx context.Context) (*dtimage.Info, error) {
+	imagesClient, err := u.imageClientProvider(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return imagesClient.GetComponentLatestInfo(ctx, dtimage.EdgeConnect, u.edgeConnect.Spec.PublicRegistryOverride)
+}
+
+func (u updater) useOCIRegistry(ctx context.Context) error {
+	registryClient, err := u.registryClientProvider(ctx)
+	if err != nil {
+		return err
+	}
+
+	imageVersion, err := registryClient.GetImageVersion(ctx, u.edgeConnect.Image())
+	if err != nil {
+		return err
+	}
+
+	imageID, err := u.combineImageWithDigest(ctx, imageVersion.Digest)
+	if err != nil {
+		return err
+	}
+
+	setImageFromOCIRegistry(ctx, u.Target(), imageID, imageVersion.Version)
+
+	return nil
+}
+
+func (u updater) combineImageWithDigest(ctx context.Context, dig digest.Digest) (string, error) {
 	log := logd.FromContext(ctx)
 
 	imageRef, err := name.ParseReference(u.edgeConnect.Image())
@@ -107,7 +198,7 @@ func (u updater) combineImageWithDigest(ctx context.Context, digest digest.Diges
 	}
 
 	if taggedRef, ok := imageRef.(name.Tag); ok {
-		canonRef := registry.BuildImageIDWithTagAndDigest(taggedRef, digest)
+		canonRef := registry.BuildImageIDWithTagAndDigest(taggedRef, dig)
 		log.Debug("canonical image reference", "reference", canonRef)
 
 		return canonRef, nil
@@ -116,6 +207,44 @@ func (u updater) combineImageWithDigest(ctx context.Context, digest digest.Diges
 	log.Debug("wrong image reference format", "reference", imageRef.String())
 
 	return "", errors.New("wrong image reference format")
+}
+
+func setImageFromImageInfo(ctx context.Context, target *status.VersionStatus, imageInfo *dtimage.Info) {
+	log := logd.FromContext(ctx)
+	oldImageID := target.ImageID
+
+	target.ImageID = imageInfo.URI
+	target.Version = imageInfo.Tag
+
+	log.Info("updated image version info",
+		"oldImageID", oldImageID,
+		"newImageID", target.ImageID,
+		"version", target.Version)
+}
+
+func setImageFromOCIRegistry(ctx context.Context, target *status.VersionStatus, imageID string, version string) {
+	log := logd.FromContext(ctx)
+	oldImageID := target.ImageID
+
+	target.ImageID = imageID
+	target.Version = version
+
+	log.Info("updated image version info from the OCI registry",
+		"oldImageID", oldImageID,
+		"newImageID", target.ImageID,
+		"version", target.Version)
+}
+
+func setImageIDToCustomImage(ctx context.Context, target *status.VersionStatus, imageURI string) {
+	log := logd.FromContext(ctx)
+	oldImageID := target.ImageID
+
+	target.ImageID = imageURI
+	target.Version = string(status.CustomImageVersionSource)
+
+	log.Info("updated image version info",
+		"oldImageID", oldImageID,
+		"newImageID", target.ImageID)
 }
 
 func (u updater) Name() string {

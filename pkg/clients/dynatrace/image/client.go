@@ -19,6 +19,7 @@ const (
 	OneAgent        ComponentType = "oneagent"
 	CodeModules     ComponentType = "codemodules"
 	ActiveGate      ComponentType = "activegate"
+	EdgeConnect     ComponentType = "edge-connect"
 	EEC             ComponentType = "eec"
 	LogModule       ComponentType = "logmodule"
 	NCC             ComponentType = "ncc"
