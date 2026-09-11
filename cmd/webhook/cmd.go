@@ -8,9 +8,9 @@ import (
 	"os"
 
 	"github.com/Dynatrace/dynatrace-operator/cmd/webhook/certificates"
-	dtprometheusvalidation "github.com/Dynatrace/dynatrace-operator/pkg/api/validation/dtprometheus"
 	dynakubevalidation "github.com/Dynatrace/dynatrace-operator/pkg/api/validation/dynakube"
 	edgeconnectvalidation "github.com/Dynatrace/dynatrace-operator/pkg/api/validation/edgeconnect"
+	pmvalidation "github.com/Dynatrace/dynatrace-operator/pkg/api/validation/prometheusmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
@@ -124,7 +124,7 @@ func run(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	err = dtprometheusvalidation.SetupWebhookWithManager(webhookManager)
+	err = pmvalidation.SetupWebhookWithManager(webhookManager)
 	if err != nil {
 		return err
 	}

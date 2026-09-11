@@ -115,7 +115,7 @@ packages:
       gatewayReconciler:
       statefulsetReconciler:
       istioReconciler:
-  github.com/Dynatrace/dynatrace-operator/pkg/controllers/dtprometheus:
+  github.com/Dynatrace/dynatrace-operator/pkg/controllers/prometheusmonitoring:
     config:
       dir: "{{.InterfaceDir}}"
       pkgname: "{{.SrcPackageName}}"

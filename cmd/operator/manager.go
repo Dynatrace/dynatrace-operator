@@ -11,10 +11,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/certificates"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dtprometheus"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/nodes"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/prometheusmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/envvars"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/pkg/errors"
@@ -37,7 +37,7 @@ func getControllerAddFuncs(isOLM bool) []controllerSetupFunc {
 	}
 
 	if k8senv.IsPrometheusEnabled() {
-		funcs = append(funcs, dtprometheus.Add)
+		funcs = append(funcs, prometheusmonitoring.Add)
 	}
 
 	if envvars.GetBool(consts.HostAvailabilityDetectionEnvVar, true) {

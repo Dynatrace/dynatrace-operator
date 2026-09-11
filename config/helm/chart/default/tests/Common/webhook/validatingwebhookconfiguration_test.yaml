@@ -109,7 +109,7 @@ tests:
                 service:
                   name: dynatrace-webhook
                   namespace: NAMESPACE
-                  path: /validate-dynatrace-com-v1alpha1-dtprometheus
+                  path: /validate-dynatrace-com-v1alpha1-prometheusmonitoring
               rules:
                 - operations:
                     - CREATE
@@ -119,8 +119,8 @@ tests:
                   apiVersions:
                     - v1alpha1
                   resources:
-                    - dtprometheuses
-              name: v1alpha1.dtprometheus.webhook.dynatrace.com
+                    - prometheusmonitorings
+              name: v1alpha1.prometheusmonitoring.webhook.dynatrace.com
               timeoutSeconds: 10
               sideEffects: None
               matchPolicy: Exact
