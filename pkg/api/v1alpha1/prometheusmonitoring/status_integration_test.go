@@ -16,20 +16,20 @@ import (
 
 const (
 	testPrometheusMonitoringName = "prometheusmonitoring"
-	testNamespaceDtp             = "dynatrace"
+	testNamespacePM              = "dynatrace"
 
-	dummyConditionTypeDtp    = "dummyType"
-	dummyConditionReasonDtp  = "dummyReason"
-	dummyConditionMessageDtp = "dummyMessage"
+	dummyConditionTypePM    = "dummyType"
+	dummyConditionReasonPM  = "dummyReason"
+	dummyConditionMessagePM = "dummyMessage"
 
-	duplicatedConditionErrorMessageDtp = `PrometheusMonitoring.dynatrace.com "prometheusmonitoring" is invalid: status.conditions[1]: Duplicate value: {"type":"dummyType"}`
+	duplicatedConditionErrorMessagePM = `PrometheusMonitoring.dynatrace.com "prometheusmonitoring" is invalid: status.conditions[1]: Duplicate value: {"type":"dummyType"}`
 )
 
 func TestPrometheusMonitoringUpdateStatus(t *testing.T) {
 	clt := integrationtests.SetupTestEnvironment(t)
 	clt.Create(t.Context(), &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   testNamespaceDtp,
+			Name:   testNamespacePM,
 			Labels: map[string]string{},
 		},
 	})
@@ -49,7 +49,7 @@ func TestPrometheusMonitoringUpdateStatus(t *testing.T) {
 
 		// append duplicated condition
 		*pm.Conditions() = append(*pm.Conditions(), dummyCondition)
-		require.ErrorContains(t, clt.Status().Update(t.Context(), pm), duplicatedConditionErrorMessageDtp)
+		require.ErrorContains(t, clt.Status().Update(t.Context(), pm), duplicatedConditionErrorMessagePM)
 
 		// check that condition count is still 1
 		clt.Get(t.Context(), client.ObjectKeyFromObject(pm), pm)
@@ -61,7 +61,7 @@ func buildPrometheusMonitoring() *prometheusmonitoring.PrometheusMonitoring {
 	return &prometheusmonitoring.PrometheusMonitoring{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        testPrometheusMonitoringName,
-			Namespace:   testNamespaceDtp,
+			Namespace:   testNamespacePM,
 			Annotations: map[string]string{},
 		},
 		Spec:   prometheusmonitoring.PrometheusMonitoringSpec{DynaKubeRef: "dynakube"},
@@ -71,10 +71,10 @@ func buildPrometheusMonitoring() *prometheusmonitoring.PrometheusMonitoring {
 
 func buildPrometheusMonitoringCondition() metav1.Condition {
 	return metav1.Condition{
-		Type:               dummyConditionTypeDtp,
+		Type:               dummyConditionTypePM,
 		Status:             metav1.ConditionTrue,
-		Reason:             dummyConditionReasonDtp,
-		Message:            dummyConditionMessageDtp,
+		Reason:             dummyConditionReasonPM,
+		Message:            dummyConditionMessagePM,
 		LastTransitionTime: metav1.Now(),
 	}
 }

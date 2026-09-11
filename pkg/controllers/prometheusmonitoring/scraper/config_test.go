@@ -15,7 +15,7 @@ import (
 
 func TestBuildScraperConfigData(t *testing.T) {
 	t.Run("endpoints are derived from the owner, not the scraper spec", func(t *testing.T) {
-		s := newTestScope(newTestDTP("pm", "dynatrace"))
+		s := newTestScope(newTestPM("pm", "dynatrace"))
 
 		data := buildScraperConfigData(s)
 
@@ -24,7 +24,7 @@ func TestBuildScraperConfigData(t *testing.T) {
 	})
 
 	t.Run("endpoints follow the owner name and namespace", func(t *testing.T) {
-		s := newTestScope(newTestDTP("other", "custom-ns"))
+		s := newTestScope(newTestPM("other", "custom-ns"))
 
 		data := buildScraperConfigData(s)
 
@@ -33,7 +33,7 @@ func TestBuildScraperConfigData(t *testing.T) {
 	})
 
 	t.Run("poll interval is taken from the spec", func(t *testing.T) {
-		pm := newTestDTP("pm", "dynatrace")
+		pm := newTestPM("pm", "dynatrace")
 		pm.Spec.Scraper.TargetsPollInterval = metav1.Duration{Duration: 90 * time.Second}
 
 		assert.Equal(t, "1m30s", buildScraperConfigData(newTestScope(pm)).TargetsPollInterval)

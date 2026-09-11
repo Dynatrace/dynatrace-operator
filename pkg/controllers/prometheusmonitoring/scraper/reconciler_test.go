@@ -34,7 +34,7 @@ import (
 
 const testImage = "registry.example.com/scraper:1.2.3"
 
-func newTestDTP(name, namespace string) *prometheusmonitoring.PrometheusMonitoring {
+func newTestPM(name, namespace string) *prometheusmonitoring.PrometheusMonitoring {
 	return &prometheusmonitoring.PrometheusMonitoring{
 		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace, UID: types.UID("pm-uid")},
 		Spec: prometheusmonitoring.PrometheusMonitoringSpec{
@@ -75,7 +75,7 @@ func createErrorClient(createErr error) client.Client {
 // that the scraper wires itself to the right condition type, component name and rollout check.
 func TestReconcileCondition(t *testing.T) {
 	t.Run("freshly created deployment with no ready replicas -> pending", func(t *testing.T) {
-		pm := newTestDTP("pm", "dynatrace")
+		pm := newTestPM("pm", "dynatrace")
 		pm.Spec.Scraper.Image = testImage
 		pm.Spec.Scraper.Replicas = new(int32(2))
 
@@ -90,7 +90,7 @@ func TestReconcileCondition(t *testing.T) {
 	})
 
 	t.Run("reconcile error -> error, with unwrapped message", func(t *testing.T) {
-		pm := newTestDTP("pm", "dynatrace")
+		pm := newTestPM("pm", "dynatrace")
 		pm.Spec.Scraper.Image = testImage
 
 		boom := errors.New("boom")
@@ -107,7 +107,7 @@ func TestReconcileCondition(t *testing.T) {
 
 func TestReconcileConfigMap(t *testing.T) {
 	t.Run("apply spec", func(t *testing.T) {
-		pm := newTestDTP("pm", "dynatrace")
+		pm := newTestPM("pm", "dynatrace")
 		s := newTestScope(pm)
 		c := fake.NewClient()
 		r := &Reconciler{Client: c}
@@ -124,7 +124,7 @@ func TestReconcileConfigMap(t *testing.T) {
 	})
 
 	t.Run("merge labels", func(t *testing.T) {
-		pm := newTestDTP("pm", "dynatrace")
+		pm := newTestPM("pm", "dynatrace")
 		s := newTestScope(pm)
 		existing := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{
 			Name:      s.Spec.GetDeploymentName(),
@@ -144,14 +144,14 @@ func TestReconcileConfigMap(t *testing.T) {
 
 	t.Run("propagate error", func(t *testing.T) {
 		expectErr := errors.New("boom")
-		err := (&Reconciler{Client: createErrorClient(expectErr)}).reconcileConfigMap(t.Context(), newTestScope(newTestDTP("pm", "dynatrace")))
+		err := (&Reconciler{Client: createErrorClient(expectErr)}).reconcileConfigMap(t.Context(), newTestScope(newTestPM("pm", "dynatrace")))
 		require.ErrorIs(t, err, expectErr)
 	})
 }
 
 func TestReconcileDeployment(t *testing.T) {
 	t.Run("unresolvable image", func(t *testing.T) {
-		pm := newTestDTP("pm", "dynatrace")
+		pm := newTestPM("pm", "dynatrace")
 		s := newTestScope(pm)
 		// No explicit image on the spec, so the reconciler falls back to the registry.
 		imgClient := imagemock.NewClient(t)
@@ -170,7 +170,7 @@ func TestReconcileDeployment(t *testing.T) {
 	})
 
 	t.Run("apply spec", func(t *testing.T) {
-		pm := newTestDTP("pm", "dynatrace")
+		pm := newTestPM("pm", "dynatrace")
 		pm.Spec.Scraper.Image = testImage
 		pm.Spec.Scraper.ImagePullPolicy = corev1.PullAlways
 		pm.Spec.Scraper.Replicas = new(int32(3))
@@ -195,7 +195,7 @@ func TestReconcileDeployment(t *testing.T) {
 	})
 
 	t.Run("records the resolved image in the status", func(t *testing.T) {
-		pm := newTestDTP("pm", "dynatrace")
+		pm := newTestPM("pm", "dynatrace")
 		pm.Spec.Scraper.Image = testImage
 		s := newTestScope(pm)
 		r := &Reconciler{Client: fake.NewClient()}
@@ -206,7 +206,7 @@ func TestReconcileDeployment(t *testing.T) {
 	})
 
 	t.Run("propagate error", func(t *testing.T) {
-		pm := newTestDTP("pm", "dynatrace")
+		pm := newTestPM("pm", "dynatrace")
 		pm.Spec.Scraper.Image = testImage
 
 		expectErr := errors.New("boom")
@@ -217,13 +217,13 @@ func TestReconcileDeployment(t *testing.T) {
 
 func TestBuildArgs(t *testing.T) {
 	t.Run("config flag only when no user args", func(t *testing.T) {
-		s := newTestScope(newTestDTP("pm", "dynatrace"))
+		s := newTestScope(newTestPM("pm", "dynatrace"))
 
 		assert.Equal(t, []string{"--config=/conf/scraper.yaml"}, buildArgs(s))
 	})
 
 	t.Run("user args are appended after the config flag", func(t *testing.T) {
-		pm := newTestDTP("pm", "dynatrace")
+		pm := newTestPM("pm", "dynatrace")
 		pm.Spec.Scraper.Args = []string{"--feature-gates=foo", "--set=bar"}
 		s := newTestScope(pm)
 
@@ -231,7 +231,7 @@ func TestBuildArgs(t *testing.T) {
 	})
 
 	t.Run("user args are sanitized", func(t *testing.T) {
-		pm := newTestDTP("pm", "dynatrace")
+		pm := newTestPM("pm", "dynatrace")
 		pm.Spec.Scraper.Args = []string{"--ok=1\nrm -rf /"}
 		s := newTestScope(pm)
 
@@ -243,7 +243,7 @@ func TestBuildArgs(t *testing.T) {
 
 func TestBuildEnv(t *testing.T) {
 	t.Run("pod name and ip are exposed for the collector config", func(t *testing.T) {
-		envs := buildEnv(newTestScope(newTestDTP("pm", "dynatrace")))
+		envs := buildEnv(newTestScope(newTestPM("pm", "dynatrace")))
 
 		assert.Equal(t, "metadata.name", findEnv(t, envs, "MY_POD_NAME").ValueFrom.FieldRef.FieldPath)
 		assert.Equal(t, "status.podIP", findEnv(t, envs, "MY_POD_IP").ValueFrom.FieldRef.FieldPath)
@@ -266,7 +266,7 @@ func findEnv(t *testing.T, envs []corev1.EnvVar, name string) corev1.EnvVar {
 
 func TestBuildVolumes(t *testing.T) {
 	t.Run("config volume only", func(t *testing.T) {
-		s := newTestScope(newTestDTP("pm", "dynatrace"))
+		s := newTestScope(newTestPM("pm", "dynatrace"))
 
 		volumes := buildVolumes(s)
 		mounts := buildVolumeMounts()
@@ -280,7 +280,7 @@ func TestBuildVolumes(t *testing.T) {
 }
 
 func TestMutateDeploymentIsIdempotent(t *testing.T) {
-	pm := newTestDTP("pm", "dynatrace")
+	pm := newTestPM("pm", "dynatrace")
 	pm.Spec.Scraper.Image = testImage
 	s := newTestScope(pm)
 

@@ -30,7 +30,7 @@ func newTestDynaKube() *dynakube.DynaKube {
 
 func TestReconcileStatefulSet(t *testing.T) {
 	t.Run("no imageRef set and fleet resolve fails with missing image", func(t *testing.T) {
-		pm := newTestDTP("pm", "dynatrace")
+		pm := newTestPM("pm", "dynatrace")
 		s := newTestScopeWithDynaKube(pm, newTestDynaKube())
 		imageClient := imagemock.NewClient(t)
 		imageClient.EXPECT().GetComponentLatestInfo(mock.Anything, mock.Anything, mock.Anything).Return(nil, errors.New("no image found"))
@@ -48,7 +48,7 @@ func TestReconcileStatefulSet(t *testing.T) {
 	})
 
 	t.Run("resolves image from fleet API when no imageRef set", func(t *testing.T) {
-		pm := newTestDTP("pm", "dynatrace")
+		pm := newTestPM("pm", "dynatrace")
 		s := newTestScopeWithDynaKube(pm, newTestDynaKube())
 		imageClient := imagemock.NewClient(t)
 		imageClient.EXPECT().GetComponentLatestInfo(mock.Anything, image.Gateway, "").Return(&image.Info{URI: "registry.example.com/fleet-gateway:latest"}, nil)
@@ -66,7 +66,7 @@ func TestReconcileStatefulSet(t *testing.T) {
 	})
 
 	t.Run("resolves image from fleet API with publicRegistryOverride", func(t *testing.T) {
-		pm := newTestDTP("pm", "dynatrace")
+		pm := newTestPM("pm", "dynatrace")
 		pm.Spec.PublicRegistryOverride = "custom.registry.example.com"
 		s := newTestScopeWithDynaKube(pm, newTestDynaKube())
 		imageClient := imagemock.NewClient(t)
@@ -85,7 +85,7 @@ func TestReconcileStatefulSet(t *testing.T) {
 	})
 
 	t.Run("apply spec", func(t *testing.T) {
-		pm := newTestDTP("pm", "dynatrace")
+		pm := newTestPM("pm", "dynatrace")
 		pm.Spec.Gateway.Image = "registry.example.com/gateway:1.2.3"
 		pm.Spec.Gateway.ImagePullPolicy = corev1.PullAlways
 		pm.Spec.Gateway.Replicas = new(int32(3))
@@ -113,7 +113,7 @@ func TestReconcileStatefulSet(t *testing.T) {
 	})
 
 	t.Run("preserve existing replicas", func(t *testing.T) {
-		pm := newTestDTP("pm", "dynatrace")
+		pm := newTestPM("pm", "dynatrace")
 		pm.Spec.Gateway.Image = "img:1"
 		s := newTestScopeWithDynaKube(pm, newTestDynaKube())
 		existing := &appsv1.StatefulSet{
@@ -131,7 +131,7 @@ func TestReconcileStatefulSet(t *testing.T) {
 	})
 
 	t.Run("propagate error", func(t *testing.T) {
-		pm := newTestDTP("pm", "dynatrace")
+		pm := newTestPM("pm", "dynatrace")
 		pm.Spec.Gateway.Image = "img:1"
 		expectErr := errors.New("boom")
 		r := &Reconciler{Client: createErrorClient(expectErr)}

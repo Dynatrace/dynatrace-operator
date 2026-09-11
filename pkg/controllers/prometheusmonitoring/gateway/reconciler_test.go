@@ -27,7 +27,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
 
-func newTestDTP(name, namespace string) *prometheusmonitoring.PrometheusMonitoring {
+func newTestPM(name, namespace string) *prometheusmonitoring.PrometheusMonitoring {
 	return &prometheusmonitoring.PrometheusMonitoring{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace, UID: types.UID("pm-uid")}}
 }
 
@@ -48,7 +48,7 @@ func newTestScopeWithDynaKube(pm *prometheusmonitoring.PrometheusMonitoring, dk 
 // that the gateway wires itself to the right condition type, component name and rollout check.
 func TestReconcileCondition(t *testing.T) {
 	t.Run("freshly created statefulset with no ready replicas -> pending", func(t *testing.T) {
-		pm := newTestDTP("pm", "dynatrace")
+		pm := newTestPM("pm", "dynatrace")
 		pm.Spec.Gateway.Image = "registry.example.com/gateway:1.2.3"
 		pm.Spec.Gateway.Replicas = new(int32(2))
 
@@ -66,7 +66,7 @@ func TestReconcileCondition(t *testing.T) {
 	})
 
 	t.Run("reconcile error -> error, with unwrapped message", func(t *testing.T) {
-		pm := newTestDTP("pm", "dynatrace")
+		pm := newTestPM("pm", "dynatrace")
 		pm.Spec.Gateway.Image = "registry.example.com/gateway:1.2.3"
 
 		boom := errors.New("boom")
@@ -110,7 +110,7 @@ func TestBuildGatewayConfigData(t *testing.T) {
 
 func TestReconcileConfigMap(t *testing.T) {
 	t.Run("apply spec", func(t *testing.T) {
-		pm := newTestDTP("pm", "dynatrace")
+		pm := newTestPM("pm", "dynatrace")
 		dk := &dynakube.DynaKube{}
 		dk.Spec.APIURL = "https://abc12345.live.dynatrace.com/api"
 		s := newTestScopeWithDynaKube(pm, dk)
@@ -129,7 +129,7 @@ func TestReconcileConfigMap(t *testing.T) {
 	})
 
 	t.Run("resource attributes are rendered into the configmap", func(t *testing.T) {
-		pm := newTestDTP("pm", "dynatrace")
+		pm := newTestPM("pm", "dynatrace")
 		dk := &dynakube.DynaKube{}
 		dk.Spec.APIURL = "https://abc12345.live.dynatrace.com/api"
 		dk.Spec.ResourceAttributes = map[string]string{"favorite.coffee": "espresso", "deploy.mood": "yolo"}
@@ -145,7 +145,7 @@ func TestReconcileConfigMap(t *testing.T) {
 	})
 
 	t.Run("changing resource attributes changes the config hash, triggering a rollout", func(t *testing.T) {
-		pm := newTestDTP("pm", "dynatrace")
+		pm := newTestPM("pm", "dynatrace")
 		dk := &dynakube.DynaKube{}
 		dk.Spec.APIURL = "https://abc12345.live.dynatrace.com/api"
 		s := newTestScopeWithDynaKube(pm, dk)
@@ -162,7 +162,7 @@ func TestReconcileConfigMap(t *testing.T) {
 	})
 
 	t.Run("merge labels", func(t *testing.T) {
-		pm := newTestDTP("pm", "dynatrace")
+		pm := newTestPM("pm", "dynatrace")
 		s := newTestScope(pm)
 		existing := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{
 			Name:      s.Spec.GetStatefulSetName(),
@@ -182,14 +182,14 @@ func TestReconcileConfigMap(t *testing.T) {
 
 	t.Run("propagate error", func(t *testing.T) {
 		expectErr := errors.New("boom")
-		err := (&Reconciler{Client: createErrorClient(expectErr)}).reconcileConfigMap(t.Context(), newTestScope(newTestDTP("pm", "dynatrace")))
+		err := (&Reconciler{Client: createErrorClient(expectErr)}).reconcileConfigMap(t.Context(), newTestScope(newTestPM("pm", "dynatrace")))
 		require.ErrorIs(t, err, expectErr)
 	})
 }
 
 func TestReconcileService(t *testing.T) {
 	t.Run("apply spec", func(t *testing.T) {
-		pm := newTestDTP("pm", "dynatrace")
+		pm := newTestPM("pm", "dynatrace")
 		s := newTestScope(pm)
 		c := fake.NewClient()
 		r := &Reconciler{Client: c}
@@ -203,7 +203,7 @@ func TestReconcileService(t *testing.T) {
 	})
 
 	t.Run("merge labels", func(t *testing.T) {
-		pm := newTestDTP("pm", "dynatrace")
+		pm := newTestPM("pm", "dynatrace")
 		s := newTestScope(pm)
 		existing := &corev1.Service{ObjectMeta: metav1.ObjectMeta{
 			Name:      s.Spec.GetStatefulSetName(),
@@ -223,7 +223,7 @@ func TestReconcileService(t *testing.T) {
 
 	t.Run("propagate error", func(t *testing.T) {
 		expectErr := errors.New("boom")
-		err := (&Reconciler{Client: createErrorClient(expectErr)}).reconcileService(t.Context(), newTestScope(newTestDTP("pm", "dynatrace")))
+		err := (&Reconciler{Client: createErrorClient(expectErr)}).reconcileService(t.Context(), newTestScope(newTestPM("pm", "dynatrace")))
 		require.ErrorIs(t, err, expectErr)
 	})
 }

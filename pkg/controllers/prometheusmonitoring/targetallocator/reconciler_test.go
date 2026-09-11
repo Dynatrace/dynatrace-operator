@@ -33,7 +33,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
 
-func newTestDTP(name, namespace string) *prometheusmonitoring.PrometheusMonitoring {
+func newTestPM(name, namespace string) *prometheusmonitoring.PrometheusMonitoring {
 	return &prometheusmonitoring.PrometheusMonitoring{
 		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace, UID: types.UID("pm-uid")},
 		Spec: prometheusmonitoring.PrometheusMonitoringSpec{
@@ -67,7 +67,7 @@ func newTestScope(pm *prometheusmonitoring.PrometheusMonitoring) *reconcileScope
 // rollout check.
 func TestReconcileCondition(t *testing.T) {
 	t.Run("freshly created deployment with no ready replicas -> pending", func(t *testing.T) {
-		pm := newTestDTP("pm", "dynatrace")
+		pm := newTestPM("pm", "dynatrace")
 		pm.Spec.TargetAllocator.Image = "registry.example.com/target-allocator:1.2.3"
 		pm.Spec.TargetAllocator.Replicas = new(int32(2))
 
@@ -82,7 +82,7 @@ func TestReconcileCondition(t *testing.T) {
 	})
 
 	t.Run("reconcile error -> error, with unwrapped message", func(t *testing.T) {
-		pm := newTestDTP("pm", "dynatrace")
+		pm := newTestPM("pm", "dynatrace")
 		pm.Spec.TargetAllocator.Image = "registry.example.com/target-allocator:1.2.3"
 
 		boom := errors.New("boom")
@@ -105,7 +105,7 @@ func TestReconcileCondition(t *testing.T) {
 
 func TestReconcileConfigMap(t *testing.T) {
 	t.Run("apply spec", func(t *testing.T) {
-		pm := newTestDTP("pm", "dynatrace")
+		pm := newTestPM("pm", "dynatrace")
 		pm.Spec.TargetAllocator.ScrapeInterval = metav1.Duration{Duration: 5 * time.Minute}
 		pm.Spec.TargetAllocator.CustomResourceNamespaceSelector = &metav1.LabelSelector{MatchLabels: map[string]string{"bar": "foo"}}
 		pm.Spec.TargetAllocator.CustomResourceSelector = &metav1.LabelSelector{MatchLabels: map[string]string{"foo": "bar"}}
@@ -125,7 +125,7 @@ func TestReconcileConfigMap(t *testing.T) {
 	})
 
 	t.Run("merge labels", func(t *testing.T) {
-		pm := newTestDTP("pm", "dynatrace")
+		pm := newTestPM("pm", "dynatrace")
 		s := newTestScope(pm)
 		existing := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{
 			Name:      s.Spec.GetDeploymentName(),
@@ -145,14 +145,14 @@ func TestReconcileConfigMap(t *testing.T) {
 
 	t.Run("propagate error", func(t *testing.T) {
 		expectErr := errors.New("boom")
-		err := (&Reconciler{Client: createErrorClient(expectErr)}).reconcileConfigMap(t.Context(), newTestScope(newTestDTP("pm", "dynatrace")))
+		err := (&Reconciler{Client: createErrorClient(expectErr)}).reconcileConfigMap(t.Context(), newTestScope(newTestPM("pm", "dynatrace")))
 		require.ErrorIs(t, err, expectErr)
 	})
 }
 
 func TestReconcileDeployment(t *testing.T) {
 	t.Run("fleet resolve fails when no imageRef set", func(t *testing.T) {
-		pm := newTestDTP("pm", "dynatrace")
+		pm := newTestPM("pm", "dynatrace")
 		s := newTestScope(pm)
 		imageClient := imagemock.NewClient(t)
 		imageClient.EXPECT().GetComponentLatestInfo(mock.Anything, mock.Anything, mock.Anything).Return(nil, errors.New("no image found"))
@@ -170,7 +170,7 @@ func TestReconcileDeployment(t *testing.T) {
 	})
 
 	t.Run("resolves image from fleet API when no imageRef set", func(t *testing.T) {
-		pm := newTestDTP("pm", "dynatrace")
+		pm := newTestPM("pm", "dynatrace")
 		s := newTestScope(pm)
 		imageClient := imagemock.NewClient(t)
 		imageClient.EXPECT().GetComponentLatestInfo(mock.Anything, image.TargetAllocator, "").Return(&image.Info{URI: "registry.example.com/fleet-ta:latest"}, nil)
@@ -188,7 +188,7 @@ func TestReconcileDeployment(t *testing.T) {
 	})
 
 	t.Run("resolves image from fleet API with publicRegistryOverride", func(t *testing.T) {
-		pm := newTestDTP("pm", "dynatrace")
+		pm := newTestPM("pm", "dynatrace")
 		pm.Spec.PublicRegistryOverride = "custom.registry.example.com"
 		s := newTestScope(pm)
 		imageClient := imagemock.NewClient(t)
@@ -207,7 +207,7 @@ func TestReconcileDeployment(t *testing.T) {
 	})
 
 	t.Run("apply spec", func(t *testing.T) {
-		pm := newTestDTP("pm", "dynatrace")
+		pm := newTestPM("pm", "dynatrace")
 		pm.Spec.TargetAllocator.Image = "registry.example.com/target-allocator:1.2.3"
 		pm.Spec.TargetAllocator.ImagePullPolicy = corev1.PullAlways
 		pm.Spec.TargetAllocator.Replicas = new(int32(3))
@@ -232,7 +232,7 @@ func TestReconcileDeployment(t *testing.T) {
 	})
 
 	t.Run("preserve existing replicas", func(t *testing.T) {
-		pm := newTestDTP("pm", "dynatrace")
+		pm := newTestPM("pm", "dynatrace")
 		pm.Spec.TargetAllocator.Image = "img:1"
 		s := newTestScope(pm)
 		existing := &appsv1.Deployment{
@@ -250,7 +250,7 @@ func TestReconcileDeployment(t *testing.T) {
 	})
 
 	t.Run("propagate error", func(t *testing.T) {
-		pm := newTestDTP("pm", "dynatrace")
+		pm := newTestPM("pm", "dynatrace")
 		pm.Spec.TargetAllocator.Image = "img:1"
 		expectErr := errors.New("boom")
 		r := &Reconciler{Client: createErrorClient(expectErr)}
@@ -263,7 +263,7 @@ func TestReconcileDeployment(t *testing.T) {
 
 func TestReconcileService(t *testing.T) {
 	t.Run("apply spec", func(t *testing.T) {
-		pm := newTestDTP("pm", "dynatrace")
+		pm := newTestPM("pm", "dynatrace")
 		s := newTestScope(pm)
 		c := fake.NewClient()
 		r := &Reconciler{Client: c}
@@ -277,7 +277,7 @@ func TestReconcileService(t *testing.T) {
 	})
 
 	t.Run("merge labels", func(t *testing.T) {
-		pm := newTestDTP("pm", "dynatrace")
+		pm := newTestPM("pm", "dynatrace")
 		s := newTestScope(pm)
 		existing := &corev1.Service{ObjectMeta: metav1.ObjectMeta{
 			Name:      s.Spec.GetDeploymentName(),
@@ -297,7 +297,7 @@ func TestReconcileService(t *testing.T) {
 
 	t.Run("propagate error", func(t *testing.T) {
 		expectErr := errors.New("boom")
-		err := (&Reconciler{Client: createErrorClient(expectErr)}).reconcileService(t.Context(), newTestScope(newTestDTP("pm", "dynatrace")))
+		err := (&Reconciler{Client: createErrorClient(expectErr)}).reconcileService(t.Context(), newTestScope(newTestPM("pm", "dynatrace")))
 		require.ErrorIs(t, err, expectErr)
 	})
 }

@@ -31,7 +31,7 @@ import (
 
 const (
 	integrationNamespace   = "dynatrace"
-	integrationDTPName     = "lifecycle"
+	integrationPMName      = "lifecycle"
 	integrationDynaKubeRef = "dk"
 	integrationImage       = "registry.example.com/gateway:1.2.3"
 )
@@ -50,7 +50,7 @@ func TestReconcileLifecycle(t *testing.T) {
 	integrationtests.CreateNamespace(t, clt, integrationNamespace)
 
 	pm := &prometheusmonitoring.PrometheusMonitoring{
-		ObjectMeta: metav1.ObjectMeta{Name: integrationDTPName, Namespace: integrationNamespace},
+		ObjectMeta: metav1.ObjectMeta{Name: integrationPMName, Namespace: integrationNamespace},
 		Spec:       prometheusmonitoring.PrometheusMonitoringSpec{DynaKubeRef: integrationDynaKubeRef},
 	}
 	integrationtests.CreateKubernetesObject(t, clt, pm)
