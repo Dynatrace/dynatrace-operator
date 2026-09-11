@@ -17,6 +17,13 @@ tests:
       - hasDocuments:
           count: 0
 
+  - it: Prometheus Operator CRDs should be absent when prometheus.installCRDs is false
+    set:
+      experimental.enablePrometheus: true
+    asserts:
+      - hasDocuments:
+          count: 0
+
   - it: Prometheus Operator CRDs should render when enabled
     set:
       prometheus.installCRDs: true
