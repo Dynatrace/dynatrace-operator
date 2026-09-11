@@ -274,16 +274,16 @@ func newPrometheusMonitoringFromDynaKubeMapper(c client.Client) handler.MapFunc 
 			return nil
 		}
 
-		dtpList := &prometheusmonitoring.PrometheusMonitoringList{}
-		if err := c.List(ctx, dtpList, client.InNamespace(dk.Namespace), client.MatchingFields{"spec.dynaKubeRef": dk.Name}); err != nil {
+		pmList := &prometheusmonitoring.PrometheusMonitoringList{}
+		if err := c.List(ctx, pmList, client.InNamespace(dk.Namespace), client.MatchingFields{"spec.dynaKubeRef": dk.Name}); err != nil {
 			log.Error(err, "failed listing prometheusmonitoring objects", "dynaKubeRef", dk.Name)
 
 			return nil
 		}
 
-		reqs := make([]ctrl.Request, len(dtpList.Items))
-		for i := range dtpList.Items {
-			reqs[i].NamespacedName = client.ObjectKeyFromObject(&dtpList.Items[i])
+		reqs := make([]ctrl.Request, len(pmList.Items))
+		for i := range pmList.Items {
+			reqs[i].NamespacedName = client.ObjectKeyFromObject(&pmList.Items[i])
 		}
 
 		return reqs
