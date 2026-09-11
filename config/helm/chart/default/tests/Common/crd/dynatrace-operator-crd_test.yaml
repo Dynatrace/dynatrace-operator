@@ -1,11 +1,11 @@
 # Copyright Dynatrace LLC
 # SPDX-License-Identifier: Apache-2.0
 
-suite: test DtPrometheus CRD deployment
+suite: test PrometheusMonitoring CRD deployment
 templates:
   - Common/crd/dynatrace-operator-prometheusmonitoring-crd.yaml
 tests:
-  - it: DtPrometheus CRD should render when installCRD is true
+  - it: PrometheusMonitoring CRD should render when installCRD is true
     set:
       installCRD: true
       experimental.enablePrometheus: true
@@ -25,7 +25,7 @@ tests:
       - hasDocuments:
           count: 0
 
-  - it: DtPrometheus CRD should be absent with default values
+  - it: PrometheusMonitoring CRD should be absent with default values
     asserts:
       - hasDocuments:
           count: 0
