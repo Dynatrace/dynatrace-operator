@@ -189,7 +189,7 @@ func runUpdatePhase(t *testing.T, deps *lifecycleDeps) {
 		imgClient := imagemock.NewClient(t)
 		imgClient.EXPECT().GetComponentLatestInfo(mock.Anything, mock.Anything, mock.Anything).Return(nil, errors.New("no scraper image available")).Maybe()
 		deps.pm.Spec.Scraper.UpdateStrategy = appsv1.DeploymentStrategy{Type: appsv1.RecreateDeploymentStrategyType}
-		require.NoError(t, deps.reconciler.Reconcile(t.Context(), deps.dtp, deps.dk, imgClient))
+		require.NoError(t, deps.reconciler.Reconcile(t.Context(), deps.pm, deps.dk, imgClient))
 
 		deploy := getDeployment(t, deps)
 		assert.Equal(t, appsv1.RecreateDeploymentStrategyType, deploy.Spec.Strategy.Type)
