@@ -43,6 +43,15 @@ func DisableAttachControlPlaneOutput() TestEnvOpt {
 }
 
 func SetupTestEnvironment(tb testing.TB, opts ...TestEnvOpt) client.Client {
+	clt, _ := SetupTestEnvironmentWithConfig(tb, opts...)
+
+	return clt
+}
+
+// SetupTestEnvironmentWithConfig is [SetupTestEnvironment] that additionally returns the
+// rest.Config of the started control plane, for tests that need to build a second client with
+// different credentials (for example an impersonating one to check RBAC).
+func SetupTestEnvironmentWithConfig(tb testing.TB, opts ...TestEnvOpt) (client.Client, *rest.Config) {
 	setupBaseTestEnv(tb)
 
 	testEnv.AttachControlPlaneOutput = true
@@ -70,7 +79,7 @@ func SetupTestEnvironment(tb testing.TB, opts ...TestEnvOpt) client.Client {
 		tb.Fatal(err)
 	}
 
-	return clt
+	return clt, cfg
 }
 
 func SetupWebhookTestEnvironment(t *testing.T, webhookOptions envtest.WebhookInstallOptions, webhookSetup func(ctrl.Manager) error, configOpts ...func(*rest.Config)) client.Client {
