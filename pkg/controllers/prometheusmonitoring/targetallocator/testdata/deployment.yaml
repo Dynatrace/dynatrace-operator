@@ -22,7 +22,11 @@ spec:
       app.kubernetes.io/instance: otel-allocator
       app.kubernetes.io/managed-by: dynatrace-operator
       app.kubernetes.io/name: opentelemetry-target-allocator
-  strategy: {}
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 0
+    type: RollingUpdate
   template:
     metadata:
       annotations:

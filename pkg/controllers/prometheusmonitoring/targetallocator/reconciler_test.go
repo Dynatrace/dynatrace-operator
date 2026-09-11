@@ -29,6 +29,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
@@ -217,6 +218,10 @@ func TestReconcileDeployment(t *testing.T) {
 		pm.Spec.TargetAllocator.Annotations = map[string]string{"custom": "annotation"}
 		pm.Spec.TargetAllocator.Labels = map[string]string{"custom": "label"}
 		pm.Spec.TargetAllocator.Args = []string{"--foo=bar"}
+		maxUnavailable := intstr.FromInt(0)
+		pm.Spec.TargetAllocator.UpdateStrategy = appsv1.DeploymentStrategy{
+			RollingUpdate: &appsv1.RollingUpdateDeployment{MaxUnavailable: &maxUnavailable},
+		}
 		s := newTestScope(pm)
 		s.ConfigMapHash = "deadbeef"
 		c := fake.NewClient()
@@ -247,30 +252,6 @@ func TestReconcileDeployment(t *testing.T) {
 		deploy := &appsv1.Deployment{}
 		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetDeploymentName(), Namespace: pm.Namespace}, deploy))
 		assert.Equal(t, new(int32(5)), deploy.Spec.Replicas)
-	})
-
-	t.Run("apply update strategy", func(t *testing.T) {
-		dtp := newTestDTP("dtp", "dynatrace")
-		dtp.Spec.TargetAllocator.Image = "img:1"
-		dtp.Spec.TargetAllocator.UpdateStrategy = appsv1.DeploymentStrategy{Type: appsv1.RecreateDeploymentStrategyType}
-		s := newTestScope(dtp)
-		existing := &appsv1.Deployment{
-			ObjectMeta: metav1.ObjectMeta{Name: s.Spec.GetDeploymentName(), Namespace: dtp.Namespace},
-			Spec: appsv1.DeploymentSpec{
-				Strategy: appsv1.DeploymentStrategy{
-					Type:          appsv1.RollingUpdateDeploymentStrategyType,
-					RollingUpdate: &appsv1.RollingUpdateDeployment{},
-				},
-			},
-		}
-		c := fake.NewClient(existing)
-		r := &Reconciler{Client: c}
-
-		require.NoError(t, r.reconcileDeployment(t.Context(), s))
-
-		deploy := &appsv1.Deployment{}
-		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetDeploymentName(), Namespace: dtp.Namespace}, deploy))
-		assert.Equal(t, dtp.Spec.TargetAllocator.UpdateStrategy, deploy.Spec.Strategy)
 	})
 
 	t.Run("propagate error", func(t *testing.T) {

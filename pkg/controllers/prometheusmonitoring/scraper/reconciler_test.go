@@ -180,6 +180,7 @@ func TestReconcileDeployment(t *testing.T) {
 		pm.Spec.Scraper.Annotations = map[string]string{"custom": "annotation"}
 		pm.Spec.Scraper.Labels = map[string]string{"custom": "label"}
 		pm.Spec.Scraper.Args = []string{"--foo=bar"}
+		pm.Spec.Scraper.UpdateStrategy = appsv1.DeploymentStrategy{Type: appsv1.RecreateDeploymentStrategyType}
 		s := newTestScope(pm)
 		s.ConfigMapHash = "deadbeef"
 		c := fake.NewClient()
@@ -203,30 +204,6 @@ func TestReconcileDeployment(t *testing.T) {
 		require.NoError(t, r.reconcileDeployment(t.Context(), s))
 
 		assert.Equal(t, testImage, pm.Status.Scraper.ResolvedImage)
-	})
-
-	t.Run("apply update strategy", func(t *testing.T) {
-		dtp := newTestDTP("dtp", "dynatrace")
-		dtp.Spec.Scraper.Image = testImage
-		dtp.Spec.Scraper.UpdateStrategy = appsv1.DeploymentStrategy{Type: appsv1.RecreateDeploymentStrategyType}
-		s := newTestScope(dtp)
-		existing := &appsv1.Deployment{
-			ObjectMeta: metav1.ObjectMeta{Name: s.Spec.GetDeploymentName(), Namespace: dtp.Namespace},
-			Spec: appsv1.DeploymentSpec{
-				Strategy: appsv1.DeploymentStrategy{
-					Type:          appsv1.RollingUpdateDeploymentStrategyType,
-					RollingUpdate: &appsv1.RollingUpdateDeployment{},
-				},
-			},
-		}
-		c := fake.NewClient(existing)
-		r := &Reconciler{Client: c}
-
-		require.NoError(t, r.reconcileDeployment(t.Context(), s))
-
-		deploy := &appsv1.Deployment{}
-		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetDeploymentName(), Namespace: dtp.Namespace}, deploy))
-		assert.Equal(t, dtp.Spec.Scraper.UpdateStrategy, deploy.Spec.Strategy)
 	})
 
 	t.Run("propagate error", func(t *testing.T) {
