@@ -1,0 +1,58 @@
+# Copyright Dynatrace LLC
+# SPDX-License-Identifier: Apache-2.0
+
+suite: test rollout of the Prometheus Operator CRDs
+templates:
+  - Common/crd/prometheus/*
+tests:
+  - it: Prometheus Operator CRDs should be absent with default values
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: Prometheus Operator CRDs should be absent when experimental.enablePrometheus is false
+    set:
+      prometheus.installCRDs: true
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: Prometheus Operator CRDs should render when enabled
+    set:
+      prometheus.installCRDs: true
+      experimental.enablePrometheus: true
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: CustomResourceDefinition
+      - template: Common/crd/prometheus/monitoring.coreos.com_podmonitors.yaml
+        equal:
+          path: metadata.name
+          value: podmonitors.monitoring.coreos.com
+      - template: Common/crd/prometheus/monitoring.coreos.com_probes.yaml
+        equal:
+          path: metadata.name
+          value: probes.monitoring.coreos.com
+      - template: Common/crd/prometheus/monitoring.coreos.com_scrapeconfigs.yaml
+        equal:
+          path: metadata.name
+          value: scrapeconfigs.monitoring.coreos.com
+      - template: Common/crd/prometheus/monitoring.coreos.com_servicemonitors.yaml
+        equal:
+          path: metadata.name
+          value: servicemonitors.monitoring.coreos.com
+      # Safety net for any CRD file the glob above picks up that isn't covered
+      # by one of the exact checks yet (e.g. a newly added upstream CRD).
+      - matchRegex:
+          path: metadata.name
+          pattern: ^(podmonitors|probes|scrapeconfigs|servicemonitors)\.monitoring\.coreos\.com$
+
+  - it: Prometheus Operator CRDs should be independent of the global installCRD switch
+    set:
+      prometheus.installCRDs: true
+      experimental.enablePrometheus: true
+      installCRD: false
+    asserts:
+      - hasDocuments:
+          count: 1
