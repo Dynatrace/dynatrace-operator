@@ -53,8 +53,8 @@ func (_m *mockTargetAllocatorReconciler) EXPECT() *mockTargetAllocatorReconciler
 }
 
 // Reconcile provides a mock function for the type mockTargetAllocatorReconciler
-func (_mock *mockTargetAllocatorReconciler) Reconcile(ctx context.Context, dtp *prometheusmonitoring.PrometheusMonitoring, dk *dynakube.DynaKube, imageClient image.Client) error {
-	ret := _mock.Called(ctx, dtp, dk, imageClient)
+func (_mock *mockTargetAllocatorReconciler) Reconcile(ctx context.Context, pm *prometheusmonitoring.PrometheusMonitoring, dk *dynakube.DynaKube, imageClient image.Client) error {
+	ret := _mock.Called(ctx, pm, dk, imageClient)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Reconcile")
@@ -62,7 +62,7 @@ func (_mock *mockTargetAllocatorReconciler) Reconcile(ctx context.Context, dtp *
 
 	var r0 error
 	if returnFunc, ok := ret.Get(0).(func(context.Context, *prometheusmonitoring.PrometheusMonitoring, *dynakube.DynaKube, image.Client) error); ok {
-		r0 = returnFunc(ctx, dtp, dk, imageClient)
+		r0 = returnFunc(ctx, pm, dk, imageClient)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -76,14 +76,14 @@ type mockTargetAllocatorReconciler_Reconcile_Call struct {
 
 // Reconcile is a helper method to define mock.On call
 //   - ctx context.Context
-//   - dtp *prometheusmonitoring.PrometheusMonitoring
+//   - pm *prometheusmonitoring.PrometheusMonitoring
 //   - dk *dynakube.DynaKube
 //   - imageClient image.Client
-func (_e *mockTargetAllocatorReconciler_Expecter) Reconcile(ctx any, dtp any, dk any, imageClient any) *mockTargetAllocatorReconciler_Reconcile_Call {
-	return &mockTargetAllocatorReconciler_Reconcile_Call{Call: _e.mock.On("Reconcile", ctx, dtp, dk, imageClient)}
+func (_e *mockTargetAllocatorReconciler_Expecter) Reconcile(ctx any, pm any, dk any, imageClient any) *mockTargetAllocatorReconciler_Reconcile_Call {
+	return &mockTargetAllocatorReconciler_Reconcile_Call{Call: _e.mock.On("Reconcile", ctx, pm, dk, imageClient)}
 }
 
-func (_c *mockTargetAllocatorReconciler_Reconcile_Call) Run(run func(ctx context.Context, dtp *prometheusmonitoring.PrometheusMonitoring, dk *dynakube.DynaKube, imageClient image.Client)) *mockTargetAllocatorReconciler_Reconcile_Call {
+func (_c *mockTargetAllocatorReconciler_Reconcile_Call) Run(run func(ctx context.Context, pm *prometheusmonitoring.PrometheusMonitoring, dk *dynakube.DynaKube, imageClient image.Client)) *mockTargetAllocatorReconciler_Reconcile_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -116,7 +116,7 @@ func (_c *mockTargetAllocatorReconciler_Reconcile_Call) Return(err error) *mockT
 	return _c
 }
 
-func (_c *mockTargetAllocatorReconciler_Reconcile_Call) RunAndReturn(run func(ctx context.Context, dtp *prometheusmonitoring.PrometheusMonitoring, dk *dynakube.DynaKube, imageClient image.Client) error) *mockTargetAllocatorReconciler_Reconcile_Call {
+func (_c *mockTargetAllocatorReconciler_Reconcile_Call) RunAndReturn(run func(ctx context.Context, pm *prometheusmonitoring.PrometheusMonitoring, dk *dynakube.DynaKube, imageClient image.Client) error) *mockTargetAllocatorReconciler_Reconcile_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -158,8 +158,8 @@ func (_m *mockGatewayReconciler) EXPECT() *mockGatewayReconciler_Expecter {
 }
 
 // Reconcile provides a mock function for the type mockGatewayReconciler
-func (_mock *mockGatewayReconciler) Reconcile(ctx context.Context, dtp *prometheusmonitoring.PrometheusMonitoring, dk *dynakube.DynaKube, imageClient image.Client) error {
-	ret := _mock.Called(ctx, dtp, dk, imageClient)
+func (_mock *mockGatewayReconciler) Reconcile(ctx context.Context, pm *prometheusmonitoring.PrometheusMonitoring, dk *dynakube.DynaKube, imageClient image.Client) error {
+	ret := _mock.Called(ctx, pm, dk, imageClient)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Reconcile")
@@ -167,7 +167,7 @@ func (_mock *mockGatewayReconciler) Reconcile(ctx context.Context, dtp *promethe
 
 	var r0 error
 	if returnFunc, ok := ret.Get(0).(func(context.Context, *prometheusmonitoring.PrometheusMonitoring, *dynakube.DynaKube, image.Client) error); ok {
-		r0 = returnFunc(ctx, dtp, dk, imageClient)
+		r0 = returnFunc(ctx, pm, dk, imageClient)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -181,14 +181,14 @@ type mockGatewayReconciler_Reconcile_Call struct {
 
 // Reconcile is a helper method to define mock.On call
 //   - ctx context.Context
-//   - dtp *prometheusmonitoring.PrometheusMonitoring
+//   - pm *prometheusmonitoring.PrometheusMonitoring
 //   - dk *dynakube.DynaKube
 //   - imageClient image.Client
-func (_e *mockGatewayReconciler_Expecter) Reconcile(ctx any, dtp any, dk any, imageClient any) *mockGatewayReconciler_Reconcile_Call {
-	return &mockGatewayReconciler_Reconcile_Call{Call: _e.mock.On("Reconcile", ctx, dtp, dk, imageClient)}
+func (_e *mockGatewayReconciler_Expecter) Reconcile(ctx any, pm any, dk any, imageClient any) *mockGatewayReconciler_Reconcile_Call {
+	return &mockGatewayReconciler_Reconcile_Call{Call: _e.mock.On("Reconcile", ctx, pm, dk, imageClient)}
 }
 
-func (_c *mockGatewayReconciler_Reconcile_Call) Run(run func(ctx context.Context, dtp *prometheusmonitoring.PrometheusMonitoring, dk *dynakube.DynaKube, imageClient image.Client)) *mockGatewayReconciler_Reconcile_Call {
+func (_c *mockGatewayReconciler_Reconcile_Call) Run(run func(ctx context.Context, pm *prometheusmonitoring.PrometheusMonitoring, dk *dynakube.DynaKube, imageClient image.Client)) *mockGatewayReconciler_Reconcile_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -221,7 +221,7 @@ func (_c *mockGatewayReconciler_Reconcile_Call) Return(err error) *mockGatewayRe
 	return _c
 }
 
-func (_c *mockGatewayReconciler_Reconcile_Call) RunAndReturn(run func(ctx context.Context, dtp *prometheusmonitoring.PrometheusMonitoring, dk *dynakube.DynaKube, imageClient image.Client) error) *mockGatewayReconciler_Reconcile_Call {
+func (_c *mockGatewayReconciler_Reconcile_Call) RunAndReturn(run func(ctx context.Context, pm *prometheusmonitoring.PrometheusMonitoring, dk *dynakube.DynaKube, imageClient image.Client) error) *mockGatewayReconciler_Reconcile_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -263,8 +263,8 @@ func (_m *mockScraperReconciler) EXPECT() *mockScraperReconciler_Expecter {
 }
 
 // Reconcile provides a mock function for the type mockScraperReconciler
-func (_mock *mockScraperReconciler) Reconcile(ctx context.Context, dtp *prometheusmonitoring.PrometheusMonitoring, dk *dynakube.DynaKube, imageClient image.Client) error {
-	ret := _mock.Called(ctx, dtp, dk, imageClient)
+func (_mock *mockScraperReconciler) Reconcile(ctx context.Context, pm *prometheusmonitoring.PrometheusMonitoring, dk *dynakube.DynaKube, imageClient image.Client) error {
+	ret := _mock.Called(ctx, pm, dk, imageClient)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Reconcile")
@@ -272,7 +272,7 @@ func (_mock *mockScraperReconciler) Reconcile(ctx context.Context, dtp *promethe
 
 	var r0 error
 	if returnFunc, ok := ret.Get(0).(func(context.Context, *prometheusmonitoring.PrometheusMonitoring, *dynakube.DynaKube, image.Client) error); ok {
-		r0 = returnFunc(ctx, dtp, dk, imageClient)
+		r0 = returnFunc(ctx, pm, dk, imageClient)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -286,14 +286,14 @@ type mockScraperReconciler_Reconcile_Call struct {
 
 // Reconcile is a helper method to define mock.On call
 //   - ctx context.Context
-//   - dtp *prometheusmonitoring.PrometheusMonitoring
+//   - pm *prometheusmonitoring.PrometheusMonitoring
 //   - dk *dynakube.DynaKube
 //   - imageClient image.Client
-func (_e *mockScraperReconciler_Expecter) Reconcile(ctx any, dtp any, dk any, imageClient any) *mockScraperReconciler_Reconcile_Call {
-	return &mockScraperReconciler_Reconcile_Call{Call: _e.mock.On("Reconcile", ctx, dtp, dk, imageClient)}
+func (_e *mockScraperReconciler_Expecter) Reconcile(ctx any, pm any, dk any, imageClient any) *mockScraperReconciler_Reconcile_Call {
+	return &mockScraperReconciler_Reconcile_Call{Call: _e.mock.On("Reconcile", ctx, pm, dk, imageClient)}
 }
 
-func (_c *mockScraperReconciler_Reconcile_Call) Run(run func(ctx context.Context, dtp *prometheusmonitoring.PrometheusMonitoring, dk *dynakube.DynaKube, imageClient image.Client)) *mockScraperReconciler_Reconcile_Call {
+func (_c *mockScraperReconciler_Reconcile_Call) Run(run func(ctx context.Context, pm *prometheusmonitoring.PrometheusMonitoring, dk *dynakube.DynaKube, imageClient image.Client)) *mockScraperReconciler_Reconcile_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -326,7 +326,7 @@ func (_c *mockScraperReconciler_Reconcile_Call) Return(err error) *mockScraperRe
 	return _c
 }
 
-func (_c *mockScraperReconciler_Reconcile_Call) RunAndReturn(run func(ctx context.Context, dtp *prometheusmonitoring.PrometheusMonitoring, dk *dynakube.DynaKube, imageClient image.Client) error) *mockScraperReconciler_Reconcile_Call {
+func (_c *mockScraperReconciler_Reconcile_Call) RunAndReturn(run func(ctx context.Context, pm *prometheusmonitoring.PrometheusMonitoring, dk *dynakube.DynaKube, imageClient image.Client) error) *mockScraperReconciler_Reconcile_Call {
 	_c.Call.Return(run)
 	return _c
 }

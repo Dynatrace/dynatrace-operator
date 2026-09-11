@@ -9,24 +9,24 @@ import (
 
 // Conditions returns a pointer to the status conditions slice so callers can
 // use meta.SetStatusCondition and friends.
-func (dtp *PrometheusMonitoring) Conditions() *[]metav1.Condition {
-	return &dtp.Status.Conditions
+func (pm *PrometheusMonitoring) Conditions() *[]metav1.Condition {
+	return &pm.Status.Conditions
 }
 
 // TargetAllocator returns the Target Allocator accessor wrapping the target
 // allocator spec and the owning PrometheusMonitoring name.
-func (dtp *PrometheusMonitoring) TargetAllocator() *TargetAllocator {
-	return NewTargetAllocator(&dtp.Spec.TargetAllocator, dtp.Name)
+func (pm *PrometheusMonitoring) TargetAllocator() *TargetAllocator {
+	return NewTargetAllocator(&pm.Spec.TargetAllocator, pm.Name)
 }
 
 // Scraper returns the scraper pool accessor wrapping the scraper spec and the
 // owning PrometheusMonitoring name.
-func (dtp *PrometheusMonitoring) Scraper() *Scraper {
-	return NewScraper(&dtp.Spec.Scraper, dtp.Name)
+func (pm *PrometheusMonitoring) Scraper() *Scraper {
+	return NewScraper(&pm.Spec.Scraper, pm.Name)
 }
 
 // Gateway returns the gateway pool accessor wrapping the gateway spec and the
 // owning PrometheusMonitoring name.
-func (dtp *PrometheusMonitoring) Gateway() *Gateway {
-	return NewGateway(&dtp.Spec.Gateway, dtp.Name)
+func (pm *PrometheusMonitoring) Gateway() *Gateway {
+	return NewGateway(&pm.Spec.Gateway, pm.Name)
 }

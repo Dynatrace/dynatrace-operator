@@ -39,7 +39,7 @@ const (
 type lifecycleDeps struct {
 	clt         client.Client
 	reconciler  *gateway.Reconciler
-	dtp         *prometheusmonitoring.PrometheusMonitoring
+	pm          *prometheusmonitoring.PrometheusMonitoring
 	dk          *dynakube.DynaKube
 	imageClient image.Client
 }
@@ -49,11 +49,11 @@ func TestReconcileLifecycle(t *testing.T) {
 	clt := integrationtests.SetupTestEnvironment(t)
 	integrationtests.CreateNamespace(t, clt, integrationNamespace)
 
-	dtp := &prometheusmonitoring.PrometheusMonitoring{
+	pm := &prometheusmonitoring.PrometheusMonitoring{
 		ObjectMeta: metav1.ObjectMeta{Name: integrationDTPName, Namespace: integrationNamespace},
 		Spec:       prometheusmonitoring.PrometheusMonitoringSpec{DynaKubeRef: integrationDynaKubeRef},
 	}
-	integrationtests.CreateKubernetesObject(t, clt, dtp)
+	integrationtests.CreateKubernetesObject(t, clt, pm)
 
 	// The fleet image API isn't reachable here; only the missing-image phase (no .spec.gateway.image
 	// set) actually calls it, and it's expected to fail there.
@@ -64,7 +64,7 @@ func TestReconcileLifecycle(t *testing.T) {
 	deps := &lifecycleDeps{
 		clt:         clt,
 		reconciler:  &gateway.Reconciler{Client: clt},
-		dtp:         dtp,
+		pm:          pm,
 		dk:          &dynakube.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: integrationDynaKubeRef, Namespace: integrationNamespace}},
 		imageClient: imageClient,
 	}
@@ -80,7 +80,7 @@ func TestReconcileLifecycle(t *testing.T) {
 func runMissingImagePhase(t *testing.T, deps *lifecycleDeps) {
 	t.Helper()
 
-	require.Error(t, deps.reconciler.Reconcile(t.Context(), deps.dtp, deps.dk, deps.imageClient))
+	require.Error(t, deps.reconciler.Reconcile(t.Context(), deps.pm, deps.dk, deps.imageClient))
 
 	getConfigMap(t, deps)
 	assertStatefulSetAbsent(t, deps)
@@ -91,16 +91,16 @@ func runMissingImagePhase(t *testing.T, deps *lifecycleDeps) {
 func runProvisionPhase(t *testing.T, deps *lifecycleDeps) {
 	t.Helper()
 
-	deps.dtp.Spec.Gateway.Image = integrationImage
-	require.NoError(t, deps.reconciler.Reconcile(t.Context(), deps.dtp, deps.dk, deps.imageClient))
+	deps.pm.Spec.Gateway.Image = integrationImage
+	require.NoError(t, deps.reconciler.Reconcile(t.Context(), deps.pm, deps.dk, deps.imageClient))
 
 	cm := getConfigMap(t, deps)
 	sts := getStatefulSet(t, deps)
 	svc := getService(t, deps)
 
-	assert.True(t, metav1.IsControlledBy(cm, deps.dtp))
-	assert.True(t, metav1.IsControlledBy(sts, deps.dtp))
-	assert.True(t, metav1.IsControlledBy(svc, deps.dtp))
+	assert.True(t, metav1.IsControlledBy(cm, deps.pm))
+	assert.True(t, metav1.IsControlledBy(sts, deps.pm))
+	assert.True(t, metav1.IsControlledBy(svc, deps.pm))
 
 	require.Len(t, sts.Spec.Template.Spec.Containers, 1)
 	assert.Equal(t, integrationImage, sts.Spec.Template.Spec.Containers[0].Image)
@@ -122,7 +122,7 @@ func runStabilizePhase(t *testing.T, deps *lifecycleDeps) {
 	reconciler := &gateway.Reconciler{Client: counting}
 
 	for range 3 {
-		require.NoError(t, reconciler.Reconcile(t.Context(), deps.dtp, deps.dk, deps.imageClient))
+		require.NoError(t, reconciler.Reconcile(t.Context(), deps.pm, deps.dk, deps.imageClient))
 
 		assert.Equal(t, cmRV, getConfigMap(t, deps).ResourceVersion)
 		assert.Equal(t, stsRV, getStatefulSet(t, deps).ResourceVersion)
@@ -155,7 +155,7 @@ func runUpdatePhase(t *testing.T, deps *lifecycleDeps) {
 		svcRV := getService(t, deps).ResourceVersion
 
 		deps.dk.Spec.APIURL = "https://changed.example.com/api"
-		require.NoError(t, deps.reconciler.Reconcile(t.Context(), deps.dtp, deps.dk, deps.imageClient))
+		require.NoError(t, deps.reconciler.Reconcile(t.Context(), deps.pm, deps.dk, deps.imageClient))
 
 		assert.NotEqual(t, cmRV, getConfigMap(t, deps).ResourceVersion)
 		assert.NotEqual(t, stsRV, getStatefulSet(t, deps).ResourceVersion)
@@ -168,8 +168,8 @@ func runUpdatePhase(t *testing.T, deps *lifecycleDeps) {
 		stsRV := getStatefulSet(t, deps).ResourceVersion
 		svcRV := getService(t, deps).ResourceVersion
 
-		deps.dtp.Spec.Gateway.Replicas = new(int32(2))
-		require.NoError(t, deps.reconciler.Reconcile(t.Context(), deps.dtp, deps.dk, deps.imageClient))
+		deps.pm.Spec.Gateway.Replicas = new(int32(2))
+		require.NoError(t, deps.reconciler.Reconcile(t.Context(), deps.pm, deps.dk, deps.imageClient))
 
 		assert.Equal(t, cmRV, getConfigMap(t, deps).ResourceVersion)
 		assert.NotEqual(t, stsRV, getStatefulSet(t, deps).ResourceVersion)
@@ -177,15 +177,15 @@ func runUpdatePhase(t *testing.T, deps *lifecycleDeps) {
 	})
 }
 
-func gatewayKey(dtp *prometheusmonitoring.PrometheusMonitoring) client.ObjectKey {
-	return client.ObjectKey{Name: dtp.Gateway().GetStatefulSetName(), Namespace: dtp.Namespace}
+func gatewayKey(pm *prometheusmonitoring.PrometheusMonitoring) client.ObjectKey {
+	return client.ObjectKey{Name: pm.Gateway().GetStatefulSetName(), Namespace: pm.Namespace}
 }
 
 func getConfigMap(t *testing.T, deps *lifecycleDeps) *corev1.ConfigMap {
 	t.Helper()
 
 	cm := &corev1.ConfigMap{}
-	require.NoError(t, deps.clt.Get(t.Context(), gatewayKey(deps.dtp), cm))
+	require.NoError(t, deps.clt.Get(t.Context(), gatewayKey(deps.pm), cm))
 
 	return cm
 }
@@ -194,7 +194,7 @@ func getStatefulSet(t *testing.T, deps *lifecycleDeps) *appsv1.StatefulSet {
 	t.Helper()
 
 	sts := &appsv1.StatefulSet{}
-	require.NoError(t, deps.clt.Get(t.Context(), gatewayKey(deps.dtp), sts))
+	require.NoError(t, deps.clt.Get(t.Context(), gatewayKey(deps.pm), sts))
 
 	return sts
 }
@@ -203,7 +203,7 @@ func getService(t *testing.T, deps *lifecycleDeps) *corev1.Service {
 	t.Helper()
 
 	svc := &corev1.Service{}
-	require.NoError(t, deps.clt.Get(t.Context(), gatewayKey(deps.dtp), svc))
+	require.NoError(t, deps.clt.Get(t.Context(), gatewayKey(deps.pm), svc))
 
 	return svc
 }
@@ -211,13 +211,13 @@ func getService(t *testing.T, deps *lifecycleDeps) *corev1.Service {
 func assertStatefulSetAbsent(t *testing.T, deps *lifecycleDeps) {
 	t.Helper()
 
-	err := deps.clt.Get(t.Context(), gatewayKey(deps.dtp), &appsv1.StatefulSet{})
+	err := deps.clt.Get(t.Context(), gatewayKey(deps.pm), &appsv1.StatefulSet{})
 	assert.True(t, k8serrors.IsNotFound(err))
 }
 
 func assertServiceAbsent(t *testing.T, deps *lifecycleDeps) {
 	t.Helper()
 
-	err := deps.clt.Get(t.Context(), gatewayKey(deps.dtp), &corev1.Service{})
+	err := deps.clt.Get(t.Context(), gatewayKey(deps.pm), &corev1.Service{})
 	assert.True(t, k8serrors.IsNotFound(err))
 }

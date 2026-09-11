@@ -75,12 +75,12 @@ type reconcileScope struct {
 // The scraper gets no Service: nothing connects to it. The target allocator finds
 // its scrapers by listing pods matching AppLabels, and every other connection the
 // scraper makes is outbound.
-func (r *Reconciler) Reconcile(ctx context.Context, dtp *prometheusmonitoring.PrometheusMonitoring, dk *dynakube.DynaKube, imageClient image.Client) error {
+func (r *Reconciler) Reconcile(ctx context.Context, pm *prometheusmonitoring.PrometheusMonitoring, dk *dynakube.DynaKube, imageClient image.Client) error {
 	ctx, _ = logd.NewFromContext(ctx, "scraper")
 
 	scope := &reconcileScope{
-		Owner:       dtp,
-		Spec:        dtp.Scraper(),
+		Owner:       pm,
+		Spec:        pm.Scraper(),
 		AppLabels:   k8slabel.OTelScraper(),
 		ImageClient: imageClient,
 	}

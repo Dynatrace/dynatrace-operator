@@ -39,7 +39,7 @@ const (
 type lifecycleDeps struct {
 	clt        client.Client
 	reconciler *targetallocator.Reconciler
-	dtp        *prometheusmonitoring.PrometheusMonitoring
+	pm         *prometheusmonitoring.PrometheusMonitoring
 	dk         *dynakube.DynaKube
 }
 
@@ -48,16 +48,16 @@ func TestReconcileLifecycle(t *testing.T) {
 	clt := integrationtests.SetupTestEnvironment(t)
 	integrationtests.CreateNamespace(t, clt, integrationNamespace)
 
-	dtp := &prometheusmonitoring.PrometheusMonitoring{
+	pm := &prometheusmonitoring.PrometheusMonitoring{
 		ObjectMeta: metav1.ObjectMeta{Name: integrationDTPName, Namespace: integrationNamespace},
 		Spec:       prometheusmonitoring.PrometheusMonitoringSpec{DynaKubeRef: integrationDynaKubeRef},
 	}
-	integrationtests.CreateKubernetesObject(t, clt, dtp)
+	integrationtests.CreateKubernetesObject(t, clt, pm)
 
 	deps := &lifecycleDeps{
 		clt:        clt,
 		reconciler: &targetallocator.Reconciler{Client: clt},
-		dtp:        dtp,
+		pm:         pm,
 		dk:         &dynakube.DynaKube{},
 	}
 
@@ -76,7 +76,7 @@ func runMissingImagePhase(t *testing.T, deps *lifecycleDeps) {
 	imageClient := imagemock.NewClient(t)
 	imageClient.EXPECT().GetComponentLatestInfo(mock.Anything, mock.Anything, mock.Anything).Return(nil, errors.New("fleet API unavailable"))
 
-	require.Error(t, deps.reconciler.Reconcile(t.Context(), deps.dtp, deps.dk, imageClient))
+	require.Error(t, deps.reconciler.Reconcile(t.Context(), deps.pm, deps.dk, imageClient))
 
 	getConfigMap(t, deps)
 	assertDeploymentAbsent(t, deps)
@@ -87,16 +87,16 @@ func runMissingImagePhase(t *testing.T, deps *lifecycleDeps) {
 func runProvisionPhase(t *testing.T, deps *lifecycleDeps) {
 	t.Helper()
 
-	deps.dtp.Spec.TargetAllocator.Image = integrationImage
-	require.NoError(t, deps.reconciler.Reconcile(t.Context(), deps.dtp, deps.dk, nil))
+	deps.pm.Spec.TargetAllocator.Image = integrationImage
+	require.NoError(t, deps.reconciler.Reconcile(t.Context(), deps.pm, deps.dk, nil))
 
 	cm := getConfigMap(t, deps)
 	deploy := getDeployment(t, deps)
 	svc := getService(t, deps)
 
-	assert.True(t, metav1.IsControlledBy(cm, deps.dtp))
-	assert.True(t, metav1.IsControlledBy(deploy, deps.dtp))
-	assert.True(t, metav1.IsControlledBy(svc, deps.dtp))
+	assert.True(t, metav1.IsControlledBy(cm, deps.pm))
+	assert.True(t, metav1.IsControlledBy(deploy, deps.pm))
+	assert.True(t, metav1.IsControlledBy(svc, deps.pm))
 
 	require.Len(t, deploy.Spec.Template.Spec.Containers, 1)
 	assert.Equal(t, integrationImage, deploy.Spec.Template.Spec.Containers[0].Image)
@@ -118,7 +118,7 @@ func runStabilizePhase(t *testing.T, deps *lifecycleDeps) {
 	reconciler := &targetallocator.Reconciler{Client: counting}
 
 	for range 3 {
-		require.NoError(t, reconciler.Reconcile(t.Context(), deps.dtp, deps.dk, nil))
+		require.NoError(t, reconciler.Reconcile(t.Context(), deps.pm, deps.dk, nil))
 
 		assert.Equal(t, cmRV, getConfigMap(t, deps).ResourceVersion)
 		assert.Equal(t, deployRV, getDeployment(t, deps).ResourceVersion)
@@ -150,8 +150,8 @@ func runUpdatePhase(t *testing.T, deps *lifecycleDeps) {
 		deployRV := getDeployment(t, deps).ResourceVersion
 		svcRV := getService(t, deps).ResourceVersion
 
-		deps.dtp.Spec.TargetAllocator.ScrapeInterval = metav1.Duration{Duration: 5 * time.Minute}
-		require.NoError(t, deps.reconciler.Reconcile(t.Context(), deps.dtp, deps.dk, nil))
+		deps.pm.Spec.TargetAllocator.ScrapeInterval = metav1.Duration{Duration: 5 * time.Minute}
+		require.NoError(t, deps.reconciler.Reconcile(t.Context(), deps.pm, deps.dk, nil))
 
 		assert.NotEqual(t, cmRV, getConfigMap(t, deps).ResourceVersion)
 		assert.NotEqual(t, deployRV, getDeployment(t, deps).ResourceVersion)
@@ -164,8 +164,8 @@ func runUpdatePhase(t *testing.T, deps *lifecycleDeps) {
 		deployRV := getDeployment(t, deps).ResourceVersion
 		svcRV := getService(t, deps).ResourceVersion
 
-		deps.dtp.Spec.TargetAllocator.Replicas = new(int32(2))
-		require.NoError(t, deps.reconciler.Reconcile(t.Context(), deps.dtp, deps.dk, nil))
+		deps.pm.Spec.TargetAllocator.Replicas = new(int32(2))
+		require.NoError(t, deps.reconciler.Reconcile(t.Context(), deps.pm, deps.dk, nil))
 
 		assert.Equal(t, cmRV, getConfigMap(t, deps).ResourceVersion)
 		assert.NotEqual(t, deployRV, getDeployment(t, deps).ResourceVersion)
@@ -173,15 +173,15 @@ func runUpdatePhase(t *testing.T, deps *lifecycleDeps) {
 	})
 }
 
-func targetAllocatorKey(dtp *prometheusmonitoring.PrometheusMonitoring) client.ObjectKey {
-	return client.ObjectKey{Name: dtp.TargetAllocator().GetDeploymentName(), Namespace: dtp.Namespace}
+func targetAllocatorKey(pm *prometheusmonitoring.PrometheusMonitoring) client.ObjectKey {
+	return client.ObjectKey{Name: pm.TargetAllocator().GetDeploymentName(), Namespace: pm.Namespace}
 }
 
 func getConfigMap(t *testing.T, deps *lifecycleDeps) *corev1.ConfigMap {
 	t.Helper()
 
 	cm := &corev1.ConfigMap{}
-	require.NoError(t, deps.clt.Get(t.Context(), targetAllocatorKey(deps.dtp), cm))
+	require.NoError(t, deps.clt.Get(t.Context(), targetAllocatorKey(deps.pm), cm))
 
 	return cm
 }
@@ -190,7 +190,7 @@ func getDeployment(t *testing.T, deps *lifecycleDeps) *appsv1.Deployment {
 	t.Helper()
 
 	deploy := &appsv1.Deployment{}
-	require.NoError(t, deps.clt.Get(t.Context(), targetAllocatorKey(deps.dtp), deploy))
+	require.NoError(t, deps.clt.Get(t.Context(), targetAllocatorKey(deps.pm), deploy))
 
 	return deploy
 }
@@ -199,7 +199,7 @@ func getService(t *testing.T, deps *lifecycleDeps) *corev1.Service {
 	t.Helper()
 
 	svc := &corev1.Service{}
-	require.NoError(t, deps.clt.Get(t.Context(), targetAllocatorKey(deps.dtp), svc))
+	require.NoError(t, deps.clt.Get(t.Context(), targetAllocatorKey(deps.pm), svc))
 
 	return svc
 }
@@ -207,13 +207,13 @@ func getService(t *testing.T, deps *lifecycleDeps) *corev1.Service {
 func assertDeploymentAbsent(t *testing.T, deps *lifecycleDeps) {
 	t.Helper()
 
-	err := deps.clt.Get(t.Context(), targetAllocatorKey(deps.dtp), &appsv1.Deployment{})
+	err := deps.clt.Get(t.Context(), targetAllocatorKey(deps.pm), &appsv1.Deployment{})
 	assert.True(t, k8serrors.IsNotFound(err))
 }
 
 func assertServiceAbsent(t *testing.T, deps *lifecycleDeps) {
 	t.Helper()
 
-	err := deps.clt.Get(t.Context(), targetAllocatorKey(deps.dtp), &corev1.Service{})
+	err := deps.clt.Get(t.Context(), targetAllocatorKey(deps.pm), &corev1.Service{})
 	assert.True(t, k8serrors.IsNotFound(err))
 }

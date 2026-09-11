@@ -35,7 +35,7 @@ import (
 
 func newTestDTP(name, namespace string) *prometheusmonitoring.PrometheusMonitoring {
 	return &prometheusmonitoring.PrometheusMonitoring{
-		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace, UID: types.UID("dtp-uid")},
+		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace, UID: types.UID("pm-uid")},
 		Spec: prometheusmonitoring.PrometheusMonitoringSpec{
 			TargetAllocator: prometheusmonitoring.TargetAllocatorSpec{
 				PodSpec: prometheusmonitoring.PodSpec{
@@ -53,11 +53,11 @@ func newTestDTP(name, namespace string) *prometheusmonitoring.PrometheusMonitori
 	}
 }
 
-func newTestScope(dtp *prometheusmonitoring.PrometheusMonitoring) *reconcileScope {
+func newTestScope(pm *prometheusmonitoring.PrometheusMonitoring) *reconcileScope {
 	return &reconcileScope{
-		Owner:     dtp,
+		Owner:     pm,
 		DynaKube:  &dynakube.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: "dk", Namespace: "dynatrace"}},
-		Spec:      dtp.TargetAllocator(),
+		Spec:      pm.TargetAllocator(),
 		AppLabels: k8slabel.OTelTargetAllocator(),
 	}
 }
@@ -67,14 +67,14 @@ func newTestScope(dtp *prometheusmonitoring.PrometheusMonitoring) *reconcileScop
 // rollout check.
 func TestReconcileCondition(t *testing.T) {
 	t.Run("freshly created deployment with no ready replicas -> pending", func(t *testing.T) {
-		dtp := newTestDTP("dtp", "dynatrace")
-		dtp.Spec.TargetAllocator.Image = "registry.example.com/target-allocator:1.2.3"
-		dtp.Spec.TargetAllocator.Replicas = new(int32(2))
+		pm := newTestDTP("pm", "dynatrace")
+		pm.Spec.TargetAllocator.Image = "registry.example.com/target-allocator:1.2.3"
+		pm.Spec.TargetAllocator.Replicas = new(int32(2))
 
 		r := &Reconciler{Client: fake.NewClient()}
-		require.NoError(t, r.Reconcile(t.Context(), dtp, &dynakube.DynaKube{}, nil))
+		require.NoError(t, r.Reconcile(t.Context(), pm, &dynakube.DynaKube{}, nil))
 
-		condition := meta.FindStatusCondition(dtp.Status.Conditions, prometheusmonitoring.TargetAllocatorAvailable)
+		condition := meta.FindStatusCondition(pm.Status.Conditions, prometheusmonitoring.TargetAllocatorAvailable)
 		require.NotNil(t, condition)
 		assert.Equal(t, metav1.ConditionFalse, condition.Status)
 		assert.Equal(t, status.ReasonReconciling, condition.Reason)
@@ -82,8 +82,8 @@ func TestReconcileCondition(t *testing.T) {
 	})
 
 	t.Run("reconcile error -> error, with unwrapped message", func(t *testing.T) {
-		dtp := newTestDTP("dtp", "dynatrace")
-		dtp.Spec.TargetAllocator.Image = "registry.example.com/target-allocator:1.2.3"
+		pm := newTestDTP("pm", "dynatrace")
+		pm.Spec.TargetAllocator.Image = "registry.example.com/target-allocator:1.2.3"
 
 		boom := errors.New("boom")
 		clt := fake.NewClientWithInterceptors(interceptor.Funcs{
@@ -93,9 +93,9 @@ func TestReconcileCondition(t *testing.T) {
 		})
 
 		r := &Reconciler{Client: clt}
-		require.Error(t, r.Reconcile(t.Context(), dtp, &dynakube.DynaKube{}, nil))
+		require.Error(t, r.Reconcile(t.Context(), pm, &dynakube.DynaKube{}, nil))
 
-		condition := meta.FindStatusCondition(dtp.Status.Conditions, prometheusmonitoring.TargetAllocatorAvailable)
+		condition := meta.FindStatusCondition(pm.Status.Conditions, prometheusmonitoring.TargetAllocatorAvailable)
 		require.NotNil(t, condition)
 		assert.Equal(t, metav1.ConditionFalse, condition.Status)
 		assert.Equal(t, status.ReasonError, condition.Reason)
@@ -105,18 +105,18 @@ func TestReconcileCondition(t *testing.T) {
 
 func TestReconcileConfigMap(t *testing.T) {
 	t.Run("apply spec", func(t *testing.T) {
-		dtp := newTestDTP("dtp", "dynatrace")
-		dtp.Spec.TargetAllocator.ScrapeInterval = metav1.Duration{Duration: 5 * time.Minute}
-		dtp.Spec.TargetAllocator.CustomResourceNamespaceSelector = &metav1.LabelSelector{MatchLabels: map[string]string{"bar": "foo"}}
-		dtp.Spec.TargetAllocator.CustomResourceSelector = &metav1.LabelSelector{MatchLabels: map[string]string{"foo": "bar"}}
-		s := newTestScope(dtp)
+		pm := newTestDTP("pm", "dynatrace")
+		pm.Spec.TargetAllocator.ScrapeInterval = metav1.Duration{Duration: 5 * time.Minute}
+		pm.Spec.TargetAllocator.CustomResourceNamespaceSelector = &metav1.LabelSelector{MatchLabels: map[string]string{"bar": "foo"}}
+		pm.Spec.TargetAllocator.CustomResourceSelector = &metav1.LabelSelector{MatchLabels: map[string]string{"foo": "bar"}}
+		s := newTestScope(pm)
 		c := fake.NewClient()
 		r := &Reconciler{Client: c}
 
 		require.NoError(t, r.reconcileConfigMap(t.Context(), s))
 
 		cm := &corev1.ConfigMap{}
-		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetDeploymentName(), Namespace: dtp.Namespace}, cm))
+		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetDeploymentName(), Namespace: pm.Namespace}, cm))
 
 		helpers.AssertGolden(t, "testdata/configmap.yaml", cm)
 
@@ -125,11 +125,11 @@ func TestReconcileConfigMap(t *testing.T) {
 	})
 
 	t.Run("merge labels", func(t *testing.T) {
-		dtp := newTestDTP("dtp", "dynatrace")
-		s := newTestScope(dtp)
+		pm := newTestDTP("pm", "dynatrace")
+		s := newTestScope(pm)
 		existing := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{
 			Name:      s.Spec.GetDeploymentName(),
-			Namespace: dtp.Namespace,
+			Namespace: pm.Namespace,
 			Labels:    map[string]string{"custom": "value", k8slabel.AppInstanceLabel: "override"},
 		}}
 		c := fake.NewClient(existing)
@@ -138,22 +138,22 @@ func TestReconcileConfigMap(t *testing.T) {
 		require.NoError(t, r.reconcileConfigMap(t.Context(), s))
 
 		cm := &corev1.ConfigMap{}
-		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetDeploymentName(), Namespace: dtp.Namespace}, cm))
+		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetDeploymentName(), Namespace: pm.Namespace}, cm))
 		assert.Equal(t, "value", cm.Labels["custom"])
 		assert.Equal(t, k8slabel.OTelTargetAllocator().Instance, cm.Labels[k8slabel.AppInstanceLabel])
 	})
 
 	t.Run("propagate error", func(t *testing.T) {
 		expectErr := errors.New("boom")
-		err := (&Reconciler{Client: createErrorClient(expectErr)}).reconcileConfigMap(t.Context(), newTestScope(newTestDTP("dtp", "dynatrace")))
+		err := (&Reconciler{Client: createErrorClient(expectErr)}).reconcileConfigMap(t.Context(), newTestScope(newTestDTP("pm", "dynatrace")))
 		require.ErrorIs(t, err, expectErr)
 	})
 }
 
 func TestReconcileDeployment(t *testing.T) {
 	t.Run("fleet resolve fails when no imageRef set", func(t *testing.T) {
-		dtp := newTestDTP("dtp", "dynatrace")
-		s := newTestScope(dtp)
+		pm := newTestDTP("pm", "dynatrace")
+		s := newTestScope(pm)
 		imageClient := imagemock.NewClient(t)
 		imageClient.EXPECT().GetComponentLatestInfo(mock.Anything, mock.Anything, mock.Anything).Return(nil, errors.New("no image found"))
 		s.ImageClient = imageClient
@@ -165,13 +165,13 @@ func TestReconcileDeployment(t *testing.T) {
 		require.Error(t, err)
 		assert.Nil(t, s.Deployment)
 
-		getErr := c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetDeploymentName(), Namespace: dtp.Namespace}, &appsv1.Deployment{})
+		getErr := c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetDeploymentName(), Namespace: pm.Namespace}, &appsv1.Deployment{})
 		assert.True(t, k8serrors.IsNotFound(getErr))
 	})
 
 	t.Run("resolves image from fleet API when no imageRef set", func(t *testing.T) {
-		dtp := newTestDTP("dtp", "dynatrace")
-		s := newTestScope(dtp)
+		pm := newTestDTP("pm", "dynatrace")
+		s := newTestScope(pm)
 		imageClient := imagemock.NewClient(t)
 		imageClient.EXPECT().GetComponentLatestInfo(mock.Anything, image.TargetAllocator, "").Return(&image.Info{URI: "registry.example.com/fleet-ta:latest"}, nil)
 		s.ImageClient = imageClient
@@ -182,15 +182,15 @@ func TestReconcileDeployment(t *testing.T) {
 		require.NotNil(t, s.Deployment)
 
 		deploy := &appsv1.Deployment{}
-		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetDeploymentName(), Namespace: dtp.Namespace}, deploy))
+		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetDeploymentName(), Namespace: pm.Namespace}, deploy))
 		assert.Equal(t, "registry.example.com/fleet-ta:latest", deploy.Spec.Template.Spec.Containers[0].Image)
-		assert.Equal(t, "registry.example.com/fleet-ta:latest", dtp.Status.TargetAllocator.ResolvedImage)
+		assert.Equal(t, "registry.example.com/fleet-ta:latest", pm.Status.TargetAllocator.ResolvedImage)
 	})
 
 	t.Run("resolves image from fleet API with publicRegistryOverride", func(t *testing.T) {
-		dtp := newTestDTP("dtp", "dynatrace")
-		dtp.Spec.PublicRegistryOverride = "custom.registry.example.com"
-		s := newTestScope(dtp)
+		pm := newTestDTP("pm", "dynatrace")
+		pm.Spec.PublicRegistryOverride = "custom.registry.example.com"
+		s := newTestScope(pm)
 		imageClient := imagemock.NewClient(t)
 		imageClient.EXPECT().GetComponentLatestInfo(mock.Anything, image.TargetAllocator, "custom.registry.example.com").Return(&image.Info{URI: "custom.registry.example.com/fleet-ta:latest"}, nil)
 		s.ImageClient = imageClient
@@ -201,23 +201,23 @@ func TestReconcileDeployment(t *testing.T) {
 		require.NotNil(t, s.Deployment)
 
 		deploy := &appsv1.Deployment{}
-		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetDeploymentName(), Namespace: dtp.Namespace}, deploy))
+		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetDeploymentName(), Namespace: pm.Namespace}, deploy))
 		assert.Equal(t, "custom.registry.example.com/fleet-ta:latest", deploy.Spec.Template.Spec.Containers[0].Image)
-		assert.Equal(t, "custom.registry.example.com/fleet-ta:latest", dtp.Status.TargetAllocator.ResolvedImage)
+		assert.Equal(t, "custom.registry.example.com/fleet-ta:latest", pm.Status.TargetAllocator.ResolvedImage)
 	})
 
 	t.Run("apply spec", func(t *testing.T) {
-		dtp := newTestDTP("dtp", "dynatrace")
-		dtp.Spec.TargetAllocator.Image = "registry.example.com/target-allocator:1.2.3"
-		dtp.Spec.TargetAllocator.ImagePullPolicy = corev1.PullAlways
-		dtp.Spec.TargetAllocator.Replicas = new(int32(3))
-		dtp.Spec.TargetAllocator.NodeSelector = map[string]string{"disk": "ssd"}
-		dtp.Spec.TargetAllocator.PriorityClassName = "high-priority"
-		dtp.Spec.TargetAllocator.Tolerations = []corev1.Toleration{{Key: "k", Operator: corev1.TolerationOpExists}}
-		dtp.Spec.TargetAllocator.Annotations = map[string]string{"custom": "annotation"}
-		dtp.Spec.TargetAllocator.Labels = map[string]string{"custom": "label"}
-		dtp.Spec.TargetAllocator.Args = []string{"--foo=bar"}
-		s := newTestScope(dtp)
+		pm := newTestDTP("pm", "dynatrace")
+		pm.Spec.TargetAllocator.Image = "registry.example.com/target-allocator:1.2.3"
+		pm.Spec.TargetAllocator.ImagePullPolicy = corev1.PullAlways
+		pm.Spec.TargetAllocator.Replicas = new(int32(3))
+		pm.Spec.TargetAllocator.NodeSelector = map[string]string{"disk": "ssd"}
+		pm.Spec.TargetAllocator.PriorityClassName = "high-priority"
+		pm.Spec.TargetAllocator.Tolerations = []corev1.Toleration{{Key: "k", Operator: corev1.TolerationOpExists}}
+		pm.Spec.TargetAllocator.Annotations = map[string]string{"custom": "annotation"}
+		pm.Spec.TargetAllocator.Labels = map[string]string{"custom": "label"}
+		pm.Spec.TargetAllocator.Args = []string{"--foo=bar"}
+		s := newTestScope(pm)
 		s.ConfigMapHash = "deadbeef"
 		c := fake.NewClient()
 		r := &Reconciler{Client: c}
@@ -226,17 +226,17 @@ func TestReconcileDeployment(t *testing.T) {
 		require.NotNil(t, s.Deployment)
 
 		deploy := &appsv1.Deployment{}
-		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetDeploymentName(), Namespace: dtp.Namespace}, deploy))
+		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetDeploymentName(), Namespace: pm.Namespace}, deploy))
 
 		helpers.AssertGolden(t, "testdata/deployment.yaml", deploy)
 	})
 
 	t.Run("preserve existing replicas", func(t *testing.T) {
-		dtp := newTestDTP("dtp", "dynatrace")
-		dtp.Spec.TargetAllocator.Image = "img:1"
-		s := newTestScope(dtp)
+		pm := newTestDTP("pm", "dynatrace")
+		pm.Spec.TargetAllocator.Image = "img:1"
+		s := newTestScope(pm)
 		existing := &appsv1.Deployment{
-			ObjectMeta: metav1.ObjectMeta{Name: s.Spec.GetDeploymentName(), Namespace: dtp.Namespace},
+			ObjectMeta: metav1.ObjectMeta{Name: s.Spec.GetDeploymentName(), Namespace: pm.Namespace},
 			Spec:       appsv1.DeploymentSpec{Replicas: new(int32(5))},
 		}
 		c := fake.NewClient(existing)
@@ -245,17 +245,17 @@ func TestReconcileDeployment(t *testing.T) {
 		require.NoError(t, r.reconcileDeployment(t.Context(), s))
 
 		deploy := &appsv1.Deployment{}
-		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetDeploymentName(), Namespace: dtp.Namespace}, deploy))
+		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetDeploymentName(), Namespace: pm.Namespace}, deploy))
 		assert.Equal(t, new(int32(5)), deploy.Spec.Replicas)
 	})
 
 	t.Run("propagate error", func(t *testing.T) {
-		dtp := newTestDTP("dtp", "dynatrace")
-		dtp.Spec.TargetAllocator.Image = "img:1"
+		pm := newTestDTP("pm", "dynatrace")
+		pm.Spec.TargetAllocator.Image = "img:1"
 		expectErr := errors.New("boom")
 		r := &Reconciler{Client: createErrorClient(expectErr)}
 
-		err := r.reconcileDeployment(t.Context(), newTestScope(dtp))
+		err := r.reconcileDeployment(t.Context(), newTestScope(pm))
 
 		require.ErrorIs(t, err, expectErr)
 	})
@@ -263,25 +263,25 @@ func TestReconcileDeployment(t *testing.T) {
 
 func TestReconcileService(t *testing.T) {
 	t.Run("apply spec", func(t *testing.T) {
-		dtp := newTestDTP("dtp", "dynatrace")
-		s := newTestScope(dtp)
+		pm := newTestDTP("pm", "dynatrace")
+		s := newTestScope(pm)
 		c := fake.NewClient()
 		r := &Reconciler{Client: c}
 
 		require.NoError(t, r.reconcileService(t.Context(), s))
 
 		svc := &corev1.Service{}
-		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetDeploymentName(), Namespace: dtp.Namespace}, svc))
+		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetDeploymentName(), Namespace: pm.Namespace}, svc))
 
 		helpers.AssertGolden(t, "testdata/service.yaml", svc)
 	})
 
 	t.Run("merge labels", func(t *testing.T) {
-		dtp := newTestDTP("dtp", "dynatrace")
-		s := newTestScope(dtp)
+		pm := newTestDTP("pm", "dynatrace")
+		s := newTestScope(pm)
 		existing := &corev1.Service{ObjectMeta: metav1.ObjectMeta{
 			Name:      s.Spec.GetDeploymentName(),
-			Namespace: dtp.Namespace,
+			Namespace: pm.Namespace,
 			Labels:    map[string]string{"custom": "value", k8slabel.AppInstanceLabel: "override"},
 		}}
 		c := fake.NewClient(existing)
@@ -290,14 +290,14 @@ func TestReconcileService(t *testing.T) {
 		require.NoError(t, r.reconcileService(t.Context(), s))
 
 		svc := &corev1.Service{}
-		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetDeploymentName(), Namespace: dtp.Namespace}, svc))
+		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetDeploymentName(), Namespace: pm.Namespace}, svc))
 		assert.Equal(t, "value", svc.Labels["custom"])
 		assert.Equal(t, k8slabel.OTelTargetAllocator().Instance, svc.Labels[k8slabel.AppInstanceLabel])
 	})
 
 	t.Run("propagate error", func(t *testing.T) {
 		expectErr := errors.New("boom")
-		err := (&Reconciler{Client: createErrorClient(expectErr)}).reconcileService(t.Context(), newTestScope(newTestDTP("dtp", "dynatrace")))
+		err := (&Reconciler{Client: createErrorClient(expectErr)}).reconcileService(t.Context(), newTestScope(newTestDTP("pm", "dynatrace")))
 		require.ErrorIs(t, err, expectErr)
 	})
 }

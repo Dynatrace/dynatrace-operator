@@ -6,15 +6,15 @@ metadata:
     app.kubernetes.io/managed-by: dynatrace-operator
     app.kubernetes.io/name: opentelemetry-collector
     internal.dynatrace.com/operator-version: snapshot
-  name: dtp-scraper
+  name: pm-scraper
   namespace: dynatrace
   ownerReferences:
   - apiVersion: dynatrace.com/v1alpha1
     blockOwnerDeletion: true
     controller: true
     kind: PrometheusMonitoring
-    name: dtp
-    uid: dtp-uid
+    name: pm
+    uid: pm-uid
 spec:
   replicas: 3
   selector:
@@ -110,6 +110,6 @@ spec:
           items:
           - key: scraper
             path: scraper.yaml
-          name: dtp-scraper
+          name: pm-scraper
         name: opentelemetry-collector-configmap
 status: {}

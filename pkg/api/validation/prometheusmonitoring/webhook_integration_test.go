@@ -70,30 +70,30 @@ func TestWebhook(t *testing.T) {
 	)
 
 	t.Run("prometheus CRDs missing", func(t *testing.T) {
-		dtp := newTestPrometheusMonitoring("missing-crds")
+		pm := newTestPrometheusMonitoring("missing-crds")
 
 		recorder.reset()
-		integrationtests.CreateKubernetesObject(t, clt, dtp)
+		integrationtests.CreateKubernetesObject(t, clt, pm)
 		assertMissingCRDWarning(t, recorder.get())
 
 		recorder.reset()
-		dtp.Spec.PublicRegistryOverride = "example.io/updated"
-		require.NoError(t, clt.Update(t.Context(), dtp))
+		pm.Spec.PublicRegistryOverride = "example.io/updated"
+		require.NoError(t, clt.Update(t.Context(), pm))
 		assertMissingCRDWarning(t, recorder.get())
 	})
 
 	t.Run("prometheus CRDs present", func(t *testing.T) {
 		installMonitoringCRDs(t, clt)
 
-		dtp := newTestPrometheusMonitoring("crds-present")
+		pm := newTestPrometheusMonitoring("crds-present")
 
 		recorder.reset()
-		integrationtests.CreateKubernetesObject(t, clt, dtp)
+		integrationtests.CreateKubernetesObject(t, clt, pm)
 		assert.Empty(t, recorder.get())
 
 		recorder.reset()
-		dtp.Spec.PublicRegistryOverride = "example.io/updated"
-		require.NoError(t, clt.Update(t.Context(), dtp))
+		pm.Spec.PublicRegistryOverride = "example.io/updated"
+		require.NoError(t, clt.Update(t.Context(), pm))
 		assert.Empty(t, recorder.get())
 	})
 }

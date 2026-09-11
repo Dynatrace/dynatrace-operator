@@ -82,13 +82,13 @@ type reconcileScope struct {
 	StatefulSet   *appsv1.StatefulSet
 }
 
-func (r *Reconciler) Reconcile(ctx context.Context, dtp *prometheusmonitoring.PrometheusMonitoring, dk *dynakube.DynaKube, imageClient image.Client) error {
+func (r *Reconciler) Reconcile(ctx context.Context, pm *prometheusmonitoring.PrometheusMonitoring, dk *dynakube.DynaKube, imageClient image.Client) error {
 	ctx, _ = logd.NewFromContext(ctx, "gateway")
 
 	scope := &reconcileScope{
-		Owner:       dtp,
+		Owner:       pm,
 		DynaKube:    dk,
-		Spec:        dtp.Gateway(),
+		Spec:        pm.Gateway(),
 		AppLabels:   k8slabel.New("opentelemetry-gateway", "otel-gateway", ""),
 		ImageClient: imageClient,
 	}

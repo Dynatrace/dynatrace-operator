@@ -11,12 +11,12 @@ import (
 )
 
 func TestPrometheusMonitoring_Conditions(t *testing.T) {
-	dtp := &PrometheusMonitoring{}
+	pm := &PrometheusMonitoring{}
 
-	conditions := dtp.Conditions()
+	conditions := pm.Conditions()
 	*conditions = append(*conditions, metav1.Condition{Type: "Ready"})
 
-	assert.Same(t, &dtp.Status.Conditions, dtp.Conditions())
-	assert.Len(t, dtp.Status.Conditions, 1)
-	assert.Equal(t, "Ready", dtp.Status.Conditions[0].Type)
+	assert.Same(t, &pm.Status.Conditions, pm.Conditions())
+	assert.Len(t, pm.Status.Conditions, 1)
+	assert.Equal(t, "Ready", pm.Status.Conditions[0].Type)
 }

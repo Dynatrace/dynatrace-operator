@@ -92,13 +92,13 @@ type reconcileScope struct {
 	Deployment    *appsv1.Deployment
 }
 
-func (r *Reconciler) Reconcile(ctx context.Context, dtp *prometheusmonitoring.PrometheusMonitoring, dk *dynakube.DynaKube, imageClient image.Client) error {
+func (r *Reconciler) Reconcile(ctx context.Context, pm *prometheusmonitoring.PrometheusMonitoring, dk *dynakube.DynaKube, imageClient image.Client) error {
 	ctx, _ = logd.NewFromContext(ctx, "targetallocator")
 
 	scope := &reconcileScope{
-		Owner:       dtp,
+		Owner:       pm,
 		DynaKube:    dk,
-		Spec:        dtp.TargetAllocator(),
+		Spec:        pm.TargetAllocator(),
 		AppLabels:   k8slabel.OTelTargetAllocator(),
 		ImageClient: imageClient,
 	}

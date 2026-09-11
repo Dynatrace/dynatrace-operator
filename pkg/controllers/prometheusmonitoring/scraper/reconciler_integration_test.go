@@ -39,7 +39,7 @@ const (
 type lifecycleDeps struct {
 	clt        client.Client
 	reconciler *scraper.Reconciler
-	dtp        *prometheusmonitoring.PrometheusMonitoring
+	pm         *prometheusmonitoring.PrometheusMonitoring
 	dk         *dynakube.DynaKube
 }
 
@@ -48,16 +48,16 @@ func TestReconcileLifecycle(t *testing.T) {
 	clt := integrationtests.SetupTestEnvironment(t)
 	integrationtests.CreateNamespace(t, clt, integrationNamespace)
 
-	dtp := &prometheusmonitoring.PrometheusMonitoring{
+	pm := &prometheusmonitoring.PrometheusMonitoring{
 		ObjectMeta: metav1.ObjectMeta{Name: integrationDTPName, Namespace: integrationNamespace},
 		Spec:       prometheusmonitoring.PrometheusMonitoringSpec{DynaKubeRef: integrationDynaKubeRef},
 	}
-	integrationtests.CreateKubernetesObject(t, clt, dtp)
+	integrationtests.CreateKubernetesObject(t, clt, pm)
 
 	deps := &lifecycleDeps{
 		clt:        clt,
 		reconciler: &scraper.Reconciler{Client: clt},
-		dtp:        dtp,
+		pm:         pm,
 		dk:         &dynakube.DynaKube{},
 	}
 
@@ -74,7 +74,7 @@ func runMissingImagePhase(t *testing.T, deps *lifecycleDeps) {
 
 	imgClient := imagemock.NewClient(t)
 	imgClient.EXPECT().GetComponentLatestInfo(mock.Anything, mock.Anything, mock.Anything).Return(nil, errors.New("no scraper image available"))
-	require.Error(t, deps.reconciler.Reconcile(t.Context(), deps.dtp, deps.dk, imgClient))
+	require.Error(t, deps.reconciler.Reconcile(t.Context(), deps.pm, deps.dk, imgClient))
 
 	getConfigMap(t, deps)
 	assertDeploymentAbsent(t, deps)
@@ -87,14 +87,14 @@ func runProvisionPhase(t *testing.T, deps *lifecycleDeps) {
 
 	imgClient := imagemock.NewClient(t)
 	imgClient.EXPECT().GetComponentLatestInfo(mock.Anything, mock.Anything, mock.Anything).Return(nil, errors.New("no scraper image available")).Maybe()
-	deps.dtp.Spec.Scraper.Image = integrationImage
-	require.NoError(t, deps.reconciler.Reconcile(t.Context(), deps.dtp, deps.dk, imgClient))
+	deps.pm.Spec.Scraper.Image = integrationImage
+	require.NoError(t, deps.reconciler.Reconcile(t.Context(), deps.pm, deps.dk, imgClient))
 
 	cm := getConfigMap(t, deps)
 	deploy := getDeployment(t, deps)
 
-	assert.True(t, metav1.IsControlledBy(cm, deps.dtp))
-	assert.True(t, metav1.IsControlledBy(deploy, deps.dtp))
+	assert.True(t, metav1.IsControlledBy(cm, deps.pm))
+	assert.True(t, metav1.IsControlledBy(deploy, deps.pm))
 
 	require.Len(t, deploy.Spec.Template.Spec.Containers, 1)
 	assert.Equal(t, integrationImage, deploy.Spec.Template.Spec.Containers[0].Image)
@@ -120,7 +120,7 @@ func runStabilizePhase(t *testing.T, deps *lifecycleDeps) {
 	imgClient.EXPECT().GetComponentLatestInfo(mock.Anything, mock.Anything, mock.Anything).Return(nil, errors.New("no scraper image available")).Maybe()
 
 	for range 3 {
-		require.NoError(t, reconciler.Reconcile(t.Context(), deps.dtp, deps.dk, imgClient))
+		require.NoError(t, reconciler.Reconcile(t.Context(), deps.pm, deps.dk, imgClient))
 
 		assert.Equal(t, cmRV, getConfigMap(t, deps).ResourceVersion)
 		assert.Equal(t, deployRV, getDeployment(t, deps).ResourceVersion)
@@ -151,8 +151,8 @@ func runUpdatePhase(t *testing.T, deps *lifecycleDeps) {
 
 		imgClient := imagemock.NewClient(t)
 		imgClient.EXPECT().GetComponentLatestInfo(mock.Anything, mock.Anything, mock.Anything).Return(nil, errors.New("no scraper image available")).Maybe()
-		deps.dtp.Spec.Scraper.TargetsPollInterval = metav1.Duration{Duration: 5 * time.Minute}
-		require.NoError(t, deps.reconciler.Reconcile(t.Context(), deps.dtp, deps.dk, imgClient))
+		deps.pm.Spec.Scraper.TargetsPollInterval = metav1.Duration{Duration: 5 * time.Minute}
+		require.NoError(t, deps.reconciler.Reconcile(t.Context(), deps.pm, deps.dk, imgClient))
 
 		assert.NotEqual(t, cmRV, getConfigMap(t, deps).ResourceVersion)
 		assert.NotEqual(t, deployRV, getDeployment(t, deps).ResourceVersion)
@@ -165,23 +165,23 @@ func runUpdatePhase(t *testing.T, deps *lifecycleDeps) {
 
 		imgClient := imagemock.NewClient(t)
 		imgClient.EXPECT().GetComponentLatestInfo(mock.Anything, mock.Anything, mock.Anything).Return(nil, errors.New("no scraper image available")).Maybe()
-		deps.dtp.Spec.Scraper.Replicas = new(int32(2))
-		require.NoError(t, deps.reconciler.Reconcile(t.Context(), deps.dtp, deps.dk, imgClient))
+		deps.pm.Spec.Scraper.Replicas = new(int32(2))
+		require.NoError(t, deps.reconciler.Reconcile(t.Context(), deps.pm, deps.dk, imgClient))
 
 		assert.Equal(t, cmRV, getConfigMap(t, deps).ResourceVersion)
 		assert.NotEqual(t, deployRV, getDeployment(t, deps).ResourceVersion)
 	})
 }
 
-func scraperKey(dtp *prometheusmonitoring.PrometheusMonitoring) client.ObjectKey {
-	return client.ObjectKey{Name: dtp.Scraper().GetDeploymentName(), Namespace: dtp.Namespace}
+func scraperKey(pm *prometheusmonitoring.PrometheusMonitoring) client.ObjectKey {
+	return client.ObjectKey{Name: pm.Scraper().GetDeploymentName(), Namespace: pm.Namespace}
 }
 
 func getConfigMap(t *testing.T, deps *lifecycleDeps) *corev1.ConfigMap {
 	t.Helper()
 
 	cm := &corev1.ConfigMap{}
-	require.NoError(t, deps.clt.Get(t.Context(), scraperKey(deps.dtp), cm))
+	require.NoError(t, deps.clt.Get(t.Context(), scraperKey(deps.pm), cm))
 
 	return cm
 }
@@ -190,7 +190,7 @@ func getDeployment(t *testing.T, deps *lifecycleDeps) *appsv1.Deployment {
 	t.Helper()
 
 	deploy := &appsv1.Deployment{}
-	require.NoError(t, deps.clt.Get(t.Context(), scraperKey(deps.dtp), deploy))
+	require.NoError(t, deps.clt.Get(t.Context(), scraperKey(deps.pm), deploy))
 
 	return deploy
 }
@@ -198,13 +198,13 @@ func getDeployment(t *testing.T, deps *lifecycleDeps) *appsv1.Deployment {
 func assertDeploymentAbsent(t *testing.T, deps *lifecycleDeps) {
 	t.Helper()
 
-	err := deps.clt.Get(t.Context(), scraperKey(deps.dtp), &appsv1.Deployment{})
+	err := deps.clt.Get(t.Context(), scraperKey(deps.pm), &appsv1.Deployment{})
 	assert.True(t, k8serrors.IsNotFound(err))
 }
 
 func assertServiceAbsent(t *testing.T, deps *lifecycleDeps) {
 	t.Helper()
 
-	err := deps.clt.Get(t.Context(), scraperKey(deps.dtp), &corev1.Service{})
+	err := deps.clt.Get(t.Context(), scraperKey(deps.pm), &corev1.Service{})
 	assert.True(t, k8serrors.IsNotFound(err))
 }

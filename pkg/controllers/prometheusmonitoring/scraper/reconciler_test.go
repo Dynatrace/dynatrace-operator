@@ -36,7 +36,7 @@ const testImage = "registry.example.com/scraper:1.2.3"
 
 func newTestDTP(name, namespace string) *prometheusmonitoring.PrometheusMonitoring {
 	return &prometheusmonitoring.PrometheusMonitoring{
-		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace, UID: types.UID("dtp-uid")},
+		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace, UID: types.UID("pm-uid")},
 		Spec: prometheusmonitoring.PrometheusMonitoringSpec{
 			Scraper: prometheusmonitoring.ScraperSpec{
 				PodSpec: prometheusmonitoring.PodSpec{
@@ -55,10 +55,10 @@ func newTestDTP(name, namespace string) *prometheusmonitoring.PrometheusMonitori
 	}
 }
 
-func newTestScope(dtp *prometheusmonitoring.PrometheusMonitoring) *reconcileScope {
+func newTestScope(pm *prometheusmonitoring.PrometheusMonitoring) *reconcileScope {
 	return &reconcileScope{
-		Owner:     dtp,
-		Spec:      dtp.Scraper(),
+		Owner:     pm,
+		Spec:      pm.Scraper(),
 		AppLabels: k8slabel.OTelScraper(),
 	}
 }
@@ -75,14 +75,14 @@ func createErrorClient(createErr error) client.Client {
 // that the scraper wires itself to the right condition type, component name and rollout check.
 func TestReconcileCondition(t *testing.T) {
 	t.Run("freshly created deployment with no ready replicas -> pending", func(t *testing.T) {
-		dtp := newTestDTP("dtp", "dynatrace")
-		dtp.Spec.Scraper.Image = testImage
-		dtp.Spec.Scraper.Replicas = new(int32(2))
+		pm := newTestDTP("pm", "dynatrace")
+		pm.Spec.Scraper.Image = testImage
+		pm.Spec.Scraper.Replicas = new(int32(2))
 
 		r := &Reconciler{Client: fake.NewClient()}
-		require.NoError(t, r.Reconcile(t.Context(), dtp, &dynakube.DynaKube{}, nil))
+		require.NoError(t, r.Reconcile(t.Context(), pm, &dynakube.DynaKube{}, nil))
 
-		condition := meta.FindStatusCondition(dtp.Status.Conditions, prometheusmonitoring.ScraperAvailable)
+		condition := meta.FindStatusCondition(pm.Status.Conditions, prometheusmonitoring.ScraperAvailable)
 		require.NotNil(t, condition)
 		assert.Equal(t, metav1.ConditionFalse, condition.Status)
 		assert.Equal(t, status.ReasonReconciling, condition.Reason)
@@ -90,14 +90,14 @@ func TestReconcileCondition(t *testing.T) {
 	})
 
 	t.Run("reconcile error -> error, with unwrapped message", func(t *testing.T) {
-		dtp := newTestDTP("dtp", "dynatrace")
-		dtp.Spec.Scraper.Image = testImage
+		pm := newTestDTP("pm", "dynatrace")
+		pm.Spec.Scraper.Image = testImage
 
 		boom := errors.New("boom")
 		r := &Reconciler{Client: createErrorClient(boom)}
-		require.Error(t, r.Reconcile(t.Context(), dtp, &dynakube.DynaKube{}, nil))
+		require.Error(t, r.Reconcile(t.Context(), pm, &dynakube.DynaKube{}, nil))
 
-		condition := meta.FindStatusCondition(dtp.Status.Conditions, prometheusmonitoring.ScraperAvailable)
+		condition := meta.FindStatusCondition(pm.Status.Conditions, prometheusmonitoring.ScraperAvailable)
 		require.NotNil(t, condition)
 		assert.Equal(t, metav1.ConditionFalse, condition.Status)
 		assert.Equal(t, status.ReasonError, condition.Reason)
@@ -107,15 +107,15 @@ func TestReconcileCondition(t *testing.T) {
 
 func TestReconcileConfigMap(t *testing.T) {
 	t.Run("apply spec", func(t *testing.T) {
-		dtp := newTestDTP("dtp", "dynatrace")
-		s := newTestScope(dtp)
+		pm := newTestDTP("pm", "dynatrace")
+		s := newTestScope(pm)
 		c := fake.NewClient()
 		r := &Reconciler{Client: c}
 
 		require.NoError(t, r.reconcileConfigMap(t.Context(), s))
 
 		cm := &corev1.ConfigMap{}
-		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetDeploymentName(), Namespace: dtp.Namespace}, cm))
+		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetDeploymentName(), Namespace: pm.Namespace}, cm))
 
 		helpers.AssertGolden(t, "testdata/configmap.yaml", cm)
 
@@ -124,11 +124,11 @@ func TestReconcileConfigMap(t *testing.T) {
 	})
 
 	t.Run("merge labels", func(t *testing.T) {
-		dtp := newTestDTP("dtp", "dynatrace")
-		s := newTestScope(dtp)
+		pm := newTestDTP("pm", "dynatrace")
+		s := newTestScope(pm)
 		existing := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{
 			Name:      s.Spec.GetDeploymentName(),
-			Namespace: dtp.Namespace,
+			Namespace: pm.Namespace,
 			Labels:    map[string]string{"custom": "value", k8slabel.AppInstanceLabel: "override"},
 		}}
 		c := fake.NewClient(existing)
@@ -137,22 +137,22 @@ func TestReconcileConfigMap(t *testing.T) {
 		require.NoError(t, r.reconcileConfigMap(t.Context(), s))
 
 		cm := &corev1.ConfigMap{}
-		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetDeploymentName(), Namespace: dtp.Namespace}, cm))
+		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetDeploymentName(), Namespace: pm.Namespace}, cm))
 		assert.Equal(t, "value", cm.Labels["custom"])
 		assert.Equal(t, k8slabel.OTelScraper().Instance, cm.Labels[k8slabel.AppInstanceLabel])
 	})
 
 	t.Run("propagate error", func(t *testing.T) {
 		expectErr := errors.New("boom")
-		err := (&Reconciler{Client: createErrorClient(expectErr)}).reconcileConfigMap(t.Context(), newTestScope(newTestDTP("dtp", "dynatrace")))
+		err := (&Reconciler{Client: createErrorClient(expectErr)}).reconcileConfigMap(t.Context(), newTestScope(newTestDTP("pm", "dynatrace")))
 		require.ErrorIs(t, err, expectErr)
 	})
 }
 
 func TestReconcileDeployment(t *testing.T) {
 	t.Run("unresolvable image", func(t *testing.T) {
-		dtp := newTestDTP("dtp", "dynatrace")
-		s := newTestScope(dtp)
+		pm := newTestDTP("pm", "dynatrace")
+		s := newTestScope(pm)
 		// No explicit image on the spec, so the reconciler falls back to the registry.
 		imgClient := imagemock.NewClient(t)
 		imgClient.EXPECT().GetComponentLatestInfo(mock.Anything, mock.Anything, mock.Anything).Return(nil, errors.New("no such component"))
@@ -165,22 +165,22 @@ func TestReconcileDeployment(t *testing.T) {
 		require.Error(t, err)
 		assert.Nil(t, s.Deployment)
 
-		getErr := c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetDeploymentName(), Namespace: dtp.Namespace}, &appsv1.Deployment{})
+		getErr := c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetDeploymentName(), Namespace: pm.Namespace}, &appsv1.Deployment{})
 		assert.True(t, k8serrors.IsNotFound(getErr))
 	})
 
 	t.Run("apply spec", func(t *testing.T) {
-		dtp := newTestDTP("dtp", "dynatrace")
-		dtp.Spec.Scraper.Image = testImage
-		dtp.Spec.Scraper.ImagePullPolicy = corev1.PullAlways
-		dtp.Spec.Scraper.Replicas = new(int32(3))
-		dtp.Spec.Scraper.NodeSelector = map[string]string{"disk": "ssd"}
-		dtp.Spec.Scraper.PriorityClassName = "high-priority"
-		dtp.Spec.Scraper.Tolerations = []corev1.Toleration{{Key: "k", Operator: corev1.TolerationOpExists}}
-		dtp.Spec.Scraper.Annotations = map[string]string{"custom": "annotation"}
-		dtp.Spec.Scraper.Labels = map[string]string{"custom": "label"}
-		dtp.Spec.Scraper.Args = []string{"--foo=bar"}
-		s := newTestScope(dtp)
+		pm := newTestDTP("pm", "dynatrace")
+		pm.Spec.Scraper.Image = testImage
+		pm.Spec.Scraper.ImagePullPolicy = corev1.PullAlways
+		pm.Spec.Scraper.Replicas = new(int32(3))
+		pm.Spec.Scraper.NodeSelector = map[string]string{"disk": "ssd"}
+		pm.Spec.Scraper.PriorityClassName = "high-priority"
+		pm.Spec.Scraper.Tolerations = []corev1.Toleration{{Key: "k", Operator: corev1.TolerationOpExists}}
+		pm.Spec.Scraper.Annotations = map[string]string{"custom": "annotation"}
+		pm.Spec.Scraper.Labels = map[string]string{"custom": "label"}
+		pm.Spec.Scraper.Args = []string{"--foo=bar"}
+		s := newTestScope(pm)
 		s.ConfigMapHash = "deadbeef"
 		c := fake.NewClient()
 		r := &Reconciler{Client: c}
@@ -189,51 +189,51 @@ func TestReconcileDeployment(t *testing.T) {
 		require.NotNil(t, s.Deployment)
 
 		deploy := &appsv1.Deployment{}
-		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetDeploymentName(), Namespace: dtp.Namespace}, deploy))
+		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetDeploymentName(), Namespace: pm.Namespace}, deploy))
 
 		helpers.AssertGolden(t, "testdata/deployment.yaml", deploy)
 	})
 
 	t.Run("records the resolved image in the status", func(t *testing.T) {
-		dtp := newTestDTP("dtp", "dynatrace")
-		dtp.Spec.Scraper.Image = testImage
-		s := newTestScope(dtp)
+		pm := newTestDTP("pm", "dynatrace")
+		pm.Spec.Scraper.Image = testImage
+		s := newTestScope(pm)
 		r := &Reconciler{Client: fake.NewClient()}
 
 		require.NoError(t, r.reconcileDeployment(t.Context(), s))
 
-		assert.Equal(t, testImage, dtp.Status.Scraper.ResolvedImage)
+		assert.Equal(t, testImage, pm.Status.Scraper.ResolvedImage)
 	})
 
 	t.Run("propagate error", func(t *testing.T) {
-		dtp := newTestDTP("dtp", "dynatrace")
-		dtp.Spec.Scraper.Image = testImage
+		pm := newTestDTP("pm", "dynatrace")
+		pm.Spec.Scraper.Image = testImage
 
 		expectErr := errors.New("boom")
-		err := (&Reconciler{Client: createErrorClient(expectErr)}).reconcileDeployment(t.Context(), newTestScope(dtp))
+		err := (&Reconciler{Client: createErrorClient(expectErr)}).reconcileDeployment(t.Context(), newTestScope(pm))
 		require.ErrorIs(t, err, expectErr)
 	})
 }
 
 func TestBuildArgs(t *testing.T) {
 	t.Run("config flag only when no user args", func(t *testing.T) {
-		s := newTestScope(newTestDTP("dtp", "dynatrace"))
+		s := newTestScope(newTestDTP("pm", "dynatrace"))
 
 		assert.Equal(t, []string{"--config=/conf/scraper.yaml"}, buildArgs(s))
 	})
 
 	t.Run("user args are appended after the config flag", func(t *testing.T) {
-		dtp := newTestDTP("dtp", "dynatrace")
-		dtp.Spec.Scraper.Args = []string{"--feature-gates=foo", "--set=bar"}
-		s := newTestScope(dtp)
+		pm := newTestDTP("pm", "dynatrace")
+		pm.Spec.Scraper.Args = []string{"--feature-gates=foo", "--set=bar"}
+		s := newTestScope(pm)
 
 		assert.Equal(t, []string{"--config=/conf/scraper.yaml", "--feature-gates=foo", "--set=bar"}, buildArgs(s))
 	})
 
 	t.Run("user args are sanitized", func(t *testing.T) {
-		dtp := newTestDTP("dtp", "dynatrace")
-		dtp.Spec.Scraper.Args = []string{"--ok=1\nrm -rf /"}
-		s := newTestScope(dtp)
+		pm := newTestDTP("pm", "dynatrace")
+		pm.Spec.Scraper.Args = []string{"--ok=1\nrm -rf /"}
+		s := newTestScope(pm)
 
 		args := buildArgs(s)
 		require.Len(t, args, 2)
@@ -243,7 +243,7 @@ func TestBuildArgs(t *testing.T) {
 
 func TestBuildEnv(t *testing.T) {
 	t.Run("pod name and ip are exposed for the collector config", func(t *testing.T) {
-		envs := buildEnv(newTestScope(newTestDTP("dtp", "dynatrace")))
+		envs := buildEnv(newTestScope(newTestDTP("pm", "dynatrace")))
 
 		assert.Equal(t, "metadata.name", findEnv(t, envs, "MY_POD_NAME").ValueFrom.FieldRef.FieldPath)
 		assert.Equal(t, "status.podIP", findEnv(t, envs, "MY_POD_IP").ValueFrom.FieldRef.FieldPath)
@@ -266,23 +266,23 @@ func findEnv(t *testing.T, envs []corev1.EnvVar, name string) corev1.EnvVar {
 
 func TestBuildVolumes(t *testing.T) {
 	t.Run("config volume only", func(t *testing.T) {
-		s := newTestScope(newTestDTP("dtp", "dynatrace"))
+		s := newTestScope(newTestDTP("pm", "dynatrace"))
 
 		volumes := buildVolumes(s)
 		mounts := buildVolumeMounts()
 
 		require.Len(t, volumes, 1)
 		assert.Equal(t, configVolumeName, volumes[0].Name)
-		assert.Equal(t, "dtp-scraper", volumes[0].ConfigMap.Name)
+		assert.Equal(t, "pm-scraper", volumes[0].ConfigMap.Name)
 		require.Len(t, mounts, 1)
 		assert.Equal(t, configMountDir, mounts[0].MountPath)
 	})
 }
 
 func TestMutateDeploymentIsIdempotent(t *testing.T) {
-	dtp := newTestDTP("dtp", "dynatrace")
-	dtp.Spec.Scraper.Image = testImage
-	s := newTestScope(dtp)
+	pm := newTestDTP("pm", "dynatrace")
+	pm.Spec.Scraper.Image = testImage
+	s := newTestScope(pm)
 
 	deploy := &appsv1.Deployment{}
 	mutateDeployment(deploy, s)

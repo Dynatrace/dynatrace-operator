@@ -65,22 +65,22 @@ type Reconciler struct {
 }
 
 type targetAllocatorReconciler interface {
-	Reconcile(ctx context.Context, dtp *prometheusmonitoring.PrometheusMonitoring, dk *dynakube.DynaKube, imageClient image.Client) error
+	Reconcile(ctx context.Context, pm *prometheusmonitoring.PrometheusMonitoring, dk *dynakube.DynaKube, imageClient image.Client) error
 }
 
 type gatewayReconciler interface {
-	Reconcile(ctx context.Context, dtp *prometheusmonitoring.PrometheusMonitoring, dk *dynakube.DynaKube, imageClient image.Client) error
+	Reconcile(ctx context.Context, pm *prometheusmonitoring.PrometheusMonitoring, dk *dynakube.DynaKube, imageClient image.Client) error
 }
 
 type scraperReconciler interface {
-	Reconcile(ctx context.Context, dtp *prometheusmonitoring.PrometheusMonitoring, dk *dynakube.DynaKube, imageClient image.Client) error
+	Reconcile(ctx context.Context, pm *prometheusmonitoring.PrometheusMonitoring, dk *dynakube.DynaKube, imageClient image.Client) error
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ctrl.Result, reterr error) {
 	log := logd.FromContext(ctx)
 
-	dtp := &prometheusmonitoring.PrometheusMonitoring{}
-	if err := r.Get(ctx, req.NamespacedName, dtp); err != nil {
+	pm := &prometheusmonitoring.PrometheusMonitoring{}
+	if err := r.Get(ctx, req.NamespacedName, pm); err != nil {
 		if !k8serrors.IsNotFound(err) {
 			return ctrl.Result{}, fmt.Errorf("get prometheusmonitoring: %w", err)
 		}
@@ -91,9 +91,9 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ct
 	}
 
 	defer func() {
-		reterr = setPhase(dtp, reterr)
+		reterr = setPhase(pm, reterr)
 
-		if applyErr := k8sobject.ApplyStatus(ctx, r, dtp); applyErr != nil {
+		if applyErr := k8sobject.ApplyStatus(ctx, r, pm); applyErr != nil {
 			if reterr != nil {
 				// The reconciler error has higher precedence than updating the status, but the information should not be lost.
 				log.Error(applyErr, "failed applying status")
@@ -105,12 +105,12 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ct
 		}
 	}()
 
-	log = log.WithValues("dynaKubeRef", dtp.Spec.DynaKubeRef)
+	log = log.WithValues("dynaKubeRef", pm.Spec.DynaKubeRef)
 
 	dk := &dynakube.DynaKube{}
-	if err := r.Get(ctx, client.ObjectKey{Name: dtp.Spec.DynaKubeRef, Namespace: dtp.Namespace}, dk); err != nil {
+	if err := r.Get(ctx, client.ObjectKey{Name: pm.Spec.DynaKubeRef, Namespace: pm.Namespace}, dk); err != nil {
 		if !k8serrors.IsNotFound(err) {
-			return ctrl.Result{}, fmt.Errorf("get dynakube %s: %w", dtp.Spec.DynaKubeRef, err)
+			return ctrl.Result{}, fmt.Errorf("get dynakube %s: %w", pm.Spec.DynaKubeRef, err)
 		}
 
 		log.Info("skipping reconcile due to missing DynaKube")
@@ -135,16 +135,16 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ct
 		return ctrl.Result{}, fmt.Errorf("build dynatrace client: %w", err)
 	}
 
-	if err := r.gateway.Reconcile(ctx, dtp, dk, dtClient.Images); err != nil {
+	if err := r.gateway.Reconcile(ctx, pm, dk, dtClient.Images); err != nil {
 		return ctrl.Result{}, fmt.Errorf("reconcile gateway: %w", err)
 	}
 
-	if err := r.targetAllocator.Reconcile(ctx, dtp, dk, dtClient.Images); err != nil {
+	if err := r.targetAllocator.Reconcile(ctx, pm, dk, dtClient.Images); err != nil {
 		return ctrl.Result{}, fmt.Errorf("reconcile target allocator: %w", err)
 	}
 
 	// Reconciled last: its config references the gateway and target allocator services.
-	if err := r.scraper.Reconcile(ctx, dtp, dk, dtClient.Images); err != nil {
+	if err := r.scraper.Reconcile(ctx, pm, dk, dtClient.Images); err != nil {
 		return ctrl.Result{}, fmt.Errorf("reconcile scraper: %w", err)
 	}
 
@@ -175,34 +175,34 @@ func (r *Reconciler) buildDynatraceClient(ctx context.Context, dk *dynakube.Dyna
 //   - Reconciliation successful: condition status True
 //   - Reconciliation ongoing: condition status False/Unknown and reason Reconciling
 //   - Reconciliation failed: anything that does not fit the above
-func setPhase(dtp *prometheusmonitoring.PrometheusMonitoring, err error) error {
+func setPhase(pm *prometheusmonitoring.PrometheusMonitoring, err error) error {
 	if errors.Is(errDynaKubeNotFound, err) {
-		if len(dtp.Status.Conditions) == 0 {
-			dtp.Status.Phase = status.Deploying
+		if len(pm.Status.Conditions) == 0 {
+			pm.Status.Phase = status.Deploying
 		} else {
-			dtp.Status.Phase = status.Error
+			pm.Status.Phase = status.Error
 		}
 
 		return nil
 	}
 
 	if errors.Is(errDynaKubeNotReady, err) {
-		dtp.Status.Phase = status.Deploying
+		pm.Status.Phase = status.Deploying
 
 		return nil
 	}
 
 	if errors.Is(errDataIngestTokenUnavailable, err) {
-		dtp.Status.Phase = status.Error
+		pm.Status.Phase = status.Error
 
 		return nil
 	}
 
-	if len(dtp.Status.Conditions) == 0 {
+	if len(pm.Status.Conditions) == 0 {
 		if err != nil {
-			dtp.Status.Phase = status.Error
+			pm.Status.Phase = status.Error
 		} else {
-			dtp.Status.Phase = status.Deploying
+			pm.Status.Phase = status.Deploying
 		}
 
 		return err
@@ -210,7 +210,7 @@ func setPhase(dtp *prometheusmonitoring.PrometheusMonitoring, err error) error {
 
 	phase := status.Running
 
-	for _, c := range dtp.Status.Conditions {
+	for _, c := range pm.Status.Conditions {
 		if c.Status != metav1.ConditionTrue {
 			if c.Reason != status.ReasonReconciling {
 				phase = status.Error
@@ -226,7 +226,7 @@ func setPhase(dtp *prometheusmonitoring.PrometheusMonitoring, err error) error {
 		phase = status.Error
 	}
 
-	dtp.Status.Phase = phase
+	pm.Status.Phase = phase
 
 	return err
 }
@@ -235,12 +235,12 @@ func setPhase(dtp *prometheusmonitoring.PrometheusMonitoring, err error) error {
 func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	// Add an index for the dynaKubeRef to allow using MatchingFields
 	if err := mgr.GetFieldIndexer().IndexField(context.TODO(), &prometheusmonitoring.PrometheusMonitoring{}, "spec.dynaKubeRef", func(obj client.Object) []string {
-		dtp, ok := obj.(*prometheusmonitoring.PrometheusMonitoring)
+		pm, ok := obj.(*prometheusmonitoring.PrometheusMonitoring)
 		if !ok {
 			return nil
 		}
 
-		return []string{dtp.Spec.DynaKubeRef}
+		return []string{pm.Spec.DynaKubeRef}
 	}); err != nil {
 		return fmt.Errorf("add dynaKubeRef index: %w", err)
 	}

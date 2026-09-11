@@ -6,15 +6,15 @@ metadata:
     app.kubernetes.io/managed-by: dynatrace-operator
     app.kubernetes.io/name: opentelemetry-gateway
     internal.dynatrace.com/operator-version: snapshot
-  name: dtp-gateway
+  name: pm-gateway
   namespace: dynatrace
   ownerReferences:
   - apiVersion: dynatrace.com/v1alpha1
     blockOwnerDeletion: true
     controller: true
     kind: PrometheusMonitoring
-    name: dtp
-    uid: dtp-uid
+    name: pm
+    uid: pm-uid
 data:
   relay: |
     connectors: {}

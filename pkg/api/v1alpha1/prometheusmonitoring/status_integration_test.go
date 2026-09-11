@@ -35,25 +35,25 @@ func TestPrometheusMonitoringUpdateStatus(t *testing.T) {
 	})
 
 	t.Run("can't add duplicated conditions", func(t *testing.T) {
-		dtp := buildPrometheusMonitoring()
-		createPrometheusMonitoring(t, clt, dtp)
+		pm := buildPrometheusMonitoring()
+		createPrometheusMonitoring(t, clt, pm)
 		dummyCondition := buildPrometheusMonitoringCondition()
 
 		// append first condition
-		*dtp.Conditions() = append(*dtp.Conditions(), dummyCondition)
-		require.NoError(t, clt.Status().Update(t.Context(), dtp))
+		*pm.Conditions() = append(*pm.Conditions(), dummyCondition)
+		require.NoError(t, clt.Status().Update(t.Context(), pm))
 
 		// check that condition was added
-		clt.Get(t.Context(), client.ObjectKeyFromObject(dtp), dtp)
-		require.Len(t, *dtp.Conditions(), 1)
+		clt.Get(t.Context(), client.ObjectKeyFromObject(pm), pm)
+		require.Len(t, *pm.Conditions(), 1)
 
 		// append duplicated condition
-		*dtp.Conditions() = append(*dtp.Conditions(), dummyCondition)
-		require.ErrorContains(t, clt.Status().Update(t.Context(), dtp), duplicatedConditionErrorMessageDtp)
+		*pm.Conditions() = append(*pm.Conditions(), dummyCondition)
+		require.ErrorContains(t, clt.Status().Update(t.Context(), pm), duplicatedConditionErrorMessageDtp)
 
 		// check that condition count is still 1
-		clt.Get(t.Context(), client.ObjectKeyFromObject(dtp), dtp)
-		require.Len(t, *dtp.Conditions(), 1)
+		clt.Get(t.Context(), client.ObjectKeyFromObject(pm), pm)
+		require.Len(t, *pm.Conditions(), 1)
 	})
 }
 
@@ -79,10 +79,10 @@ func buildPrometheusMonitoringCondition() metav1.Condition {
 	}
 }
 
-func createPrometheusMonitoring(t *testing.T, clt client.Client, dtp *prometheusmonitoring.PrometheusMonitoring) {
+func createPrometheusMonitoring(t *testing.T, clt client.Client, pm *prometheusmonitoring.PrometheusMonitoring) {
 	t.Helper()
-	status := dtp.Status
-	integrationtests.CreateKubernetesObject(t, clt, dtp)
-	dtp.Status = status
-	require.NoError(t, clt.Status().Update(t.Context(), dtp))
+	status := pm.Status
+	integrationtests.CreateKubernetesObject(t, clt, pm)
+	pm.Status = status
+	require.NoError(t, clt.Status().Update(t.Context(), pm))
 }

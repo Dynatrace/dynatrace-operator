@@ -28,18 +28,18 @@ import (
 )
 
 func newTestDTP(name, namespace string) *prometheusmonitoring.PrometheusMonitoring {
-	return &prometheusmonitoring.PrometheusMonitoring{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace, UID: types.UID("dtp-uid")}}
+	return &prometheusmonitoring.PrometheusMonitoring{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace, UID: types.UID("pm-uid")}}
 }
 
-func newTestScope(dtp *prometheusmonitoring.PrometheusMonitoring) *reconcileScope {
-	return newTestScopeWithDynaKube(dtp, &dynakube.DynaKube{})
+func newTestScope(pm *prometheusmonitoring.PrometheusMonitoring) *reconcileScope {
+	return newTestScopeWithDynaKube(pm, &dynakube.DynaKube{})
 }
 
-func newTestScopeWithDynaKube(dtp *prometheusmonitoring.PrometheusMonitoring, dk *dynakube.DynaKube) *reconcileScope {
+func newTestScopeWithDynaKube(pm *prometheusmonitoring.PrometheusMonitoring, dk *dynakube.DynaKube) *reconcileScope {
 	return &reconcileScope{
-		Owner:     dtp,
+		Owner:     pm,
 		DynaKube:  dk,
-		Spec:      dtp.Gateway(),
+		Spec:      pm.Gateway(),
 		AppLabels: k8slabel.New("opentelemetry-gateway", "otel-gateway", ""),
 	}
 }
@@ -48,17 +48,17 @@ func newTestScopeWithDynaKube(dtp *prometheusmonitoring.PrometheusMonitoring, dk
 // that the gateway wires itself to the right condition type, component name and rollout check.
 func TestReconcileCondition(t *testing.T) {
 	t.Run("freshly created statefulset with no ready replicas -> pending", func(t *testing.T) {
-		dtp := newTestDTP("dtp", "dynatrace")
-		dtp.Spec.Gateway.Image = "registry.example.com/gateway:1.2.3"
-		dtp.Spec.Gateway.Replicas = new(int32(2))
+		pm := newTestDTP("pm", "dynatrace")
+		pm.Spec.Gateway.Image = "registry.example.com/gateway:1.2.3"
+		pm.Spec.Gateway.Replicas = new(int32(2))
 
 		dk := &dynakube.DynaKube{}
 		dk.Spec.APIURL = "https://abc12345.live.dynatrace.com/api"
 
 		r := &Reconciler{Client: fake.NewClient()}
-		require.NoError(t, r.Reconcile(t.Context(), dtp, dk, nil))
+		require.NoError(t, r.Reconcile(t.Context(), pm, dk, nil))
 
-		condition := meta.FindStatusCondition(dtp.Status.Conditions, prometheusmonitoring.GatewayAvailable)
+		condition := meta.FindStatusCondition(pm.Status.Conditions, prometheusmonitoring.GatewayAvailable)
 		require.NotNil(t, condition)
 		assert.Equal(t, metav1.ConditionFalse, condition.Status)
 		assert.Equal(t, status.ReasonReconciling, condition.Reason)
@@ -66,8 +66,8 @@ func TestReconcileCondition(t *testing.T) {
 	})
 
 	t.Run("reconcile error -> error, with unwrapped message", func(t *testing.T) {
-		dtp := newTestDTP("dtp", "dynatrace")
-		dtp.Spec.Gateway.Image = "registry.example.com/gateway:1.2.3"
+		pm := newTestDTP("pm", "dynatrace")
+		pm.Spec.Gateway.Image = "registry.example.com/gateway:1.2.3"
 
 		boom := errors.New("boom")
 		clt := fake.NewClientWithInterceptors(interceptor.Funcs{
@@ -77,9 +77,9 @@ func TestReconcileCondition(t *testing.T) {
 		})
 
 		r := &Reconciler{Client: clt}
-		require.Error(t, r.Reconcile(t.Context(), dtp, &dynakube.DynaKube{}, nil))
+		require.Error(t, r.Reconcile(t.Context(), pm, &dynakube.DynaKube{}, nil))
 
-		condition := meta.FindStatusCondition(dtp.Status.Conditions, prometheusmonitoring.GatewayAvailable)
+		condition := meta.FindStatusCondition(pm.Status.Conditions, prometheusmonitoring.GatewayAvailable)
 		require.NotNil(t, condition)
 		assert.Equal(t, metav1.ConditionFalse, condition.Status)
 		assert.Equal(t, status.ReasonError, condition.Reason)
@@ -110,17 +110,17 @@ func TestBuildGatewayConfigData(t *testing.T) {
 
 func TestReconcileConfigMap(t *testing.T) {
 	t.Run("apply spec", func(t *testing.T) {
-		dtp := newTestDTP("dtp", "dynatrace")
+		pm := newTestDTP("pm", "dynatrace")
 		dk := &dynakube.DynaKube{}
 		dk.Spec.APIURL = "https://abc12345.live.dynatrace.com/api"
-		s := newTestScopeWithDynaKube(dtp, dk)
+		s := newTestScopeWithDynaKube(pm, dk)
 		c := fake.NewClient()
 		r := &Reconciler{Client: c}
 
 		require.NoError(t, r.reconcileConfigMap(t.Context(), s))
 
 		cm := &corev1.ConfigMap{}
-		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetStatefulSetName(), Namespace: dtp.Namespace}, cm))
+		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetStatefulSetName(), Namespace: pm.Namespace}, cm))
 
 		helpers.AssertGolden(t, filepath.Join("testdata", "configmap.yaml"), cm)
 
@@ -129,26 +129,26 @@ func TestReconcileConfigMap(t *testing.T) {
 	})
 
 	t.Run("resource attributes are rendered into the configmap", func(t *testing.T) {
-		dtp := newTestDTP("dtp", "dynatrace")
+		pm := newTestDTP("pm", "dynatrace")
 		dk := &dynakube.DynaKube{}
 		dk.Spec.APIURL = "https://abc12345.live.dynatrace.com/api"
 		dk.Spec.ResourceAttributes = map[string]string{"favorite.coffee": "espresso", "deploy.mood": "yolo"}
-		s := newTestScopeWithDynaKube(dtp, dk)
+		s := newTestScopeWithDynaKube(pm, dk)
 		c := fake.NewClient()
 		r := &Reconciler{Client: c}
 
 		require.NoError(t, r.reconcileConfigMap(t.Context(), s))
 
 		cm := &corev1.ConfigMap{}
-		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetStatefulSetName(), Namespace: dtp.Namespace}, cm))
+		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetStatefulSetName(), Namespace: pm.Namespace}, cm))
 		helpers.AssertGolden(t, filepath.Join("testdata", "configmap_with_resource_attributes.yaml"), cm)
 	})
 
 	t.Run("changing resource attributes changes the config hash, triggering a rollout", func(t *testing.T) {
-		dtp := newTestDTP("dtp", "dynatrace")
+		pm := newTestDTP("pm", "dynatrace")
 		dk := &dynakube.DynaKube{}
 		dk.Spec.APIURL = "https://abc12345.live.dynatrace.com/api"
-		s := newTestScopeWithDynaKube(dtp, dk)
+		s := newTestScopeWithDynaKube(pm, dk)
 		r := &Reconciler{Client: fake.NewClient()}
 
 		require.NoError(t, r.reconcileConfigMap(t.Context(), s))
@@ -162,11 +162,11 @@ func TestReconcileConfigMap(t *testing.T) {
 	})
 
 	t.Run("merge labels", func(t *testing.T) {
-		dtp := newTestDTP("dtp", "dynatrace")
-		s := newTestScope(dtp)
+		pm := newTestDTP("pm", "dynatrace")
+		s := newTestScope(pm)
 		existing := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{
 			Name:      s.Spec.GetStatefulSetName(),
-			Namespace: dtp.Namespace,
+			Namespace: pm.Namespace,
 			Labels:    map[string]string{"custom": "value", k8slabel.AppInstanceLabel: "override"},
 		}}
 		c := fake.NewClient(existing)
@@ -175,39 +175,39 @@ func TestReconcileConfigMap(t *testing.T) {
 		require.NoError(t, r.reconcileConfigMap(t.Context(), s))
 
 		cm := &corev1.ConfigMap{}
-		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetStatefulSetName(), Namespace: dtp.Namespace}, cm))
+		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetStatefulSetName(), Namespace: pm.Namespace}, cm))
 		assert.Equal(t, "value", cm.Labels["custom"])
 		assert.Equal(t, "otel-gateway", cm.Labels[k8slabel.AppInstanceLabel])
 	})
 
 	t.Run("propagate error", func(t *testing.T) {
 		expectErr := errors.New("boom")
-		err := (&Reconciler{Client: createErrorClient(expectErr)}).reconcileConfigMap(t.Context(), newTestScope(newTestDTP("dtp", "dynatrace")))
+		err := (&Reconciler{Client: createErrorClient(expectErr)}).reconcileConfigMap(t.Context(), newTestScope(newTestDTP("pm", "dynatrace")))
 		require.ErrorIs(t, err, expectErr)
 	})
 }
 
 func TestReconcileService(t *testing.T) {
 	t.Run("apply spec", func(t *testing.T) {
-		dtp := newTestDTP("dtp", "dynatrace")
-		s := newTestScope(dtp)
+		pm := newTestDTP("pm", "dynatrace")
+		s := newTestScope(pm)
 		c := fake.NewClient()
 		r := &Reconciler{Client: c}
 
 		require.NoError(t, r.reconcileService(t.Context(), s))
 
 		svc := &corev1.Service{}
-		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetStatefulSetName(), Namespace: dtp.Namespace}, svc))
+		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetStatefulSetName(), Namespace: pm.Namespace}, svc))
 
 		helpers.AssertGolden(t, filepath.Join("testdata", "service.yaml"), svc)
 	})
 
 	t.Run("merge labels", func(t *testing.T) {
-		dtp := newTestDTP("dtp", "dynatrace")
-		s := newTestScope(dtp)
+		pm := newTestDTP("pm", "dynatrace")
+		s := newTestScope(pm)
 		existing := &corev1.Service{ObjectMeta: metav1.ObjectMeta{
 			Name:      s.Spec.GetStatefulSetName(),
-			Namespace: dtp.Namespace,
+			Namespace: pm.Namespace,
 			Labels:    map[string]string{"custom": "value", k8slabel.AppInstanceLabel: "override"},
 		}}
 		c := fake.NewClient(existing)
@@ -216,14 +216,14 @@ func TestReconcileService(t *testing.T) {
 		require.NoError(t, r.reconcileService(t.Context(), s))
 
 		svc := &corev1.Service{}
-		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetStatefulSetName(), Namespace: dtp.Namespace}, svc))
+		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetStatefulSetName(), Namespace: pm.Namespace}, svc))
 		assert.Equal(t, "value", svc.Labels["custom"])
 		assert.Equal(t, "otel-gateway", svc.Labels[k8slabel.AppInstanceLabel])
 	})
 
 	t.Run("propagate error", func(t *testing.T) {
 		expectErr := errors.New("boom")
-		err := (&Reconciler{Client: createErrorClient(expectErr)}).reconcileService(t.Context(), newTestScope(newTestDTP("dtp", "dynatrace")))
+		err := (&Reconciler{Client: createErrorClient(expectErr)}).reconcileService(t.Context(), newTestScope(newTestDTP("pm", "dynatrace")))
 		require.ErrorIs(t, err, expectErr)
 	})
 }

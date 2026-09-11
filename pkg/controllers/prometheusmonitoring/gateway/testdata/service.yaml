@@ -1,7 +1,7 @@
 kind: Service
 apiVersion: v1
 metadata:
-  name: dtp-gateway
+  name: pm-gateway
   namespace: dynatrace
   labels:
     app.kubernetes.io/instance: otel-gateway
@@ -13,8 +13,8 @@ metadata:
     blockOwnerDeletion: true
     controller: true
     kind: PrometheusMonitoring
-    name: dtp
-    uid: dtp-uid
+    name: pm
+    uid: pm-uid
 spec:
   ports:
   - name: otlp

@@ -15,12 +15,12 @@ import (
 
 func TestBuildScraperConfigData(t *testing.T) {
 	t.Run("endpoints are derived from the owner, not the scraper spec", func(t *testing.T) {
-		s := newTestScope(newTestDTP("dtp", "dynatrace"))
+		s := newTestScope(newTestDTP("pm", "dynatrace"))
 
 		data := buildScraperConfigData(s)
 
-		assert.Equal(t, "http://dtp-allocator.dynatrace:80", data.TargetAllocatorEndpoint)
-		assert.Equal(t, "dtp-gateway.dynatrace", data.GatewayService)
+		assert.Equal(t, "http://pm-allocator.dynatrace:80", data.TargetAllocatorEndpoint)
+		assert.Equal(t, "pm-gateway.dynatrace", data.GatewayService)
 	})
 
 	t.Run("endpoints follow the owner name and namespace", func(t *testing.T) {
@@ -33,10 +33,10 @@ func TestBuildScraperConfigData(t *testing.T) {
 	})
 
 	t.Run("poll interval is taken from the spec", func(t *testing.T) {
-		dtp := newTestDTP("dtp", "dynatrace")
-		dtp.Spec.Scraper.TargetsPollInterval = metav1.Duration{Duration: 90 * time.Second}
+		pm := newTestDTP("pm", "dynatrace")
+		pm.Spec.Scraper.TargetsPollInterval = metav1.Duration{Duration: 90 * time.Second}
 
-		assert.Equal(t, "1m30s", buildScraperConfigData(newTestScope(dtp)).TargetsPollInterval)
+		assert.Equal(t, "1m30s", buildScraperConfigData(newTestScope(pm)).TargetsPollInterval)
 	})
 }
 

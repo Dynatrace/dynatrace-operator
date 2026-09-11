@@ -12,14 +12,14 @@ import (
 func TestNewScraper(t *testing.T) {
 	spec := &ScraperSpec{}
 
-	scraper := NewScraper(spec, "dtp")
+	scraper := NewScraper(spec, "pm")
 
 	assert.Same(t, spec, scraper.ScraperSpec)
-	assert.Equal(t, "dtp"+ScraperNameSuffix, scraper.GetDeploymentName())
+	assert.Equal(t, "pm"+ScraperNameSuffix, scraper.GetDeploymentName())
 }
 
 func TestScraper_GetDeploymentName(t *testing.T) {
-	scraper := NewScraper(&ScraperSpec{}, "dtp")
+	scraper := NewScraper(&ScraperSpec{}, "pm")
 
-	assert.Equal(t, "dtp-scraper", scraper.GetDeploymentName())
+	assert.Equal(t, "pm-scraper", scraper.GetDeploymentName())
 }

@@ -39,9 +39,9 @@ type TargetAllocatorStatus struct {
 }
 
 // SetPhase sets the status phase on the PrometheusMonitoring object.
-func (dtps *PrometheusMonitoringStatus) SetPhase(phase status.DeploymentPhase) bool {
-	upd := phase != dtps.Phase
-	dtps.Phase = phase
+func (pms *PrometheusMonitoringStatus) SetPhase(phase status.DeploymentPhase) bool {
+	upd := phase != pms.Phase
+	pms.Phase = phase
 
 	return upd
 }

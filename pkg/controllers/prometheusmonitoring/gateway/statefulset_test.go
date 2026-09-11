@@ -30,8 +30,8 @@ func newTestDynaKube() *dynakube.DynaKube {
 
 func TestReconcileStatefulSet(t *testing.T) {
 	t.Run("no imageRef set and fleet resolve fails with missing image", func(t *testing.T) {
-		dtp := newTestDTP("dtp", "dynatrace")
-		s := newTestScopeWithDynaKube(dtp, newTestDynaKube())
+		pm := newTestDTP("pm", "dynatrace")
+		s := newTestScopeWithDynaKube(pm, newTestDynaKube())
 		imageClient := imagemock.NewClient(t)
 		imageClient.EXPECT().GetComponentLatestInfo(mock.Anything, mock.Anything, mock.Anything).Return(nil, errors.New("no image found"))
 		s.ImageClient = imageClient
@@ -43,13 +43,13 @@ func TestReconcileStatefulSet(t *testing.T) {
 		require.Error(t, err)
 		assert.Nil(t, s.StatefulSet)
 
-		getErr := c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetStatefulSetName(), Namespace: dtp.Namespace}, &appsv1.StatefulSet{})
+		getErr := c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetStatefulSetName(), Namespace: pm.Namespace}, &appsv1.StatefulSet{})
 		assert.True(t, k8serrors.IsNotFound(getErr))
 	})
 
 	t.Run("resolves image from fleet API when no imageRef set", func(t *testing.T) {
-		dtp := newTestDTP("dtp", "dynatrace")
-		s := newTestScopeWithDynaKube(dtp, newTestDynaKube())
+		pm := newTestDTP("pm", "dynatrace")
+		s := newTestScopeWithDynaKube(pm, newTestDynaKube())
 		imageClient := imagemock.NewClient(t)
 		imageClient.EXPECT().GetComponentLatestInfo(mock.Anything, image.Gateway, "").Return(&image.Info{URI: "registry.example.com/fleet-gateway:latest"}, nil)
 		s.ImageClient = imageClient
@@ -60,15 +60,15 @@ func TestReconcileStatefulSet(t *testing.T) {
 		require.NotNil(t, s.StatefulSet)
 
 		sts := &appsv1.StatefulSet{}
-		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetStatefulSetName(), Namespace: dtp.Namespace}, sts))
+		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetStatefulSetName(), Namespace: pm.Namespace}, sts))
 		assert.Equal(t, "registry.example.com/fleet-gateway:latest", sts.Spec.Template.Spec.Containers[0].Image)
-		assert.Equal(t, "registry.example.com/fleet-gateway:latest", dtp.Status.Gateway.ResolvedImage)
+		assert.Equal(t, "registry.example.com/fleet-gateway:latest", pm.Status.Gateway.ResolvedImage)
 	})
 
 	t.Run("resolves image from fleet API with publicRegistryOverride", func(t *testing.T) {
-		dtp := newTestDTP("dtp", "dynatrace")
-		dtp.Spec.PublicRegistryOverride = "custom.registry.example.com"
-		s := newTestScopeWithDynaKube(dtp, newTestDynaKube())
+		pm := newTestDTP("pm", "dynatrace")
+		pm.Spec.PublicRegistryOverride = "custom.registry.example.com"
+		s := newTestScopeWithDynaKube(pm, newTestDynaKube())
 		imageClient := imagemock.NewClient(t)
 		imageClient.EXPECT().GetComponentLatestInfo(mock.Anything, image.Gateway, "custom.registry.example.com").Return(&image.Info{URI: "custom.registry.example.com/fleet-gateway:latest"}, nil)
 		s.ImageClient = imageClient
@@ -79,25 +79,25 @@ func TestReconcileStatefulSet(t *testing.T) {
 		require.NotNil(t, s.StatefulSet)
 
 		sts := &appsv1.StatefulSet{}
-		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetStatefulSetName(), Namespace: dtp.Namespace}, sts))
+		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetStatefulSetName(), Namespace: pm.Namespace}, sts))
 		assert.Equal(t, "custom.registry.example.com/fleet-gateway:latest", sts.Spec.Template.Spec.Containers[0].Image)
-		assert.Equal(t, "custom.registry.example.com/fleet-gateway:latest", dtp.Status.Gateway.ResolvedImage)
+		assert.Equal(t, "custom.registry.example.com/fleet-gateway:latest", pm.Status.Gateway.ResolvedImage)
 	})
 
 	t.Run("apply spec", func(t *testing.T) {
-		dtp := newTestDTP("dtp", "dynatrace")
-		dtp.Spec.Gateway.Image = "registry.example.com/gateway:1.2.3"
-		dtp.Spec.Gateway.ImagePullPolicy = corev1.PullAlways
-		dtp.Spec.Gateway.Replicas = new(int32(3))
-		dtp.Spec.Gateway.NodeSelector = map[string]string{"disk": "ssd"}
-		dtp.Spec.Gateway.PriorityClassName = "high-priority"
-		dtp.Spec.Gateway.Tolerations = []corev1.Toleration{{Key: "k", Operator: corev1.TolerationOpExists}}
-		dtp.Spec.Gateway.Annotations = map[string]string{"custom": "annotation"}
-		dtp.Spec.Gateway.Labels = map[string]string{"custom": "label"}
-		dtp.Spec.Gateway.Resources = corev1.ResourceRequirements{
+		pm := newTestDTP("pm", "dynatrace")
+		pm.Spec.Gateway.Image = "registry.example.com/gateway:1.2.3"
+		pm.Spec.Gateway.ImagePullPolicy = corev1.PullAlways
+		pm.Spec.Gateway.Replicas = new(int32(3))
+		pm.Spec.Gateway.NodeSelector = map[string]string{"disk": "ssd"}
+		pm.Spec.Gateway.PriorityClassName = "high-priority"
+		pm.Spec.Gateway.Tolerations = []corev1.Toleration{{Key: "k", Operator: corev1.TolerationOpExists}}
+		pm.Spec.Gateway.Annotations = map[string]string{"custom": "annotation"}
+		pm.Spec.Gateway.Labels = map[string]string{"custom": "label"}
+		pm.Spec.Gateway.Resources = corev1.ResourceRequirements{
 			Limits: corev1.ResourceList{corev1.ResourceMemory: resource.MustParse("500Mi")},
 		}
-		s := newTestScopeWithDynaKube(dtp, newTestDynaKube())
+		s := newTestScopeWithDynaKube(pm, newTestDynaKube())
 		s.ConfigMapHash = "deadbeef"
 		s.DynaKube.Status.KubernetesClusterName = "prometheus"
 		c := fake.NewClient()
@@ -107,17 +107,17 @@ func TestReconcileStatefulSet(t *testing.T) {
 		require.NotNil(t, s.StatefulSet)
 
 		sts := &appsv1.StatefulSet{}
-		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetStatefulSetName(), Namespace: dtp.Namespace}, sts))
+		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetStatefulSetName(), Namespace: pm.Namespace}, sts))
 
 		helpers.AssertGolden(t, filepath.Join("testdata", "statefulset.yaml"), sts)
 	})
 
 	t.Run("preserve existing replicas", func(t *testing.T) {
-		dtp := newTestDTP("dtp", "dynatrace")
-		dtp.Spec.Gateway.Image = "img:1"
-		s := newTestScopeWithDynaKube(dtp, newTestDynaKube())
+		pm := newTestDTP("pm", "dynatrace")
+		pm.Spec.Gateway.Image = "img:1"
+		s := newTestScopeWithDynaKube(pm, newTestDynaKube())
 		existing := &appsv1.StatefulSet{
-			ObjectMeta: metav1.ObjectMeta{Name: s.Spec.GetStatefulSetName(), Namespace: dtp.Namespace},
+			ObjectMeta: metav1.ObjectMeta{Name: s.Spec.GetStatefulSetName(), Namespace: pm.Namespace},
 			Spec:       appsv1.StatefulSetSpec{Replicas: new(int32(5))},
 		}
 		c := fake.NewClient(existing)
@@ -126,17 +126,17 @@ func TestReconcileStatefulSet(t *testing.T) {
 		require.NoError(t, r.reconcileStatefulset(t.Context(), s))
 
 		sts := &appsv1.StatefulSet{}
-		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetStatefulSetName(), Namespace: dtp.Namespace}, sts))
+		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetStatefulSetName(), Namespace: pm.Namespace}, sts))
 		assert.Equal(t, new(int32(5)), sts.Spec.Replicas)
 	})
 
 	t.Run("propagate error", func(t *testing.T) {
-		dtp := newTestDTP("dtp", "dynatrace")
-		dtp.Spec.Gateway.Image = "img:1"
+		pm := newTestDTP("pm", "dynatrace")
+		pm.Spec.Gateway.Image = "img:1"
 		expectErr := errors.New("boom")
 		r := &Reconciler{Client: createErrorClient(expectErr)}
 
-		err := r.reconcileStatefulset(t.Context(), newTestScopeWithDynaKube(dtp, newTestDynaKube()))
+		err := r.reconcileStatefulset(t.Context(), newTestScopeWithDynaKube(pm, newTestDynaKube()))
 
 		require.ErrorIs(t, err, expectErr)
 	})

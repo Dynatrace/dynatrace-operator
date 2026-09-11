@@ -49,10 +49,10 @@ func (v *Validator) validate(ctx context.Context, obj runtime.Object) (admission
 	return warnings, nil
 }
 
-func getPrometheusMonitoring(obj runtime.Object) (dtp *prometheusmonitoring.PrometheusMonitoring, err error) {
+func getPrometheusMonitoring(obj runtime.Object) (pm *prometheusmonitoring.PrometheusMonitoring, err error) {
 	switch v := obj.(type) {
 	case *prometheusmonitoring.PrometheusMonitoring:
-		dtp = v
+		pm = v
 	default:
 		return nil, fmt.Errorf("unknown object %T", obj)
 	}
