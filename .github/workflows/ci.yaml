@@ -130,8 +130,7 @@ jobs:
           CHANGED_PREREQUISITES_MK_FILE: ${{ steps.prerequisites.outputs.all_changed_files }}
       - name: Get Go version from Dockerfile
         id: go-version
-        run: |
-          echo "go_version=$(grep -m1 'FROM.*golang:' Dockerfile | sed 's/.*golang:\([0-9.]*\).*/\1/')" >> "$GITHUB_OUTPUT"
+        uses: ./.github/actions/get-go-version
 
   helm-test:
     needs: [detect-changes]

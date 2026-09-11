@@ -62,7 +62,7 @@ jobs:
 
       - name: Get go version
         id: go-version
-        run: echo "go_version=$(grep -m1 'FROM.*golang:' Dockerfile | sed 's/.*golang:\([0-9.]*\).*/\1/')" >> "$GITHUB_OUTPUT"
+        uses: ./.github/actions/get-go-version
 
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:

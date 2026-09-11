@@ -128,8 +128,9 @@ runs:
       uses: azure/setup-kubectl@829323503d1be3d00ca8346e5391ca0b07a9ab0d # v5.1.0
     - name: Get go version
       id: go-version
-      shell: bash
-      run: echo "go_version=$(grep -m1 'FROM.*golang:' ./target/Dockerfile | sed 's/.*golang:\([0-9.]*\).*/\1/')" >> "$GITHUB_OUTPUT"
+      uses: ./.github/actions/get-go-version
+      with:
+        dockerfile: ./target/Dockerfile
     - name: Set up go
       uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
       with:
