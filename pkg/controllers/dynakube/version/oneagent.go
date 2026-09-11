@@ -129,7 +129,8 @@ func (updater *oneAgentUpdater) CheckForDowngrade(ctx context.Context, latestVer
 
 	var err error
 
-	if updater.Target().Source == status.TenantRegistryVersionSource {
+	switch updater.Target().Source {
+	case status.TenantRegistryVersionSource, status.PublicRegistryVersionSource:
 		previousVersion = updater.Target().Version //nolint:staticcheck
 	}
 

@@ -242,6 +242,26 @@ func TestCheckForDowngrade(t *testing.T) {
 			isDowngrade: false,
 		},
 		{
+			testName: "is downgrade, public registry",
+			dk: newDynakubeWithOneAgentStatus(status.VersionStatus{
+				ImageID: "some.registry.com:" + newerVersion,
+				Version: newerVersion,
+				Source:  status.PublicRegistryVersionSource,
+			}),
+			newVersion:  olderVersion,
+			isDowngrade: true,
+		},
+		{
+			testName: "is NOT downgrade, public registry",
+			dk: newDynakubeWithOneAgentStatus(status.VersionStatus{
+				ImageID: "some.registry.com:" + olderVersion,
+				Version: olderVersion,
+				Source:  status.PublicRegistryVersionSource,
+			}),
+			newVersion:  newerVersion,
+			isDowngrade: false,
+		},
+		{
 			testName: "is NOT downgrade, custom image - no logic",
 			dk: newDynakubeWithOneAgentStatus(status.VersionStatus{
 				ImageID: "some.registry.com:" + newerVersion,
