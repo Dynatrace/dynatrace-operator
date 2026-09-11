@@ -126,10 +126,15 @@ runs:
         persist-credentials: false
     - name: Set up kubectl
       uses: azure/setup-kubectl@829323503d1be3d00ca8346e5391ca0b07a9ab0d # v5.1.0
+    - name: Get go version
+      id: go-version
+      uses: $/.github/actions/get-go-version
+      with:
+        dockerfile: ./target/Dockerfile
     - name: Set up go
       uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
       with:
-        go-version: 'stable' # Latest stable version
+        go-version: ${{ steps.go-version.outputs.go_version }}
         cache: false
     - name: Set up helm
       uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1

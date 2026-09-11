@@ -32,7 +32,7 @@ OPENAPI_GENERATOR_CLI_VERSION ?= v2.41.0+incompatible
 ADDLICENSE_VERSION ?= v1.2.0
 
 # renovate depName=github.com/prometheus-operator/prometheus-operator
-PROMETHEUS_OPERATOR_VERSION ?= v0.93.0
+PROMETHEUS_OPERATOR_VERSION ?= v0.94.0
 
 # Enable renovate once project is migrated to newer structure
 OPERATOR_SDK_VERSION ?= v1.36.0
