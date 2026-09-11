@@ -25,12 +25,15 @@ import (
 
 const (
 	activeGateAuthTokenSecretConditionType string = "ActiveGateAuthTokenSecret"
+	malformedAuthTokenReason               string = "MalformedAuthToken"
 
 	ActiveGateAuthTokenName = "auth-token"
 
 	// Buffer to avoid warnings in the UI
 	AuthTokenBuffer           = time.Hour * 24
 	AuthTokenRotationInterval = time.Hour*24*30 - AuthTokenBuffer
+
+	authTokenPublicParts = 2
 )
 
 type Reconciler struct {
@@ -95,9 +98,7 @@ func (r *Reconciler) reconcileAuthTokenSecret(ctx context.Context, dk *dynakube.
 		return r.ensureAuthTokenSecret(ctx, dk, agClient)
 	}
 
-	r.conditionSetSecretCreated(dk, secret) // update message once a day
-
-	return nil
+	return r.conditionSetSecretCreated(dk, secret) // update message once a day
 }
 
 func (r *Reconciler) ensureAuthTokenSecret(ctx context.Context, dk *dynakube.DynaKube, agClient agclient.Client) error {
@@ -144,9 +145,7 @@ func (r *Reconciler) createSecret(ctx context.Context, dk *dynakube.DynaKube, se
 		return errors.Errorf("failed to create secret '%s': %v", secretName, err)
 	}
 
-	r.conditionSetSecretCreated(dk, secret)
-
-	return nil
+	return r.conditionSetSecretCreated(dk, secret)
 }
 
 func (r *Reconciler) deleteSecret(ctx context.Context, dk *dynakube.DynaKube, secret *corev1.Secret) error {
@@ -163,13 +162,32 @@ func isSecretOutdated(secret *corev1.Secret) bool {
 	return secret.CreationTimestamp.Add(AuthTokenRotationInterval).Before(time.Now())
 }
 
-func (r *Reconciler) conditionSetSecretCreated(dk *dynakube.DynaKube, secret *corev1.Secret) {
+func (r *Reconciler) conditionSetSecretCreated(dk *dynakube.DynaKube, secret *corev1.Secret) error {
+	tokenAllParts := strings.Split(string(secret.Data[ActiveGateAuthTokenName]), ".")
+	if len(tokenAllParts) < authTokenPublicParts {
+		err := errors.Errorf("malformed ActiveGate auth token in secret '%s': expected at least %d dot-separated segments, got %d", secret.Name, authTokenPublicParts, len(tokenAllParts))
+		setAuthSecretMalformed(dk.Conditions(), activeGateAuthTokenSecretConditionType, err)
+
+		return err
+	}
+
 	lifespan := time.Since(secret.CreationTimestamp.Time)
 	days := strconv.Itoa(int(lifespan.Hours() / 24))
-	tokenAllParts := strings.Split(string(secret.Data[ActiveGateAuthTokenName]), ".")
-	tokenPublicPart := strings.Join(tokenAllParts[:2], ".")
+	tokenPublicPart := strings.Join(tokenAllParts[:authTokenPublicParts], ".")
 
 	setAuthSecretCreated(dk.Conditions(), activeGateAuthTokenSecretConditionType, "secret created "+days+" day(s) ago, token:"+tokenPublicPart)
+
+	return nil
+}
+
+func setAuthSecretMalformed(conditions *[]metav1.Condition, conditionType string, err error) {
+	condition := metav1.Condition{
+		Type:    conditionType,
+		Status:  metav1.ConditionFalse,
+		Reason:  malformedAuthTokenReason,
+		Message: err.Error(),
+	}
+	_ = meta.SetStatusCondition(conditions, condition)
 }
 
 func setAuthSecretCreated(conditions *[]metav1.Condition, conditionType string, msg string) {
