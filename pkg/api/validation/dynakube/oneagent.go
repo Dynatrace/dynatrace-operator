@@ -55,7 +55,7 @@ Use a nodeSelector to avoid this conflict. Conflicting DynaKubes: %s`
 
 	warningDeprecatedVersionIgnored = `version field is deprecated and ignored. Please remove the version field from the DynaKube specification.`
 
-	errorImagePullRequiresCodeModulesImage = `The DynaKube specification enables node image pull, but neither a code modules image is set nor a public registry is used.`
+	errorImagePullRequiresCodeModulesImage = `The DynaKube specification enables node image pull or image volume, but neither a code modules image is set nor a public registry is used.`
 
 	errorConflictingImageMode = `Node image pull and image volume are mutually exclusive as image volume will not use the CSI driver, while node-image-pull FF only influences the CSI driver.`
 )

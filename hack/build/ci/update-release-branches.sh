@@ -16,10 +16,10 @@ NUM_VERSIONS=3
 RENOVATE_FILE=.github/renovate.json5
 WORKFLOW_FILE=.github/workflows/e2e-tests-ondemand.yaml
 
-# Fetch list of versions by looking for the "baseBranches" key and reading the following $NUM_VERSIONS+1 lines.
+# Fetch list of versions by looking for the "baseBranchPatterns" key and reading the following $NUM_VERSIONS+1 lines.
 # Trim the first line to get rid of the "$default".
 # Clean up the list by removing all spaces, commas and quotes.
-VERSION_LIST=$(grep -A $((NUM_VERSIONS+1)) baseBranches $RENOVATE_FILE | tail -n+$NUM_VERSIONS | tr -d ' ",')
+VERSION_LIST=$(grep -A $((NUM_VERSIONS+1)) baseBranchPatterns $RENOVATE_FILE | tail -n+$NUM_VERSIONS | tr -d " \"',")
 if (( NUM_VERSIONS != "$(wc -l <<< "$VERSION_LIST")" )); then
     printf "unexpected list of versions:\n%s\n" "$VERSION_LIST" >&2
     exit 1
