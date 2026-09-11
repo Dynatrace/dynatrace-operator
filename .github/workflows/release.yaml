@@ -386,7 +386,7 @@ jobs:
           persist-credentials: false
       - name: Get go version
         id: go-version
-        uses: ./.github/actions/get-go-version
+        uses: $/.github/actions/get-go-version
       - name: Setup Golang
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:

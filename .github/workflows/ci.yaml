@@ -130,7 +130,7 @@ jobs:
           CHANGED_PREREQUISITES_MK_FILE: ${{ steps.prerequisites.outputs.all_changed_files }}
       - name: Get Go version from Dockerfile
         id: go-version
-        uses: ./.github/actions/get-go-version
+        uses: $/.github/actions/get-go-version
 
   helm-test:
     needs: [detect-changes]
