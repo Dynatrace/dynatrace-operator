@@ -267,9 +267,7 @@ func mutateDeployment(deploy *appsv1.Deployment, s *reconcileScope) {
 		deploy.Spec.Replicas = s.Spec.Replicas
 	}
 
-	if s.Spec.UpdateStrategy.Type != "" {
-		deploy.Spec.Strategy = s.Spec.UpdateStrategy
-	}
+	deploy.Spec.Strategy = k8sdeployment.NormalizeStrategy(s.Spec.UpdateStrategy)
 
 	deploy.Spec.Selector = &metav1.LabelSelector{MatchLabels: s.AppLabels.AsSelector()}
 	deploy.Spec.Template.Spec.ServiceAccountName = serviceAccount

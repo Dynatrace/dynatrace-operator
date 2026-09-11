@@ -97,6 +97,9 @@ func TestReconcileStatefulSet(t *testing.T) {
 		pm.Spec.Gateway.Resources = corev1.ResourceRequirements{
 			Limits: corev1.ResourceList{corev1.ResourceMemory: resource.MustParse("500Mi")},
 		}
+		pm.Spec.Gateway.UpdateStrategy = appsv1.StatefulSetUpdateStrategy{
+			RollingUpdate: &appsv1.RollingUpdateStatefulSetStrategy{Partition: new(int32(1))},
+		}
 		s := newTestScopeWithDynaKube(pm, newTestDynaKube())
 		s.ConfigMapHash = "deadbeef"
 		s.DynaKube.Status.KubernetesClusterName = "prometheus"
@@ -128,30 +131,6 @@ func TestReconcileStatefulSet(t *testing.T) {
 		sts := &appsv1.StatefulSet{}
 		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetStatefulSetName(), Namespace: pm.Namespace}, sts))
 		assert.Equal(t, new(int32(5)), sts.Spec.Replicas)
-	})
-
-	t.Run("apply update strategy", func(t *testing.T) {
-		dtp := newTestDTP("dtp", "dynatrace")
-		dtp.Spec.Gateway.Image = "img:1"
-		dtp.Spec.Gateway.UpdateStrategy = appsv1.StatefulSetUpdateStrategy{Type: appsv1.OnDeleteStatefulSetStrategyType}
-		s := newTestScopeWithDynaKube(dtp, newTestDynaKube())
-		existing := &appsv1.StatefulSet{
-			ObjectMeta: metav1.ObjectMeta{Name: s.Spec.GetStatefulSetName(), Namespace: dtp.Namespace},
-			Spec: appsv1.StatefulSetSpec{
-				UpdateStrategy: appsv1.StatefulSetUpdateStrategy{
-					Type:          appsv1.RollingUpdateStatefulSetStrategyType,
-					RollingUpdate: &appsv1.RollingUpdateStatefulSetStrategy{Partition: new(int32(0))},
-				},
-			},
-		}
-		c := fake.NewClient(existing)
-		r := &Reconciler{Client: c}
-
-		require.NoError(t, r.reconcileStatefulset(t.Context(), s))
-
-		sts := &appsv1.StatefulSet{}
-		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetStatefulSetName(), Namespace: dtp.Namespace}, sts))
-		assert.Equal(t, dtp.Spec.Gateway.UpdateStrategy, sts.Spec.UpdateStrategy)
 	})
 
 	t.Run("propagate error", func(t *testing.T) {
