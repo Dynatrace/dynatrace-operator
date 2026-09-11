@@ -189,7 +189,7 @@ func runUpdatePhase(t *testing.T, deps *lifecycleDeps) {
 		svcRV := getService(t, deps).ResourceVersion
 
 		deps.pm.Spec.TargetAllocator.UpdateStrategy = appsv1.DeploymentStrategy{Type: appsv1.RecreateDeploymentStrategyType}
-		require.NoError(t, deps.reconciler.Reconcile(t.Context(), deps.dtp, deps.dk, nil))
+		require.NoError(t, deps.reconciler.Reconcile(t.Context(), deps.pm, deps.dk, nil))
 
 		deploy := getDeployment(t, deps)
 		assert.Equal(t, appsv1.RecreateDeploymentStrategyType, deploy.Spec.Strategy.Type)
