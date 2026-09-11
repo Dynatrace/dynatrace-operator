@@ -13,7 +13,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 )
 
 func (dk *DynaKube) ActiveGate() *activegate.ActiveGate {
@@ -70,7 +69,7 @@ func (dk *DynaKube) KubernetesMonitoring() *kubemon.KubeMon {
 }
 
 func (dk *DynaKube) IsKubemonEnabled() bool {
-	return k8senv.IsKubemonOperandEnabled() && dk.KubernetesMonitoring().IsEnabled()
+	return dk.KubernetesMonitoring().IsEnabled()
 }
 
 func (dk *DynaKube) IsKubernetesMonitoringEnabled() bool {

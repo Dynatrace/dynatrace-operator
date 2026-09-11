@@ -10,11 +10,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 )
 
 func TestKubemonMutualExclusiveCustomPropertiesValue(t *testing.T) {
-	t.Setenv(k8senv.ExperimentalEnableKubemonOperand, "true")
 	t.Run("no custom properties", func(t *testing.T) {
 		assertAllowedWithoutWarnings(t, &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
@@ -47,7 +45,6 @@ func TestKubemonMutualExclusiveCustomPropertiesValue(t *testing.T) {
 	})
 
 	t.Run("value and valueFrom", func(t *testing.T) {
-		t.Setenv(k8senv.ExperimentalEnableKubemonOperand, "true")
 		assertDenied(t, []string{errorMutualExclusiveKubernetesMonitoringValue}, &dynakube.DynaKube{
 			ObjectMeta: defaultDynakubeObjectMeta,
 			Spec: dynakube.DynaKubeSpec{
@@ -64,8 +61,6 @@ func TestKubemonMutualExclusiveCustomPropertiesValue(t *testing.T) {
 }
 
 func TestMutualExclusiveKubernetesMonitoring(t *testing.T) {
-	t.Setenv(k8senv.ExperimentalEnableKubemonOperand, "true")
-
 	t.Run("only kubernetesMonitoring", func(t *testing.T) {
 		assertAllowedWithoutWarnings(t, &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
