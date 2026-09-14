@@ -1,7 +1,7 @@
 CRD_BASE_OPTIONS := crd:crdVersions=v1,ignoreUnexportedFields=true
 # DynaKube strips descriptions to stay within etcd's 1 MB object size limit.
 CRD_STRIP_DESC := $(CRD_BASE_OPTIONS),maxDescLen=0
-# Smaller CRDs (EdgeConnect, DtPrometheus) keep full descriptions.
+# Smaller CRDs (EdgeConnect, PrometheusMonitoring) keep full descriptions.
 CRD_KEEP_DESC := $(CRD_BASE_OPTIONS)
 
 # Auto-discover versioned packages per CRD kind: pkg/api/<version>/<kind>.

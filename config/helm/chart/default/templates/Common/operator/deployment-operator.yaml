@@ -117,10 +117,6 @@ spec:
             - name: DT_CLIENT_CACHE_CLEAN_INTERVAL
               value: "{{ .Values.operator.clientCacheCleanupInterval }}"
             {{- end }}
-            {{- if (.Values.experimental).enableKubemonOperand }}
-            - name: EXPERIMENTAL_ENABLE_KUBEMON_OPERAND
-              value: "true"
-            {{- end }}
             {{- if (.Values.experimental).enablePrometheus }}
             - name: EXPERIMENTAL_ENABLE_PROMETHEUS
               value: "true"

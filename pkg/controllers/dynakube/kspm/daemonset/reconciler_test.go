@@ -438,8 +438,6 @@ func TestTlsSecretHashAnnotationHandling(t *testing.T) {
 	})
 
 	t.Run("kubemon AG preferred", func(t *testing.T) {
-		t.Setenv(k8senv.ExperimentalEnableKubemonOperand, "true")
-
 		dk := createDynakube(true)
 		dk.Spec.KubernetesMonitoring = &kubemon.Spec{}
 

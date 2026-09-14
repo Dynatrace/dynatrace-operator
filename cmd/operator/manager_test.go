@@ -35,13 +35,13 @@ func TestGetControllerAddFuncs(t *testing.T) {
 		t.Setenv(k8senv.ExperimentalEnablePrometheus, "true")
 		funcs := getControllerAddFuncs(true)
 
-		assert.Len(t, funcs, 4) // dk, ec, dtp, nodes
+		assert.Len(t, funcs, 4) // dk, ec, pm, nodes
 	})
 
 	t.Run("without OLM and with ExperimentalEnablePrometheus", func(t *testing.T) {
 		t.Setenv(k8senv.ExperimentalEnablePrometheus, "true")
 		funcs := getControllerAddFuncs(false)
 
-		assert.Len(t, funcs, 5) // dk, ec, dtp, nodes, certs
+		assert.Len(t, funcs, 5) // dk, ec, pm, nodes, certs
 	})
 }

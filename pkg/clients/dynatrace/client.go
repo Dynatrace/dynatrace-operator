@@ -42,6 +42,7 @@ type Client struct {
 
 type OAuthClient struct {
 	EdgeConnect edgeconnect.Client
+	Images      image.Client
 }
 
 type Config struct {
@@ -121,6 +122,7 @@ func NewOAuthClient(credentials clientcredentials.Config, options ...Option) (*O
 
 	return &OAuthClient{
 		EdgeConnect: edgeconnect.NewClient(apiClient),
+		Images:      image.NewClient(apiClient),
 	}, nil
 }
 

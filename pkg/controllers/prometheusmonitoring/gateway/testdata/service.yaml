@@ -1,0 +1,30 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: pm-gateway
+  namespace: dynatrace
+  labels:
+    app.kubernetes.io/instance: otel-gateway
+    app.kubernetes.io/managed-by: dynatrace-operator
+    app.kubernetes.io/name: opentelemetry-gateway
+    internal.dynatrace.com/operator-version: snapshot
+  ownerReferences:
+  - apiVersion: dynatrace.com/v1alpha1
+    blockOwnerDeletion: true
+    controller: true
+    kind: PrometheusMonitoring
+    name: pm
+    uid: pm-uid
+spec:
+  ports:
+  - name: otlp
+    port: 4317
+    protocol: TCP
+    appProtocol: grpc
+    targetPort: otlp
+  selector:
+    app.kubernetes.io/instance: otel-gateway
+    app.kubernetes.io/managed-by: dynatrace-operator
+    app.kubernetes.io/name: opentelemetry-gateway
+status:
+  loadBalancer: {}

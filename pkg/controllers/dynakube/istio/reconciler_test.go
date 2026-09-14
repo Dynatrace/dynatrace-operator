@@ -14,7 +14,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -488,7 +487,6 @@ func TestReconcileActiveGateCommunicationHosts(t *testing.T) {
 	})
 	t.Run("kubemon enabled but AG disabled: uses kubemon endpoints", func(t *testing.T) {
 		ctx := t.Context()
-		t.Setenv(k8senv.ExperimentalEnableKubemonOperand, "true")
 		dk := createTestDynaKube()
 		dk.Spec.ActiveGate = activegate.Spec{}
 		dk.Spec.KubernetesMonitoring = &kubemonapi.Spec{}

@@ -14,6 +14,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
 	edgeconnectClient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/edgeconnect"
+	dtimage "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect/deployment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
@@ -24,6 +25,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/oci/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	edgeconnectmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/edgeconnect"
+	imagemock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/image"
 	registrymock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/util/oci/registry"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -89,7 +91,7 @@ func TestReconcile(t *testing.T) {
 	t.Run("Create works with minimal setup", func(t *testing.T) {
 		ec := createEdgeConnectRegularCR()
 
-		controller := createFakeClientAndReconciler(t, createImageGetterMock(t), ec,
+		controller := createFakeClientAndReconciler(t, createImageClientMock(t), ec,
 			createClientSecret(testOauthClientSecret, ec.Namespace),
 			createKubeSystemNamespace(),
 		)
@@ -111,7 +113,7 @@ func TestReconcile(t *testing.T) {
 			},
 		}
 
-		controller := createFakeClientAndReconciler(t, createImageGetterMock(t), ec,
+		controller := createFakeClientAndReconciler(t, createImageClientMock(t), ec,
 			createClientSecret(testOauthClientSecret, ec.Namespace),
 			createKubeSystemNamespace(),
 		)
@@ -132,7 +134,7 @@ func TestReconcile(t *testing.T) {
 	t.Run("Reconciles phase change correctly", func(t *testing.T) {
 		ec := createEdgeConnectRegularCR()
 
-		controller := createFakeClientAndReconciler(t, createImageGetterMock(t), ec,
+		controller := createFakeClientAndReconciler(t, createImageClientMock(t), ec,
 			createClientSecret(testOauthClientSecret, ec.Namespace),
 			createKubeSystemNamespace(),
 		)
@@ -152,7 +154,7 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, status.Running, ec.Status.DeploymentPhase)
 	})
 	t.Run("Reconciles doesn't fail if edgeconnectClient not found", func(t *testing.T) {
-		controller := createFakeClientAndReconciler(t, registrymock.NewImageGetter(t), nil)
+		controller := createFakeClientAndReconciler(t, imagemock.NewClient(t), nil)
 
 		_, err := controller.Reconcile(t.Context(), reconcile.Request{
 			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
@@ -169,7 +171,7 @@ func TestReconcile(t *testing.T) {
 		customCA := newConfigMap(testCAConfigMapName, ec.Namespace, data)
 		clientSecret := createClientSecret(testOauthClientSecret, ec.Namespace)
 
-		controller := createFakeClientAndReconciler(t, createImageGetterMock(t), ec, clientSecret, customCA, createKubeSystemNamespace())
+		controller := createFakeClientAndReconciler(t, createImageClientMock(t), ec, clientSecret, customCA, createKubeSystemNamespace())
 
 		_, err := controller.Reconcile(t.Context(), reconcile.Request{
 			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
@@ -181,7 +183,7 @@ func TestReconcile(t *testing.T) {
 	t.Run("SecretConfigConditionType is set SecretCreated", func(t *testing.T) {
 		ec := createEdgeConnectRegularCR()
 
-		controller := createFakeClientAndReconciler(t, createImageGetterMock(t), ec,
+		controller := createFakeClientAndReconciler(t, createImageClientMock(t), ec,
 			createClientSecret(testOauthClientSecret, ec.Namespace),
 			createKubeSystemNamespace(),
 		)
@@ -205,7 +207,7 @@ func TestReconcile(t *testing.T) {
 	t.Run("SecretConfigConditionType is set SecretGenFailed failed to get clientSecret", func(t *testing.T) {
 		ec := createEdgeConnectRegularCR()
 
-		controller := createFakeClientAndReconciler(t, registrymock.NewImageGetter(t), ec,
+		controller := createFakeClientAndReconciler(t, imagemock.NewClient(t), ec,
 			createKubeSystemNamespace(),
 		)
 
@@ -223,7 +225,7 @@ func TestReconcile(t *testing.T) {
 	t.Run("SecretConfigConditionType is set SecretGenFailed failed", func(t *testing.T) {
 		ec := createEdgeConnectRegularCR()
 
-		controller := createFakeClientAndReconciler(t, registrymock.NewImageGetter(t), ec,
+		controller := createFakeClientAndReconciler(t, imagemock.NewClient(t), ec,
 			createKubeSystemNamespace(),
 		)
 
@@ -258,7 +260,7 @@ func TestReconcileProvisionerCreate(t *testing.T) {
 
 		controller := createFakeClientAndReconcilerForProvisioner(
 			t,
-			createImageGetterMock(t),
+			createImageClientMock(t),
 			ec,
 			mockNewEdgeConnectClientCreate(edgeConnectClient, testHostPatterns),
 			createOauthSecret(ec.Spec.OAuth.ClientSecret, ec.Namespace),
@@ -320,7 +322,7 @@ func TestReconcileProvisionerRecreate(t *testing.T) {
 
 		controller := createFakeClientAndReconcilerForProvisioner(
 			t,
-			createImageGetterMock(t),
+			createImageClientMock(t),
 			ec,
 			mockNewEdgeConnectClientRecreate(edgeConnectClient, testCreatedID),
 			createOauthSecret(ec.Spec.OAuth.ClientSecret, ec.Namespace),
@@ -381,7 +383,7 @@ func TestReconcileProvisionerRecreate(t *testing.T) {
 
 		controller := createFakeClientAndReconcilerForProvisioner(
 			t,
-			createImageGetterMock(t),
+			createImageClientMock(t),
 			ec,
 			mockNewEdgeConnectClientRecreate(edgeConnectClient, testRecreatedInvalidID),
 			createOauthSecret(ec.Spec.OAuth.ClientSecret, ec.Namespace),
@@ -444,7 +446,7 @@ func TestReconcileProvisionerDelete(t *testing.T) {
 
 		controller := createFakeClientAndReconcilerForProvisioner(
 			t,
-			registrymock.NewImageGetter(t),
+			imagemock.NewClient(t),
 			ec,
 			mockNewEdgeConnectClientDelete(edgeConnectClient),
 			createOauthSecret(ec.Spec.OAuth.ClientSecret, ec.Namespace),
@@ -475,7 +477,7 @@ func TestReconcileProvisionerDelete(t *testing.T) {
 
 		controller := createFakeClientAndReconcilerForProvisioner(
 			t,
-			registrymock.NewImageGetter(t),
+			imagemock.NewClient(t),
 			ec,
 			mockNewEdgeConnectClientDelete(edgeConnectClient),
 			createOauthSecret(ec.Spec.OAuth.ClientSecret, ec.Namespace),
@@ -503,7 +505,7 @@ func TestReconcileProvisionerDelete(t *testing.T) {
 
 		controller := createFakeClientAndReconcilerForProvisioner(
 			t,
-			registrymock.NewImageGetter(t),
+			imagemock.NewClient(t),
 			ec,
 			mockNewEdgeConnectClientDeleteNotFoundOnTenant(edgeConnectClient),
 			createOauthSecret(ec.Spec.OAuth.ClientSecret, ec.Namespace),
@@ -533,7 +535,7 @@ func TestReconcileProvisionerUpdate(t *testing.T) {
 
 		controller := createFakeClientAndReconcilerForProvisioner(
 			t,
-			createImageGetterMock(t),
+			createImageClientMock(t),
 			ec,
 			mockNewEdgeConnectClientUpdate(edgeConnectClient, testHostPatterns, testHostPatterns2),
 			createOauthSecret(ec.Spec.OAuth.ClientSecret, ec.Namespace),
@@ -568,7 +570,7 @@ func TestReconcileProvisionerWithK8sAutomationsCreate(t *testing.T) {
 
 		controller := createFakeClientAndReconcilerForProvisioner(
 			t,
-			createImageGetterMock(t),
+			createImageClientMock(t),
 			ec,
 			mockNewEdgeConnectClientCreate(edgeConnectClient, testHostPatterns),
 			createOauthSecret(ec.Spec.OAuth.ClientSecret, ec.Namespace),
@@ -630,7 +632,7 @@ func TestReconcileProvisionerWithK8sAutomationsUpdate(t *testing.T) {
 
 		controller := createFakeClientAndReconcilerForProvisioner(
 			t,
-			createImageGetterMock(t),
+			createImageClientMock(t),
 			ec,
 			mockNewEdgeConnectClientUpdate(edgeConnectClient, testHostPatterns, testHostPatterns2),
 			createOauthSecret(ec.Spec.OAuth.ClientSecret, ec.Namespace),
@@ -667,7 +669,7 @@ func TestReconcileReplicas(t *testing.T) {
 		t.Helper()
 
 		if !provisioner {
-			return createFakeClientAndReconciler(t, createImageGetterMock(t), ec, objs...)
+			return createFakeClientAndReconciler(t, createImageClientMock(t), ec, objs...)
 		}
 
 		edgeClient := edgeconnectmock.NewClient(t)
@@ -676,7 +678,7 @@ func TestReconcileReplicas(t *testing.T) {
 
 		return createFakeClientAndReconcilerForProvisioner(
 			t,
-			createImageGetterMock(t),
+			createImageClientMock(t),
 			ec,
 			mockNewEdgeConnectClientCreate(edgeClient, testHostPatterns),
 			objs...,
@@ -834,17 +836,17 @@ func getEdgeConnectCR(t *testing.T, apiReader client.Reader, name string, namesp
 	return edgeConnectCR, err
 }
 
-func createImageGetterMock(t *testing.T) *registrymock.ImageGetter {
+func createImageClientMock(t *testing.T) *imagemock.Client {
 	t.Helper()
 
-	mockImageGetter := registrymock.NewImageGetter(t)
-	mockImageGetter.EXPECT().GetImageVersion(anyCtx, mock.Anything).
-		Return(registry.ImageVersion{Digest: testFakeDigest}, nil)
+	imageClient := imagemock.NewClient(t)
+	imageClient.EXPECT().GetComponentLatestInfo(anyCtx, dtimage.EdgeConnect, mock.Anything).
+		Return(&dtimage.Info{URI: "docker.io/dynatrace/edgeconnect:latest@" + testFakeDigest}, nil)
 
-	return mockImageGetter
+	return imageClient
 }
 
-func createFakeClientAndReconciler(t *testing.T, mockImageGetter *registrymock.ImageGetter, ec *edgeconnect.EdgeConnect, objects ...client.Object) *Controller {
+func createFakeClientAndReconciler(t *testing.T, mockImageClient *imagemock.Client, ec *edgeconnect.EdgeConnect, objects ...client.Object) *Controller {
 	t.Helper()
 
 	fakeClient := fake.NewClientWithIndex(createCRD(t))
@@ -854,8 +856,8 @@ func createFakeClientAndReconciler(t *testing.T, mockImageGetter *registrymock.I
 		fakeClient = fake.NewClientWithIndex(objs...)
 	}
 
-	mockRegistryClientBuilder := func(options ...func(*registry.Client)) (registry.ImageGetter, error) {
-		return mockImageGetter, nil
+	mockImageClientBuilder := func(context.Context, *edgeconnect.EdgeConnect, oauthCredentialsType, []byte) (dtimage.Client, error) {
+		return mockImageClient, nil
 	}
 
 	mockEdgeConnectClient := edgeconnectmock.NewClient(t)
@@ -864,10 +866,17 @@ func createFakeClientAndReconciler(t *testing.T, mockImageGetter *registrymock.I
 		return mockEdgeConnectClient, nil
 	}
 
+	// No expectations — panics if the OCI path is unexpectedly taken.
+	mockRegistryClient := registrymock.NewImageGetter(t)
+	mockRegistryClientBuilder := func(options ...func(*registry.Client)) (registry.ImageGetter, error) {
+		return mockRegistryClient, nil
+	}
+
 	controller := &Controller{
 		client:                   fakeClient,
 		apiReader:                fakeClient,
 		timeProvider:             timeprovider.New(),
+		imageClientBuilder:       mockImageClientBuilder,
 		registryClientBuilder:    mockRegistryClientBuilder,
 		edgeConnectClientBuilder: mockEdgeConnectClientBuilder,
 		secrets:                  k8ssecret.Query(fakeClient, fakeClient),
@@ -876,7 +885,7 @@ func createFakeClientAndReconciler(t *testing.T, mockImageGetter *registrymock.I
 	return controller
 }
 
-func createFakeClientAndReconcilerForProvisioner(t *testing.T, mockImageGetter *registrymock.ImageGetter, ec *edgeconnect.EdgeConnect, builder edgeConnectClientBuilderType, objects ...client.Object) *Controller {
+func createFakeClientAndReconcilerForProvisioner(t *testing.T, mockImageClient *imagemock.Client, ec *edgeconnect.EdgeConnect, builder edgeConnectClientBuilderType, objects ...client.Object) *Controller {
 	t.Helper()
 
 	fakeClient := fake.NewClientWithIndex(createCRD(t))
@@ -886,14 +895,21 @@ func createFakeClientAndReconcilerForProvisioner(t *testing.T, mockImageGetter *
 		fakeClient = fake.NewClientWithIndex(objs...)
 	}
 
+	mockImageClientBuilder := func(context.Context, *edgeconnect.EdgeConnect, oauthCredentialsType, []byte) (dtimage.Client, error) {
+		return mockImageClient, nil
+	}
+
+	// No expectations — panics if the OCI path is unexpectedly taken.
+	mockRegistryClient := registrymock.NewImageGetter(t)
 	mockRegistryClientBuilder := func(options ...func(*registry.Client)) (registry.ImageGetter, error) {
-		return mockImageGetter, nil
+		return mockRegistryClient, nil
 	}
 
 	controller := &Controller{
 		client:                   fakeClient,
 		apiReader:                fakeClient,
 		timeProvider:             timeprovider.New(),
+		imageClientBuilder:       mockImageClientBuilder,
 		registryClientBuilder:    mockRegistryClientBuilder,
 		edgeConnectClientBuilder: builder,
 		secrets:                  k8ssecret.Query(fakeClient, fakeClient),
@@ -1131,6 +1147,29 @@ func Test_newEdgeConnectClient(t *testing.T) {
 	})
 }
 
+func Test_newImageClient(t *testing.T) {
+	ec := createEdgeConnectProvisionerCR([]string{}, nil, testHostPatterns)
+
+	imageClientBuilder := newImageClient()
+	require.NotNil(t, imageClientBuilder)
+
+	actualClient, err := imageClientBuilder(t.Context(), ec, oauthCredentialsType{clientID: "fake", clientSecret: "fake"}, nil)
+	require.NoError(t, err)
+	require.NotNil(t, actualClient)
+}
+
+func Test_environmentAPIURL(t *testing.T) {
+	ec := &edgeconnect.EdgeConnect{
+		Spec: edgeconnect.EdgeConnectSpec{
+			APIServer: "abc12345.dev.apps.dynatracelabs.com",
+		},
+	}
+
+	// the fleet management path of the image client is relative to the classic environment API,
+	// which is served under a dedicated prefix on the EdgeConnect platform apiServer
+	assert.Equal(t, "https://abc12345.dev.apps.dynatracelabs.com/platform/classic/environment-api", environmentAPIURL(ec))
+}
+
 func Test_buildOAuthScopes(t *testing.T) {
 	baseScopes := []string{
 		"app-engine:edge-connects:read",
@@ -1140,20 +1179,33 @@ func Test_buildOAuthScopes(t *testing.T) {
 	}
 
 	t.Run("k8s automation disabled returns only base scopes", func(t *testing.T) {
-		scopes := buildOAuthScopes(false)
+		scopes := buildEdgeConnectOAuthScopes(false)
 		assert.Equal(t, baseScopes, scopes)
 	})
 
 	t.Run("k8s automation enabled appends settings scopes", func(t *testing.T) {
-		scopes := buildOAuthScopes(true)
+		scopes := buildEdgeConnectOAuthScopes(true)
 		expected := slices.Concat(baseScopes, []string{"settings:objects:read", "settings:objects:write"})
 		assert.Equal(t, expected, scopes)
 	})
 
 	t.Run("k8s automation disabled does not include settings scopes", func(t *testing.T) {
-		scopes := buildOAuthScopes(false)
+		scopes := buildEdgeConnectOAuthScopes(false)
 		assert.NotContains(t, scopes, "settings:objects:read")
 		assert.NotContains(t, scopes, "settings:objects:write")
+	})
+
+	// requesting a scope that is not granted makes the token service reject the whole request, so
+	// the EdgeConnect client must not ask for the fleet management scope it never uses
+	t.Run("fleet management scope is not requested for the EdgeConnect client", func(t *testing.T) {
+		assert.NotContains(t, buildEdgeConnectOAuthScopes(false), "fleet-management:container-images:read")
+		assert.NotContains(t, buildEdgeConnectOAuthScopes(true), "fleet-management:container-images:read")
+	})
+}
+
+func Test_buildImageOAuthScopes(t *testing.T) {
+	t.Run("only the fleet management scope is requested", func(t *testing.T) {
+		assert.Equal(t, []string{"fleet-management:container-images:read"}, buildImageOAuthScopes())
 	})
 }
 
@@ -1163,6 +1215,7 @@ func mockController(t *testing.T) *Controller {
 	return &Controller{
 		client:                   fake.NewClient(),
 		apiReader:                fake.NewClient(),
+		imageClientBuilder:       newImageClient(),
 		registryClientBuilder:    registry.NewClient,
 		config:                   &rest.Config{},
 		timeProvider:             timeprovider.New(),

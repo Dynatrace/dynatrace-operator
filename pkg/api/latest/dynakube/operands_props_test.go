@@ -10,54 +10,37 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestIsKubemonEnabled(t *testing.T) {
-	tests := []struct {
-		name          string
-		kubemonEnv    string
-		kubemonConfig bool
-		expected      bool
-	}{
-		{"disabled when environment variable is unset", "", true, false},
-		{"disabled when Kubernetes Monitoring is not configured", "true", false, false},
-		{"disabled when environment variable is false", "false", true, false},
-		{"enabled when operand and environment variable are enabled", "true", true, true},
-	}
+	t.Run("enabled", func(t *testing.T) {
+		dk := &DynaKube{}
+		dk.Spec.KubernetesMonitoring = &kubemon.Spec{}
+		assert.True(t, dk.IsKubemonEnabled())
+	})
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			t.Setenv(k8senv.ExperimentalEnableKubemonOperand, tt.kubemonEnv)
-			dk := &DynaKube{}
-			if tt.kubemonConfig {
-				dk.Spec.KubernetesMonitoring = &kubemon.Spec{}
-			}
-
-			assert.Equal(t, tt.expected, dk.IsKubemonEnabled())
-		})
-	}
+	t.Run("disabled", func(t *testing.T) {
+		dk := &DynaKube{}
+		assert.False(t, dk.IsKubemonEnabled())
+	})
 }
 
 func TestIsKubernetesMonitoringEnabled(t *testing.T) {
 	tests := []struct {
 		name          string
-		kubemonEnv    string
 		kubemonConfig bool
 		activeGate    bool
 		expected      bool
 	}{
-		{"disabled when neither operand is enabled", "", false, false, false},
-		{"enabled by Kubernetes Monitoring operand", "true", true, false, true},
-		{"disabled when Kubernetes Monitoring environment gate is off", "false", true, false, false},
-		{"enabled by ActiveGate capability", "", false, true, true},
+		{"disabled when neither operand is enabled", false, false, false},
+		{"enabled by Kubernetes Monitoring operand", true, false, true},
+		{"enabled by ActiveGate capability", false, true, true},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			t.Setenv(k8senv.ExperimentalEnableKubemonOperand, tt.kubemonEnv)
 			dk := &DynaKube{}
 			if tt.kubemonConfig {
 				dk.Spec.KubernetesMonitoring = &kubemon.Spec{}
@@ -107,7 +90,6 @@ func TestIsKubernetesMonitoringRegistrationEnabled(t *testing.T) {
 				}
 			}
 			if tt.kubemonOp {
-				t.Setenv(k8senv.ExperimentalEnableKubemonOperand, "true")
 				dk.Spec.KubernetesMonitoring = &kubemon.Spec{
 					Registration: &kubemon.Registration{},
 				}

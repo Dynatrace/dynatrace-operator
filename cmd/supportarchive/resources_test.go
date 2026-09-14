@@ -13,7 +13,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/dtprometheus"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/prometheusmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	webhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
@@ -101,9 +101,9 @@ func TestManifestCollector_Success(t *testing.T) {
 			TypeMeta:   typeMeta("EdgeConnect"),
 			ObjectMeta: objectMeta("edgeconnect1"),
 		},
-		&dtprometheus.DTPrometheus{
-			TypeMeta:   typeMeta("DTPrometheus"),
-			ObjectMeta: objectMeta("dtprometheus1"),
+		&prometheusmonitoring.PrometheusMonitoring{
+			TypeMeta:   typeMeta("PrometheusMonitoring"),
+			ObjectMeta: objectMeta("prometheusmonitoring1"),
 		},
 		&admissionregistrationv1.MutatingWebhookConfiguration{
 			TypeMeta: metav1.TypeMeta{
@@ -138,7 +138,7 @@ func TestManifestCollector_Success(t *testing.T) {
 		&apiextensionsv1.CustomResourceDefinition{
 			TypeMeta: typeMeta("CustomResourceDefinition"),
 			ObjectMeta: metav1.ObjectMeta{
-				Name: "dtprometheuses.dynatrace.com",
+				Name: "prometheusmonitorings.dynatrace.com",
 			},
 		},
 	)
@@ -159,12 +159,12 @@ func TestManifestCollector_Success(t *testing.T) {
 		fmt.Sprintf("%s/job/crd-storage-migration%s", testOperatorNamespace, manifestExtension),
 		fmt.Sprintf("%s/dynakube/dynakube1%s", testOperatorNamespace, manifestExtension),
 		fmt.Sprintf("%s/edgeconnect/edgeconnect1%s", testOperatorNamespace, manifestExtension),
-		fmt.Sprintf("%s/dtprometheus/dtprometheus1%s", testOperatorNamespace, manifestExtension),
+		fmt.Sprintf("%s/prometheusmonitoring/prometheusmonitoring1%s", testOperatorNamespace, manifestExtension),
 		fmt.Sprintf("%s/mutatingwebhookconfiguration%s", "webhook_configurations", manifestExtension),
 		fmt.Sprintf("%s/validatingwebhookconfiguration%s", "webhook_configurations", manifestExtension),
 		fmt.Sprintf("%s/customresourcedefinition-dynakubes%s", "crds", manifestExtension),
 		fmt.Sprintf("%s/customresourcedefinition-edgeconnects%s", "crds", manifestExtension),
-		fmt.Sprintf("%s/customresourcedefinition-dtprometheuses%s", "crds", manifestExtension),
+		fmt.Sprintf("%s/customresourcedefinition-prometheusmonitorings%s", "crds", manifestExtension),
 	}
 
 	slices.Sort(expectedFiles)

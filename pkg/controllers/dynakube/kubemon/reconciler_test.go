@@ -20,7 +20,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/gateway"
 	kubemonstatefulset "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
 	agclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/activegate"
 	imageclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/image"
@@ -40,7 +39,6 @@ import (
 
 // TestReconcileDisabled covers removal of an existing condition once cleanup succeeds.
 func TestReconcileDisabled(t *testing.T) {
-	t.Setenv(k8senv.ExperimentalEnableKubemonOperand, "true") // remove with gate
 	t.Run("removes condition when disabled and cleanup succeeds", func(t *testing.T) {
 		connInfoReconciler := newMockConnectionInfoReconciler(t)
 		authTokenReconciler := newMockAuthTokenReconciler(t)
@@ -84,8 +82,6 @@ func TestReconcileDisabled(t *testing.T) {
 // (rollout, connection info) map to Reconciling; any other error surfaces as Error with the
 // root-cause message.
 func TestReconcileConditionMapping(t *testing.T) {
-	t.Setenv(k8senv.ExperimentalEnableKubemonOperand, "true") // remove with gate
-
 	type reconcilerMocks struct {
 		reconciler           *Reconciler
 		connInfo             *mockConnectionInfoReconciler

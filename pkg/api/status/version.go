@@ -14,6 +14,9 @@ const (
 	CustomImageVersionSource    VersionSource = "custom-image"
 	CustomVersionVersionSource  VersionSource = "custom-version"
 	PublicRegistryVersionSource VersionSource = "public-registry"
+	// PublicRegistryWithOverrideVersionSource marks an image that was requested from the registry the
+	// user pinned, which makes adding and removing that pin observable in the status.
+	PublicRegistryWithOverrideVersionSource VersionSource = "public-registry-override"
 
 	ImmutableImageType = "immutable"
 )

@@ -12,7 +12,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -20,12 +19,6 @@ import (
 const testDynakubeName = "dynakube"
 
 func TestExtensionsWithoutKubernetesMonitoringRegistration(t *testing.T) {
-	t.Run("warning if kubernetes monitoring is not configured", func(t *testing.T) {
-		dk := createStandaloneExtensionsDynakube(testDynakubeName, testAPIURL)
-		warnings, _ := assertAllowed(t, withDatabasesExtension(dk))
-		assert.Contains(t, warnings, warningExtensionsWithoutK8SMonitoringOld)
-	})
-
 	t.Run("no warning if kubernetes monitoring with activegate", func(t *testing.T) {
 		dk := createStandaloneExtensionsDynakube(testDynakubeName, testAPIURL)
 		dk.Spec.ActiveGate = activegate.Spec{
@@ -47,27 +40,25 @@ func TestExtensionsWithoutKubernetesMonitoringRegistration(t *testing.T) {
 			},
 		}
 		warnings, _ := assertAllowed(t, withDatabasesExtension(dk))
-		assert.Contains(t, warnings, warningExtensionsWithoutK8SMonitoringOld)
+		assert.Contains(t, warnings, warningExtensionsWithoutK8SMonitoring)
 	})
 
 	t.Run("no warning if kubernetes monitoring with kubernetesMonitoring with registration", func(t *testing.T) {
-		t.Setenv(k8senv.ExperimentalEnableKubemonOperand, "true")
 		dk := createStandaloneExtensionsDynakube(testDynakubeName, testAPIURL)
 		dk.Spec.KubernetesMonitoring = &kubemon.Spec{
 			Registration: &kubemon.Registration{},
 		}
 
 		warnings, _ := assertAllowed(t, withDatabasesExtension(dk))
-		assert.NotContains(t, warnings, warningExtensionsWithoutK8SMonitoringNew)
+		assert.NotContains(t, warnings, warningExtensionsWithoutK8SMonitoring)
 	})
 
 	t.Run("warning if kubernetesMonitoring has no registration", func(t *testing.T) {
-		t.Setenv(k8senv.ExperimentalEnableKubemonOperand, "true")
 		dk := createStandaloneExtensionsDynakube(testDynakubeName, testAPIURL)
 		dk.Spec.KubernetesMonitoring = &kubemon.Spec{}
 
 		warnings, _ := assertAllowed(t, withDatabasesExtension(dk))
-		assert.Contains(t, warnings, warningExtensionsWithoutK8SMonitoringNew)
+		assert.Contains(t, warnings, warningExtensionsWithoutK8SMonitoring)
 	})
 }
 
