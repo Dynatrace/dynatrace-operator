@@ -24,9 +24,7 @@ spec:
       app.kubernetes.io/name: opentelemetry-target-allocator
   strategy:
     rollingUpdate:
-      maxSurge: 25%
       maxUnavailable: 0
-    type: RollingUpdate
   template:
     metadata:
       annotations:

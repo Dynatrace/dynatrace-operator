@@ -1311,8 +1311,6 @@ spec:
                       type: object
                     type: array
                   updateStrategy:
-                    default:
-                      type: RollingUpdate
                     description: |-
                       StatefulSet update strategy for the gateway pool. partition: N means only
                       pods with ordinal >= N are updated; set a non-zero value for canary rollouts.

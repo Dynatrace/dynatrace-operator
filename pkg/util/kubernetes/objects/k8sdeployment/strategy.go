@@ -5,39 +5,37 @@ package k8sdeployment
 
 import (
 	appsv1 "k8s.io/api/apps/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-// NormalizeStrategy fills in the same defaults the apiserver applies in SetDefaults_Deployment, so the
-// result compares equal to what the apiserver stores once the object is created or updated. Without this,
-// a desired strategy that only sets a subset of fields (or none at all) would never match the
-// apiserver-defaulted value already on the stored object, causing a perpetual Update.
-func NormalizeStrategy(desired appsv1.DeploymentStrategy) appsv1.DeploymentStrategy {
-	normalized := *desired.DeepCopy()
-
-	if normalized.Type == "" {
-		normalized.Type = appsv1.RollingUpdateDeploymentStrategyType
+// MergeStrategy applies the fields set in desired on top of current. Fields left empty in desired
+// keep the value stored on the object, including what the apiserver defaulted.
+func MergeStrategy(current, desired appsv1.DeploymentStrategy) appsv1.DeploymentStrategy {
+	if desired.Type != "" {
+		current.Type = desired.Type
 	}
 
-	if normalized.Type != appsv1.RollingUpdateDeploymentStrategyType {
-		normalized.RollingUpdate = nil
+	if desired.RollingUpdate != nil {
+		var rollingUpdate appsv1.RollingUpdateDeployment
 
-		return normalized
+		if current.RollingUpdate != nil {
+			rollingUpdate = *current.RollingUpdate
+		}
+
+		if desired.RollingUpdate.MaxSurge != nil {
+			rollingUpdate.MaxSurge = desired.RollingUpdate.MaxSurge
+		}
+
+		if desired.RollingUpdate.MaxUnavailable != nil {
+			rollingUpdate.MaxUnavailable = desired.RollingUpdate.MaxUnavailable
+		}
+
+		current.RollingUpdate = &rollingUpdate
 	}
 
-	if normalized.RollingUpdate == nil {
-		normalized.RollingUpdate = &appsv1.RollingUpdateDeployment{}
+	// The apiserver rejects a rollingUpdate block for Recreate.
+	if current.Type == appsv1.RecreateDeploymentStrategyType {
+		current.RollingUpdate = nil
 	}
 
-	if normalized.RollingUpdate.MaxUnavailable == nil {
-		maxUnavailable := intstr.FromString("25%")
-		normalized.RollingUpdate.MaxUnavailable = &maxUnavailable
-	}
-
-	if normalized.RollingUpdate.MaxSurge == nil {
-		maxSurge := intstr.FromString("25%")
-		normalized.RollingUpdate.MaxSurge = &maxSurge
-	}
-
-	return normalized
+	return current
 }
