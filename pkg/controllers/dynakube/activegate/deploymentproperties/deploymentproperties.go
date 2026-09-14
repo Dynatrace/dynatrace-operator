@@ -8,22 +8,31 @@ import (
 	"maps"
 	"slices"
 	"strings"
+
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 )
 
-func BuildContent(attrs map[string]string) string {
-	if len(attrs) == 0 {
-		return ""
-	}
-
-	keys := slices.Collect(maps.Keys(attrs))
-	slices.Sort(keys)
-
+func BuildContent(dk *dynakube.DynaKube) string {
 	var sb strings.Builder
 
-	sb.WriteString("[resource_attributes]\n")
+	attrs := dk.Spec.ResourceAttributes
+	if len(attrs) > 0 {
+		keys := slices.Collect(maps.Keys(attrs))
+		slices.Sort(keys)
 
-	for _, k := range keys {
-		fmt.Fprintf(&sb, "%s = %s\n", k, attrs[k])
+		sb.WriteString("[resource_attributes]\n")
+
+		for _, k := range keys {
+			fmt.Fprintf(&sb, "%s = %s\n", k, attrs[k])
+		}
+
+		fmt.Fprint(&sb, "\n")
+	}
+
+	if dk.NeedsCustomNoProxy() {
+		noProxyValue := strings.ReplaceAll(dk.FF().GetNoProxy(), ",", "|")
+		fmt.Fprintf(&sb, "%s\n%s = %s\n\n", consts.PropertiesClientInternalSection, consts.PropertiesNoProxyFieldName, noProxyValue)
 	}
 
 	return sb.String()

@@ -736,7 +736,7 @@ func TestCreateDeploymentPropertiesConfigMap(t *testing.T) {
 		err = fakeClient.Get(t.Context(), client.ObjectKey{Name: dk.ActiveGate().GetDeploymentPropertiesConfigMapName(), Namespace: testNamespace}, &cm)
 		require.NoError(t, err)
 		assert.Contains(t, cm.Data, consts.DeploymentPropertiesFileName)
-		assert.Equal(t, deploymentproperties.BuildContent(nil), cm.Data[consts.DeploymentPropertiesFileName])
+		assert.Equal(t, deploymentproperties.BuildContent(&dynakube.DynaKube{}), cm.Data[consts.DeploymentPropertiesFileName])
 	})
 
 	t.Run("configmap content reflects resource attributes", func(t *testing.T) {
@@ -759,7 +759,7 @@ func TestCreateDeploymentPropertiesConfigMap(t *testing.T) {
 		var cm corev1.ConfigMap
 		err = fakeClient.Get(t.Context(), client.ObjectKey{Name: dk.ActiveGate().GetDeploymentPropertiesConfigMapName(), Namespace: testNamespace}, &cm)
 		require.NoError(t, err)
-		assert.Equal(t, deploymentproperties.BuildContent(dk.Spec.ResourceAttributes), cm.Data[consts.DeploymentPropertiesFileName])
+		assert.Equal(t, deploymentproperties.BuildContent(dk), cm.Data[consts.DeploymentPropertiesFileName])
 	})
 }
 
