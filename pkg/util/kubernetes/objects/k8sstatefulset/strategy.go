@@ -3,41 +3,37 @@
 
 package k8sstatefulset
 
-import (
-	appsv1 "k8s.io/api/apps/v1"
-)
+import appsv1 "k8s.io/api/apps/v1"
 
-// NormalizeUpdateStrategy fills in the same defaults the apiserver applies in SetDefaults_StatefulSet, so the
-// result compares equal to what the apiserver stores once the object is created or updated. Without this,
-// a desired strategy that only sets a subset of fields (or none at all) would never match the
-// apiserver-defaulted value already on the stored object, causing a perpetual Update.
-func NormalizeUpdateStrategy(current, desired appsv1.StatefulSetUpdateStrategy) appsv1.StatefulSetUpdateStrategy {
-	normalized := *desired.DeepCopy()
-
-	if normalized.Type == "" {
-		normalized.Type = appsv1.RollingUpdateStatefulSetStrategyType
+// MergeUpdateStrategy applies the fields set in desired on top of current. Fields left empty in
+// desired keep the value stored on the object, including what the apiserver defaulted.
+func MergeUpdateStrategy(current, desired appsv1.StatefulSetUpdateStrategy) appsv1.StatefulSetUpdateStrategy {
+	if desired.Type != "" {
+		current.Type = desired.Type
 	}
 
-	if normalized.Type != appsv1.RollingUpdateStatefulSetStrategyType {
-		normalized.RollingUpdate = nil
+	if desired.RollingUpdate != nil {
+		var rollingUpdate appsv1.RollingUpdateStatefulSetStrategy
 
-		return normalized
+		if current.RollingUpdate != nil {
+			rollingUpdate = *current.RollingUpdate
+		}
+
+		if desired.RollingUpdate.Partition != nil {
+			rollingUpdate.Partition = desired.RollingUpdate.Partition
+		}
+
+		if desired.RollingUpdate.MaxUnavailable != nil {
+			rollingUpdate.MaxUnavailable = desired.RollingUpdate.MaxUnavailable
+		}
+
+		current.RollingUpdate = &rollingUpdate
 	}
 
-	if normalized.RollingUpdate == nil {
-		normalized.RollingUpdate = &appsv1.RollingUpdateStatefulSetStrategy{}
+	// The apiserver rejects a rollingUpdate block for OnDelete.
+	if current.Type == appsv1.OnDeleteStatefulSetStrategyType {
+		current.RollingUpdate = nil
 	}
 
-	if normalized.RollingUpdate.Partition == nil {
-		normalized.RollingUpdate.Partition = new(int32(0))
-	}
-
-	// MaxUnavailable defaulting on the apiserver is gated behind the MaxUnavailableStatefulSet feature gate,
-	// so it can't be hardcoded here without risking a permanent mismatch on clusters where the gate is off.
-	// Instead, carry forward whatever the apiserver already put on the stored object.
-	if normalized.RollingUpdate.MaxUnavailable == nil && current.RollingUpdate != nil {
-		normalized.RollingUpdate.MaxUnavailable = current.RollingUpdate.MaxUnavailable
-	}
-
-	return normalized
+	return current
 }

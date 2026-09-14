@@ -11,55 +11,74 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func TestNormalizeStrategy(t *testing.T) {
+func TestMergeStrategy(t *testing.T) {
 	percent25 := intstr.FromString("25%")
 	percent10 := intstr.FromString("10%")
-	one := intstr.FromInt(1)
+	zero := intstr.FromInt32(0)
+	one := intstr.FromInt32(1)
+
+	// defaulted is what the apiserver stores for a RollingUpdate deployment when nothing is set.
+	defaulted := func() appsv1.DeploymentStrategy {
+		return appsv1.DeploymentStrategy{
+			Type:          appsv1.RollingUpdateDeploymentStrategyType,
+			RollingUpdate: &appsv1.RollingUpdateDeployment{MaxUnavailable: &percent25, MaxSurge: &percent25},
+		}
+	}
 
 	tests := []struct {
 		name    string
+		current appsv1.DeploymentStrategy
 		desired appsv1.DeploymentStrategy
 		want    appsv1.DeploymentStrategy
 	}{
 		{
-			name:    "empty strategy defaults to RollingUpdate with 25%/25%",
+			name:    "nothing set keeps the apiserver defaults on the stored object",
+			current: defaulted(),
 			desired: appsv1.DeploymentStrategy{},
-			want: appsv1.DeploymentStrategy{
-				Type:          appsv1.RollingUpdateDeploymentStrategyType,
-				RollingUpdate: &appsv1.RollingUpdateDeployment{MaxUnavailable: &percent25, MaxSurge: &percent25},
-			},
+			want:    defaulted(),
 		},
 		{
-			name:    "type only fills in rollingUpdate defaults",
+			name:    "nothing set on a new object stays empty, the apiserver defaults it on create",
+			current: appsv1.DeploymentStrategy{},
+			desired: appsv1.DeploymentStrategy{},
+			want:    appsv1.DeploymentStrategy{},
+		},
+		{
+			name:    "type only overrides the type and keeps the stored rollingUpdate",
+			current: defaulted(),
 			desired: appsv1.DeploymentStrategy{Type: appsv1.RollingUpdateDeploymentStrategyType},
+			want:    defaulted(),
+		},
+		{
+			name:    "partial rollingUpdate keeps the stored value of the other field",
+			current: defaulted(),
+			desired: appsv1.DeploymentStrategy{RollingUpdate: &appsv1.RollingUpdateDeployment{MaxUnavailable: &zero}},
 			want: appsv1.DeploymentStrategy{
 				Type:          appsv1.RollingUpdateDeploymentStrategyType,
-				RollingUpdate: &appsv1.RollingUpdateDeployment{MaxUnavailable: &percent25, MaxSurge: &percent25},
+				RollingUpdate: &appsv1.RollingUpdateDeployment{MaxUnavailable: &zero, MaxSurge: &percent25},
 			},
 		},
 		{
-			name:    "rollingUpdate only, no type, is treated as RollingUpdate",
-			desired: appsv1.DeploymentStrategy{RollingUpdate: &appsv1.RollingUpdateDeployment{}},
-			want: appsv1.DeploymentStrategy{
-				Type:          appsv1.RollingUpdateDeploymentStrategyType,
-				RollingUpdate: &appsv1.RollingUpdateDeployment{MaxUnavailable: &percent25, MaxSurge: &percent25},
-			},
+			name:    "rollingUpdate on a new object only carries what the spec sets",
+			current: appsv1.DeploymentStrategy{},
+			desired: appsv1.DeploymentStrategy{RollingUpdate: &appsv1.RollingUpdateDeployment{MaxUnavailable: &zero}},
+			want:    appsv1.DeploymentStrategy{RollingUpdate: &appsv1.RollingUpdateDeployment{MaxUnavailable: &zero}},
 		},
 		{
-			name: "Recreate clears a stale rollingUpdate block",
-			desired: appsv1.DeploymentStrategy{
-				Type:          appsv1.RecreateDeploymentStrategyType,
-				RollingUpdate: &appsv1.RollingUpdateDeployment{MaxUnavailable: &percent10},
-			},
-			want: appsv1.DeploymentStrategy{Type: appsv1.RecreateDeploymentStrategyType},
+			name:    "switching to Recreate clears the stored rollingUpdate block",
+			current: defaulted(),
+			desired: appsv1.DeploymentStrategy{Type: appsv1.RecreateDeploymentStrategyType},
+			want:    appsv1.DeploymentStrategy{Type: appsv1.RecreateDeploymentStrategyType},
 		},
 		{
-			name:    "non-RollingUpdate type clears a stale rollingUpdate block",
-			desired: appsv1.DeploymentStrategy{Type: appsv1.DeploymentStrategyType("Custom"), RollingUpdate: &appsv1.RollingUpdateDeployment{MaxSurge: &one}},
-			want:    appsv1.DeploymentStrategy{Type: appsv1.DeploymentStrategyType("Custom")},
+			name:    "a stored Recreate is kept when the spec no longer sets a type",
+			current: appsv1.DeploymentStrategy{Type: appsv1.RecreateDeploymentStrategyType},
+			desired: appsv1.DeploymentStrategy{},
+			want:    appsv1.DeploymentStrategy{Type: appsv1.RecreateDeploymentStrategyType},
 		},
 		{
-			name: "user-provided values are kept",
+			name:    "fully specified values win over the stored ones",
+			current: defaulted(),
 			desired: appsv1.DeploymentStrategy{
 				Type:          appsv1.RollingUpdateDeploymentStrategyType,
 				RollingUpdate: &appsv1.RollingUpdateDeployment{MaxUnavailable: &percent10, MaxSurge: &one},
@@ -73,18 +92,32 @@ func TestNormalizeStrategy(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := NormalizeStrategy(tt.desired)
+			got := MergeStrategy(tt.current, tt.desired)
 
 			assert.Equal(t, tt.want, got)
 		})
 	}
 }
 
-func TestNormalizeStrategyDoesNotMutateInput(t *testing.T) {
-	desired := appsv1.DeploymentStrategy{RollingUpdate: &appsv1.RollingUpdateDeployment{}}
-	original := *desired.DeepCopy()
+// The merge runs on the stored object, so writing through its rollingUpdate pointer would change the
+// object the caller still compares against.
+func TestMergeStrategyDoesNotMutateInputs(t *testing.T) {
+	percent25 := intstr.FromString("25%")
+	zero := intstr.FromInt32(0)
 
-	NormalizeStrategy(desired)
+	current := appsv1.DeploymentStrategy{
+		Type:          appsv1.RollingUpdateDeploymentStrategyType,
+		RollingUpdate: &appsv1.RollingUpdateDeployment{MaxUnavailable: &percent25, MaxSurge: &percent25},
+	}
+	desired := appsv1.DeploymentStrategy{
+		RollingUpdate: &appsv1.RollingUpdateDeployment{MaxUnavailable: &zero},
+	}
 
-	assert.Equal(t, original, desired)
+	currentBefore := *current.DeepCopy()
+	desiredBefore := *desired.DeepCopy()
+
+	MergeStrategy(current, desired)
+
+	assert.Equal(t, currentBefore, current)
+	assert.Equal(t, desiredBefore, desired)
 }

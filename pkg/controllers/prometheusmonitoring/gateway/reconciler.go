@@ -224,7 +224,7 @@ func mutateStatefulSet(sts *appsv1.StatefulSet, s *reconcileScope) {
 		sts.Spec.Replicas = s.Spec.Replicas
 	}
 
-	sts.Spec.UpdateStrategy = k8sstatefulset.NormalizeUpdateStrategy(sts.Spec.UpdateStrategy, s.Spec.UpdateStrategy)
+	sts.Spec.UpdateStrategy = k8sstatefulset.MergeUpdateStrategy(sts.Spec.UpdateStrategy, s.Spec.UpdateStrategy)
 
 	sts.Spec.ServiceName = s.Spec.GetStatefulSetName()
 

@@ -11,10 +11,16 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func TestNormalizeUpdateStrategy(t *testing.T) {
-	zero := int32(0)
-	five := int32(5)
-	one := intstr.FromInt(1)
+func TestMergeUpdateStrategy(t *testing.T) {
+	one := intstr.FromInt32(1)
+
+	// defaulted is what the apiserver stores for a RollingUpdate statefulset when nothing is set.
+	defaulted := func() appsv1.StatefulSetUpdateStrategy {
+		return appsv1.StatefulSetUpdateStrategy{
+			Type:          appsv1.RollingUpdateStatefulSetStrategyType,
+			RollingUpdate: &appsv1.RollingUpdateStatefulSetStrategy{Partition: new(int32(0))},
+		}
+	}
 
 	tests := []struct {
 		name    string
@@ -23,92 +29,98 @@ func TestNormalizeUpdateStrategy(t *testing.T) {
 		want    appsv1.StatefulSetUpdateStrategy
 	}{
 		{
-			name:    "empty strategy defaults to RollingUpdate with partition 0",
+			name:    "nothing set keeps the apiserver defaults on the stored object",
+			current: defaulted(),
 			desired: appsv1.StatefulSetUpdateStrategy{},
-			want: appsv1.StatefulSetUpdateStrategy{
-				Type:          appsv1.RollingUpdateStatefulSetStrategyType,
-				RollingUpdate: &appsv1.RollingUpdateStatefulSetStrategy{Partition: &zero},
-			},
+			want:    defaulted(),
 		},
 		{
-			name:    "type only fills in rollingUpdate defaults",
-			desired: appsv1.StatefulSetUpdateStrategy{Type: appsv1.RollingUpdateStatefulSetStrategyType},
-			want: appsv1.StatefulSetUpdateStrategy{
-				Type:          appsv1.RollingUpdateStatefulSetStrategyType,
-				RollingUpdate: &appsv1.RollingUpdateStatefulSetStrategy{Partition: &zero},
-			},
-		},
-		{
-			name:    "rollingUpdate only, no type, is treated as RollingUpdate",
-			desired: appsv1.StatefulSetUpdateStrategy{RollingUpdate: &appsv1.RollingUpdateStatefulSetStrategy{}},
-			want: appsv1.StatefulSetUpdateStrategy{
-				Type:          appsv1.RollingUpdateStatefulSetStrategyType,
-				RollingUpdate: &appsv1.RollingUpdateStatefulSetStrategy{Partition: &zero},
-			},
-		},
-		{
-			name: "OnDelete clears a stale rollingUpdate block",
-			desired: appsv1.StatefulSetUpdateStrategy{
-				Type:          appsv1.OnDeleteStatefulSetStrategyType,
-				RollingUpdate: &appsv1.RollingUpdateStatefulSetStrategy{Partition: &five},
-			},
-			want: appsv1.StatefulSetUpdateStrategy{Type: appsv1.OnDeleteStatefulSetStrategyType},
-		},
-		{
-			name: "user-provided values are kept",
-			desired: appsv1.StatefulSetUpdateStrategy{
-				Type:          appsv1.RollingUpdateStatefulSetStrategyType,
-				RollingUpdate: &appsv1.RollingUpdateStatefulSetStrategy{Partition: &five, MaxUnavailable: &one},
-			},
-			want: appsv1.StatefulSetUpdateStrategy{
-				Type:          appsv1.RollingUpdateStatefulSetStrategyType,
-				RollingUpdate: &appsv1.RollingUpdateStatefulSetStrategy{Partition: &five, MaxUnavailable: &one},
-			},
-		},
-		{
-			name:    "nil maxUnavailable with no current rollingUpdate stays nil",
+			name:    "nothing set on a new object stays empty, the apiserver defaults it on create",
 			current: appsv1.StatefulSetUpdateStrategy{},
-			desired: appsv1.StatefulSetUpdateStrategy{RollingUpdate: &appsv1.RollingUpdateStatefulSetStrategy{Partition: &five}},
-			want: appsv1.StatefulSetUpdateStrategy{
-				Type:          appsv1.RollingUpdateStatefulSetStrategyType,
-				RollingUpdate: &appsv1.RollingUpdateStatefulSetStrategy{Partition: &five},
-			},
+			desired: appsv1.StatefulSetUpdateStrategy{},
+			want:    appsv1.StatefulSetUpdateStrategy{},
 		},
 		{
-			name: "nil maxUnavailable is taken from the current, apiserver-defaulted object",
+			name:    "type only overrides the type and keeps the stored rollingUpdate",
+			current: defaulted(),
+			desired: appsv1.StatefulSetUpdateStrategy{Type: appsv1.RollingUpdateStatefulSetStrategyType},
+			want:    defaulted(),
+		},
+		{
+			name: "partition overrides the stored one and keeps the stored maxUnavailable",
 			current: appsv1.StatefulSetUpdateStrategy{
 				Type:          appsv1.RollingUpdateStatefulSetStrategyType,
-				RollingUpdate: &appsv1.RollingUpdateStatefulSetStrategy{Partition: &zero, MaxUnavailable: &one},
+				RollingUpdate: &appsv1.RollingUpdateStatefulSetStrategy{Partition: new(int32(0)), MaxUnavailable: &one},
 			},
-			desired: appsv1.StatefulSetUpdateStrategy{RollingUpdate: &appsv1.RollingUpdateStatefulSetStrategy{Partition: &five}},
+			desired: appsv1.StatefulSetUpdateStrategy{
+				RollingUpdate: &appsv1.RollingUpdateStatefulSetStrategy{Partition: new(int32(2))},
+			},
 			want: appsv1.StatefulSetUpdateStrategy{
 				Type:          appsv1.RollingUpdateStatefulSetStrategyType,
-				RollingUpdate: &appsv1.RollingUpdateStatefulSetStrategy{Partition: &five, MaxUnavailable: &one},
+				RollingUpdate: &appsv1.RollingUpdateStatefulSetStrategy{Partition: new(int32(2)), MaxUnavailable: &one},
+			},
+		},
+		{
+			name:    "rollingUpdate on a new object only carries what the spec sets",
+			current: appsv1.StatefulSetUpdateStrategy{},
+			desired: appsv1.StatefulSetUpdateStrategy{
+				RollingUpdate: &appsv1.RollingUpdateStatefulSetStrategy{Partition: new(int32(1))},
+			},
+			want: appsv1.StatefulSetUpdateStrategy{
+				RollingUpdate: &appsv1.RollingUpdateStatefulSetStrategy{Partition: new(int32(1))},
+			},
+		},
+		{
+			name:    "switching to OnDelete clears the stored rollingUpdate block",
+			current: defaulted(),
+			desired: appsv1.StatefulSetUpdateStrategy{Type: appsv1.OnDeleteStatefulSetStrategyType},
+			want:    appsv1.StatefulSetUpdateStrategy{Type: appsv1.OnDeleteStatefulSetStrategyType},
+		},
+		{
+			name:    "a stored OnDelete is kept when the spec no longer sets a type",
+			current: appsv1.StatefulSetUpdateStrategy{Type: appsv1.OnDeleteStatefulSetStrategyType},
+			desired: appsv1.StatefulSetUpdateStrategy{},
+			want:    appsv1.StatefulSetUpdateStrategy{Type: appsv1.OnDeleteStatefulSetStrategyType},
+		},
+		{
+			name:    "fully specified values win over the stored ones",
+			current: defaulted(),
+			desired: appsv1.StatefulSetUpdateStrategy{
+				Type:          appsv1.RollingUpdateStatefulSetStrategyType,
+				RollingUpdate: &appsv1.RollingUpdateStatefulSetStrategy{Partition: new(int32(3)), MaxUnavailable: &one},
+			},
+			want: appsv1.StatefulSetUpdateStrategy{
+				Type:          appsv1.RollingUpdateStatefulSetStrategyType,
+				RollingUpdate: &appsv1.RollingUpdateStatefulSetStrategy{Partition: new(int32(3)), MaxUnavailable: &one},
 			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := NormalizeUpdateStrategy(tt.current, tt.desired)
+			got := MergeUpdateStrategy(tt.current, tt.desired)
 
 			assert.Equal(t, tt.want, got)
 		})
 	}
 }
 
-func TestNormalizeUpdateStrategyDoesNotMutateInput(t *testing.T) {
-	one := intstr.FromInt(1)
+// The merge runs on the stored object, so writing through its rollingUpdate pointer would change the
+// object the caller still compares against.
+func TestMergeUpdateStrategyDoesNotMutateInputs(t *testing.T) {
 	current := appsv1.StatefulSetUpdateStrategy{
 		Type:          appsv1.RollingUpdateStatefulSetStrategyType,
-		RollingUpdate: &appsv1.RollingUpdateStatefulSetStrategy{MaxUnavailable: &one},
+		RollingUpdate: &appsv1.RollingUpdateStatefulSetStrategy{Partition: new(int32(0))},
 	}
-	originalCurrent := *current.DeepCopy()
-	desired := appsv1.StatefulSetUpdateStrategy{RollingUpdate: &appsv1.RollingUpdateStatefulSetStrategy{}}
-	originalDesired := *desired.DeepCopy()
+	desired := appsv1.StatefulSetUpdateStrategy{
+		RollingUpdate: &appsv1.RollingUpdateStatefulSetStrategy{Partition: new(int32(2))},
+	}
 
-	NormalizeUpdateStrategy(current, desired)
+	currentBefore := *current.DeepCopy()
+	desiredBefore := *desired.DeepCopy()
 
-	assert.Equal(t, originalCurrent, current)
-	assert.Equal(t, originalDesired, desired)
+	MergeUpdateStrategy(current, desired)
+
+	assert.Equal(t, currentBefore, current)
+	assert.Equal(t, desiredBefore, desired)
 }
