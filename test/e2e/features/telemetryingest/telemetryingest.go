@@ -53,7 +53,11 @@ func WithPublicActiveGate(t *testing.T) features.Feature {
 	options := []componentDynakube.Option{
 		componentDynakube.WithAPIURL(secretConfig.APIURL),
 		componentDynakube.WithTelemetryIngestEnabled(true),
-		componentDynakube.WithOTelCollectorImageRef(t, componentDynakube.GetLatestOTelCollectorImageTagURI(t)),
+	}
+
+	if !tenant.UsePhase3Tenant() {
+		// Gen2 tenants don't serve the OTel Collector image from the fleet management endpoint, so keep using the pinned image.
+		options = append(options, componentDynakube.WithOTelCollectorImageRef(t, componentDynakube.GetLatestOTelCollectorImageTagURI(t)))
 	}
 
 	testDynakube := *componentDynakube.New(options...)
@@ -61,6 +65,7 @@ func WithPublicActiveGate(t *testing.T) features.Feature {
 	componentDynakube.Install(builder, &secretConfig, testDynakube)
 
 	builder.Assess("otel collector started", k8sstatefulset.IsReady(testDynakube.OTelCollectorStatefulsetName(), testDynakube.Namespace))
+	builder.Assess("otel collector uses resolved image", otelCollectorUsesResolvedImage(&testDynakube))
 	builder.Assess("otel collector config created", checkOTelCollectorConfig(&testDynakube))
 	builder.Assess("otel collector service created", checkOTelCollectorService(&testDynakube))
 
@@ -411,4 +416,15 @@ func createAgTLSSecret(namespace string) (corev1.Secret, error) {
 			opconsts.TLSServerCrtDataName:          agCrt,
 			consts.AgCertificateAndPrivateKeyField: agP12,
 		}), nil
+}
+
+func otelCollectorUsesResolvedImage(dk *dynakube.DynaKube) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		var current dynakube.DynaKube
+		require.NoError(t, envConfig.Client().Resources().Get(ctx, dk.Name, dk.Namespace, &current))
+
+		require.NotEmpty(t, current.Status.OTelCollector.ResolvedImage)
+
+		return k8sstatefulset.VerifyUsesImage(current.OTelCollectorStatefulsetName(), current.Namespace, current.Status.OTelCollector.ResolvedImage)(ctx, t, envConfig)
+	}
 }
