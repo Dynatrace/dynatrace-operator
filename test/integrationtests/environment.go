@@ -24,6 +24,7 @@ import (
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/config"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
@@ -43,22 +44,35 @@ func DisableAttachControlPlaneOutput() TestEnvOpt {
 }
 
 func SetupTestEnvironment(tb testing.TB, opts ...TestEnvOpt) client.Client {
+	clt, _ := SetupTestEnvironmentWithConfig(tb, opts...)
+
+	return clt
+}
+
+// SetupTestEnvironmentWithConfig is [SetupTestEnvironment] that additionally returns the
+// rest.Config of the started control plane, for tests that need to build a second client with
+// different credentials (for example an impersonating one to check RBAC).
+func SetupTestEnvironmentWithConfig(tb testing.TB, opts ...TestEnvOpt) (client.Client, *rest.Config) {
 	setupBaseTestEnv(tb)
 
-	testEnv.AttachControlPlaneOutput = true
+	// The environment this call started, held locally so the cleanup below stops that one rather
+	// than whatever the package global points at by then.
+	env := testEnv
+
+	env.AttachControlPlaneOutput = true
 
 	for _, opt := range opts {
-		opt(testEnv)
+		opt(env)
 	}
 
 	// start test environment
-	cfg, err := testEnv.Start()
+	cfg, err := env.Start()
 	if err != nil {
 		tb.Fatal(err)
 	}
 
 	tb.Cleanup(func() {
-		err := testEnv.Stop()
+		err := env.Stop()
 		if err != nil {
 			// test is already ending, no need to explicitly fail test
 			tb.Error(err, "stop env")
@@ -70,7 +84,7 @@ func SetupTestEnvironment(tb testing.TB, opts ...TestEnvOpt) client.Client {
 		tb.Fatal(err)
 	}
 
-	return clt
+	return clt, cfg
 }
 
 func SetupWebhookTestEnvironment(t *testing.T, webhookOptions envtest.WebhookInstallOptions, webhookSetup func(ctrl.Manager) error, configOpts ...func(*rest.Config)) client.Client {
@@ -163,18 +177,34 @@ func SetupWebhookTestEnvironment(t *testing.T, webhookOptions envtest.WebhookIns
 func SetupManagerTestEnvironment(t *testing.T, managerSetup func(ctrl.Manager) error) client.Client {
 	setupBaseTestEnv(t)
 
-	cfg, err := testEnv.Start()
+	env := testEnv
+
+	cfg, err := env.Start()
 	if err != nil {
 		t.Fatal(err, "start environment")
 	}
 
 	t.Cleanup(func() {
-		err := testEnv.Stop()
+		err := env.Stop()
 		if err != nil {
 			// test is already ending, no need to explicitly fail test
 			t.Error(err, "stop env")
 		}
 	})
+
+	return StartManager(t, cfg, managerSetup)
+}
+
+// StartManager builds a Manager (no webhook server) on an already running control plane, calls
+// managerSetup (typically Reconciler.SetupWithManager) on it, starts it, and waits for its cache to
+// sync so that any Owns/Watches registered by managerSetup are ready to receive events. The Manager
+// stops when the test's context is canceled.
+//
+// Separate from [SetupManagerTestEnvironment] so that a test which already has a control plane (for
+// example from [SetupTestEnvironmentWithConfig]) can run a live controller against it without
+// paying for a second one.
+func StartManager(t *testing.T, cfg *rest.Config, managerSetup func(ctrl.Manager) error) client.Client {
+	t.Helper()
 
 	clt, err := client.New(cfg, client.Options{})
 	if err != nil {
@@ -185,6 +215,10 @@ func SetupManagerTestEnvironment(t *testing.T, managerSetup func(ctrl.Manager) e
 		Scheme:         scheme.Scheme,
 		LeaderElection: false,
 		Metrics:        metricsserver.Options{BindAddress: "0"},
+		// Controller names are registered in a package global so that two controllers cannot report
+		// the same metric. That registry is never cleaned up, so a second Manager in the same test
+		// binary cannot register the same controller again. Metrics are off here anyway.
+		Controller: config.Controller{SkipNameValidation: new(true)},
 	})
 	if err != nil {
 		t.Fatal(err, "new manager")
