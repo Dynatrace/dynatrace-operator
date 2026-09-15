@@ -267,6 +267,8 @@ func mutateDeployment(deploy *appsv1.Deployment, s *reconcileScope) {
 		deploy.Spec.Replicas = s.Spec.Replicas
 	}
 
+	deploy.Spec.Strategy = k8sdeployment.MergeStrategy(deploy.Spec.Strategy, s.Spec.UpdateStrategy)
+
 	deploy.Spec.Selector = &metav1.LabelSelector{MatchLabels: s.AppLabels.AsSelector()}
 	deploy.Spec.Template.Spec.ServiceAccountName = serviceAccount
 	deploy.Spec.Template.Spec.AutomountServiceAccountToken = new(true)

@@ -29,6 +29,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
@@ -217,6 +218,10 @@ func TestReconcileDeployment(t *testing.T) {
 		pm.Spec.TargetAllocator.Annotations = map[string]string{"custom": "annotation"}
 		pm.Spec.TargetAllocator.Labels = map[string]string{"custom": "label"}
 		pm.Spec.TargetAllocator.Args = []string{"--foo=bar"}
+		maxUnavailable := intstr.FromInt(0)
+		pm.Spec.TargetAllocator.UpdateStrategy = appsv1.DeploymentStrategy{
+			RollingUpdate: &appsv1.RollingUpdateDeployment{MaxUnavailable: &maxUnavailable},
+		}
 		s := newTestScope(pm)
 		s.ConfigMapHash = "deadbeef"
 		c := fake.NewClient()
