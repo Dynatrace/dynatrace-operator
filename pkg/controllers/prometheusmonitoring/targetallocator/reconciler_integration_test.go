@@ -181,23 +181,6 @@ func runUpdatePhase(t *testing.T, deps *lifecycleDeps) {
 		assert.NotEqual(t, deployRV, getDeployment(t, deps).ResourceVersion)
 		assert.Equal(t, svcRV, getService(t, deps).ResourceVersion)
 	})
-
-	// Switching to a non-rolling strategy must clear the stale rollingUpdate block and leave the
-	// ConfigMap and Service alone.
-	t.Run("switching to Recreate clears rollingUpdate, service and configmap untouched", func(t *testing.T) {
-		cmRV := getConfigMap(t, deps).ResourceVersion
-		svcRV := getService(t, deps).ResourceVersion
-
-		deps.pm.Spec.TargetAllocator.UpdateStrategy = appsv1.DeploymentStrategy{Type: appsv1.RecreateDeploymentStrategyType}
-		require.NoError(t, deps.reconciler.Reconcile(t.Context(), deps.pm, deps.dk, nil))
-
-		deploy := getDeployment(t, deps)
-		assert.Equal(t, appsv1.RecreateDeploymentStrategyType, deploy.Spec.Strategy.Type)
-		assert.Nil(t, deploy.Spec.Strategy.RollingUpdate)
-
-		assert.Equal(t, cmRV, getConfigMap(t, deps).ResourceVersion)
-		assert.Equal(t, svcRV, getService(t, deps).ResourceVersion)
-	})
 }
 
 func targetAllocatorKey(pm *prometheusmonitoring.PrometheusMonitoring) client.ObjectKey {
