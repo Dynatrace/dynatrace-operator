@@ -30,11 +30,11 @@ const (
 	testDynakubeName           = "test-dk"
 	testResourceAttributeKey   = "key"
 	testResourceAttributeValue = "value"
-	testDataValue              = "[resource_attributes]\n" + testResourceAttributeKey + " = " + testResourceAttributeValue + "\n\n"
+	testDataValue              = "[resource_attributes]\n" + testResourceAttributeKey + " = " + testResourceAttributeValue + "\n"
 
 	testResourceAttributeKey2   = "key2"
 	testResourceAttributeValue2 = "value2"
-	testDataValue2              = "[resource_attributes]\n" + testResourceAttributeKey2 + " = " + testResourceAttributeValue2 + "\n\n"
+	testDataValue2              = "[resource_attributes]\n" + testResourceAttributeKey2 + " = " + testResourceAttributeValue2 + "\n"
 
 	testNoProxyValue     = "svc.cluster.local"
 	testNoProxyWithComma = "svc.cluster.local,10.0.0.0/8"
@@ -134,7 +134,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, r.Reconcile(t.Context(), dk))
 
 		secret := getDeploymentPropertiesSecret(t, clt, dk)
-		expectedContent := agconsts.PropertiesClientInternalSection + "\n" + agconsts.PropertiesNoProxyFieldName + " = " + testNoProxyValue + "\n\n"
+		expectedContent := agconsts.PropertiesClientInternalSection + "\n" + agconsts.PropertiesNoProxyFieldName + " = " + testNoProxyValue + "\n"
 		assert.Equal(t, expectedContent, string(secret.Data[agconsts.DeploymentPropertiesFileName]))
 	})
 
@@ -146,7 +146,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, r.Reconcile(t.Context(), dk))
 
 		secret := getDeploymentPropertiesSecret(t, clt, dk)
-		expectedContent := testDataValue + agconsts.PropertiesClientInternalSection + "\n" + agconsts.PropertiesNoProxyFieldName + " = " + testNoProxyValue + "\n\n"
+		expectedContent := testDataValue + agconsts.PropertiesClientInternalSection + "\n" + agconsts.PropertiesNoProxyFieldName + " = " + testNoProxyValue + "\n"
 		assert.Equal(t, expectedContent, string(secret.Data[agconsts.DeploymentPropertiesFileName]))
 	})
 
@@ -158,7 +158,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, r.Reconcile(t.Context(), dk))
 
 		secret := getDeploymentPropertiesSecret(t, clt, dk)
-		expectedContent := agconsts.PropertiesClientInternalSection + "\n" + agconsts.PropertiesNoProxyFieldName + " = svc.cluster.local|10.0.0.0/8\n\n"
+		expectedContent := agconsts.PropertiesClientInternalSection + "\n" + agconsts.PropertiesNoProxyFieldName + " = svc.cluster.local|10.0.0.0/8\n"
 		assert.Equal(t, expectedContent, string(secret.Data[agconsts.DeploymentPropertiesFileName]))
 	})
 

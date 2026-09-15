@@ -26,13 +26,11 @@ func BuildContent(dk *dynakube.DynaKube) string {
 		for _, k := range keys {
 			fmt.Fprintf(&sb, "%s = %s\n", k, attrs[k])
 		}
-
-		fmt.Fprint(&sb, "\n")
 	}
 
 	if dk.NeedsCustomNoProxy() {
 		noProxyValue := strings.ReplaceAll(dk.FF().GetNoProxy(), ",", "|")
-		fmt.Fprintf(&sb, "%s\n%s = %s\n\n", consts.PropertiesClientInternalSection, consts.PropertiesNoProxyFieldName, noProxyValue)
+		fmt.Fprintf(&sb, "%s\n%s = %s\n", consts.PropertiesClientInternalSection, consts.PropertiesNoProxyFieldName, noProxyValue)
 	}
 
 	return sb.String()

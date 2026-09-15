@@ -38,7 +38,7 @@ func TestBuildContent(t *testing.T) {
 				ResourceAttributes: map[string]string{"foo": "bar"},
 			},
 		})
-		assert.Equal(t, "[resource_attributes]\nfoo = bar\n\n", content)
+		assert.Equal(t, "[resource_attributes]\nfoo = bar\n", content)
 	})
 
 	t.Run("multiple entries are sorted by key", func(t *testing.T) {
@@ -52,7 +52,7 @@ func TestBuildContent(t *testing.T) {
 				ResourceAttributes: attrs,
 			},
 		})
-		assert.Equal(t, "[resource_attributes]\naaa = first\nmmm = middle\nzzz = last\n\n", content)
+		assert.Equal(t, "[resource_attributes]\naaa = first\nmmm = middle\nzzz = last\n", content)
 	})
 
 	t.Run("no-proxy value", func(t *testing.T) {
@@ -68,7 +68,7 @@ func TestBuildContent(t *testing.T) {
 				},
 			},
 		})
-		assert.Equal(t, "[http.client.internal]\nproxy-non-proxy-hosts = 1.2.3.4\n\n", content)
+		assert.Equal(t, "[http.client.internal]\nproxy-non-proxy-hosts = 1.2.3.4\n", content)
 	})
 
 	t.Run("resource attributes and no-proxy", func(t *testing.T) {
@@ -87,6 +87,6 @@ func TestBuildContent(t *testing.T) {
 				},
 			},
 		})
-		assert.Equal(t, "[resource_attributes]\nfoo = bar\n\n[http.client.internal]\nproxy-non-proxy-hosts = 1.2.3.4\n\n", content)
+		assert.Equal(t, "[resource_attributes]\nfoo = bar\n[http.client.internal]\nproxy-non-proxy-hosts = 1.2.3.4\n", content)
 	})
 }
