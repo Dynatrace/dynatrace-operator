@@ -7,6 +7,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
@@ -17,7 +18,6 @@ import (
 	agclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/deploymentproperties"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
@@ -736,7 +736,7 @@ func TestCreateDeploymentPropertiesConfigMap(t *testing.T) {
 		err = fakeClient.Get(t.Context(), client.ObjectKey{Name: dk.ActiveGate().GetDeploymentPropertiesConfigMapName(), Namespace: testNamespace}, &cm)
 		require.NoError(t, err)
 		assert.Contains(t, cm.Data, consts.DeploymentPropertiesFileName)
-		assert.Equal(t, deploymentproperties.BuildContent(&dynakube.DynaKube{}), cm.Data[consts.DeploymentPropertiesFileName])
+		assert.Empty(t, cm.Data[consts.DeploymentPropertiesFileName])
 	})
 
 	t.Run("configmap content reflects resource attributes", func(t *testing.T) {
@@ -759,7 +759,37 @@ func TestCreateDeploymentPropertiesConfigMap(t *testing.T) {
 		var cm corev1.ConfigMap
 		err = fakeClient.Get(t.Context(), client.ObjectKey{Name: dk.ActiveGate().GetDeploymentPropertiesConfigMapName(), Namespace: testNamespace}, &cm)
 		require.NoError(t, err)
-		assert.Equal(t, deploymentproperties.BuildContent(dk), cm.Data[consts.DeploymentPropertiesFileName])
+		assert.Contains(t, cm.Data, consts.DeploymentPropertiesFileName)
+		assert.Equal(t, "[resource_attributes]\nkey = value\n", cm.Data[consts.DeploymentPropertiesFileName])
+	})
+
+	t.Run("configmap content reflects no-proxy ff", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: testNamespace,
+				Name:      testName,
+				Annotations: map[string]string{
+					exp.NoProxyKey: "test",
+				},
+			},
+			Spec: dynakube.DynaKubeSpec{
+				ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}},
+				Proxy: &value.Source{
+					Value: "test",
+				},
+			},
+		}
+		fakeClient := fake.NewClient()
+		r := &Reconciler{configMaps: k8sconfigmap.Query(fakeClient, fakeClient)}
+
+		err := r.createDeploymentPropertiesConfigMap(t.Context(), dk)
+		require.NoError(t, err)
+
+		var cm corev1.ConfigMap
+		err = fakeClient.Get(t.Context(), client.ObjectKey{Name: dk.ActiveGate().GetDeploymentPropertiesConfigMapName(), Namespace: testNamespace}, &cm)
+		require.NoError(t, err)
+		assert.Contains(t, cm.Data, consts.DeploymentPropertiesFileName)
+		assert.Equal(t, "[http.client.internal]\nproxy-non-proxy-hosts = test\n", cm.Data[consts.DeploymentPropertiesFileName])
 	})
 }
 
