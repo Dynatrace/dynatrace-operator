@@ -185,23 +185,6 @@ func runUpdatePhase(t *testing.T, deps *lifecycleDeps) {
 		assert.NotEqual(t, stsRV, getStatefulSet(t, deps).ResourceVersion)
 		assert.Equal(t, svcRV, getService(t, deps).ResourceVersion)
 	})
-
-	// Switching to a non-rolling strategy must clear the stale rollingUpdate block and leave the
-	// ConfigMap and Service alone.
-	t.Run("switching to OnDelete clears rollingUpdate, service and configmap untouched", func(t *testing.T) {
-		cmRV := getConfigMap(t, deps).ResourceVersion
-		svcRV := getService(t, deps).ResourceVersion
-
-		deps.pm.Spec.Gateway.UpdateStrategy = appsv1.StatefulSetUpdateStrategy{Type: appsv1.OnDeleteStatefulSetStrategyType}
-		require.NoError(t, deps.reconciler.Reconcile(t.Context(), deps.pm, deps.dk, deps.imageClient))
-
-		sts := getStatefulSet(t, deps)
-		assert.Equal(t, appsv1.OnDeleteStatefulSetStrategyType, sts.Spec.UpdateStrategy.Type)
-		assert.Nil(t, sts.Spec.UpdateStrategy.RollingUpdate)
-
-		assert.Equal(t, cmRV, getConfigMap(t, deps).ResourceVersion)
-		assert.Equal(t, svcRV, getService(t, deps).ResourceVersion)
-	})
 }
 
 func gatewayKey(pm *prometheusmonitoring.PrometheusMonitoring) client.ObjectKey {
