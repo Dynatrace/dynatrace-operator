@@ -217,7 +217,11 @@ func (in *PrometheusMonitoringStatus) DeepCopy() *PrometheusMonitoringStatus {
 func (in *ScraperSpec) DeepCopyInto(out *ScraperSpec) {
 	*out = *in
 	in.PodSpec.DeepCopyInto(&out.PodSpec)
-	out.TargetsPollInterval = in.TargetsPollInterval
+	if in.TargetsPollInterval != nil {
+		in, out := &in.TargetsPollInterval, &out.TargetsPollInterval
+		*out = new(metav1.Duration)
+		**out = **in
+	}
 	in.UpdateStrategy.DeepCopyInto(&out.UpdateStrategy)
 }
 
@@ -250,7 +254,11 @@ func (in *ScraperStatus) DeepCopy() *ScraperStatus {
 func (in *TargetAllocatorSpec) DeepCopyInto(out *TargetAllocatorSpec) {
 	*out = *in
 	in.PodSpec.DeepCopyInto(&out.PodSpec)
-	out.ScrapeInterval = in.ScrapeInterval
+	if in.ScrapeInterval != nil {
+		in, out := &in.ScrapeInterval, &out.ScrapeInterval
+		*out = new(metav1.Duration)
+		**out = **in
+	}
 	if in.CustomResourceSelector != nil {
 		in, out := &in.CustomResourceSelector, &out.CustomResourceSelector
 		*out = new(metav1.LabelSelector)
