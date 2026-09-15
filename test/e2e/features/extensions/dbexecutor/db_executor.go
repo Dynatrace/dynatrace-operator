@@ -25,10 +25,16 @@ func Feature(t *testing.T) features.Feature {
 
 	options := []componentDynakube.Option{
 		componentDynakube.WithAPIURL(secretConfig.APIURL),
-		componentDynakube.WithExtensionsEECImageRef(t, componentDynakube.GetLatestEECImageTagURI(t)),
 		componentDynakube.WithExtensionsDatabases(extensions.DatabaseSpec{ID: testDatabaseID + "-a"}, extensions.DatabaseSpec{ID: testDatabaseID + "-b"}, extensions.DatabaseSpec{ID: testDatabaseID + "-c"}),
-		componentDynakube.WithExtensionsDBExecutorImageRef(t, componentDynakube.GetLatestDBExecutorImageTagURI(t)),
 		componentDynakube.WithActiveGate(),
+	}
+
+	if !tenant.UsePhase3Tenant() {
+		// Gen2 tenants don't serve the EEC and DBExecutor images from the fleet management endpoint, so keep using the pinned images.
+		options = append(options,
+			componentDynakube.WithExtensionsEECImageRef(t, componentDynakube.GetLatestEECImageTagURI(t)),
+			componentDynakube.WithExtensionsDBExecutorImageRef(t, componentDynakube.GetLatestDBExecutorImageTagURI(t)),
+		)
 	}
 
 	testDynakube := *componentDynakube.New(options...)
