@@ -70,7 +70,7 @@ type HTTPSConfig struct {
 
 type ScrapeConfig struct {
 	Enabled                         bool                  `json:"enabled"`
-	ScrapeInterval                  metav1.Duration       `json:"scrape_interval"`
+	ScrapeInterval                  *metav1.Duration      `json:"scrape_interval"`
 	PodMonitorSelector              *metav1.LabelSelector `json:"pod_monitor_selector,omitempty"`
 	PodMonitorNamespaceSelector     *metav1.LabelSelector `json:"pod_monitor_namespace_selector,omitempty"`
 	ServiceMonitorSelector          *metav1.LabelSelector `json:"service_monitor_selector,omitempty"`

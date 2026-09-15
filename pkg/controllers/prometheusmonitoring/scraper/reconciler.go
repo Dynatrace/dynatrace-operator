@@ -154,12 +154,18 @@ func (r *Reconciler) reconcileConfigMap(ctx context.Context, s *reconcileScope) 
 func buildScraperConfigData(s *reconcileScope) scraperConfigData {
 	namespace := s.Owner.Namespace
 
-	return scraperConfigData{
+	data := scraperConfigData{
 		TargetAllocatorEndpoint: "http://" + net.JoinHostPort(
-			serviceAddress(s.Owner.TargetAllocator().GetDeploymentName(), namespace), strconv.Itoa(targetAllocatorPort)),
-		GatewayService:      s.Owner.Gateway().GetStatefulSetName() + "." + namespace,
-		TargetsPollInterval: s.Spec.TargetsPollInterval.Duration.String(),
+			serviceAddress(s.Owner.TargetAllocator().GetDeploymentName(), namespace), strconv.Itoa(targetAllocatorPort),
+		),
+		GatewayService: s.Owner.Gateway().GetStatefulSetName() + "." + namespace,
 	}
+
+	if interval := s.Spec.TargetsPollInterval; interval != nil && interval.Duration > 0 {
+		data.TargetsPollInterval = s.Spec.TargetsPollInterval.Duration.String()
+	}
+
+	return data
 }
 
 func serviceAddress(name, namespace string) string {

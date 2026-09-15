@@ -151,7 +151,7 @@ func runUpdatePhase(t *testing.T, deps *lifecycleDeps) {
 
 		imgClient := imagemock.NewClient(t)
 		imgClient.EXPECT().GetComponentLatestInfo(mock.Anything, mock.Anything, mock.Anything).Return(nil, errors.New("no scraper image available")).Maybe()
-		deps.pm.Spec.Scraper.TargetsPollInterval = metav1.Duration{Duration: 5 * time.Minute}
+		deps.pm.Spec.Scraper.TargetsPollInterval = new(metav1.Duration{Duration: 5 * time.Minute})
 		require.NoError(t, deps.reconciler.Reconcile(t.Context(), deps.pm, deps.dk, imgClient))
 
 		assert.NotEqual(t, cmRV, getConfigMap(t, deps).ResourceVersion)
