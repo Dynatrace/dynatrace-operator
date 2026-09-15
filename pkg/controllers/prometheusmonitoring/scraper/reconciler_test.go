@@ -49,7 +49,7 @@ func newTestPM(name, namespace string) *prometheusmonitoring.PrometheusMonitorin
 						},
 					},
 				},
-				TargetsPollInterval: metav1.Duration{Duration: 60 * time.Second},
+				TargetsPollInterval: new(metav1.Duration{Duration: 60 * time.Second}),
 			},
 		},
 	}
