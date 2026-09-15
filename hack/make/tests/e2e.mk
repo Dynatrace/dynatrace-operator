@@ -430,3 +430,7 @@ test/e2e/token/migration:
 test/e2e/imagevolumes:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "TestNoCSI_image_volume_injection" $(SKIPCLEANUP)
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/standard -run "TestStandard_cloudnative_image_volume_injection" $(SKIPCLEANUP)
+
+## Runs PrometheusMonitoring e2e test only
+test/e2e/prometheus-monitoring:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "prometheus_monitoring" $(SKIPCLEANUP)
