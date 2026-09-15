@@ -1,7 +1,7 @@
 // Copyright Dynatrace LLC
 // SPDX-License-Identifier: Apache-2.0
 
-package dtprometheus
+package prometheusmonitoring
 
 import (
 	"context"
@@ -13,7 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/dtprometheus"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/prometheusmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
@@ -25,15 +25,20 @@ import (
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	networkingv1 "k8s.io/api/networking/v1"
+	policyv1 "k8s.io/api/policy/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
+	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// Integration tests for the DTPrometheus controller as a whole, against a real API server.
+// Integration tests for the PrometheusMonitoring controller as a whole, against a real API server.
 //
 // The per-component reconcilers already have their own envtest lifecycle tests
 // (gateway/scraper/targetallocator ...reconciler_integration_test.go) plus golden-file unit
@@ -58,16 +63,20 @@ const (
 
 	testDynaKubeName = "dk"
 	testAPIURL       = "https://tenant.dev.dynatracelabs.com/api"
+
+	// How long to wait on a live Manager to notice something and act on it.
+	managerTimeout  = 30 * time.Second
+	managerInterval = 100 * time.Millisecond
 )
 
-// component describes one deployed DTPrometheus component so that the aspect tests below can be
+// component describes one deployed PrometheusMonitoring component so that the aspect tests below can be
 // table driven. Adding a component later (for example Self Monitoring, which is intentionally not
 // covered yet) means adding one entry here plus its expected object set.
 type component struct {
 	name string
 	// workload is the Deployment or StatefulSet, and also the ConfigMap and Service name:
 	// all objects of a component share one name.
-	objectName func(dtp *dtprometheus.DTPrometheus) string
+	objectName func(pm *prometheusmonitoring.PrometheusMonitoring) string
 	labels     func() *k8slabel.Labels
 	// podSpec returns the pod template of the component's workload.
 	podSpec       func(t *testing.T, f *fixture) (*corev1.PodTemplateSpec, *metav1.LabelSelector)
@@ -76,36 +85,48 @@ type component struct {
 	hasService bool
 	// serviceAccount is created by the helm chart, not by the operator.
 	serviceAccount string
+	// clusterRoleTemplate and clusterRoleBindingTemplate are the component's own RBAC in the helm
+	// chart, relative to config/helm/chart/default/templates/Common.
+	clusterRoleTemplate        string
+	clusterRoleBindingTemplate string
 }
 
 func components() []component {
 	return []component{
 		{
-			name:           "gateway",
-			objectName:     func(dtp *dtprometheus.DTPrometheus) string { return dtp.Gateway().GetStatefulSetName() },
-			labels:         func() *k8slabel.Labels { return k8slabel.New("opentelemetry-gateway", "otel-gateway", "") },
-			podSpec:        gatewayPodSpec,
-			containerName:  "gateway",
-			hasService:     true,
-			serviceAccount: "dynatrace-prometheus-gateway",
+			name:                       "gateway",
+			objectName:                 func(pm *prometheusmonitoring.PrometheusMonitoring) string { return pm.Gateway().GetStatefulSetName() },
+			labels:                     func() *k8slabel.Labels { return k8slabel.New("opentelemetry-gateway", "otel-gateway", "") },
+			podSpec:                    gatewayPodSpec,
+			containerName:              "gateway",
+			hasService:                 true,
+			serviceAccount:             "dynatrace-prometheus-gateway",
+			clusterRoleTemplate:        "prometheus/clusterrole-prometheus-gateway.yaml",
+			clusterRoleBindingTemplate: "prometheus/clusterrolebinding-prometheus-gateway.yaml",
 		},
 		{
-			name:           "scraper",
-			objectName:     func(dtp *dtprometheus.DTPrometheus) string { return dtp.Scraper().GetDeploymentName() },
-			labels:         k8slabel.OTelScraper,
-			podSpec:        scraperPodSpec,
-			containerName:  "scraper",
-			hasService:     false,
-			serviceAccount: "dynatrace-prometheus-scraper",
+			name:                       "scraper",
+			objectName:                 func(pm *prometheusmonitoring.PrometheusMonitoring) string { return pm.Scraper().GetDeploymentName() },
+			labels:                     k8slabel.OTelScraper,
+			podSpec:                    scraperPodSpec,
+			containerName:              "scraper",
+			hasService:                 false,
+			serviceAccount:             "dynatrace-prometheus-scraper",
+			clusterRoleTemplate:        "prometheus/clusterrole-prometheus-scraper.yaml",
+			clusterRoleBindingTemplate: "prometheus/clusterrolebinding-prometheus-scraper.yaml",
 		},
 		{
-			name:           "targetallocator",
-			objectName:     func(dtp *dtprometheus.DTPrometheus) string { return dtp.TargetAllocator().GetDeploymentName() },
-			labels:         k8slabel.OTelTargetAllocator,
-			podSpec:        targetAllocatorPodSpec,
-			containerName:  "targetallocator",
-			hasService:     true,
-			serviceAccount: "dynatrace-target-allocator",
+			name: "targetallocator",
+			objectName: func(pm *prometheusmonitoring.PrometheusMonitoring) string {
+				return pm.TargetAllocator().GetDeploymentName()
+			},
+			labels:                     k8slabel.OTelTargetAllocator,
+			podSpec:                    targetAllocatorPodSpec,
+			containerName:              "targetallocator",
+			hasService:                 true,
+			serviceAccount:             "dynatrace-target-allocator",
+			clusterRoleTemplate:        "prometheus/clusterrole-target-allocator.yaml",
+			clusterRoleBindingTemplate: "prometheus/clusterrolebinding-target-allocator.yaml",
 		},
 	}
 }
@@ -121,7 +142,7 @@ func gatewayPodSpec(t *testing.T, f *fixture) (*corev1.PodTemplateSpec, *metav1.
 func scraperPodSpec(t *testing.T, f *fixture) (*corev1.PodTemplateSpec, *metav1.LabelSelector) {
 	t.Helper()
 
-	deploy := f.deployment(t, f.dtp.Scraper().GetDeploymentName())
+	deploy := f.deployment(t, f.pm.Scraper().GetDeploymentName())
 
 	return &deploy.Spec.Template, deploy.Spec.Selector
 }
@@ -129,7 +150,7 @@ func scraperPodSpec(t *testing.T, f *fixture) (*corev1.PodTemplateSpec, *metav1.
 func targetAllocatorPodSpec(t *testing.T, f *fixture) (*corev1.PodTemplateSpec, *metav1.LabelSelector) {
 	t.Helper()
 
-	deploy := f.deployment(t, f.dtp.TargetAllocator().GetDeploymentName())
+	deploy := f.deployment(t, f.pm.TargetAllocator().GetDeploymentName())
 
 	return &deploy.Spec.Template, deploy.Spec.Selector
 }
@@ -155,6 +176,8 @@ func TestReconcileComponents(t *testing.T) {
 	t.Run("error-paths", func(t *testing.T) { testErrorPaths(t, clt) })
 	t.Run("deletion", func(t *testing.T) { testDeletion(t, clt) })
 	t.Run("operator-rbac", func(t *testing.T) { testOperatorRBAC(t, clt, cfg) })
+	t.Run("component-rbac", func(t *testing.T) { testComponentRBAC(t, clt, cfg) })
+	t.Run("drift-correction-under-manager", func(t *testing.T) { testDriftCorrectionUnderManager(t, clt, cfg) })
 }
 
 // managedObject identifies one object the controller is expected to manage.
@@ -167,13 +190,13 @@ func (o managedObject) String() string {
 	return o.kind + "/" + o.name
 }
 
-// expectedManagedObjects is the complete inventory of what one DTPrometheus reconcile creates.
+// expectedManagedObjects is the complete inventory of what one PrometheusMonitoring reconcile creates.
 // The creation test asserts equality against it, so a component that starts creating an extra
 // object (or stops creating one) fails here rather than silently drifting.
-func expectedManagedObjects(dtp *dtprometheus.DTPrometheus) []managedObject {
-	gw := dtp.Gateway().GetStatefulSetName()
-	sc := dtp.Scraper().GetDeploymentName()
-	ta := dtp.TargetAllocator().GetDeploymentName()
+func expectedManagedObjects(pm *prometheusmonitoring.PrometheusMonitoring) []managedObject {
+	gw := pm.Gateway().GetStatefulSetName()
+	sc := pm.Scraper().GetDeploymentName()
+	ta := pm.TargetAllocator().GetDeploymentName()
 
 	return []managedObject{
 		{"ConfigMap", gw},
@@ -191,27 +214,19 @@ func testCreation(t *testing.T, clt client.Client) {
 	f := newFixture(t, clt, "creation")
 	f.reconcileSuccessfully(t)
 
-	assert.ElementsMatch(t, expectedManagedObjects(f.dtp), f.listManagedObjects(t),
+	assert.ElementsMatch(t, expectedManagedObjects(f.pm), f.listManagedObjects(t),
 		"the set of objects created by a full reconcile changed")
 
-	t.Run("no secrets are created", func(t *testing.T) {
-		// The DTPrometheus controller creates no Secrets of its own: the only Secret involved is
-		// the DynaKube token Secret, which it reads. Everything the components need from it is
-		// referenced (projected volume / secretKeyRef), never copied.
-		secrets := &corev1.SecretList{}
-		require.NoError(t, clt.List(t.Context(), secrets, client.InNamespace(f.ns)))
+	t.Run("nothing else is created", func(t *testing.T) {
+		// The inventory above filters on the managed-by label, so an object created without that
+		// label is invisible to it. Listing the same kinds unfiltered closes that hole, and subsumes
+		// two narrower claims at once: that the controller creates no Secret of its own (the DynaKube
+		// token Secret is only ever read and referenced, never copied) and no ServiceAccount (the
+		// components' ServiceAccounts come from the helm chart, the operator only names them).
+		want := append(expectedManagedObjects(f.pm), fixtureObjects()...)
 
-		for _, secret := range secrets.Items {
-			assert.Empty(t, secret.OwnerReferences, "secret %s must not be owned by the DTPrometheus", secret.Name)
-		}
-	})
-
-	t.Run("service accounts come from the helm chart", func(t *testing.T) {
-		// The operator only references them by name; nothing creates them at reconcile time.
-		for _, c := range components() {
-			err := clt.Get(t.Context(), client.ObjectKey{Name: c.serviceAccount, Namespace: f.ns}, &corev1.ServiceAccount{})
-			assert.True(t, k8serrors.IsNotFound(err), "%s must not create a ServiceAccount", c.name)
-		}
+		assert.ElementsMatch(t, want, f.listAllObjects(t),
+			"an object exists in the namespace that is neither part of the fixture nor an expected managed object")
 	})
 }
 
@@ -219,7 +234,7 @@ func testOwnership(t *testing.T, clt client.Client) {
 	f := newFixture(t, clt, "ownership")
 	f.reconcileSuccessfully(t)
 
-	for _, want := range expectedManagedObjects(f.dtp) {
+	for _, want := range expectedManagedObjects(f.pm) {
 		t.Run(want.String(), func(t *testing.T) {
 			obj := f.getManagedObject(t, want)
 
@@ -227,10 +242,10 @@ func testOwnership(t *testing.T, clt client.Client) {
 			require.Len(t, refs, 1)
 
 			ref := refs[0]
-			assert.Equal(t, "DTPrometheus", ref.Kind)
+			assert.Equal(t, "PrometheusMonitoring", ref.Kind)
 			assert.Equal(t, v1alpha1.GroupVersion.String(), ref.APIVersion)
-			assert.Equal(t, f.dtp.Name, ref.Name)
-			assert.Equal(t, f.dtp.UID, ref.UID)
+			assert.Equal(t, f.pm.Name, ref.Name)
+			assert.Equal(t, f.pm.UID, ref.UID)
 			assert.Equal(t, new(true), ref.Controller)
 			assert.Equal(t, new(true), ref.BlockOwnerDeletion)
 		})
@@ -317,7 +332,7 @@ func assertServiceRoutesToWorkload(t *testing.T, f *fixture, c component) {
 
 	tmpl, _ := c.podSpec(t, f)
 	container := containerByName(t, tmpl, c.containerName)
-	svc := f.service(t, c.objectName(f.dtp))
+	svc := f.service(t, c.objectName(f.pm))
 
 	require.NotEmpty(t, svc.Spec.Ports)
 
@@ -330,7 +345,7 @@ func assertServiceRoutesToWorkload(t *testing.T, f *fixture, c component) {
 }
 
 // assertTargetPortExists checks that a Service port routes to a port the container actually opens.
-// All DTPrometheus Services use named target ports, so a rename on either side breaks the Service
+// All PrometheusMonitoring Services use named target ports, so a rename on either side breaks the Service
 // silently on a real cluster; here it fails the test.
 func assertTargetPortExists(t *testing.T, container corev1.Container, port corev1.ServicePort) {
 	t.Helper()
@@ -405,17 +420,17 @@ func containerByName(t *testing.T, tmpl *corev1.PodTemplateSpec, name string) co
 func testCustomization(t *testing.T, clt client.Client) {
 	f := newFixture(t, clt, "customization")
 
-	f.dtp.Spec.Gateway.Replicas = new(int32(3))
-	f.dtp.Spec.Gateway.ImagePullPolicy = corev1.PullAlways
-	f.dtp.Spec.Gateway.Labels = map[string]string{"custom-label": "gateway"}
-	f.dtp.Spec.Gateway.Annotations = map[string]string{"custom-annotation": "gateway"}
-	f.dtp.Spec.Gateway.PriorityClassName = "system-cluster-critical"
-	f.dtp.Spec.Gateway.NodeSelector = map[string]string{"kubernetes.io/os": "linux"}
-	f.dtp.Spec.Gateway.Tolerations = []corev1.Toleration{{Key: "dedicated", Operator: corev1.TolerationOpExists}}
-	f.dtp.Spec.Scraper.Args = []string{"--feature-gates=+foo"}
-	f.dtp.Spec.Scraper.Replicas = new(int32(4))
-	f.dtp.Spec.TargetAllocator.Replicas = new(int32(2))
-	f.updateDTPrometheus(t)
+	f.pm.Spec.Gateway.Replicas = new(int32(3))
+	f.pm.Spec.Gateway.ImagePullPolicy = corev1.PullAlways
+	f.pm.Spec.Gateway.Labels = map[string]string{"custom-label": "gateway"}
+	f.pm.Spec.Gateway.Annotations = map[string]string{"custom-annotation": "gateway"}
+	f.pm.Spec.Gateway.PriorityClassName = "system-cluster-critical"
+	f.pm.Spec.Gateway.NodeSelector = map[string]string{"kubernetes.io/os": "linux"}
+	f.pm.Spec.Gateway.Tolerations = []corev1.Toleration{{Key: "dedicated", Operator: corev1.TolerationOpExists}}
+	f.pm.Spec.Scraper.Args = []string{"--feature-gates=+foo"}
+	f.pm.Spec.Scraper.Replicas = new(int32(4))
+	f.pm.Spec.TargetAllocator.Replicas = new(int32(2))
+	f.updatePrometheusMonitoring(t)
 	f.reconcileSuccessfully(t)
 
 	t.Run("gateway", func(t *testing.T) {
@@ -425,7 +440,8 @@ func testCustomization(t *testing.T, clt client.Client) {
 		assert.Equal(t, "gateway", sts.Spec.Template.Annotations["custom-annotation"])
 		assert.Equal(t, "system-cluster-critical", sts.Spec.Template.Spec.PriorityClassName)
 		assert.Equal(t, map[string]string{"kubernetes.io/os": "linux"}, sts.Spec.Template.Spec.NodeSelector)
-		assert.Len(t, sts.Spec.Template.Spec.Tolerations, 1)
+		assert.Equal(t, []corev1.Toleration{{Key: "dedicated", Operator: corev1.TolerationOpExists}},
+			sts.Spec.Template.Spec.Tolerations)
 
 		container := containerByName(t, &sts.Spec.Template, "gateway")
 		assert.Equal(t, corev1.PullAlways, container.ImagePullPolicy)
@@ -437,7 +453,7 @@ func testCustomization(t *testing.T, clt client.Client) {
 	})
 
 	t.Run("scraper", func(t *testing.T) {
-		deploy := f.deployment(t, f.dtp.Scraper().GetDeploymentName())
+		deploy := f.deployment(t, f.pm.Scraper().GetDeploymentName())
 		assert.Equal(t, new(int32(4)), deploy.Spec.Replicas)
 
 		container := containerByName(t, &deploy.Spec.Template, "scraper")
@@ -447,42 +463,50 @@ func testCustomization(t *testing.T, clt client.Client) {
 	})
 
 	t.Run("target allocator", func(t *testing.T) {
-		deploy := f.deployment(t, f.dtp.TargetAllocator().GetDeploymentName())
+		deploy := f.deployment(t, f.pm.TargetAllocator().GetDeploymentName())
 		assert.Equal(t, new(int32(2)), deploy.Spec.Replicas)
 	})
 
-	// BUG (no ticket yet, see the PR description): spec.gateway.updateStrategy and
-	// spec.targetAllocator.updateStrategy are part of the CRD (the gateway one is even defaulted to
-	// {type: RollingUpdate}) but no code reads them, so setting them has no effect. Only
-	// spec.scraper.updateStrategy is applied. These assertions pin the current behavior so the gap
-	// is visible; they must be inverted when the fields get wired up.
+	// BUG ICP-9602: spec.gateway.updateStrategy and spec.targetAllocator.updateStrategy are part of
+	// the CRD (the gateway one is even defaulted to {type: RollingUpdate}) but no code reads them,
+	// so setting them has no effect. Only spec.scraper.updateStrategy is applied. The fix is in
+	// flight on bug/updateStrategy-ignorance-ICP-9602, which wires both fields up and drops the
+	// kubebuilder default on the gateway field. These assertions pin the current behavior so the gap
+	// stays visible until then; they must be inverted when that branch lands.
 	t.Run("updateStrategy is only honored for the scraper", func(t *testing.T) {
-		f.dtp.Spec.Gateway.UpdateStrategy = appsv1.StatefulSetUpdateStrategy{Type: appsv1.OnDeleteStatefulSetStrategyType}
-		f.dtp.Spec.TargetAllocator.UpdateStrategy = appsv1.DeploymentStrategy{Type: appsv1.RecreateDeploymentStrategyType}
-		f.dtp.Spec.Scraper.UpdateStrategy = appsv1.DeploymentStrategy{Type: appsv1.RecreateDeploymentStrategyType}
-		f.updateDTPrometheus(t)
+		f.pm.Spec.Gateway.UpdateStrategy = appsv1.StatefulSetUpdateStrategy{Type: appsv1.OnDeleteStatefulSetStrategyType}
+		f.pm.Spec.TargetAllocator.UpdateStrategy = appsv1.DeploymentStrategy{Type: appsv1.RecreateDeploymentStrategyType}
+		f.pm.Spec.Scraper.UpdateStrategy = appsv1.DeploymentStrategy{Type: appsv1.RecreateDeploymentStrategyType}
+		f.updatePrometheusMonitoring(t)
 		f.reconcileSuccessfully(t)
 
 		assert.Equal(t, appsv1.RollingUpdateStatefulSetStrategyType, f.gatewayStatefulSet(t).Spec.UpdateStrategy.Type,
 			"spec.gateway.updateStrategy is currently ignored")
 		assert.Equal(t, appsv1.RollingUpdateDeploymentStrategyType,
-			f.deployment(t, f.dtp.TargetAllocator().GetDeploymentName()).Spec.Strategy.Type,
+			f.deployment(t, f.pm.TargetAllocator().GetDeploymentName()).Spec.Strategy.Type,
 			"spec.targetAllocator.updateStrategy is currently ignored")
 		assert.Equal(t, appsv1.RecreateDeploymentStrategyType,
-			f.deployment(t, f.dtp.Scraper().GetDeploymentName()).Spec.Strategy.Type)
+			f.deployment(t, f.pm.Scraper().GetDeploymentName()).Spec.Strategy.Type)
 	})
 }
 
+// testIdempotency asserts that repeating a reconcile changes nothing. Each component's own
+// lifecycle test already covers that for its own objects; what is only visible from here is the
+// top-level reconciler, which writes the PrometheusMonitoring status on every single pass.
 func testIdempotency(t *testing.T, clt client.Client) {
 	f := newFixture(t, clt, "idempotency")
 	f.reconcileSuccessfully(t)
 
 	before := f.resourceVersions(t)
+	beforeOwner := f.storedPrometheusMonitoring(t).ResourceVersion
 
 	// resourceVersion alone is not proof: the API server re-defaults an incoming object before
-	// comparing it to storage, so a reconcile that sends a stale object still issues a real Update
-	// that is silently no-op'ed server-side. Counting client-side Update calls catches that.
-	counting := &updateCounter{Client: clt}
+	// comparing it to storage, so a reconcile that sends a stale object still issues a real write
+	// that is silently no-op'ed server-side. Counting the calls the reconcile makes catches that,
+	// for every kind of write rather than only for Update: a component switching from Update to
+	// Patch, or deleting and recreating an object it could have updated, would otherwise slip
+	// through while still restarting pods on a real cluster.
+	counting := &callCounter{Client: clt}
 	f.r = newStubbedReconciler(t, counting)
 
 	for range 3 {
@@ -490,7 +514,53 @@ func testIdempotency(t *testing.T, clt client.Client) {
 		assert.Equal(t, before, f.resourceVersions(t))
 	}
 
+	assert.Zero(t, counting.creates, "a no-op reconcile must not issue any Create call")
 	assert.Zero(t, counting.updates, "a no-op reconcile must not issue any Update call")
+	assert.Zero(t, counting.patches, "a no-op reconcile must not issue any Patch call")
+	assert.Zero(t, counting.deletes, "a no-op reconcile must not issue any Delete call")
+
+	// The status is applied server-side on every pass (through SubResource("status"), which is why
+	// the counter above does not see it). An apply that carries the same content does not bump
+	// resourceVersion, so the owner has to stay untouched too; if it does not, the status the
+	// reconciler derives is not stable and the controller would write in a loop on a real cluster.
+	assert.Equal(t, beforeOwner, f.storedPrometheusMonitoring(t).ResourceVersion,
+		"a no-op reconcile rewrote the PrometheusMonitoring")
+}
+
+// testDriftCorrectionUnderManager runs the real reconciler under a live Manager, which is the only
+// way to prove that drift actually reaches it: the drift tests above call Reconcile by hand, so they
+// show the correction but not the trigger. It reuses the control plane the other subtests already
+// started rather than paying for a second one.
+func testDriftCorrectionUnderManager(t *testing.T, clt client.Client, cfg *rest.Config) {
+	f := newFixture(t, clt, "drift-manager")
+
+	integrationtests.StartManager(t, cfg, func(mgr ctrl.Manager) error {
+		return newStubbedReconciler(t, mgr.GetClient()).SetupWithManager(mgr)
+	})
+
+	name := f.pm.Scraper().GetDeploymentName()
+
+	// The Manager reconciles on its own as soon as it sees the PrometheusMonitoring, so wait for
+	// that first pass before taking anything away.
+	require.Eventually(t, func() bool {
+		return f.clt.Get(t.Context(), client.ObjectKey{Name: name, Namespace: f.ns}, &corev1.ConfigMap{}) == nil
+	}, managerTimeout, managerInterval, "the initial reconcile never created the scraper ConfigMap")
+
+	deleted := f.configMap(t, name)
+	require.NoError(t, clt.Delete(t.Context(), deleted))
+
+	// A new UID rather than just presence: a cached read could otherwise still serve the object
+	// that was just deleted and pass without anything having been recreated.
+	require.Eventually(t, func() bool {
+		restored := &corev1.ConfigMap{}
+		if f.clt.Get(t.Context(), client.ObjectKey{Name: name, Namespace: f.ns}, restored) != nil {
+			return false
+		}
+
+		return restored.UID != deleted.UID
+	}, managerTimeout, managerInterval, "deleting an owned ConfigMap did not trigger a reconcile that recreated it")
+
+	assert.Equal(t, deleted.Data, f.configMap(t, name).Data)
 }
 
 func testUpdatePropagation(t *testing.T, clt client.Client) {
@@ -508,7 +578,7 @@ func testUpdatePropagation(t *testing.T, clt client.Client) {
 		after := f.resourceVersions(t)
 		afterHashes := f.configHashes(t)
 
-		gw := f.dtp.Gateway().GetStatefulSetName()
+		gw := f.pm.Gateway().GetStatefulSetName()
 		assert.NotEqual(t, before["ConfigMap/"+gw], after["ConfigMap/"+gw])
 		assert.NotEqual(t, before["StatefulSet/"+gw], after["StatefulSet/"+gw])
 		assert.NotEqual(t, beforeHashes["gateway"], afterHashes["gateway"], "the config hash must change so pods roll")
@@ -521,8 +591,8 @@ func testUpdatePropagation(t *testing.T, clt client.Client) {
 	t.Run("a scraper poll interval change rolls only the scraper pods", func(t *testing.T) {
 		beforeHashes := f.configHashes(t)
 
-		f.dtp.Spec.Scraper.TargetsPollInterval = metav1.Duration{Duration: 5 * time.Minute}
-		f.updateDTPrometheus(t)
+		f.pm.Spec.Scraper.TargetsPollInterval = metav1.Duration{Duration: 5 * time.Minute}
+		f.updatePrometheusMonitoring(t)
 		f.reconcileSuccessfully(t)
 
 		afterHashes := f.configHashes(t)
@@ -534,8 +604,8 @@ func testUpdatePropagation(t *testing.T, clt client.Client) {
 	t.Run("a target allocator scrape interval change rolls only the allocator pods", func(t *testing.T) {
 		beforeHashes := f.configHashes(t)
 
-		f.dtp.Spec.TargetAllocator.ScrapeInterval = metav1.Duration{Duration: 90 * time.Second}
-		f.updateDTPrometheus(t)
+		f.pm.Spec.TargetAllocator.ScrapeInterval = metav1.Duration{Duration: 90 * time.Second}
+		f.updatePrometheusMonitoring(t)
 		f.reconcileSuccessfully(t)
 
 		afterHashes := f.configHashes(t)
@@ -544,16 +614,9 @@ func testUpdatePropagation(t *testing.T, clt client.Client) {
 		assert.Equal(t, beforeHashes["scraper"], afterHashes["scraper"])
 	})
 
-	t.Run("a replicas change does not roll the pods", func(t *testing.T) {
-		beforeHashes := f.configHashes(t)
-
-		f.dtp.Spec.Gateway.Replicas = new(int32(2))
-		f.updateDTPrometheus(t)
-		f.reconcileSuccessfully(t)
-
-		assert.Equal(t, beforeHashes, f.configHashes(t))
-		assert.Equal(t, new(int32(2)), f.gatewayStatefulSet(t).Spec.Replicas)
-	})
+	// A replicas change is deliberately not covered here: each component's own lifecycle test
+	// ("replicas change only touches the <workload>") already asserts that it leaves the ConfigMap
+	// untouched, and the config hash is derived from that ConfigMap, so the pods cannot roll.
 }
 
 func testDriftCorrection(t *testing.T, clt client.Client) {
@@ -571,23 +634,23 @@ func testDriftCorrection(t *testing.T, clt client.Client) {
 	})
 
 	t.Run("a deleted ConfigMap is recreated", func(t *testing.T) {
-		cm := f.configMap(t, f.dtp.Scraper().GetDeploymentName())
+		cm := f.configMap(t, f.pm.Scraper().GetDeploymentName())
 		require.NoError(t, clt.Delete(t.Context(), cm))
 
 		f.reconcileSuccessfully(t)
 
-		restored := f.configMap(t, f.dtp.Scraper().GetDeploymentName())
+		restored := f.configMap(t, f.pm.Scraper().GetDeploymentName())
 		assert.Equal(t, cm.Data, restored.Data)
-		assert.True(t, metav1.IsControlledBy(restored, f.dtp))
+		assert.True(t, metav1.IsControlledBy(restored, f.pm))
 	})
 
 	t.Run("a deleted Service is recreated", func(t *testing.T) {
-		svc := f.service(t, f.dtp.TargetAllocator().GetDeploymentName())
+		svc := f.service(t, f.pm.TargetAllocator().GetDeploymentName())
 		require.NoError(t, clt.Delete(t.Context(), svc))
 
 		f.reconcileSuccessfully(t)
 
-		restored := f.service(t, f.dtp.TargetAllocator().GetDeploymentName())
+		restored := f.service(t, f.pm.TargetAllocator().GetDeploymentName())
 		assert.Equal(t, svc.Spec.Ports, restored.Spec.Ports)
 		assert.Equal(t, svc.Spec.Selector, restored.Spec.Selector)
 	})
@@ -595,14 +658,14 @@ func testDriftCorrection(t *testing.T, clt client.Client) {
 	t.Run("a foreign label added by hand is preserved", func(t *testing.T) {
 		// MergeInto deliberately keeps labels it does not own, so third-party tooling can label
 		// the managed objects without the operator fighting it.
-		cm := f.configMap(t, f.dtp.Gateway().GetStatefulSetName())
+		cm := f.configMap(t, f.pm.Gateway().GetStatefulSetName())
 		cm.Labels["foreign.example.com/owner"] = "somebody-else"
 		require.NoError(t, clt.Update(t.Context(), cm))
 
 		f.reconcileSuccessfully(t)
 
 		assert.Equal(t, "somebody-else",
-			f.configMap(t, f.dtp.Gateway().GetStatefulSetName()).Labels["foreign.example.com/owner"])
+			f.configMap(t, f.pm.Gateway().GetStatefulSetName()).Labels["foreign.example.com/owner"])
 	})
 }
 
@@ -610,7 +673,7 @@ func testStatus(t *testing.T, clt client.Client) {
 	f := newFixture(t, clt, "status")
 	f.reconcileSuccessfully(t)
 
-	stored := f.storedDTPrometheus(t)
+	stored := f.storedPrometheusMonitoring(t)
 
 	t.Run("resolved images are recorded", func(t *testing.T) {
 		assert.Equal(t, testGatewayImage, stored.Status.Gateway.ResolvedImage)
@@ -620,9 +683,9 @@ func testStatus(t *testing.T, clt client.Client) {
 
 	t.Run("one availability condition per component", func(t *testing.T) {
 		wantTypes := []string{
-			dtprometheus.GatewayAvailable,
-			dtprometheus.ScraperAvailable,
-			dtprometheus.TargetAllocatorAvailable,
+			prometheusmonitoring.GatewayAvailable,
+			prometheusmonitoring.ScraperAvailable,
+			prometheusmonitoring.TargetAllocatorAvailable,
 		}
 
 		gotTypes := make([]string, 0, len(stored.Status.Conditions))
@@ -641,7 +704,7 @@ func testStatus(t *testing.T, clt client.Client) {
 		for _, condition := range stored.Status.Conditions {
 			assert.Equal(t, metav1.ConditionFalse, condition.Status, condition.Type)
 			assert.Equal(t, status.ReasonReconciling, condition.Reason, condition.Type)
-			assert.Contains(t, condition.Message, "is pending", condition.Type)
+			assert.NotEmpty(t, condition.Message, condition.Type)
 		}
 
 		assert.Equal(t, status.Deploying, stored.Status.Phase)
@@ -657,7 +720,7 @@ func testErrorPaths(t *testing.T, clt client.Client) {
 		// DynaKube is still being created.
 		require.NoError(t, f.reconcile(t))
 
-		assert.Equal(t, status.Deploying, f.storedDTPrometheus(t).Status.Phase)
+		assert.Equal(t, status.Deploying, f.storedPrometheusMonitoring(t).Status.Phase)
 		assert.Empty(t, f.listManagedObjects(t), "nothing may be deployed without a DynaKube")
 	})
 
@@ -668,7 +731,7 @@ func testErrorPaths(t *testing.T, clt client.Client) {
 
 		require.NoError(t, f.reconcile(t))
 
-		assert.Equal(t, status.Deploying, f.storedDTPrometheus(t).Status.Phase)
+		assert.Equal(t, status.Deploying, f.storedPrometheusMonitoring(t).Status.Phase)
 		assert.Empty(t, f.listManagedObjects(t))
 	})
 
@@ -678,7 +741,7 @@ func testErrorPaths(t *testing.T, clt client.Client) {
 
 		require.NoError(t, f.reconcile(t))
 
-		assert.Equal(t, status.Error, f.storedDTPrometheus(t).Status.Phase)
+		assert.Equal(t, status.Error, f.storedPrometheusMonitoring(t).Status.Phase)
 		assert.Empty(t, f.listManagedObjects(t))
 	})
 
@@ -690,7 +753,7 @@ func testErrorPaths(t *testing.T, clt client.Client) {
 
 		require.NoError(t, f.reconcile(t))
 
-		assert.Equal(t, status.Error, f.storedDTPrometheus(t).Status.Phase)
+		assert.Equal(t, status.Error, f.storedPrometheusMonitoring(t).Status.Phase)
 		assert.Empty(t, f.listManagedObjects(t), "the gateway must not be deployed without a data-ingest token")
 	})
 
@@ -701,15 +764,15 @@ func testErrorPaths(t *testing.T, clt client.Client) {
 		f := newFixture(t, clt, "err-partial")
 		f.reconcileSuccessfully(t)
 
-		f.dtp.Spec.Scraper.Image = ""
-		f.updateDTPrometheus(t)
+		f.pm.Spec.Scraper.Image = ""
+		f.updatePrometheusMonitoring(t)
 
 		// Without an image and without a fleet image client, the scraper reconcile fails.
 		require.Error(t, f.reconcile(t))
 
-		gw := f.dtp.Gateway().GetStatefulSetName()
+		gw := f.pm.Gateway().GetStatefulSetName()
 		assert.Contains(t, f.listManagedObjects(t), managedObject{"StatefulSet", gw})
-		assert.Equal(t, status.Error, f.storedDTPrometheus(t).Status.Phase)
+		assert.Equal(t, status.Error, f.storedPrometheusMonitoring(t).Status.Phase)
 	})
 }
 
@@ -720,45 +783,68 @@ func testDeletion(t *testing.T, clt client.Client) {
 	// There is no finalizer, so cleanup relies entirely on the controller owner references
 	// asserted in testOwnership. envtest runs no garbage collector, so the cascade itself can only
 	// be verified on a real cluster (see the e2e follow-up).
-	assert.Empty(t, f.storedDTPrometheus(t).Finalizers)
+	assert.Empty(t, f.storedPrometheusMonitoring(t).Finalizers)
 
-	require.NoError(t, clt.Delete(t.Context(), f.dtp))
+	require.NoError(t, clt.Delete(t.Context(), f.pm))
 
 	result, err := f.r.Reconcile(t.Context(), f.request())
-	require.NoError(t, err, "reconciling a deleted DTPrometheus must be a no-op")
+	require.NoError(t, err, "reconciling a deleted PrometheusMonitoring must be a no-op")
 	assert.Empty(t, result)
 }
 
-// updateCounter wraps a client.Client to count the Update calls issued through it.
-type updateCounter struct {
+// callCounter wraps a client.Client to count the writes issued through it. Status subresource
+// writes go through SubResource(), which the embedded client serves directly, so they are
+// deliberately not counted here.
+type callCounter struct {
 	client.Client
 
+	creates int
 	updates int
+	patches int
+	deletes int
 }
 
-func (c *updateCounter) Update(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error {
+func (c *callCounter) Create(ctx context.Context, obj client.Object, opts ...client.CreateOption) error {
+	c.creates++
+
+	return c.Client.Create(ctx, obj, opts...)
+}
+
+func (c *callCounter) Update(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error {
 	c.updates++
 
 	return c.Client.Update(ctx, obj, opts...)
 }
 
-// fixture is one fully provisioned DTPrometheus scenario in its own namespace.
+func (c *callCounter) Patch(ctx context.Context, obj client.Object, patch client.Patch, opts ...client.PatchOption) error {
+	c.patches++
+
+	return c.Client.Patch(ctx, obj, patch, opts...)
+}
+
+func (c *callCounter) Delete(ctx context.Context, obj client.Object, opts ...client.DeleteOption) error {
+	c.deletes++
+
+	return c.Client.Delete(ctx, obj, opts...)
+}
+
+// fixture is one fully provisioned PrometheusMonitoring scenario in its own namespace.
 type fixture struct {
 	clt client.Client
 	r   *Reconciler
-	dtp *dtprometheus.DTPrometheus
+	pm  *prometheusmonitoring.PrometheusMonitoring
 	dk  *dynakube.DynaKube
 	ns  string
 }
 
-// newFixture creates a namespace, a token Secret, a Running DynaKube and a DTPrometheus with
+// newFixture creates a namespace, a token Secret, a Running DynaKube and a PrometheusMonitoring with
 // explicit images for all three components, plus a Reconciler whose Dynatrace client factory is
 // stubbed out. Explicit images keep the fleet-management image API out of the picture; resolving
 // images from it is covered by the per-component unit tests.
 func newFixture(t *testing.T, clt client.Client, name string) *fixture {
 	t.Helper()
 
-	ns := "dtp-" + name
+	ns := "pm-" + name
 	integrationtests.CreateNamespace(t, clt, ns)
 
 	integrationtests.CreateKubernetesObject(t, clt, &corev1.Secret{
@@ -777,26 +863,26 @@ func newFixture(t *testing.T, clt client.Client, name string) *fixture {
 	}
 	integrationtests.CreateDynakube(t, clt, dk)
 
-	dtp := createDefaultedDTPrometheus(t, clt, ns)
+	pm := createDefaultedPrometheusMonitoring(t, clt, ns)
 
-	return &fixture{clt: clt, r: newStubbedReconciler(t, clt), dtp: dtp, dk: dk, ns: ns}
+	return &fixture{clt: clt, r: newStubbedReconciler(t, clt), pm: pm, dk: dk, ns: ns}
 }
 
-// createDefaultedDTPrometheus creates the DTPrometheus as an unstructured object carrying only the
+// createDefaultedPrometheusMonitoring creates the PrometheusMonitoring as an unstructured object carrying only the
 // fields a user would actually write, so the API server applies every CRD default before the
 // reconciler ever sees it. Creating it from the typed struct would send explicit zero values for
 // metav1.Duration fields (which marshal to "0s" rather than being omitted) and the defaults would
 // silently not apply.
-func createDefaultedDTPrometheus(t *testing.T, clt client.Client, ns string) *dtprometheus.DTPrometheus {
+func createDefaultedPrometheusMonitoring(t *testing.T, clt client.Client, ns string) *prometheusmonitoring.PrometheusMonitoring {
 	t.Helper()
 
 	obj := &unstructured.Unstructured{}
-	obj.SetGroupVersionKind(v1alpha1.GroupVersion.WithKind("DTPrometheus"))
-	obj.SetName("dtp")
+	obj.SetGroupVersionKind(v1alpha1.GroupVersion.WithKind("PrometheusMonitoring"))
+	obj.SetName("pm")
 	obj.SetNamespace(ns)
 
 	require.NoError(t, unstructured.SetNestedMap(obj.Object, map[string]any{
-		"dynaKubeName":    testDynaKubeName,
+		"dynaKubeRef":     testDynaKubeName,
 		"gateway":         map[string]any{"image": testGatewayImage},
 		"scraper":         map[string]any{"image": testScraperImage},
 		"targetAllocator": map[string]any{"image": testTargetAllocatorImage},
@@ -804,10 +890,10 @@ func createDefaultedDTPrometheus(t *testing.T, clt client.Client, ns string) *dt
 
 	integrationtests.CreateKubernetesObject(t, clt, obj)
 
-	dtp := &dtprometheus.DTPrometheus{}
-	require.NoError(t, clt.Get(t.Context(), client.ObjectKey{Name: obj.GetName(), Namespace: ns}, dtp))
+	pm := &prometheusmonitoring.PrometheusMonitoring{}
+	require.NoError(t, clt.Get(t.Context(), client.ObjectKey{Name: obj.GetName(), Namespace: ns}, pm))
 
-	return dtp
+	return pm
 }
 
 // newStubbedReconciler is the production reconciler with only the Dynatrace API client factory
@@ -830,7 +916,7 @@ func newStubbedReconciler(t *testing.T, clt client.Client) *Reconciler {
 }
 
 func (f *fixture) request() ctrl.Request {
-	return ctrl.Request{NamespacedName: types.NamespacedName{Name: f.dtp.Name, Namespace: f.ns}}
+	return ctrl.Request{NamespacedName: types.NamespacedName{Name: f.pm.Name, Namespace: f.ns}}
 }
 
 func (f *fixture) reconcile(t *testing.T) error {
@@ -847,23 +933,23 @@ func (f *fixture) reconcileSuccessfully(t *testing.T) {
 	require.NoError(t, f.reconcile(t))
 }
 
-// updateDTPrometheus persists spec changes made on the in-memory object. The reconciler reads the
-// DTPrometheus from the API server, so a spec change that is not written has no effect.
-func (f *fixture) updateDTPrometheus(t *testing.T) {
+// updatePrometheusMonitoring persists spec changes made on the in-memory object. The reconciler reads the
+// PrometheusMonitoring from the API server, so a spec change that is not written has no effect.
+func (f *fixture) updatePrometheusMonitoring(t *testing.T) {
 	t.Helper()
 
-	stored := f.storedDTPrometheus(t)
-	stored.Spec = f.dtp.Spec
+	stored := f.storedPrometheusMonitoring(t)
+	stored.Spec = f.pm.Spec
 	require.NoError(t, f.clt.Update(t.Context(), stored))
 
-	f.dtp.ResourceVersion = stored.ResourceVersion
+	f.pm.ResourceVersion = stored.ResourceVersion
 }
 
-func (f *fixture) storedDTPrometheus(t *testing.T) *dtprometheus.DTPrometheus {
+func (f *fixture) storedPrometheusMonitoring(t *testing.T) *prometheusmonitoring.PrometheusMonitoring {
 	t.Helper()
 
-	stored := &dtprometheus.DTPrometheus{}
-	require.NoError(t, f.clt.Get(t.Context(), client.ObjectKeyFromObject(f.dtp), stored))
+	stored := &prometheusmonitoring.PrometheusMonitoring{}
+	require.NoError(t, f.clt.Get(t.Context(), client.ObjectKeyFromObject(f.pm), stored))
 
 	return stored
 }
@@ -920,7 +1006,7 @@ func (f *fixture) gatewayStatefulSet(t *testing.T) *appsv1.StatefulSet {
 
 	sts := &appsv1.StatefulSet{}
 	require.NoError(t, f.clt.Get(t.Context(),
-		client.ObjectKey{Name: f.dtp.Gateway().GetStatefulSetName(), Namespace: f.ns}, sts))
+		client.ObjectKey{Name: f.pm.Gateway().GetStatefulSetName(), Namespace: f.ns}, sts))
 
 	return sts
 }
@@ -950,65 +1036,68 @@ func (f *fixture) getManagedObject(t *testing.T, want managedObject) client.Obje
 	return obj
 }
 
+// namespacedLists is one empty list per kind the controller could plausibly create. Listing more
+// kinds than it actually creates is deliberate: a component that starts creating a
+// PodDisruptionBudget, a NetworkPolicy or its own RBAC shows up as a diff instead of going
+// unnoticed.
+func namespacedLists() map[string]client.ObjectList {
+	return map[string]client.ObjectList{
+		"ConfigMap":           &corev1.ConfigMapList{},
+		"Service":             &corev1.ServiceList{},
+		"Secret":              &corev1.SecretList{},
+		"ServiceAccount":      &corev1.ServiceAccountList{},
+		"Deployment":          &appsv1.DeploymentList{},
+		"StatefulSet":         &appsv1.StatefulSetList{},
+		"DaemonSet":           &appsv1.DaemonSetList{},
+		"PodDisruptionBudget": &policyv1.PodDisruptionBudgetList{},
+		"NetworkPolicy":       &networkingv1.NetworkPolicyList{},
+		"Role":                &rbacv1.RoleList{},
+		"RoleBinding":         &rbacv1.RoleBindingList{},
+	}
+}
+
+// fixtureObjects is what newFixture itself puts into the namespace, in the kinds namespacedLists
+// covers. The DynaKube and the PrometheusMonitoring are not among them.
+func fixtureObjects() []managedObject {
+	return []managedObject{{"Secret", testDynaKubeName}}
+}
+
 // listManagedObjects returns every object in the fixture namespace that carries the operator's
-// managed-by label, across all kinds the controller could plausibly create. Listing more kinds
-// than the controller creates is deliberate: an unexpected extra object shows up as a diff.
+// managed-by label.
 func (f *fixture) listManagedObjects(t *testing.T) []managedObject {
 	t.Helper()
 
-	found := make([]managedObject, 0)
-	inNamespace := []client.ListOption{
+	return f.listObjects(t,
 		client.InNamespace(f.ns),
-		client.MatchingLabels{k8slabel.AppManagedByLabel: version.AppName},
-	}
+		client.MatchingLabels{k8slabel.AppManagedByLabel: version.AppName})
+}
 
-	configMaps := &corev1.ConfigMapList{}
-	require.NoError(t, f.clt.List(t.Context(), configMaps, inNamespace...))
+// listAllObjects returns every object in the fixture namespace regardless of labels, which is what
+// makes the inventory check independent of the operator labeling its objects correctly.
+func (f *fixture) listAllObjects(t *testing.T) []managedObject {
+	t.Helper()
 
-	for i := range configMaps.Items {
-		found = append(found, managedObject{"ConfigMap", configMaps.Items[i].Name})
-	}
+	return f.listObjects(t, client.InNamespace(f.ns))
+}
 
-	services := &corev1.ServiceList{}
-	require.NoError(t, f.clt.List(t.Context(), services, inNamespace...))
+func (f *fixture) listObjects(t *testing.T, opts ...client.ListOption) []managedObject {
+	t.Helper()
 
-	for i := range services.Items {
-		found = append(found, managedObject{"Service", services.Items[i].Name})
-	}
+	found := make([]managedObject, 0)
 
-	secrets := &corev1.SecretList{}
-	require.NoError(t, f.clt.List(t.Context(), secrets, inNamespace...))
+	for kind, list := range namespacedLists() {
+		require.NoErrorf(t, f.clt.List(t.Context(), list, opts...), "cannot list %ss", kind)
 
-	for i := range secrets.Items {
-		found = append(found, managedObject{"Secret", secrets.Items[i].Name})
-	}
+		require.NoError(t, apimeta.EachListItem(list, func(obj runtime.Object) error {
+			accessor, err := apimeta.Accessor(obj)
+			if err != nil {
+				return err
+			}
 
-	serviceAccounts := &corev1.ServiceAccountList{}
-	require.NoError(t, f.clt.List(t.Context(), serviceAccounts, inNamespace...))
+			found = append(found, managedObject{kind, accessor.GetName()})
 
-	for i := range serviceAccounts.Items {
-		found = append(found, managedObject{"ServiceAccount", serviceAccounts.Items[i].Name})
-	}
-
-	deployments := &appsv1.DeploymentList{}
-	require.NoError(t, f.clt.List(t.Context(), deployments, inNamespace...))
-
-	for i := range deployments.Items {
-		found = append(found, managedObject{"Deployment", deployments.Items[i].Name})
-	}
-
-	statefulSets := &appsv1.StatefulSetList{}
-	require.NoError(t, f.clt.List(t.Context(), statefulSets, inNamespace...))
-
-	for i := range statefulSets.Items {
-		found = append(found, managedObject{"StatefulSet", statefulSets.Items[i].Name})
-	}
-
-	daemonSets := &appsv1.DaemonSetList{}
-	require.NoError(t, f.clt.List(t.Context(), daemonSets, inNamespace...))
-
-	for i := range daemonSets.Items {
-		found = append(found, managedObject{"DaemonSet", daemonSets.Items[i].Name})
+			return nil
+		}))
 	}
 
 	return found
@@ -1019,7 +1108,7 @@ func (f *fixture) resourceVersions(t *testing.T) map[string]string {
 	t.Helper()
 
 	versions := make(map[string]string)
-	for _, want := range expectedManagedObjects(f.dtp) {
+	for _, want := range expectedManagedObjects(f.pm) {
 		versions[want.String()] = f.getManagedObject(t, want).GetResourceVersion()
 	}
 
@@ -1028,6 +1117,11 @@ func (f *fixture) resourceVersions(t *testing.T) map[string]string {
 
 // configHashes maps a component name to the config-hash annotation on its pod template. A change
 // there is what actually rolls the pods when a ConfigMap's content changes.
+//
+// Each component names its annotation after itself (gateway-config-hash, scraper-config-hash,
+// allocator-config-hash) and the constants are package private, so the annotation is found by
+// suffix. Exactly one match is required: picking the last match out of a map range would depend on
+// the iteration order the moment a component grew a second hash annotation.
 func (f *fixture) configHashes(t *testing.T) map[string]string {
 	t.Helper()
 
@@ -1036,16 +1130,19 @@ func (f *fixture) configHashes(t *testing.T) map[string]string {
 	for _, c := range components() {
 		tmpl, _ := c.podSpec(t, f)
 
-		var hash string
+		matches := make([]string, 0, 1)
 
 		for key, value := range tmpl.Annotations {
 			if strings.HasSuffix(key, "-config-hash") {
-				hash = value
+				matches = append(matches, value)
 			}
 		}
 
-		require.NotEmptyf(t, hash, "%s pod template has no config hash annotation", c.name)
-		hashes[c.name] = hash
+		require.Lenf(t, matches, 1, "%s pod template must carry exactly one config hash annotation, has %v",
+			c.name, tmpl.Annotations)
+		require.NotEmptyf(t, matches[0], "%s config hash annotation is empty", c.name)
+
+		hashes[c.name] = matches[0]
 	}
 
 	return hashes

@@ -1,7 +1,7 @@
 // Copyright Dynatrace LLC
 // SPDX-License-Identifier: Apache-2.0
 
-package dtprometheus
+package prometheusmonitoring
 
 import (
 	"encoding/json"
@@ -107,20 +107,34 @@ type bearerTokenAuth struct {
 func (f *fixture) gatewayConfig(t *testing.T) collectorConfig {
 	t.Helper()
 
-	return unmarshalConfig[collectorConfig](t, f.configMap(t, f.dtp.Gateway().GetStatefulSetName()), "relay")
+	return unmarshalConfig[collectorConfig](t, f.configMap(t, f.pm.Gateway().GetStatefulSetName()), "relay")
 }
 
 func (f *fixture) scraperConfig(t *testing.T) collectorConfig {
 	t.Helper()
 
-	return unmarshalConfig[collectorConfig](t, f.configMap(t, f.dtp.Scraper().GetDeploymentName()), "scraper")
+	return unmarshalConfig[collectorConfig](t, f.configMap(t, f.pm.Scraper().GetDeploymentName()), "scraper")
 }
 
 func (f *fixture) targetAllocatorConfig(t *testing.T) targetAllocatorConfig {
 	t.Helper()
 
 	return unmarshalConfig[targetAllocatorConfig](t,
-		f.configMap(t, f.dtp.TargetAllocator().GetDeploymentName()), "targetallocator.yaml")
+		f.configMap(t, f.pm.TargetAllocator().GetDeploymentName()), "targetallocator.yaml")
+}
+
+// targetAllocatorPrometheusCR returns the rendered prometheus_cr block with its keys unparsed, for
+// checks that have to react to which keys are there rather than to their values.
+func (f *fixture) targetAllocatorPrometheusCR(t *testing.T) map[string]json.RawMessage {
+	t.Helper()
+
+	parsed := unmarshalConfig[struct {
+		PrometheusCR map[string]json.RawMessage `json:"prometheus_cr"`
+	}](t, f.configMap(t, f.pm.TargetAllocator().GetDeploymentName()), "targetallocator.yaml")
+
+	require.NotEmpty(t, parsed.PrometheusCR)
+
+	return parsed.PrometheusCR
 }
 
 func unmarshalConfig[T any](t *testing.T, cm *corev1.ConfigMap, key string) T {
@@ -182,7 +196,7 @@ func testConfigMaps(t *testing.T, clt client.Client) {
 		// Each scraper pod must identify itself to the target allocator with a unique, stable id,
 		// and the only thing that qualifies is its own pod name.
 		assert.Equal(t, "${env:MY_POD_NAME}", receiver.TargetAllocator.CollectorID)
-		f.assertEnvIsDefined(t, f.dtp.Scraper().GetDeploymentName(), "scraper", "MY_POD_NAME")
+		f.assertEnvIsDefined(t, f.pm.Scraper().GetDeploymentName(), "scraper", "MY_POD_NAME")
 	})
 
 	t.Run("target allocator config", func(t *testing.T) {
@@ -211,9 +225,9 @@ func testConfigMaps(t *testing.T, clt client.Client) {
 	t.Run("a custom scrapeCRSelector reaches every CRD kind", func(t *testing.T) {
 		selector := &metav1.LabelSelector{MatchLabels: map[string]string{"team": "edp"}}
 		nsSelector := &metav1.LabelSelector{MatchLabels: map[string]string{"monitored": "true"}}
-		f.dtp.Spec.TargetAllocator.ScrapeCRSelector = selector
-		f.dtp.Spec.TargetAllocator.ScrapeCRNamespaceSelector = nsSelector
-		f.updateDTPrometheus(t)
+		f.pm.Spec.TargetAllocator.CustomResourceSelector = selector
+		f.pm.Spec.TargetAllocator.CustomResourceNamespaceSelector = nsSelector
+		f.updatePrometheusMonitoring(t)
 		f.reconcileSuccessfully(t)
 
 		cfg := f.targetAllocatorConfig(t)
@@ -342,7 +356,7 @@ func testWiring(t *testing.T, clt client.Client) {
 		receiver := unmarshalInto[scraperReceiver](t, f.scraperConfig(t).Receivers["prometheus"], "prometheus receiver")
 
 		host, port := splitEndpoint(t, receiver.TargetAllocator.Endpoint)
-		svc := f.service(t, f.dtp.TargetAllocator().GetDeploymentName())
+		svc := f.service(t, f.pm.TargetAllocator().GetDeploymentName())
 
 		assert.Equal(t, svc.Name+"."+svc.Namespace, host,
 			"the configured target allocator host must be the target allocator Service")
@@ -363,7 +377,7 @@ func testWiring(t *testing.T, clt client.Client) {
 
 	t.Run("target allocator finds the scraper pods", func(t *testing.T) {
 		cfg := f.targetAllocatorConfig(t)
-		scraperDeploy := f.deployment(t, f.dtp.Scraper().GetDeploymentName())
+		scraperDeploy := f.deployment(t, f.pm.Scraper().GetDeploymentName())
 
 		assert.Equal(t, scraperDeploy.Namespace, cfg.CollectorNamespace)
 		require.NotNil(t, cfg.CollectorSelector)
@@ -379,7 +393,7 @@ func testWiring(t *testing.T, clt client.Client) {
 		exporter := unmarshalInto[loadBalancingExporter](t,
 			f.scraperConfig(t).Exporters["load_balancing"], "load_balancing exporter")
 
-		svc := f.service(t, f.dtp.Gateway().GetStatefulSetName())
+		svc := f.service(t, f.pm.Gateway().GetStatefulSetName())
 		assert.Equal(t, svc.Name+"."+svc.Namespace, exporter.Resolver.K8s.Service,
 			"the load balancing resolver must point at the gateway Service")
 		require.Len(t, exporter.Resolver.K8s.Ports, 1)
@@ -545,11 +559,9 @@ func containerPortByName(t *testing.T, container corev1.Container, name string) 
 	return corev1.ContainerPort{}
 }
 
-// testSecrets covers the only Secret in play: the DynaKube token Secret, which the controller
-// reads but never copies.
-// testSecrets covers the only Secret in play. Each subtest gets its own fixture: they mutate the
-// DynaKube and create Secrets whose t.Cleanup would otherwise pull the ground out from under the
-// next subtest.
+// testSecrets covers the only Secret in play: the DynaKube token Secret, which the controller reads
+// but never copies. Each subtest gets its own fixture, because they mutate the DynaKube and create
+// Secrets whose t.Cleanup would otherwise pull the ground out from under the next subtest.
 func testSecrets(t *testing.T, clt client.Client) {
 	t.Run("no token value is ever written in plain text", func(t *testing.T) {
 		f := newFixture(t, clt, "secrets-leak")
@@ -632,7 +644,7 @@ func projectedSecretName(t *testing.T, volumes []corev1.Volume, volumeName strin
 	return ""
 }
 
-// assertNoTokenLeak walks everything the operator wrote into the namespace, plus the DTPrometheus
+// assertNoTokenLeak walks everything the operator wrote into the namespace, plus the PrometheusMonitoring
 // status, and fails if a token value shows up in plain text anywhere. Secret values may only be
 // consumed through a secretKeyRef or a Secret volume.
 func (f *fixture) assertNoTokenLeak(t *testing.T) {
@@ -640,7 +652,7 @@ func (f *fixture) assertNoTokenLeak(t *testing.T) {
 
 	secrets := []string{testAPIToken, testPaaSToken, testDataIngestToken}
 
-	for _, want := range expectedManagedObjects(f.dtp) {
+	for _, want := range expectedManagedObjects(f.pm) {
 		obj := f.getManagedObject(t, want)
 		haystack := renderForLeakCheck(t, obj)
 
@@ -649,9 +661,9 @@ func (f *fixture) assertNoTokenLeak(t *testing.T) {
 		}
 	}
 
-	statusHaystack := renderForLeakCheck(t, f.storedDTPrometheus(t))
+	statusHaystack := renderForLeakCheck(t, f.storedPrometheusMonitoring(t))
 	for _, secret := range secrets {
-		assert.NotContains(t, statusHaystack, secret, "the DTPrometheus leaks a token value in plain text")
+		assert.NotContains(t, statusHaystack, secret, "the PrometheusMonitoring leaks a token value in plain text")
 	}
 }
 
