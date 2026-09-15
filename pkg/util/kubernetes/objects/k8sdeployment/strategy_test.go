@@ -12,16 +12,14 @@ import (
 )
 
 func TestMergeStrategy(t *testing.T) {
-	percent25 := intstr.FromString("25%")
-	percent10 := intstr.FromString("10%")
-	zero := intstr.FromInt32(0)
-	one := intstr.FromInt32(1)
-
 	// defaulted is what the apiserver stores for a RollingUpdate deployment when nothing is set.
 	defaulted := func() appsv1.DeploymentStrategy {
 		return appsv1.DeploymentStrategy{
-			Type:          appsv1.RollingUpdateDeploymentStrategyType,
-			RollingUpdate: &appsv1.RollingUpdateDeployment{MaxUnavailable: &percent25, MaxSurge: &percent25},
+			Type: appsv1.RollingUpdateDeploymentStrategyType,
+			RollingUpdate: &appsv1.RollingUpdateDeployment{
+				MaxUnavailable: new(intstr.FromString("25%")),
+				MaxSurge:       new(intstr.FromString("25%")),
+			},
 		}
 	}
 
@@ -52,17 +50,20 @@ func TestMergeStrategy(t *testing.T) {
 		{
 			name:    "partial rollingUpdate keeps the stored value of the other field",
 			current: defaulted(),
-			desired: appsv1.DeploymentStrategy{RollingUpdate: &appsv1.RollingUpdateDeployment{MaxUnavailable: &zero}},
+			desired: appsv1.DeploymentStrategy{RollingUpdate: &appsv1.RollingUpdateDeployment{MaxUnavailable: new(intstr.FromInt32(0))}},
 			want: appsv1.DeploymentStrategy{
-				Type:          appsv1.RollingUpdateDeploymentStrategyType,
-				RollingUpdate: &appsv1.RollingUpdateDeployment{MaxUnavailable: &zero, MaxSurge: &percent25},
+				Type: appsv1.RollingUpdateDeploymentStrategyType,
+				RollingUpdate: &appsv1.RollingUpdateDeployment{
+					MaxUnavailable: new(intstr.FromInt32(0)),
+					MaxSurge:       new(intstr.FromString("25%")),
+				},
 			},
 		},
 		{
 			name:    "rollingUpdate on a new object only carries what the spec sets",
 			current: appsv1.DeploymentStrategy{},
-			desired: appsv1.DeploymentStrategy{RollingUpdate: &appsv1.RollingUpdateDeployment{MaxUnavailable: &zero}},
-			want:    appsv1.DeploymentStrategy{RollingUpdate: &appsv1.RollingUpdateDeployment{MaxUnavailable: &zero}},
+			desired: appsv1.DeploymentStrategy{RollingUpdate: &appsv1.RollingUpdateDeployment{MaxUnavailable: new(intstr.FromInt32(0))}},
+			want:    appsv1.DeploymentStrategy{RollingUpdate: &appsv1.RollingUpdateDeployment{MaxUnavailable: new(intstr.FromInt32(0))}},
 		},
 		{
 			name:    "switching to Recreate clears the stored rollingUpdate block",
@@ -80,12 +81,18 @@ func TestMergeStrategy(t *testing.T) {
 			name:    "fully specified values win over the stored ones",
 			current: defaulted(),
 			desired: appsv1.DeploymentStrategy{
-				Type:          appsv1.RollingUpdateDeploymentStrategyType,
-				RollingUpdate: &appsv1.RollingUpdateDeployment{MaxUnavailable: &percent10, MaxSurge: &one},
+				Type: appsv1.RollingUpdateDeploymentStrategyType,
+				RollingUpdate: &appsv1.RollingUpdateDeployment{
+					MaxUnavailable: new(intstr.FromString("10%")),
+					MaxSurge:       new(intstr.FromInt32(1)),
+				},
 			},
 			want: appsv1.DeploymentStrategy{
-				Type:          appsv1.RollingUpdateDeploymentStrategyType,
-				RollingUpdate: &appsv1.RollingUpdateDeployment{MaxUnavailable: &percent10, MaxSurge: &one},
+				Type: appsv1.RollingUpdateDeploymentStrategyType,
+				RollingUpdate: &appsv1.RollingUpdateDeployment{
+					MaxUnavailable: new(intstr.FromString("10%")),
+					MaxSurge:       new(intstr.FromInt32(1)),
+				},
 			},
 		},
 	}
@@ -102,15 +109,15 @@ func TestMergeStrategy(t *testing.T) {
 // The merge runs on the stored object, so writing through its rollingUpdate pointer would change the
 // object the caller still compares against.
 func TestMergeStrategyDoesNotMutateInputs(t *testing.T) {
-	percent25 := intstr.FromString("25%")
-	zero := intstr.FromInt32(0)
-
 	current := appsv1.DeploymentStrategy{
-		Type:          appsv1.RollingUpdateDeploymentStrategyType,
-		RollingUpdate: &appsv1.RollingUpdateDeployment{MaxUnavailable: &percent25, MaxSurge: &percent25},
+		Type: appsv1.RollingUpdateDeploymentStrategyType,
+		RollingUpdate: &appsv1.RollingUpdateDeployment{
+			MaxUnavailable: new(intstr.FromString("25%")),
+			MaxSurge:       new(intstr.FromString("25%")),
+		},
 	}
 	desired := appsv1.DeploymentStrategy{
-		RollingUpdate: &appsv1.RollingUpdateDeployment{MaxUnavailable: &zero},
+		RollingUpdate: &appsv1.RollingUpdateDeployment{MaxUnavailable: new(intstr.FromInt32(0))},
 	}
 
 	currentBefore := *current.DeepCopy()

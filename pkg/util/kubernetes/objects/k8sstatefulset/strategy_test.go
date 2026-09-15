@@ -12,8 +12,6 @@ import (
 )
 
 func TestMergeUpdateStrategy(t *testing.T) {
-	one := intstr.FromInt32(1)
-
 	// defaulted is what the apiserver stores for a RollingUpdate statefulset when nothing is set.
 	defaulted := func() appsv1.StatefulSetUpdateStrategy {
 		return appsv1.StatefulSetUpdateStrategy{
@@ -50,14 +48,14 @@ func TestMergeUpdateStrategy(t *testing.T) {
 			name: "partition overrides the stored one and keeps the stored maxUnavailable",
 			current: appsv1.StatefulSetUpdateStrategy{
 				Type:          appsv1.RollingUpdateStatefulSetStrategyType,
-				RollingUpdate: &appsv1.RollingUpdateStatefulSetStrategy{Partition: new(int32(0)), MaxUnavailable: &one},
+				RollingUpdate: &appsv1.RollingUpdateStatefulSetStrategy{Partition: new(int32(0)), MaxUnavailable: new(intstr.FromInt32(1))},
 			},
 			desired: appsv1.StatefulSetUpdateStrategy{
 				RollingUpdate: &appsv1.RollingUpdateStatefulSetStrategy{Partition: new(int32(2))},
 			},
 			want: appsv1.StatefulSetUpdateStrategy{
 				Type:          appsv1.RollingUpdateStatefulSetStrategyType,
-				RollingUpdate: &appsv1.RollingUpdateStatefulSetStrategy{Partition: new(int32(2)), MaxUnavailable: &one},
+				RollingUpdate: &appsv1.RollingUpdateStatefulSetStrategy{Partition: new(int32(2)), MaxUnavailable: new(intstr.FromInt32(1))},
 			},
 		},
 		{
@@ -87,11 +85,11 @@ func TestMergeUpdateStrategy(t *testing.T) {
 			current: defaulted(),
 			desired: appsv1.StatefulSetUpdateStrategy{
 				Type:          appsv1.RollingUpdateStatefulSetStrategyType,
-				RollingUpdate: &appsv1.RollingUpdateStatefulSetStrategy{Partition: new(int32(3)), MaxUnavailable: &one},
+				RollingUpdate: &appsv1.RollingUpdateStatefulSetStrategy{Partition: new(int32(3)), MaxUnavailable: new(intstr.FromInt32(1))},
 			},
 			want: appsv1.StatefulSetUpdateStrategy{
 				Type:          appsv1.RollingUpdateStatefulSetStrategyType,
-				RollingUpdate: &appsv1.RollingUpdateStatefulSetStrategy{Partition: new(int32(3)), MaxUnavailable: &one},
+				RollingUpdate: &appsv1.RollingUpdateStatefulSetStrategy{Partition: new(int32(3)), MaxUnavailable: new(intstr.FromInt32(1))},
 			},
 		},
 	}
