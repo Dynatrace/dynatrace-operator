@@ -106,7 +106,7 @@ func TestReconcileCondition(t *testing.T) {
 func TestReconcileConfigMap(t *testing.T) {
 	t.Run("apply spec", func(t *testing.T) {
 		pm := newTestPM("pm", "dynatrace")
-		pm.Spec.TargetAllocator.ScrapeInterval = metav1.Duration{Duration: 5 * time.Minute}
+		pm.Spec.TargetAllocator.ScrapeInterval = new(metav1.Duration{Duration: 5 * time.Minute})
 		pm.Spec.TargetAllocator.CustomResourceNamespaceSelector = &metav1.LabelSelector{MatchLabels: map[string]string{"bar": "foo"}}
 		pm.Spec.TargetAllocator.CustomResourceSelector = &metav1.LabelSelector{MatchLabels: map[string]string{"foo": "bar"}}
 		s := newTestScope(pm)

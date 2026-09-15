@@ -43,7 +43,7 @@ type TargetAllocatorSpec struct {
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default="60s"
 	// +kubebuilder:validation:Format=duration
-	ScrapeInterval metav1.Duration `json:"scrapeInterval,omitempty"`
+	ScrapeInterval *metav1.Duration `json:"scrapeInterval,omitempty"`
 
 	// Label selector applied to all Prometheus Operator CRDs (ServiceMonitor,
 	// PodMonitor, ScrapeConfig, Probe). The TA only picks up CRDs whose labels
