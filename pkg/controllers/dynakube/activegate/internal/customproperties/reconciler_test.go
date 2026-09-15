@@ -10,10 +10,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -39,7 +39,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		require.NoError(t, err)
 	})
 
-	t.Run("Create creates custom properties secret for no-proxy", func(t *testing.T) {
+	t.Run("no-proxy value is not written to custom properties secret", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
@@ -63,20 +63,11 @@ func TestReconciler_Reconcile(t *testing.T) {
 		var customPropertiesSecret corev1.Secret
 		err = fakeClient.Get(t.Context(), client.ObjectKey{Name: r.buildCustomPropertiesName(testName, testOwner), Namespace: testNamespace}, &customPropertiesSecret)
 
-		require.NoError(t, err)
-		assert.NotNil(t, customPropertiesSecret)
-		assert.NotEmpty(t, customPropertiesSecret.Data)
-		assert.Contains(t, customPropertiesSecret.Data, DataKey)
-
-		expectedValue := "\n" + consts.PropertiesClientInternalSection + "\n" + consts.PropertiesNoProxyFieldName + "=" + testValue
-
-		assert.Equal(t, []byte(expectedValue), customPropertiesSecret.Data[DataKey])
-
-		assert.Len(t, dk.Status.Conditions, 1)
-		assert.Equal(t, customPropertiesConditionType, dk.Status.Conditions[0].Type)
+		require.Error(t, err)
+		assert.True(t, errors.IsNotFound(err))
 	})
 
-	t.Run("Create creates custom properties secret for no-proxy with custom properties", func(t *testing.T) {
+	t.Run("Create custom properties secret without no-proxy value", func(t *testing.T) {
 		valueSource := value.Source{Value: testValue}
 		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
@@ -106,7 +97,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		assert.NotEmpty(t, customPropertiesSecret.Data)
 		assert.Contains(t, customPropertiesSecret.Data, DataKey)
 
-		expectedValue := testValue + "\n" + consts.PropertiesClientInternalSection + "\n" + consts.PropertiesNoProxyFieldName + "=" + testValue
+		expectedValue := testValue
 
 		assert.Equal(t, []byte(expectedValue), customPropertiesSecret.Data[DataKey])
 	})
