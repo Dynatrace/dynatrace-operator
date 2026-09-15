@@ -11,6 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	imagemock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/image"
 	"github.com/stretchr/testify/assert"
@@ -139,5 +140,30 @@ func TestReconcileStatefulSet(t *testing.T) {
 		err := r.reconcileStatefulset(t.Context(), newTestScopeWithDynaKube(pm, newTestDynaKube()))
 
 		require.ErrorIs(t, err, expectErr)
+	})
+}
+
+func TestImagePullSecrets(t *testing.T) {
+	t.Setenv(k8senv.DTOperatorPullSecretEnvName, "")
+
+	t.Run("no pull secrets when the DynaKube has no custom pull secret", func(t *testing.T) {
+		sts := &appsv1.StatefulSet{}
+
+		mutateStatefulSet(sts, newTestScopeWithDynaKube(newTestPM("pm", "dynatrace"), newTestDynaKube()))
+
+		assert.Empty(t, sts.Spec.Template.Spec.ImagePullSecrets)
+	})
+
+	t.Run("custom pull secret, no tenant registry pull secret", func(t *testing.T) {
+		dk := newTestDynaKube()
+		dk.Spec.CustomPullSecret = "custom-pull-secret"
+		sts := &appsv1.StatefulSet{}
+
+		mutateStatefulSet(sts, newTestScopeWithDynaKube(newTestPM("pm", "dynatrace"), dk))
+
+		assert.Equal(t, []corev1.LocalObjectReference{{Name: dk.Spec.CustomPullSecret}}, sts.Spec.Template.Spec.ImagePullSecrets)
+
+		// tenant pull secret is only needed for classicfullstack monitoring => not for the new components
+		assert.NotContains(t, sts.Spec.Template.Spec.ImagePullSecrets, corev1.LocalObjectReference{Name: dk.TenantRegistryPullSecretName()})
 	})
 }
