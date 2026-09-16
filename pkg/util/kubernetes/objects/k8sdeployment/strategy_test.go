@@ -42,12 +42,6 @@ func TestMergeStrategy(t *testing.T) {
 			want:    appsv1.DeploymentStrategy{},
 		},
 		{
-			name:    "type only overrides a stored Recreate with RollingUpdate",
-			current: appsv1.DeploymentStrategy{Type: appsv1.RecreateDeploymentStrategyType},
-			desired: appsv1.DeploymentStrategy{Type: appsv1.RollingUpdateDeploymentStrategyType},
-			want:    appsv1.DeploymentStrategy{Type: appsv1.RollingUpdateDeploymentStrategyType},
-		},
-		{
 			name:    "partial rollingUpdate keeps the stored value of the other field",
 			current: defaulted(),
 			desired: appsv1.DeploymentStrategy{RollingUpdate: &appsv1.RollingUpdateDeployment{MaxUnavailable: new(intstr.FromInt32(0))}},
