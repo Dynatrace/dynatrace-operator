@@ -7,6 +7,7 @@ package k8sobject
 
 import (
 	"context"
+	"encoding/json"
 	"reflect"
 	"testing"
 	"time"
@@ -29,7 +30,7 @@ func Expect[T client.Object](name, namespace string, matcher func(T) bool) featu
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		obj := emptyObject[T]()
 		require.NoError(t, envConfig.Client().Resources().Get(ctx, name, namespace, obj))
-		assert.True(t, matcher(obj))
+		assert.Truef(t, matcher(obj), "actual object:\n%s", objectMarshaler{obj})
 
 		return ctx
 	}
@@ -57,6 +58,17 @@ func Create(obj client.Object) features.Func {
 	}
 }
 
+func Update[T client.Object](name, namespace string, mutate func(t *testing.T, obj T)) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		obj := emptyObject[T]()
+		require.NoError(t, envConfig.Client().Resources().Get(ctx, name, namespace, obj))
+		mutate(t, obj)
+		require.NoError(t, envConfig.Client().Resources().Update(ctx, obj))
+
+		return ctx
+	}
+}
+
 func Delete(obj client.Object) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		require.NoError(t, client.IgnoreNotFound(envConfig.Client().Resources().Delete(ctx, obj)))
@@ -79,4 +91,16 @@ func WaitForDeletion(obj client.Object) features.Func {
 
 func emptyObject[T client.Object]() T {
 	return reflect.New(reflect.TypeFor[T]().Elem()).Interface().(T)
+}
+
+type objectMarshaler struct {
+	client.Object
+}
+
+func (o objectMarshaler) String() string {
+	obj := o.DeepCopyObject().(client.Object)
+	obj.SetManagedFields(nil)
+	data, _ := json.Marshal(obj)
+
+	return string(data)
 }
