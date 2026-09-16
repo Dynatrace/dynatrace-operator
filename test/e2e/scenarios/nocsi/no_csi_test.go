@@ -300,6 +300,10 @@ func TestNoCSI_host_agent_pgc_cloudnative(t *testing.T) {
 	testEnv.Test(t, cloudnative.HostAgentPGC(t))
 }
 
-func TestNoCSI_prometheus_monitoring(t *testing.T) {
+func TestNoCSI_prometheus_monitoring_lifecycle(t *testing.T) {
 	testEnv.Test(t, prometheusmonitoring.Feature(t))
+}
+
+func TestNoCSI_prometheus_monitoring_use_public_registry(t *testing.T) {
+	testEnv.Test(t, prometheusmonitoring.PublicRegistry(t))
 }
