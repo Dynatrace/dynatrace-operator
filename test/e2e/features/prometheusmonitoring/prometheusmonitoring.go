@@ -110,6 +110,9 @@ func enablePrometheus(builder *features.FeatureBuilder) {
 	builder.WithSetup("enable prometheus feature", helpers.ToFeatureFunc(operator.InstallLocal(false, helm.WithArgs(
 		"--set", "experimental.enablePrometheus=true",
 		"--set", "prometheus.installCRDs=true",
+		// Enable helm to overwrite pre-installed CRDs
+		"--take-ownership",
+		"--force-conflicts",
 	)), true))
 }
 
