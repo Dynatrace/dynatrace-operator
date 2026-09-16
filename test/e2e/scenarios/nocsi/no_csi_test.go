@@ -21,6 +21,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/kspm"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/kubemon"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/logmonitoring"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/prometheusmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/resourceattributes"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/telemetryingest"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/token"
@@ -297,4 +298,8 @@ func TestNoCSI_host_agent_pgc_host_monitoring(t *testing.T) {
 
 func TestNoCSI_host_agent_pgc_cloudnative(t *testing.T) {
 	testEnv.Test(t, cloudnative.HostAgentPGC(t))
+}
+
+func TestNoCSI_prometheus_monitoring(t *testing.T) {
+	testEnv.Test(t, prometheusmonitoring.Feature(t))
 }

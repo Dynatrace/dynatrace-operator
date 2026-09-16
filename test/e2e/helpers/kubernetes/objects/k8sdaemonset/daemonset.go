@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers"
-	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects"
+	k8sobject "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -97,7 +97,7 @@ func VerifyUsesImage(name, namespace, expectedImage string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		var ds appsv1.DaemonSet
 		require.NoError(t, envConfig.Client().Resources().Get(ctx, name, namespace, &ds))
-		objects.VerifyWorkloadUsesImage(t, ds.Spec.Template.Spec.Containers, expectedImage, name)
+		k8sobject.VerifyWorkloadUsesImage(t, ds.Spec.Template.Spec.Containers, expectedImage, name)
 
 		return ctx
 	}
