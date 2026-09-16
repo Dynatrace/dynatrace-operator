@@ -202,7 +202,7 @@ func (r *Reconciler) createDeploymentPropertiesConfigMap(ctx context.Context, dk
 	configMap, err := k8sconfigmap.Build(dk,
 		dk.ActiveGate().GetDeploymentPropertiesConfigMapName(),
 		map[string]string{
-			consts.DeploymentPropertiesFileName: deploymentproperties.BuildContent(dk.Spec.ResourceAttributes),
+			consts.DeploymentPropertiesFileName: deploymentproperties.BuildContent(dk),
 		},
 		k8sconfigmap.SetLabels(coreLabels.BuildLabels()),
 	)

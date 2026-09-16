@@ -6,7 +6,9 @@ package modifiers
 import (
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -20,7 +22,20 @@ func TestDeploymentPropertiesModifierEnabled(t *testing.T) {
 		assert.True(t, mod.Enabled())
 	})
 
-	t.Run("disabled without resource attributes", func(t *testing.T) {
+	t.Run("enabled when no-proxy ff is set", func(t *testing.T) {
+		dk := getBaseDynakube()
+		dk.Spec.Proxy = &value.Source{
+			Value: "test",
+		}
+		dk.Annotations = map[string]string{
+			exp.NoProxyKey: "test.example.com",
+		}
+
+		mod := NewDeploymentPropertiesModifier(dk)
+		assert.True(t, mod.Enabled())
+	})
+
+	t.Run("disabled without resource attributes and no-proxy ff", func(t *testing.T) {
 		dk := getBaseDynakube()
 		mod := NewDeploymentPropertiesModifier(dk)
 		assert.False(t, mod.Enabled())

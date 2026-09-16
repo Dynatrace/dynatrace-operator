@@ -37,7 +37,7 @@ func TestCustomPropertyEnabled(t *testing.T) {
 		assert.True(t, mod.Enabled())
 	})
 
-	t.Run("true with NeedsCustomNoProxy", func(t *testing.T) {
+	t.Run("false with NeedsCustomNoProxy", func(t *testing.T) {
 		dk := getBaseDynakube()
 		dk.Spec.Proxy = &value.Source{
 			Value: "test",
@@ -52,7 +52,7 @@ func TestCustomPropertyEnabled(t *testing.T) {
 
 		mod := NewCustomPropertiesModifier(dk, multiCapability)
 
-		assert.True(t, mod.Enabled())
+		assert.False(t, mod.Enabled())
 	})
 
 	t.Run("false", func(t *testing.T) {

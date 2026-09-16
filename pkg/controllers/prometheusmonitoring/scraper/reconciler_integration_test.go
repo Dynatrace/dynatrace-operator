@@ -59,7 +59,9 @@ func TestReconcileLifecycle(t *testing.T) {
 		clt:        clt,
 		reconciler: &scraper.Reconciler{Client: clt},
 		pm:         pm,
-		dk:         &dynakube.DynaKube{},
+		// A custom pull secret is set so imagePullSecrets is a non-empty value, letting the
+		// stabilize phase prove it reconciles without spurious Update calls.
+		dk: &dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{CustomPullSecret: "custom-pull-secret"}},
 	}
 
 	t.Run("missing-image", func(t *testing.T) { runMissingImagePhase(t, deps) })
