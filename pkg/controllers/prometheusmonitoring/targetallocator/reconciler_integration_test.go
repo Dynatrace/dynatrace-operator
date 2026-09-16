@@ -150,7 +150,7 @@ func runUpdatePhase(t *testing.T, deps *lifecycleDeps) {
 		deployRV := getDeployment(t, deps).ResourceVersion
 		svcRV := getService(t, deps).ResourceVersion
 
-		deps.pm.Spec.TargetAllocator.ScrapeInterval = metav1.Duration{Duration: 5 * time.Minute}
+		deps.pm.Spec.TargetAllocator.ScrapeInterval = new(metav1.Duration{Duration: 5 * time.Minute})
 		require.NoError(t, deps.reconciler.Reconcile(t.Context(), deps.pm, deps.dk, nil))
 
 		assert.NotEqual(t, cmRV, getConfigMap(t, deps).ResourceVersion)
