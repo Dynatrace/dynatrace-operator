@@ -29,7 +29,8 @@ import (
 )
 
 const (
-	helmRegistryURL = "oci://public.ecr.aws/dynatrace/dynatrace-operator"
+	helmRegistryURL      = "oci://public.ecr.aws/dynatrace/dynatrace-operator"
+	githubReleaseBaseURL = "https://github.com/Dynatrace/dynatrace-operator/releases/download"
 )
 
 // Install the operator chart with the specified tag and CSI mode.
@@ -219,6 +220,62 @@ func UninstallViaManifests(platform string, withCSI bool) error {
 		project.RootDir(),
 		cmd,
 	)
+}
+
+// InstallReleasedManifest downloads and applies operator manifests from a GitHub release.
+func InstallReleasedManifest(releaseTag string, withCSI bool) env.Func {
+	return func(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
+		_platform, err := platform.NewResolver().GetPlatform()
+		if err != nil {
+			return ctx, err
+		}
+
+		if err = installViaReleasedManifests(releaseTag, _platform, withCSI); err != nil {
+			return ctx, err
+		}
+
+		return VerifyInstall(ctx, envConfig, withCSI)
+	}
+}
+
+func installViaReleasedManifests(releaseTag, operatorPlatform string, withCSI bool) error {
+	filename := operatorPlatform + ".yaml"
+	if withCSI {
+		filename = operatorPlatform + "-csi.yaml"
+	}
+
+	manifestURL := fmt.Sprintf("%s/v%s/%s", githubReleaseBaseURL, releaseTag, filename)
+
+	return execMakeCommand(project.RootDir(), "manifests/apply/released", "MANIFEST_URL="+manifestURL)
+}
+
+// InstallLocalViaManifests applies the current build's generated manifests.
+func InstallLocalViaManifests(withCSI bool) env.Func {
+	return func(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
+		_platform, err := platform.NewResolver().GetPlatform()
+		if err != nil {
+			return ctx, err
+		}
+
+		err = InstallViaManifests(_platform, withCSI)
+		if err != nil {
+			return ctx, err
+		}
+
+		return VerifyInstall(ctx, envConfig, withCSI)
+	}
+}
+
+// UninstallCurrentManifests deletes the operator using the current build's generated manifests.
+func UninstallCurrentManifests(withCSI bool) env.Func {
+	return func(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
+		_platform, err := platform.NewResolver().GetPlatform()
+		if err != nil {
+			return ctx, err
+		}
+
+		return ctx, UninstallViaManifests(_platform, withCSI)
+	}
 }
 
 func getHelmOptions(releaseTag, platform string, withCSI bool) ([]helm.Option, error) {
