@@ -12,6 +12,7 @@ import (
 	pmapi "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/prometheusmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sdeployment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/consts"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/operator"
@@ -103,6 +104,44 @@ func Feature(t *testing.T) features.Feature {
 	builder.Assess("target allocator deleted", k8sobject.WaitForDeletion(targetAllocatorDeployment(pm)))
 
 	// Ensure the object gets cleaned up even if a previous step failed
+	builder.Teardown(k8sobject.Delete(pm))
+
+	disablePrometheus(builder)
+
+	return builder.Feature()
+}
+
+func PublicRegistry(t *testing.T) features.Feature {
+	builder := features.New("public-registry")
+	builder.Assess("devregistry pull secret exists", k8sobject.Expect(consts.DevRegistryPullSecretName, operator.DefaultNamespace, k8sobject.SecretExists))
+
+	secretConfig := tenant.GetSingleTenantSecret(t)
+
+	dk := *dynakube.New(
+		dynakube.WithAPIURL(secretConfig.APIURL),
+		dynakube.WithCustomPullSecret(consts.DevRegistryPullSecretName),
+	)
+
+	pm := &pmapi.PrometheusMonitoring{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "monitoring",
+			Namespace: operator.DefaultNamespace,
+		},
+		Spec: pmapi.PrometheusMonitoringSpec{
+			DynaKubeRef: dk.Name,
+		},
+	}
+
+	enablePrometheus(builder)
+
+	dynakube.Install(builder, &secretConfig, dk)
+
+	builder.Assess("created PrometheusMonitoring", k8sobject.Create(pm))
+	builder.Assess("PrometheusMonitoring becomes ready", waitForPhase(pm, status.Running))
+	builder.Assess("gateway is ready", k8sobject.Expect(pm.Gateway().GetStatefulSetName(), pm.Namespace, k8sstatefulset.IsRolloutComplete))
+	builder.Assess("scraper is ready", k8sobject.Expect(pm.Scraper().GetDeploymentName(), pm.Namespace, k8sdeployment.IsRolloutComplete))
+	builder.Assess("target allocator is ready", k8sobject.Expect(pm.TargetAllocator().GetDeploymentName(), pm.Namespace, k8sdeployment.IsRolloutComplete))
+
 	builder.Teardown(k8sobject.Delete(pm))
 
 	disablePrometheus(builder)

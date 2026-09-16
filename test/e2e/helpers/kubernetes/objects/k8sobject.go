@@ -14,6 +14,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/e2e-framework/klient/k8s"
 	"sigs.k8s.io/e2e-framework/klient/wait"
@@ -25,6 +26,10 @@ import (
 const DefaultWaitTimeout = 5 * time.Minute
 
 var WaitTimeout = DefaultWaitTimeout
+
+var SecretExists = exists[*corev1.Secret]
+
+func exists[T client.Object](T) bool { return true }
 
 func Expect[T client.Object](name, namespace string, matcher func(T) bool) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
