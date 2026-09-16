@@ -5,8 +5,6 @@ package deploymentproperties
 
 import (
 	"context"
-	"fmt"
-	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	agconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
@@ -59,19 +57,8 @@ func (r *Reconciler) createDeploymentPropertiesSecret(ctx context.Context, dk *d
 }
 
 func secretData(dk *dynakube.DynaKube) map[string][]byte {
-	data := ""
-
-	if len(dk.GetResourceAttributes()) > 0 {
-		data += deploymentproperties.BuildContent(dk.GetResourceAttributes())
-	}
-
-	if dk.NeedsCustomNoProxy() {
-		noProxyValue := strings.ReplaceAll(dk.FF().GetNoProxy(), ",", "|")
-		data += fmt.Sprintf("%s\n%s=%s\n", agconsts.PropertiesClientInternalSection, agconsts.PropertiesNoProxyFieldName, noProxyValue)
-	}
-
 	return map[string][]byte{
-		agconsts.DeploymentPropertiesFileName: []byte(data),
+		agconsts.DeploymentPropertiesFileName: []byte(deploymentproperties.BuildContent(dk)),
 	}
 }
 

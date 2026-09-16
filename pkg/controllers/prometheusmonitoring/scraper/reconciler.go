@@ -62,6 +62,7 @@ type Reconciler struct {
 type reconcileScope struct {
 	// Required for reconcile
 	Owner       *prometheusmonitoring.PrometheusMonitoring
+	DynaKube    *dynakube.DynaKube
 	Spec        *prometheusmonitoring.Scraper
 	AppLabels   *k8slabel.Labels
 	ImageClient image.Client
@@ -80,6 +81,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, pm *prometheusmonitoring.Pro
 
 	scope := &reconcileScope{
 		Owner:       pm,
+		DynaKube:    dk,
 		Spec:        pm.Scraper(),
 		AppLabels:   k8slabel.OTelScraper(),
 		ImageClient: imageClient,
@@ -154,12 +156,18 @@ func (r *Reconciler) reconcileConfigMap(ctx context.Context, s *reconcileScope) 
 func buildScraperConfigData(s *reconcileScope) scraperConfigData {
 	namespace := s.Owner.Namespace
 
-	return scraperConfigData{
+	data := scraperConfigData{
 		TargetAllocatorEndpoint: "http://" + net.JoinHostPort(
-			serviceAddress(s.Owner.TargetAllocator().GetDeploymentName(), namespace), strconv.Itoa(targetAllocatorPort)),
-		GatewayService:      s.Owner.Gateway().GetStatefulSetName() + "." + namespace,
-		TargetsPollInterval: s.Spec.TargetsPollInterval.Duration.String(),
+			serviceAddress(s.Owner.TargetAllocator().GetDeploymentName(), namespace), strconv.Itoa(targetAllocatorPort),
+		),
+		GatewayService: s.Owner.Gateway().GetStatefulSetName() + "." + namespace,
 	}
+
+	if interval := s.Spec.TargetsPollInterval; interval != nil && interval.Duration > 0 {
+		data.TargetsPollInterval = s.Spec.TargetsPollInterval.Duration.String()
+	}
+
+	return data
 }
 
 func serviceAddress(name, namespace string) string {
@@ -229,6 +237,7 @@ func mutateDeployment(deploy *appsv1.Deployment, s *reconcileScope) {
 	deploy.Spec.Template.Spec.PriorityClassName = s.Spec.PriorityClassName
 	deploy.Spec.Template.Spec.Tolerations = s.Spec.Tolerations
 	deploy.Spec.Template.Spec.TopologySpreadConstraints = s.Spec.TopologySpreadConstraints
+	deploy.Spec.Template.Spec.ImagePullSecrets = s.DynaKube.CustomPullSecretReferences()
 	deploy.Spec.Template.Spec.Volumes = buildVolumes(s)
 	// The stored container is passed in so buildContainer can preserve apiserver-defaulted
 	// fields (e.g. ImagePullPolicy, probe timeouts) and avoid spurious diffs.

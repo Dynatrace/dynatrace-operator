@@ -70,7 +70,7 @@ type HTTPSConfig struct {
 
 type ScrapeConfig struct {
 	Enabled                         bool                  `json:"enabled"`
-	ScrapeInterval                  metav1.Duration       `json:"scrape_interval"`
+	ScrapeInterval                  *metav1.Duration      `json:"scrape_interval"`
 	PodMonitorSelector              *metav1.LabelSelector `json:"pod_monitor_selector,omitempty"`
 	PodMonitorNamespaceSelector     *metav1.LabelSelector `json:"pod_monitor_namespace_selector,omitempty"`
 	ServiceMonitorSelector          *metav1.LabelSelector `json:"service_monitor_selector,omitempty"`
@@ -275,6 +275,7 @@ func mutateDeployment(deploy *appsv1.Deployment, s *reconcileScope) {
 	deploy.Spec.Template.Spec.PriorityClassName = s.Spec.PriorityClassName
 	deploy.Spec.Template.Spec.Tolerations = s.Spec.Tolerations
 	deploy.Spec.Template.Spec.TopologySpreadConstraints = s.Spec.TopologySpreadConstraints
+	deploy.Spec.Template.Spec.ImagePullSecrets = s.DynaKube.CustomPullSecretReferences()
 	deploy.Spec.Template.Spec.Volumes = buildVolumes(s.Spec)
 	deploy.Spec.Template.Spec.Containers = []corev1.Container{
 		buildContainer(s.Spec, s.Owner.Status.TargetAllocator.ResolvedImage, s.Owner.Namespace, k8scontainer.GetFirstInPodSpec(&deploy.Spec.Template.Spec)),

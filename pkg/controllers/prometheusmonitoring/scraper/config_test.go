@@ -14,30 +14,14 @@ import (
 )
 
 func TestBuildScraperConfigData(t *testing.T) {
-	t.Run("endpoints are derived from the owner, not the scraper spec", func(t *testing.T) {
-		s := newTestScope(newTestPM("pm", "dynatrace"))
+	pm := newTestPM("other", "custom-ns")
+	pm.Spec.Scraper.TargetsPollInterval = new(metav1.Duration{Duration: 90 * time.Second})
 
-		data := buildScraperConfigData(s)
+	data := buildScraperConfigData(newTestScope(pm))
 
-		assert.Equal(t, "http://pm-allocator.dynatrace:80", data.TargetAllocatorEndpoint)
-		assert.Equal(t, "pm-gateway.dynatrace", data.GatewayService)
-	})
-
-	t.Run("endpoints follow the owner name and namespace", func(t *testing.T) {
-		s := newTestScope(newTestPM("other", "custom-ns"))
-
-		data := buildScraperConfigData(s)
-
-		assert.Equal(t, "http://other-allocator.custom-ns:80", data.TargetAllocatorEndpoint)
-		assert.Equal(t, "other-gateway.custom-ns", data.GatewayService)
-	})
-
-	t.Run("poll interval is taken from the spec", func(t *testing.T) {
-		pm := newTestPM("pm", "dynatrace")
-		pm.Spec.Scraper.TargetsPollInterval = metav1.Duration{Duration: 90 * time.Second}
-
-		assert.Equal(t, "1m30s", buildScraperConfigData(newTestScope(pm)).TargetsPollInterval)
-	})
+	assert.Equal(t, "http://other-allocator.custom-ns:80", data.TargetAllocatorEndpoint)
+	assert.Equal(t, "other-gateway.custom-ns", data.GatewayService)
+	assert.Equal(t, "1m30s", data.TargetsPollInterval)
 }
 
 func TestBuildScraperOTelConfig(t *testing.T) {

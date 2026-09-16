@@ -58,7 +58,9 @@ func TestReconcileLifecycle(t *testing.T) {
 		clt:        clt,
 		reconciler: &targetallocator.Reconciler{Client: clt},
 		pm:         pm,
-		dk:         &dynakube.DynaKube{},
+		// A custom pull secret is set so imagePullSecrets is a non-empty value, letting the
+		// stabilize phase prove it reconciles without spurious Update calls.
+		dk: &dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{CustomPullSecret: "custom-pull-secret"}},
 	}
 
 	t.Run("missing-image", func(t *testing.T) { runMissingImagePhase(t, deps) })
@@ -150,7 +152,7 @@ func runUpdatePhase(t *testing.T, deps *lifecycleDeps) {
 		deployRV := getDeployment(t, deps).ResourceVersion
 		svcRV := getService(t, deps).ResourceVersion
 
-		deps.pm.Spec.TargetAllocator.ScrapeInterval = metav1.Duration{Duration: 5 * time.Minute}
+		deps.pm.Spec.TargetAllocator.ScrapeInterval = new(metav1.Duration{Duration: 5 * time.Minute})
 		require.NoError(t, deps.reconciler.Reconcile(t.Context(), deps.pm, deps.dk, nil))
 
 		assert.NotEqual(t, cmRV, getConfigMap(t, deps).ResourceVersion)
