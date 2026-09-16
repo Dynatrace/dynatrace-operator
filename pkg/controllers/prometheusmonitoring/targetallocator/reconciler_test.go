@@ -219,7 +219,7 @@ func TestReconcileDeployment(t *testing.T) {
 		pm.Spec.TargetAllocator.Labels = map[string]string{"custom": "label"}
 		pm.Spec.TargetAllocator.Args = []string{"--foo=bar"}
 		maxUnavailable := intstr.FromInt(0)
-		pm.Spec.TargetAllocator.UpdateStrategy = appsv1.DeploymentStrategy{
+		pm.Spec.TargetAllocator.Strategy = appsv1.DeploymentStrategy{
 			RollingUpdate: &appsv1.RollingUpdateDeployment{MaxUnavailable: &maxUnavailable},
 		}
 		s := newTestScope(pm)

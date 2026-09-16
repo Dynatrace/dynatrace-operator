@@ -60,7 +60,7 @@ type TargetAllocatorSpec struct {
 
 	// Deployment update strategy for the Target Allocator.
 	// +kubebuilder:validation:Optional
-	UpdateStrategy appsv1.DeploymentStrategy `json:"updateStrategy,omitzero"`
+	Strategy appsv1.DeploymentStrategy `json:"updateStrategy,omitzero"`
 }
 
 // NewTargetAllocator wraps the given Spec together with the owning PrometheusMonitoring name.

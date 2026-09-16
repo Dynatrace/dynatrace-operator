@@ -91,7 +91,7 @@ func runProvisionPhase(t *testing.T, deps *lifecycleDeps) {
 	deps.pm.Spec.TargetAllocator.Image = integrationImage
 	// Only rollingUpdate is set, no type: the apiserver defaults the type to RollingUpdate on its own.
 	maxUnavailable := intstr.FromInt(0)
-	deps.pm.Spec.TargetAllocator.UpdateStrategy = appsv1.DeploymentStrategy{
+	deps.pm.Spec.TargetAllocator.Strategy = appsv1.DeploymentStrategy{
 		RollingUpdate: &appsv1.RollingUpdateDeployment{MaxUnavailable: &maxUnavailable},
 	}
 	require.NoError(t, deps.reconciler.Reconcile(t.Context(), deps.pm, deps.dk, nil))
