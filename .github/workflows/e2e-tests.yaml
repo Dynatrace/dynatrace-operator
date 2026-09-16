@@ -251,6 +251,7 @@ jobs:
   run-in-ocp:
     if: ${{ github.event.inputs.run-e2e-in-ocp != 'false' }}
     name: Run in OpenShift latest (${{ github.event.inputs.target || 'main' }})
+    timeout-minutes: 480 # default is 360 (6h), max is 21600 (6 days)
     permissions:
       checks: write
       pull-requests: write
