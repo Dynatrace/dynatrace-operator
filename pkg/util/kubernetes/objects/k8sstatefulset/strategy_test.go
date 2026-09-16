@@ -39,10 +39,10 @@ func TestMergeUpdateStrategy(t *testing.T) {
 			want:    appsv1.StatefulSetUpdateStrategy{},
 		},
 		{
-			name:    "type only overrides the type and keeps the stored rollingUpdate",
-			current: defaulted(),
+			name:    "type only overrides a stored OnDelete with RollingUpdate",
+			current: appsv1.StatefulSetUpdateStrategy{Type: appsv1.OnDeleteStatefulSetStrategyType},
 			desired: appsv1.StatefulSetUpdateStrategy{Type: appsv1.RollingUpdateStatefulSetStrategyType},
-			want:    defaulted(),
+			want:    appsv1.StatefulSetUpdateStrategy{Type: appsv1.RollingUpdateStatefulSetStrategyType},
 		},
 		{
 			name: "partition overrides the stored one and keeps the stored maxUnavailable",
