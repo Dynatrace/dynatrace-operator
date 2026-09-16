@@ -40,7 +40,7 @@ type ScraperSpec struct {
 
 	// Deployment update strategy for the scraper pool.
 	// +kubebuilder:validation:Optional
-	Strategy appsv1.DeploymentStrategy `json:"Strategy,omitzero"`
+	Strategy appsv1.DeploymentStrategy `json:"strategy,omitzero"`
 }
 
 // NewScraper wraps the given Spec together with the owning PrometheusMonitoring name.
