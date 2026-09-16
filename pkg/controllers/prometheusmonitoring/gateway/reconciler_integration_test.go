@@ -62,10 +62,15 @@ func TestReconcileLifecycle(t *testing.T) {
 		Return(nil, errors.New("fleet image API unavailable")).Maybe()
 
 	deps := &lifecycleDeps{
-		clt:         clt,
-		reconciler:  &gateway.Reconciler{Client: clt},
-		pm:          pm,
-		dk:          &dynakube.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: integrationDynaKubeRef, Namespace: integrationNamespace}},
+		clt:        clt,
+		reconciler: &gateway.Reconciler{Client: clt},
+		pm:         pm,
+		// A custom pull secret is set so imagePullSecrets is a non-empty value, letting the
+		// stabilize phase prove it reconciles without spurious Update calls.
+		dk: &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{Name: integrationDynaKubeRef, Namespace: integrationNamespace},
+			Spec:       dynakube.DynaKubeSpec{CustomPullSecret: "custom-pull-secret"},
+		},
 		imageClient: imageClient,
 	}
 
