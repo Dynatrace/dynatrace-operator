@@ -34,11 +34,6 @@ func Feature(t *testing.T) features.Feature {
 		componentDynakube.WithActiveGate(),
 	}
 
-	if !tenant.UsePhase3Tenant() {
-		// Gen2 tenants don't serve the NCC image from the fleet management endpoint, so keep using the pinned image.
-		options = append(options, componentDynakube.WithKSPMImageRef(t, componentDynakube.GetLatestKSPMImageTagURI(t)))
-	}
-
 	testDynakube := *componentDynakube.New(options...)
 
 	componentDynakube.Install(builder, &secretConfig, testDynakube)

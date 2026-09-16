@@ -55,11 +55,6 @@ func WithPublicActiveGate(t *testing.T) features.Feature {
 		componentDynakube.WithTelemetryIngestEnabled(true),
 	}
 
-	if !tenant.UsePhase3Tenant() {
-		// Gen2 tenants don't serve the OTel Collector image from the fleet management endpoint, so keep using the pinned image.
-		options = append(options, componentDynakube.WithOTelCollectorImageRef(t, componentDynakube.GetLatestOTelCollectorImageTagURI(t)))
-	}
-
 	testDynakube := *componentDynakube.New(options...)
 
 	componentDynakube.Install(builder, &secretConfig, testDynakube)
