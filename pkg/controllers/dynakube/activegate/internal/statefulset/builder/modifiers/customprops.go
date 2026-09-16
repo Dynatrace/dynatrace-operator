@@ -75,9 +75,7 @@ func (mod CustomPropertiesModifier) getVolumeMounts() []corev1.VolumeMount {
 func (mod CustomPropertiesModifier) hasCustomProperties() bool {
 	customProperties := mod.capability.Properties().CustomProperties
 
-	return (customProperties != nil &&
-		(customProperties.Value != "" ||
-			customProperties.ValueFrom != "")) || mod.dk.NeedsCustomNoProxy()
+	return customProperties != nil && (customProperties.Value != "" || customProperties.ValueFrom != "")
 }
 
 func (mod CustomPropertiesModifier) determineCustomPropertiesSource() string {

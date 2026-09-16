@@ -6,11 +6,9 @@ package customproperties
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
@@ -42,7 +40,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, customPropertiesOwnerName string, customPropertiesSource *value.Source) error {
 	ctx, log := logd.NewFromContext(ctx, "customproperties")
 
-	if customPropertiesSource == nil && !dk.NeedsCustomNoProxy() {
+	if customPropertiesSource == nil {
 		if meta.FindStatusCondition(*dk.Conditions(), customPropertiesConditionType) == nil {
 			return nil
 		}
@@ -107,37 +105,7 @@ func (r *Reconciler) buildCustomPropertiesValue(ctx context.Context, dk *dynakub
 		}
 	}
 
-	lines := strings.Split(customPropertiesValue, "\n")
-
-	if dk.NeedsCustomNoProxy() {
-		lines = r.addNonProxyHostsSettingsToValue(dk.FF().GetNoProxy(), lines)
-	}
-
-	customPropertiesValue = strings.Join(lines, "\n")
-
 	return []byte(customPropertiesValue), nil
-}
-
-func (r *Reconciler) addNonProxyHostsSettingsToValue(ffNoProxy string, lines []string) []string {
-	noProxyValue := strings.ReplaceAll(ffNoProxy, ",", "|")
-	proxySettings := fmt.Sprintf("%s\n%s=%s", consts.PropertiesClientInternalSection, consts.PropertiesNoProxyFieldName, noProxyValue)
-
-	found := false
-
-	for i, line := range lines {
-		if strings.Contains(line, consts.PropertiesClientInternalSection) {
-			found = true
-			lines[i] = proxySettings
-
-			break
-		}
-	}
-
-	if !found {
-		lines = append(lines, proxySettings)
-	}
-
-	return lines
 }
 
 func (r *Reconciler) buildCustomPropertiesName(name string, customPropertiesOwnerName string) string {
