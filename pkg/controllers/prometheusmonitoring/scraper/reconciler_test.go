@@ -324,7 +324,7 @@ func TestImagePullSecrets(t *testing.T) {
 
 		assert.Equal(t, []corev1.LocalObjectReference{{Name: dk.Spec.CustomPullSecret}}, deploy.Spec.Template.Spec.ImagePullSecrets)
 
-		// tenant pull secret is only needed for classicfullstack monitoring => not for the new components
+		// tenant pull secret not needed for the Prometheus components
 		assert.NotContains(t, deploy.Spec.Template.Spec.ImagePullSecrets, corev1.LocalObjectReference{Name: dk.TenantRegistryPullSecretName()})
 	})
 }
