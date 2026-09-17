@@ -383,6 +383,12 @@ func testReferencesResolve(t *testing.T, clt client.Client) {
 				f.assertEnvSourceResolves(t, env)
 			}
 
+			// A pull secret is referenced by name only, so a missing one is not a config error the
+			// operator can see: the pods just sit in ImagePullBackOff.
+			for _, pullSecret := range tmpl.Spec.ImagePullSecrets {
+				f.assertSecretExists(t, pullSecret.Name)
+			}
+
 			t.Run("every volume mount has a volume", func(t *testing.T) {
 				for _, mount := range container.VolumeMounts {
 					assert.True(t, hasVolume(tmpl.Spec.Volumes, mount.Name),
@@ -467,26 +473,31 @@ func testCustomization(t *testing.T, clt client.Client) {
 		assert.Equal(t, new(int32(2)), deploy.Spec.Replicas)
 	})
 
-	// BUG ICP-9602: spec.gateway.updateStrategy and spec.targetAllocator.updateStrategy are part of
-	// the CRD (the gateway one is even defaulted to {type: RollingUpdate}) but no code reads them,
-	// so setting them has no effect. Only spec.scraper.updateStrategy is applied. The fix is in
-	// flight on bug/updateStrategy-ignorance-ICP-9602, which wires both fields up and drops the
-	// kubebuilder default on the gateway field. These assertions pin the current behavior so the gap
-	// stays visible until then; they must be inverted when that branch lands.
-	t.Run("updateStrategy is only honored for the scraper", func(t *testing.T) {
+	// Each component's own lifecycle test covers the partial merge, where only a rollingUpdate
+	// block is set and the apiserver's defaulted type survives. Two things are only observable from
+	// here: that one reconcile routes each of the three strategies to the right workload (they are
+	// three different fields on two different kinds), and the other branch of the merge helpers,
+	// where an explicit non-rolling type has to clear the rollingUpdate block the apiserver
+	// defaulted in, because the apiserver rejects the two together.
+	t.Run("all three update strategies are honored", func(t *testing.T) {
 		f.pm.Spec.Gateway.UpdateStrategy = appsv1.StatefulSetUpdateStrategy{Type: appsv1.OnDeleteStatefulSetStrategyType}
-		f.pm.Spec.TargetAllocator.UpdateStrategy = appsv1.DeploymentStrategy{Type: appsv1.RecreateDeploymentStrategyType}
-		f.pm.Spec.Scraper.UpdateStrategy = appsv1.DeploymentStrategy{Type: appsv1.RecreateDeploymentStrategyType}
+		f.pm.Spec.TargetAllocator.Strategy = appsv1.DeploymentStrategy{Type: appsv1.RecreateDeploymentStrategyType}
+		f.pm.Spec.Scraper.Strategy = appsv1.DeploymentStrategy{Type: appsv1.RecreateDeploymentStrategyType}
 		f.updatePrometheusMonitoring(t)
 		f.reconcileSuccessfully(t)
 
-		assert.Equal(t, appsv1.RollingUpdateStatefulSetStrategyType, f.gatewayStatefulSet(t).Spec.UpdateStrategy.Type,
-			"spec.gateway.updateStrategy is currently ignored")
-		assert.Equal(t, appsv1.RollingUpdateDeploymentStrategyType,
-			f.deployment(t, f.pm.TargetAllocator().GetDeploymentName()).Spec.Strategy.Type,
-			"spec.targetAllocator.updateStrategy is currently ignored")
-		assert.Equal(t, appsv1.RecreateDeploymentStrategyType,
-			f.deployment(t, f.pm.Scraper().GetDeploymentName()).Spec.Strategy.Type)
+		gatewayStrategy := f.gatewayStatefulSet(t).Spec.UpdateStrategy
+		assert.Equal(t, appsv1.OnDeleteStatefulSetStrategyType, gatewayStrategy.Type)
+		assert.Nil(t, gatewayStrategy.RollingUpdate, "OnDelete must not keep a rollingUpdate block")
+
+		for name, workload := range map[string]string{
+			"target allocator": f.pm.TargetAllocator().GetDeploymentName(),
+			"scraper":          f.pm.Scraper().GetDeploymentName(),
+		} {
+			strategy := f.deployment(t, workload).Spec.Strategy
+			assert.Equal(t, appsv1.RecreateDeploymentStrategyType, strategy.Type, name)
+			assert.Nil(t, strategy.RollingUpdate, "%s: Recreate must not keep a rollingUpdate block", name)
+		}
 	})
 }
 
@@ -591,7 +602,7 @@ func testUpdatePropagation(t *testing.T, clt client.Client) {
 	t.Run("a scraper poll interval change rolls only the scraper pods", func(t *testing.T) {
 		beforeHashes := f.configHashes(t)
 
-		f.pm.Spec.Scraper.TargetsPollInterval = metav1.Duration{Duration: 5 * time.Minute}
+		f.pm.Spec.Scraper.TargetsPollInterval = new(metav1.Duration{Duration: 5 * time.Minute})
 		f.updatePrometheusMonitoring(t)
 		f.reconcileSuccessfully(t)
 
@@ -604,7 +615,7 @@ func testUpdatePropagation(t *testing.T, clt client.Client) {
 	t.Run("a target allocator scrape interval change rolls only the allocator pods", func(t *testing.T) {
 		beforeHashes := f.configHashes(t)
 
-		f.pm.Spec.TargetAllocator.ScrapeInterval = metav1.Duration{Duration: 90 * time.Second}
+		f.pm.Spec.TargetAllocator.ScrapeInterval = new(metav1.Duration{Duration: 90 * time.Second})
 		f.updatePrometheusMonitoring(t)
 		f.reconcileSuccessfully(t)
 
@@ -1212,11 +1223,21 @@ func (f *fixture) assertConfigMapKeys(t *testing.T, name string, keys []string) 
 func (f *fixture) assertSecretKeys(t *testing.T, name string, keys []string) {
 	t.Helper()
 
+	f.assertSecretExists(t, name)
+
 	secret := &corev1.Secret{}
-	require.NoErrorf(t, f.clt.Get(t.Context(), client.ObjectKey{Name: name, Namespace: f.ns}, secret),
-		"referenced Secret %s does not exist", name)
+	require.NoError(t, f.clt.Get(t.Context(), client.ObjectKey{Name: name, Namespace: f.ns}, secret))
 
 	for _, key := range keys {
 		assert.Containsf(t, secret.Data, key, "Secret %s has no key %s", name, key)
 	}
+}
+
+// assertSecretExists is the weaker check for Secrets that are referenced by name only, where no
+// particular key is expected (an image pull secret, for example).
+func (f *fixture) assertSecretExists(t *testing.T, name string) {
+	t.Helper()
+
+	require.NoErrorf(t, f.clt.Get(t.Context(), client.ObjectKey{Name: name, Namespace: f.ns}, &corev1.Secret{}),
+		"referenced Secret %s does not exist", name)
 }

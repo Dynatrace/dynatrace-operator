@@ -74,7 +74,7 @@ func testOperatorRBAC(t *testing.T, clt client.Client, cfg *rest.Config) {
 
 		f.pm.Spec.Gateway.Replicas = new(int32(2))
 		f.pm.Spec.Scraper.Replicas = new(int32(3))
-		f.pm.Spec.TargetAllocator.ScrapeInterval = metav1.Duration{Duration: 30 * time.Second}
+		f.pm.Spec.TargetAllocator.ScrapeInterval = new(metav1.Duration{Duration: 30 * time.Second})
 		f.updatePrometheusMonitoring(t)
 
 		_, err := r.Reconcile(t.Context(), f.request())

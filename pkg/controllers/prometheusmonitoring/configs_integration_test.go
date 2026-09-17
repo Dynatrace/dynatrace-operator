@@ -14,6 +14,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/prometheusmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/test/integrationtests"
 	"github.com/stretchr/testify/assert"
@@ -209,8 +210,10 @@ func testConfigMaps(t *testing.T, clt client.Client) {
 		assert.Equal(t, "1m0s", cfg.PrometheusCR.ScrapeInterval, "the CRD default for scrapeInterval is 60s")
 
 		// All four Prometheus Operator CRD kinds must be selected the same way, otherwise a
-		// scrapeCRSelector would silently apply to some kinds only.
-		defaultSelector := &metav1.LabelSelector{MatchLabels: map[string]string{"prometheus.dynatrace.com": "true"}}
+		// customResourceSelector would silently apply to some kinds only.
+		defaultSelector := &metav1.LabelSelector{
+			MatchLabels: map[string]string{prometheusmonitoring.DefaultCustomResourceSelectorLabel: "true"},
+		}
 		assert.Equal(t, defaultSelector, cfg.PrometheusCR.PodMonitorSelector)
 		assert.Equal(t, defaultSelector, cfg.PrometheusCR.ServiceMonitorSelector)
 		assert.Equal(t, defaultSelector, cfg.PrometheusCR.ScrapeConfigSelector)
@@ -222,7 +225,7 @@ func testConfigMaps(t *testing.T, clt client.Client) {
 		assert.Nil(t, cfg.PrometheusCR.ProbeNamespaceSelector)
 	})
 
-	t.Run("a custom scrapeCRSelector reaches every CRD kind", func(t *testing.T) {
+	t.Run("a custom customResourceSelector reaches every CRD kind", func(t *testing.T) {
 		selector := &metav1.LabelSelector{MatchLabels: map[string]string{"team": "edp"}}
 		nsSelector := &metav1.LabelSelector{MatchLabels: map[string]string{"monitored": "true"}}
 		f.pm.Spec.TargetAllocator.CustomResourceSelector = selector
@@ -622,6 +625,36 @@ func testSecrets(t *testing.T, clt client.Client) {
 
 		f.assertProxySecretIsReferenced(t, clt)
 	})
+
+	t.Run("a custom pull secret reaches every component", func(t *testing.T) {
+		// Each component has its own unit test for the reference. What only one full reconcile shows
+		// is that all three get it from the same DynaKube field: a component that never wired it up
+		// leaves exactly one pod template unable to pull, which is invisible per component.
+		f := newFixture(t, clt, "secrets-pull")
+
+		const pullSecretName = "custom-pull-secret"
+
+		integrationtests.CreateKubernetesObject(t, clt, &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{Name: pullSecretName, Namespace: f.ns},
+			Type:       corev1.SecretTypeDockerConfigJson,
+			Data:       map[string][]byte{corev1.DockerConfigJsonKey: []byte(`{"auths":{}}`)},
+		})
+		f.dk.Spec.CustomPullSecret = pullSecretName
+		require.NoError(t, clt.Update(t.Context(), f.dk))
+
+		f.reconcileSuccessfully(t)
+
+		for _, c := range components() {
+			tmpl, _ := c.podSpec(t, f)
+
+			assert.Equalf(t, []corev1.LocalObjectReference{{Name: pullSecretName}}, tmpl.Spec.ImagePullSecrets,
+				"%s does not reference the DynaKube's custom pull secret", c.name)
+
+			for _, pullSecret := range tmpl.Spec.ImagePullSecrets {
+				f.assertSecretExists(t, pullSecret.Name)
+			}
+		}
+	})
 }
 
 func projectedSecretName(t *testing.T, volumes []corev1.Volume, volumeName string) string {
@@ -713,4 +746,25 @@ func (f *fixture) assertProxySecretIsReferenced(t *testing.T, clt client.Client)
 	}
 
 	assert.Equal(t, 2, found, "both HTTP_PROXY and HTTPS_PROXY must be set from the proxy Secret")
+
+	// Whatever the proxy is, in-cluster traffic must not go through it: the gateway talks to the
+	// apiserver for the k8s_attributes processor, and the scraper reaches the gateway by Service
+	// DNS. A NO_PROXY that misses those turns a working proxy setup into no telemetry at all.
+	noProxy := envByName(t, container, "NO_PROXY")
+	assert.Contains(t, noProxy.Value, "$(KUBERNETES_SERVICE_HOST)")
+	assert.Contains(t, noProxy.Value, "kubernetes.default")
+}
+
+func envByName(t *testing.T, container corev1.Container, name string) corev1.EnvVar {
+	t.Helper()
+
+	for _, env := range container.Env {
+		if env.Name == name {
+			return env
+		}
+	}
+
+	require.Failf(t, "env not found", "container %s does not define %s", container.Name, name)
+
+	return corev1.EnvVar{}
 }
