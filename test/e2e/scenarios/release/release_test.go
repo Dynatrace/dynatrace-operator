@@ -58,23 +58,23 @@ func TestMain(m *testing.M) {
 	testEnv.Run(m)
 }
 
-func TestRelease_operator_upgrade_110(t *testing.T) {
+func TestRelease_helm_upgrade_110(t *testing.T) {
 	testEnv.Test(t, upgrade.Feature(t, releaseTag110))
 }
 
-func TestRelease_operator_upgrade_19(t *testing.T) {
+func TestRelease_helm_upgrade_19(t *testing.T) {
 	testEnv.Test(t, upgrade.Feature(t, releaseTag19))
 }
 
-func TestRelease_operator_upgrade_18(t *testing.T) {
+func TestRelease_helm_upgrade_18(t *testing.T) {
 	testEnv.Test(t, upgrade.Feature(t, releaseTag18))
 }
 
-func TestRelease_operator_upgrade_17(t *testing.T) {
+func TestRelease_helm_upgrade_17(t *testing.T) {
 	testEnv.Test(t, upgrade.Feature(t, releaseTag17))
 }
 
-func TestRelease_operator_upgrade_16(t *testing.T) {
+func TestRelease_helm_upgrade_16(t *testing.T) {
 	testEnv.Test(t, upgrade.Feature(t, releaseTag16))
 }
 

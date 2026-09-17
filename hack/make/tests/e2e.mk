@@ -172,9 +172,9 @@ test/e2e/cloudnative/csi-migration:
 test/e2e/manifest/upgrade:
 	$(GOTESTCMD) -timeout 100m ./test/e2e/scenarios/release -run "manifest_upgrade" $(SKIPCLEANUP)
 
-## Runs Operator upgrade e2e test only
-test/e2e/operator/upgrade:
-	$(GOTESTCMD) -timeout 100m ./test/e2e/scenarios/release -run "operator_upgrade" $(SKIPCLEANUP)
+## Runs helm-based operator upgrade e2e test only
+test/e2e/helm/upgrade:
+	$(GOTESTCMD) -timeout 100m ./test/e2e/scenarios/release -run "helm_upgrade" $(SKIPCLEANUP)
 
 ## Runs extensions upgrade e2e test only
 test/e2e/extensions/upgrade:
