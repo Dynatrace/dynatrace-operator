@@ -208,7 +208,7 @@ jobs:
       - name: Copy fips image to artifact for rhcc
         uses: ./.github/actions/copy-image-to-artifact
         with:
-          image: quay.io/${{ vars.RHCC_REPOSITORY }}-fips:${{ needs.prepare.outputs.version }}-fips@${{ needs.build-push.outputs.fips-digest }}
+          image: quay.io/${{ vars.RHCC_REPOSITORY }}:${{ needs.prepare.outputs.version }}-fips@${{ needs.build-push.outputs.fips-digest }}
           artifact-name: release-fips-image-rhcc
           registry: quay.io
           registry-token: ${{ secrets.RHCC_PASSWORD }}
