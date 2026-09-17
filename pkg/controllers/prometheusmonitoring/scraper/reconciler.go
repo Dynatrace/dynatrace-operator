@@ -62,6 +62,7 @@ type Reconciler struct {
 type reconcileScope struct {
 	// Required for reconcile
 	Owner       *prometheusmonitoring.PrometheusMonitoring
+	DynaKube    *dynakube.DynaKube
 	Spec        *prometheusmonitoring.Scraper
 	AppLabels   *k8slabel.Labels
 	ImageClient image.Client
@@ -80,6 +81,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, pm *prometheusmonitoring.Pro
 
 	scope := &reconcileScope{
 		Owner:       pm,
+		DynaKube:    dk,
 		Spec:        pm.Scraper(),
 		AppLabels:   k8slabel.OTelScraper(),
 		ImageClient: imageClient,
@@ -223,9 +225,7 @@ func mutateDeployment(deploy *appsv1.Deployment, s *reconcileScope) {
 		deploy.Spec.Replicas = s.Spec.Replicas
 	}
 
-	if s.Spec.UpdateStrategy.Type != "" {
-		deploy.Spec.Strategy = s.Spec.UpdateStrategy
-	}
+	deploy.Spec.Strategy = k8sdeployment.MergeStrategy(deploy.Spec.Strategy, s.Spec.Strategy)
 
 	deploy.Spec.Selector = &metav1.LabelSelector{MatchLabels: s.AppLabels.AsSelector()}
 	deploy.Spec.Template.Spec.ServiceAccountName = serviceAccountName
@@ -235,6 +235,7 @@ func mutateDeployment(deploy *appsv1.Deployment, s *reconcileScope) {
 	deploy.Spec.Template.Spec.PriorityClassName = s.Spec.PriorityClassName
 	deploy.Spec.Template.Spec.Tolerations = s.Spec.Tolerations
 	deploy.Spec.Template.Spec.TopologySpreadConstraints = s.Spec.TopologySpreadConstraints
+	deploy.Spec.Template.Spec.ImagePullSecrets = s.DynaKube.CustomPullSecretReferences()
 	deploy.Spec.Template.Spec.Volumes = buildVolumes(s)
 	// The stored container is passed in so buildContainer can preserve apiserver-defaulted
 	// fields (e.g. ImagePullPolicy, probe timeouts) and avoid spurious diffs.

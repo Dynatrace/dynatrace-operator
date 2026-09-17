@@ -21,6 +21,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -58,7 +59,9 @@ func TestReconcileLifecycle(t *testing.T) {
 		clt:        clt,
 		reconciler: &scraper.Reconciler{Client: clt},
 		pm:         pm,
-		dk:         &dynakube.DynaKube{},
+		// A custom pull secret is set so imagePullSecrets is a non-empty value, letting the
+		// stabilize phase prove it reconciles without spurious Update calls.
+		dk: &dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{CustomPullSecret: "custom-pull-secret"}},
 	}
 
 	t.Run("missing-image", func(t *testing.T) { runMissingImagePhase(t, deps) })
@@ -88,6 +91,11 @@ func runProvisionPhase(t *testing.T, deps *lifecycleDeps) {
 	imgClient := imagemock.NewClient(t)
 	imgClient.EXPECT().GetComponentLatestInfo(mock.Anything, mock.Anything, mock.Anything).Return(nil, errors.New("no scraper image available")).Maybe()
 	deps.pm.Spec.Scraper.Image = integrationImage
+	// Only rollingUpdate is set, no type: the apiserver defaults the type to RollingUpdate on its own.
+	maxUnavailable := intstr.FromInt(0)
+	deps.pm.Spec.Scraper.Strategy = appsv1.DeploymentStrategy{
+		RollingUpdate: &appsv1.RollingUpdateDeployment{MaxUnavailable: &maxUnavailable},
+	}
 	require.NoError(t, deps.reconciler.Reconcile(t.Context(), deps.pm, deps.dk, imgClient))
 
 	cm := getConfigMap(t, deps)
@@ -98,6 +106,10 @@ func runProvisionPhase(t *testing.T, deps *lifecycleDeps) {
 
 	require.Len(t, deploy.Spec.Template.Spec.Containers, 1)
 	assert.Equal(t, integrationImage, deploy.Spec.Template.Spec.Containers[0].Image)
+
+	assert.Equal(t, appsv1.RollingUpdateDeploymentStrategyType, deploy.Spec.Strategy.Type)
+	require.NotNil(t, deploy.Spec.Strategy.RollingUpdate)
+	assert.Equal(t, &maxUnavailable, deploy.Spec.Strategy.RollingUpdate.MaxUnavailable)
 
 	assertServiceAbsent(t, deps)
 }
