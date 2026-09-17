@@ -165,12 +165,12 @@ func execMakeCommand(rootDir, makeTarget string, envVariables ...string) error {
 func InstallViaHelm(releaseTag string, withCSI bool, extraOpts ...helm.Option) error {
 	manager := helm.New("''")
 
-	_platform, err := platform.NewResolver().GetPlatform()
+	p, err := platform.NewResolver().GetPlatform()
 	if err != nil {
 		return err
 	}
 
-	opts, err := getHelmOptions(releaseTag, _platform, withCSI)
+	opts, err := getHelmOptions(releaseTag, p, withCSI)
 	if err != nil {
 		return err
 	}
@@ -225,12 +225,12 @@ func UninstallViaManifests(platform string, withCSI bool) error {
 // InstallReleasedManifest downloads and applies operator manifests from a GitHub release.
 func InstallReleasedManifest(releaseTag string, withCSI bool) env.Func {
 	return func(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
-		_platform, err := platform.NewResolver().GetPlatform()
+		p, err := platform.NewResolver().GetPlatform()
 		if err != nil {
 			return ctx, err
 		}
 
-		if err = installViaReleasedManifests(releaseTag, _platform, withCSI); err != nil {
+		if err = installViaReleasedManifests(releaseTag, p, withCSI); err != nil {
 			return ctx, err
 		}
 
@@ -252,12 +252,12 @@ func installViaReleasedManifests(releaseTag, operatorPlatform string, withCSI bo
 // InstallLocalViaManifests applies the current build's generated manifests.
 func InstallLocalViaManifests(withCSI bool) env.Func {
 	return func(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
-		_platform, err := platform.NewResolver().GetPlatform()
+		p, err := platform.NewResolver().GetPlatform()
 		if err != nil {
 			return ctx, err
 		}
 
-		err = InstallViaManifests(_platform, withCSI)
+		err = InstallViaManifests(p, withCSI)
 		if err != nil {
 			return ctx, err
 		}
@@ -269,12 +269,12 @@ func InstallLocalViaManifests(withCSI bool) env.Func {
 // UninstallCurrentManifests deletes the operator using the current build's generated manifests.
 func UninstallCurrentManifests(withCSI bool) env.Func {
 	return func(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
-		_platform, err := platform.NewResolver().GetPlatform()
+		p, err := platform.NewResolver().GetPlatform()
 		if err != nil {
 			return ctx, err
 		}
 
-		return ctx, UninstallViaManifests(_platform, withCSI)
+		return ctx, UninstallViaManifests(p, withCSI)
 	}
 }
 
