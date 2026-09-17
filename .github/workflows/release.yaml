@@ -119,7 +119,7 @@ jobs:
       - name: Copy fips image to artifact for gcr
         uses: ./.github/actions/copy-image-to-artifact
         with:
-          image: gcr.io/${{ vars.GCR_REPOSITORY }}-fips:${{ needs.prepare.outputs.version }}@${{ needs.build-push.outputs.fips-digest }}
+          image: gcr.io/${{ vars.GCR_REPOSITORY }}:${{ needs.prepare.outputs.version }}-fips@${{ needs.build-push.outputs.fips-digest }}
           artifact-name: release-fips-image-gcr
           registry: gcr.io
           registry-token: ${{ secrets.GCR_JSON_KEY }}
@@ -149,7 +149,7 @@ jobs:
       - name: Copy fips image to artifact for dockerhub
         uses: ./.github/actions/copy-image-to-artifact
         with:
-          image: docker.io/${{ vars.DOCKERHUB_REPOSITORY }}-fips:${{ needs.prepare.outputs.version }}@${{ needs.build-push.outputs.fips-digest }}
+          image: docker.io/${{ vars.DOCKERHUB_REPOSITORY }}:${{ needs.prepare.outputs.version }}-fips@${{ needs.build-push.outputs.fips-digest }}
           artifact-name: release-fips-image-dockerhub
           registry: docker.io
           registry-token: ${{ secrets.DOCKERHUB_PASSWORD }}
@@ -179,7 +179,7 @@ jobs:
       - name: Copy fips image to artifact for amazon-ecr
         uses: ./.github/actions/copy-image-to-artifact
         with:
-          image: public.ecr.aws/${{ vars.ECR_REPOSITORY }}-fips:${{ needs.prepare.outputs.version }}@${{ needs.build-push.outputs.fips-digest }}
+          image: public.ecr.aws/${{ vars.ECR_REPOSITORY }}-fips:${{ needs.prepare.outputs.version }}-fips@${{ needs.build-push.outputs.fips-digest }}
           artifact-name: release-fips-image-amazon-ecr
           registry: public.ecr.aws
           registry-token: ${{ secrets.ECR_IMAGEPUSH_ROLE }}
@@ -208,7 +208,7 @@ jobs:
       - name: Copy fips image to artifact for rhcc
         uses: ./.github/actions/copy-image-to-artifact
         with:
-          image: quay.io/${{ vars.RHCC_REPOSITORY }}-fips:${{ needs.prepare.outputs.version }}@${{ needs.build-push.outputs.fips-digest }}
+          image: quay.io/${{ vars.RHCC_REPOSITORY }}-fips:${{ needs.prepare.outputs.version }}-fips@${{ needs.build-push.outputs.fips-digest }}
           artifact-name: release-fips-image-rhcc
           registry: quay.io
           registry-token: ${{ secrets.RHCC_PASSWORD }}
