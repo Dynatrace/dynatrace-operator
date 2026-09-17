@@ -30,15 +30,11 @@ import (
 const withCSI = true
 
 type upgradeOptions struct {
-	featureName     string
-	sampleNamespace string
-	installOld      env.Func
-	installNew      env.Func
-	// teardownDynakube deletes the DynaKube CR (and any tenant-side resources tied to it) before the
-	// operator itself is uninstalled. It is optional: nil when the DynaKube doesn't need explicit cleanup.
-	teardownDynakube func(b *features.FeatureBuilder, dk dynakubelatest.DynaKube)
-	// teardownOperator uninstalls the operator itself.
-	teardownOperator func(b *features.FeatureBuilder)
+	featureName      string
+	sampleNamespace  string
+	installOld       env.Func
+	installNew       env.Func
+	teardownOperator func(b *features.FeatureBuilder, dk dynakubelatest.DynaKube)
 }
 
 func Feature(t *testing.T, releaseTag string) features.Feature {
@@ -47,7 +43,7 @@ func Feature(t *testing.T, releaseTag string) features.Feature {
 		sampleNamespace: "helm-upgrade-sample",
 		installOld:      operator.Install(releaseTag, withCSI),
 		installNew:      operator.InstallLocal(withCSI),
-		teardownOperator: func(b *features.FeatureBuilder) {
+		teardownOperator: func(b *features.FeatureBuilder, _ dynakubelatest.DynaKube) {
 			b.WithTeardown("uninstall operator",
 				helpers.ToFeatureFunc(func(ctx context.Context, c *envconf.Config) (context.Context, error) {
 					// If we cleaned up during a fail-fast (aka.: /debug) it wouldn't be possible to investigate the error.
@@ -69,7 +65,7 @@ func ManifestFeature(t *testing.T, releaseTag string) features.Feature {
 		sampleNamespace: "manifest-upgrade-sample",
 		installOld:      operator.InstallReleasedManifest(releaseTag, withCSI),
 		installNew:      operator.InstallLocalViaManifests(withCSI),
-		teardownDynakube: func(b *features.FeatureBuilder, dk dynakubelatest.DynaKube) {
+		teardownOperator: func(b *features.FeatureBuilder, dk dynakubelatest.DynaKube) {
 			dynakube.Delete(b, features.LevelTeardown, dk)
 			b.WithTeardown("delete tenant secret",
 				func(ctx context.Context, t *testing.T, c *envconf.Config) context.Context {
@@ -80,8 +76,6 @@ func ManifestFeature(t *testing.T, releaseTag string) features.Feature {
 
 					return tenant.DeleteTenantSecret(dk.Name, dk.Namespace)(ctx, t, c)
 				})
-		},
-		teardownOperator: func(b *features.FeatureBuilder) {
 			b.WithTeardown("uninstall operator via manifests",
 				helpers.ToFeatureFunc(func(ctx context.Context, c *envconf.Config) (context.Context, error) {
 					// If we cleaned up during a fail-fast (aka.: /debug) it wouldn't be possible to investigate the error.
@@ -154,11 +148,7 @@ func buildUpgradeFeature(t *testing.T, releaseTag string, opts upgradeOptions) f
 	builder.WithTeardown("delete EC tenant config",
 		edgeconnectComponents.DeleteTenantConfig(edgeconnectSecretConfig, edgeConnectTenantConfig))
 
-	if opts.teardownDynakube != nil {
-		opts.teardownDynakube(builder, testDynakube)
-	}
-
-	opts.teardownOperator(builder)
+	opts.teardownOperator(builder, testDynakube)
 
 	return builder.Feature()
 }
