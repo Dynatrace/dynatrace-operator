@@ -162,7 +162,6 @@ func TestReconcileComponents(t *testing.T) {
 	clt, cfg := integrationtests.SetupTestEnvironmentWithConfig(t)
 
 	t.Run("creation", func(t *testing.T) { testCreation(t, clt) })
-	t.Run("ownership", func(t *testing.T) { testOwnership(t, clt) })
 	t.Run("workload-spec", func(t *testing.T) { testWorkloadSpec(t, clt) })
 	t.Run("references-resolve", func(t *testing.T) { testReferencesResolve(t, clt) })
 	t.Run("wiring", func(t *testing.T) { testWiring(t, clt) })
@@ -174,7 +173,6 @@ func TestReconcileComponents(t *testing.T) {
 	t.Run("drift-correction", func(t *testing.T) { testDriftCorrection(t, clt) })
 	t.Run("status", func(t *testing.T) { testStatus(t, clt) })
 	t.Run("error-paths", func(t *testing.T) { testErrorPaths(t, clt) })
-	t.Run("deletion", func(t *testing.T) { testDeletion(t, clt) })
 	t.Run("operator-rbac", func(t *testing.T) { testOperatorRBAC(t, clt, cfg) })
 	t.Run("component-rbac", func(t *testing.T) { testComponentRBAC(t, clt, cfg) })
 	t.Run("drift-correction-under-manager", func(t *testing.T) { testDriftCorrectionUnderManager(t, clt, cfg) })
@@ -228,28 +226,22 @@ func testCreation(t *testing.T, clt client.Client) {
 		assert.ElementsMatch(t, want, f.listAllObjects(t),
 			"an object exists in the namespace that is neither part of the fixture nor an expected managed object")
 	})
-}
 
-func testOwnership(t *testing.T, clt client.Client) {
-	f := newFixture(t, clt, "ownership")
-	f.reconcileSuccessfully(t)
+	t.Run("every managed object is owned by the PrometheusMonitoring", func(t *testing.T) {
+		// The exact owner reference (apiVersion, kind, blockOwnerDeletion) is pinned per object by
+		// the component golden files. What only the full inventory can show is that nothing is
+		// created unowned, which would survive the cascade and leak on delete.
+		for _, want := range expectedManagedObjects(f.pm) {
+			assert.Truef(t, metav1.IsControlledBy(f.getManagedObject(t, want), f.pm),
+				"%s is not controlled by the PrometheusMonitoring", want)
+		}
+	})
 
-	for _, want := range expectedManagedObjects(f.pm) {
-		t.Run(want.String(), func(t *testing.T) {
-			obj := f.getManagedObject(t, want)
-
-			refs := obj.GetOwnerReferences()
-			require.Len(t, refs, 1)
-
-			ref := refs[0]
-			assert.Equal(t, "PrometheusMonitoring", ref.Kind)
-			assert.Equal(t, v1alpha1.GroupVersion.String(), ref.APIVersion)
-			assert.Equal(t, f.pm.Name, ref.Name)
-			assert.Equal(t, f.pm.UID, ref.UID)
-			assert.Equal(t, new(true), ref.Controller)
-			assert.Equal(t, new(true), ref.BlockOwnerDeletion)
-		})
-	}
+	t.Run("no finalizer is added", func(t *testing.T) {
+		// Cleanup relies entirely on the owner references above. A finalizer nobody removes would
+		// wedge deletion, and there is no code to remove one.
+		assert.Empty(t, f.storedPrometheusMonitoring(t).Finalizers)
+	})
 }
 
 func testWorkloadSpec(t *testing.T, clt client.Client) {
@@ -296,13 +288,8 @@ func assertWorkloadSpec(t *testing.T, f *fixture, c component) {
 		assertContainerHardened(t, containerByName(t, tmpl, c.containerName))
 	})
 
-	t.Run("probes", func(t *testing.T) {
-		container := containerByName(t, tmpl, c.containerName)
-		require.NotNil(t, container.LivenessProbe)
-		require.NotNil(t, container.ReadinessProbe)
-		assert.NotNil(t, container.LivenessProbe.HTTPGet)
-		assert.NotNil(t, container.ReadinessProbe.HTTPGet)
-	})
+	// Probes are deliberately not asserted here: each component's golden workload pins both of them
+	// in full, and "a probe exists" adds nothing on top of that.
 
 	t.Run("image", func(t *testing.T) {
 		assert.Equal(t, f.imageFor(c.name), containerByName(t, tmpl, c.containerName).Image)
@@ -644,16 +631,9 @@ func testDriftCorrection(t *testing.T, clt client.Client) {
 		assert.Equal(t, testGatewayImage, f.gatewayStatefulSet(t).Spec.Template.Spec.Containers[0].Image)
 	})
 
-	t.Run("a deleted ConfigMap is recreated", func(t *testing.T) {
-		cm := f.configMap(t, f.pm.Scraper().GetDeploymentName())
-		require.NoError(t, clt.Delete(t.Context(), cm))
-
-		f.reconcileSuccessfully(t)
-
-		restored := f.configMap(t, f.pm.Scraper().GetDeploymentName())
-		assert.Equal(t, cm.Data, restored.Data)
-		assert.True(t, metav1.IsControlledBy(restored, f.pm))
-	})
+	// A deleted ConfigMap is not covered here: testDriftCorrectionUnderManager deletes one and
+	// proves both that it comes back and that the watch is what brought the reconcile, which is
+	// strictly more than this test could show by calling Reconcile by hand.
 
 	t.Run("a deleted Service is recreated", func(t *testing.T) {
 		svc := f.service(t, f.pm.TargetAllocator().GetDeploymentName())
@@ -722,51 +702,64 @@ func testStatus(t *testing.T, clt client.Client) {
 	})
 }
 
+// testErrorPaths covers the preconditions that make the reconcile bail out before it deploys
+// anything. Which phase each one produces is already covered exhaustively and cheaply by
+// TestReconcile and Test_setPhase against a fake client; what is only observable against a real
+// apiserver is that the bail-out really happens before any object is written, so the phase is
+// asserted here only to tie each precondition to the right outcome.
 func testErrorPaths(t *testing.T, clt client.Client) {
-	t.Run("missing DynaKube", func(t *testing.T) {
-		f := newFixture(t, clt, "err-no-dynakube")
-		require.NoError(t, clt.Delete(t.Context(), f.dk))
+	preconditions := []struct {
+		name      string
+		namespace string
+		prepare   func(t *testing.T, f *fixture)
+		phase     status.DeploymentPhase
+	}{
+		{
+			// errDynaKubeNotFound is swallowed by setPhase: it is an expected transient state while
+			// the DynaKube is still being created.
+			name:      "missing DynaKube",
+			namespace: "err-no-dynakube",
+			prepare:   func(t *testing.T, f *fixture) { require.NoError(t, clt.Delete(t.Context(), f.dk)) },
+			phase:     status.Deploying,
+		},
+		{
+			name:      "DynaKube not running",
+			namespace: "err-dynakube-pending",
+			prepare: func(t *testing.T, f *fixture) {
+				f.dk.Status.Phase = status.Deploying
+				require.NoError(t, f.dk.UpdateStatus(t.Context(), clt))
+			},
+			phase: status.Deploying,
+		},
+		{
+			name:      "token secret missing",
+			namespace: "err-no-secret",
+			prepare:   func(t *testing.T, f *fixture) { require.NoError(t, clt.Delete(t.Context(), f.tokenSecret(t))) },
+			phase:     status.Error,
+		},
+		{
+			name:      "data-ingest key missing from the token secret",
+			namespace: "err-no-data-ingest-key",
+			prepare: func(t *testing.T, f *fixture) {
+				secret := f.tokenSecret(t)
+				delete(secret.Data, token.DataIngestKey)
+				require.NoError(t, clt.Update(t.Context(), secret))
+			},
+			phase: status.Error,
+		},
+	}
 
-		// errDynaKubeNotFound is swallowed by setPhase: it is an expected transient state while the
-		// DynaKube is still being created.
-		require.NoError(t, f.reconcile(t))
+	for _, precondition := range preconditions {
+		t.Run(precondition.name, func(t *testing.T) {
+			f := newFixture(t, clt, precondition.namespace)
+			precondition.prepare(t, f)
 
-		assert.Equal(t, status.Deploying, f.storedPrometheusMonitoring(t).Status.Phase)
-		assert.Empty(t, f.listManagedObjects(t), "nothing may be deployed without a DynaKube")
-	})
+			require.NoError(t, f.reconcile(t))
 
-	t.Run("DynaKube not running", func(t *testing.T) {
-		f := newFixture(t, clt, "err-dynakube-pending")
-		f.dk.Status.Phase = status.Deploying
-		require.NoError(t, f.dk.UpdateStatus(t.Context(), clt))
-
-		require.NoError(t, f.reconcile(t))
-
-		assert.Equal(t, status.Deploying, f.storedPrometheusMonitoring(t).Status.Phase)
-		assert.Empty(t, f.listManagedObjects(t))
-	})
-
-	t.Run("token secret missing", func(t *testing.T) {
-		f := newFixture(t, clt, "err-no-secret")
-		require.NoError(t, clt.Delete(t.Context(), f.tokenSecret(t)))
-
-		require.NoError(t, f.reconcile(t))
-
-		assert.Equal(t, status.Error, f.storedPrometheusMonitoring(t).Status.Phase)
-		assert.Empty(t, f.listManagedObjects(t))
-	})
-
-	t.Run("data-ingest key missing from the token secret", func(t *testing.T) {
-		f := newFixture(t, clt, "err-no-data-ingest-key")
-		secret := f.tokenSecret(t)
-		delete(secret.Data, token.DataIngestKey)
-		require.NoError(t, clt.Update(t.Context(), secret))
-
-		require.NoError(t, f.reconcile(t))
-
-		assert.Equal(t, status.Error, f.storedPrometheusMonitoring(t).Status.Phase)
-		assert.Empty(t, f.listManagedObjects(t), "the gateway must not be deployed without a data-ingest token")
-	})
+			assert.Equal(t, precondition.phase, f.storedPrometheusMonitoring(t).Status.Phase)
+			assert.Empty(t, f.listManagedObjects(t), "nothing may be deployed when the reconcile bails out")
+		})
+	}
 
 	t.Run("objects created before a later failure are kept", func(t *testing.T) {
 		// The reconcile loop breaks on the first error and nothing rolls back, so a component that
@@ -787,21 +780,11 @@ func testErrorPaths(t *testing.T, clt client.Client) {
 	})
 }
 
-func testDeletion(t *testing.T, clt client.Client) {
-	f := newFixture(t, clt, "deletion")
-	f.reconcileSuccessfully(t)
-
-	// There is no finalizer, so cleanup relies entirely on the controller owner references
-	// asserted in testOwnership. envtest runs no garbage collector, so the cascade itself can only
-	// be verified on a real cluster (see the e2e follow-up).
-	assert.Empty(t, f.storedPrometheusMonitoring(t).Finalizers)
-
-	require.NoError(t, clt.Delete(t.Context(), f.pm))
-
-	result, err := f.r.Reconcile(t.Context(), f.request())
-	require.NoError(t, err, "reconciling a deleted PrometheusMonitoring must be a no-op")
-	assert.Empty(t, result)
-}
+// Deletion has no test of its own. The two things it could assert are covered elsewhere and
+// cheaper: that reconciling a deleted PrometheusMonitoring is a no-op is TestReconcile's
+// "get prometheusmonitoring deleted" case against a fake client, and that nothing holds the object
+// back is the finalizer check in testCreation. The cascade itself needs a real garbage collector,
+// so it belongs to the e2e suite, which already asserts the workloads disappear after a delete.
 
 // callCounter wraps a client.Client to count the writes issued through it. Status subresource
 // writes go through SubResource(), which the embedded client serves directly, so they are

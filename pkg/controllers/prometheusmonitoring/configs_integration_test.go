@@ -161,56 +161,37 @@ func unmarshalInto[T any](t *testing.T, raw json.RawMessage, what string) T {
 	return parsed
 }
 
-// testConfigMaps checks each rendered config on its own: valid, internally consistent, and
-// carrying the values the spec asked for.
+// testConfigMaps checks what the golden files in the component packages cannot: that each rendered
+// config is internally consistent, and that the values the apiserver defaulted into the CRD arrive
+// in it. The exact rendered bytes are pinned by those golden files, from an explicitly populated
+// spec, so nothing here restates a field they already cover.
 func testConfigMaps(t *testing.T, clt client.Client) {
 	f := newFixture(t, clt, "configmaps")
 	f.reconcileSuccessfully(t)
 
 	t.Run("gateway collector config", func(t *testing.T) {
-		cfg := f.gatewayConfig(t)
-		assertCollectorConfigConsistent(t, cfg)
-
-		require.Contains(t, cfg.Service.Pipelines, "metrics")
-		assert.Equal(t, []string{"otlp"}, cfg.Service.Pipelines["metrics"].Receivers)
-		assert.Equal(t, []string{"otlp_http"}, cfg.Service.Pipelines["metrics"].Exporters)
-		assert.Equal(t,
-			[]string{"memory_limiter", "metric_start_time", "cumulative_to_delta", "k8s_attributes", "transform"},
-			cfg.Service.Pipelines["metrics"].Processors)
-
-		exporter := unmarshalInto[otlpHTTPExporter](t, cfg.Exporters["otlp_http"], "gateway otlp_http exporter")
-		assert.Equal(t, testAPIURL+"/v2/otlp", exporter.Endpoint, "the tenant endpoint comes from the DynaKube apiUrl")
-		assert.Equal(t, "bearertokenauth", exporter.Auth.Authenticator)
-		assert.Empty(t, exporter.TLS.CAFile, "no custom CA is configured on the DynaKube")
+		assertCollectorConfigConsistent(t, f.gatewayConfig(t))
 	})
 
 	t.Run("scraper collector config", func(t *testing.T) {
 		cfg := f.scraperConfig(t)
 		assertCollectorConfigConsistent(t, cfg)
 
-		require.Contains(t, cfg.Service.Pipelines, "metrics")
-		assert.Equal(t, []string{"prometheus"}, cfg.Service.Pipelines["metrics"].Receivers)
-		assert.Equal(t, []string{"load_balancing"}, cfg.Service.Pipelines["metrics"].Exporters)
-
 		receiver := unmarshalInto[scraperReceiver](t, cfg.Receivers["prometheus"], "scraper prometheus receiver")
 		assert.Equal(t, "1m0s", receiver.TargetAllocator.Interval, "the CRD default for targetsPollInterval is 60s")
-		// Each scraper pod must identify itself to the target allocator with a unique, stable id,
-		// and the only thing that qualifies is its own pod name.
-		assert.Equal(t, "${env:MY_POD_NAME}", receiver.TargetAllocator.CollectorID)
+
+		// The config expands a placeholder the container has to define, which no single-object
+		// golden file can check.
 		f.assertEnvIsDefined(t, f.pm.Scraper().GetDeploymentName(), "scraper", "MY_POD_NAME")
 	})
 
-	t.Run("target allocator config", func(t *testing.T) {
+	t.Run("target allocator config carries the CRD defaults", func(t *testing.T) {
+		// The golden file renders an explicitly populated spec, so the defaults the apiserver
+		// applies when the user writes nothing are only observable here.
 		cfg := f.targetAllocatorConfig(t)
 
-		assert.Equal(t, "consistent-hashing", cfg.AllocationStrategy,
-			"consistent hashing keeps targets on the same scraper when the pool scales")
-		assert.Equal(t, "relabel-config", cfg.FilterStrategy)
-		assert.True(t, cfg.PrometheusCR.Enabled)
 		assert.Equal(t, "1m0s", cfg.PrometheusCR.ScrapeInterval, "the CRD default for scrapeInterval is 60s")
 
-		// All four Prometheus Operator CRD kinds must be selected the same way, otherwise a
-		// customResourceSelector would silently apply to some kinds only.
 		defaultSelector := &metav1.LabelSelector{
 			MatchLabels: map[string]string{prometheusmonitoring.DefaultCustomResourceSelectorLabel: "true"},
 		}
@@ -225,29 +206,9 @@ func testConfigMaps(t *testing.T, clt client.Client) {
 		assert.Nil(t, cfg.PrometheusCR.ProbeNamespaceSelector)
 	})
 
-	t.Run("a custom customResourceSelector reaches every CRD kind", func(t *testing.T) {
-		selector := &metav1.LabelSelector{MatchLabels: map[string]string{"team": "edp"}}
-		nsSelector := &metav1.LabelSelector{MatchLabels: map[string]string{"monitored": "true"}}
-		f.pm.Spec.TargetAllocator.CustomResourceSelector = selector
-		f.pm.Spec.TargetAllocator.CustomResourceNamespaceSelector = nsSelector
-		f.updatePrometheusMonitoring(t)
-		f.reconcileSuccessfully(t)
-
-		cfg := f.targetAllocatorConfig(t)
-		for name, got := range map[string]*metav1.LabelSelector{
-			"pod_monitor":     cfg.PrometheusCR.PodMonitorSelector,
-			"service_monitor": cfg.PrometheusCR.ServiceMonitorSelector,
-			"scrape_config":   cfg.PrometheusCR.ScrapeConfigSelector,
-			"probe":           cfg.PrometheusCR.ProbeSelector,
-		} {
-			assert.Equal(t, selector, got, "%s_selector", name)
-		}
-
-		assert.Equal(t, nsSelector, cfg.PrometheusCR.PodMonitorNamespaceSelector)
-		assert.Equal(t, nsSelector, cfg.PrometheusCR.ServiceMonitorNamespaceSelector)
-		assert.Equal(t, nsSelector, cfg.PrometheusCR.ScrapeConfigNamespaceSelector)
-		assert.Equal(t, nsSelector, cfg.PrometheusCR.ProbeNamespaceSelector)
-	})
+	// A custom customResourceSelector is not covered here: the target allocator's golden ConfigMap
+	// is rendered from a spec that sets both the selector and the namespace selector, so it already
+	// pins all eight fields the fan-out produces.
 
 	t.Run("a custom CA on the DynaKube reaches the gateway exporter and the pod", func(t *testing.T) {
 		integrationtests.CreateKubernetesObject(t, clt, &corev1.ConfigMap{

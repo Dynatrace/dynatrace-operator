@@ -142,13 +142,11 @@ func testComponentRBAC(t *testing.T, clt client.Client, cfg *rest.Config) {
 			clusterRole := chartClusterRole(t, c.clusterRoleTemplate)
 			binding := chartClusterRoleBinding(t, c.clusterRoleBindingTemplate)
 
-			// The chart's own wiring rather than an assumption about it: a ClusterRoleBinding that
-			// points at the wrong ClusterRole or ServiceAccount leaves the component with no
-			// permissions at all, which looks exactly like a missing rule from inside the pod.
-			assert.Equal(t, "ClusterRole", binding.RoleRef.Kind)
-			assert.Equal(t, clusterRole.Name, binding.RoleRef.Name)
+			// The binding's roleRef and its subject's kind and namespace are pinned by the helm
+			// unittest suite, which renders the template properly and covers the feature gate
+			// matrix too. The one thing it cannot know is which ServiceAccount the operator
+			// actually renders into the pod template, so only that cross-check lives here.
 			require.Len(t, binding.Subjects, 1)
-			assert.Equal(t, rbacv1.ServiceAccountKind, binding.Subjects[0].Kind)
 			assert.Equal(t, serviceAccountName, binding.Subjects[0].Name,
 				"the chart binds a different ServiceAccount than the one the pod template runs as")
 
