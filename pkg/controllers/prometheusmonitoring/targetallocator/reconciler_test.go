@@ -16,6 +16,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/prometheusmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	imagemock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/image"
@@ -299,6 +300,31 @@ func TestReconcileService(t *testing.T) {
 		expectErr := errors.New("boom")
 		err := (&Reconciler{Client: createErrorClient(expectErr)}).reconcileService(t.Context(), newTestScope(newTestPM("pm", "dynatrace")))
 		require.ErrorIs(t, err, expectErr)
+	})
+}
+
+func TestImagePullSecrets(t *testing.T) {
+	t.Setenv(k8senv.DTOperatorPullSecretEnvName, "")
+
+	t.Run("no pull secrets when the DynaKube has no custom pull secret", func(t *testing.T) {
+		deploy := &appsv1.Deployment{}
+
+		mutateDeployment(deploy, newTestScope(newTestPM("pm", "dynatrace")))
+
+		assert.Empty(t, deploy.Spec.Template.Spec.ImagePullSecrets)
+	})
+
+	t.Run("custom pull secret, no tenant registry pull secret", func(t *testing.T) {
+		s := newTestScope(newTestPM("pm", "dynatrace"))
+		s.DynaKube.Spec.CustomPullSecret = "custom-pull-secret"
+		deploy := &appsv1.Deployment{}
+
+		mutateDeployment(deploy, s)
+
+		assert.Equal(t, []corev1.LocalObjectReference{{Name: s.DynaKube.Spec.CustomPullSecret}}, deploy.Spec.Template.Spec.ImagePullSecrets)
+
+		// tenant pull secret not needed for the Prometheus components
+		assert.NotContains(t, deploy.Spec.Template.Spec.ImagePullSecrets, corev1.LocalObjectReference{Name: s.DynaKube.TenantRegistryPullSecretName()})
 	})
 }
 
