@@ -230,23 +230,18 @@ func InstallReleasedManifest(releaseTag string, withCSI bool) env.Func {
 			return ctx, err
 		}
 
-		if err = installViaReleasedManifests(releaseTag, p, withCSI); err != nil {
+		filename := p + ".yaml"
+		if withCSI {
+			filename = p + "-csi.yaml"
+		}
+
+		manifestURL := fmt.Sprintf("%s/v%s/%s", githubReleaseBaseURL, releaseTag, filename)
+		if err = execMakeCommand(project.RootDir(), "manifests/apply/released", "MANIFEST_URL="+manifestURL); err != nil {
 			return ctx, err
 		}
 
 		return VerifyInstall(ctx, envConfig, withCSI)
 	}
-}
-
-func installViaReleasedManifests(releaseTag, operatorPlatform string, withCSI bool) error {
-	filename := operatorPlatform + ".yaml"
-	if withCSI {
-		filename = operatorPlatform + "-csi.yaml"
-	}
-
-	manifestURL := fmt.Sprintf("%s/v%s/%s", githubReleaseBaseURL, releaseTag, filename)
-
-	return execMakeCommand(project.RootDir(), "manifests/apply/released", "MANIFEST_URL="+manifestURL)
 }
 
 // InstallLocalViaManifests applies the current build's generated manifests.
