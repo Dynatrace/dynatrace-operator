@@ -8,6 +8,7 @@ package upgrade
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 
 	dynakubelatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -29,6 +30,12 @@ import (
 
 const withCSI = true
 
+// sanitizeReleaseTag makes a release tag (e.g. "1.10.2") safe to use inside a Kubernetes object name,
+// which must be a valid RFC 1123 label and therefore cannot contain dots.
+func sanitizeReleaseTag(releaseTag string) string {
+	return strings.ReplaceAll(releaseTag, ".", "-")
+}
+
 type upgradeOptions struct {
 	featureName      string
 	sampleNamespace  string
@@ -40,7 +47,7 @@ type upgradeOptions struct {
 func Feature(t *testing.T, releaseTag string) features.Feature {
 	return buildUpgradeFeature(t, releaseTag, upgradeOptions{
 		featureName:     "dk-upgrade-operator-via-helm",
-		sampleNamespace: "helm-upgrade-sample",
+		sampleNamespace: "helm-upgrade-sample-" + sanitizeReleaseTag(releaseTag),
 		installOld:      operator.Install(releaseTag, withCSI),
 		installNew:      operator.InstallLocal(withCSI),
 		teardownOperator: func(b *features.FeatureBuilder, _ dynakubelatest.DynaKube) {
@@ -62,7 +69,7 @@ func Feature(t *testing.T, releaseTag string) features.Feature {
 func ManifestFeature(t *testing.T, releaseTag string) features.Feature {
 	return buildUpgradeFeature(t, releaseTag, upgradeOptions{
 		featureName:     "dk-upgrade-operator-via-manifest",
-		sampleNamespace: "manifest-upgrade-sample",
+		sampleNamespace: "manifest-upgrade-sample-" + sanitizeReleaseTag(releaseTag),
 		installOld:      operator.InstallReleasedManifest(releaseTag, withCSI),
 		installNew:      operator.InstallLocalViaManifests(withCSI),
 		teardownOperator: func(b *features.FeatureBuilder, dk dynakubelatest.DynaKube) {
@@ -96,6 +103,7 @@ func buildUpgradeFeature(t *testing.T, releaseTag string, opts upgradeOptions) f
 
 	secretConfig := tenant.GetSingleTenantSecret(t)
 	testDynakube := *dynakube.New(
+		dynakube.WithName("dynakube-"+sanitizeReleaseTag(releaseTag)),
 		dynakube.WithAPIURL(secretConfig.APIURL),
 		dynakube.WithCloudNativeSpec(cloudnative.DefaultCloudNativeSpec()),
 	)
