@@ -121,7 +121,9 @@ spec:
               - key: dataIngestToken
                 path: data-ingest-token
               name: dk
-  updateStrategy: {}
+  updateStrategy:
+    rollingUpdate:
+      partition: 1
 status:
   availableReplicas: 0
   replicas: 0
