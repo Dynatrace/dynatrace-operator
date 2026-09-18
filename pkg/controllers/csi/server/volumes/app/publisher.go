@@ -37,6 +37,8 @@ type Publisher struct {
 
 const (
 	retryLimitReachedMsg = "reached max mount attempts for pod, attaching dummy volume, monitoring disabled"
+
+	podInfoFilePerm = 0666
 )
 
 func (pub *Publisher) PublishVolume(ctx context.Context, volumeCfg *csivolumes.VolumeConfig) (*csi.NodePublishVolumeResponse, error) {
@@ -219,14 +221,8 @@ func (pub *Publisher) preparePodInfoUpperDir(volumeCfg *csivolumes.VolumeConfig)
 	content := pub.path.AppMountPodInfoDir(volumeCfg.DynakubeName, volumeCfg.PodNamespace, volumeCfg.PodName)
 	destPath := pub.path.OverlayVarPodInfo(volumeCfg.VolumeID)
 
-	destFile, err := os.OpenFile(destPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, os.ModePerm)
-	if err != nil {
-		return errors.WithMessagef(err, "failed to open destination pod-info file, path: %s", destPath)
-	}
-
-	_, err = destFile.WriteString(content)
-	if err != nil {
-		return errors.WithMessagef(err, "failed write into pod-info file, path: %s", destPath)
+	if err := os.WriteFile(destPath, []byte(content), podInfoFilePerm); err != nil {
+		return errors.WithMessagef(err, "failed to write pod-info file, path: %s", destPath)
 	}
 
 	return nil
