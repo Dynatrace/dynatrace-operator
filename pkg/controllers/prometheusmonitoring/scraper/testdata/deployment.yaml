@@ -22,7 +22,8 @@ spec:
       app.kubernetes.io/instance: otel-scraper
       app.kubernetes.io/managed-by: dynatrace-operator
       app.kubernetes.io/name: opentelemetry-collector
-  strategy: {}
+  strategy:
+    type: Recreate
   template:
     metadata:
       annotations:
