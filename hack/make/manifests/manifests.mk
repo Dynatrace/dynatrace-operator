@@ -19,5 +19,9 @@ manifests/apply/%: manifests/prepare-directory manifests/kubernetes manifests/op
 	kubectl get namespace $(MANIFEST_NAMESPACE) >/dev/null 2>&1 || kubectl create namespace $(MANIFEST_NAMESPACE)
 	kubectl apply -f $($*) # Apply how a user would based on release notes
 
+manifests/apply/released:
+	kubectl get namespace $(MANIFEST_NAMESPACE) >/dev/null 2>&1 || kubectl create namespace $(MANIFEST_NAMESPACE)
+	kubectl apply -f $(MANIFEST_URL)
+
 manifests/delete/%: manifests/prepare-directory manifests/kubernetes manifests/openshift
 	kubectl delete --ignore-not-found -f $($*)
