@@ -15,6 +15,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/prometheusmonitoring"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	imagemock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/image"
@@ -49,18 +50,27 @@ func newTestPM(name, namespace string) *prometheusmonitoring.PrometheusMonitorin
 						},
 					},
 				},
-				TargetsPollInterval: metav1.Duration{Duration: 60 * time.Second},
+				TargetsPollInterval: new(metav1.Duration{Duration: 60 * time.Second}),
 			},
 		},
 	}
 }
 
 func newTestScope(pm *prometheusmonitoring.PrometheusMonitoring) *reconcileScope {
+	return newTestScopeWithDynaKube(pm, newTestDynaKube())
+}
+
+func newTestScopeWithDynaKube(pm *prometheusmonitoring.PrometheusMonitoring, dk *dynakube.DynaKube) *reconcileScope {
 	return &reconcileScope{
 		Owner:     pm,
+		DynaKube:  dk,
 		Spec:      pm.Scraper(),
 		AppLabels: k8slabel.OTelScraper(),
 	}
+}
+
+func newTestDynaKube() *dynakube.DynaKube {
+	return &dynakube.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: "dk", Namespace: "dynatrace"}}
 }
 
 func createErrorClient(createErr error) client.Client {
@@ -180,6 +190,7 @@ func TestReconcileDeployment(t *testing.T) {
 		pm.Spec.Scraper.Annotations = map[string]string{"custom": "annotation"}
 		pm.Spec.Scraper.Labels = map[string]string{"custom": "label"}
 		pm.Spec.Scraper.Args = []string{"--foo=bar"}
+		pm.Spec.Scraper.Strategy = appsv1.DeploymentStrategy{Type: appsv1.RecreateDeploymentStrategyType}
 		s := newTestScope(pm)
 		s.ConfigMapHash = "deadbeef"
 		c := fake.NewClient()
@@ -283,6 +294,7 @@ func TestMutateDeploymentIsIdempotent(t *testing.T) {
 	pm := newTestPM("pm", "dynatrace")
 	pm.Spec.Scraper.Image = testImage
 	s := newTestScope(pm)
+	s.DynaKube.Spec.CustomPullSecret = "custom-pull-secret"
 
 	deploy := &appsv1.Deployment{}
 	mutateDeployment(deploy, s)
@@ -291,4 +303,29 @@ func TestMutateDeploymentIsIdempotent(t *testing.T) {
 	mutateDeployment(deploy, s)
 
 	assert.Equal(t, first, deploy)
+}
+
+func TestImagePullSecrets(t *testing.T) {
+	t.Setenv(k8senv.DTOperatorPullSecretEnvName, "")
+
+	t.Run("no pull secrets when the DynaKube has no custom pull secret", func(t *testing.T) {
+		deploy := &appsv1.Deployment{}
+
+		mutateDeployment(deploy, newTestScope(newTestPM("pm", "dynatrace")))
+
+		assert.Empty(t, deploy.Spec.Template.Spec.ImagePullSecrets)
+	})
+
+	t.Run("custom pull secret, no tenant registry pull secret", func(t *testing.T) {
+		dk := newTestDynaKube()
+		dk.Spec.CustomPullSecret = "custom-pull-secret"
+		deploy := &appsv1.Deployment{}
+
+		mutateDeployment(deploy, newTestScopeWithDynaKube(newTestPM("pm", "dynatrace"), dk))
+
+		assert.Equal(t, []corev1.LocalObjectReference{{Name: dk.Spec.CustomPullSecret}}, deploy.Spec.Template.Spec.ImagePullSecrets)
+
+		// tenant pull secret not needed for the Prometheus components
+		assert.NotContains(t, deploy.Spec.Template.Spec.ImagePullSecrets, corev1.LocalObjectReference{Name: dk.TenantRegistryPullSecretName()})
+	})
 }

@@ -224,6 +224,8 @@ func mutateStatefulSet(sts *appsv1.StatefulSet, s *reconcileScope) {
 		sts.Spec.Replicas = s.Spec.Replicas
 	}
 
+	sts.Spec.UpdateStrategy = k8sstatefulset.MergeUpdateStrategy(sts.Spec.UpdateStrategy, s.Spec.UpdateStrategy)
+
 	sts.Spec.ServiceName = s.Spec.GetStatefulSetName()
 
 	sts.Spec.PodManagementPolicy = appsv1.ParallelPodManagement
@@ -239,6 +241,7 @@ func mutateStatefulSet(sts *appsv1.StatefulSet, s *reconcileScope) {
 	sts.Spec.Template.Spec.PriorityClassName = s.Spec.PriorityClassName
 	sts.Spec.Template.Spec.Tolerations = s.Spec.Tolerations
 	sts.Spec.Template.Spec.TopologySpreadConstraints = s.Spec.TopologySpreadConstraints
+	sts.Spec.Template.Spec.ImagePullSecrets = s.DynaKube.CustomPullSecretReferences()
 	sts.Spec.Template.Spec.Volumes = buildVolumes(s)
 	// The stored container is passed in so buildContainer can preserve apiserver-defaulted
 	// fields (e.g. ImagePullPolicy, probe timeouts) and avoid spurious diffs.

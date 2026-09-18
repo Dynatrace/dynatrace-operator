@@ -62,10 +62,15 @@ func TestReconcileLifecycle(t *testing.T) {
 		Return(nil, errors.New("fleet image API unavailable")).Maybe()
 
 	deps := &lifecycleDeps{
-		clt:         clt,
-		reconciler:  &gateway.Reconciler{Client: clt},
-		pm:          pm,
-		dk:          &dynakube.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: integrationDynaKubeRef, Namespace: integrationNamespace}},
+		clt:        clt,
+		reconciler: &gateway.Reconciler{Client: clt},
+		pm:         pm,
+		// A custom pull secret is set so imagePullSecrets is a non-empty value, letting the
+		// stabilize phase prove it reconciles without spurious Update calls.
+		dk: &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{Name: integrationDynaKubeRef, Namespace: integrationNamespace},
+			Spec:       dynakube.DynaKubeSpec{CustomPullSecret: "custom-pull-secret"},
+		},
 		imageClient: imageClient,
 	}
 
@@ -92,6 +97,10 @@ func runProvisionPhase(t *testing.T, deps *lifecycleDeps) {
 	t.Helper()
 
 	deps.pm.Spec.Gateway.Image = integrationImage
+	// Only rollingUpdate is set, no type: the apiserver defaults the type to RollingUpdate on its own.
+	deps.pm.Spec.Gateway.UpdateStrategy = appsv1.StatefulSetUpdateStrategy{
+		RollingUpdate: &appsv1.RollingUpdateStatefulSetStrategy{Partition: new(int32(1))},
+	}
 	require.NoError(t, deps.reconciler.Reconcile(t.Context(), deps.pm, deps.dk, deps.imageClient))
 
 	cm := getConfigMap(t, deps)
@@ -104,6 +113,12 @@ func runProvisionPhase(t *testing.T, deps *lifecycleDeps) {
 
 	require.Len(t, sts.Spec.Template.Spec.Containers, 1)
 	assert.Equal(t, integrationImage, sts.Spec.Template.Spec.Containers[0].Image)
+
+	// MaxUnavailable isn't asserted: whether the apiserver defaults it depends on the
+	// MaxUnavailableStatefulSet feature gate.
+	assert.Equal(t, appsv1.RollingUpdateStatefulSetStrategyType, sts.Spec.UpdateStrategy.Type)
+	require.NotNil(t, sts.Spec.UpdateStrategy.RollingUpdate)
+	assert.Equal(t, new(int32(1)), sts.Spec.UpdateStrategy.RollingUpdate.Partition)
 }
 
 // runStabilizePhase reconciles repeatedly with unchanged input. None of the three resources may be rewritten.

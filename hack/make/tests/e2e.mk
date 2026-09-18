@@ -168,9 +168,13 @@ test/e2e/cloudnative/switchmodes:
 test/e2e/cloudnative/csi-migration:
 	$(GOTESTCMD) -timeout 40m ./test/e2e/scenarios/standard -run "cloudnative_csi_migration" $(SKIPCLEANUP)
 
-## Runs Operator upgrade e2e test only
-test/e2e/operator/upgrade:
-	$(GOTESTCMD) -timeout 100m ./test/e2e/scenarios/release -run "operator_upgrade" $(SKIPCLEANUP)
+## Runs manifest-based operator upgrade e2e tests (install released version → upgrade to current build via kubectl apply)
+test/e2e/manifest/upgrade:
+	$(GOTESTCMD) -timeout 100m ./test/e2e/scenarios/release -run "manifest_upgrade" $(SKIPCLEANUP)
+
+## Runs helm-based operator upgrade e2e test only
+test/e2e/helm/upgrade:
+	$(GOTESTCMD) -timeout 100m ./test/e2e/scenarios/release -run "helm_upgrade" $(SKIPCLEANUP)
 
 ## Runs extensions upgrade e2e test only
 test/e2e/extensions/upgrade:
@@ -436,3 +440,7 @@ test/e2e/token/migration:
 test/e2e/imagevolumes:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "TestNoCSI_image_volume_injection" $(SKIPCLEANUP)
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/standard -run "TestStandard_cloudnative_image_volume_injection" $(SKIPCLEANUP)
+
+## Runs PrometheusMonitoring e2e test only
+test/e2e/prometheus-monitoring:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi -run "prometheus_monitoring" $(SKIPCLEANUP)

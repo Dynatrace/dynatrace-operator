@@ -36,11 +36,11 @@ type ScraperSpec struct {
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default="60s"
 	// +kubebuilder:validation:Format=duration
-	TargetsPollInterval metav1.Duration `json:"targetsPollInterval,omitempty"`
+	TargetsPollInterval *metav1.Duration `json:"targetsPollInterval,omitempty"`
 
 	// Deployment update strategy for the scraper pool.
 	// +kubebuilder:validation:Optional
-	UpdateStrategy appsv1.DeploymentStrategy `json:"updateStrategy,omitzero"`
+	Strategy appsv1.DeploymentStrategy `json:"strategy,omitzero"`
 }
 
 // NewScraper wraps the given Spec together with the owning PrometheusMonitoring name.

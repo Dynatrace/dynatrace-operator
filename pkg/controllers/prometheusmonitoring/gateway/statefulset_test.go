@@ -11,6 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	imagemock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/image"
 	"github.com/stretchr/testify/assert"
@@ -97,6 +98,9 @@ func TestReconcileStatefulSet(t *testing.T) {
 		pm.Spec.Gateway.Resources = corev1.ResourceRequirements{
 			Limits: corev1.ResourceList{corev1.ResourceMemory: resource.MustParse("500Mi")},
 		}
+		pm.Spec.Gateway.UpdateStrategy = appsv1.StatefulSetUpdateStrategy{
+			RollingUpdate: &appsv1.RollingUpdateStatefulSetStrategy{Partition: new(int32(1))},
+		}
 		s := newTestScopeWithDynaKube(pm, newTestDynaKube())
 		s.ConfigMapHash = "deadbeef"
 		s.DynaKube.Status.KubernetesClusterName = "prometheus"
@@ -139,5 +143,30 @@ func TestReconcileStatefulSet(t *testing.T) {
 		err := r.reconcileStatefulset(t.Context(), newTestScopeWithDynaKube(pm, newTestDynaKube()))
 
 		require.ErrorIs(t, err, expectErr)
+	})
+}
+
+func TestImagePullSecrets(t *testing.T) {
+	t.Setenv(k8senv.DTOperatorPullSecretEnvName, "")
+
+	t.Run("no pull secrets when the DynaKube has no custom pull secret", func(t *testing.T) {
+		sts := &appsv1.StatefulSet{}
+
+		mutateStatefulSet(sts, newTestScopeWithDynaKube(newTestPM("pm", "dynatrace"), newTestDynaKube()))
+
+		assert.Empty(t, sts.Spec.Template.Spec.ImagePullSecrets)
+	})
+
+	t.Run("custom pull secret, no tenant registry pull secret", func(t *testing.T) {
+		dk := newTestDynaKube()
+		dk.Spec.CustomPullSecret = "custom-pull-secret"
+		sts := &appsv1.StatefulSet{}
+
+		mutateStatefulSet(sts, newTestScopeWithDynaKube(newTestPM("pm", "dynatrace"), dk))
+
+		assert.Equal(t, []corev1.LocalObjectReference{{Name: dk.Spec.CustomPullSecret}}, sts.Spec.Template.Spec.ImagePullSecrets)
+
+		// tenant pull secret not needed for the Prometheus components
+		assert.NotContains(t, sts.Spec.Template.Spec.ImagePullSecrets, corev1.LocalObjectReference{Name: dk.TenantRegistryPullSecretName()})
 	})
 }
