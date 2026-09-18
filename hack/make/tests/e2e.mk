@@ -277,6 +277,12 @@ test/e2e/usepublicregistry/dbexecutor:
 test/e2e/usepublicregistry/logmon:
 	$(GOTESTCMD) -timeout 30m ./test/e2e/scenarios/nocsi -run "use_public_registry_logmon" $(SKIPCLEANUP)
 
+test/e2e/usepublicregistry/kspm:
+	$(GOTESTCMD) -timeout 30m ./test/e2e/scenarios/nocsi -run "use_public_registry_kspm" $(SKIPCLEANUP)
+
+test/e2e/usepublicregistry/telemetryingest:
+	$(GOTESTCMD) -timeout 30m ./test/e2e/scenarios/nocsi -run "use_public_registry_telemetryingest" $(SKIPCLEANUP)
+
 ## Runs combined all-features test: CloudNative OA + ActiveGate + DBExecutor, each with an explicit image override, plus use-public-registry flag
 test/e2e/usepublicregistry/all-features-with-image-overrides:
 	$(GOTESTCMD) -timeout 30m ./test/e2e/scenarios/nocsi -run "use_public_registry_all_features_with_image_overrides" $(SKIPCLEANUP)
