@@ -6,18 +6,14 @@
 package kspm
 
 import (
-	"context"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/activegate"
 	componentDynakube "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sdaemonset"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sstatefulset"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
 	componentKspm "github.com/Dynatrace/dynatrace-operator/test/helpers/components/kspm"
-	"github.com/stretchr/testify/require"
-	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
@@ -31,6 +27,7 @@ func Feature(t *testing.T) features.Feature {
 	options := []componentDynakube.Option{
 		componentDynakube.WithAPIURL(secretConfig.APIURL),
 		componentDynakube.WithKSPM(),
+		componentDynakube.WithKSPMImageRef(t, componentDynakube.GetLatestKSPMImageTagURI(t)),
 		componentDynakube.WithActiveGate(),
 	}
 
@@ -41,8 +38,6 @@ func Feature(t *testing.T) features.Feature {
 	builder.Assess("active gate pod is running", activegate.CheckContainer(&testDynakube))
 
 	builder.Assess("kspm node config collector started", k8sdaemonset.IsReady(testDynakube.KSPM().GetDaemonSetName(), testDynakube.Namespace))
-
-	builder.Assess("kspm node config collector uses resolved image", kspmUsesResolvedImage(&testDynakube))
 
 	builder.Assess("check if KSPM settings were created on tenant", componentKspm.CheckKSPMSettingsExistOnTenant(secretConfig, &testDynakube))
 
@@ -105,15 +100,4 @@ func OptionalScopes(t *testing.T) features.Feature {
 	builder.Assess("kspm node config collector started", k8sdaemonset.IsReady(testDynakube.KSPM().GetDaemonSetName(), testDynakube.Namespace))
 
 	return builder.Feature()
-}
-
-func kspmUsesResolvedImage(dk *dynakube.DynaKube) features.Func {
-	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		var current dynakube.DynaKube
-		require.NoError(t, envConfig.Client().Resources().Get(ctx, dk.Name, dk.Namespace, &current))
-
-		require.NotEmpty(t, current.Status.KSPM.ResolvedImage)
-
-		return k8sdaemonset.VerifyUsesImage(current.KSPM().GetDaemonSetName(), current.Namespace, current.Status.KSPM.ResolvedImage)(ctx, t, envConfig)
-	}
 }

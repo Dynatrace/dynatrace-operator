@@ -198,6 +198,22 @@ func TestNoCSI_use_public_registry_logmon_with_override(t *testing.T) {
 	testEnv.Test(t, usepublicregistry.LogMonWithOverride(t))
 }
 
+func TestNoCSI_use_public_registry_kspm(t *testing.T) {
+	testEnv.Test(t, usepublicregistry.KSPM(t))
+}
+
+func TestNoCSI_use_public_registry_kspm_with_override(t *testing.T) {
+	testEnv.Test(t, usepublicregistry.KSPMWithOverride(t))
+}
+
+func TestNoCSI_use_public_registry_telemetryingest(t *testing.T) {
+	testEnv.Test(t, usepublicregistry.TelemetryIngest(t))
+}
+
+func TestNoCSI_use_public_registry_telemetryingest_with_override(t *testing.T) {
+	testEnv.Test(t, usepublicregistry.TelemetryIngestWithOverride(t))
+}
+
 func TestNoCSI_use_public_registry_all_features_with_image_overrides(t *testing.T) {
 	testEnv.Test(t, usepublicregistry.AllFeaturesWithImageOverrides(t))
 }

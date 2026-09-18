@@ -362,6 +362,118 @@ func dbExecutorFeature(t *testing.T, featureName, dkName, override string) featu
 	return builder.Feature()
 }
 
+func KSPM(t *testing.T) features.Feature {
+	return kspmFeature(t,
+		"use-public-registry-kspm",
+		"use-public-registry-kspm",
+		"")
+}
+
+func KSPMWithOverride(t *testing.T) features.Feature {
+	return kspmFeature(t,
+		"use-public-registry-kspm-with-override",
+		"use-public-registry-kspm-ovrd",
+		publicRegistryOverride(t))
+}
+
+func TelemetryIngest(t *testing.T) features.Feature {
+	return telemetryIngestFeature(t,
+		"use-public-registry-telemetryingest",
+		"use-public-registry-ti",
+		"")
+}
+
+func TelemetryIngestWithOverride(t *testing.T) features.Feature {
+	return telemetryIngestFeature(t,
+		"use-public-registry-telemetryingest-with-override",
+		"use-public-registry-ti-ovrd",
+		publicRegistryOverride(t))
+}
+
+func kspmFeature(t *testing.T, featureName, dkName, override string) features.Feature {
+	builder := features.New(featureName)
+	builder.Assess("devregistry pull secret exists", requireDevRegistrySecret())
+
+	secretConfig := tenant.GetSingleTenantSecret(t)
+
+	options := []dynakubeComponents.Option{
+		dynakubeComponents.WithName(dkName),
+		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
+		dynakubeComponents.WithKSPM(),
+		dynakubeComponents.WithActiveGate(),
+	}
+	if override != "" {
+		options = append(options, dynakubeComponents.WithPublicRegistryOverride(override))
+	}
+	if !tenant.UsePlatformToken() {
+		options = append(options, dynakubeComponents.WithUsePublicRegistryFF())
+	}
+
+	testDynakube := *dynakubeComponents.New(options...)
+
+	dynakubeComponents.Install(builder, &secretConfig, testDynakube)
+
+	builder.Assess("active gate pod is running", activegate.CheckContainer(&testDynakube))
+	builder.Assess("KSPM node config collector started",
+		k8sdaemonset.IsReady(testDynakube.KSPM().GetDaemonSetName(), testDynakube.Namespace))
+	builder.Assess("KSPM node config collector uses resolved image",
+		kspmUsesResolvedImage(testDynakube))
+
+	return builder.Feature()
+}
+
+func telemetryIngestFeature(t *testing.T, featureName, dkName, override string) features.Feature {
+	builder := features.New(featureName)
+	builder.Assess("devregistry pull secret exists", requireDevRegistrySecret())
+
+	secretConfig := tenant.GetSingleTenantSecret(t)
+
+	options := []dynakubeComponents.Option{
+		dynakubeComponents.WithName(dkName),
+		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
+		dynakubeComponents.WithTelemetryIngestEnabled(true),
+	}
+	if override != "" {
+		options = append(options, dynakubeComponents.WithPublicRegistryOverride(override))
+	}
+	if !tenant.UsePlatformToken() {
+		options = append(options, dynakubeComponents.WithUsePublicRegistryFF())
+	}
+
+	testDynakube := *dynakubeComponents.New(options...)
+
+	dynakubeComponents.Install(builder, &secretConfig, testDynakube)
+
+	builder.Assess("otel collector started",
+		k8sstatefulset.IsReady(testDynakube.OTelCollectorStatefulsetName(), testDynakube.Namespace))
+	builder.Assess("otel collector uses resolved image",
+		otelCollectorUsesResolvedImage(testDynakube))
+
+	return builder.Feature()
+}
+
+func kspmUsesResolvedImage(dk dynakube.DynaKube) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		var current dynakube.DynaKube
+		require.NoError(t, envConfig.Client().Resources().Get(ctx, dk.Name, dk.Namespace, &current))
+
+		require.NotEmpty(t, current.Status.KSPM.ResolvedImage)
+
+		return k8sdaemonset.VerifyUsesImage(current.KSPM().GetDaemonSetName(), current.Namespace, current.Status.KSPM.ResolvedImage)(ctx, t, envConfig)
+	}
+}
+
+func otelCollectorUsesResolvedImage(dk dynakube.DynaKube) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		var current dynakube.DynaKube
+		require.NoError(t, envConfig.Client().Resources().Get(ctx, dk.Name, dk.Namespace, &current))
+
+		require.NotEmpty(t, current.Status.OTelCollector.ResolvedImage)
+
+		return k8sstatefulset.VerifyUsesImage(current.OTelCollectorStatefulsetName(), current.Namespace, current.Status.OTelCollector.ResolvedImage)(ctx, t, envConfig)
+	}
+}
+
 func logMonFeature(t *testing.T, featureName, dkName, override string) features.Feature {
 	builder := features.New(featureName)
 	builder.Assess("devregistry pull secret exists", requireDevRegistrySecret())
