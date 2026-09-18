@@ -6,6 +6,7 @@
 package upgrade
 
 import (
+	"context"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
@@ -16,6 +17,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
 	"github.com/stretchr/testify/require"
+	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
@@ -43,6 +45,15 @@ func FromAPIToPlatformToken(t *testing.T, releaseTag string) features.Feature {
 	builder.Assess("upgrade operator", helpers.ToFeatureFunc(operator.InstallLocal(withCSI), true))
 	componentDynakube.VerifyStartup(builder, features.LevelAssess, testDynakube)
 	componentDynakube.VerifyPlatformTokenStatus(builder, testDynakube, true)
+
+	builder.WithTeardown("uninstall operator",
+		helpers.ToFeatureFunc(func(ctx context.Context, c *envconf.Config) (context.Context, error) {
+			if c.FailFast() {
+				return ctx, nil
+			}
+
+			return operator.Uninstall(withCSI)(ctx, c)
+		}, false))
 
 	return builder.Feature()
 }
