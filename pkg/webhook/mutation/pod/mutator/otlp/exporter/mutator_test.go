@@ -900,7 +900,7 @@ func Test_ensureCertificateVolumeMounted(t *testing.T) {
 
 func Test_addActiveGateCertVolume(t *testing.T) {
 	newPod := func() *corev1.Pod { return &corev1.Pod{} }
-	baseDK := func() dynakube.DynaKube { return dynakube.DynaKube{} }
+	baseDK := func() *dynakube.DynaKube { return &dynakube.DynaKube{} }
 
 	t.Run("no activegate -> no volume", func(t *testing.T) {
 		dk := baseDK() // ActiveGate not enabled

@@ -162,7 +162,7 @@ func (m Mutator) mutate(request *dtwebhook.BaseRequest, log logd.Logger) (bool, 
 	}
 
 	if shouldAddCertificate && mutated {
-		err = addActiveGateCertVolume(request.DynaKube, request.Pod)
+		err = addActiveGateCertVolume(&request.DynaKube, request.Pod)
 	}
 
 	return mutated, err
@@ -237,7 +237,7 @@ func setNotInjectedAnnotationFunc(reason string) func(*corev1.Pod) {
 	}
 }
 
-func addActiveGateCertVolume(dk dynakube.DynaKube, pod *corev1.Pod) error {
+func addActiveGateCertVolume(dk *dynakube.DynaKube, pod *corev1.Pod) error {
 	if !dk.ActiveGate().HasCaCert() && dk.Spec.TrustedCAs == "" {
 		return nil
 	}
@@ -254,12 +254,11 @@ func addActiveGateCertVolume(dk dynakube.DynaKube, pod *corev1.Pod) error {
 		return nil
 	}
 
-	defaultMode := int32(420)
 	agCertVolume := corev1.Volume{
 		Name: ActiveGateTrustedCertVolumeName,
 		VolumeSource: corev1.VolumeSource{
 			Secret: &corev1.SecretVolumeSource{
-				DefaultMode: &defaultMode,
+				DefaultMode: new(int32(420)),
 				SecretName:  consts.OTLPExporterCertsSecretName,
 			},
 		},

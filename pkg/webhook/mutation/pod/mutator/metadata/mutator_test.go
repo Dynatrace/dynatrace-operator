@@ -1291,7 +1291,7 @@ func TestInitResources(t *testing.T) {
 			},
 		}
 
-		dk := dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				MetadataEnrichment: metadataenrichment.Spec{InitResources: customResources},
 			},
@@ -1301,7 +1301,7 @@ func TestInitResources(t *testing.T) {
 	})
 
 	t.Run("falls back to defaults when initResources is not set", func(t *testing.T) {
-		dk := dynakube.DynaKube{}
+		dk := &dynakube.DynaKube{}
 
 		expected := corev1.ResourceRequirements{
 			Requests: k8sresource.NewResourceList("30m", "30Mi"),
