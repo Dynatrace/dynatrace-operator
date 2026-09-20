@@ -104,10 +104,10 @@ func mutateInitContainer(mutationRequest *dtwebhook.MutationRequest, installPath
 		}
 	}
 
-	return addInitArgs(mutationRequest.Pod, mutationRequest.InstallContainer, mutationRequest.DynaKube, installPath, log)
+	return addInitArgs(mutationRequest.Pod, mutationRequest.InstallContainer, &mutationRequest.DynaKube, installPath, log)
 }
 
-func addInitArgs(pod *corev1.Pod, initContainer *corev1.Container, dk dynakube.DynaKube, installPath string, log logd.Logger) error {
+func addInitArgs(pod *corev1.Pod, initContainer *corev1.Container, dk *dynakube.DynaKube, installPath string, log logd.Logger) error {
 	args := []arg.Arg{
 		{Name: k8sinit.SourceFolderFlag, Value: AgentCodeModuleSource},
 		{Name: k8sinit.TargetFolderFlag, Value: consts.AgentInitBinDirMount},
@@ -128,7 +128,7 @@ func addInitArgs(pod *corev1.Pod, initContainer *corev1.Container, dk dynakube.D
 		args = append(args, arg.Arg{Name: configure.IsFullstackFlag}, arg.Arg{Name: configure.TenantFlag, Value: tenantUUID})
 	}
 
-	if technology := getTechnology(*pod, dk); technology != "" {
+	if technology := getTechnology(pod, dk); technology != "" {
 		args = append(args, arg.Arg{Name: move.TechnologyFlag, Value: technology})
 	}
 
@@ -141,6 +141,6 @@ func addInitArgs(pod *corev1.Pod, initContainer *corev1.Container, dk dynakube.D
 	return nil
 }
 
-func getTechnology(pod corev1.Pod, dk dynakube.DynaKube) string {
+func getTechnology(pod *corev1.Pod, dk *dynakube.DynaKube) string {
 	return maputils.GetField(pod.Annotations, AnnotationTechnologies, dk.FF().GetNodeImagePullTechnology())
 }

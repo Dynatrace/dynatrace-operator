@@ -417,7 +417,7 @@ func TestAddOneAgentToContainer(t *testing.T) {
 			},
 		}
 		addVolumeMounts(&container, installPath, isImageVolume(baseReq))
-		addOneAgentEnvsToContainer(baseReq.DynaKube, &container, corev1.Namespace{}, installPath, "")
+		addOneAgentEnvsToContainer(&baseReq.DynaKube, &container, corev1.Namespace{}, installPath, "")
 
 		assert.Len(t, container.VolumeMounts, 2) // preload,bin
 
@@ -445,7 +445,7 @@ func TestAddOneAgentToContainer(t *testing.T) {
 
 	t.Run("add runtime class env when runtimeClassName is set", func(t *testing.T) {
 		container := corev1.Container{}
-		dk := dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				OneAgent: oneagent.Spec{ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{}},
 			},

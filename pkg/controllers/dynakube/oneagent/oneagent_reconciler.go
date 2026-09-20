@@ -144,7 +144,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtCli
 		return err
 	}
 
-	log.Info("reconciled " + deploymentmetadata.GetOneAgentDeploymentType(*dk))
+	log.Info("reconciled " + deploymentmetadata.GetOneAgentDeploymentType(dk))
 
 	return nil
 }
@@ -345,7 +345,7 @@ func (r *Reconciler) buildDesiredDaemonSet(ctx context.Context, dk *dynakube.Dyn
 }
 
 func (r *Reconciler) reconcileInstanceStatuses(ctx context.Context, dk *dynakube.DynaKube) error {
-	pods, listOpts, err := r.getOneagentPods(ctx, dk, deploymentmetadata.GetOneAgentDeploymentType(*dk))
+	pods, listOpts, err := r.getOneagentPods(ctx, dk, deploymentmetadata.GetOneAgentDeploymentType(dk))
 	if err != nil {
 		handlePodListError(ctx, err, listOpts)
 	}

@@ -691,27 +691,27 @@ func TestAddInitArgs(t *testing.T) {
 	}
 
 	t.Run("default appmon -> only common args", func(t *testing.T) {
-		pod := corev1.Pod{}
-		dk := dynakube.DynaKube{}
+		pod := &corev1.Pod{}
+		dk := &dynakube.DynaKube{}
 		dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
 
-		initContainer := corev1.Container{}
+		initContainer := &corev1.Container{}
 
-		err := addInitArgs(&pod, &initContainer, dk, installPath, logd.Get())
+		err := addInitArgs(pod, initContainer, dk, installPath, logd.Get())
 		require.NoError(t, err)
 
 		assert.ElementsMatch(t, commonArgs, initContainer.Args)
 	})
 	t.Run("default cloudnative -> common args + cloudnative args", func(t *testing.T) {
 		tenantUUID := "my-tenant-123"
-		pod := corev1.Pod{}
-		dk := dynakube.DynaKube{}
+		pod := &corev1.Pod{}
+		dk := &dynakube.DynaKube{}
 		dk.Spec.OneAgent.CloudNativeFullStack = &oneagent.CloudNativeFullStackSpec{}
 		dk.Status.ActiveGate.ConnectionInfo.TenantUUID = tenantUUID
 
-		initContainer := corev1.Container{}
+		initContainer := &corev1.Container{}
 
-		err := addInitArgs(&pod, &initContainer, dk, installPath, logd.Get())
+		err := addInitArgs(pod, initContainer, dk, installPath, logd.Get())
 		require.NoError(t, err)
 
 		expectedArgs := slices.Concat([]string{
@@ -722,30 +722,30 @@ func TestAddInitArgs(t *testing.T) {
 		assert.ElementsMatch(t, expectedArgs, initContainer.Args)
 	})
 	t.Run("default cloudnative + no-tenant -> error", func(t *testing.T) {
-		pod := corev1.Pod{}
-		dk := dynakube.DynaKube{}
+		pod := &corev1.Pod{}
+		dk := &dynakube.DynaKube{}
 		dk.Spec.OneAgent.CloudNativeFullStack = &oneagent.CloudNativeFullStackSpec{}
 		dk.Status.ActiveGate.ConnectionInfo.TenantUUID = ""
 
-		initContainer := corev1.Container{}
+		initContainer := &corev1.Container{}
 
-		err := addInitArgs(&pod, &initContainer, dk, installPath, logd.Get())
+		err := addInitArgs(pod, initContainer, dk, installPath, logd.Get())
 		require.ErrorAs(t, err, new(webhook.MutatorError))
 	})
 	t.Run("cloudnative + tech from dk -> common args + cloudnative args + tech arg", func(t *testing.T) {
 		tenantUUID := "my-tenant-123"
 		technology := "java,php"
-		pod := corev1.Pod{}
-		dk := dynakube.DynaKube{}
+		pod := &corev1.Pod{}
+		dk := &dynakube.DynaKube{}
 		dk.Spec.OneAgent.CloudNativeFullStack = &oneagent.CloudNativeFullStackSpec{}
 		dk.Status.ActiveGate.ConnectionInfo.TenantUUID = tenantUUID
 		dk.Annotations = map[string]string{
 			AnnotationTechnologies: technology,
 		}
 
-		initContainer := corev1.Container{}
+		initContainer := &corev1.Container{}
 
-		err := addInitArgs(&pod, &initContainer, dk, installPath, logd.Get())
+		err := addInitArgs(pod, initContainer, dk, installPath, logd.Get())
 		require.NoError(t, err)
 
 		expectedArgs := slices.Concat([]string{
@@ -759,16 +759,16 @@ func TestAddInitArgs(t *testing.T) {
 
 	t.Run("appmon + tech from pod -> common args + tech arg", func(t *testing.T) {
 		technology := "java,php"
-		pod := corev1.Pod{}
+		pod := &corev1.Pod{}
 		pod.Annotations = map[string]string{
 			AnnotationTechnologies: technology,
 		}
-		dk := dynakube.DynaKube{}
+		dk := &dynakube.DynaKube{}
 		dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
 
-		initContainer := corev1.Container{}
+		initContainer := &corev1.Container{}
 
-		err := addInitArgs(&pod, &initContainer, dk, installPath, logd.Get())
+		err := addInitArgs(pod, initContainer, dk, installPath, logd.Get())
 		require.NoError(t, err)
 
 		expectedArgs := slices.Concat([]string{
@@ -830,8 +830,8 @@ func TestGetTechnology(t *testing.T) {
 
 	for _, test := range testCases {
 		t.Run(test.title, func(t *testing.T) {
-			pod := corev1.Pod{}
-			dk := dynakube.DynaKube{}
+			pod := &corev1.Pod{}
+			dk := &dynakube.DynaKube{}
 
 			pod.Annotations = test.podAnnotations
 			dk.Annotations = test.dkAnnotations

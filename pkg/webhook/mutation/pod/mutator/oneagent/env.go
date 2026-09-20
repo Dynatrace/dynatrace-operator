@@ -14,7 +14,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func addDeploymentMetadataEnv(container *corev1.Container, dk dynakube.DynaKube) {
+func addDeploymentMetadataEnv(container *corev1.Container, dk *dynakube.DynaKube) {
 	if k8senv.Contains(container.Env, DynatraceMetadataEnv) {
 		return
 	}

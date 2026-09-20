@@ -151,13 +151,13 @@ func mutateUserContainers(request *dtwebhook.BaseRequest, installPath string, lo
 	for _, container := range newContainers {
 		log.Info("adding OneAgent to container", "name", container.Name)
 		addVolumeMounts(container, installPath, isImageVolumeEnabled)
-		addOneAgentEnvsToContainer(request.DynaKube, container, request.Namespace, installPath, ptr.Deref(request.Pod.Spec.RuntimeClassName, ""))
+		addOneAgentEnvsToContainer(&request.DynaKube, container, request.Namespace, installPath, ptr.Deref(request.Pod.Spec.RuntimeClassName, ""))
 	}
 
 	return len(newContainers) > 0
 }
 
-func addOneAgentEnvsToContainer(dk dynakube.DynaKube, container *corev1.Container, namespace corev1.Namespace, installPath string, runtimeClassName string) {
+func addOneAgentEnvsToContainer(dk *dynakube.DynaKube, container *corev1.Container, namespace corev1.Namespace, installPath string, runtimeClassName string) {
 	addDeploymentMetadataEnv(container, dk)
 	addPreloadEnv(container, installPath)
 	addDTStorageEnv(container)
