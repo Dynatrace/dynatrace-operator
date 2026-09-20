@@ -316,7 +316,7 @@ func getInjectedPod(t *testing.T) *corev1.Pod {
 
 	h := createTestHandler(webhookmock.NewMutator(t), webhookmock.NewMutator(t))
 
-	installContainer := h.createInitContainerBase(t.Context(), pod, *getTestDynakube())
+	installContainer := h.createInitContainerBase(t.Context(), pod, getTestDynakube())
 	pod.Spec.InitContainers = append(pod.Spec.InitContainers, *installContainer)
 
 	return pod

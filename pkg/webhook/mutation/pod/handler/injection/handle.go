@@ -107,7 +107,7 @@ func (h *Handler) Handle(mutationRequest *dtwebhook.MutationRequest) error {
 }
 
 func (h *Handler) handlePodMutation(mutationRequest *dtwebhook.MutationRequest) (bool, error) {
-	mutationRequest.InstallContainer = h.createInitContainerBase(mutationRequest.Context, mutationRequest.Pod, mutationRequest.DynaKube)
+	mutationRequest.InstallContainer = h.createInitContainerBase(mutationRequest.Context, mutationRequest.Pod, &mutationRequest.DynaKube)
 
 	var mutated bool
 
