@@ -25,11 +25,11 @@ var (
 
 type VersionLabelMapping map[string]string
 
-func NewVersionLabelMapping(namespace corev1.Namespace) VersionLabelMapping {
+func NewVersionLabelMapping(namespace *corev1.Namespace) VersionLabelMapping {
 	return mergeMappingWithDefault(getMappingFromNamespace(namespace))
 }
 
-func getMappingFromNamespace(namespace corev1.Namespace) VersionLabelMapping {
+func getMappingFromNamespace(namespace *corev1.Namespace) VersionLabelMapping {
 	annotationLabelMap := map[string]string{
 		versionMappingAnnotationName: ReleaseVersionEnv,
 		productMappingAnnotationName: ReleaseProductEnv,

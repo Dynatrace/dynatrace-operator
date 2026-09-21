@@ -28,7 +28,7 @@ func (wh *webhook) createMutationRequestBase(ctx context.Context, request admiss
 		return nil, err
 	}
 
-	dkName, err := getDynakubeName(*namespace)
+	dkName, err := getDynakubeName(namespace)
 	if err != nil && !wh.deployedViaOLM {
 		return nil, err
 	} else if err != nil {
@@ -44,7 +44,7 @@ func (wh *webhook) createMutationRequestBase(ctx context.Context, request admiss
 		return nil, err
 	}
 
-	mutationRequest := dtwebhook.NewMutationRequest(ctx, *namespace, nil, pod, dk)
+	mutationRequest := dtwebhook.NewMutationRequest(ctx, namespace, nil, pod, dk)
 
 	return mutationRequest, nil
 }
@@ -77,7 +77,7 @@ func getNamespaceFromRequest(ctx context.Context, apiReader client.Reader, req a
 	return &namespace, nil
 }
 
-func getDynakubeName(namespace corev1.Namespace) (string, error) {
+func getDynakubeName(namespace *corev1.Namespace) (string, error) {
 	dynakubeName, ok := namespace.Labels[dtwebhook.InjectionInstanceLabel]
 	if !ok {
 		return "", errors.Errorf("no DynaKube instance set for namespace: %s", namespace.Name)

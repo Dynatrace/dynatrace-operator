@@ -92,5 +92,5 @@ func newRequest(t *testing.T) *mutator.MutationRequest {
 	ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: testNamespace}}
 	dk := &dynakube.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: "dk", Namespace: testNamespace}}
 
-	return mutator.NewMutationRequest(t.Context(), *ns, nil, pod, dk)
+	return mutator.NewMutationRequest(t.Context(), ns, nil, pod, dk)
 }

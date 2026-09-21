@@ -70,7 +70,7 @@ func TestGetNamespaceFromRequest(t *testing.T) {
 func TestGetDynakubeName(t *testing.T) {
 	t.Run("should return the dynakube's name", func(t *testing.T) {
 		namespace := getTestNamespace()
-		dynakubeName, err := getDynakubeName(*namespace)
+		dynakubeName, err := getDynakubeName(namespace)
 		require.NoError(t, err)
 		assert.Equal(t, testDynakubeName, dynakubeName)
 	})
@@ -91,7 +91,7 @@ func TestGetDynakube(t *testing.T) {
 func createTestMutationRequest(t *testing.T, dk *dynakube.DynaKube) *dtwebhook.MutationRequest {
 	t.Helper()
 
-	return dtwebhook.NewMutationRequest(t.Context(), *getTestNamespace(), nil, getTestPod(), dk)
+	return dtwebhook.NewMutationRequest(t.Context(), getTestNamespace(), nil, getTestPod(), dk)
 }
 
 func createTestAdmissionRequest(pod *corev1.Pod) *admission.Request {

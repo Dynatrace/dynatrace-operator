@@ -32,7 +32,7 @@ import (
 type mutatorTestCase struct {
 	name           string
 	objects        []runtime.Object
-	namespace      corev1.Namespace
+	namespace      *corev1.Namespace
 	pod            *corev1.Pod
 	wantAttributes map[string][]string
 }
@@ -87,7 +87,7 @@ func Test_Mutator_Mutate(t *testing.T) {
 				replicaSetOwned,
 				deployment,
 			},
-			namespace: corev1.Namespace{
+			namespace: &corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "ns",
 					Labels: map[string]string{
@@ -147,7 +147,7 @@ func Test_Mutator_Mutate(t *testing.T) {
 					},
 				},
 			},
-			namespace: corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "ns"}},
+			namespace: &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "ns"}},
 			pod: &corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace:   "ns",
@@ -199,7 +199,7 @@ func Test_Mutator_Mutate(t *testing.T) {
 				},
 				Spec: corev1.PodSpec{Containers: []corev1.Container{{Name: "c1"}}},
 			},
-			namespace: corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "ns"}},
+			namespace: &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "ns"}},
 			wantAttributes: map[string][]string{
 				"c1": {
 					"k8s.workload.name=pod1",
@@ -221,7 +221,7 @@ func Test_Mutator_Mutate(t *testing.T) {
 		{
 			name:      "multiple containers all mutated (job)",
 			objects:   []runtime.Object{&batchv1.Job{ObjectMeta: metav1.ObjectMeta{Name: "jobx", Namespace: "ns"}}},
-			namespace: corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "ns"}},
+			namespace: &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "ns"}},
 			pod: &corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: "ns",
@@ -270,8 +270,9 @@ func Test_Mutator_Mutate(t *testing.T) {
 			},
 		},
 		{
-			name:    "container excluded via annotation is skipped",
-			objects: nil,
+			namespace: &corev1.Namespace{},
+			name:      "container excluded via annotation is skipped",
+			objects:   nil,
 			pod: &corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace:   "ns",
@@ -371,7 +372,7 @@ func runMutatorTests(t *testing.T, dk *latestdynakube.DynaKube, tests []mutatorT
 				nodeNameVar := k8senv.Find(container.Env, "K8S_NODE_NAME")
 
 				require.NotNil(t, podNameVar, "missing K8S_PODNAME env var")
-				require.NotNil(t, podUIDVar, "missing K8S_PODUID env var")
+				require.NotNil(t, podUIDVar, "clearmissing K8S_PODUID env var")
 				require.NotNil(t, nodeNameVar, "missing K8S_NODE_NAME env var")
 
 				assert.Equal(t, "metadata.name", podNameVar.ValueFrom.FieldRef.FieldPath)
@@ -416,7 +417,7 @@ func Test_Mutator_EncodesAttributeValues(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{Namespace: "ns", Annotations: tt.annotations},
 				Spec:       corev1.PodSpec{Containers: []corev1.Container{{Name: "c1"}}},
 			}
-			namespace := corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "ns"}}
+			namespace := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "ns"}}
 
 			client := fake.NewClientBuilder().WithScheme(scheme.Scheme).Build()
 			req := dtwebhook.NewMutationRequest(t.Context(), namespace, nil, pod, baseDK)
@@ -431,7 +432,7 @@ func Test_Mutator_EncodesAttributeValues(t *testing.T) {
 
 // Abort mutation if owner reference cannot be resolved, be consistent with metadata mutator
 func Test_Mutator_MutateNoOwner(t *testing.T) {
-	namespace := corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "ns"}}
+	namespace := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "ns"}}
 	pod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "ns",
@@ -492,7 +493,7 @@ func Test_Mutator_Reinvoke(t *testing.T) {
 		BaseRequest: &dtwebhook.BaseRequest{
 			Pod:       pod,
 			DynaKube:  baseDK,
-			Namespace: corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: pod.Namespace}},
+			Namespace: &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: pod.Namespace}},
 		},
 	}
 
@@ -514,7 +515,7 @@ func TestMutate_OTLPResourceAttributes(t *testing.T) {
 		containerVal  = "container-value"
 	)
 
-	baseNamespace := corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: testNamespace}}
+	baseNamespace := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: testNamespace}}
 
 	newPod := func(containerEnv ...corev1.EnvVar) *corev1.Pod {
 		return &corev1.Pod{
@@ -671,7 +672,7 @@ func TestMutate_AnnotationWriter(t *testing.T) {
 			},
 		},
 	}
-	namespace := corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: testNamespace}}
+	namespace := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: testNamespace}}
 
 	t.Run("AnnotationWriter is set after Mutate", func(t *testing.T) {
 		pod := &corev1.Pod{
