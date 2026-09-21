@@ -305,7 +305,7 @@ func (r *Reconciler) getOneagentPods(ctx context.Context, dk *dynakube.DynaKube,
 		feature, agentVersion)
 	podList := &corev1.PodList{}
 	listOps := []client.ListOption{
-		client.InNamespace((*dk).GetNamespace()),
+		client.InNamespace(dk.GetNamespace()),
 		client.MatchingLabels(appLabels.BuildLabels()),
 	}
 	err := r.client.List(ctx, podList, listOps...)
