@@ -64,7 +64,8 @@ func buildReadinessProbe() *corev1.Probe {
 }
 
 func buildArgs(extraArgs []string) []string {
-	base := []string{"--config=file:///config/telemetry.yaml"}
+	base := make([]string, 0, 1+len(extraArgs))
+	base = append(base, "--config=file:///config/telemetry.yaml")
 
 	return append(base, extraArgs...)
 }
