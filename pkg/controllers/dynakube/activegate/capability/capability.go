@@ -94,13 +94,13 @@ func BuildServiceName(dynakubeName string) string {
 
 // BuildServiceHostname returns the in-cluster DNS hostname of the ActiveGate Service:
 // "<dk-name>-activegate.<namespace>".
-func BuildServiceHostname(dk dynakube.DynaKube) string {
+func BuildServiceHostname(dk *dynakube.DynaKube) string {
 	return fmt.Sprintf("%s.%s", BuildServiceName(dk.Name), dk.Namespace)
 }
 
 // BuildDNSEntryPoint will create a string listing of the full DNS entry points for the Service of the ActiveGate in the provided DynaKube.
 // Example: https://34.118.233.238:443,https://dynakube-activegate.dynatrace:443
-func BuildDNSEntryPoint(dk dynakube.DynaKube) string {
+func BuildDNSEntryPoint(dk *dynakube.DynaKube) string {
 	entries := []string{}
 
 	for _, ip := range dk.Status.ActiveGate.ServiceIPs {
@@ -124,7 +124,7 @@ func BuildDNSEntryPoint(dk dynakube.DynaKube) string {
 // BuildHostEntries will create a string listing the host entries for the Service of the ActiveGate in the provided DynaKube
 // Meant to be used as a NO_PROXY value for components needing to directly communicate with the ActiveGate.
 // example: 34.118.233.238,dynakube-activegate.dynatrace
-func BuildHostEntries(dk dynakube.DynaKube) string {
+func BuildHostEntries(dk *dynakube.DynaKube) string {
 	entries := []string{}
 
 	for _, ip := range dk.Status.ActiveGate.ServiceIPs {
@@ -150,7 +150,7 @@ func withHTTPSPort(host string) string {
 
 // buildServiceHostnameWithPort returns BuildServiceHostname(dk) suffixed with the HTTPS
 // service port: "<dk-name>-activegate.<namespace>:443".
-func buildServiceHostnameWithPort(dk dynakube.DynaKube) string {
+func buildServiceHostnameWithPort(dk *dynakube.DynaKube) string {
 	return withHTTPSPort(BuildServiceHostname(dk))
 }
 
