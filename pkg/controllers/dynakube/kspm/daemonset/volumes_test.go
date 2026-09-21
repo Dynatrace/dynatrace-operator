@@ -44,7 +44,7 @@ func TestGetMounts(t *testing.T) {
 	}
 
 	t.Run("get volume mounts", func(t *testing.T) {
-		dk := dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				KSPM: &kspm.Spec{},
 			},
@@ -60,7 +60,7 @@ func TestGetMounts(t *testing.T) {
 	})
 
 	t.Run("get volume mounts with mapped paths", func(t *testing.T) {
-		dk := dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				KSPM: &kspm.Spec{
 					MappedHostPaths: []string{
@@ -76,7 +76,7 @@ func TestGetMounts(t *testing.T) {
 	})
 
 	t.Run("get volume mounts with duplicated mapped paths", func(t *testing.T) {
-		dk := dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				KSPM: &kspm.Spec{
 					MappedHostPaths: []string{
@@ -177,7 +177,7 @@ func TestGetVolumes(t *testing.T) {
 	}
 
 	t.Run("get volumes", func(t *testing.T) {
-		dk := dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				KSPM: &kspm.Spec{},
 			},
@@ -193,7 +193,7 @@ func TestGetVolumes(t *testing.T) {
 	})
 
 	t.Run("get volume mounts with mapped paths", func(t *testing.T) {
-		dk := dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				KSPM: &kspm.Spec{
 					MappedHostPaths: []string{
@@ -209,7 +209,7 @@ func TestGetVolumes(t *testing.T) {
 	})
 
 	t.Run("get volume mounts with duplicated mapped paths", func(t *testing.T) {
-		dk := dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				KSPM: &kspm.Spec{
 					MappedHostPaths: []string{
