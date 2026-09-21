@@ -22,7 +22,7 @@ func getContainer(dk *dynakube.DynaKube, replicas int32) corev1.Container {
 		SecurityContext: buildSecurityContext(dk),
 		Env:             getEnvs(dk, replicas),
 		Resources:       dk.Spec.Templates.OpenTelemetryCollector.Resources,
-		Args:            buildArgs(),
+		Args:            buildArgs(dk.Spec.Templates.OpenTelemetryCollector.SanitizedArgs()),
 		VolumeMounts:    buildContainerVolumeMounts(dk),
 		LivenessProbe:   buildLivenessProbe(),
 		ReadinessProbe:  buildReadinessProbe(),
@@ -63,6 +63,8 @@ func buildReadinessProbe() *corev1.Probe {
 	}
 }
 
-func buildArgs() []string {
-	return []string{"--config=file:///config/telemetry.yaml"}
+func buildArgs(extraArgs []string) []string {
+	base := []string{"--config=file:///config/telemetry.yaml"}
+
+	return append(base, extraArgs...)
 }

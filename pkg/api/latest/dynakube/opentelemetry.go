@@ -5,6 +5,7 @@ package dynakube
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/sanitize"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -44,4 +45,12 @@ type OpenTelemetryCollectorSpec struct {
 	// Adds TopologySpreadConstraints for the OtelCollector pods
 	// +kubebuilder:validation:Optional
 	TopologySpreadConstraints []corev1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
+
+	// Set additional arguments to pass to the OtelCollector process
+	// +kubebuilder:validation:Optional
+	Args []string `json:"args,omitempty"`
+}
+
+func (s *OpenTelemetryCollectorSpec) SanitizedArgs() []string {
+	return sanitize.CommandLineArgs(s.Args)
 }
