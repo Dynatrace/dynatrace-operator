@@ -152,7 +152,7 @@ func createResponseForPod(ctx context.Context, pod *corev1.Pod, req admission.Re
 
 func silentErrorResponse(pod *corev1.Pod, err error, log logd.Logger) admission.Response {
 	rsp := admission.Patched("")
-	podName := k8spod.GetName(*pod)
+	podName := k8spod.GetName(pod)
 	log.Error(err, "failed to inject into pod", "podName", podName)
 	rsp.Result.Message = fmt.Sprintf("Failed to inject into pod: %s because %s", podName, err.Error())
 

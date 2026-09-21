@@ -75,7 +75,7 @@ func (req *BaseRequest) PodName() string {
 		return ""
 	}
 
-	return k8spod.GetName(*req.Pod)
+	return k8spod.GetName(req.Pod)
 }
 
 func (req *BaseRequest) IsSplitMountsEnabled() bool {
