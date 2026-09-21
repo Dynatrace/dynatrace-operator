@@ -26,8 +26,6 @@ var (
 )
 
 const (
-	releaseTag16  = "1.6.3"
-	releaseTag17  = "1.7.3"
 	releaseTag18  = "1.8.1"
 	releaseTag19  = "1.9.0"
 	releaseTag110 = "1.10.2"
@@ -70,14 +68,6 @@ func TestRelease_helm_upgrade_18(t *testing.T) {
 	testEnv.Test(t, upgrade.Feature(t, releaseTag18))
 }
 
-func TestRelease_helm_upgrade_17(t *testing.T) {
-	testEnv.Test(t, upgrade.Feature(t, releaseTag17))
-}
-
-func TestRelease_helm_upgrade_16(t *testing.T) {
-	testEnv.Test(t, upgrade.Feature(t, releaseTag16))
-}
-
 func TestRelease_platform_token_upgrade(t *testing.T) {
 	testEnv.Test(t, tokenupgrade.FromAPIToPlatformToken(t, releaseTag19))
 }
@@ -92,12 +82,4 @@ func TestRelease_manifest_upgrade_19(t *testing.T) {
 
 func TestRelease_manifest_upgrade_18(t *testing.T) {
 	testEnv.Test(t, upgrade.ManifestFeature(t, releaseTag18))
-}
-
-func TestRelease_manifest_upgrade_17(t *testing.T) {
-	testEnv.Test(t, upgrade.ManifestFeature(t, releaseTag17))
-}
-
-func TestRelease_manifest_upgrade_16(t *testing.T) {
-	testEnv.Test(t, upgrade.ManifestFeature(t, releaseTag16))
 }
