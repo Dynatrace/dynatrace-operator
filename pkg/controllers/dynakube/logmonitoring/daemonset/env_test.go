@@ -20,7 +20,7 @@ const (
 
 func TestGetInitEnvs(t *testing.T) {
 	t.Run("get base init envs", func(t *testing.T) {
-		dk := dynakube.DynaKube{}
+		dk := &dynakube.DynaKube{}
 		dk.Name = "dk-name-test"
 		dk.Status.KubeSystemUUID = "test-cluster-uuid"
 		dk.Status.KubernetesClusterMEID = "test-me-id"
@@ -36,7 +36,7 @@ func TestGetInitEnvs(t *testing.T) {
 	})
 
 	t.Run("get base init envs without MEID but all scopes set", func(t *testing.T) {
-		dk := dynakube.DynaKube{}
+		dk := &dynakube.DynaKube{}
 		dk.Name = "dk-name-test"
 		dk.Status.KubeSystemUUID = "test-cluster-uuid"
 

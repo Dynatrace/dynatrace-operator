@@ -27,7 +27,7 @@ var (
 	}
 )
 
-func getContainer(dk dynakube.DynaKube, tenantUUID, imageURI string) corev1.Container {
+func getContainer(dk *dynakube.DynaKube, tenantUUID, imageURI string) corev1.Container {
 	securityContext := getBaseSecurityContext(dk)
 	securityContext.Capabilities.Add = neededCapabilities
 
@@ -52,7 +52,7 @@ func getContainer(dk dynakube.DynaKube, tenantUUID, imageURI string) corev1.Cont
 	return container
 }
 
-func getInitContainer(dk dynakube.DynaKube, tenantUUID, imageURI string) corev1.Container {
+func getInitContainer(dk *dynakube.DynaKube, tenantUUID, imageURI string) corev1.Container {
 	securityContext := getBaseSecurityContext(dk)
 	securityContext.Capabilities.Add = neededInitCapabilities
 
@@ -80,7 +80,7 @@ func getInitContainer(dk dynakube.DynaKube, tenantUUID, imageURI string) corev1.
 	return container
 }
 
-func getBaseSecurityContext(dk dynakube.DynaKube) *corev1.SecurityContext {
+func getBaseSecurityContext(dk *dynakube.DynaKube) *corev1.SecurityContext {
 	securityContext := &corev1.SecurityContext{
 		Privileged:               new(false),
 		ReadOnlyRootFilesystem:   new(true),
