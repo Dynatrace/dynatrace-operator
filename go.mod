@@ -29,8 +29,8 @@ require (
 	golang.org/x/sys v0.48.0
 	google.golang.org/grpc v1.84.0
 	gopkg.in/yaml.v3 v3.0.1
-	istio.io/api v1.31.0
-	istio.io/client-go v1.31.0
+	istio.io/api v1.31.1
+	istio.io/client-go v1.31.1
 	k8s.io/api v0.37.0
 	k8s.io/apiextensions-apiserver v0.37.0
 	k8s.io/apimachinery v0.37.0
