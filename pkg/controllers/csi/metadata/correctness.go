@@ -7,6 +7,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -25,10 +26,10 @@ type CorrectnessChecker struct {
 }
 
 type OverlayMount struct {
-	Path     string
-	LowerDir string
-	UpperDir string
-	WorkDir  string
+	Path      string
+	UpperDir  string
+	WorkDir   string
+	LowerDirs []string
 }
 
 func NewCorrectnessChecker(apiReader client.Reader, opts dtcsi.CSIOptions) *CorrectnessChecker {
@@ -171,7 +172,27 @@ func GetRelevantDynaKubes(ctx context.Context, apiReader client.Reader) ([]dynak
 	return relevantDks, nil
 }
 
+// GetRelevantOverlayMounts returns the overlay mounts that are mounted somewhere under baseFolder.
 func GetRelevantOverlayMounts(mounter mount.Interface, baseFolder string) ([]OverlayMount, error) {
+	return collectOverlayMounts(mounter, func(overlayMount OverlayMount) bool {
+		return isUnder(overlayMount.Path, baseFolder)
+	})
+}
+
+// GetOverlayMountsWithLowerDirIn returns the overlay mounts that use at least one lower directory
+// under baseFolder, regardless of where the mount point itself is.
+//
+// App mounts are mounted directly at the kubelet target path (/var/lib/kubelet/pods/...), so the
+// lower directory is the only part of such a mount that points back into the CSI filesystem.
+func GetOverlayMountsWithLowerDirIn(mounter mount.Interface, baseFolder string) ([]OverlayMount, error) {
+	return collectOverlayMounts(mounter, func(overlayMount OverlayMount) bool {
+		return slices.ContainsFunc(overlayMount.LowerDirs, func(lowerDir string) bool {
+			return isUnder(lowerDir, baseFolder)
+		})
+	})
+}
+
+func collectOverlayMounts(mounter mount.Interface, isRelevant func(OverlayMount) bool) ([]OverlayMount, error) {
 	mountPoints, err := mounter.List()
 	if err != nil {
 		return nil, err
@@ -180,29 +201,78 @@ func GetRelevantOverlayMounts(mounter mount.Interface, baseFolder string) ([]Ove
 	relevantMounts := []OverlayMount{}
 
 	for _, mountPoint := range mountPoints {
-		if mountPoint.Device == "overlay" {
-			if !strings.HasPrefix(mountPoint.Path, baseFolder) {
-				continue
-			}
+		if mountPoint.Device != "overlay" {
+			continue
+		}
 
-			overlayMount := OverlayMount{
-				Path: mountPoint.Path,
-			}
-
-			for _, opt := range mountPoint.Opts {
-				switch dirType, dirPath, _ := strings.Cut(opt, "="); dirType {
-				case "lowerdir":
-					overlayMount.LowerDir = dirPath
-				case "upperdir":
-					overlayMount.UpperDir = dirPath
-				case "workdir":
-					overlayMount.WorkDir = dirPath
-				}
-			}
-
+		overlayMount := parseOverlayMount(mountPoint)
+		if isRelevant(overlayMount) {
 			relevantMounts = append(relevantMounts, overlayMount)
 		}
 	}
 
 	return relevantMounts, nil
+}
+
+func parseOverlayMount(mountPoint mount.MountPoint) OverlayMount {
+	overlayMount := OverlayMount{
+		Path: mountPoint.Path,
+	}
+
+	for _, opt := range mountPoint.Opts {
+		switch dirType, dirPath, _ := strings.Cut(opt, "="); dirType {
+		// "lowerdir+" is how kernels >= 6.7 spell the additional lower layers.
+		case "lowerdir", "lowerdir+":
+			overlayMount.LowerDirs = append(overlayMount.LowerDirs, splitLowerDirs(dirPath)...)
+		case "upperdir":
+			overlayMount.UpperDir = dirPath
+		case "workdir":
+			overlayMount.WorkDir = dirPath
+		}
+	}
+
+	return overlayMount
+}
+
+// splitLowerDirs splits the value of an overlayfs lowerdir option into the individual layers.
+// Layers are separated by ':', and overlayfs escapes ':', ',' and the backslash itself within a
+// path with a leading backslash.
+func splitLowerDirs(value string) []string {
+	var (
+		lowerDirs []string
+		current   strings.Builder
+		escaped   bool
+	)
+
+	appendCurrent := func() {
+		if current.Len() > 0 {
+			lowerDirs = append(lowerDirs, current.String())
+			current.Reset()
+		}
+	}
+
+	for _, char := range value {
+		switch {
+		case escaped:
+			current.WriteRune(char)
+
+			escaped = false
+		case char == '\\':
+			escaped = true
+		case char == ':':
+			appendCurrent()
+		default:
+			current.WriteRune(char)
+		}
+	}
+
+	appendCurrent()
+
+	return lowerDirs
+}
+
+// isUnder reports whether path is inside baseFolder, comparing whole path components so that
+// for example /database is not considered to be under /data.
+func isUnder(path, baseFolder string) bool {
+	return strings.HasPrefix(path, filepath.Clean(baseFolder)+string(os.PathSeparator))
 }

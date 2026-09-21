@@ -347,6 +347,7 @@ tests:
                   - mountPath: "/var/lib/kubelet/pods/"
                     name: mountpoint-dir
                     readOnly: true
+                    mountPropagation: HostToContainer
               - args:
                   - "csi-node-driver-registrar"
                   - "--csi-address=/csi/csi.sock"

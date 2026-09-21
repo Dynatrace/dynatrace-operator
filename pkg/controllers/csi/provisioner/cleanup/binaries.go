@@ -89,7 +89,9 @@ func (c *Cleaner) collectStillMountedBins(ctx context.Context) (map[string]bool,
 
 	mountedBins := map[string]bool{}
 
-	overlays, err := metadata.GetRelevantOverlayMounts(c.mounter, c.path.RootDir)
+	// App mounts live at the kubelet target path, not under the CSI root, so they can only be
+	// found via their lower directory, which points at the code module they are using.
+	overlays, err := metadata.GetOverlayMountsWithLowerDirIn(c.mounter, c.path.AgentSharedBinaryDirBase())
 	if err != nil {
 		log.Info("failed to list active overlay mounts, skipping unused binaries cleanup")
 
@@ -97,7 +99,9 @@ func (c *Cleaner) collectStillMountedBins(ctx context.Context) (map[string]bool,
 	}
 
 	for _, overlay := range overlays {
-		mountedBins[overlay.LowerDir] = true
+		for _, lowerDir := range overlay.LowerDirs {
+			mountedBins[lowerDir] = true
+		}
 	}
 
 	if len(mountedBins) > 0 {
