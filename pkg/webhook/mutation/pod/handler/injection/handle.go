@@ -107,7 +107,7 @@ func (h *Handler) Handle(mutationRequest *dtwebhook.MutationRequest) error {
 }
 
 func (h *Handler) handlePodMutation(mutationRequest *dtwebhook.MutationRequest) (bool, error) {
-	mutationRequest.InstallContainer = h.createInitContainerBase(mutationRequest.Context, mutationRequest.Pod, &mutationRequest.DynaKube)
+	mutationRequest.InstallContainer = h.createInitContainerBase(mutationRequest.Context, mutationRequest.Pod, mutationRequest.DynaKube)
 
 	var mutated bool
 
@@ -132,7 +132,7 @@ func (h *Handler) handlePodMutation(mutationRequest *dtwebhook.MutationRequest) 
 			return false, err
 		}
 
-		events.SendPodInjectEvent(h.recorder, &mutationRequest.DynaKube, mutationRequest.Pod)
+		events.SendPodInjectEvent(h.recorder, mutationRequest.DynaKube, mutationRequest.Pod)
 	}
 
 	return mutated, nil
@@ -151,7 +151,7 @@ func (h *Handler) handlePodReinvocation(mutationRequest *dtwebhook.MutationReque
 
 	if (h.oaMutator.IsEnabled(mutationRequest.Context, mutationRequest.BaseRequest) && h.oaMutator.Reinvoke(mutationRequest.Context, mutationRequest.ToReinvocationRequest())) || updated {
 		log.Info("reinvocation policy applied", "podName", mutationRequest.PodName())
-		events.SendPodUpdateEvent(h.recorder, &mutationRequest.DynaKube, mutationRequest.Pod)
+		events.SendPodUpdateEvent(h.recorder, mutationRequest.DynaKube, mutationRequest.Pod)
 
 		return
 	}

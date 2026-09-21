@@ -106,7 +106,7 @@ func (r *Reconciler) reconcileConfigMap(ctx context.Context, dk *dynakube.DynaKu
 func (r *Reconciler) generateData(dk *dynakube.DynaKube) (map[string]string, error) {
 	data := make(map[string]string)
 
-	dtEndpoint, err := BuildOTLPEndpoint(*dk)
+	dtEndpoint, err := BuildOTLPEndpoint(dk)
 	if err != nil {
 		return data, err
 	}
@@ -116,7 +116,7 @@ func (r *Reconciler) generateData(dk *dynakube.DynaKube) (map[string]string, err
 	return data, nil
 }
 
-func BuildOTLPEndpoint(dk dynakube.DynaKube) (string, error) {
+func BuildOTLPEndpoint(dk *dynakube.DynaKube) (string, error) {
 	// dk.APIURL() returns the 2nd gen URL, which is required because OTLP endpoints are
 	// served through the Environment V2 API that is only available on 2nd gen URLs.
 	dtEndpoint := dk.APIURL() + "/v2/otlp"
@@ -127,7 +127,7 @@ func BuildOTLPEndpoint(dk dynakube.DynaKube) (string, error) {
 			return "", err
 		}
 
-		dtEndpoint = fmt.Sprintf("https://%s/e/%s/api/v2/otlp", activegate.GetServiceFQDN(&dk), tenantUUID)
+		dtEndpoint = fmt.Sprintf("https://%s/e/%s/api/v2/otlp", activegate.GetServiceFQDN(dk), tenantUUID)
 	}
 
 	return dtEndpoint, nil

@@ -104,7 +104,7 @@ func mutateInitContainer(mutationRequest *dtwebhook.MutationRequest, installPath
 		}
 	}
 
-	return addInitArgs(mutationRequest.Pod, mutationRequest.InstallContainer, &mutationRequest.DynaKube, installPath, log)
+	return addInitArgs(mutationRequest.Pod, mutationRequest.InstallContainer, mutationRequest.DynaKube, installPath, log)
 }
 
 func addInitArgs(pod *corev1.Pod, initContainer *corev1.Container, dk *dynakube.DynaKube, installPath string, log logd.Logger) error {

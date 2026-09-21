@@ -71,7 +71,7 @@ func (mut *Mutator) Mutate(request *dtwebhook.MutationRequest) error {
 	_, log := logd.NewFromContext(request.Context, "metadata-enrichment")
 	log.Info("adding metadata-enrichment to pod", "name", request.PodName())
 
-	request.InstallContainer.Resources = initResources(&request.DynaKube)
+	request.InstallContainer.Resources = initResources(request.DynaKube)
 
 	attrs, err := attributes.NewPodAttributes(request.Context, *request.BaseRequest, mut.metaClient)
 	if err != nil {

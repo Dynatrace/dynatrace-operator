@@ -45,7 +45,7 @@ func TestMutateInitContainer(t *testing.T) {
 	t.Run("status not ready - no version", func(t *testing.T) {
 		installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: true})
 
-		dk := dynakube.DynaKube{}
+		dk := &dynakube.DynaKube{}
 		dk.Name = "no-version-set"
 		dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
 		pod := &corev1.Pod{}
@@ -66,7 +66,7 @@ func TestMutateInitContainer(t *testing.T) {
 	t.Run("status not ready - no image", func(t *testing.T) {
 		installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: true})
 
-		dk := dynakube.DynaKube{}
+		dk := &dynakube.DynaKube{}
 		dk.Name = "no-version-set"
 		dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
 		dk.Spec.OneAgent.ApplicationMonitoring.CodeModulesImage = "example"
@@ -88,7 +88,7 @@ func TestMutateInitContainer(t *testing.T) {
 	t.Run("status not ready - image set, version is needed", func(t *testing.T) {
 		installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: true})
 
-		dk := dynakube.DynaKube{}
+		dk := &dynakube.DynaKube{}
 		dk.Name = "no-version-set"
 		dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
 		dk.Status.CodeModules.ImageID = "example"
@@ -110,7 +110,7 @@ func TestMutateInitContainer(t *testing.T) {
 	t.Run("status not ready - version set, image is needed", func(t *testing.T) {
 		installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: true})
 
-		dk := dynakube.DynaKube{}
+		dk := &dynakube.DynaKube{}
 		dk.Name = "no-version-set"
 		dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
 		dk.Spec.OneAgent.ApplicationMonitoring.CodeModulesImage = "example"
@@ -133,7 +133,7 @@ func TestMutateInitContainer(t *testing.T) {
 	t.Run("csi-scenario -> custom init-resources", func(t *testing.T) {
 		installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: true})
 
-		dk := dynakube.DynaKube{}
+		dk := &dynakube.DynaKube{}
 		dk.Name = "csi-scenario"
 		dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
 		dk.Spec.OneAgent.ApplicationMonitoring.InitResources = &corev1.ResourceRequirements{
@@ -172,7 +172,7 @@ func TestMutateInitContainer(t *testing.T) {
 	t.Run("csi-scenario", func(t *testing.T) {
 		installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: true})
 
-		dk := dynakube.DynaKube{}
+		dk := &dynakube.DynaKube{}
 		dk.Name = "csi-scenario"
 		dk.Status.CodeModules.Version = "1.2.3"
 		dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
@@ -210,7 +210,7 @@ func TestMutateInitContainer(t *testing.T) {
 
 		flavor := "musl"
 		version := "1.2.3"
-		dk := dynakube.DynaKube{}
+		dk := &dynakube.DynaKube{}
 		dk.Name = "zip-scenario"
 		dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
 		dk.Status.CodeModules.Version = version
@@ -251,7 +251,7 @@ func TestMutateInitContainer(t *testing.T) {
 		installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: false})
 
 		image := "myimage.io:latest"
-		dk := dynakube.DynaKube{}
+		dk := &dynakube.DynaKube{}
 		dk.Name = "node-image-pull-scenario"
 		dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
 		dk.Spec.OneAgent.ApplicationMonitoring.CodeModulesImage = image
@@ -289,7 +289,7 @@ func TestMutateInitContainer(t *testing.T) {
 
 		flavor := "musl"
 		version := "1.2.3"
-		dk := dynakube.DynaKube{}
+		dk := &dynakube.DynaKube{}
 		dk.Name = "zip-scenario"
 		dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
 		dk.Spec.OneAgent.ApplicationMonitoring.InitResources = &corev1.ResourceRequirements{
@@ -319,7 +319,7 @@ func TestMutateInitContainer(t *testing.T) {
 		installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: false})
 
 		image := "myimage.io:latest"
-		dk := dynakube.DynaKube{}
+		dk := &dynakube.DynaKube{}
 		dk.Name = "node-image-pull-scenario"
 		dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
 		dk.Spec.OneAgent.ApplicationMonitoring.InitResources = &corev1.ResourceRequirements{
@@ -346,7 +346,7 @@ func TestMutateInitContainer(t *testing.T) {
 	t.Run("should not enable links extraction by default", func(t *testing.T) {
 		installconfig.SetModulesOverride(t, installconfig.Modules{})
 
-		dk := dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{Name: "dynakube"},
 			Spec:       dynakube.DynaKubeSpec{OneAgent: oneagent.Spec{ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{}}},
 		}
@@ -368,7 +368,7 @@ func TestMutateInitContainer(t *testing.T) {
 		t.Setenv(k8senv.DTExtractCodeModulesImageLinksEnvVar, "true")
 		installconfig.SetModulesOverride(t, installconfig.Modules{})
 
-		dk := dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{Name: "dynakube"},
 			Spec:       dynakube.DynaKubeSpec{OneAgent: oneagent.Spec{ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{}}},
 		}
@@ -490,7 +490,7 @@ func TestMutateInitContainer(t *testing.T) {
 	t.Run("csi-scenario -> conflicting volume type", func(t *testing.T) {
 		installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: true})
 
-		dk := dynakube.DynaKube{}
+		dk := &dynakube.DynaKube{}
 		dk.Name = "csi-scenario"
 		dk.Status.CodeModules.Version = "1.2.3"
 		dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
@@ -515,7 +515,7 @@ func TestMutateInitContainer(t *testing.T) {
 	t.Run("zip-scenario -> conflicting volume type", func(t *testing.T) {
 		installconfig.SetModulesOverride(t, installconfig.Modules{CSIDriver: false})
 
-		dk := dynakube.DynaKube{}
+		dk := &dynakube.DynaKube{}
 		dk.Name = "zip-scenario"
 		dk.Status.CodeModules.Version = "1.2.3"
 		dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
@@ -650,9 +650,9 @@ func TestMutateInitContainer(t *testing.T) {
 	})
 }
 
-func createAppMonDKwithImage(t *testing.T, image string) dynakube.DynaKube {
+func createAppMonDKwithImage(t *testing.T, image string) *dynakube.DynaKube {
 	t.Helper()
-	dk := dynakube.DynaKube{
+	dk := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{Name: "image-volume-scenario", Annotations: map[string]string{}},
 		Spec: dynakube.DynaKubeSpec{
 			OneAgent: oneagent.Spec{

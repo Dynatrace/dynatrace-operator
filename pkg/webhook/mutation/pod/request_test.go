@@ -91,7 +91,7 @@ func TestGetDynakube(t *testing.T) {
 func createTestMutationRequest(t *testing.T, dk *dynakube.DynaKube) *dtwebhook.MutationRequest {
 	t.Helper()
 
-	return dtwebhook.NewMutationRequest(t.Context(), *getTestNamespace(), nil, getTestPod(), *dk)
+	return dtwebhook.NewMutationRequest(t.Context(), *getTestNamespace(), nil, getTestPod(), dk)
 }
 
 func createTestAdmissionRequest(pod *corev1.Pod) *admission.Request {

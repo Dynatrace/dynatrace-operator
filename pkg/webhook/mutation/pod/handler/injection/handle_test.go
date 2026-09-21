@@ -278,7 +278,7 @@ func getTestDynakubeWithAGCerts() *dynakube.DynaKube {
 func createTestMutationRequestWithInjectedPod(t *testing.T, dk *dynakube.DynaKube) *dtwebhook.MutationRequest {
 	t.Helper()
 
-	return dtwebhook.NewMutationRequest(t.Context(), *getTestNamespace(), nil, getInjectedPod(t), *dk)
+	return dtwebhook.NewMutationRequest(t.Context(), *getTestNamespace(), nil, getInjectedPod(t), dk)
 }
 
 func getInjectedPod(t *testing.T) *corev1.Pod {
@@ -359,7 +359,7 @@ func TestSetDynatraceInjectedAnnotation(t *testing.T) {
 func createTestMutationRequest(t *testing.T, dk *dynakube.DynaKube) *dtwebhook.MutationRequest {
 	t.Helper()
 
-	return dtwebhook.NewMutationRequest(t.Context(), *getTestNamespace(), nil, getTestPod(), *dk)
+	return dtwebhook.NewMutationRequest(t.Context(), *getTestNamespace(), nil, getTestPod(), dk)
 }
 
 func getTestNamespace() *corev1.Namespace {

@@ -782,7 +782,7 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive // function-length
 			// assert NO_PROXY is set
 			noProxyEnv := k8senv.Find(c.Env, NoProxyEnv)
 			require.NotNil(t, noProxyEnv)
-			assert.Equal(t, otelcactivegate.GetServiceFQDN(&request.DynaKube), noProxyEnv.Value)
+			assert.Equal(t, otelcactivegate.GetServiceFQDN(request.DynaKube), noProxyEnv.Value)
 		}
 		// Init containers should not have the mount
 		for _, c := range request.Pod.Spec.InitContainers {
@@ -929,7 +929,7 @@ func Test_addActiveGateCertVolume(t *testing.T) {
 func createTestMutationRequest(t *testing.T, dk *dynakube.DynaKube) *mutator.MutationRequest {
 	t.Helper()
 
-	return mutator.NewMutationRequest(t.Context(), *getTestNamespace(), nil, getTestPod(), *dk)
+	return mutator.NewMutationRequest(t.Context(), *getTestNamespace(), nil, getTestPod(), dk)
 }
 
 func getTestNamespace() *corev1.Namespace {

@@ -21,7 +21,7 @@ func newTestMutationRequest(t *testing.T) *mutator.MutationRequest {
 	ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "ns"}}
 	dk := &dynakube.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: "dk", Namespace: "ns"}}
 
-	return mutator.NewMutationRequest(t.Context(), *ns, nil, pod, *dk)
+	return mutator.NewMutationRequest(t.Context(), *ns, nil, pod, dk)
 }
 
 func TestSetDynatraceInjectedAnnotation_InitializesMapAndSetsFlags(t *testing.T) {

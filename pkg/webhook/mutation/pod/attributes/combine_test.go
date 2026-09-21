@@ -468,8 +468,8 @@ func TestCombine_ViaConstructors_AnnotationsOverrideAutoCollected(t *testing.T) 
 		}
 	}
 
-	makeDynaKube := func() dynakube.DynaKube {
-		return dynakube.DynaKube{
+	makeDynaKube := func() *dynakube.DynaKube {
+		return &dynakube.DynaKube{
 			Status: dynakube.DynaKubeStatus{
 				KubeSystemUUID:        clusterUID,
 				KubernetesClusterName: clusterName,
@@ -621,6 +621,7 @@ func TestCombine_ViaConstructors_WorkloadAnnotations(t *testing.T) {
 
 	newRequest := func(namespaceAnnotations, podAnnotations map[string]string) dtwebhook.BaseRequest {
 		return dtwebhook.BaseRequest{
+			DynaKube: &dynakube.DynaKube{},
 			Pod: &corev1.Pod{
 				TypeMeta: metav1.TypeMeta{Kind: "Pod", APIVersion: "v1"},
 				ObjectMeta: metav1.ObjectMeta{
