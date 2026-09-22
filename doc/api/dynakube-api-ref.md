@@ -120,6 +120,7 @@
 |Parameter|Description|Default value|Data type|
 |:-|:-|:-|:-|
 |`annotations`||-|object|
+|`args`||-|array|
 |`labels`||-|object|
 |`nodeSelector`||-|object|
 |`replicas`||-|integer|
