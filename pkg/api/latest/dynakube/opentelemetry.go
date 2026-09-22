@@ -46,7 +46,7 @@ type OpenTelemetryCollectorSpec struct {
 	// +kubebuilder:validation:Optional
 	TopologySpreadConstraints []corev1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
 
-	// Set additional arguments to pass to the OtelCollector process
+	// Set additional arguments to pass to the OpenTelemetry Collector process
 	// +kubebuilder:validation:Optional
 	Args []string `json:"args,omitempty"`
 }
