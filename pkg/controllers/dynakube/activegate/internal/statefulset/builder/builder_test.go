@@ -6,7 +6,6 @@ package builder
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -18,77 +17,66 @@ func TestBuilder(t *testing.T) {
 		actual, err := b.Build()
 		require.NoError(t, err)
 
-		expected := appsv1.StatefulSet{}
-		assert.Equal(t, expected, actual)
+		expected := &appsv1.StatefulSet{}
+		require.Equal(t, expected, actual)
 	})
 	t.Run("One modifier", func(t *testing.T) {
 		b := Builder{}
 
 		modifierMock := NewMockModifier(t)
-		modifierMock.On("Modify", mock.Anything).Return(nil)
-		modifierMock.On("Enabled").Return(true)
+		modifierMock.EXPECT().Modify(mock.Anything).Return(nil).Once()
+		modifierMock.EXPECT().Enabled().Return(true).Once()
 
 		actual, err := b.AddModifier(modifierMock).Build()
 		require.NoError(t, err)
 
-		modifierMock.AssertNumberOfCalls(t, "Modify", 1)
-
-		expected := appsv1.StatefulSet{}
+		expected := &appsv1.StatefulSet{}
 		require.Equal(t, expected, actual)
 	})
 	t.Run("One modifier, not enabled", func(t *testing.T) {
 		b := Builder{}
 
 		modifierMock := NewMockModifier(t)
-		modifierMock.On("Modify", mock.Anything).Return(nil).Maybe()
-		modifierMock.On("Enabled").Return(false)
+		modifierMock.EXPECT().Enabled().Return(false).Once()
 
 		actual, err := b.AddModifier(modifierMock).Build()
 		require.NoError(t, err)
 
-		modifierMock.AssertNumberOfCalls(t, "Modify", 0)
-
-		expected := appsv1.StatefulSet{}
+		expected := &appsv1.StatefulSet{}
 		require.Equal(t, expected, actual)
 	})
 	t.Run("Two modifiers, one used twice", func(t *testing.T) {
 		b := Builder{}
 
 		modifierMock0 := NewMockModifier(t)
-		modifierMock0.On("Modify", mock.Anything).Return(nil)
-		modifierMock0.On("Enabled").Return(true)
+		modifierMock0.EXPECT().Modify(mock.Anything).Return(nil).Twice()
+		modifierMock0.EXPECT().Enabled().Return(true).Twice()
 
 		modifierMock1 := NewMockModifier(t)
-		modifierMock1.On("Modify", mock.Anything).Return(nil)
-		modifierMock1.On("Enabled").Return(true)
+		modifierMock1.EXPECT().Modify(mock.Anything).Return(nil).Once()
+		modifierMock1.EXPECT().Enabled().Return(true).Once()
 
 		actual, err := b.AddModifier(modifierMock0, modifierMock0, modifierMock1).Build()
 		require.NoError(t, err)
 
-		modifierMock0.AssertNumberOfCalls(t, "Modify", 2)
-		modifierMock1.AssertNumberOfCalls(t, "Modify", 1)
-
-		expected := appsv1.StatefulSet{}
+		expected := &appsv1.StatefulSet{}
 		require.Equal(t, expected, actual)
 	})
 	t.Run("Chain of modifiers", func(t *testing.T) {
 		b := Builder{}
 
 		modifierMock0 := NewMockModifier(t)
-		modifierMock0.On("Modify", mock.Anything).Return(nil)
-		modifierMock0.On("Enabled").Return(true)
+		modifierMock0.EXPECT().Modify(mock.Anything).Return(nil).Twice()
+		modifierMock0.EXPECT().Enabled().Return(true).Twice()
 
 		modifierMock1 := NewMockModifier(t)
-		modifierMock1.On("Modify", mock.Anything).Return(nil)
-		modifierMock1.On("Enabled").Return(true)
+		modifierMock1.EXPECT().Modify(mock.Anything).Return(nil).Once()
+		modifierMock1.EXPECT().Enabled().Return(true).Once()
 
 		actual, err := b.AddModifier(modifierMock0, modifierMock0).AddModifier(modifierMock1).Build()
 		require.NoError(t, err)
 
-		modifierMock0.AssertNumberOfCalls(t, "Modify", 2)
-		modifierMock1.AssertNumberOfCalls(t, "Modify", 1)
-
-		expected := appsv1.StatefulSet{}
+		expected := &appsv1.StatefulSet{}
 		require.Equal(t, expected, actual)
 	})
 }
