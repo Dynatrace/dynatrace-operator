@@ -587,7 +587,7 @@ func TestGetMetadataAnnotations(t *testing.T) {
 		workloadInfo := workload.Info{
 			Annotations: map[string]string{metadataenrichment.Prefix + "workload-key": "workload-val"},
 		}
-		dk := dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			Status: dynakube.DynaKubeStatus{
 				MetadataEnrichment: metadataenrichment.Status{
 					Rules: []metadataenrichment.Rule{
@@ -818,7 +818,7 @@ func createTestMutationRequest(t *testing.T, dk *dynakube.DynaKube, annotations 
 			Name: dtwebhook.InstallContainerName,
 		},
 		getTestPod(annotations),
-		*dk,
+		dk,
 	)
 }
 
@@ -979,7 +979,7 @@ func TestReadPodAttributes(t *testing.T) {
 			Pod: &corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{Namespace: "my-ns"},
 			},
-			DynaKube: dynakube.DynaKube{},
+			DynaKube: &dynakube.DynaKube{},
 		}
 
 		attrs.readPodAttributes(request)
@@ -1008,7 +1008,7 @@ func TestReadPodAttributes(t *testing.T) {
 			Pod: &corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{Namespace: "my-ns"},
 			},
-			DynaKube: dynakube.DynaKube{},
+			DynaKube: &dynakube.DynaKube{},
 		}
 
 		attrs.readPodAttributes(request)
@@ -1023,7 +1023,7 @@ func TestReadPodAttributes(t *testing.T) {
 		attrs := newPodAttrs()
 		request := dtwebhook.BaseRequest{
 			Pod: &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Namespace: "ns"}},
-			DynaKube: dynakube.DynaKube{
+			DynaKube: &dynakube.DynaKube{
 				Status: dynakube.DynaKubeStatus{
 					KubeSystemUUID:        "uid-123",
 					KubernetesClusterName: "my-cluster",

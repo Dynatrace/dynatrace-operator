@@ -23,7 +23,7 @@ const (
 	nodeRootMountPath = "/node_root"
 )
 
-func getVolumes(dk dynakube.DynaKube) []corev1.Volume {
+func getVolumes(dk *dynakube.DynaKube) []corev1.Volume {
 	var volumes []corev1.Volume
 
 	volumes = append(volumes, getNodeVolumes(dk.KSPM().GetUniqueMappedHostPaths())...)
@@ -36,7 +36,7 @@ func getVolumes(dk dynakube.DynaKube) []corev1.Volume {
 	return volumes
 }
 
-func getMounts(dk dynakube.DynaKube) []corev1.VolumeMount {
+func getMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 	var mounts []corev1.VolumeMount
 
 	mounts = append(mounts, getNodeVolumeMounts(dk.KSPM().GetUniqueMappedHostPaths())...)
@@ -57,7 +57,7 @@ func getTokenVolumeMount() corev1.VolumeMount {
 	}
 }
 
-func getTokenVolume(dk dynakube.DynaKube) corev1.Volume {
+func getTokenVolume(dk *dynakube.DynaKube) corev1.Volume {
 	return corev1.Volume{
 		Name: tokenVolumeName,
 		VolumeSource: corev1.VolumeSource{

@@ -40,7 +40,7 @@ func TestGet(t *testing.T) {
 func TestGetName(t *testing.T) {
 	t.Run("get pod name", func(t *testing.T) {
 		podName := "superpod"
-		testPod := corev1.Pod{
+		testPod := &corev1.Pod{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: podName,
 			},
@@ -51,7 +51,7 @@ func TestGetName(t *testing.T) {
 	t.Run("get pod generateName", func(t *testing.T) {
 		podName := ""
 		podGenerateName := "gen-name-"
-		testPod := corev1.Pod{
+		testPod := &corev1.Pod{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:         podName,
 				GenerateName: podGenerateName,

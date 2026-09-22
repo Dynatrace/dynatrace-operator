@@ -20,7 +20,7 @@ const (
 
 func TestGetEnvs(t *testing.T) {
 	t.Run("get base envs", func(t *testing.T) {
-		dk := dynakube.DynaKube{}
+		dk := &dynakube.DynaKube{}
 		dk.Name = "dk-name-test"
 		tenant := "test-tenant"
 		envs := getEnvs(dk, tenant)
@@ -46,7 +46,7 @@ func TestGetEnvs(t *testing.T) {
 	})
 
 	t.Run("adds user env", func(t *testing.T) {
-		dk := dynakube.DynaKube{}
+		dk := &dynakube.DynaKube{}
 		dk.Name = "dk-name-test"
 		tenant := "test-tenant"
 		dk.KSPM().Env = []corev1.EnvVar{
@@ -68,7 +68,7 @@ func TestGetEnvs(t *testing.T) {
 	})
 
 	t.Run("adds activegate service env", func(t *testing.T) {
-		dk := dynakube.DynaKube{}
+		dk := &dynakube.DynaKube{}
 		dk.Name = "dk-name-test"
 		dk.Namespace = "test"
 		tenant := "test-tenant"
@@ -81,7 +81,7 @@ func TestGetEnvs(t *testing.T) {
 	})
 
 	t.Run("adds kubemon service env", func(t *testing.T) {
-		dk := dynakube.DynaKube{}
+		dk := &dynakube.DynaKube{}
 		dk.Name = "dk-name-test"
 		dk.Namespace = "test"
 		dk.Spec.KubernetesMonitoring = &kubemon.Spec{}

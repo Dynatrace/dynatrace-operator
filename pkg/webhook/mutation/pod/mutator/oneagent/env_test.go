@@ -98,7 +98,7 @@ func TestAddDeploymentMetadataEnv(t *testing.T) {
 
 	t.Run("Add cloudNative deployment metadata env", func(t *testing.T) {
 		container := &corev1.Container{}
-		dk := dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				OneAgent: oneagent.Spec{
 					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
@@ -116,7 +116,7 @@ func TestAddDeploymentMetadataEnv(t *testing.T) {
 
 	t.Run("Add appMonitoring deployment metadata env", func(t *testing.T) {
 		container := &corev1.Container{}
-		dk := dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				OneAgent: oneagent.Spec{
 					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{},

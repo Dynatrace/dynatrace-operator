@@ -133,7 +133,7 @@ func Test_getInitArgs(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			dk := dynakube.DynaKube{}
+			dk := &dynakube.DynaKube{}
 			dk.Name = "dk-name-test"
 			dk.Status.KubernetesClusterMEID = tt.meID
 			dk.Status.KubernetesClusterName = tt.clusterName

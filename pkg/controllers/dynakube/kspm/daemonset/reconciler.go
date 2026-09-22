@@ -130,7 +130,7 @@ func (r *Reconciler) generateDaemonSet(dk *dynakube.DynaKube, tlsSecretHash stri
 		affinity.NodeAffinity = dk.KSPM().NodeAffinity
 	}
 
-	ds, err := k8sdaemonset.Build(dk, dk.KSPM().GetDaemonSetName(), getContainer(*dk, tenantUUID),
+	ds, err := k8sdaemonset.Build(dk, dk.KSPM().GetDaemonSetName(), getContainer(dk, tenantUUID),
 		k8sdaemonset.SetAllLabels(labels.BuildLabels(), labels.BuildMatchLabels(), labels.BuildLabels(), dk.KSPM().Labels),
 		k8sdaemonset.SetAllAnnotations(dk.KSPM().Annotations, templateAnnotations),
 		k8sdaemonset.SetServiceAccount(serviceAccountName),
@@ -140,7 +140,7 @@ func (r *Reconciler) generateDaemonSet(dk *dynakube.DynaKube, tlsSecretHash stri
 		k8sdaemonset.SetTolerations(dk.KSPM().Tolerations),
 		k8sdaemonset.SetPullSecret(dk.CustomPullSecretReferences()...),
 		k8sdaemonset.SetUpdateStrategy(r.getUpdateStrategy(dk)),
-		k8sdaemonset.SetVolumes(getVolumes(*dk)),
+		k8sdaemonset.SetVolumes(getVolumes(dk)),
 		k8sdaemonset.SetAutomountServiceAccountToken(false),
 		k8sdaemonset.SetHostPID(true),
 		k8sdaemonset.SetSecurityContext(buildPodSecurityContext()),

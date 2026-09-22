@@ -15,7 +15,7 @@ const (
 	runAs         int64 = 65532
 )
 
-func getContainer(dk dynakube.DynaKube, tenantUUID string) corev1.Container {
+func getContainer(dk *dynakube.DynaKube, tenantUUID string) corev1.Container {
 	securityContext := getSecurityContext()
 	securityContext.AppArmorProfile = k8ssecuritycontext.GetAppArmorProfile(dk.Spec.Templates.KSPMNodeConfigurationCollector.Annotations, containerName)
 
@@ -49,7 +49,7 @@ func getSecurityContext() corev1.SecurityContext {
 	return securityContext
 }
 
-func getResources(dk dynakube.DynaKube) corev1.ResourceRequirements {
+func getResources(dk *dynakube.DynaKube) corev1.ResourceRequirements {
 	const (
 		defaultCPU    = "100m"
 		defaultMemory = "128Mi"

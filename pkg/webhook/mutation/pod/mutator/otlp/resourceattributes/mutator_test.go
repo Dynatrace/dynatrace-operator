@@ -288,17 +288,17 @@ func Test_Mutator_Mutate(t *testing.T) {
 	t.Run("with deprecated annotations", func(t *testing.T) {
 		dk := baseDK.DeepCopy()
 		dk.Annotations = map[string]string{}
-		runMutatorTests(t, *dk, tests, false)
+		runMutatorTests(t, dk, tests, false)
 	})
 
 	t.Run("without deprecated annotations", func(t *testing.T) {
 		dk := baseDK.DeepCopy()
 		dk.Annotations = map[string]string{exp.EnrichmentEnableAttributesDTKubernetes: "false"}
-		runMutatorTests(t, *dk, tests, true)
+		runMutatorTests(t, dk, tests, true)
 	})
 }
 
-func runMutatorTests(t *testing.T, dk latestdynakube.DynaKube, tests []mutatorTestCase, removeDeprecatedAttr bool) { //nolint:revive
+func runMutatorTests(t *testing.T, dk *latestdynakube.DynaKube, tests []mutatorTestCase, removeDeprecatedAttr bool) { //nolint:revive
 	t.Helper()
 
 	removeDTKubernetesAnnotations := func(attributes map[string][]string) map[string][]string {
@@ -407,7 +407,7 @@ func Test_Mutator_EncodesAttributeValues(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			baseDK := latestdynakube.DynaKube{}
+			baseDK := &latestdynakube.DynaKube{}
 			baseDK.Status.KubeSystemUUID = "cluster-uid"
 			baseDK.Status.KubernetesClusterName = tt.clusterName
 			baseDK.Status.KubernetesClusterMEID = "cluster-meid"
@@ -446,7 +446,7 @@ func Test_Mutator_MutateNoOwner(t *testing.T) {
 		},
 		Spec: corev1.PodSpec{Containers: []corev1.Container{{Name: "c1"}}},
 	}
-	baseDK := latestdynakube.DynaKube{}
+	baseDK := &latestdynakube.DynaKube{}
 	builder := fake.NewClientBuilder().WithScheme(scheme.Scheme)
 	client := builder.Build()
 	mut := New(client)
@@ -465,7 +465,7 @@ func Test_Mutator_Reinvoke(t *testing.T) {
 	_ = appsv1.AddToScheme(scheme.Scheme)
 	_ = corev1.AddToScheme(scheme.Scheme)
 
-	baseDK := latestdynakube.DynaKube{}
+	baseDK := &latestdynakube.DynaKube{}
 	baseDK.Status.KubeSystemUUID = "cluster-uid"
 	baseDK.Status.KubernetesClusterName = "cluster-name"
 
@@ -527,7 +527,7 @@ func TestMutate_OTLPResourceAttributes(t *testing.T) {
 
 	type testCase struct {
 		name        string
-		dk          latestdynakube.DynaKube
+		dk          *latestdynakube.DynaKube
 		pod         *corev1.Pod
 		wantAttrs   []string
 		notWantKeys []string
@@ -536,7 +536,7 @@ func TestMutate_OTLPResourceAttributes(t *testing.T) {
 	cases := []testCase{
 		{
 			name: "no Dynakube resource attributes, only operator semantic attrs present",
-			dk:   latestdynakube.DynaKube{},
+			dk:   &latestdynakube.DynaKube{},
 			pod:  newPod(),
 			wantAttrs: []string{
 				"k8s.namespace.name=ns",
@@ -545,7 +545,7 @@ func TestMutate_OTLPResourceAttributes(t *testing.T) {
 		},
 		{
 			name: "global resource attributes applied",
-			dk: latestdynakube.DynaKube{
+			dk: &latestdynakube.DynaKube{
 				Spec: latestdynakube.DynaKubeSpec{
 					ResourceAttributes: map[string]string{globalKey: globalValue},
 				},
@@ -555,7 +555,7 @@ func TestMutate_OTLPResourceAttributes(t *testing.T) {
 		},
 		{
 			name: "OTLP additionalResourceAttributes applied",
-			dk: latestdynakube.DynaKube{
+			dk: &latestdynakube.DynaKube{
 				Spec: latestdynakube.DynaKubeSpec{
 					OTLPExporterConfiguration: &otlp.ExporterConfigurationSpec{
 						AdditionalResourceAttributes: map[string]string{otlpKey: otlpValue},
@@ -567,7 +567,7 @@ func TestMutate_OTLPResourceAttributes(t *testing.T) {
 		},
 		{
 			name: "both Dynakube fields set, key collision - OTLP-additional wins",
-			dk: latestdynakube.DynaKube{
+			dk: &latestdynakube.DynaKube{
 				Spec: latestdynakube.DynaKubeSpec{
 					ResourceAttributes: map[string]string{collisionKey: globalCollVal},
 					OTLPExporterConfiguration: &otlp.ExporterConfigurationSpec{
@@ -581,7 +581,7 @@ func TestMutate_OTLPResourceAttributes(t *testing.T) {
 		},
 		{
 			name: "Dynakube field collides with operator semantic key - user wins",
-			dk: latestdynakube.DynaKube{
+			dk: &latestdynakube.DynaKube{
 				Spec: latestdynakube.DynaKubeSpec{
 					ResourceAttributes: map[string]string{"k8s.namespace.name": "user-override"},
 				},
@@ -592,7 +592,7 @@ func TestMutate_OTLPResourceAttributes(t *testing.T) {
 		},
 		{
 			name: "container pre-existing OTEL_RESOURCE_ATTRIBUTES wins on collision with Dynakube",
-			dk: latestdynakube.DynaKube{
+			dk: &latestdynakube.DynaKube{
 				Spec: latestdynakube.DynaKubeSpec{
 					ResourceAttributes: map[string]string{collisionKey: globalCollVal},
 				},
@@ -606,7 +606,7 @@ func TestMutate_OTLPResourceAttributes(t *testing.T) {
 		},
 		{
 			name: "empty key and empty value in Dynakube field are filtered out",
-			dk: latestdynakube.DynaKube{
+			dk: &latestdynakube.DynaKube{
 				Spec: latestdynakube.DynaKubeSpec{
 					ResourceAttributes: map[string]string{
 						"":          "empty-key-value",
@@ -663,7 +663,7 @@ func TestMutate_AnnotationWriter(t *testing.T) {
 
 	_ = appsv1.AddToScheme(scheme.Scheme)
 
-	dk := latestdynakube.DynaKube{
+	dk := &latestdynakube.DynaKube{
 		Spec: latestdynakube.DynaKubeSpec{
 			ResourceAttributes: map[string]string{collisionKey: globalCollVal},
 			OTLPExporterConfiguration: &otlp.ExporterConfigurationSpec{

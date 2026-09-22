@@ -56,7 +56,7 @@ func (mut *Mutator) IsInjected(_ context.Context, request *dtwebhook.BaseRequest
 	return maputils.GetFieldBool(request.Pod.Annotations, AnnotationInjected, false)
 }
 
-func initResources(dk dynakube.DynaKube) corev1.ResourceRequirements {
+func initResources(dk *dynakube.DynaKube) corev1.ResourceRequirements {
 	if custom := dk.MetadataEnrichment().GetInitResources(); custom != nil {
 		return *custom
 	}

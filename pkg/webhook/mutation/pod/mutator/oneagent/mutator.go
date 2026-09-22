@@ -157,7 +157,7 @@ func mutateUserContainers(request *dtwebhook.BaseRequest, installPath string, lo
 	return len(newContainers) > 0
 }
 
-func addOneAgentEnvsToContainer(dk dynakube.DynaKube, container *corev1.Container, namespace corev1.Namespace, installPath string, runtimeClassName string) {
+func addOneAgentEnvsToContainer(dk *dynakube.DynaKube, container *corev1.Container, namespace corev1.Namespace, installPath string, runtimeClassName string) {
 	addDeploymentMetadataEnv(container, dk)
 	addPreloadEnv(container, installPath)
 	addDTStorageEnv(container)

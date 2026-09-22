@@ -108,20 +108,20 @@ func GetK8SClusterAPIReader(kubeConfig *rest.Config) (client.Reader, error) {
 
 func runChecksForAllDynakubes(ctx context.Context, baseLog logd.Logger, apiReader client.Reader, httpClient *http.Client, dynakubes []dynakube.DynaKube) {
 	for _, dk := range dynakubes {
-		err := runChecksForDynakube(ctx, baseLog, apiReader, httpClient, dk)
+		err := runChecksForDynakube(ctx, baseLog, apiReader, httpClient, &dk)
 		if err != nil {
 			logErrorf(baseLog, "Error in DynaKube %s/%s", dk.Namespace, dk.Name)
 		}
 	}
 }
 
-func runChecksForDynakube(ctx context.Context, baseLog logd.Logger, apiReader client.Reader, httpClient *http.Client, dk dynakube.DynaKube) error {
+func runChecksForDynakube(ctx context.Context, baseLog logd.Logger, apiReader client.Reader, httpClient *http.Client, dk *dynakube.DynaKube) error {
 	log := baseLog.WithName(dynakubeCheckLoggerName)
 
 	logNewCheckf(log, "checking if '%s:%s' Dynakube is configured correctly", dk.Namespace, dk.Name)
 	logInfof(log, "using '%s:%s' Dynakube", dk.Namespace, dk.Name)
 
-	err := checkDynakube(ctx, baseLog, apiReader, &dk)
+	err := checkDynakube(ctx, baseLog, apiReader, dk)
 	if err != nil {
 		return errors.Wrapf(err, "'%s:%s' Dynakube isn't valid. %s",
 			dk.Namespace, dk.Name, dynakubeNotValidMessage())
@@ -134,22 +134,22 @@ func runChecksForDynakube(ctx context.Context, baseLog logd.Logger, apiReader cl
 		return err
 	}
 
-	transport, err := createTransport(ctx, apiReader, &dk, httpClient)
+	transport, err := createTransport(ctx, apiReader, dk, httpClient)
 	if err != nil {
 		return err
 	}
 
-	err = verifyAllImagesAvailable(ctx, log, keychain, transport, &dk)
+	err = verifyAllImagesAvailable(ctx, log, keychain, transport, dk)
 	if err != nil {
 		return err
 	}
 
-	err = checkActiveGates(ctx, log, apiReader, &dk)
+	err = checkActiveGates(ctx, log, apiReader, dk)
 	if err != nil {
 		return err
 	}
 
-	return checkProxySettings(ctx, log, apiReader, &dk)
+	return checkProxySettings(ctx, log, apiReader, dk)
 }
 
 func createTransport(ctx context.Context, apiReader client.Reader, dk *dynakube.DynaKube, httpClient *http.Client) (*http.Transport, error) {

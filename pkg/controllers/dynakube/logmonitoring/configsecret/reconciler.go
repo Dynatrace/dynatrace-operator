@@ -171,7 +171,7 @@ func (r *Reconciler) getSecretData(ctx context.Context, dk *dynakube.DynaKube) (
 		deploymentConfigContent[proxyKey] = proxyURL
 	}
 
-	noProxy := createNoProxyValue(*dk)
+	noProxy := createNoProxyValue(dk)
 	if noProxy != "" {
 		deploymentConfigContent[noProxyKey] = noProxy
 	}
@@ -193,7 +193,7 @@ func (r *Reconciler) getSecretData(ctx context.Context, dk *dynakube.DynaKube) (
 	return map[string][]byte{DeploymentConfigFilename: []byte(content.String())}, nil
 }
 
-func createNoProxyValue(dk dynakube.DynaKube) string {
+func createNoProxyValue(dk *dynakube.DynaKube) string {
 	sources := []string{
 		dk.FF().GetNoProxy(),
 		capability.BuildHostEntries(dk),
@@ -217,7 +217,7 @@ func GetSecretName(dkName string) string {
 // AddAnnotations adds the key-values to the provided map for values within the secret that may change,
 // and should cause the user of the secret to be restarted, if they don't read the config during runtime.
 // Can't use a single hash for the config, as part of the secret (endpoints) changes too often.
-func AddAnnotations(source map[string]string, dk dynakube.DynaKube) map[string]string {
+func AddAnnotations(source map[string]string, dk *dynakube.DynaKube) map[string]string {
 	annotation := map[string]string{}
 	if source != nil {
 		annotation = maps.Clone(source)
