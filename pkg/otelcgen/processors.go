@@ -218,8 +218,8 @@ func (c *Config) dynatraceTransformations() []map[string]any {
 		"k8s.statefulset.name",
 		"k8s.deployment.name",
 		"k8s.replicaset.name",
-		"k8s.job.name",
 		"k8s.cronjob.name",
+		"k8s.job.name",
 	}
 
 	nameStatements := make([]string, len(workloadNameFacts))
