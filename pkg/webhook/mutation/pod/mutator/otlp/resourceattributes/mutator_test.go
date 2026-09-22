@@ -288,17 +288,17 @@ func Test_Mutator_Mutate(t *testing.T) {
 	t.Run("with deprecated annotations", func(t *testing.T) {
 		dk := baseDK.DeepCopy()
 		dk.Annotations = map[string]string{}
-		runMutatorTests(t, *dk, tests, false)
+		runMutatorTests(t, dk, tests, false)
 	})
 
 	t.Run("without deprecated annotations", func(t *testing.T) {
 		dk := baseDK.DeepCopy()
 		dk.Annotations = map[string]string{exp.EnrichmentEnableAttributesDTKubernetes: "false"}
-		runMutatorTests(t, *dk, tests, true)
+		runMutatorTests(t, dk, tests, true)
 	})
 }
 
-func runMutatorTests(t *testing.T, dk latestdynakube.DynaKube, tests []mutatorTestCase, removeDeprecatedAttr bool) { //nolint:revive
+func runMutatorTests(t *testing.T, dk *latestdynakube.DynaKube, tests []mutatorTestCase, removeDeprecatedAttr bool) { //nolint:revive
 	t.Helper()
 
 	removeDTKubernetesAnnotations := func(attributes map[string][]string) map[string][]string {
@@ -334,7 +334,7 @@ func runMutatorTests(t *testing.T, dk latestdynakube.DynaKube, tests []mutatorTe
 				tt.namespace,
 				nil,
 				pod,
-				&dk,
+				dk,
 			)
 			err := mut.Mutate(req)
 			require.NoError(t, err)
