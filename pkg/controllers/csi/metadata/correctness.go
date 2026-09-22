@@ -55,7 +55,7 @@ func (checker *CorrectnessChecker) migrateAppMounts(ctx context.Context) {
 	log := logd.FromContext(ctx)
 	baseDir := checker.path.RootDir
 
-	appMounts, err := GetRelevantOverlayMounts(checker.mounter, baseDir)
+	appMounts, err := GetOverlayMountsIn(ctx, checker.mounter, baseDir)
 	if err != nil {
 		log.Error(err, "failed to get relevant overlay mounts")
 	}
@@ -172,9 +172,9 @@ func GetRelevantDynaKubes(ctx context.Context, apiReader client.Reader) ([]dynak
 	return relevantDks, nil
 }
 
-// GetRelevantOverlayMounts returns the overlay mounts that are mounted somewhere under baseFolder.
-func GetRelevantOverlayMounts(mounter mount.Interface, baseFolder string) ([]OverlayMount, error) {
-	return collectOverlayMounts(mounter, func(overlayMount OverlayMount) bool {
+// GetOverlayMountsIn returns the overlay mounts that are mounted somewhere under baseFolder.
+func GetOverlayMountsIn(ctx context.Context, mounter mount.Interface, baseFolder string) ([]OverlayMount, error) {
+	return collectOverlayMounts(ctx, mounter, func(overlayMount OverlayMount) bool {
 		return isUnder(overlayMount.Path, baseFolder)
 	})
 }
@@ -184,15 +184,19 @@ func GetRelevantOverlayMounts(mounter mount.Interface, baseFolder string) ([]Ove
 //
 // App mounts are mounted directly at the kubelet target path (/var/lib/kubelet/pods/...), so the
 // lower directory is the only part of such a mount that points back into the CSI filesystem.
-func GetOverlayMountsWithLowerDirIn(mounter mount.Interface, baseFolder string) ([]OverlayMount, error) {
-	return collectOverlayMounts(mounter, func(overlayMount OverlayMount) bool {
+func GetOverlayMountsWithLowerDirIn(ctx context.Context, mounter mount.Interface, baseFolder string) ([]OverlayMount, error) {
+	return collectOverlayMounts(ctx, mounter, func(overlayMount OverlayMount) bool {
 		return slices.ContainsFunc(overlayMount.LowerDirs, func(lowerDir string) bool {
 			return isUnder(lowerDir, baseFolder)
 		})
 	})
 }
 
-func collectOverlayMounts(mounter mount.Interface, isRelevant func(OverlayMount) bool) ([]OverlayMount, error) {
+func collectOverlayMounts(ctx context.Context, mounter mount.Interface, isRelevant func(OverlayMount) bool) ([]OverlayMount, error) {
+	log := logd.FromContext(ctx)
+
+	// Only lists the mounts of our own mount namespace, so this needs HostToContainer propagation
+	// on the kubelet path (/var/lib/kubelet) to see the app mounts the CSI server creates.
 	mountPoints, err := mounter.List()
 	if err != nil {
 		return nil, err
@@ -206,7 +210,15 @@ func collectOverlayMounts(mounter mount.Interface, isRelevant func(OverlayMount)
 		}
 
 		overlayMount := parseOverlayMount(mountPoint)
-		if isRelevant(overlayMount) {
+		isRelevantMount := isRelevant(overlayMount)
+
+		log.Debug("checked overlay mount",
+			"path", overlayMount.Path,
+			"lowerDirs", overlayMount.LowerDirs,
+			"upperDir", overlayMount.UpperDir,
+			"relevant", isRelevantMount)
+
+		if isRelevantMount {
 			relevantMounts = append(relevantMounts, overlayMount)
 		}
 	}

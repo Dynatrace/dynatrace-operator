@@ -91,7 +91,7 @@ func TestGetRelevantOverlayMounts(t *testing.T) {
 			},
 		})
 
-		mounts, err := GetRelevantOverlayMounts(mounter, baseFolder)
+		mounts, err := GetOverlayMountsIn(t.Context(), mounter, baseFolder)
 		require.NoError(t, err)
 		require.NotNil(t, mounts)
 		require.Len(t, mounts, 1)
@@ -103,7 +103,7 @@ func TestGetRelevantOverlayMounts(t *testing.T) {
 
 	t.Run("works with no mount points", func(t *testing.T) {
 		mounter := mount.NewFakeMounter([]mount.MountPoint{})
-		mounts, err := GetRelevantOverlayMounts(mounter, "/test")
+		mounts, err := GetOverlayMountsIn(t.Context(), mounter, "/test")
 		require.NoError(t, err)
 		require.NotNil(t, mounts)
 		require.Empty(t, mounts)
@@ -120,20 +120,18 @@ func TestGetRelevantOverlayMounts(t *testing.T) {
 				Type:   "overlay",
 			},
 		})
-		mounts, err := GetRelevantOverlayMounts(mounter, "/test")
+		mounts, err := GetOverlayMountsIn(t.Context(), mounter, "/test")
 		require.NoError(t, err)
 		require.NotNil(t, mounts)
 		require.Empty(t, mounts)
 	})
 
 	t.Run("app mounts at the kubelet target path are not mounted under the CSI root", func(t *testing.T) {
-		// Guards the app mount migration, which derives a volume id from the mount path and would
-		// produce garbage for a kubelet target path.
 		mounter := mount.NewFakeMounter([]mount.MountPoint{
 			newAppMountPoint(testAppMountPath, "lowerdir="+testCodeModuleDir),
 		})
 
-		mounts, err := GetRelevantOverlayMounts(mounter, "/data")
+		mounts, err := GetOverlayMountsIn(t.Context(), mounter, "/data")
 		require.NoError(t, err)
 		assert.Empty(t, mounts)
 	})
@@ -143,7 +141,7 @@ func TestGetRelevantOverlayMounts(t *testing.T) {
 			newAppMountPoint("/database/something", "lowerdir="+testCodeModuleDir),
 		})
 
-		mounts, err := GetRelevantOverlayMounts(mounter, "/data")
+		mounts, err := GetOverlayMountsIn(t.Context(), mounter, "/data")
 		require.NoError(t, err)
 		assert.Empty(t, mounts)
 	})
@@ -157,7 +155,7 @@ func TestGetOverlayMountsWithLowerDirIn(t *testing.T) {
 			{Device: "not-relevant-mount-type"},
 		})
 
-		mounts, err := GetOverlayMountsWithLowerDirIn(mounter, testCodeModulesBase)
+		mounts, err := GetOverlayMountsWithLowerDirIn(t.Context(), mounter, testCodeModulesBase)
 		require.NoError(t, err)
 		require.Len(t, mounts, 1)
 		assert.Equal(t, testAppMountPath, mounts[0].Path)
@@ -167,7 +165,7 @@ func TestGetOverlayMountsWithLowerDirIn(t *testing.T) {
 	t.Run("ignores the overlay of the container itself", func(t *testing.T) {
 		mounter := mount.NewFakeMounter([]mount.MountPoint{containerRootMountPoint()})
 
-		mounts, err := GetOverlayMountsWithLowerDirIn(mounter, testCodeModulesBase)
+		mounts, err := GetOverlayMountsWithLowerDirIn(t.Context(), mounter, testCodeModulesBase)
 		require.NoError(t, err)
 		assert.Empty(t, mounts)
 	})
@@ -178,7 +176,7 @@ func TestGetOverlayMountsWithLowerDirIn(t *testing.T) {
 			newAppMountPoint(testAppMountPath, "lowerdir="+testCodeModuleDir+":"+otherDir),
 		})
 
-		mounts, err := GetOverlayMountsWithLowerDirIn(mounter, testCodeModulesBase)
+		mounts, err := GetOverlayMountsWithLowerDirIn(t.Context(), mounter, testCodeModulesBase)
 		require.NoError(t, err)
 		require.Len(t, mounts, 1)
 		assert.Equal(t, []string{testCodeModuleDir, otherDir}, mounts[0].LowerDirs)
@@ -189,7 +187,7 @@ func TestGetOverlayMountsWithLowerDirIn(t *testing.T) {
 			newAppMountPoint(testAppMountPath, "lowerdir=/somewhere/else:"+testCodeModuleDir),
 		})
 
-		mounts, err := GetOverlayMountsWithLowerDirIn(mounter, testCodeModulesBase)
+		mounts, err := GetOverlayMountsWithLowerDirIn(t.Context(), mounter, testCodeModulesBase)
 		require.NoError(t, err)
 		require.Len(t, mounts, 1)
 		assert.Equal(t, []string{"/somewhere/else", testCodeModuleDir}, mounts[0].LowerDirs)
@@ -200,7 +198,7 @@ func TestGetOverlayMountsWithLowerDirIn(t *testing.T) {
 			newAppMountPoint(testAppMountPath, "lowerdir+="+testCodeModuleDir),
 		})
 
-		mounts, err := GetOverlayMountsWithLowerDirIn(mounter, testCodeModulesBase)
+		mounts, err := GetOverlayMountsWithLowerDirIn(t.Context(), mounter, testCodeModulesBase)
 		require.NoError(t, err)
 		require.Len(t, mounts, 1)
 		assert.Equal(t, []string{testCodeModuleDir}, mounts[0].LowerDirs)
@@ -212,7 +210,7 @@ func TestGetOverlayMountsWithLowerDirIn(t *testing.T) {
 			newAppMountPoint(testAppMountPath, `lowerdir=`+testCodeModulesBase+`/weird\:name`),
 		})
 
-		mounts, err := GetOverlayMountsWithLowerDirIn(mounter, testCodeModulesBase)
+		mounts, err := GetOverlayMountsWithLowerDirIn(t.Context(), mounter, testCodeModulesBase)
 		require.NoError(t, err)
 		require.Len(t, mounts, 1)
 		assert.Equal(t, []string{escapedDir}, mounts[0].LowerDirs)
@@ -223,7 +221,7 @@ func TestGetOverlayMountsWithLowerDirIn(t *testing.T) {
 			newAppMountPoint(testAppMountPath, "lowerdir=/data/codemodules-backup/1.2.3"),
 		})
 
-		mounts, err := GetOverlayMountsWithLowerDirIn(mounter, testCodeModulesBase)
+		mounts, err := GetOverlayMountsWithLowerDirIn(t.Context(), mounter, testCodeModulesBase)
 		require.NoError(t, err)
 		assert.Empty(t, mounts)
 	})
@@ -231,7 +229,7 @@ func TestGetOverlayMountsWithLowerDirIn(t *testing.T) {
 	t.Run("works with no mount points", func(t *testing.T) {
 		mounter := mount.NewFakeMounter([]mount.MountPoint{})
 
-		mounts, err := GetOverlayMountsWithLowerDirIn(mounter, testCodeModulesBase)
+		mounts, err := GetOverlayMountsWithLowerDirIn(t.Context(), mounter, testCodeModulesBase)
 		require.NoError(t, err)
 		require.NotNil(t, mounts)
 		assert.Empty(t, mounts)
