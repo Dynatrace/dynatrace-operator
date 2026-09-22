@@ -160,7 +160,7 @@ func getWebhookServiceURL(dk dynakube.DynaKube) string {
 	return fmt.Sprintf("%s.%s.svc.cluster.local", webhook.DeploymentName, dk.Namespace)
 }
 
-func createProxyTLSSecret(pemCert []byte, pemPK []byte) corev1.Secret {
+func createProxyTLSSecret(pemCert []byte, pemPK []byte) *corev1.Secret {
 	pem := pemCert
 	pem = append(pem, byte('\n'))
 	pem = append(pem, pemPK...)

@@ -88,7 +88,7 @@ func NewClient(options ...func(*Client)) (ImageGetter, error) {
 	}
 
 	if c.keyChainSecret != nil {
-		keychain, err := dockerkeychain.NewDockerKeychain(c.ctx, c.apiReader, *c.keyChainSecret)
+		keychain, err := dockerkeychain.NewDockerKeychain(c.ctx, c.apiReader, c.keyChainSecret)
 		if err != nil {
 			return nil, errors.WithMessage(err, "failed to fetch pull secret")
 		}

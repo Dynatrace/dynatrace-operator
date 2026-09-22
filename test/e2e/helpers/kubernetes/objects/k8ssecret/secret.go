@@ -20,8 +20,8 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-func New(name, namespace string, data map[string][]byte) corev1.Secret {
-	return corev1.Secret{
+func New(name, namespace string, data map[string][]byte) *corev1.Secret {
+	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
@@ -30,12 +30,12 @@ func New(name, namespace string, data map[string][]byte) corev1.Secret {
 	}
 }
 
-func Create(secret corev1.Secret) features.Func {
+func Create(secret *corev1.Secret) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		err := envConfig.Client().Resources().Create(ctx, &secret)
+		err := envConfig.Client().Resources().Create(ctx, secret)
 		if err != nil {
 			if k8serrors.IsAlreadyExists(err) {
-				err = envConfig.Client().Resources().Update(ctx, &secret)
+				err = envConfig.Client().Resources().Update(ctx, secret)
 			}
 			require.NoError(t, err)
 		}
@@ -44,9 +44,9 @@ func Create(secret corev1.Secret) features.Func {
 	}
 }
 
-func Delete(secret corev1.Secret) features.Func {
+func Delete(secret *corev1.Secret) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		err := envConfig.Client().Resources().Delete(ctx, &secret)
+		err := envConfig.Client().Resources().Delete(ctx, secret)
 		if err != nil {
 			if k8serrors.IsNotFound(err) {
 				err = nil
