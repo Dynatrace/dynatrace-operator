@@ -53,7 +53,34 @@ func TestProbes(t *testing.T) {
 }
 
 func TestContainer(t *testing.T) {
-	t.Run("builds the telemetry config arg", func(t *testing.T) {
-		assert.Equal(t, []string{"--config=file:///config/telemetry.yaml"}, buildArgs())
+	t.Run("builds the telemetry config arg with default (empty) extraArgs", func(t *testing.T) {
+		assert.Equal(t, []string{"--config=file:///config/telemetry.yaml"}, buildArgs([]string{}))
+	})
+	t.Run("builds the telemetry config arg with (user-specified) extraArgs", func(t *testing.T) {
+		assert.Equal(t, []string{"--config=file:///config/telemetry.yaml", "--set=exporters::debug::verbosity=basic"}, buildArgs([]string{"--set=exporters::debug::verbosity=basic"}))
+	})
+	t.Run("nil extraArgs produces only base arg", func(t *testing.T) {
+		assert.Equal(t, []string{"--config=file:///config/telemetry.yaml"}, buildArgs(nil))
+	})
+	t.Run("multiple extraArgs are appended in order", func(t *testing.T) {
+		assert.Equal(t, []string{
+			"--config=file:///config/telemetry.yaml",
+			"--set=exporters::debug::verbosity=basic",
+			"--feature-gates=+component.UseLocalHostAsDefaultHost",
+		}, buildArgs([]string{
+			"--set=exporters::debug::verbosity=basic",
+			"--feature-gates=+component.UseLocalHostAsDefaultHost",
+		}))
+	})
+	t.Run("args are wired into container", func(t *testing.T) {
+		dk := getTestDynakube()
+		dk.Spec.TelemetryIngest = &telemetryingest.Spec{}
+		dk.Spec.Templates.OpenTelemetryCollector.Args = []string{"--set=exporters::debug::verbosity=basic"}
+
+		container := getContainer(dk, 1)
+		assert.Equal(t, []string{
+			"--config=file:///config/telemetry.yaml",
+			"--set=exporters::debug::verbosity=basic",
+		}, container.Args)
 	})
 }
