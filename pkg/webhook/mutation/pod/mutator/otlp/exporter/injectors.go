@@ -112,7 +112,7 @@ func (li *logsInjector) Inject(c *corev1.Container, apiURL string, addCertificat
 
 // noProxyInjector injects ActiveGate service into NO_PROXY env var when feature flag and ActiveGate enabled.
 type noProxyInjector struct {
-	dk dynakube.DynaKube
+	dk *dynakube.DynaKube
 }
 
 func (npi *noProxyInjector) isEnabled() bool {
@@ -124,7 +124,7 @@ func (npi *noProxyInjector) Inject(c *corev1.Container, _ string, _ bool) bool {
 		return false
 	}
 
-	agServiceFQDN := activegate.GetServiceFQDN(&npi.dk)
+	agServiceFQDN := activegate.GetServiceFQDN(npi.dk)
 
 	noProxyEnvVar := k8senv.FindCaseInsensitive(c.Env, NoProxyEnv)
 

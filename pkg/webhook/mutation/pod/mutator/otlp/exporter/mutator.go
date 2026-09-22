@@ -135,7 +135,7 @@ func (m Mutator) mutate(request *dtwebhook.BaseRequest, log logd.Logger) (bool, 
 		&traceInjector{cfg: otlpExporterConfig},
 		&metricsInjector{cfg: otlpExporterConfig},
 		&logsInjector{cfg: otlpExporterConfig},
-		&noProxyInjector{dk: *request.DynaKube},
+		&noProxyInjector{dk: request.DynaKube},
 	}
 
 	mutated := false
