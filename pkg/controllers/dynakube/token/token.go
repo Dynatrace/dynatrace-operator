@@ -51,7 +51,7 @@ func (token *Token) addFeatures(features []Feature) {
 	token.Features = append(token.Features, features...)
 }
 
-func (token *Token) verifyScopes(ctx context.Context, dtClient token.Client, dk dynakube.DynaKube) (map[string]bool, error) {
+func (token *Token) verifyScopes(ctx context.Context, dtClient token.Client, dk *dynakube.DynaKube) (map[string]bool, error) {
 	ctx, log := logd.NewFromContext(ctx, "tokens")
 
 	if len(token.Features) == 0 {
@@ -82,7 +82,7 @@ func (token *Token) verifyScopes(ctx context.Context, dtClient token.Client, dk 
 	return optionalScopes, err
 }
 
-func (token *Token) verifyRequiredScopes(scopes []string, dk dynakube.DynaKube) error {
+func (token *Token) verifyRequiredScopes(scopes []string, dk *dynakube.DynaKube) error {
 	collectedErrors := make([]error, 0)
 	allMissingScopes := make([]string, 0)
 
@@ -106,7 +106,7 @@ func (token *Token) verifyRequiredScopes(scopes []string, dk dynakube.DynaKube) 
 	return nil
 }
 
-func (token *Token) collectOptionalScopes(availableScopes []string, dk dynakube.DynaKube) map[string]bool {
+func (token *Token) collectOptionalScopes(availableScopes []string, dk *dynakube.DynaKube) map[string]bool {
 	optionalScopes := map[string]bool{}
 
 	for _, feature := range token.Features {

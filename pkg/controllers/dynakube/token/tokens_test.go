@@ -110,7 +110,7 @@ func TestTokens(t *testing.T) {
 			APIKey: new(newToken(APIKey, fakeTokenAllAPITokenPermissions)),
 		}
 		tokens = tokens.AddFeatureScopesToTokens()
-		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t, fakeTokenAllAPITokenPermissions), dynakube.DynaKube{})
+		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t, fakeTokenAllAPITokenPermissions), &dynakube.DynaKube{})
 
 		assert.Len(t, tokens.APIToken().Features, 9)
 		assert.Empty(t, tokens.PaasToken().Features)
@@ -125,7 +125,7 @@ func TestTokens(t *testing.T) {
 			PaaSKey: new(newToken(PaaSKey, fakeTokenPaas)),
 		}
 		tokens = tokens.AddFeatureScopesToTokens()
-		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t, fakeTokenAllAPITokenPermissions, fakeTokenPaas), dynakube.DynaKube{})
+		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t, fakeTokenAllAPITokenPermissions, fakeTokenPaas), &dynakube.DynaKube{})
 
 		assert.Len(t, tokens.APIToken().Features, 9)
 		assert.Len(t, tokens.PaasToken().Features, 1)
@@ -137,7 +137,7 @@ func TestTokens(t *testing.T) {
 			APIKey: new(newToken(APIKey, fakeTokenAllAPITokenPermissionsIncludingPaaS)),
 		}
 		tokens = tokens.AddFeatureScopesToTokens()
-		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t, fakeTokenAllAPITokenPermissionsIncludingPaaS), dynakube.DynaKube{})
+		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t, fakeTokenAllAPITokenPermissionsIncludingPaaS), &dynakube.DynaKube{})
 
 		assert.Len(t, tokens.APIToken().Features, 9)
 		assert.Empty(t, tokens.PaasToken().Features)
@@ -145,7 +145,7 @@ func TestTokens(t *testing.T) {
 		assert.NoError(t, err)
 	})
 	t.Run("activegate enabled dynakube, no permissions in api token => fail", func(t *testing.T) {
-		dk := dynakube.DynaKube{}
+		dk := &dynakube.DynaKube{}
 		dk.Spec.ActiveGate.Capabilities = []activegate.CapabilityDisplayName{
 			activegate.KubeMonCapability.DisplayName,
 		}
@@ -163,8 +163,8 @@ func TestTokens(t *testing.T) {
 		assert.EqualError(t, err, "token 'apiToken' has scope errors: [feature 'Access problem and event feed, metrics, and topology' is missing scope 'DataExport' feature 'Automatic ActiveGate Token Creation' is missing scope 'activeGateTokenManagement.create' feature 'Download Installer' is missing scope 'InstallerDownload']")
 	})
 	t.Run("data ingest enabled => dataingest token missing rights => fail", func(t *testing.T) {
-		dk := dynakube.DynaKube{}
-		enableKubernetesMonitoringAndMetricsIngest(&dk)
+		dk := &dynakube.DynaKube{}
+		enableKubernetesMonitoringAndMetricsIngest(dk)
 
 		tokens := Tokens{
 			APIKey:        new(newToken(APIKey, fakeTokenAllAPITokenPermissionsIncludingPaaS)),
@@ -185,7 +185,7 @@ func TestTokens(t *testing.T) {
 			DataIngestKey: new(newToken(DataIngestKey, fakeTokenAllDataIngestPermissions)),
 		}
 		tokens = tokens.AddFeatureScopesToTokens()
-		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t, fakeTokenAllAPITokenPermissionsIncludingPaaS, fakeTokenAllDataIngestPermissions), dynakube.DynaKube{})
+		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t, fakeTokenAllAPITokenPermissionsIncludingPaaS, fakeTokenAllDataIngestPermissions), &dynakube.DynaKube{})
 
 		assert.Len(t, tokens.APIToken().Features, 9)
 		assert.Empty(t, tokens.PaasToken().Features)
@@ -193,7 +193,7 @@ func TestTokens(t *testing.T) {
 		assert.NoError(t, err)
 	})
 	t.Run("otlp exporter configuration enabled => dataingest token missing rights => fail", func(t *testing.T) {
-		dk := dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				OTLPExporterConfiguration: &otlp.ExporterConfigurationSpec{
 					Signals: otlp.SignalConfiguration{
@@ -219,7 +219,7 @@ func TestTokens(t *testing.T) {
 		assert.EqualError(t, err, "token 'dataIngestToken' has scope errors: [feature 'OTLP trace exporter configuration' is missing scope 'openTelemetryTrace.ingest' feature 'OTLP logs exporter configuration' is missing scope 'logs.ingest' feature 'OTLP metrics exporter configuration' is missing scope 'metrics.ingest']")
 	})
 	t.Run("otlp exporter configuration enabled => dataingest token has rights => success", func(t *testing.T) {
-		dk := dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				OTLPExporterConfiguration: &otlp.ExporterConfigurationSpec{
 					Signals: otlp.SignalConfiguration{
@@ -248,7 +248,7 @@ func TestTokens(t *testing.T) {
 func TestTokens_VerifyScopes(t *testing.T) {
 	type testCase struct {
 		title            string
-		dk               dynakube.DynaKube
+		dk               *dynakube.DynaKube
 		availableScopes  []string
 		expectedOptional map[string]bool
 		shouldError      bool
@@ -257,7 +257,7 @@ func TestTokens_VerifyScopes(t *testing.T) {
 	cases := []testCase{
 		{
 			title: "kubernetes-monitoring enabled - all scopes present",
-			dk: dynakube.DynaKube{
+			dk: &dynakube.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
 						"feature.dynatrace.com/automatic-kubernetes-api-monitoring": "true",
@@ -286,7 +286,7 @@ func TestTokens_VerifyScopes(t *testing.T) {
 		},
 		{
 			title: "kubernetes-monitoring enabled - required scopes missing",
-			dk: dynakube.DynaKube{
+			dk: &dynakube.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
 						"feature.dynatrace.com/automatic-kubernetes-api-monitoring": "true",
@@ -314,7 +314,7 @@ func TestTokens_VerifyScopes(t *testing.T) {
 		},
 		{
 			title: "kubernetes-monitoring enabled - optional scopes missing",
-			dk: dynakube.DynaKube{
+			dk: &dynakube.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
 						"feature.dynatrace.com/automatic-kubernetes-api-monitoring": "true",
@@ -341,7 +341,7 @@ func TestTokens_VerifyScopes(t *testing.T) {
 		},
 		{
 			title: "kubernetesMonitoring operand with registration enabled, optional scopes present",
-			dk: dynakube.DynaKube{
+			dk: &dynakube.DynaKube{
 				Spec: dynakube.DynaKubeSpec{
 					KubernetesMonitoring: &kubemon.Spec{
 						Registration: &kubemon.Registration{},
@@ -362,7 +362,7 @@ func TestTokens_VerifyScopes(t *testing.T) {
 		},
 		{
 			title: "kubernetesMonitoring operand without registration, optional scopes missing",
-			dk: dynakube.DynaKube{
+			dk: &dynakube.DynaKube{
 				Spec: dynakube.DynaKubeSpec{
 					KubernetesMonitoring: &kubemon.Spec{},
 				},
@@ -376,7 +376,7 @@ func TestTokens_VerifyScopes(t *testing.T) {
 		},
 		{
 			title: "metadataEnrichment - all scopes present",
-			dk: dynakube.DynaKube{
+			dk: &dynakube.DynaKube{
 				Spec: dynakube.DynaKubeSpec{
 					MetadataEnrichment: metadataenrichment.Spec{
 						Enabled: new(true),
@@ -395,7 +395,7 @@ func TestTokens_VerifyScopes(t *testing.T) {
 		},
 		{
 			title: "metadataEnrichment - required scopes missing", // TODO: related to the other TODOS, this test is a bit "incorrect", as metadataEnrichment doesn't really have required scopes
-			dk: dynakube.DynaKube{
+			dk: &dynakube.DynaKube{
 				Spec: dynakube.DynaKubeSpec{
 					MetadataEnrichment: metadataenrichment.Spec{
 						Enabled: new(true),
@@ -413,7 +413,7 @@ func TestTokens_VerifyScopes(t *testing.T) {
 		},
 		{
 			title: "metadataEnrichment - optional scopes missing",
-			dk: dynakube.DynaKube{
+			dk: &dynakube.DynaKube{
 				Spec: dynakube.DynaKubeSpec{
 					MetadataEnrichment: metadataenrichment.Spec{
 						Enabled: new(true),
@@ -431,7 +431,7 @@ func TestTokens_VerifyScopes(t *testing.T) {
 		},
 		{
 			title: "logMonitoring enabled - optional scopes present",
-			dk: dynakube.DynaKube{
+			dk: &dynakube.DynaKube{
 				Spec: dynakube.DynaKubeSpec{
 					LogMonitoring: &logmonitoring.Spec{},
 				},
@@ -450,7 +450,7 @@ func TestTokens_VerifyScopes(t *testing.T) {
 		},
 		{
 			title: "logMonitoring enabled - optional scopes missing",
-			dk: dynakube.DynaKube{
+			dk: &dynakube.DynaKube{
 				Spec: dynakube.DynaKubeSpec{
 					LogMonitoring: &logmonitoring.Spec{},
 				},
