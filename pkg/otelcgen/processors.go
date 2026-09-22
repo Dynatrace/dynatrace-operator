@@ -212,13 +212,14 @@ func (c *Config) buildTransformPodIP() map[string]any {
 // without the guard they would unconditionally overwrite a DynaKube resourceAttributes override
 // with the built-in fact whenever the pod belongs to a real workload (i.e. almost always).
 func (c *Config) dynatraceTransformations() []map[string]any {
+	// It's important to sort this in order of highest in the chain, e.g. a deployment-owned pod shouldn't use replicaset.
 	workloadNameFacts := []string{
-		"k8s.statefulset.name",
-		"k8s.replicaset.name",
-		"k8s.job.name",
-		"k8s.deployment.name",
 		"k8s.daemonset.name",
+		"k8s.statefulset.name",
+		"k8s.deployment.name",
+		"k8s.replicaset.name",
 		"k8s.cronjob.name",
+		"k8s.job.name",
 	}
 
 	nameStatements := make([]string, len(workloadNameFacts))
@@ -230,12 +231,13 @@ func (c *Config) dynatraceTransformations() []map[string]any {
 		`merge_maps(attributes, ParseJSON(attributes["metadata.dynatrace.com"]), "upsert") where IsMatch(attributes["metadata.dynatrace.com"], "^\\{")`,
 		`delete_key(attributes, "metadata.dynatrace.com")`,
 	}, nameStatements, []string{
-		setLiteralIfPresentAndAbsent("k8s.workload.kind", "statefulset", "k8s.statefulset.name"),
-		setLiteralIfPresentAndAbsent("k8s.workload.kind", "replicaset", "k8s.replicaset.name"),
-		setLiteralIfPresentAndAbsent("k8s.workload.kind", "job", "k8s.job.name"),
-		setLiteralIfPresentAndAbsent("k8s.workload.kind", "deployment", "k8s.deployment.name"),
+		// It's important to sort this in order of highest in the chain, e.g. a deployment-owned pod shouldn't use replicaset.
 		setLiteralIfPresentAndAbsent("k8s.workload.kind", "daemonset", "k8s.daemonset.name"),
+		setLiteralIfPresentAndAbsent("k8s.workload.kind", "statefulset", "k8s.statefulset.name"),
+		setLiteralIfPresentAndAbsent("k8s.workload.kind", "deployment", "k8s.deployment.name"),
+		setLiteralIfPresentAndAbsent("k8s.workload.kind", "replicaset", "k8s.replicaset.name"),
 		setLiteralIfPresentAndAbsent("k8s.workload.kind", "cronjob", "k8s.cronjob.name"),
+		setLiteralIfPresentAndAbsent("k8s.workload.kind", "job", "k8s.job.name"),
 		setLiteralIfAbsent("k8s.cluster.uid", "${env:K8S_CLUSTER_UID}"),
 		setLiteralIfAbsent("k8s.cluster.name", "${env:K8S_CLUSTER_NAME}"),
 		`set(attributes["dt.kubernetes.workload.name"], attributes["k8s.workload.name"])`,
