@@ -31,7 +31,7 @@ const DeploymentAvailableTimeout = 5 * time.Minute
 
 const DeploymentReplicaFailureTimeout = 5 * time.Minute
 
-type PodConsumer func(pod corev1.Pod)
+type PodConsumer func(pod *corev1.Pod)
 
 type MutateFn func(deploy *appsv1.Deployment)
 
@@ -60,8 +60,8 @@ func (query *Query) ForEachPod(consumer PodConsumer) error {
 		return err
 	}
 
-	for _, pod := range pods.Items {
-		consumer(pod)
+	for i := range pods.Items {
+		consumer(&pods.Items[i])
 	}
 
 	return nil

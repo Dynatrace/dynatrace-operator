@@ -178,7 +178,7 @@ func executeSupportArchiveCommand(ctx context.Context, t *testing.T, envConfig *
 	command := slices.Concat([]string{"/usr/local/bin/dynatrace-operator", "support-archive"}, cmdLineArguments)
 
 	executionResult, err := k8spod.Exec(ctx, envConfig.Client().Resources(),
-		operatorPods[0],
+		&operatorPods[0],
 		operator.ContainerName,
 		command...,
 	)

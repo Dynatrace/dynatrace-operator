@@ -308,7 +308,7 @@ func isProvisionerUsingPublicRegistry(dkName string, namespace string, imageID *
 }
 
 func checkProvisionerLog(ctx context.Context, t *testing.T, envConfig *envconf.Config, dkName string, imageID string) k8sdaemonset.PodConsumer {
-	return func(pod corev1.Pod) {
+	return func(pod *corev1.Pod) {
 		provisionerLog := logs.ReadLog(ctx, t, envConfig, pod.Namespace, pod.Name, "provisioner")
 
 		// expected message: `{"level":"info",...,"msg":"pullOciImage",...,"name":"use-public-registry-cm-with-csi",..."ref.String":"<registry>:<version>@sha256:<sha256>"}`

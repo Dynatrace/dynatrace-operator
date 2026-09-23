@@ -71,7 +71,7 @@ func oneAgentHaveGeneratedMetadata(dk dynakube.DynaKube) features.Func {
 }
 
 func assertGeneratedMetadataFields(ctx context.Context, t *testing.T, resource *resources.Resources) k8sdaemonset.PodConsumer {
-	return func(pod corev1.Pod) {
+	return func(pod *corev1.Pod) {
 		generatedMetadata := metadataenrichment.GetNodeMetadataPropertiesFromPod(ctx, t, resource, pod)
 		assert.NotEmpty(t, generatedMetadata, "generated metadata should not be empty")
 		for _, attribute := range expectedMetadataFields {

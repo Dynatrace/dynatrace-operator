@@ -413,11 +413,11 @@ func (app *App) ListPods(ctx context.Context, t *testing.T, resource *resources.
 	return corev1.PodList{Items: []corev1.Pod{pod}}
 }
 
-func (app *App) GetPod(ctx context.Context, t *testing.T, resource *resources.Resources) corev1.Pod {
+func (app *App) GetPod(ctx context.Context, t *testing.T, resource *resources.Resources) *corev1.Pod {
 	pods := app.ListPods(ctx, t, resource)
 	require.NotEmpty(t, pods.Items)
 
-	return pods.Items[0]
+	return &pods.Items[0]
 }
 
 func (app *App) GetInitContainer(ctx context.Context, t *testing.T, resource *resources.Resources, name string) corev1.Container {

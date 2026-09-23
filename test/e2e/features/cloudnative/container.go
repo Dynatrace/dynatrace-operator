@@ -49,14 +49,14 @@ func checkSampleContainer(sampleApp *sample.App, agCrtFunc func() []byte, truste
 			certs := string(agCrtFunc()) + "\n" + string(trustedCAs)
 
 			if string(agCrtFunc()) == "" && string(trustedCAs) == "" {
-				checkFileNotFound(ctx, t, resources, pod, sampleApp.ContainerName(), oneAgentCustomPemPath)
+				checkFileNotFound(ctx, t, resources, &pod, sampleApp.ContainerName(), oneAgentCustomPemPath)
 			} else {
-				checkFileContents(ctx, t, resources, pod, sampleApp.ContainerName(), oneAgentCustomPemPath, certs)
+				checkFileContents(ctx, t, resources, &pod, sampleApp.ContainerName(), oneAgentCustomPemPath, certs)
 			}
 			if string(trustedCAs) == "" {
-				checkFileNotFound(ctx, t, resources, pod, sampleApp.ContainerName(), oneAgentCustomProxyPemPath)
+				checkFileNotFound(ctx, t, resources, &pod, sampleApp.ContainerName(), oneAgentCustomProxyPemPath)
 			} else {
-				checkFileContents(ctx, t, resources, pod, sampleApp.ContainerName(), oneAgentCustomProxyPemPath, string(trustedCAs))
+				checkFileContents(ctx, t, resources, &pod, sampleApp.ContainerName(), oneAgentCustomProxyPemPath, string(trustedCAs))
 			}
 		}
 
@@ -84,8 +84,8 @@ func checkActiveGateContainer(dk *dynakube.DynaKube, trustedCAs []byte) features
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resources := envConfig.Client().Resources()
 
-		var activeGatePod corev1.Pod
-		require.NoError(t, resources.WithNamespace(dk.Namespace).Get(ctx, activegate.GetActiveGatePodName(dk), dk.Namespace, &activeGatePod))
+		activeGatePod := &corev1.Pod{}
+		require.NoError(t, resources.WithNamespace(dk.Namespace).Get(ctx, activegate.GetActiveGatePodName(dk), dk.Namespace, activeGatePod))
 
 		require.NotNil(t, activeGatePod.Spec)
 		require.NotEmpty(t, activeGatePod.Spec.Containers)
@@ -100,7 +100,7 @@ func checkActiveGateContainer(dk *dynakube.DynaKube, trustedCAs []byte) features
 	}
 }
 
-func checkFileContents(ctx context.Context, t *testing.T, testResources *resources.Resources, testPod corev1.Pod, containerName string, filename string, certificates string) { //nolint:revive
+func checkFileContents(ctx context.Context, t *testing.T, testResources *resources.Resources, testPod *corev1.Pod, containerName string, filename string, certificates string) { //nolint:revive
 	catCommand := shell.Shell(shell.Cat(filename))
 	executionResult, err := k8spod.Exec(ctx, testResources, testPod, containerName, catCommand...)
 
@@ -113,7 +113,7 @@ func checkFileContents(ctx context.Context, t *testing.T, testResources *resourc
 	assert.Empty(t, stdErr)
 }
 
-func checkFileNotFound(ctx context.Context, t *testing.T, testResources *resources.Resources, testPod corev1.Pod, containerName string, filename string) { //nolint:revive
+func checkFileNotFound(ctx context.Context, t *testing.T, testResources *resources.Resources, testPod *corev1.Pod, containerName string, filename string) { //nolint:revive
 	existsCommand := shell.Shell(shell.Exists(filename))
 	executionResult, err := k8spod.Exec(ctx, testResources, testPod, containerName, existsCommand...)
 

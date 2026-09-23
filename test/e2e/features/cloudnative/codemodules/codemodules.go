@@ -489,7 +489,7 @@ func ImageHasBeenDownloaded(dk dynakube.DynaKube) features.Func {
 		err = k8sdaemonset.NewQuery(ctx, resource, client.ObjectKey{
 			Name:      csi.DaemonSetName,
 			Namespace: dk.Namespace,
-		}).ForEachPod(func(pod corev1.Pod) {
+		}).ForEachPod(func(pod *corev1.Pod) {
 			err = wait.For(func(ctx context.Context) (done bool, err error) {
 				logStream, err := clientset.CoreV1().Pods(pod.Namespace).GetLogs(pod.Name, &corev1.PodLogOptions{
 					Container: provisionerContainerName,
@@ -524,7 +524,7 @@ func measureDiskUsage(namespace string, storageMap map[string]int) features.Func
 		err := k8sdaemonset.NewQuery(ctx, resource, client.ObjectKey{
 			Name:      csi.DaemonSetName,
 			Namespace: namespace,
-		}).ForEachPod(func(pod corev1.Pod) {
+		}).ForEachPod(func(pod *corev1.Pod) {
 			diskUsage := getDiskUsage(ctx, t, envConfig.Client().Resources(), pod, provisionerContainerName, dataPath)
 			storageMap[pod.Name] = diskUsage
 		})
@@ -540,7 +540,7 @@ func diskUsageDoesNotIncrease(namespace string, storageMap map[string]int) featu
 		err := k8sdaemonset.NewQuery(ctx, resource, client.ObjectKey{
 			Name:      csi.DaemonSetName,
 			Namespace: namespace,
-		}).ForEachPod(func(pod corev1.Pod) {
+		}).ForEachPod(func(pod *corev1.Pod) {
 			diskUsage := getDiskUsage(ctx, t, envConfig.Client().Resources(), pod, provisionerContainerName, dataPath)
 			assert.InDelta(t, storageMap[pod.Name], diskUsage, diskUsageKiBDelta)
 		})
@@ -550,7 +550,7 @@ func diskUsageDoesNotIncrease(namespace string, storageMap map[string]int) featu
 	}
 }
 
-func getDiskUsage(ctx context.Context, t *testing.T, resource *resources.Resources, pod corev1.Pod, containerName, path string) int { //nolint:revive
+func getDiskUsage(ctx context.Context, t *testing.T, resource *resources.Resources, pod *corev1.Pod, containerName, path string) int { //nolint:revive
 	diskUsageCommand := shell.Shell(
 		shell.Pipe(
 			shell.DiskUsageWithTotal(path),
@@ -572,7 +572,7 @@ func VolumesAreMountedCorrectly(sampleApp sample.App) features.Func {
 		err := k8sdeployment.NewQuery(ctx, resource, client.ObjectKey{
 			Name:      sampleApp.Name(),
 			Namespace: sampleApp.Namespace(),
-		}).ForEachPod(func(pod corev1.Pod) {
+		}).ForEachPod(func(pod *corev1.Pod) {
 			volumes := pod.Spec.Volumes
 			volumeMounts := pod.Spec.Containers[0].VolumeMounts
 
@@ -633,7 +633,7 @@ func checkOneAgentEnvVars(dk dynakube.DynaKube) features.Func {
 		err := k8sdaemonset.NewQuery(ctx, resources, client.ObjectKey{
 			Name:      dk.OneAgent().GetDaemonsetName(),
 			Namespace: dk.Namespace,
-		}).ForEachPod(func(pod corev1.Pod) {
+		}).ForEachPod(func(pod *corev1.Pod) {
 			checkEnvVarsInContainer(t, pod, dk.OneAgent().GetDaemonsetName(), httpsProxy)
 		})
 
@@ -643,7 +643,7 @@ func checkOneAgentEnvVars(dk dynakube.DynaKube) features.Func {
 	}
 }
 
-func checkEnvVarsInContainer(t *testing.T, pod corev1.Pod, containerName string, envVar string) {
+func checkEnvVarsInContainer(t *testing.T, pod *corev1.Pod, containerName string, envVar string) {
 	for _, container := range pod.Spec.Containers {
 		if container.Name == containerName {
 			require.NotNil(t, container.Env)

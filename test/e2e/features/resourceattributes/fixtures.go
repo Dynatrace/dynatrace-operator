@@ -148,7 +148,7 @@ func assessDTNodeMetadataProperties(dk dynakube.DynaKube, expected map[string]st
 
 		expectedDefaults := buildExpectedNodeDefaults(ctx, t, envConfig, dk)
 		forbidden := forbiddenAttrs(expected)
-		err := q.ForEachPod(func(pod corev1.Pod) {
+		err := q.ForEachPod(func(pod *corev1.Pod) {
 			properties := metadataenrichment.GetNodeMetadataPropertiesFromPod(ctx, t, r, pod)
 			for k, v := range expected {
 				assert.Equalf(t, v, properties[k], "dt_node_metadata.properties key %q in pod %s", k, pod.Name)
@@ -171,7 +171,7 @@ func assessOTLPInjectionAttributes(dk dynakube.DynaKube, app *sample.App, expect
 		resource := envConfig.Client().Resources()
 		query := k8sdeployment.NewQuery(ctx, resource, client.ObjectKey{Name: app.Name(), Namespace: app.Namespace()})
 
-		err := query.ForEachPod(func(p corev1.Pod) {
+		err := query.ForEachPod(func(p *corev1.Pod) {
 			require.NotEmptyf(t, p.Spec.Containers, "pod %s has no containers", p.Name)
 			gotAttrs, ok := resourceattributes.NewAttributesFromEnv(p.Spec.Containers[0].Env, resourceattributes.OTelResourceAttributesEnv)
 			require.Truef(t, ok, "OTEL_RESOURCE_ATTRIBUTES missing on pod %s", p.Name)
@@ -201,7 +201,7 @@ func assessOTLPInjectionAttributesAbsent(app *sample.App) features.Func {
 		resource := envConfig.Client().Resources()
 		query := k8sdeployment.NewQuery(ctx, resource, client.ObjectKey{Name: app.Name(), Namespace: app.Namespace()})
 
-		err := query.ForEachPod(func(p corev1.Pod) {
+		err := query.ForEachPod(func(p *corev1.Pod) {
 			require.NotEmptyf(t, p.Spec.Containers, "pod %s has no containers", p.Name)
 			_, ok := resourceattributes.NewAttributesFromEnv(p.Spec.Containers[0].Env, resourceattributes.OTelResourceAttributesEnv)
 			assert.Falsef(t, ok, "%s must be absent on pod %s when OTLP is not configured", resourceattributes.OTelResourceAttributesEnv, p.Name)

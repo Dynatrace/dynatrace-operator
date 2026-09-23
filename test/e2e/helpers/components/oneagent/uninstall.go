@@ -73,7 +73,7 @@ func removeUninstallDaemonset(namespace string) features.Func {
 }
 
 func cleanUpNodeConsumer(ctx context.Context, t *testing.T, resource *resources.Resources) k8sdaemonset.PodConsumer {
-	return func(pod corev1.Pod) {
+	return func(pod *corev1.Pod) {
 		stdOut := bytes.NewBuffer([]byte{})
 		stdErr := bytes.NewBuffer([]byte{})
 		if err := resource.ExecInPod(ctx, pod.Namespace, pod.Name, "uninstall-oneagent", []string{"/bin/sh", "-c", "chroot /mnt/root /opt/dynatrace/oneagent/agent/uninstall.sh"}, stdOut, stdErr); err != nil {

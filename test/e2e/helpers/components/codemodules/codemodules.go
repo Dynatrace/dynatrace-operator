@@ -45,7 +45,7 @@ func CheckRuxitAgentProcFileHasNoConnInfo(testDynakube dynakube.DynaKube) featur
 		err := k8sdaemonset.NewQuery(ctx, resources, client.ObjectKey{
 			Name:      csi.DaemonSetName,
 			Namespace: testDynakube.Namespace,
-		}).ForEachPod(func(pod corev1.Pod) {
+		}).ForEachPod(func(pod *corev1.Pod) {
 			// /data/codemodules/1.318.0.20250609-191530/agent/conf/ruxitagentproc.conf
 			dir := filepath.Join("/data", "codemodules", dk.OneAgent().GetCodeModulesVersion(), "agent", "conf", RuxitAgentProcFile)
 			err := wait.For(func(ctx context.Context) (done bool, err error) {
@@ -78,10 +78,11 @@ func CheckImageVolumeInjection(deployment *sample.App, imageURI string) features
 
 		require.NotEmpty(t, samplePods.Items)
 
-		for _, item := range samplePods.Items {
-			require.NotEmpty(t, item.Spec.InitContainers)
-			require.Equal(t, webhook.InstallContainerName, item.Spec.InitContainers[0].Name)
-			require.Contains(t, item.Spec.Volumes, corev1.Volume{
+		for i := range samplePods.Items {
+			pod := &samplePods.Items[i]
+			require.NotEmpty(t, pod.Spec.InitContainers)
+			require.Equal(t, webhook.InstallContainerName, pod.Spec.InitContainers[0].Name)
+			require.Contains(t, pod.Spec.Volumes, corev1.Volume{
 				Name: oaMutator.BinVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Image: &corev1.ImageVolumeSource{
@@ -93,7 +94,7 @@ func CheckImageVolumeInjection(deployment *sample.App, imageURI string) features
 
 			// the only reliable way to test if codemodules works is to check
 			ifNotEmptyCommand := shell.Shell(shell.CheckIfNotEmpty("/var/lib/dynatrace/oneagent/log/php/"))
-			executionResult, err := k8spod.Exec(ctx, resource, item, deployment.ContainerName(), ifNotEmptyCommand...)
+			executionResult, err := k8spod.Exec(ctx, resource, pod, deployment.ContainerName(), ifNotEmptyCommand...)
 			require.NoError(t, err)
 			require.NotEmpty(t, executionResult)
 		}

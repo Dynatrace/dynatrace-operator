@@ -142,7 +142,7 @@ func CheckRuxitAgentProcFileHasProxySetting(sampleApp sample.App, proxySpec *val
 		err := k8sdeployment.NewQuery(ctx, resources, client.ObjectKey{
 			Name:      sampleApp.Name(),
 			Namespace: sampleApp.Namespace(),
-		}).ForEachPod(func(pod corev1.Pod) {
+		}).ForEachPod(func(pod *corev1.Pod) {
 			dir := filepath.Join(volumes.ConfigMountPath, pmc.DestinationRuxitAgentProcPath)
 			readFileCommand := shell.ReadFile(dir)
 			result, err := k8spod.Exec(ctx, resources, pod, sampleApp.ContainerName(), readFileCommand...)

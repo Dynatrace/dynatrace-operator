@@ -58,7 +58,7 @@ func MetadataEnrichment(t *testing.T) features.Feature {
 
 func assessMetadataEnrichmentHasDeprecatedAttributes(samplePod *sample.App) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		testPod := samplePod.ListPods(ctx, t, envConfig.Client().Resources()).Items[0]
+		testPod := &samplePod.ListPods(ctx, t, envConfig.Client().Resources()).Items[0]
 		enrichmentMetadata := metadataenrichment.GetMetadataJSONFromPod(ctx, t, envConfig.Client().Resources(), testPod)
 
 		assert.Equal(t, "pod", enrichmentMetadata.DTWorkloadKind)

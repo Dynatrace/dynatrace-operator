@@ -159,11 +159,12 @@ func assertBuildLabels(sampleApp *sample.App, expectedBuildLabels map[string]bui
 		kubeResources := envConfig.Client().Resources()
 		pods := sampleApp.ListPods(ctx, t, kubeResources)
 
-		for _, pod := range pods.Items {
+		for i := range pods.Items {
+			pod := &pods.Items[i]
 			appContainer := pod.Spec.Containers[0]
 			assert.Equal(t, sampleApp.ContainerName(), appContainer.Name, "%s namespace", sampleApp.Namespace())
 
-			assertReferences(t, &pod, sampleApp, expectedBuildLabels)
+			assertReferences(t, pod, sampleApp, expectedBuildLabels)
 
 			assertValues(ctx, t, envConfig.Client().Resources(), pod, sampleApp, expectedBuildLabels)
 		}
@@ -202,13 +203,13 @@ func assertReferences(t *testing.T, pod *corev1.Pod, sampleApp *sample.App, expe
 	}
 }
 
-func assertValues(ctx context.Context, t *testing.T, resource *resources.Resources, pod corev1.Pod, sampleApp *sample.App, expectedBuildLabels map[string]buildLabel) { //nolint:revive // argument-limit
+func assertValues(ctx context.Context, t *testing.T, resource *resources.Resources, pod *corev1.Pod, sampleApp *sample.App, expectedBuildLabels map[string]buildLabel) { //nolint:revive // argument-limit
 	for _, variableName := range []string{dtReleaseVersion, dtReleaseProduct, dtReleaseStage, dtReleaseBuildVersion} {
 		assertValue(ctx, t, resource, pod, sampleApp, variableName, expectedBuildLabels[variableName].value)
 	}
 }
 
-func assertValue(ctx context.Context, t *testing.T, resource *resources.Resources, pod corev1.Pod, sampleApp *sample.App, variableName string, expectedValue string) { //nolint:revive // argument-limit
+func assertValue(ctx context.Context, t *testing.T, resource *resources.Resources, pod *corev1.Pod, sampleApp *sample.App, variableName string, expectedValue string) { //nolint:revive // argument-limit
 	echoCommand := shell.Shell(shell.Echo(fmt.Sprintf("$%s", variableName)))
 	executionResult, err := k8spod.Exec(ctx, resource, pod, sampleApp.ContainerName(), echoCommand...)
 	require.NoError(t, err)

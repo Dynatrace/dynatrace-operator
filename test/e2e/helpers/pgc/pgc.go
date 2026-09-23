@@ -51,7 +51,7 @@ func allPodsHaveFile(ctx context.Context, r *resources.Resources, dk dynakube.Dy
 	podCount := 0
 	var firstExecErr error
 
-	err := q.ForEachPod(func(pod corev1.Pod) {
+	err := q.ForEachPod(func(pod *corev1.Pod) {
 		podCount++
 
 		if !allFound || len(pod.Spec.Containers) == 0 {
