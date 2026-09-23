@@ -12,7 +12,7 @@ import (
 func TestAuthTokenModify(t *testing.T) {
 	t.Run("successfully modified", func(t *testing.T) {
 		dk := getBaseDynakube()
-		enableKubeMonCapability(&dk)
+		enableKubeMonCapability(dk)
 		mod := NewAuthTokenModifier(dk)
 		builder := createBuilderForTesting()
 

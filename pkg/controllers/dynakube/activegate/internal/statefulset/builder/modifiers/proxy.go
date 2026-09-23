@@ -17,14 +17,14 @@ var _ volumeModifier = ProxyModifier{}
 var _ volumeMountModifier = ProxyModifier{}
 var _ builder.Modifier = ProxyModifier{}
 
-func NewProxyModifier(dk dynakube.DynaKube) ProxyModifier {
+func NewProxyModifier(dk *dynakube.DynaKube) ProxyModifier {
 	return ProxyModifier{
 		dk: dk,
 	}
 }
 
 type ProxyModifier struct {
-	dk dynakube.DynaKube
+	dk *dynakube.DynaKube
 }
 
 func (mod ProxyModifier) Enabled() bool {

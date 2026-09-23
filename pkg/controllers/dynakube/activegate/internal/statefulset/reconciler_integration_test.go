@@ -50,7 +50,7 @@ func TestStatefulSet(t *testing.T) {
 		dk.Spec.TelemetryIngest = &telemetryingest.Spec{}
 
 		integrationtests.CreateNamespace(t, clt, ns)
-		integrationtests.CreateDynakube(t, clt, &dk)
+		integrationtests.CreateDynakube(t, clt, dk)
 		integrationtests.CreateKubernetesObject(t, clt, &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testDynakubeName + activegate.AuthTokenSecretSuffix,
@@ -59,14 +59,14 @@ func TestStatefulSet(t *testing.T) {
 			Data: map[string][]byte{authtoken.ActiveGateAuthTokenName: []byte(testToken)},
 		})
 
-		mcap := capability.NewMultiCapability(&dk)
+		mcap := capability.NewMultiCapability(dk)
 		reconciler := NewReconciler(clt, clt)
 
-		err := reconciler.Reconcile(ctx, &dk, mcap)
+		err := reconciler.Reconcile(ctx, dk, mcap)
 		require.NoError(t, err)
 
 		dk.Spec.ActiveGate.UseEphemeralVolume = new(true)
-		err = reconciler.Reconcile(ctx, &dk, mcap)
+		err = reconciler.Reconcile(ctx, dk, mcap)
 		require.NoError(t, err)
 	})
 
@@ -102,7 +102,7 @@ func TestStatefulSet(t *testing.T) {
 		dk.Spec.ActiveGate.VolumeMounts = []corev1.VolumeMount{userVolumeMount}
 
 		integrationtests.CreateNamespace(t, clt, ns)
-		integrationtests.CreateDynakube(t, clt, &dk)
+		integrationtests.CreateDynakube(t, clt, dk)
 		integrationtests.CreateKubernetesObject(t, clt, &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testDynakubeName + activegate.AuthTokenSecretSuffix,
@@ -111,9 +111,9 @@ func TestStatefulSet(t *testing.T) {
 			Data: map[string][]byte{authtoken.ActiveGateAuthTokenName: []byte(testToken)},
 		})
 
-		mcap := capability.NewMultiCapability(&dk)
+		mcap := capability.NewMultiCapability(dk)
 		reconciler := NewReconciler(clt, clt)
-		require.NoError(t, reconciler.Reconcile(ctx, &dk, mcap))
+		require.NoError(t, reconciler.Reconcile(ctx, dk, mcap))
 
 		sts := &appsv1.StatefulSet{}
 		require.NoError(t, clt.Get(ctx, client.ObjectKey{Name: capability.BuildServiceName(dk.Name), Namespace: dk.Namespace}, sts))
@@ -154,7 +154,7 @@ func TestStatefulSet(t *testing.T) {
 		dk.Spec.ActiveGate.VolumeMounts = []corev1.VolumeMount{userVolumeMount}
 
 		integrationtests.CreateNamespace(t, clt, ns)
-		integrationtests.CreateDynakube(t, clt, &dk)
+		integrationtests.CreateDynakube(t, clt, dk)
 		integrationtests.CreateKubernetesObject(t, clt, &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testDynakubeName + activegate.AuthTokenSecretSuffix,
@@ -163,8 +163,8 @@ func TestStatefulSet(t *testing.T) {
 			Data: map[string][]byte{authtoken.ActiveGateAuthTokenName: []byte(testToken)},
 		})
 
-		mcap := capability.NewMultiCapability(&dk)
+		mcap := capability.NewMultiCapability(dk)
 		reconciler := NewReconciler(clt, clt)
-		require.Error(t, reconciler.Reconcile(ctx, &dk, mcap))
+		require.Error(t, reconciler.Reconcile(ctx, dk, mcap))
 	})
 }

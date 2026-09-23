@@ -19,14 +19,14 @@ var _ builder.Modifier = EECModifier{}
 
 const eecFile = "eec.token"
 
-func NewEECVolumeModifier(dk dynakube.DynaKube) EECModifier {
+func NewEECVolumeModifier(dk *dynakube.DynaKube) EECModifier {
 	return EECModifier{
 		dk: dk,
 	}
 }
 
 type EECModifier struct {
-	dk dynakube.DynaKube
+	dk *dynakube.DynaKube
 }
 
 func (mod EECModifier) Enabled() bool {

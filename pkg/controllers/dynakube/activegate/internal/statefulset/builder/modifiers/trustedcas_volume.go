@@ -18,14 +18,14 @@ var _ builder.Modifier = TrustedCAsModifier{}
 
 const trustedCAsFile = "rootca.pem"
 
-func NewTrustedCAsVolumeModifier(dk dynakube.DynaKube) TrustedCAsModifier {
+func NewTrustedCAsVolumeModifier(dk *dynakube.DynaKube) TrustedCAsModifier {
 	return TrustedCAsModifier{
 		dk: dk,
 	}
 }
 
 type TrustedCAsModifier struct {
-	dk dynakube.DynaKube
+	dk *dynakube.DynaKube
 }
 
 func (mod TrustedCAsModifier) Enabled() bool {

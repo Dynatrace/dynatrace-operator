@@ -16,14 +16,14 @@ var _ volumeModifier = DeploymentPropertiesModifier{}
 var _ volumeMountModifier = DeploymentPropertiesModifier{}
 var _ builder.Modifier = DeploymentPropertiesModifier{}
 
-func NewDeploymentPropertiesModifier(dk dynakube.DynaKube) DeploymentPropertiesModifier {
+func NewDeploymentPropertiesModifier(dk *dynakube.DynaKube) DeploymentPropertiesModifier {
 	return DeploymentPropertiesModifier{
 		dk: dk,
 	}
 }
 
 type DeploymentPropertiesModifier struct {
-	dk dynakube.DynaKube
+	dk *dynakube.DynaKube
 }
 
 func (mod DeploymentPropertiesModifier) Enabled() bool {

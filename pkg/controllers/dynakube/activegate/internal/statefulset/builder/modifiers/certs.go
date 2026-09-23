@@ -16,14 +16,14 @@ var _ volumeModifier = CertificatesModifier{}
 var _ volumeMountModifier = CertificatesModifier{}
 var _ builder.Modifier = CertificatesModifier{}
 
-func NewCertificatesModifier(dk dynakube.DynaKube) CertificatesModifier {
+func NewCertificatesModifier(dk *dynakube.DynaKube) CertificatesModifier {
 	return CertificatesModifier{
 		dk: dk,
 	}
 }
 
 type CertificatesModifier struct {
-	dk dynakube.DynaKube
+	dk *dynakube.DynaKube
 }
 
 func (mod CertificatesModifier) Enabled() bool {

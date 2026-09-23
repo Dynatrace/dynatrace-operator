@@ -16,14 +16,14 @@ var _ volumeModifier = SSLVolumeModifier{}
 var _ volumeMountModifier = SSLVolumeModifier{}
 var _ builder.Modifier = SSLVolumeModifier{}
 
-func NewSSLVolumeModifier(dk dynakube.DynaKube) SSLVolumeModifier {
+func NewSSLVolumeModifier(dk *dynakube.DynaKube) SSLVolumeModifier {
 	return SSLVolumeModifier{
 		dk: dk,
 	}
 }
 
 type SSLVolumeModifier struct {
-	dk dynakube.DynaKube
+	dk *dynakube.DynaKube
 }
 
 func (mod SSLVolumeModifier) Enabled() bool {

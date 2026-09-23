@@ -14,7 +14,7 @@ import (
 func TestRawImageEnabled(t *testing.T) {
 	t.Run("true", func(t *testing.T) {
 		dk := getBaseDynakube()
-		enableKubeMonCapability(&dk)
+		enableKubeMonCapability(dk)
 
 		mod := NewRawImageModifier(dk, prioritymap.New())
 
@@ -25,7 +25,7 @@ func TestRawImageEnabled(t *testing.T) {
 func TestRawImageModify(t *testing.T) {
 	t.Run("successfully modified", func(t *testing.T) {
 		dk := getBaseDynakube()
-		enableKubeMonCapability(&dk)
+		enableKubeMonCapability(dk)
 		mod := NewRawImageModifier(dk, prioritymap.New())
 		builder := createBuilderForTesting()
 

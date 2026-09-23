@@ -19,7 +19,7 @@ var _ volumeModifier = RawImageModifier{}
 var _ volumeMountModifier = RawImageModifier{}
 var _ builder.Modifier = RawImageModifier{}
 
-func NewRawImageModifier(dk dynakube.DynaKube, envMap *prioritymap.Map) RawImageModifier {
+func NewRawImageModifier(dk *dynakube.DynaKube, envMap *prioritymap.Map) RawImageModifier {
 	return RawImageModifier{
 		dk:     dk,
 		envMap: envMap,
@@ -28,7 +28,7 @@ func NewRawImageModifier(dk dynakube.DynaKube, envMap *prioritymap.Map) RawImage
 
 type RawImageModifier struct {
 	envMap *prioritymap.Map
-	dk     dynakube.DynaKube
+	dk     *dynakube.DynaKube
 }
 
 func (mod RawImageModifier) Enabled() bool {

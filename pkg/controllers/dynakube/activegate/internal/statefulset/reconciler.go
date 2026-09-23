@@ -85,7 +85,7 @@ func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.D
 		return nil, err
 	}
 
-	statefulSetBuilder := NewStatefulSetBuilder(kubeUID, activeGateConfigurationHash, *dk, agCapability)
+	statefulSetBuilder := NewStatefulSetBuilder(kubeUID, activeGateConfigurationHash, dk, agCapability)
 
 	desiredSts, err := statefulSetBuilder.CreateStatefulSet()
 	if err != nil {

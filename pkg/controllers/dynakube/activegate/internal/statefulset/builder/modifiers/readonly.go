@@ -16,7 +16,7 @@ var _ volumeModifier = ReadOnlyModifier{}
 var _ volumeMountModifier = ReadOnlyModifier{}
 var _ builder.Modifier = ReadOnlyModifier{}
 
-func NewReadOnlyModifier(dk dynakube.DynaKube) ReadOnlyModifier {
+func NewReadOnlyModifier(dk *dynakube.DynaKube) ReadOnlyModifier {
 	return ReadOnlyModifier{
 		dk: dk,
 	}
@@ -25,7 +25,7 @@ func NewReadOnlyModifier(dk dynakube.DynaKube) ReadOnlyModifier {
 type ReadOnlyModifier struct {
 	presentVolumes []corev1.Volume
 	presentMounts  []corev1.VolumeMount
-	dk             dynakube.DynaKube
+	dk             *dynakube.DynaKube
 }
 
 func (mod ReadOnlyModifier) Enabled() bool {

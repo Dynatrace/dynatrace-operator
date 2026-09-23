@@ -20,7 +20,7 @@ var _ volumeModifier = CustomPropertiesModifier{}
 var _ volumeMountModifier = CustomPropertiesModifier{}
 var _ builder.Modifier = CustomPropertiesModifier{}
 
-func NewCustomPropertiesModifier(dk dynakube.DynaKube, capability capability.Capability) CustomPropertiesModifier {
+func NewCustomPropertiesModifier(dk *dynakube.DynaKube, capability capability.Capability) CustomPropertiesModifier {
 	return CustomPropertiesModifier{
 		dk:         dk,
 		capability: capability,
@@ -29,7 +29,7 @@ func NewCustomPropertiesModifier(dk dynakube.DynaKube, capability capability.Cap
 
 type CustomPropertiesModifier struct {
 	capability capability.Capability
-	dk         dynakube.DynaKube
+	dk         *dynakube.DynaKube
 }
 
 func (mod CustomPropertiesModifier) Enabled() bool {

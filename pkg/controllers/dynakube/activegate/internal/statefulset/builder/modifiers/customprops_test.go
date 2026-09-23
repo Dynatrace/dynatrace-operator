@@ -28,8 +28,8 @@ func setCustomPropertyUsage(capability capability.Capability, isUsed bool) {
 func TestCustomPropertyEnabled(t *testing.T) {
 	t.Run("true", func(t *testing.T) {
 		dk := getBaseDynakube()
-		enableKubeMonCapability(&dk)
-		multiCapability := capability.NewMultiCapability(&dk)
+		enableKubeMonCapability(dk)
+		multiCapability := capability.NewMultiCapability(dk)
 		setCustomPropertyUsage(multiCapability, true)
 
 		mod := NewCustomPropertiesModifier(dk, multiCapability)
@@ -46,8 +46,8 @@ func TestCustomPropertyEnabled(t *testing.T) {
 			exp.NoProxyKey: "test.example.com",
 		}
 
-		enableKubeMonCapability(&dk)
-		multiCapability := capability.NewMultiCapability(&dk)
+		enableKubeMonCapability(dk)
+		multiCapability := capability.NewMultiCapability(dk)
 		setCustomPropertyUsage(multiCapability, false)
 
 		mod := NewCustomPropertiesModifier(dk, multiCapability)
@@ -57,8 +57,8 @@ func TestCustomPropertyEnabled(t *testing.T) {
 
 	t.Run("false", func(t *testing.T) {
 		dk := getBaseDynakube()
-		enableKubeMonCapability(&dk)
-		multiCapability := capability.NewMultiCapability(&dk)
+		enableKubeMonCapability(dk)
+		multiCapability := capability.NewMultiCapability(dk)
 		setCustomPropertyUsage(multiCapability, false)
 
 		mod := NewCustomPropertiesModifier(dk, multiCapability)
@@ -70,8 +70,8 @@ func TestCustomPropertyEnabled(t *testing.T) {
 func TestCustomPropertyModify(t *testing.T) {
 	t.Run("successfully modified", func(t *testing.T) {
 		dk := getBaseDynakube()
-		enableKubeMonCapability(&dk)
-		multiCapability := capability.NewMultiCapability(&dk)
+		enableKubeMonCapability(dk)
+		multiCapability := capability.NewMultiCapability(dk)
 		setCustomPropertyUsage(multiCapability, true)
 		mod := NewCustomPropertiesModifier(dk, multiCapability)
 		builder := createBuilderForTesting()
