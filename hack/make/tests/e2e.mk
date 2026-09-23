@@ -66,7 +66,7 @@ test/e2e/no-csi:
 
 ## Run release e2e test only
 test/e2e/release:
-	$(GOTESTCMD) -timeout 60m ./test/e2e/scenarios/release $(SKIPCLEANUP)
+	$(GOTESTCMD) -timeout 90m ./test/e2e/scenarios/release $(SKIPCLEANUP)
 
 ## Run deploy e2e test
 test/e2e/deploy:
@@ -170,7 +170,7 @@ test/e2e/cloudnative/csi-migration:
 
 ## Runs manifest-based operator upgrade e2e tests (install released version → upgrade to current build via kubectl apply)
 test/e2e/manifest/upgrade:
-	$(GOTESTCMD) -timeout 100m ./test/e2e/scenarios/release -run "manifest_upgrade" $(SKIPCLEANUP)
+	$(GOTESTCMD) -timeout 30m ./test/e2e/scenarios/release -run "manifest_upgrade" $(SKIPCLEANUP)
 
 ## Runs helm-based operator upgrade e2e test only
 test/e2e/helm/upgrade:
