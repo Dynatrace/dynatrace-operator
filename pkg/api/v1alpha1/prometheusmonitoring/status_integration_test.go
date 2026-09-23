@@ -64,7 +64,7 @@ func buildPrometheusMonitoring() *prometheusmonitoring.PrometheusMonitoring {
 			Namespace:   testNamespacePM,
 			Annotations: map[string]string{},
 		},
-		Spec:   prometheusmonitoring.PrometheusMonitoringSpec{DynaKubeRef: "dynakube"},
+		Spec:   prometheusmonitoring.PrometheusMonitoringSpec{DynaKubeName: "dynakube"},
 		Status: prometheusmonitoring.PrometheusMonitoringStatus{},
 	}
 }

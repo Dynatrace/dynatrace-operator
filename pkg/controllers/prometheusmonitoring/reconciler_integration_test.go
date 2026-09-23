@@ -89,7 +89,7 @@ func TestSetupWithManager(t *testing.T) {
 
 		pm := &prometheusmonitoring.PrometheusMonitoring{
 			ObjectMeta: metav1.ObjectMeta{GenerateName: "prometheusmonitoring", Namespace: metav1.NamespaceDefault},
-			Spec:       prometheusmonitoring.PrometheusMonitoringSpec{DynaKubeRef: "dynakube"},
+			Spec:       prometheusmonitoring.PrometheusMonitoringSpec{DynaKubeName: "dynakube"},
 		}
 		integrationtests.CreateKubernetesObject(t, clt, pm)
 
@@ -173,7 +173,7 @@ func TestSetupWithManager(t *testing.T) {
 		pm, key := createPrometheusMonitoring(t)
 
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{Name: pm.Spec.DynaKubeRef, Namespace: pm.Namespace},
+			ObjectMeta: metav1.ObjectMeta{Name: pm.Spec.DynaKubeName, Namespace: pm.Namespace},
 			Spec:       dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
 			Status:     dynakube.DynaKubeStatus{Phase: status.Running},
 		}
@@ -189,7 +189,7 @@ func TestSetupWithManager(t *testing.T) {
 		pm, key := createPrometheusMonitoring(t)
 
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{Name: pm.Spec.DynaKubeRef, Namespace: pm.Namespace},
+			ObjectMeta: metav1.ObjectMeta{Name: pm.Spec.DynaKubeName, Namespace: pm.Namespace},
 			Spec:       dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api", Tokens: "old-token-secret"},
 		}
 		integrationtests.CreateDynakube(t, clt, dk)
@@ -204,7 +204,7 @@ func TestSetupWithManager(t *testing.T) {
 		pm, key := createPrometheusMonitoring(t)
 
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{Name: pm.Spec.DynaKubeRef, Namespace: pm.Namespace},
+			ObjectMeta: metav1.ObjectMeta{Name: pm.Spec.DynaKubeName, Namespace: pm.Namespace},
 			Spec:       dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
 		}
 		integrationtests.CreateDynakube(t, clt, dk)
@@ -219,7 +219,7 @@ func TestSetupWithManager(t *testing.T) {
 		pm, key := createPrometheusMonitoring(t)
 
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{Name: pm.Spec.DynaKubeRef, Namespace: pm.Namespace},
+			ObjectMeta: metav1.ObjectMeta{Name: pm.Spec.DynaKubeName, Namespace: pm.Namespace},
 			Spec:       dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
 		}
 		integrationtests.CreateDynakube(t, clt, dk)
@@ -234,7 +234,7 @@ func TestSetupWithManager(t *testing.T) {
 		pm, key := createPrometheusMonitoring(t)
 
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{Name: pm.Spec.DynaKubeRef, Namespace: pm.Namespace},
+			ObjectMeta: metav1.ObjectMeta{Name: pm.Spec.DynaKubeName, Namespace: pm.Namespace},
 			Spec:       dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
 		}
 		integrationtests.CreateDynakube(t, clt, dk)
@@ -249,7 +249,7 @@ func TestSetupWithManager(t *testing.T) {
 		pm, key := createPrometheusMonitoring(t)
 
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{Name: pm.Spec.DynaKubeRef, Namespace: pm.Namespace},
+			ObjectMeta: metav1.ObjectMeta{Name: pm.Spec.DynaKubeName, Namespace: pm.Namespace},
 			Spec:       dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
 		}
 		integrationtests.CreateDynakube(t, clt, dk)
@@ -264,7 +264,7 @@ func TestSetupWithManager(t *testing.T) {
 		pm, key := createPrometheusMonitoring(t)
 
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{Name: pm.Spec.DynaKubeRef, Namespace: pm.Namespace},
+			ObjectMeta: metav1.ObjectMeta{Name: pm.Spec.DynaKubeName, Namespace: pm.Namespace},
 			Spec:       dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
 			Status:     dynakube.DynaKubeStatus{Phase: status.Running},
 		}
@@ -282,7 +282,7 @@ func TestSetupWithManager(t *testing.T) {
 		pm, key := createPrometheusMonitoring(t)
 
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{Name: pm.Spec.DynaKubeRef, Namespace: pm.Namespace},
+			ObjectMeta: metav1.ObjectMeta{Name: pm.Spec.DynaKubeName, Namespace: pm.Namespace},
 			Spec:       dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
 			Status:     dynakube.DynaKubeStatus{Phase: status.Running},
 		}
@@ -314,7 +314,7 @@ func TestSetupWithManager(t *testing.T) {
 		pm, key := createPrometheusMonitoring(t)
 
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{Name: pm.Spec.DynaKubeRef, Namespace: pm.Namespace},
+			ObjectMeta: metav1.ObjectMeta{Name: pm.Spec.DynaKubeName, Namespace: pm.Namespace},
 			Spec:       dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
 			Status:     dynakube.DynaKubeStatus{Phase: status.Running},
 		}
