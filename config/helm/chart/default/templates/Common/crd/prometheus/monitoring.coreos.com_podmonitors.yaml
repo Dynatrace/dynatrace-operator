@@ -1,5 +1,5 @@
 {{- if and (.Values.prometheus).installCRDs (.Values.experimental).enablePrometheus }}
-# Source: https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.94.0/example/prometheus-operator-crd/monitoring.coreos.com_podmonitors.yaml
+# Source: https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.94.1/example/prometheus-operator-crd/monitoring.coreos.com_podmonitors.yaml
 # Licensed under the Apache License, Version 2.0 (https://www.apache.org/licenses/LICENSE-2.0)
 #
 # CoreOS Project
@@ -13,7 +13,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.22.0
-    operator.prometheus.io/version: 0.94.0
+    operator.prometheus.io/version: 0.94.1
   name: podmonitors.monitoring.coreos.com
   namespace: {{ .Release.Namespace }}
   labels: {{- include "dynatrace-operator.commonLabels" . | nindent 4 }}
