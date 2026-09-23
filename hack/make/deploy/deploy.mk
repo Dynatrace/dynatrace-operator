@@ -7,6 +7,7 @@ PROFILING ?= true
 PLATFORM ?= "kubernetes"
 HELM_CHART ?= config/helm/chart/default
 IMAGE_PULL_POLICY ?= Always
+ENABLE_PROMETHEUS ?= true
 
 ## Display the image name used to deploy the helm chart
 deploy/show-image-ref:
@@ -47,7 +48,7 @@ deploy: manifests/crd/helm
 			--set enableInsecurePprofEndpoint=$(PROFILING) \
 			--set dtClientLogLevel=$(DT_CLIENT_LOG_LEVEL) \
 			--set imageRef.pullPolicy=$(IMAGE_PULL_POLICY) \
-			--set experimental.enablePrometheus=true
+			--set experimental.enablePrometheus=$(ENABLE_PROMETHEUS)
 
 ## Undeploy the current operator installation
 undeploy:
