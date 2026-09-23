@@ -26,7 +26,7 @@ import (
 type MutateFn func(ss *appsv1.StatefulSet)
 
 func Get(ctx context.Context, resource *resources.Resources, name, namespace string) (*appsv1.StatefulSet, error) {
-	var statefulSet *appsv1.StatefulSet
+	statefulSet := &appsv1.StatefulSet{}
 	err := resource.Get(ctx, name, namespace, statefulSet)
 
 	return statefulSet, err
