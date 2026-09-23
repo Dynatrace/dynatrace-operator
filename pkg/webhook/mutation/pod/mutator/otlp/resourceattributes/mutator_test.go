@@ -372,7 +372,7 @@ func runMutatorTests(t *testing.T, dk *latestdynakube.DynaKube, tests []mutatorT
 				nodeNameVar := k8senv.Find(container.Env, "K8S_NODE_NAME")
 
 				require.NotNil(t, podNameVar, "missing K8S_PODNAME env var")
-				require.NotNil(t, podUIDVar, "clearmissing K8S_PODUID env var")
+				require.NotNil(t, podUIDVar, "missing K8S_PODUID env var")
 				require.NotNil(t, nodeNameVar, "missing K8S_NODE_NAME env var")
 
 				assert.Equal(t, "metadata.name", podNameVar.ValueFrom.FieldRef.FieldPath)
