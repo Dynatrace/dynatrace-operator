@@ -60,7 +60,7 @@ func EnrichmentRules(t *testing.T) features.Feature {
 		dynakubeComponents.WithMetadataEnrichment(),
 		dynakubeComponents.WithNameBasedMetadataEnrichmentNamespaceSelector(),
 	)
-	dynakubeComponents.Install(builder, &secretConfig, *testDynakube)
+	dynakubeComponents.Install(builder, &secretConfig, testDynakube)
 
 	builder.Assess("enrichment rule is stored in DynaKube status",
 		enrichment.CheckEnrichmentRuleInDynaKubeStatus(testDynakube, expectedRule, ignoredRule))

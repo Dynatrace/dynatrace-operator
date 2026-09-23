@@ -34,7 +34,7 @@ func WithHPA(t *testing.T) features.Feature {
 		componentDynakube.WithOTelCollectorImageRef(t, componentDynakube.GetLatestOTelCollectorImageTagURI(t)),
 	}
 
-	testDynakube := *componentDynakube.New(options...)
+	testDynakube := componentDynakube.New(options...)
 
 	componentDynakube.Install(builder, &secretConfig, testDynakube)
 
@@ -74,7 +74,7 @@ func EnforceReplicas(t *testing.T) features.Feature {
 		componentDynakube.WithOTelCollectorReplicas(baseReplicas),
 	}
 
-	testDynakube := *componentDynakube.New(options...)
+	testDynakube := componentDynakube.New(options...)
 
 	componentDynakube.Install(builder, &secretConfig, testDynakube)
 

@@ -26,7 +26,7 @@ func WaitForDaemonSetPodsDeletion(dsName, namespace string) features.Func {
 	return k8spod.WaitForDeletionWithOwner(dsName, namespace)
 }
 
-func Get(ctx context.Context, resource *resources.Resources, dk dynakube.DynaKube) (*appsv1.DaemonSet, error) {
+func Get(ctx context.Context, resource *resources.Resources, dk *dynakube.DynaKube) (*appsv1.DaemonSet, error) {
 	return k8sdaemonset.NewQuery(ctx, resource, client.ObjectKey{
 		Name:      dk.OneAgent().GetDaemonsetName(),
 		Namespace: dk.Namespace,

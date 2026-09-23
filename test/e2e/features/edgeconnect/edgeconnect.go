@@ -51,7 +51,7 @@ func NormalModeFeature(t *testing.T) features.Feature {
 
 	builder.Assess("create EC configuration on the tenant", ecComponents.CreateTenantConfig(testECname, secretConfig, edgeConnectTenantConfig, testHostPattern))
 
-	testEdgeConnect := *ecComponents.New(
+	testEdgeConnect := ecComponents.New(
 		// this tenantConfigName should match with tenant edgeConnect tenantConfigName
 		ecComponents.WithName(testECname),
 		ecComponents.WithAPIServer(secretConfig.APIServer),
@@ -110,19 +110,19 @@ func provisionerModeFeature(t *testing.T, featureName, expectedImage string, opt
 		ecComponents.WithProvisionerMode(true),
 		ecComponents.WithHostPattern(testHostPattern),
 	}, opts...)
-	testEdgeConnect := *ecComponents.New(ecOpts...)
+	testEdgeConnect := ecComponents.New(ecOpts...)
 
 	ecComponents.Install(builder, &secretConfig, testEdgeConnect)
 
 	builder.Assess("get tenant config", getTenantConfig(testECname, secretConfig, edgeConnectTenantConfig))
-	builder.Assess("get EC status", ecComponents.Get(&testEdgeConnect))
+	builder.Assess("get EC status", ecComponents.Get(testEdgeConnect))
 
 	if expectedImage != "" {
 		builder.Assess("edgeconnect deployment uses expected image", k8sdeployment.VerifyUsesImage(testEdgeConnect.Name, testEdgeConnect.Namespace, expectedImage))
 	}
 	builder.Assess("check if EC configuration exists on the tenant", ecComponents.CheckECExistsOnTheTenant(secretConfig, edgeConnectTenantConfig))
 	builder.Assess("check hostPatterns on the tenant - testHostPattern", checkHostPatternOnTheTenant(secretConfig, edgeConnectTenantConfig, func() string { return testHostPattern }))
-	builder.Assess("update hostPatterns", updateHostPatterns(&testEdgeConnect, testHostPattern2))
+	builder.Assess("update hostPatterns", updateHostPatterns(testEdgeConnect, testHostPattern2))
 	builder.Assess("check hostPatterns on the tenant - testHostPattern2", checkHostPatternOnTheTenant(secretConfig, edgeConnectTenantConfig, func() string { return testHostPattern2 }))
 	builder.Assess("delete EC custom resource", ecComponents.Delete(testEdgeConnect))
 	builder.Assess("check if EC configuration is deleted on the tenant", checkECNotExistsOnTheTenant(secretConfig, edgeConnectTenantConfig))
@@ -153,7 +153,7 @@ func WithHTTPProxy(t *testing.T) features.Feature {
 	testECname := uuid.NewString()
 	testHostPattern := fmt.Sprintf("%s.e2eTestHostPattern.internal.org", testECname)
 
-	testEdgeConnect := *ecComponents.New(
+	testEdgeConnect := ecComponents.New(
 		ecComponents.WithName(testECname),
 		ecComponents.WithAPIServer(secretConfig.APIServer),
 		ecComponents.WithOAuthClientSecret(ecComponents.BuildOAuthClientSecretName(testECname)),
@@ -164,7 +164,7 @@ func WithHTTPProxy(t *testing.T) features.Feature {
 		ecComponents.WithProxy(proxy.EdgeConnectProxySpec),
 	)
 
-	dummyDynakube := dynakube.DynaKube{}
+	dummyDynakube := &dynakube.DynaKube{}
 	dummyDynakube.Namespace = testEdgeConnect.Namespace
 	dummyDynakube.Spec.Proxy = proxy.ProxySpec
 
@@ -175,7 +175,7 @@ func WithHTTPProxy(t *testing.T) features.Feature {
 	ecComponents.Install(builder, &secretConfig, testEdgeConnect)
 
 	builder.Assess("get tenant config", getTenantConfig(testECname, secretConfig, edgeConnectTenantConfig))
-	builder.Assess("get EC status", ecComponents.Get(&testEdgeConnect))
+	builder.Assess("get EC status", ecComponents.Get(testEdgeConnect))
 	builder.Assess("check if EC configuration exists on the tenant", ecComponents.CheckECExistsOnTheTenant(secretConfig, edgeConnectTenantConfig))
 	builder.Assess("delete EC custom resource", ecComponents.Delete(testEdgeConnect))
 	builder.Assess("check if EC configuration is deleted on the tenant", checkECNotExistsOnTheTenant(secretConfig, edgeConnectTenantConfig))
@@ -206,7 +206,7 @@ func WithHTTPSProxy(t *testing.T) features.Feature {
 	testECname := uuid.NewString()
 	testHostPattern := fmt.Sprintf("%s.e2eTestHostPattern.internal.org", testECname)
 
-	testEdgeConnect := *ecComponents.New(
+	testEdgeConnect := ecComponents.New(
 		ecComponents.WithName(testECname),
 		ecComponents.WithAPIServer(secretConfig.APIServer),
 		ecComponents.WithOAuthClientSecret(ecComponents.BuildOAuthClientSecretName(testECname)),
@@ -229,7 +229,7 @@ func WithHTTPSProxy(t *testing.T) features.Feature {
 	builder.Assess("create trusted CAs config map", k8sconfigmap.Create(caConfigMap))
 	builder.Teardown(k8sconfigmap.Delete(caConfigMap))
 
-	dummyDynakube := dynakube.DynaKube{}
+	dummyDynakube := &dynakube.DynaKube{}
 	dummyDynakube.Namespace = testEdgeConnect.Namespace
 	dummyDynakube.Spec.Proxy = proxy.HTTPSProxySpec
 
@@ -240,7 +240,7 @@ func WithHTTPSProxy(t *testing.T) features.Feature {
 	ecComponents.Install(builder, &secretConfig, testEdgeConnect)
 
 	builder.Assess("get tenant config", getTenantConfig(testECname, secretConfig, edgeConnectTenantConfig))
-	builder.Assess("get EC status", ecComponents.Get(&testEdgeConnect))
+	builder.Assess("get EC status", ecComponents.Get(testEdgeConnect))
 	builder.Assess("check if EC configuration exists on the tenant", ecComponents.CheckECExistsOnTheTenant(secretConfig, edgeConnectTenantConfig))
 	builder.Assess("delete EC custom resource", ecComponents.Delete(testEdgeConnect))
 	builder.Assess("check if EC configuration is deleted on the tenant", checkECNotExistsOnTheTenant(secretConfig, edgeConnectTenantConfig))
@@ -262,7 +262,7 @@ func AutomationModeFeature(t *testing.T) features.Feature {
 	edgeConnectTenantConfig := &ecComponents.TenantConfig{}
 	testECname := uuid.NewString()
 
-	testEdgeConnect := *ecComponents.New(
+	testEdgeConnect := ecComponents.New(
 		ecComponents.WithName(testECname),
 		ecComponents.WithAPIServer(secretConfig.APIServer),
 		ecComponents.WithOAuthClientSecret(ecComponents.BuildOAuthClientSecretName(testECname)),
@@ -278,17 +278,17 @@ func AutomationModeFeature(t *testing.T) features.Feature {
 	ecComponents.Install(builder, &secretConfig, testEdgeConnect)
 
 	builder.Assess("get tenant config", getTenantConfig(testECname, secretConfig, edgeConnectTenantConfig))
-	builder.Assess("get EC status", ecComponents.Get(&testEdgeConnect))
+	builder.Assess("get EC status", ecComponents.Get(testEdgeConnect))
 
 	builder.Assess("check if EC configuration exists on the tenant", ecComponents.CheckECExistsOnTheTenant(secretConfig, edgeConnectTenantConfig))
 	// k8sautomation.HostPattern has to be executed when the test is running and testEdgeConnect.Status contains real data
 	builder.Assess("check hostPatterns - k8s automation", checkHostPatternOnTheTenant(secretConfig, edgeConnectTenantConfig, func() string { //nolint
 		return testEdgeConnect.K8sAutomationHostPattern()
 	}))
-	builder.Assess("check if settings object exists on the tenant", checkSettingsExistsOnTheTenant(secretConfig, &testEdgeConnect))
+	builder.Assess("check if settings object exists on the tenant", checkSettingsExistsOnTheTenant(secretConfig, testEdgeConnect))
 	builder.Assess("delete EC custom resource", ecComponents.Delete(testEdgeConnect))
 	builder.Assess("check if EC configuration is deleted on the tenant", checkECNotExistsOnTheTenant(secretConfig, edgeConnectTenantConfig))
-	builder.Assess("check if settings object is deleted on the tenant", checkSettingsNotExistsOnTheTenant(secretConfig, &testEdgeConnect))
+	builder.Assess("check if settings object is deleted on the tenant", checkSettingsNotExistsOnTheTenant(secretConfig, testEdgeConnect))
 
 	builder.Teardown(deleteServiceAccount())
 

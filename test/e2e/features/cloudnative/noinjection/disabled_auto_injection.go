@@ -24,7 +24,7 @@ func Feature(t *testing.T) features.Feature {
 	builder := features.New("cloudnative-disabled-auto-inject")
 
 	secretConfig := tenant.GetSingleTenantSecret(t)
-	testDynakube := *dynakubeComponents.New(
+	testDynakube := dynakubeComponents.New(
 		dynakubeComponents.WithAnnotations(map[string]string{
 			exp.InjectionAutomaticKey: "false",
 		}),
@@ -33,8 +33,8 @@ func Feature(t *testing.T) features.Feature {
 	)
 
 	// Register sample app install
-	sampleNamespace := *k8snamespace.New("cloudnative-disabled-injection-sample")
-	sampleApp := sample.NewApp(t, &testDynakube,
+	sampleNamespace := k8snamespace.New("cloudnative-disabled-injection-sample")
+	sampleApp := sample.NewApp(t, testDynakube,
 		sample.AsDeployment(),
 		sample.WithNamespace(sampleNamespace),
 	)

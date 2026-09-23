@@ -35,7 +35,7 @@ const (
 	timeout            = 1 * time.Minute
 )
 
-func CheckRuxitAgentProcFileHasNoConnInfo(testDynakube dynakube.DynaKube) features.Func {
+func CheckRuxitAgentProcFileHasNoConnInfo(testDynakube *dynakube.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, e *envconf.Config) context.Context {
 		resources := e.Client().Resources()
 

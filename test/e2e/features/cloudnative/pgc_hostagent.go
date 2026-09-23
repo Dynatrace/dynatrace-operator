@@ -19,7 +19,7 @@ func HostAgentPGC(t *testing.T) features.Feature {
 	builder := features.New("host-agent-pgc")
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
-	testDynakube := *componentDynakube.New(
+	testDynakube := componentDynakube.New(
 		componentDynakube.WithAPIURL(secretConfig.APIURL),
 		componentDynakube.WithActiveGate(),
 		componentDynakube.WithCloudNativeSpec(DefaultCloudNativeSpec()),

@@ -38,7 +38,7 @@ func WithHPA(t *testing.T) features.Feature {
 		componentDynakube.WithActiveGate(),
 	}
 
-	testDynakube := *componentDynakube.New(options...)
+	testDynakube := componentDynakube.New(options...)
 
 	componentDynakube.Install(builder, &secretConfig, testDynakube)
 
@@ -80,7 +80,7 @@ func EnforceReplicas(t *testing.T) features.Feature {
 		componentDynakube.WithActiveGate(),
 	}
 
-	testDynakube := *componentDynakube.New(options...)
+	testDynakube := componentDynakube.New(options...)
 
 	componentDynakube.Install(builder, &secretConfig, testDynakube)
 

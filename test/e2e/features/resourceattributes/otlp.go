@@ -19,7 +19,7 @@ func OTLPExporterConfig(t *testing.T) features.Feature {
 	secretConfig := tenant.GetSingleTenantSecret(t)
 	ns := "resource-attributes-otlp"
 
-	testDynakube := *dynakubeComponents.New(
+	testDynakube := dynakubeComponents.New(
 		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
 		dynakubeComponents.WithNameBasedOTLPNamespaceSelector(),
 		dynakubeComponents.WithOTLPSignals(otlp.SignalConfiguration{
@@ -31,7 +31,7 @@ func OTLPExporterConfig(t *testing.T) features.Feature {
 		dynakubeComponents.WithOTLPAdditionalResourceAttributes(otlpAdditional),
 	)
 
-	sampleApp := newSampleApp(t, &testDynakube, ns, testDynakube.Spec.OTLPExporterConfiguration.NamespaceSelector.MatchLabels)
+	sampleApp := newSampleApp(t, testDynakube, ns, testDynakube.Spec.OTLPExporterConfiguration.NamespaceSelector.MatchLabels)
 
 	dynakubeComponents.Install(builder, &secretConfig, testDynakube)
 	installSampleApp(builder, sampleApp)

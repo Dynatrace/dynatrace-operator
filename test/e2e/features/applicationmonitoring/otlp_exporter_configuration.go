@@ -40,7 +40,7 @@ func OTLPExporterConfiguration(t *testing.T) features.Feature {
 	builder := features.New("otlp-exporter-configuration")
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
-	testDynakube := *dynakubeComponents.New(
+	testDynakube := dynakubeComponents.New(
 		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
 		dynakubeComponents.WithApplicationMonitoringSpec(&oneagent.ApplicationMonitoringSpec{}),
 	)
@@ -73,7 +73,7 @@ func OTLPExporterConfiguration(t *testing.T) features.Feature {
 	testCases := []testCase{
 		{
 			name: "deployment matching namespace selector",
-			app: sample.NewApp(t, &testDynakube,
+			app: sample.NewApp(t, testDynakube,
 				sample.WithName("deploy-otlp"),
 				sample.AsDeployment(),
 				sample.WithNamespaceLabels(matchingLabels),
@@ -84,7 +84,7 @@ func OTLPExporterConfiguration(t *testing.T) features.Feature {
 		},
 		{
 			name: "pod matching namespace selector",
-			app: sample.NewApp(t, &testDynakube,
+			app: sample.NewApp(t, testDynakube,
 				sample.WithName("pod-otlp"),
 				sample.WithNamespaceLabels(matchingLabels),
 				sample.WithAnnotations(metadataAnnotations),
@@ -94,7 +94,7 @@ func OTLPExporterConfiguration(t *testing.T) features.Feature {
 		},
 		{
 			name: "deployment non-matching namespace selector",
-			app: sample.NewApp(t, &testDynakube,
+			app: sample.NewApp(t, testDynakube,
 				sample.WithName("deploy-no-otlp"),
 				sample.AsDeployment(),
 				sample.WithNamespaceLabels(nonMatchingLabels),
@@ -104,7 +104,7 @@ func OTLPExporterConfiguration(t *testing.T) features.Feature {
 		},
 		{
 			name: "pod non-matching namespace selector",
-			app: sample.NewApp(t, &testDynakube,
+			app: sample.NewApp(t, testDynakube,
 				sample.WithName("pod-no-otlp"),
 				sample.WithNamespaceLabels(nonMatchingLabels),
 			),

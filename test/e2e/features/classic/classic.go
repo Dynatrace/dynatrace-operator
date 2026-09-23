@@ -26,7 +26,7 @@ func Feature(t *testing.T) features.Feature {
 
 	builder := features.New("classic")
 	secretConfig := tenant.GetSingleTenantSecret(t)
-	testDynakube := *dynakubeComponents.New(
+	testDynakube := dynakubeComponents.New(
 		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
 		dynakubeComponents.WithClassicFullStackSpec(&oneagent.HostInjectSpec{}),
 	)

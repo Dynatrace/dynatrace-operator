@@ -36,7 +36,7 @@ func Feature(t *testing.T) features.Feature {
 
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
-	dk := *dynakube.New(
+	dk := dynakube.New(
 		dynakube.WithAPIURL(secretConfig.APIURL),
 	)
 
@@ -117,7 +117,7 @@ func PublicRegistry(t *testing.T) features.Feature {
 
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
-	dk := *dynakube.New(
+	dk := dynakube.New(
 		dynakube.WithAPIURL(secretConfig.APIURL),
 		dynakube.WithCustomPullSecret(consts.DevRegistryPullSecretName),
 	)

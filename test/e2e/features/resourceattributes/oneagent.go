@@ -21,7 +21,7 @@ func OneAgent(t *testing.T) features.Feature {
 	secretConfig := tenant.GetSingleTenantSecret(t)
 	ns := "resource-attributes-oneagent"
 
-	testDynakube := *dynakubeComponents.New(
+	testDynakube := dynakubeComponents.New(
 		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
 		dynakubeComponents.WithCloudNativeSpec(cloudnative.DefaultCloudNativeSpec()),
 		dynakubeComponents.WithMetadataEnrichment(),
@@ -36,7 +36,7 @@ func OneAgent(t *testing.T) features.Feature {
 		testDynakube.MetadataEnrichment().GetNamespaceSelector().MatchLabels,
 	)
 
-	sampleApp := newSampleApp(t, &testDynakube, ns, injectEverythingLabels)
+	sampleApp := newSampleApp(t, testDynakube, ns, injectEverythingLabels)
 
 	dynakubeComponents.Install(builder, &secretConfig, testDynakube)
 	builder.Assess("OneAgent DaemonSet is ready", k8sdaemonset.IsReady(testDynakube.OneAgent().GetDaemonsetName(), testDynakube.Namespace))

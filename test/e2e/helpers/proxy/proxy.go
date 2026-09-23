@@ -70,7 +70,7 @@ var (
 	}
 )
 
-func SetupProxyWithTeardown(t *testing.T, builder *features.FeatureBuilder, testDynakube dynakube.DynaKube) {
+func SetupProxyWithTeardown(t *testing.T, builder *features.FeatureBuilder, testDynakube *dynakube.DynaKube) {
 	if testDynakube.Spec.Proxy != nil {
 		installProxySCC(builder, t)
 		builder.Assess("install proxy", helpers.ToFeatureFunc(manifests.InstallFromFile(proxyDeploymentPath), true))
@@ -80,7 +80,7 @@ func SetupProxyWithTeardown(t *testing.T, builder *features.FeatureBuilder, test
 	}
 }
 
-func SetupProxyWithCustomCAandTeardown(t *testing.T, builder *features.FeatureBuilder, testDynakube dynakube.DynaKube, pemCert []byte, pemPk []byte) {
+func SetupProxyWithCustomCAandTeardown(t *testing.T, builder *features.FeatureBuilder, testDynakube *dynakube.DynaKube, pemCert []byte, pemPk []byte) {
 	if testDynakube.HasProxy() {
 		builder.Assess("create proxy namespace", helpers.ToFeatureFunc(manifests.InstallFromFile(proxyNamespaceWithCustomCADeploymentPath), true))
 		proxySecret := createProxyTLSSecret(pemCert, pemPk)
@@ -120,7 +120,7 @@ func CutOffDynatraceNamespace(builder *features.FeatureBuilder, proxySpec *value
 	}
 }
 
-func IsDynatraceNamespaceCutOff(builder *features.FeatureBuilder, testDynakube dynakube.DynaKube) {
+func IsDynatraceNamespaceCutOff(builder *features.FeatureBuilder, testDynakube *dynakube.DynaKube) {
 	if testDynakube.HasProxy() {
 		isNetworkTrafficCutOff(builder, "ingress", curlPodNameDynatraceInboundTraffic, proxyNamespaceName, getWebhookServiceURL(testDynakube))
 		isNetworkTrafficCutOff(builder, "egress", curlPodNameDynatraceOutboundTraffic, testDynakube.Namespace, internetURL)
@@ -156,7 +156,7 @@ func CheckRuxitAgentProcFileHasProxySetting(sampleApp sample.App, proxySpec *val
 	}
 }
 
-func getWebhookServiceURL(dk dynakube.DynaKube) string {
+func getWebhookServiceURL(dk *dynakube.DynaKube) string {
 	return fmt.Sprintf("%s.%s.svc.cluster.local", webhook.DeploymentName, dk.Namespace)
 }
 

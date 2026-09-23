@@ -28,7 +28,7 @@ import (
 func NoCSI(t *testing.T) features.Feature {
 	builder := features.New("node-image-pull-with-no-csi")
 	secretConfig := tenant.GetSingleTenantSecret(t)
-	dk := *dynakubeComponents.New(
+	dk := dynakubeComponents.New(
 		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
 		dynakubeComponents.WithApplicationMonitoringSpec(&oneagent.ApplicationMonitoringSpec{AppInjectionSpec: oneagent.AppInjectionSpec{CodeModulesImage: registry.GetLatestCodeModulesImageTagURI(t)}}),
 		dynakubeComponents.WithAnnotations(map[string]string{
@@ -38,7 +38,7 @@ func NoCSI(t *testing.T) features.Feature {
 
 	dynakubeComponents.Install(builder, &secretConfig, dk)
 
-	sampleApp := sample.NewApp(t, &dk,
+	sampleApp := sample.NewApp(t, dk,
 		sample.AsDeployment(),
 		sample.WithPodSecurityContext(corev1.PodSecurityContext{}),
 		sample.WithoutClusterRole(),
@@ -46,13 +46,13 @@ func NoCSI(t *testing.T) features.Feature {
 	builder.Assess("install sample app", sampleApp.Install())
 	builder.Assess("check injection of sample app", checkInjection(sampleApp))
 
-	podSample := sample.NewApp(t, &dk,
+	podSample := sample.NewApp(t, dk,
 		sample.WithName("only-pod-sample"),
 	)
 	builder.Assess("install additional pod", podSample.Install())
 	builder.Assess("check injection of additional pod", checkInjection(podSample))
 
-	randomUserSample := sample.NewApp(t, &dk,
+	randomUserSample := sample.NewApp(t, dk,
 		sample.WithName("random-user"),
 		sample.AsDeployment(),
 		sample.WithPodSecurityContext(corev1.PodSecurityContext{
@@ -77,7 +77,7 @@ func NoCSI(t *testing.T) features.Feature {
 	isOpenshift, err := platform.NewResolver().IsOpenshift()
 	require.NoError(t, err)
 	if isOpenshift {
-		randomUserSampleFail := sample.NewApp(t, &dk,
+		randomUserSampleFail := sample.NewApp(t, dk,
 			sample.WithName("random-user-fail"),
 			sample.AsDeployment(),
 			sample.WithPodSecurityContext(corev1.PodSecurityContext{

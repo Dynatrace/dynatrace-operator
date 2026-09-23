@@ -61,7 +61,7 @@ func Feature(t *testing.T) features.Feature {
 		}))
 	}
 
-	testDynakube := *componentDynakube.New(options...)
+	testDynakube := componentDynakube.New(options...)
 
 	agCrt, err := os.ReadFile(filepath.Join(project.TestDataDir(), consts.AgCertificate))
 	require.NoError(t, err)
@@ -78,7 +78,7 @@ func Feature(t *testing.T) features.Feature {
 
 	componentDynakube.Install(builder, &secretConfig, testDynakube)
 
-	builder.Assess("active gate pod is running", activegate.CheckContainer(&testDynakube))
+	builder.Assess("active gate pod is running", activegate.CheckContainer(testDynakube))
 
 	builder.Assess("log agent started", k8sdaemonset.IsReady(testDynakube.LogMonitoring().GetDaemonSetName(), testDynakube.Namespace))
 
@@ -113,11 +113,11 @@ func WithOptionalScopes(t *testing.T) features.Feature {
 		}))
 	}
 
-	testDynakube := *componentDynakube.New(options...)
+	testDynakube := componentDynakube.New(options...)
 
 	componentDynakube.InstallWithoutSettingsScopes(builder, &secretConfig, testDynakube)
 
-	builder.Assess("active gate pod is running", activegate.CheckContainer(&testDynakube))
+	builder.Assess("active gate pod is running", activegate.CheckContainer(testDynakube))
 
 	builder.Assess("log agent started", k8sdaemonset.IsReady(testDynakube.LogMonitoring().GetDaemonSetName(), testDynakube.Namespace))
 
@@ -169,7 +169,7 @@ func checkConditions(name string, namespace string, scopesEnabled bool) features
 	}
 }
 
-func triggerDaemonSetReconcile(dk dynakube.DynaKube) features.Func {
+func triggerDaemonSetReconcile(dk *dynakube.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resources := envConfig.Client().Resources()
 		logMonitoring := k8sdaemonset.NewQuery(ctx, resources, client.ObjectKey{Name: dk.LogMonitoring().GetDaemonSetName(), Namespace: dk.Namespace})
@@ -178,14 +178,14 @@ func triggerDaemonSetReconcile(dk dynakube.DynaKube) features.Func {
 		require.NoError(t, err)
 		prevGeneration := logMonDaemonSet.Generation
 
-		require.NoError(t, resources.Get(ctx, dk.Name, dk.Namespace, &dk))
+		require.NoError(t, resources.Get(ctx, dk.Name, dk.Namespace, dk))
 		// Force reconciliation by simulating the passage of time
-		expireLastTransitionTime(&dk, "MonitoredEntity")
-		expireLastTransitionTime(&dk, logmonsettings.ConditionType)
-		require.NoError(t, resources.UpdateStatus(ctx, &dk))
+		expireLastTransitionTime(dk, "MonitoredEntity")
+		expireLastTransitionTime(dk, logmonsettings.ConditionType)
+		require.NoError(t, resources.UpdateStatus(ctx, dk))
 
 		dk.Spec.DynatraceAPIRequestThreshold = new(uint16(0))
-		require.NoError(t, resources.Update(ctx, &dk))
+		require.NoError(t, resources.Update(ctx, dk))
 
 		// Verify that the operator picked up the update
 		err = wait.For(func(ctx context.Context) (bool, error) {

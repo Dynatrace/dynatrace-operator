@@ -29,7 +29,7 @@ import (
 func MetadataEnrichment(t *testing.T) features.Feature {
 	builder := features.New("metadata-enrichment")
 	secretConfig := tenant.GetSingleTenantSecret(t)
-	testDynakube := *dynakubeComponents.New(
+	testDynakube := dynakubeComponents.New(
 		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
 		dynakubeComponents.WithMetadataEnrichment(),
 		dynakubeComponents.WithApplicationMonitoringSpec(&oneagent.ApplicationMonitoringSpec{}),
@@ -43,7 +43,7 @@ func MetadataEnrichment(t *testing.T) features.Feature {
 		testDynakube.MetadataEnrichment().GetNamespaceSelector().MatchLabels,
 	)
 
-	sampleApp := sample.NewApp(t, &testDynakube,
+	sampleApp := sample.NewApp(t, testDynakube,
 		sample.WithName("pod-with-dt-attributes"),
 		sample.WithNamespaceLabels(injectEverythingLabels),
 	)

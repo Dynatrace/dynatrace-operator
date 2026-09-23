@@ -40,8 +40,8 @@ type requiredFiles struct {
 	t              *testing.T
 	ctx            context.Context
 	resources      *resources.Resources
-	dk             dynakube.DynaKube
-	ec             edgeconnect.EdgeConnect
+	dk             *dynakube.DynaKube
+	ec             *edgeconnect.EdgeConnect
 	collectManaged bool
 }
 

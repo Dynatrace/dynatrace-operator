@@ -40,7 +40,7 @@ type TenantConfig struct {
 
 // Install creates a tenant secret and waits until the EdgeConnect is Running.
 // It also registers the deletion of these resources in reverse order.
-func Install(builder *features.FeatureBuilder, secretConfig *tenant.EdgeConnectSecret, ec edgeconnect.EdgeConnect) {
+func Install(builder *features.FeatureBuilder, secretConfig *tenant.EdgeConnectSecret, ec *edgeconnect.EdgeConnect) {
 	if secretConfig != nil {
 		builder.WithStep("create edgeconnect client Secret", features.LevelAssess, tenant.CreateClientSecret(secretConfig, BuildOAuthClientSecretName(ec.Name), ec.Namespace))
 	}
@@ -54,16 +54,16 @@ func Install(builder *features.FeatureBuilder, secretConfig *tenant.EdgeConnectS
 	builder.WithTeardown("delete edgeconnect client Secret", tenant.DeleteTenantSecret(BuildOAuthClientSecretName(ec.Name), ec.Namespace))
 }
 
-func VerifyStartup(builder *features.FeatureBuilder, level features.Level, testEdgeConnect edgeconnect.EdgeConnect) {
+func VerifyStartup(builder *features.FeatureBuilder, level features.Level, testEdgeConnect *edgeconnect.EdgeConnect) {
 	builder.WithStep(
 		fmt.Sprintf("'%s' edgeconnect phase changes to 'Running'", testEdgeConnect.Name),
 		level,
 		WaitForPhase(testEdgeConnect, status.Running))
 }
 
-func Create(edgeConnect edgeconnect.EdgeConnect) features.Func {
+func Create(edgeConnect *edgeconnect.EdgeConnect) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		require.NoError(t, environmentConfig.Client().Resources().Create(ctx, &edgeConnect))
+		require.NoError(t, environmentConfig.Client().Resources().Create(ctx, edgeConnect))
 
 		return ctx
 	}
@@ -77,14 +77,14 @@ func Get(ec *edgeconnect.EdgeConnect) features.Func {
 	}
 }
 
-func Delete(edgeConnect edgeconnect.EdgeConnect) features.Func {
+func Delete(edgeConnect *edgeconnect.EdgeConnect) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resources := envConfig.Client().Resources()
 
 		err := v1alpha1.AddToScheme(resources.GetScheme())
 		require.NoError(t, err)
 
-		err = resources.Delete(ctx, &edgeConnect)
+		err = resources.Delete(ctx, edgeConnect)
 		isNoKindMatchErr := meta.IsNoMatchError(err)
 
 		if err != nil {
@@ -95,18 +95,18 @@ func Delete(edgeConnect edgeconnect.EdgeConnect) features.Func {
 			require.NoError(t, err)
 		}
 
-		err = wait.For(conditions.New(resources).ResourceDeleted(&edgeConnect), wait.WithTimeout(1*time.Minute))
+		err = wait.For(conditions.New(resources).ResourceDeleted(edgeConnect), wait.WithTimeout(1*time.Minute))
 		require.NoError(t, err)
 
 		return ctx
 	}
 }
 
-func WaitForPhase(edgeConnect edgeconnect.EdgeConnect, phase status.DeploymentPhase) features.Func {
+func WaitForPhase(edgeConnect *edgeconnect.EdgeConnect, phase status.DeploymentPhase) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resources := envConfig.Client().Resources()
 
-		err := wait.For(conditions.New(resources).ResourceMatch(&edgeConnect, func(object k8s.Object) bool {
+		err := wait.For(conditions.New(resources).ResourceMatch(edgeConnect, func(object k8s.Object) bool {
 			ec, isEdgeConnect := object.(*edgeconnect.EdgeConnect)
 
 			return isEdgeConnect && ec.Status.DeploymentPhase == phase

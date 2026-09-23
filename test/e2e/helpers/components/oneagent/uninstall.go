@@ -33,14 +33,14 @@ var (
 	uninstallOneAgentDaemonSetPath = filepath.Join(project.TestDataDir(), "oneagent/uninstall-oneagent.yaml")
 )
 
-func RunClassicUninstall(builder *features.FeatureBuilder, level features.Level, testDynakube dynakube.DynaKube) {
+func RunClassicUninstall(builder *features.FeatureBuilder, level features.Level, testDynakube *dynakube.DynaKube) {
 	builder.WithStep("clean up OneAgent files from nodes", level, createUninstallDaemonSet(testDynakube))
 	builder.WithStep("wait for daemonset", level, waitForUninstallDaemonset(testDynakube.Namespace))
 	builder.WithStep("OneAgent files removed from nodes", level, executeUninstall(testDynakube.Namespace))
 	builder.WithStep("clean up removed", level, removeUninstallDaemonset(testDynakube.Namespace))
 }
 
-func createUninstallDaemonSet(dk dynakube.DynaKube) features.Func {
+func createUninstallDaemonSet(dk *dynakube.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		uninstallDaemonSet := manifests.ObjectFromFile[*appsv1.DaemonSet](t, uninstallOneAgentDaemonSetPath)
 		uninstallDaemonSet.Namespace = dk.Namespace

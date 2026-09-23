@@ -61,7 +61,7 @@ var (
 // the *Gateway* process is reachable via *Gateway service*.
 func Feature(t *testing.T, proxySpec *value.Source) features.Feature {
 	secretConfig := tenant.GetSingleTenantSecret(t)
-	testDynakube := *dynakubeComponents.New(
+	testDynakube := dynakubeComponents.New(
 		dynakubeComponents.WithActiveGate(),
 		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
 		dynakubeComponents.WithProxy(proxySpec))
@@ -73,9 +73,9 @@ func Feature(t *testing.T, proxySpec *value.Source) features.Feature {
 
 	// Register actual test
 	dynakubeComponents.Install(builder, &secretConfig, testDynakube)
-	assessActiveGate(builder, &testDynakube)
+	assessActiveGate(builder, testDynakube)
 
-	assessReadOnlyActiveGate(builder, &testDynakube)
+	assessReadOnlyActiveGate(builder, testDynakube)
 
 	// only activegate capabilities are used in this test
 	// make sure that if separate kubemon activegate is not used - it does not create separate statefulset and secret

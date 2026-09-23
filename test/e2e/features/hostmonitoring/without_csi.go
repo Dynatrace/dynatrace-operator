@@ -24,7 +24,7 @@ func WithoutCSI(t *testing.T) features.Feature {
 		dynakube.WithAPIURL(secretConfig.APIURL),
 		dynakube.WithHostMonitoringSpec(&oneagent.HostInjectSpec{}),
 	}
-	testDynakube := *dynakube.New(options...)
+	testDynakube := dynakube.New(options...)
 
 	// Register dynakube install
 	dynakube.Install(builder, &secretConfig, testDynakube)

@@ -58,7 +58,7 @@ type App struct {
 	base      *corev1.Pod
 	scBase    *corev1.ServiceAccount
 	owner     metav1.Object
-	namespace corev1.Namespace
+	namespace *corev1.Namespace
 
 	installedNamespace bool
 	isDeployment       bool
@@ -81,7 +81,7 @@ func NewApp(t *testing.T, owner metav1.Object, options ...Option) *App {
 		owner:     owner,
 		base:      base,
 		scBase:    sc,
-		namespace: *k8snamespace.New(base.Namespace),
+		namespace: k8snamespace.New(base.Namespace),
 	}
 
 	defaultOptions := []Option{
@@ -103,7 +103,7 @@ func WithName(name string) Option {
 	return func(app *App) {
 		if app.base.Namespace == app.base.Name {
 			app.base.Namespace = name
-			app.namespace = *k8snamespace.New(name)
+			app.namespace = k8snamespace.New(name)
 			app.scBase.Namespace = name
 		}
 		app.base.Name = name
@@ -116,7 +116,7 @@ func AsDeployment() Option {
 	}
 }
 
-func WithNamespace(namespace corev1.Namespace) Option {
+func WithNamespace(namespace *corev1.Namespace) Option {
 	return func(app *App) {
 		app.namespace = namespace
 		app.base.Namespace = namespace.Name

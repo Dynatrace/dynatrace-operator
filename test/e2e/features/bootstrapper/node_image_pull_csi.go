@@ -29,15 +29,15 @@ func InstallWithCSI(t *testing.T) features.Feature {
 	builder := features.New("node-image-pull-with-csi")
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
-	appMonDynakube := *dynakubeComponents.New(
+	appMonDynakube := dynakubeComponents.New(
 		dynakubeComponents.WithName("app-codemodules"),
 		dynakubeComponents.WithApplicationMonitoringSpec(&oneagent.ApplicationMonitoringSpec{AppInjectionSpec: oneagent.AppInjectionSpec{CodeModulesImage: registry.GetLatestCodeModulesImageTagURI(t)}}),
 		dynakubeComponents.WithAnnotations(map[string]string{exp.OANodeImagePullKey: "true"}),
 		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
 	)
 
-	sampleNamespace := *k8snamespace.New("codemodules-sample-node-image-pull")
-	sampleApp := sample.NewApp(t, &appMonDynakube,
+	sampleNamespace := k8snamespace.New("codemodules-sample-node-image-pull")
+	sampleApp := sample.NewApp(t, appMonDynakube,
 		sample.AsDeployment(),
 		sample.WithNamespace(sampleNamespace),
 	)
@@ -60,7 +60,7 @@ func InstallWithCSI(t *testing.T) features.Feature {
 	return builder.Feature()
 }
 
-func jobsAreCompleted(dk dynakube.DynaKube) features.Func {
+func jobsAreCompleted(dk *dynakube.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resource := envConfig.Client().Resources()
 

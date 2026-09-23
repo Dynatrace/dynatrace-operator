@@ -55,7 +55,7 @@ func ResilienceFeature(t *testing.T) features.Feature {
 
 	restrictCSI(builder)
 
-	testDynakube := *dynakube.New(
+	testDynakube := dynakube.New(
 		dynakube.WithAPIURL(secretConfig.APIURL),
 		dynakube.WithCloudNativeSpec(cloudnative.DefaultCloudNativeSpec()),
 		dynakube.WithAnnotations(map[string]string{
@@ -63,8 +63,8 @@ func ResilienceFeature(t *testing.T) features.Feature {
 		}),
 	)
 
-	sampleNamespace := *k8snamespace.New("network-problem-sample")
-	sampleApp := sample.NewApp(t, &testDynakube,
+	sampleNamespace := k8snamespace.New("network-problem-sample")
+	sampleApp := sample.NewApp(t, testDynakube,
 		sample.AsDeployment(),
 		sample.WithNamespace(sampleNamespace),
 		sample.WithFailurePolicy(false),

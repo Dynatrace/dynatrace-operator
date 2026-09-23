@@ -159,7 +159,7 @@ func oneAgentFeature(t *testing.T, featureName, dkName, override string) feature
 		options = append(options, dynakubeComponents.WithUsePublicRegistryFF())
 	}
 
-	testDynakube := *dynakubeComponents.New(options...)
+	testDynakube := dynakubeComponents.New(options...)
 
 	dynakubeComponents.Install(builder, &secretConfig, testDynakube)
 
@@ -189,12 +189,12 @@ func activeGateFeature(t *testing.T, featureName, dkName, override string) featu
 		options = append(options, dynakubeComponents.WithUsePublicRegistryFF())
 	}
 
-	testDynakube := *dynakubeComponents.New(options...)
+	testDynakube := dynakubeComponents.New(options...)
 
 	dynakubeComponents.Install(builder, &secretConfig, testDynakube)
 
 	builder.Assess("ActiveGate StatefulSet ready",
-		k8sstatefulset.IsReady(activegate.GetActiveGateStateFulSetName(&testDynakube), testDynakube.Namespace))
+		k8sstatefulset.IsReady(activegate.GetActiveGateStateFulSetName(testDynakube), testDynakube.Namespace))
 	builder.Assess("ActiveGate status reports public-registry source",
 		statusSourceIsPublicRegistry(testDynakube, image.ActiveGate))
 
@@ -219,10 +219,10 @@ func codeModulesFeature(t *testing.T, featureName, dkName, sampleNamespaceName, 
 		options = append(options, dynakubeComponents.WithUsePublicRegistryFF())
 	}
 
-	testDynakube := *dynakubeComponents.New(options...)
+	testDynakube := dynakubeComponents.New(options...)
 
-	sampleNamespace := *k8snamespace.New(sampleNamespaceName)
-	sampleApp := sample.NewApp(t, &testDynakube,
+	sampleNamespace := k8snamespace.New(sampleNamespaceName)
+	sampleApp := sample.NewApp(t, testDynakube,
 		sample.AsDeployment(),
 		sample.WithNamespace(sampleNamespace),
 		// The injected init container image is pulled by kubelet from the user's
@@ -262,10 +262,10 @@ func codeModulesWithCSIFeature(t *testing.T, featureName, dkName, sampleNamespac
 		options = append(options, dynakubeComponents.WithUsePublicRegistryFF())
 	}
 
-	testDynakube := *dynakubeComponents.New(options...)
+	testDynakube := dynakubeComponents.New(options...)
 
-	sampleNamespace := *k8snamespace.New(sampleNamespaceName)
-	sampleApp := sample.NewApp(t, &testDynakube,
+	sampleNamespace := k8snamespace.New(sampleNamespaceName)
+	sampleApp := sample.NewApp(t, testDynakube,
 		sample.AsDeployment(),
 		sample.WithNamespace(sampleNamespace),
 		// The injected init container image is pulled by kubelet from the user's
@@ -347,11 +347,11 @@ func dbExecutorFeature(t *testing.T, featureName, dkName, override string) featu
 		options = append(options, dynakubeComponents.WithUsePublicRegistryFF())
 	}
 
-	testDynakube := *dynakubeComponents.New(options...)
+	testDynakube := dynakubeComponents.New(options...)
 
 	dynakubeComponents.Install(builder, &secretConfig, testDynakube)
 
-	builder.Assess("active gate pod is running", activegate.CheckContainer(&testDynakube))
+	builder.Assess("active gate pod is running", activegate.CheckContainer(testDynakube))
 
 	builder.Assess("extensions execution controller started", k8sstatefulset.IsReady(testDynakube.Extensions().GetExecutionControllerStatefulsetName(), testDynakube.Namespace))
 
@@ -409,11 +409,11 @@ func kspmFeature(t *testing.T, featureName, dkName, override string) features.Fe
 		options = append(options, dynakubeComponents.WithUsePublicRegistryFF())
 	}
 
-	testDynakube := *dynakubeComponents.New(options...)
+	testDynakube := dynakubeComponents.New(options...)
 
 	dynakubeComponents.Install(builder, &secretConfig, testDynakube)
 
-	builder.Assess("active gate pod is running", activegate.CheckContainer(&testDynakube))
+	builder.Assess("active gate pod is running", activegate.CheckContainer(testDynakube))
 	builder.Assess("KSPM node config collector started",
 		k8sdaemonset.IsReady(testDynakube.KSPM().GetDaemonSetName(), testDynakube.Namespace))
 	builder.Assess("KSPM node config collector uses resolved image",
@@ -440,7 +440,7 @@ func telemetryIngestFeature(t *testing.T, featureName, dkName, override string) 
 		options = append(options, dynakubeComponents.WithUsePublicRegistryFF())
 	}
 
-	testDynakube := *dynakubeComponents.New(options...)
+	testDynakube := dynakubeComponents.New(options...)
 
 	dynakubeComponents.Install(builder, &secretConfig, testDynakube)
 
@@ -452,7 +452,7 @@ func telemetryIngestFeature(t *testing.T, featureName, dkName, override string) 
 	return builder.Feature()
 }
 
-func kspmUsesResolvedImage(dk dynakube.DynaKube) features.Func {
+func kspmUsesResolvedImage(dk *dynakube.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		var current dynakube.DynaKube
 		require.NoError(t, envConfig.Client().Resources().Get(ctx, dk.Name, dk.Namespace, &current))
@@ -463,7 +463,7 @@ func kspmUsesResolvedImage(dk dynakube.DynaKube) features.Func {
 	}
 }
 
-func otelCollectorUsesResolvedImage(dk dynakube.DynaKube) features.Func {
+func otelCollectorUsesResolvedImage(dk *dynakube.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		var current dynakube.DynaKube
 		require.NoError(t, envConfig.Client().Resources().Get(ctx, dk.Name, dk.Namespace, &current))
@@ -502,7 +502,7 @@ func logMonFeature(t *testing.T, featureName, dkName, override string) features.
 		}))
 	}
 
-	testDynakube := *dynakubeComponents.New(options...)
+	testDynakube := dynakubeComponents.New(options...)
 
 	agCrt, err := os.ReadFile(filepath.Join(project.TestDataDir(), consts.AgCertificate))
 	require.NoError(t, err)
@@ -519,7 +519,7 @@ func logMonFeature(t *testing.T, featureName, dkName, override string) features.
 
 	dynakubeComponents.Install(builder, &secretConfig, testDynakube)
 
-	builder.Assess("active gate pod is running", activegate.CheckContainer(&testDynakube))
+	builder.Assess("active gate pod is running", activegate.CheckContainer(testDynakube))
 
 	builder.Assess("log agent started", k8sdaemonset.IsReady(testDynakube.LogMonitoring().GetDaemonSetName(), testDynakube.Namespace))
 
@@ -565,9 +565,9 @@ func allFeaturesWithImageOverridesFeature(t *testing.T, featureName, dkName stri
 		options = append(options, dynakubeComponents.WithUsePublicRegistryFF())
 	}
 
-	testDynakube := *dynakubeComponents.New(options...)
+	testDynakube := dynakubeComponents.New(options...)
 
-	agStatefulSetName := activegate.GetActiveGateStateFulSetName(&testDynakube)
+	agStatefulSetName := activegate.GetActiveGateStateFulSetName(testDynakube)
 
 	dynakubeComponents.Install(builder, &secretConfig, testDynakube)
 
@@ -595,15 +595,15 @@ func allFeaturesWithImageOverridesFeature(t *testing.T, featureName, dkName stri
 	return builder.Feature()
 }
 
-func statusSourceIsCustomImage(dk dynakube.DynaKube, component image.ComponentType) features.Func {
+func statusSourceIsCustomImage(dk *dynakube.DynaKube, component image.ComponentType) features.Func {
 	return statusSourceIs(dk, component, status.CustomImageVersionSource)
 }
 
-func statusSourceIsPublicRegistry(dk dynakube.DynaKube, component image.ComponentType) features.Func {
+func statusSourceIsPublicRegistry(dk *dynakube.DynaKube, component image.ComponentType) features.Func {
 	return statusSourceIs(dk, component, status.PublicRegistryVersionSource)
 }
 
-func statusSourceIs(dk dynakube.DynaKube, component image.ComponentType, expected status.VersionSource) features.Func {
+func statusSourceIs(dk *dynakube.DynaKube, component image.ComponentType, expected status.VersionSource) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		var current dynakube.DynaKube
 		require.NoError(t,
@@ -630,7 +630,7 @@ func statusSourceIs(dk dynakube.DynaKube, component image.ComponentType, expecte
 	}
 }
 
-func getStatusCodeModulesImageID(dk dynakube.DynaKube, imageID *string) features.Func {
+func getStatusCodeModulesImageID(dk *dynakube.DynaKube, imageID *string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		var current dynakube.DynaKube
 		require.NoError(t,

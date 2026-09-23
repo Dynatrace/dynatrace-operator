@@ -73,7 +73,7 @@ func InstallFromImage(t *testing.T) features.Feature {
 	secretConfigs := tenant.GetMultiTenantSecret(t)
 	require.Len(t, secretConfigs, 2)
 
-	cloudNativeDynakube := *dynakubeComponents.New(
+	cloudNativeDynakube := dynakubeComponents.New(
 		dynakubeComponents.WithName("cloudnative-codemodules"),
 		dynakubeComponents.WithCloudNativeSpec(codeModulesCloudNativeSpec(t)),
 		dynakubeComponents.WithNameBasedOneAgentNamespaceSelector(),
@@ -81,7 +81,7 @@ func InstallFromImage(t *testing.T) features.Feature {
 		dynakubeComponents.WithAPIURL(secretConfigs[0].APIURL),
 	)
 
-	appDynakube := *dynakubeComponents.New(
+	appDynakube := dynakubeComponents.New(
 		dynakubeComponents.WithName("app-codemodules"),
 		dynakubeComponents.WithApplicationMonitoringSpec(&oneagent.ApplicationMonitoringSpec{AppInjectionSpec: *codeModulesAppInjectSpec(t)}),
 		dynakubeComponents.WithNameBasedOneAgentNamespaceSelector(),
@@ -90,9 +90,9 @@ func InstallFromImage(t *testing.T) features.Feature {
 	)
 
 	labels := cloudNativeDynakube.OneAgent().GetNamespaceSelector().MatchLabels
-	sampleNamespace := *k8snamespace.New("codemodules-sample", k8snamespace.WithLabels(labels))
+	sampleNamespace := k8snamespace.New("codemodules-sample", k8snamespace.WithLabels(labels))
 
-	sampleApp := sample.NewApp(t, &cloudNativeDynakube,
+	sampleApp := sample.NewApp(t, cloudNativeDynakube,
 		sample.AsDeployment(),
 		sample.WithNamespace(sampleNamespace),
 	)
@@ -139,7 +139,7 @@ func WithProxy(t *testing.T, proxySpec *value.Source) features.Feature {
 	secretConfigs := tenant.GetMultiTenantSecret(t)
 	require.Len(t, secretConfigs, 2)
 
-	cloudNativeDynakube := *dynakubeComponents.New(
+	cloudNativeDynakube := dynakubeComponents.New(
 		dynakubeComponents.WithName("codemodules-with-proxy"),
 		dynakubeComponents.WithAPIURL(secretConfigs[0].APIURL),
 		dynakubeComponents.WithCloudNativeSpec(codeModulesCloudNativeSpec(t)),
@@ -151,8 +151,8 @@ func WithProxy(t *testing.T, proxySpec *value.Source) features.Feature {
 		}),
 	)
 
-	sampleNamespace := *k8snamespace.New("codemodules-sample-with-proxy", k8snamespace.WithIstio())
-	sampleApp := sample.NewApp(t, &cloudNativeDynakube,
+	sampleNamespace := k8snamespace.New("codemodules-sample-with-proxy", k8snamespace.WithIstio())
+	sampleApp := sample.NewApp(t, cloudNativeDynakube,
 		sample.AsDeployment(),
 		sample.WithNamespace(sampleNamespace),
 	)
@@ -180,7 +180,7 @@ func WithProxy(t *testing.T, proxySpec *value.Source) features.Feature {
 
 	cloudnative.AssessSampleContainer(builder, sampleApp, func() []byte { return nil }, nil)
 	cloudnative.AssessOneAgentContainer(builder, func() []byte { return nil }, nil)
-	cloudnative.AssessActiveGateContainer(builder, &cloudNativeDynakube, nil)
+	cloudnative.AssessActiveGateContainer(builder, cloudNativeDynakube, nil)
 
 	// Register sample, dynakubeComponents and operator uninstall
 	builder.Teardown(sampleApp.Uninstall())
@@ -205,7 +205,7 @@ func WithProxyAndAGCert(t *testing.T, proxySpec *value.Source) features.Feature 
 	secretConfigs := tenant.GetMultiTenantSecret(t)
 	require.Len(t, secretConfigs, 2)
 
-	cloudNativeDynakube := *dynakubeComponents.New(
+	cloudNativeDynakube := dynakubeComponents.New(
 		dynakubeComponents.WithName("codemodules-with-proxy-and-ag-cert"),
 		dynakubeComponents.WithAPIURL(secretConfigs[0].APIURL),
 		dynakubeComponents.WithCloudNativeSpec(codeModulesCloudNativeSpec(t)),
@@ -215,8 +215,8 @@ func WithProxyAndAGCert(t *testing.T, proxySpec *value.Source) features.Feature 
 		dynakubeComponents.WithProxy(proxySpec),
 	)
 
-	sampleNamespace := *k8snamespace.New("codemodules-sample-with-proxy-custom-ca", k8snamespace.WithIstio())
-	sampleApp := sample.NewApp(t, &cloudNativeDynakube,
+	sampleNamespace := k8snamespace.New("codemodules-sample-with-proxy-custom-ca", k8snamespace.WithIstio())
+	sampleApp := sample.NewApp(t, cloudNativeDynakube,
 		sample.AsDeployment(),
 		sample.WithNamespace(sampleNamespace),
 	)
@@ -254,7 +254,7 @@ func WithProxyAndAGCert(t *testing.T, proxySpec *value.Source) features.Feature 
 
 	cloudnative.AssessSampleContainer(builder, sampleApp, func() []byte { return agCrt }, nil)
 	cloudnative.AssessOneAgentContainer(builder, func() []byte { return agCrt }, nil)
-	cloudnative.AssessActiveGateContainer(builder, &cloudNativeDynakube, nil)
+	cloudnative.AssessActiveGateContainer(builder, cloudNativeDynakube, nil)
 
 	// Register sample, dynakubeComponents and operator uninstall
 	builder.Teardown(sampleApp.Uninstall())
@@ -269,7 +269,7 @@ func WithProxyAndAutomaticAGCert(t *testing.T, proxySpec *value.Source) features
 	secretConfigs := tenant.GetMultiTenantSecret(t)
 	require.Len(t, secretConfigs, 2)
 
-	cloudNativeDynakube := *dynakubeComponents.New(
+	cloudNativeDynakube := dynakubeComponents.New(
 		dynakubeComponents.WithName("codemodules-with-proxy"),
 		dynakubeComponents.WithAPIURL(secretConfigs[0].APIURL),
 		dynakubeComponents.WithCloudNativeSpec(codeModulesCloudNativeSpec(t)),
@@ -278,8 +278,8 @@ func WithProxyAndAutomaticAGCert(t *testing.T, proxySpec *value.Source) features
 		dynakubeComponents.WithProxy(proxySpec),
 	)
 
-	sampleNamespace := *k8snamespace.New("codemodules-sample-with-proxy", k8snamespace.WithIstio())
-	sampleApp := sample.NewApp(t, &cloudNativeDynakube,
+	sampleNamespace := k8snamespace.New("codemodules-sample-with-proxy", k8snamespace.WithIstio())
+	sampleApp := sample.NewApp(t, cloudNativeDynakube,
 		sample.AsDeployment(),
 		sample.WithNamespace(sampleNamespace),
 	)
@@ -315,7 +315,7 @@ func WithProxyAndAutomaticAGCert(t *testing.T, proxySpec *value.Source) features
 
 	cloudnative.AssessSampleContainer(builder, sampleApp, func() []byte { return agTLSSecret.Data[opconsts.TLSServerCrtDataName] }, nil)
 	cloudnative.AssessOneAgentContainer(builder, func() []byte { return agTLSSecret.Data[opconsts.TLSServerCrtDataName] }, nil)
-	cloudnative.AssessActiveGateContainer(builder, &cloudNativeDynakube, nil)
+	cloudnative.AssessActiveGateContainer(builder, cloudNativeDynakube, nil)
 
 	// Register sample, dynakubeComponents and operator uninstall
 	builder.Teardown(sampleApp.Uninstall())
@@ -328,7 +328,7 @@ func WithProxyCAAndAGCert(t *testing.T, proxySpec *value.Source) features.Featur
 	secretConfigs := tenant.GetMultiTenantSecret(t)
 	require.Len(t, secretConfigs, 2)
 
-	cloudNativeDynakube := *dynakubeComponents.New(
+	cloudNativeDynakube := dynakubeComponents.New(
 		dynakubeComponents.WithName("codemodules-with-proxy-custom-ca-ag-cert"),
 		dynakubeComponents.WithAPIURL(secretConfigs[0].APIURL),
 		dynakubeComponents.WithCloudNativeSpec(codeModulesCloudNativeSpec(t)),
@@ -339,8 +339,8 @@ func WithProxyCAAndAGCert(t *testing.T, proxySpec *value.Source) features.Featur
 		dynakubeComponents.WithProxy(proxySpec),
 	)
 
-	sampleNamespace := *k8snamespace.New("codemodules-sample-with-proxy-custom-ca", k8snamespace.WithIstio())
-	sampleApp := sample.NewApp(t, &cloudNativeDynakube,
+	sampleNamespace := k8snamespace.New("codemodules-sample-with-proxy-custom-ca", k8snamespace.WithIstio())
+	sampleApp := sample.NewApp(t, cloudNativeDynakube,
 		sample.AsDeployment(),
 		sample.WithNamespace(sampleNamespace),
 	)
@@ -387,7 +387,7 @@ func WithProxyCAAndAGCert(t *testing.T, proxySpec *value.Source) features.Featur
 
 	cloudnative.AssessSampleContainer(builder, sampleApp, func() []byte { return agCrt }, trustedCa)
 	cloudnative.AssessOneAgentContainer(builder, func() []byte { return agCrt }, trustedCa)
-	cloudnative.AssessActiveGateContainer(builder, &cloudNativeDynakube, trustedCa)
+	cloudnative.AssessActiveGateContainer(builder, cloudNativeDynakube, trustedCa)
 
 	// Register sample, dynakubeComponents and operator uninstall
 	builder.Teardown(sampleApp.Uninstall())
@@ -403,7 +403,7 @@ func WithProxyCAAndAutomaticAGCert(t *testing.T, proxySpec *value.Source) featur
 	secretConfigs := tenant.GetMultiTenantSecret(t)
 	require.Len(t, secretConfigs, 2)
 
-	cloudNativeDynakube := *dynakubeComponents.New(
+	cloudNativeDynakube := dynakubeComponents.New(
 		dynakubeComponents.WithName("codemodules-with-proxy-custom-ca-ag-cert"),
 		dynakubeComponents.WithAPIURL(secretConfigs[0].APIURL),
 		dynakubeComponents.WithCloudNativeSpec(codeModulesCloudNativeSpec(t)),
@@ -413,8 +413,8 @@ func WithProxyCAAndAutomaticAGCert(t *testing.T, proxySpec *value.Source) featur
 		dynakubeComponents.WithProxy(proxySpec),
 	)
 
-	sampleNamespace := *k8snamespace.New("codemodules-sample-with-proxy-custom-ca", k8snamespace.WithIstio())
-	sampleApp := sample.NewApp(t, &cloudNativeDynakube,
+	sampleNamespace := k8snamespace.New("codemodules-sample-with-proxy-custom-ca", k8snamespace.WithIstio())
+	sampleApp := sample.NewApp(t, cloudNativeDynakube,
 		sample.AsDeployment(),
 		sample.WithNamespace(sampleNamespace),
 	)
@@ -457,7 +457,7 @@ func WithProxyCAAndAutomaticAGCert(t *testing.T, proxySpec *value.Source) featur
 
 	cloudnative.AssessSampleContainer(builder, sampleApp, func() []byte { return agTLSSecret.Data[opconsts.TLSServerCrtDataName] }, trustedCa)
 	cloudnative.AssessOneAgentContainer(builder, func() []byte { return agTLSSecret.Data[opconsts.TLSServerCrtDataName] }, trustedCa)
-	cloudnative.AssessActiveGateContainer(builder, &cloudNativeDynakube, trustedCa)
+	cloudnative.AssessActiveGateContainer(builder, cloudNativeDynakube, trustedCa)
 
 	// Register sample, dynakubeComponents and operator uninstall
 	builder.Teardown(sampleApp.Uninstall())
@@ -480,7 +480,7 @@ func codeModulesAppInjectSpec(t *testing.T) *oneagent.AppInjectionSpec {
 	}
 }
 
-func ImageHasBeenDownloaded(dk dynakube.DynaKube) features.Func {
+func ImageHasBeenDownloaded(dk *dynakube.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resource := envConfig.Client().Resources()
 		clientset, err := kubernetes.NewForConfig(resource.GetConfig())
@@ -627,7 +627,7 @@ func isVolumeAttached(t *testing.T, volumes []corev1.Volume, volumeName string) 
 	return result
 }
 
-func checkOneAgentEnvVars(dk dynakube.DynaKube) features.Func {
+func checkOneAgentEnvVars(dk *dynakube.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resources := envConfig.Client().Resources()
 		err := k8sdaemonset.NewQuery(ctx, resources, client.ObjectKey{

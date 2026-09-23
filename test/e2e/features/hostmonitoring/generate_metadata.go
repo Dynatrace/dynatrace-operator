@@ -42,19 +42,19 @@ func GenerateMetadata(t *testing.T) features.Feature {
 		componentDynakube.WithActiveGate(),
 		componentDynakube.WithHostMonitoringSpec(&oneagent.HostInjectSpec{}),
 	}
-	testDynakube := *componentDynakube.New(options...)
+	testDynakube := componentDynakube.New(options...)
 
 	// Register Dynakube install
 	componentDynakube.Install(builder, &secretConfig, testDynakube)
 	builder.Assess("OneAgent started", k8sdaemonset.IsReady(testDynakube.OneAgent().GetDaemonsetName(), testDynakube.Namespace))
-	builder.Assess("active gate pod is running", activegate.CheckContainer(&testDynakube))
+	builder.Assess("active gate pod is running", activegate.CheckContainer(testDynakube))
 
 	builder.Assess("Checking if all OneAgent pods have generated metadata", oneAgentHaveGeneratedMetadata(testDynakube))
 
 	return builder.Feature()
 }
 
-func oneAgentHaveGeneratedMetadata(dk dynakube.DynaKube) features.Func {
+func oneAgentHaveGeneratedMetadata(dk *dynakube.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		r := envConfig.Client().Resources()
 

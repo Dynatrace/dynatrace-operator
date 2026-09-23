@@ -36,15 +36,15 @@ func PGCWithCloudNativeFullStack(t *testing.T) features.Feature {
 		},
 	}
 
-	dk := *dynakubeComponents.New(
+	dk := dynakubeComponents.New(
 		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
 		// we need kubernetesClusterMEID to PGC work
 		dynakubeComponents.WithActiveGateModules(activegate.KubeMonCapability.DisplayName),
 		dynakubeComponents.WithCloudNativeSpec(fullStackSpec),
 	)
 
-	sampleNamespace := *k8snamespace.New("pgc-fullstack-sample")
-	sampleApp := sample.NewApp(t, &dk,
+	sampleNamespace := k8snamespace.New("pgc-fullstack-sample")
+	sampleApp := sample.NewApp(t, dk,
 		sample.WithNamespace(sampleNamespace),
 		sample.AsDeployment(),
 	)

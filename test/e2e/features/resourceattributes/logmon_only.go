@@ -45,7 +45,7 @@ func LogmonOnly(t *testing.T) features.Feature {
 		}))
 	}
 
-	testDynakube := *componentDynakube.New(options...)
+	testDynakube := componentDynakube.New(options...)
 
 	componentDynakube.Install(builder, &secretConfig, testDynakube)
 	builder.Assess("LogMonitoring DaemonSet is ready", k8sdaemonset.IsReady(testDynakube.LogMonitoring().GetDaemonSetName(), testDynakube.Namespace))
@@ -55,7 +55,7 @@ func LogmonOnly(t *testing.T) features.Feature {
 	return builder.Feature()
 }
 
-func assessLogMonitoringInitArgs(dk dynakube.DynaKube, expected map[string]string) features.Func {
+func assessLogMonitoringInitArgs(dk *dynakube.DynaKube, expected map[string]string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		ds, err := k8sdaemonset.NewQuery(ctx, envConfig.Client().Resources(), client.ObjectKey{
 			Name:      dk.LogMonitoring().GetDaemonSetName(),

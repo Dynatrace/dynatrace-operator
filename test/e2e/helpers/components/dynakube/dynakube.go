@@ -34,7 +34,7 @@ const (
 
 // install creates a tenant secret and waits until the DynaKube is Running.
 // It also registers the deletion of these resources in reverse order.
-func install(builder *features.FeatureBuilder, t tenant.Tokens, dk dynakube.DynaKube) {
+func install(builder *features.FeatureBuilder, t tenant.Tokens, dk *dynakube.DynaKube) {
 	Create(builder, features.LevelAssess, t, dk)
 	VerifyStartup(builder, features.LevelAssess, dk)
 	// The secret is required for correct cleanup, so always delete it last
@@ -42,20 +42,20 @@ func install(builder *features.FeatureBuilder, t tenant.Tokens, dk dynakube.Dyna
 	builder.WithTeardown("deleted tenant secret", tenant.DeleteTenantSecret(dk.Name, dk.Namespace))
 }
 
-func Install(builder *features.FeatureBuilder, secretConfig *tenant.Secret, dk dynakube.DynaKube) {
+func Install(builder *features.FeatureBuilder, secretConfig *tenant.Secret, dk *dynakube.DynaKube) {
 	install(builder, secretConfig.TokensWithSettingsScope(), dk)
 }
 
-func InstallWithoutSettingsScopes(builder *features.FeatureBuilder, secretConfig *tenant.Secret, dk dynakube.DynaKube) {
+func InstallWithoutSettingsScopes(builder *features.FeatureBuilder, secretConfig *tenant.Secret, dk *dynakube.DynaKube) {
 	install(builder, secretConfig.TokensWithoutSettingsScope(), dk)
 }
 
-func InstallPreviousVersion(builder *features.FeatureBuilder, level features.Level, secretConfig *tenant.Secret, prevDK prevDynakube.DynaKube) {
+func InstallPreviousVersion(builder *features.FeatureBuilder, level features.Level, secretConfig *tenant.Secret, prevDK *prevDynakube.DynaKube) {
 	CreatePreviousVersion(builder, level, secretConfig.TokensWithSettingsScope(), prevDK)
 	VerifyStartupPreviousVersion(builder, level, prevDK)
 }
 
-func Create(builder *features.FeatureBuilder, level features.Level, tokens tenant.Tokens, testDynakube dynakube.DynaKube) {
+func Create(builder *features.FeatureBuilder, level features.Level, tokens tenant.Tokens, testDynakube *dynakube.DynaKube) {
 	useDevRegistryPullSecret := tenant.UsePlatformToken() || testDynakube.FF().IsPublicRegistry()
 	if useDevRegistryPullSecret && testDynakube.Spec.CustomPullSecret == "" {
 		testDynakube.Spec.CustomPullSecret = e2econst.DevRegistryPullSecretName
@@ -67,11 +67,11 @@ func Create(builder *features.FeatureBuilder, level features.Level, tokens tenan
 		create(testDynakube))
 }
 
-func Update(builder *features.FeatureBuilder, testDynakube dynakube.DynaKube) {
+func Update(builder *features.FeatureBuilder, testDynakube *dynakube.DynaKube) {
 	builder.WithStep("dynakube updated", features.LevelAssess, update(testDynakube))
 }
 
-func CreatePreviousVersion(builder *features.FeatureBuilder, level features.Level, tokens tenant.Tokens, prevDK prevDynakube.DynaKube) {
+func CreatePreviousVersion(builder *features.FeatureBuilder, level features.Level, tokens tenant.Tokens, prevDK *prevDynakube.DynaKube) {
 	builder.WithStep("created tenant secret", level, tenant.CreateTenantSecret(tokens, prevDK.Name, prevDK.Namespace))
 	builder.WithStep(
 		fmt.Sprintf("'%s' dynakube created", prevDK.Name),
@@ -79,7 +79,7 @@ func CreatePreviousVersion(builder *features.FeatureBuilder, level features.Leve
 		createPreviousVersion(prevDK))
 }
 
-func VerifyStartupPreviousVersion(builder *features.FeatureBuilder, level features.Level, prevDK prevDynakube.DynaKube) {
+func VerifyStartupPreviousVersion(builder *features.FeatureBuilder, level features.Level, prevDK *prevDynakube.DynaKube) {
 	if prevDK.OneAgent().IsDaemonsetRequired() {
 		builder.WithStep("oneagent started", level, oneagent.WaitForDaemonset(prevDK.OneAgent().GetDaemonsetName(), prevDK.Namespace))
 	}
@@ -89,7 +89,7 @@ func VerifyStartupPreviousVersion(builder *features.FeatureBuilder, level featur
 		WaitForPhasePreviousVersion(prevDK, status.Running))
 }
 
-func Delete(builder *features.FeatureBuilder, level features.Level, dk dynakube.DynaKube) {
+func Delete(builder *features.FeatureBuilder, level features.Level, dk *dynakube.DynaKube) {
 	builder.WithStep("dynakube deleted", level, remove(dk))
 	if dk.OneAgent().IsDaemonsetRequired() {
 		builder.WithStep("oneagent pods stopped", level, oneagent.WaitForDaemonSetPodsDeletion(dk.OneAgent().GetDaemonsetName(), dk.Namespace))
@@ -99,7 +99,7 @@ func Delete(builder *features.FeatureBuilder, level features.Level, dk dynakube.
 	}
 }
 
-func VerifyStartup(builder *features.FeatureBuilder, level features.Level, dk dynakube.DynaKube) {
+func VerifyStartup(builder *features.FeatureBuilder, level features.Level, dk *dynakube.DynaKube) {
 	if dk.OneAgent().IsDaemonsetRequired() {
 		builder.WithStep("oneagent started", level, oneagent.WaitForDaemonset(dk.OneAgent().GetDaemonsetName(), dk.Namespace))
 	}
@@ -121,10 +121,10 @@ func conditionStatusMatch(condType string, expectedStatus metav1.ConditionStatus
 	}
 }
 
-func CheckCondition(dk dynakube.DynaKube, condType string, expectedStatus metav1.ConditionStatus) features.Func {
+func CheckCondition(dk *dynakube.DynaKube, condType string, expectedStatus metav1.ConditionStatus) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resources := envConfig.Client().Resources()
-		done, err := conditions.New(resources).ResourceMatch(&dk, conditionStatusMatch(condType, expectedStatus))(ctx)
+		done, err := conditions.New(resources).ResourceMatch(dk, conditionStatusMatch(condType, expectedStatus))(ctx)
 		require.NoError(t, err)
 		require.True(t, done)
 
@@ -132,20 +132,20 @@ func CheckCondition(dk dynakube.DynaKube, condType string, expectedStatus metav1
 	}
 }
 
-func WaitForCondition(dk dynakube.DynaKube, condType string, expectedStatus metav1.ConditionStatus) features.Func {
+func WaitForCondition(dk *dynakube.DynaKube, condType string, expectedStatus metav1.ConditionStatus) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resources := envConfig.Client().Resources()
-		err := wait.For(conditions.New(resources).ResourceMatch(&dk, conditionStatusMatch(condType, expectedStatus)), wait.WithTimeout(5*time.Minute))
+		err := wait.For(conditions.New(resources).ResourceMatch(dk, conditionStatusMatch(condType, expectedStatus)), wait.WithTimeout(5*time.Minute))
 		require.NoError(t, err)
 
 		return ctx
 	}
 }
 
-func WaitForConditionAbsent(dk dynakube.DynaKube, condType string) features.Func {
+func WaitForConditionAbsent(dk *dynakube.DynaKube, condType string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resources := envConfig.Client().Resources()
-		err := wait.For(conditions.New(resources).ResourceMatch(&dk, func(object k8s.Object) bool {
+		err := wait.For(conditions.New(resources).ResourceMatch(dk, func(object k8s.Object) bool {
 			d, ok := object.(*dynakube.DynaKube)
 
 			return ok && meta.FindStatusCondition(d.Status.Conditions, condType) == nil
@@ -156,12 +156,12 @@ func WaitForConditionAbsent(dk dynakube.DynaKube, condType string) features.Func
 	}
 }
 
-func WaitForPhase(dk dynakube.DynaKube, phase status.DeploymentPhase) features.Func {
+func WaitForPhase(dk *dynakube.DynaKube, phase status.DeploymentPhase) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resources := envConfig.Client().Resources()
 
 		const timeout = 8 * time.Minute
-		err := wait.For(conditions.New(resources).ResourceMatch(&dk, func(object k8s.Object) bool {
+		err := wait.For(conditions.New(resources).ResourceMatch(dk, func(object k8s.Object) bool {
 			dynakube, isDynakube := object.(*dynakube.DynaKube)
 
 			return isDynakube && dynakube.Status.Phase == phase
@@ -173,12 +173,12 @@ func WaitForPhase(dk dynakube.DynaKube, phase status.DeploymentPhase) features.F
 	}
 }
 
-func WaitForPhasePreviousVersion(dk prevDynakube.DynaKube, phase status.DeploymentPhase) features.Func {
+func WaitForPhasePreviousVersion(dk *prevDynakube.DynaKube, phase status.DeploymentPhase) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resources := envConfig.Client().Resources()
 
 		const timeout = 5 * time.Minute
-		err := wait.For(conditions.New(resources).ResourceMatch(&dk, func(object k8s.Object) bool {
+		err := wait.For(conditions.New(resources).ResourceMatch(dk, func(object k8s.Object) bool {
 			dynakube, isDynakube := object.(*prevDynakube.DynaKube)
 
 			return isDynakube && dynakube.Status.Phase == phase
@@ -190,54 +190,54 @@ func WaitForPhasePreviousVersion(dk prevDynakube.DynaKube, phase status.Deployme
 	}
 }
 
-func VerifyPlatformTokenStatus(builder *features.FeatureBuilder, dk dynakube.DynaKube, expectPlatform bool) {
+func VerifyPlatformTokenStatus(builder *features.FeatureBuilder, dk *dynakube.DynaKube, expectPlatform bool) {
 	builder.WithStep("verify platform token status", features.LevelAssess, assert(dk, func(current *dynakube.DynaKube) bool {
 		return current.Status.APIToken.Platform != nil && *current.Status.APIToken.Platform == expectPlatform
 	}))
 }
 
-func assert(dk dynakube.DynaKube, check func(*dynakube.DynaKube) bool) features.Func {
+func assert(dk *dynakube.DynaKube, check func(*dynakube.DynaKube) bool) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		require.NoError(t, envConfig.Client().Resources().Get(ctx, dk.Name, dk.Namespace, &dk))
-		require.True(t, check(&dk))
+		require.NoError(t, envConfig.Client().Resources().Get(ctx, dk.Name, dk.Namespace, dk))
+		require.True(t, check(dk))
 
 		return ctx
 	}
 }
 
-func create(dk dynakube.DynaKube) features.Func {
+func create(dk *dynakube.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		require.NoError(t, envConfig.Client().Resources().Create(ctx, &dk))
+		require.NoError(t, envConfig.Client().Resources().Create(ctx, dk))
 
 		return ctx
 	}
 }
 
-func createPreviousVersion(dk prevDynakube.DynaKube) features.Func {
+func createPreviousVersion(dk *prevDynakube.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		require.NoError(t, envConfig.Client().Resources().Create(ctx, &dk))
+		require.NoError(t, envConfig.Client().Resources().Create(ctx, dk))
 
 		return ctx
 	}
 }
 
-func update(dk dynakube.DynaKube) features.Func {
+func update(dk *dynakube.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		var oldDK dynakube.DynaKube
 		require.NoError(t, envConfig.Client().Resources().Get(ctx, dk.Name, dk.Namespace, &oldDK))
 		dk.ResourceVersion = oldDK.ResourceVersion
-		require.NoError(t, envConfig.Client().Resources().Update(ctx, &dk))
+		require.NoError(t, envConfig.Client().Resources().Update(ctx, dk))
 
 		return ctx
 	}
 }
 
 // TriggerReconciliation forces an immediate reconcile
-func TriggerReconciliation(builder *features.FeatureBuilder, dk dynakube.DynaKube) {
+func TriggerReconciliation(builder *features.FeatureBuilder, dk *dynakube.DynaKube) {
 	builder.WithStep("triggered dynakube reconciliation", features.LevelAssess, triggerReconciliation(dk))
 }
 
-func triggerReconciliation(dk dynakube.DynaKube) features.Func {
+func triggerReconciliation(dk *dynakube.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resources := envConfig.Client().Resources()
 
@@ -263,11 +263,11 @@ func triggerReconciliation(dk dynakube.DynaKube) features.Func {
 	}
 }
 
-func remove(dk dynakube.DynaKube) features.Func {
+func remove(dk *dynakube.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resources := envConfig.Client().Resources()
 
-		err := resources.Delete(ctx, &dk)
+		err := resources.Delete(ctx, dk)
 		isNoKindMatchErr := meta.IsNoMatchError(err)
 
 		if err != nil {
@@ -278,7 +278,7 @@ func remove(dk dynakube.DynaKube) features.Func {
 			require.NoError(t, err)
 		}
 
-		err = wait.For(conditions.New(resources).ResourceDeleted(&dk), wait.WithTimeout(1*time.Minute))
+		err = wait.For(conditions.New(resources).ResourceDeleted(dk), wait.WithTimeout(1*time.Minute))
 		require.NoError(t, err)
 
 		return ctx

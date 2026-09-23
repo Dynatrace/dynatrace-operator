@@ -32,7 +32,7 @@ func FromPlatformToAPIToken(t *testing.T) features.Feature {
 		options = append(options, componentDynakube.WithUsePublicRegistryFF())
 	}
 
-	testDynakube := *componentDynakube.New(options...)
+	testDynakube := componentDynakube.New(options...)
 
 	componentDynakube.Install(builder, &secretConfig, testDynakube)
 
@@ -55,7 +55,7 @@ func FromAPIToPlatformToken(t *testing.T) features.Feature {
 
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
-	testDynakube := *componentDynakube.New(
+	testDynakube := componentDynakube.New(
 		componentDynakube.WithAPIURL(secretConfig.APIURL),
 		componentDynakube.WithHostMonitoringSpec(&oneagent.HostInjectSpec{}),
 		componentDynakube.WithCustomPullSecret(e2econst.DevRegistryPullSecretName),

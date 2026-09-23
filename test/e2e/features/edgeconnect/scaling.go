@@ -37,7 +37,7 @@ func WithHPARegular(t *testing.T) features.Feature {
 
 	builder.Assess("create EC configuration on the tenant", ecComponents.CreateTenantConfig(testECname, secretConfig, edgeConnectTenantConfig, testHostPattern))
 
-	testEdgeConnect := *ecComponents.New(
+	testEdgeConnect := ecComponents.New(
 		// this tenantConfigName should match with tenant edgeConnect tenantConfigName
 		ecComponents.WithName(testECname),
 		ecComponents.WithAPIServer(secretConfig.APIServer),
@@ -86,7 +86,7 @@ func WithHPAProvisioner(t *testing.T) features.Feature {
 	testECname := uuid.NewString()
 	testHostPattern := fmt.Sprintf("%s.e2eTestHostPattern.internal.org", testECname)
 
-	testEdgeConnect := *ecComponents.New(
+	testEdgeConnect := ecComponents.New(
 		ecComponents.WithName(testECname),
 		ecComponents.WithAPIServer(secretConfig.APIServer),
 		ecComponents.WithOAuthClientSecret(ecComponents.BuildOAuthClientSecretName(testECname)),
@@ -136,7 +136,7 @@ func EnforceReplicasRegular(t *testing.T) features.Feature {
 
 	builder.Assess("create EC configuration on the tenant", ecComponents.CreateTenantConfig(testECname, secretConfig, edgeConnectTenantConfig, testHostPattern))
 
-	testEdgeConnect := *ecComponents.New(
+	testEdgeConnect := ecComponents.New(
 		// this tenantConfigName should match with tenant edgeConnect tenantConfigName
 		ecComponents.WithName(testECname),
 		ecComponents.WithAPIServer(secretConfig.APIServer),
@@ -172,7 +172,7 @@ func EnforceReplicasProvisioner(t *testing.T) features.Feature {
 	testECname := uuid.NewString()
 	testHostPattern := fmt.Sprintf("%s.e2eTestHostPattern.internal.org", testECname)
 
-	testEdgeConnect := *ecComponents.New(
+	testEdgeConnect := ecComponents.New(
 		ecComponents.WithName(testECname),
 		ecComponents.WithAPIServer(secretConfig.APIServer),
 		ecComponents.WithOAuthClientSecret(ecComponents.BuildOAuthClientSecretName(testECname)),

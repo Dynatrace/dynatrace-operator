@@ -24,24 +24,24 @@ import (
 func WithoutCSI(t *testing.T) features.Feature {
 	builder := features.New("app-monitoring-without-csi")
 	secretConfig := tenant.GetSingleTenantSecret(t)
-	appOnlyDynakube := *dynakubeComponents.New(
+	appOnlyDynakube := dynakubeComponents.New(
 		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
 		dynakubeComponents.WithApplicationMonitoringSpec(&oneagent.ApplicationMonitoringSpec{}),
 	)
 
 	dynakubeComponents.Install(builder, &secretConfig, appOnlyDynakube)
 
-	sampleApp := sample.NewApp(t, &appOnlyDynakube, sample.AsDeployment())
+	sampleApp := sample.NewApp(t, appOnlyDynakube, sample.AsDeployment())
 	builder.Assess("install sample app", sampleApp.Install())
 	builder.Assess("check injection of additional pod", checkInjection(sampleApp))
 
-	podSample := sample.NewApp(t, &appOnlyDynakube,
+	podSample := sample.NewApp(t, appOnlyDynakube,
 		sample.WithName("only-pod-sample"),
 	)
 	builder.Assess("install additional pod", podSample.Install())
 	builder.Assess("check injection of additional pod", checkInjection(podSample))
 
-	randomUserSample := sample.NewApp(t, &appOnlyDynakube,
+	randomUserSample := sample.NewApp(t, appOnlyDynakube,
 		sample.WithName("random-user"),
 		sample.AsDeployment(),
 		sample.WithPodSecurityContext(corev1.PodSecurityContext{

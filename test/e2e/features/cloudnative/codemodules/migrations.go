@@ -22,7 +22,7 @@ func MigrateToImage(t *testing.T) features.Feature {
 	builder := features.New("cloudnative-zip-to-image")
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
-	appDynakube := *dynakubeComponents.New(
+	appDynakube := dynakubeComponents.New(
 		dynakubeComponents.WithName("app-codemodules"),
 		dynakubeComponents.WithApplicationMonitoringSpec(&oneagent.ApplicationMonitoringSpec{AppInjectionSpec: oneagent.AppInjectionSpec{}}),
 		dynakubeComponents.WithNameBasedOneAgentNamespaceSelector(),
@@ -31,9 +31,9 @@ func MigrateToImage(t *testing.T) features.Feature {
 	)
 
 	labels := appDynakube.OneAgent().GetNamespaceSelector().MatchLabels
-	sampleNamespace := *k8snamespace.New("codemodules-sample", k8snamespace.WithLabels(labels))
+	sampleNamespace := k8snamespace.New("codemodules-sample", k8snamespace.WithLabels(labels))
 
-	sampleApp := sample.NewApp(t, &appDynakube,
+	sampleApp := sample.NewApp(t, appDynakube,
 		sample.AsDeployment(),
 		sample.WithNamespace(sampleNamespace),
 	)
@@ -70,7 +70,7 @@ func MigrateToNodeImagePull(t *testing.T) features.Feature {
 	builder := features.New("cloudnative-zip-to-node-image-pull")
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
-	appDynakube := *dynakubeComponents.New(
+	appDynakube := dynakubeComponents.New(
 		dynakubeComponents.WithName("app-codemodules"),
 		dynakubeComponents.WithApplicationMonitoringSpec(&oneagent.ApplicationMonitoringSpec{AppInjectionSpec: oneagent.AppInjectionSpec{}}),
 		dynakubeComponents.WithNameBasedOneAgentNamespaceSelector(),
@@ -79,9 +79,9 @@ func MigrateToNodeImagePull(t *testing.T) features.Feature {
 	)
 
 	labels := appDynakube.OneAgent().GetNamespaceSelector().MatchLabels
-	sampleNamespace := *k8snamespace.New("codemodules-sample", k8snamespace.WithLabels(labels))
+	sampleNamespace := k8snamespace.New("codemodules-sample", k8snamespace.WithLabels(labels))
 
-	sampleApp := sample.NewApp(t, &appDynakube,
+	sampleApp := sample.NewApp(t, appDynakube,
 		sample.AsDeployment(),
 		sample.WithNamespace(sampleNamespace),
 	)

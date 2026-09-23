@@ -33,8 +33,8 @@ func Feature(t *testing.T) features.Feature {
 	commonOptions := []dynakubeComponents.Option{
 		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
 	}
-	dynakubeCloudNative := *dynakubeComponents.New(append(commonOptions, dynakubeComponents.WithCloudNativeSpec(&oneagent.CloudNativeFullStackSpec{}))...)
-	sampleAppCloudNative := sample.NewApp(t, &dynakubeCloudNative,
+	dynakubeCloudNative := dynakubeComponents.New(append(commonOptions, dynakubeComponents.WithCloudNativeSpec(&oneagent.CloudNativeFullStackSpec{}))...)
+	sampleAppCloudNative := sample.NewApp(t, dynakubeCloudNative,
 		sample.AsDeployment(),
 		sample.WithName(sampleAppsCloudNativeName),
 	)
@@ -51,8 +51,8 @@ func Feature(t *testing.T) features.Feature {
 	cloudnative.AssessSampleInitContainers(builder, sampleAppCloudNative)
 
 	// switch to classic full stack
-	dynakubeClassicFullStack := *dynakubeComponents.New(append(commonOptions, dynakubeComponents.WithClassicFullStackSpec(&oneagent.HostInjectSpec{}))...)
-	sampleAppClassicFullStack := sample.NewApp(t, &dynakubeClassicFullStack,
+	dynakubeClassicFullStack := dynakubeComponents.New(append(commonOptions, dynakubeComponents.WithClassicFullStackSpec(&oneagent.HostInjectSpec{}))...)
+	sampleAppClassicFullStack := sample.NewApp(t, dynakubeClassicFullStack,
 		sample.AsDeployment(),
 		sample.WithName(sampleAppsClassicName),
 	)

@@ -41,7 +41,7 @@ type upgradeOptions struct {
 	sampleNamespace  string
 	installOld       env.Func
 	installNew       env.Func
-	teardownOperator func(b *features.FeatureBuilder, dk dynakubelatest.DynaKube)
+	teardownOperator func(b *features.FeatureBuilder, dk *dynakubelatest.DynaKube)
 }
 
 func Feature(t *testing.T, releaseTag string) features.Feature {
@@ -50,7 +50,7 @@ func Feature(t *testing.T, releaseTag string) features.Feature {
 		sampleNamespace: "helm-upgrade-sample-" + sanitizeReleaseTag(releaseTag),
 		installOld:      operator.Install(releaseTag, withCSI),
 		installNew:      operator.InstallLocal(withCSI),
-		teardownOperator: func(b *features.FeatureBuilder, _ dynakubelatest.DynaKube) {
+		teardownOperator: func(b *features.FeatureBuilder, _ *dynakubelatest.DynaKube) {
 			b.WithTeardown("uninstall operator",
 				helpers.ToFeatureFunc(func(ctx context.Context, c *envconf.Config) (context.Context, error) {
 					// If we cleaned up during a fail-fast (aka.: /debug) it wouldn't be possible to investigate the error.
@@ -72,7 +72,7 @@ func ManifestFeature(t *testing.T, releaseTag string) features.Feature {
 		sampleNamespace: "manifest-upgrade-sample-" + sanitizeReleaseTag(releaseTag),
 		installOld:      operator.InstallReleasedManifest(releaseTag, withCSI),
 		installNew:      operator.InstallLocalViaManifests(withCSI),
-		teardownOperator: func(b *features.FeatureBuilder, dk dynakubelatest.DynaKube) {
+		teardownOperator: func(b *features.FeatureBuilder, dk *dynakubelatest.DynaKube) {
 			dynakube.Delete(b, features.LevelTeardown, dk)
 			b.WithTeardown("delete tenant secret",
 				func(ctx context.Context, t *testing.T, c *envconf.Config) context.Context {
@@ -102,7 +102,7 @@ func buildUpgradeFeature(t *testing.T, releaseTag string, opts upgradeOptions) f
 	builder.Assess("install operator "+releaseTag, helpers.ToFeatureFunc(opts.installOld, true))
 
 	secretConfig := tenant.GetSingleTenantSecret(t)
-	testDynakube := *dynakube.New(
+	testDynakube := dynakube.New(
 		dynakube.WithName("dynakube-"+sanitizeReleaseTag(releaseTag)),
 		dynakube.WithAPIURL(secretConfig.APIURL),
 		dynakube.WithCloudNativeSpec(cloudnative.DefaultCloudNativeSpec()),
@@ -114,7 +114,7 @@ func buildUpgradeFeature(t *testing.T, releaseTag string, opts upgradeOptions) f
 	edgeconnectSecretConfig := tenant.GetEdgeConnectTenantSecret(t)
 	builder.Assess("create EC configuration on the tenant", edgeconnectComponents.CreateTenantConfig(testECname, edgeconnectSecretConfig, edgeConnectTenantConfig, testHostPattern))
 
-	testEdgeConnect := *edgeconnectComponents.New(
+	testEdgeConnect := edgeconnectComponents.New(
 		edgeconnectComponents.WithName(testECname),
 		edgeconnectComponents.WithAPIServer(edgeconnectSecretConfig.APIServer),
 		edgeconnectComponents.WithOAuthClientSecret(edgeconnectComponents.BuildOAuthClientSecretName(testECname)),
@@ -130,15 +130,15 @@ func buildUpgradeFeature(t *testing.T, releaseTag string, opts upgradeOptions) f
 	builder.Assess("check EC configuration on the tenant", edgeconnectComponents.CheckECExistsOnTheTenant(edgeconnectSecretConfig, edgeConnectTenantConfig))
 
 	// Register sample app install
-	sampleNamespace := *k8snamespace.New(opts.sampleNamespace)
-	sampleApp := sample.NewApp(t, &testDynakube,
+	sampleNamespace := k8snamespace.New(opts.sampleNamespace)
+	sampleApp := sample.NewApp(t, testDynakube,
 		sample.AsDeployment(),
 		sample.WithNamespace(sampleNamespace),
 	)
 
 	previousVersionDynakube := &dynakubev1beta5.DynaKube{}
-	require.NoError(t, previousVersionDynakube.ConvertFrom(&testDynakube))
-	dynakube.InstallPreviousVersion(builder, helpers.LevelAssess, &secretConfig, *previousVersionDynakube)
+	require.NoError(t, previousVersionDynakube.ConvertFrom(testDynakube))
+	dynakube.InstallPreviousVersion(builder, helpers.LevelAssess, &secretConfig, previousVersionDynakube)
 
 	builder.Assess("create sample namespace", sampleApp.InstallNamespace())
 	builder.Assess("install sample app", sampleApp.Install())
