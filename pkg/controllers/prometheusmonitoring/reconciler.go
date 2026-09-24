@@ -105,12 +105,12 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ct
 		}
 	}()
 
-	log = log.WithValues("dynaKubeRef", pm.Spec.DynaKubeRef)
+	log = log.WithValues("dynaKubeName", pm.Spec.DynaKubeName)
 
 	dk := &dynakube.DynaKube{}
-	if err := r.Get(ctx, client.ObjectKey{Name: pm.Spec.DynaKubeRef, Namespace: pm.Namespace}, dk); err != nil {
+	if err := r.Get(ctx, client.ObjectKey{Name: pm.Spec.DynaKubeName, Namespace: pm.Namespace}, dk); err != nil {
 		if !k8serrors.IsNotFound(err) {
-			return ctrl.Result{}, fmt.Errorf("get dynakube %s: %w", pm.Spec.DynaKubeRef, err)
+			return ctrl.Result{}, fmt.Errorf("get dynakube %s: %w", pm.Spec.DynaKubeName, err)
 		}
 
 		log.Info("skipping reconcile due to missing DynaKube")
@@ -233,16 +233,16 @@ func setPhase(pm *prometheusmonitoring.PrometheusMonitoring, err error) error {
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
-	// Add an index for the dynaKubeRef to allow using MatchingFields
-	if err := mgr.GetFieldIndexer().IndexField(context.TODO(), &prometheusmonitoring.PrometheusMonitoring{}, "spec.dynaKubeRef", func(obj client.Object) []string {
+	// Add an index for the dynaKubeName to allow using MatchingFields
+	if err := mgr.GetFieldIndexer().IndexField(context.TODO(), &prometheusmonitoring.PrometheusMonitoring{}, "spec.dynaKubeName", func(obj client.Object) []string {
 		pm, ok := obj.(*prometheusmonitoring.PrometheusMonitoring)
 		if !ok {
 			return nil
 		}
 
-		return []string{pm.Spec.DynaKubeRef}
+		return []string{pm.Spec.DynaKubeName}
 	}); err != nil {
-		return fmt.Errorf("add dynaKubeRef index: %w", err)
+		return fmt.Errorf("add dynaKubeName index: %w", err)
 	}
 
 	return ctrl.NewControllerManagedBy(mgr).
@@ -262,7 +262,7 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-// Create a [handler.MapFunc] for DynaKubes that returns requests for PrometheusMonitoring objects whose spec.dynaKubeRef matches the DynaKube name.
+// Create a [handler.MapFunc] for DynaKubes that returns requests for PrometheusMonitoring objects whose spec.dynaKubeName matches the DynaKube name.
 func newPrometheusMonitoringFromDynaKubeMapper(c client.Client) handler.MapFunc {
 	return func(ctx context.Context, obj client.Object) []ctrl.Request {
 		_, log := logd.NewFromContext(ctx, "prometheusmonitoring-mapper")
@@ -275,8 +275,8 @@ func newPrometheusMonitoringFromDynaKubeMapper(c client.Client) handler.MapFunc 
 		}
 
 		pmList := &prometheusmonitoring.PrometheusMonitoringList{}
-		if err := c.List(ctx, pmList, client.InNamespace(dk.Namespace), client.MatchingFields{"spec.dynaKubeRef": dk.Name}); err != nil {
-			log.Error(err, "failed listing prometheusmonitoring objects", "dynaKubeRef", dk.Name)
+		if err := c.List(ctx, pmList, client.InNamespace(dk.Namespace), client.MatchingFields{"spec.dynaKubeName": dk.Name}); err != nil {
+			log.Error(err, "failed listing prometheusmonitoring objects", "dynaKubeName", dk.Name)
 
 			return nil
 		}
