@@ -61,7 +61,13 @@ func NormalModeFeature(t *testing.T) features.Feature {
 	)
 
 	// create OAuth client secret related to the specific EdgeConnect configuration on the tenant
-	builder.Assess("create client secret", tenant.CreateClientSecret(edgeConnectTenantConfig.Secret, ecComponents.BuildOAuthClientSecretName(testEdgeConnect.Name), testEdgeConnect.Namespace))
+	builder.Assess("create client secret", func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		return tenant.CreateClientSecret(
+			edgeConnectTenantConfig.Secret,
+			ecComponents.BuildOAuthClientSecretName(testEdgeConnect.Name),
+			testEdgeConnect.Namespace,
+		)(ctx, t, envConfig)
+	})
 
 	ecComponents.Install(builder, tenant.EdgeConnectSecret{}, testEdgeConnect)
 
