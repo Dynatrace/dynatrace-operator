@@ -42,7 +42,7 @@ func (ff *FeatureFlags) GetNoProxy() string {
 }
 
 func (ff *FeatureFlags) UseEECLegacyMounts() bool {
-	return ff.getBoolWithDefault(UseEECLegacyMountsKey, true)
+	return ff.getBoolWithDefault(UseEECLegacyMountsKey, false)
 }
 
 func (ff *FeatureFlags) IsPublicRegistry() bool {
