@@ -43,22 +43,20 @@ func defaultAuths(server string) Auths {
 	}
 }
 
-func setupDockerMocker(t *testing.T, handleUrls []string) (*httptest.Server, *corev1.Secret, string, error) { //nolint:revive // maximum number of return results per function exceeded; max 3 but got 4
-	// StartTLS puts the server on the loopback network instead of the default in-memory one.
-	// The in-memory network would route every host to this mock, including the deliberately
-	// unreachable "myunknownserver.com" used by the negative tests below, which expect a real
-	// connection failure. Loopback also gives dockerServer.URL a real host:port, which the
-	// helper parses here to build the pull secret before any client exists.
-	dockerServer := httptest.NewTestServer(t, testDockerServerHandler(http.MethodGet, handleUrls))
-	dockerServer.StartTLS()
+func setupDockerMocker(handleUrls []string) (*httptest.Server, *corev1.Secret, string, error) { //nolint:revive // maximum number of return results per function exceeded; max 3 but got 4
+	dockerServer := httptest.NewTLSServer(testDockerServerHandler(http.MethodGet, handleUrls))
 
 	parsedServerURL, err := url.Parse(dockerServer.URL)
 	if err != nil {
+		dockerServer.Close()
+
 		return nil, nil, "", err
 	}
 
 	secret, err := createSecret(defaultAuths(parsedServerURL.Host))
 	if err != nil {
+		dockerServer.Close()
+
 		return nil, nil, "", err
 	}
 
@@ -83,7 +81,6 @@ func dynakubeBuilder(dockerURL string) *testDynaKubeBuilder {
 
 func TestImagePullable(t *testing.T) {
 	dockerServer, secret, server, err := setupDockerMocker(
-		t,
 		[]string{
 			"/v2/",
 			"/v2" + oneagent.DefaultOneAgentImageRegistrySubPath + "/manifests/" + testVersion + "-raw",
@@ -93,6 +90,8 @@ func TestImagePullable(t *testing.T) {
 			"/v2/" + testActiveGateCustomImage + "/manifests/" + testVersion,
 		})
 	require.NoError(t, err)
+
+	defer dockerServer.Close()
 
 	tests := []struct {
 		name         string
@@ -189,11 +188,11 @@ func TestImagePullable(t *testing.T) {
 
 func TestImageNotPullable(t *testing.T) {
 	dockerServer, secret, server, err := setupDockerMocker(
-		t,
 		[]string{
 			"/v2/",
 		})
 	require.NoError(t, err)
+	defer dockerServer.Close()
 
 	tests := []struct {
 		name      string
@@ -288,13 +287,14 @@ func TestImageNotPullable(t *testing.T) {
 
 func TestOneAgentCodeModulesImageNotPullable(t *testing.T) {
 	dockerServer, secret, _, err := setupDockerMocker(
-		t,
 		[]string{
 			"/v2/",
 			"/v2/" + testOneAgentCodeModulesImage + "/manifests/latest",
 			"/v2/" + testOneAgentCodeModulesImage + "/manifests/" + testVersion,
 		})
 	require.NoError(t, err)
+
+	defer dockerServer.Close()
 
 	t.Run("OneAgent code modules unreachable server", func(t *testing.T) {
 		dk := *testNewDynakubeBuilder(testNamespace, testDynakube).

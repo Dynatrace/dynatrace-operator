@@ -106,17 +106,16 @@ func TestReconcile(t *testing.T) {
 			require.NoError(t, err)
 			assert.NotEmpty(t, authToken.Data[ActiveGateAuthTokenName])
 
-			// "initialize" the secret as if it was created a month ago
+			// the fake client does not set CreationTimestamp, so stamp it as "created now"
 			authToken.Data = map[string][]byte{ActiveGateAuthTokenName: []byte(testToken)}
-			// time.Round is called because client.Update(secret)->json.Marshall(secret) rounds CreationTimestamp to seconds
-			authToken.CreationTimestamp = metav1.Time{Time: time.Now().Round(1 * time.Second).Add(-AuthTokenRotationInterval).Add(-5 * time.Second)}
+			authToken.CreationTimestamp = metav1.Time{Time: time.Now()}
 			err = r.secrets.Update(t.Context(), authToken)
 			require.NoError(t, err)
 
 			firstCreationTimestamp := authToken.CreationTimestamp
 
-			// Advance the bubble's fake clock; small difference needed to compare LastTransitionTime.
-			synctest.Sleep(1 * time.Second)
+			// let the token age past the rotation interval
+			synctest.Sleep(AuthTokenRotationInterval + 5*time.Second)
 
 			// update secret
 			err = r.Reconcile(t.Context(), agCl, dk)
@@ -168,17 +167,16 @@ func TestReconcile(t *testing.T) {
 			require.NoError(t, err)
 			assert.NotEmpty(t, authToken.Data[ActiveGateAuthTokenName])
 
-			// "initialize" the secret as if it was created a month ago
+			// the fake client does not set CreationTimestamp, so stamp it as "created now"
 			authToken.Data = map[string][]byte{ActiveGateAuthTokenName: []byte(testToken)}
-			// time.Round is called because client.Update(secret)->json.Marshall(secret) rounds CreationTimestamp to seconds
-			authToken.CreationTimestamp = metav1.Time{Time: time.Now().Round(1 * time.Second).Add(-AuthTokenRotationInterval).Add(1 * time.Minute)}
+			authToken.CreationTimestamp = metav1.Time{Time: time.Now()}
 			err = r.secrets.Update(t.Context(), authToken)
 			require.NoError(t, err)
 
 			firstCreationTimestamp := authToken.CreationTimestamp
 
-			// Advance the bubble's fake clock; small difference needed to compare LastTransitionTime.
-			synctest.Sleep(1 * time.Second)
+			// age the token to just before the rotation interval, so it is still valid
+			synctest.Sleep(AuthTokenRotationInterval - time.Minute)
 
 			// do not update secret
 			err = r.Reconcile(t.Context(), agCl, dk)

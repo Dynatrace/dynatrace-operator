@@ -37,12 +37,12 @@ func (m brokenModel) MarshalJSON() ([]byte, error) {
 }
 
 func TestClient_Verbs(t *testing.T) {
-	s := httptest.NewTestServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, "/api/test/"+r.Method, r.URL.Path)
 	}))
-	client := s.Client()
+	defer s.Close()
 
-	c := NewClient(Config{BaseURL: must(url.Parse(s.URL)).JoinPath("/api/"), HTTPClient: client})
+	c := NewClient(Config{BaseURL: must(url.Parse(s.URL)).JoinPath("/api/")})
 	require.NoError(t, c.GET(t.Context(), "/").WithPath("/test//", http.MethodGet).Execute(nil))
 	require.NoError(t, c.POST(t.Context(), "/").WithPath("/test//", http.MethodPost).Execute(nil))
 	require.NoError(t, c.PUT(t.Context(), "/").WithPath("/test//", http.MethodPut).Execute(nil))
@@ -51,26 +51,27 @@ func TestClient_Verbs(t *testing.T) {
 
 func TestClient_Headers(t *testing.T) {
 	var expectContentType string
-	s := httptest.NewTestServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, "/api/test", r.URL.Path)
 		assert.Equal(t, "my-user-agent", r.UserAgent())
 		assert.Equal(t, "application/json", r.Header.Get("accept"))
 		assert.Equal(t, expectContentType, r.Header.Get("content-type"))
 	}))
-	client := s.Client()
+	defer s.Close()
 
-	c := NewClient(Config{BaseURL: must(url.Parse(s.URL)).JoinPath("/api/"), UserAgent: "my-user-agent", HTTPClient: client})
+	c := NewClient(Config{BaseURL: must(url.Parse(s.URL)).JoinPath("/api/"), UserAgent: "my-user-agent"})
 	require.NoError(t, c.GET(t.Context(), "test").Execute(nil))
 }
 
 func TestClient_WithHeader(t *testing.T) {
 	t.Run("override accept header", func(t *testing.T) {
-		s := httptest.NewTestServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			assert.Equal(t, "application/octet-stream", r.Header.Get("Accept"))
 		}))
-		client := s.Client()
 
-		c := NewClient(Config{BaseURL: must(url.Parse(s.URL)), HTTPClient: client})
+		defer s.Close()
+
+		c := NewClient(Config{BaseURL: must(url.Parse(s.URL))})
 		err := c.GET(t.Context(), "/test").
 			WithHeader("Accept", "application/octet-stream").
 			Execute(nil)
@@ -78,13 +79,13 @@ func TestClient_WithHeader(t *testing.T) {
 	})
 
 	t.Run("custom header", func(t *testing.T) {
-		s := httptest.NewTestServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			assert.Equal(t, "application/json", r.Header.Get("Accept"))
 			assert.Equal(t, "custom-value", r.Header.Get("X-Custom"))
 		}))
-		client := s.Client()
+		defer s.Close()
 
-		c := NewClient(Config{BaseURL: must(url.Parse(s.URL)), HTTPClient: client})
+		c := NewClient(Config{BaseURL: must(url.Parse(s.URL))})
 		err := c.GET(t.Context(), "/test").
 			WithHeader("X-Custom", "custom-value").
 			Execute(nil)
@@ -92,12 +93,12 @@ func TestClient_WithHeader(t *testing.T) {
 	})
 
 	t.Run("empty string value", func(t *testing.T) {
-		s := httptest.NewTestServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			assert.Empty(t, r.Header.Get("X-Empty"))
 		}))
-		client := s.Client()
+		defer s.Close()
 
-		c := NewClient(Config{BaseURL: must(url.Parse(s.URL)), HTTPClient: client})
+		c := NewClient(Config{BaseURL: must(url.Parse(s.URL))})
 		err := c.GET(t.Context(), "/test").
 			WithHeader("X-Empty", "").
 			Execute(nil)
@@ -106,13 +107,13 @@ func TestClient_WithHeader(t *testing.T) {
 }
 
 func TestClient_URL(t *testing.T) {
-	s := httptest.NewTestServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, "/test", r.URL.Path)
 		assert.Equal(t, "a=b&c=d", r.URL.Query().Encode())
 	}))
-	client := s.Client()
+	defer s.Close()
 
-	c := NewClient(Config{BaseURL: must(url.Parse(s.URL)), HTTPClient: client})
+	c := NewClient(Config{BaseURL: must(url.Parse(s.URL))})
 	err := c.POST(t.Context(), "/test").
 		WithQueryParams(map[string]string{"a": "b", "c": "d"}).
 		Execute(nil)
@@ -134,16 +135,15 @@ func TestClient_Errors(t *testing.T) {
 func TestClient_TokenTypes(t *testing.T) {
 	var expectAuthHeader string
 
-	s := httptest.NewTestServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, expectAuthHeader, r.Header.Get("Authorization"))
 	}))
-	client := s.Client()
+	defer s.Close()
 
 	c := NewClient(Config{
-		BaseURL:    must(url.Parse(s.URL)),
-		HTTPClient: client,
-		APIToken:   "api",
-		PaasToken:  "paas",
+		BaseURL:   must(url.Parse(s.URL)),
+		APIToken:  "api",
+		PaasToken: "paas",
 	})
 
 	t.Run("default", func(t *testing.T) {
@@ -163,7 +163,7 @@ func TestClient_TokenTypes(t *testing.T) {
 }
 
 func TestClient_Execute(t *testing.T) {
-	s := httptest.NewTestServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/fail" {
 			w.WriteHeader(http.StatusTeapot)
 			_, _ = w.Write([]byte(`{"error":{}}`))
@@ -172,9 +172,9 @@ func TestClient_Execute(t *testing.T) {
 		}
 		_, _ = w.Write([]byte(`{"foo":"bar"}`))
 	}))
-	client := s.Client()
+	defer s.Close()
 
-	c := NewClient(Config{BaseURL: must(url.Parse(s.URL)), HTTPClient: client})
+	c := NewClient(Config{BaseURL: must(url.Parse(s.URL))})
 
 	t.Run("ok", func(t *testing.T) {
 		var model apiModel
@@ -194,7 +194,7 @@ func TestClient_ExecuteWriter(t *testing.T) {
 	const responseBody = "binary-blob-content"
 	const etagValue = `"v1"`
 
-	s := httptest.NewTestServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/fail":
 			w.WriteHeader(http.StatusTeapot)
@@ -206,9 +206,9 @@ func TestClient_ExecuteWriter(t *testing.T) {
 			_, _ = w.Write([]byte(responseBody))
 		}
 	}))
-	client := s.Client()
+	defer s.Close()
 
-	c := NewClient(Config{BaseURL: must(url.Parse(s.URL)), HTTPClient: client})
+	c := NewClient(Config{BaseURL: must(url.Parse(s.URL))})
 
 	t.Run("streams response body to writer and returns headers", func(t *testing.T) {
 		var buf bytes.Buffer
@@ -259,7 +259,7 @@ func (brokenWriter) Write(_ []byte) (int, error) {
 func TestClient_Execute_Cacheable(t *testing.T) {
 	newCachingClient := func(t *testing.T, server *httptest.Server) *ClientImpl {
 		t.Helper()
-		transport := middleware.NewCacheRoundTripper(server.Client().Transport, time.Minute)
+		transport := middleware.NewCacheRoundTripper(http.DefaultTransport, time.Minute)
 
 		return NewClient(Config{
 			BaseURL:    must(url.Parse(server.URL)),
@@ -267,18 +267,13 @@ func TestClient_Execute_Cacheable(t *testing.T) {
 		})
 	}
 
-	// middleware's response cache is keyed only by request URL and is a package-level global,
-	// so each subtest below starts its server on the loopback network (a unique host:port)
-	// rather than the default in-memory network, which gives every server the same fixed
-	// "example.com" host and would let subtests poison each other's cache entries.
-
 	t.Run("non-empty response is cached", func(t *testing.T) {
 		calls := 0
-		s := httptest.NewTestServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			calls++
 			_, _ = w.Write([]byte(`{"foo":"bar"}`))
 		}))
-		s.Start()
+		defer s.Close()
 
 		c := newCachingClient(t, s)
 
@@ -295,11 +290,11 @@ func TestClient_Execute_Cacheable(t *testing.T) {
 
 	t.Run("empty response invalidates cache", func(t *testing.T) {
 		calls := 0
-		s := httptest.NewTestServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			calls++
 			_, _ = w.Write([]byte(`{"foo":""}`))
 		}))
-		s.Start()
+		defer s.Close()
 
 		c := newCachingClient(t, s)
 
@@ -315,11 +310,11 @@ func TestClient_Execute_Cacheable(t *testing.T) {
 
 	t.Run("non-Cacheable model is not cached", func(t *testing.T) {
 		calls := 0
-		s := httptest.NewTestServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			calls++
 			_, _ = w.Write([]byte(`{"foo":"bar"}`))
 		}))
-		s.Start()
+		defer s.Close()
 
 		c := newCachingClient(t, s)
 
@@ -334,7 +329,7 @@ func TestClient_Execute_Cacheable(t *testing.T) {
 
 	t.Run("HTTP error invalidates cached entry", func(t *testing.T) {
 		calls := 0
-		s := httptest.NewTestServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			calls++
 			if calls == 1 {
 				w.WriteHeader(http.StatusInternalServerError)
@@ -344,7 +339,7 @@ func TestClient_Execute_Cacheable(t *testing.T) {
 			}
 			_, _ = w.Write([]byte(`{"foo":"recovered"}`))
 		}))
-		s.Start()
+		defer s.Close()
 
 		c := newCachingClient(t, s)
 

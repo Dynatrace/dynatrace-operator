@@ -12,6 +12,7 @@ import (
 	"slices"
 	"testing"
 	"time"
+	"uuid"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
@@ -27,7 +28,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/proxy"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/project"
-	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/e2e-framework/klient/k8s"
@@ -46,7 +46,7 @@ func NormalModeFeature(t *testing.T) features.Feature {
 
 	edgeConnectTenantConfig := &ecComponents.TenantConfig{}
 
-	testECname := uuid.NewString()
+	testECname := uuid.New().String()
 	testHostPattern := fmt.Sprintf("%s.e2eTestHostPattern.internal.org", testECname)
 
 	builder.Assess("create EC configuration on the tenant", ecComponents.CreateTenantConfig(testECname, secretConfig, edgeConnectTenantConfig, testHostPattern))
@@ -97,7 +97,7 @@ func provisionerModeFeature(t *testing.T, featureName, expectedImage string, opt
 
 	edgeConnectTenantConfig := &ecComponents.TenantConfig{}
 
-	testECname := uuid.NewString()
+	testECname := uuid.New().String()
 	testHostPattern := fmt.Sprintf("%s.e2eTestHostPattern.internal.org", testECname)
 	testHostPattern2 := fmt.Sprintf("%s.e2eTestHostPattern2.internal.org", testECname)
 
@@ -150,7 +150,7 @@ func WithHTTPProxy(t *testing.T) features.Feature {
 
 	edgeConnectTenantConfig := &ecComponents.TenantConfig{}
 
-	testECname := uuid.NewString()
+	testECname := uuid.New().String()
 	testHostPattern := fmt.Sprintf("%s.e2eTestHostPattern.internal.org", testECname)
 
 	testEdgeConnect := ecComponents.New(
@@ -203,7 +203,7 @@ func WithHTTPSProxy(t *testing.T) features.Feature {
 
 	edgeConnectTenantConfig := &ecComponents.TenantConfig{}
 
-	testECname := uuid.NewString()
+	testECname := uuid.New().String()
 	testHostPattern := fmt.Sprintf("%s.e2eTestHostPattern.internal.org", testECname)
 
 	testEdgeConnect := ecComponents.New(
@@ -260,7 +260,7 @@ func AutomationModeFeature(t *testing.T) features.Feature {
 	secretConfig := tenant.GetEdgeConnectTenantSecret(t)
 
 	edgeConnectTenantConfig := &ecComponents.TenantConfig{}
-	testECname := uuid.NewString()
+	testECname := uuid.New().String()
 
 	testEdgeConnect := ecComponents.New(
 		ecComponents.WithName(testECname),

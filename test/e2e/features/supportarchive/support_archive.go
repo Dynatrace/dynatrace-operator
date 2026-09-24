@@ -15,6 +15,7 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"uuid"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
@@ -32,7 +33,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sstatefulset"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/project"
-	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -79,7 +79,7 @@ func Feature(t *testing.T) features.Feature {
 		dynakubeComponents.WithExtensionsDBExecutorImageRef(t, dynakubeComponents.GetLatestDBExecutorImageTagURI(t)),
 	)
 
-	testECname := uuid.NewString()
+	testECname := uuid.New().String()
 	testHostPattern := fmt.Sprintf("%s.e2eTestHostPattern.internal.org", testECname)
 	edgeConnectTenantConfig := &edgeconnectComponents.TenantConfig{}
 

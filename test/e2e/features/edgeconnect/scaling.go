@@ -8,12 +8,12 @@ package edgeconnect
 import (
 	"fmt"
 	"testing"
+	"uuid"
 
 	ecComponents "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sdeployment"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8shpa"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
-	"github.com/google/uuid"
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv1 "k8s.io/api/autoscaling/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -32,7 +32,7 @@ func WithHPARegular(t *testing.T) features.Feature {
 
 	edgeConnectTenantConfig := &ecComponents.TenantConfig{}
 
-	testECname := uuid.NewString()
+	testECname := uuid.New().String()
 	testHostPattern := fmt.Sprintf("%s.e2eTestHostPattern.internal.org", testECname)
 
 	builder.Assess("create EC configuration on the tenant", ecComponents.CreateTenantConfig(testECname, secretConfig, edgeConnectTenantConfig, testHostPattern))
@@ -83,7 +83,7 @@ func WithHPAProvisioner(t *testing.T) features.Feature {
 
 	edgeConnectTenantConfig := &ecComponents.TenantConfig{}
 
-	testECname := uuid.NewString()
+	testECname := uuid.New().String()
 	testHostPattern := fmt.Sprintf("%s.e2eTestHostPattern.internal.org", testECname)
 
 	testEdgeConnect := ecComponents.New(
@@ -131,7 +131,7 @@ func EnforceReplicasRegular(t *testing.T) features.Feature {
 
 	edgeConnectTenantConfig := &ecComponents.TenantConfig{}
 
-	testECname := uuid.NewString()
+	testECname := uuid.New().String()
 	testHostPattern := fmt.Sprintf("%s.e2eTestHostPattern.internal.org", testECname)
 
 	builder.Assess("create EC configuration on the tenant", ecComponents.CreateTenantConfig(testECname, secretConfig, edgeConnectTenantConfig, testHostPattern))
@@ -169,7 +169,7 @@ func EnforceReplicasProvisioner(t *testing.T) features.Feature {
 
 	edgeConnectTenantConfig := &ecComponents.TenantConfig{}
 
-	testECname := uuid.NewString()
+	testECname := uuid.New().String()
 	testHostPattern := fmt.Sprintf("%s.e2eTestHostPattern.internal.org", testECname)
 
 	testEdgeConnect := ecComponents.New(
