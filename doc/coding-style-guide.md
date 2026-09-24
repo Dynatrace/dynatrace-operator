@@ -125,6 +125,53 @@ Ordering of **return values** is more straightforward; the `err error` should al
 
 So a full example: `func ExampleFunc(ctx context.Context, kubeClient client.Client, pod corev1.Pod, data string) (corev1.Pod, error) {...}`
 
+## Pointers vs Pass-by-Value
+
+The general principle: pass large, mutable domain objects as pointers; pass small, flat data-carrier structs by value.
+
+### Large objects: CRD types and Kubernetes API objects
+
+Always use a pointer — in function parameters, return values, and struct fields.
+
+The rule applies to all top-level types that implement `metav1.Object` — i.e., anything you pass to `client.Client` or `client.Reader`. In practice this means:
+- CRD types: `*dynakube.DynaKube`, `*edgeconnect.EdgeConnect`, `*prometheusmonitoring.PrometheusMonitoring`
+- Kubernetes API objects: `*appsv1.StatefulSet`, `*appsv1.DaemonSet`, `*appsv1.Deployment`, `*corev1.Pod`, `*corev1.Secret`, `*admissionregistrationv1.MutatingWebhookConfiguration`, etc.
+
+Reasoning: these types are large; copying them is expensive and produces subtle bugs when the caller mutates the value after passing it.
+
+```go
+// ✓ pointer parameter
+func PassObject(ds *appsv1.DaemonSet) { ... }
+
+// ✓ pointer return value
+func ReturnObject() *appsv1.DaemonSet { ... }
+
+// ✓ pointer in struct field
+type AuthTokenModifier struct {
+    dk *dynakube.DynaKube
+}
+
+// ✓ - pointer receiver
+func (dk *dynakube.DynaKube) Method() { ... }
+
+
+// ✗ - value parameter copies the whole struct
+func PassObject(ds appsv1.DaemonSet) { ... }
+
+// ✗ - value return copies the whole struct
+func ReturnObject() appsv1.DaemonSet { ... }
+
+// ✗ - value receiver on a CRD type
+func (dk dynakube.DynaKube) Method() { ... }
+```
+
+### Small data-carrier structs
+
+Always pass by value.
+
+- These are flat, read-only config bags with no mutation after construction.
+- Use the zero value (e.g. `MyConfig{}`) instead of `nil` to express "no value provided".
+
 ## Cuddling of statements
 
 Statements must be cuddled, i.e., written as a single block, if an `if`-statement directly follows a single assignment and the condition is directly related to the assignment.
