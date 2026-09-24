@@ -117,7 +117,7 @@ func CreateForEnv(namespace *corev1.Namespace) env.Func {
 
 var networkAttachmentPath = filepath.Join(project.TestDataDir(), "network/ocp-istio-cni.yaml")
 
-func AddIstioNetworkAttachment(namespace *corev1.Namespace) func(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
+func AddIstioNetworkAttachment(namespace *corev1.Namespace) env.Func {
 	return func(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
 		isOpenshift, err := platform.NewResolver().IsOpenshift()
 		if err != nil {
