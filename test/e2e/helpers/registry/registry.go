@@ -54,16 +54,16 @@ var (
 	}
 )
 
-func GetLatestImageTagURI(t *testing.T, repoURI, envVar string, fips bool) string {
+func GetLatestImageTagURI(t *testing.T, repoURI, envVar string) string {
 	t.Helper()
 
-	return getLatestImageURI(t, repoURI, envVar, fips, false)
+	return getLatestImageURI(t, repoURI, envVar, false, false)
 }
 
-func GetLatestImageDigestURI(t *testing.T, repoURI, envVar string, fips bool) string {
+func GetLatestImageDigestURI(t *testing.T, repoURI, envVar string) string {
 	t.Helper()
 
-	return getLatestImageURI(t, repoURI, envVar, fips, true)
+	return getLatestImageURI(t, repoURI, envVar, false, true)
 }
 
 func getLatestImageURI(t *testing.T, repoURI, envVar string, fips, digest bool) string {
@@ -137,37 +137,37 @@ func resolveLatestDigestURI(t *testing.T, repoURI, tagURI string) string {
 func GetLatestActiveGateImageTagURI(t *testing.T) string {
 	t.Helper()
 
-	return GetLatestImageTagURI(t, agPublicECR, agImageEnv, platform.IsFIPS())
+	return getLatestImageURI(t, agPublicECR, agImageEnv, platform.IsFIPS(), false)
 }
 
 func GetLatestOneAgentImageTagURI(t *testing.T) string {
 	t.Helper()
 
-	return GetLatestImageTagURI(t, oaPublicECR, oaImageEnv, platform.IsFIPS())
+	return getLatestImageURI(t, oaPublicECR, oaImageEnv, platform.IsFIPS(), false)
 }
 
 func GetLatestCodeModulesImageTagURI(t *testing.T) string {
 	t.Helper()
 
-	return GetLatestImageTagURI(t, cmPublicECR, cmImageEnv, platform.IsFIPS())
+	return getLatestImageURI(t, cmPublicECR, cmImageEnv, platform.IsFIPS(), false)
 }
 
 func GetLatestActiveGateImageDigestURI(t *testing.T) string {
 	t.Helper()
 
-	return GetLatestImageDigestURI(t, agPublicECR, agDigestImageEnv, platform.IsFIPS())
+	return getLatestImageURI(t, agPublicECR, agDigestImageEnv, platform.IsFIPS(), true)
 }
 
 func GetLatestOneAgentImageDigestURI(t *testing.T) string {
 	t.Helper()
 
-	return GetLatestImageDigestURI(t, oaPublicECR, oaDigestImageEnv, platform.IsFIPS())
+	return getLatestImageURI(t, oaPublicECR, oaDigestImageEnv, platform.IsFIPS(), true)
 }
 
 func GetLatestCodeModulesImageDigestURI(t *testing.T) string {
 	t.Helper()
 
-	return GetLatestImageDigestURI(t, cmPublicECR, cmDigestImageEnv, platform.IsFIPS())
+	return getLatestImageURI(t, cmPublicECR, cmDigestImageEnv, platform.IsFIPS(), true)
 }
 
 func ParseImageURI(imageURI string) (repository, tag, digest string) {

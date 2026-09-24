@@ -49,7 +49,7 @@ func Feature(t *testing.T) features.Feature {
 			DynaKubeRef: dk.Name,
 			TargetAllocator: pmapi.TargetAllocatorSpec{
 				PodSpec: pmapi.PodSpec{
-					Image: registry.GetLatestImageTagURI(t, defaultTargetAllocatorRepo, targetAllocatorImageEnvVar, false),
+					Image: registry.GetLatestImageTagURI(t, defaultTargetAllocatorRepo, targetAllocatorImageEnvVar),
 				},
 			},
 			Scraper: pmapi.ScraperSpec{
@@ -82,7 +82,7 @@ func Feature(t *testing.T) features.Feature {
 		previousScraperImage = pm.Status.Scraper.ResolvedImage
 		previousGatewayImage = pm.Status.Gateway.ResolvedImage
 
-		pm.Spec.TargetAllocator.Image = registry.GetLatestImageDigestURI(t, defaultTargetAllocatorRepo, targetAllocatorImageDigestEnvVar, false)
+		pm.Spec.TargetAllocator.Image = registry.GetLatestImageDigestURI(t, defaultTargetAllocatorRepo, targetAllocatorImageDigestEnvVar)
 		pm.Spec.Scraper.Image = dynakube.GetLatestOTelCollectorImageDigestURI(t)
 		pm.Spec.Gateway.Image = dynakube.GetLatestOTelCollectorImageDigestURI(t)
 	}))
