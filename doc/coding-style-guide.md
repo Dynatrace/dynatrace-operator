@@ -134,6 +134,7 @@ The general principle: pass large, mutable domain objects as pointers; pass smal
 Always use a pointer — in function parameters, return values, and struct fields.
 
 The rule applies to all top-level types that implement `metav1.Object` — i.e., anything you pass to `client.Client` or `client.Reader`. In practice this means:
+
 - CRD types: `*dynakube.DynaKube`, `*edgeconnect.EdgeConnect`, `*prometheusmonitoring.PrometheusMonitoring`
 - Kubernetes API objects: `*appsv1.StatefulSet`, `*appsv1.DaemonSet`, `*appsv1.Deployment`, `*corev1.Pod`, `*corev1.Secret`, `*admissionregistrationv1.MutatingWebhookConfiguration`, etc.
 
