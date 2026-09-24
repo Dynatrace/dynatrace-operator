@@ -36,7 +36,7 @@ func NoCSI(t *testing.T) features.Feature {
 		}),
 	)
 
-	dynakubeComponents.Install(builder, &secretConfig, dk)
+	dynakubeComponents.Install(builder, secretConfig, dk)
 
 	sampleApp := sample.NewApp(t, dk,
 		sample.AsDeployment(),

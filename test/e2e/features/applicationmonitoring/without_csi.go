@@ -29,7 +29,7 @@ func WithoutCSI(t *testing.T) features.Feature {
 		dynakubeComponents.WithApplicationMonitoringSpec(&oneagent.ApplicationMonitoringSpec{}),
 	)
 
-	dynakubeComponents.Install(builder, &secretConfig, appOnlyDynakube)
+	dynakubeComponents.Install(builder, secretConfig, appOnlyDynakube)
 
 	sampleApp := sample.NewApp(t, appOnlyDynakube, sample.AsDeployment())
 	builder.Assess("install sample app", sampleApp.Install())

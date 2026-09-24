@@ -50,7 +50,7 @@ func PGCWithCloudNativeFullStack(t *testing.T) features.Feature {
 	)
 
 	builder.Assess("create sample namespace", sampleApp.InstallNamespace())
-	dynakubeComponents.Install(builder, &secretConfig, dk)
+	dynakubeComponents.Install(builder, secretConfig, dk)
 	builder.Assess("install sample app", sampleApp.Install())
 	builder.Assess("check bootstrapper secret has PGC data", checkBootstrapperSecret(sampleApp))
 	builder.Assess("verify bootstrapper files mounted in pod", verifyBootstrapperFilesMounted(sampleApp))

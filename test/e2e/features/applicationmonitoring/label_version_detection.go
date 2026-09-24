@@ -125,8 +125,8 @@ func LabelVersionDetection(t *testing.T) features.Feature {
 		buildPreservedBuildLabelSampleApp(t, labelVersionDynakube),
 		buildInvalidBuildLabelSampleApp(t, labelVersionDynakube),
 	}
-	dynakubeComponents.Install(builder, &secretConfig, defaultDynakube)
-	dynakubeComponents.Install(builder, &secretConfig, labelVersionDynakube)
+	dynakubeComponents.Install(builder, secretConfig, defaultDynakube)
+	dynakubeComponents.Install(builder, secretConfig, labelVersionDynakube)
 
 	// Register actual test (+sample cleanup)
 	installSampleApplications(builder, sampleApps)

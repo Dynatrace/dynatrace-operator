@@ -42,15 +42,15 @@ func install(builder *features.FeatureBuilder, t tenant.Tokens, dk *dynakube.Dyn
 	builder.WithTeardown("deleted tenant secret", tenant.DeleteTenantSecret(dk.Name, dk.Namespace))
 }
 
-func Install(builder *features.FeatureBuilder, secretConfig *tenant.Secret, dk *dynakube.DynaKube) {
+func Install(builder *features.FeatureBuilder, secretConfig tenant.Secret, dk *dynakube.DynaKube) {
 	install(builder, secretConfig.TokensWithSettingsScope(), dk)
 }
 
-func InstallWithoutSettingsScopes(builder *features.FeatureBuilder, secretConfig *tenant.Secret, dk *dynakube.DynaKube) {
+func InstallWithoutSettingsScopes(builder *features.FeatureBuilder, secretConfig tenant.Secret, dk *dynakube.DynaKube) {
 	install(builder, secretConfig.TokensWithoutSettingsScope(), dk)
 }
 
-func InstallPreviousVersion(builder *features.FeatureBuilder, level features.Level, secretConfig *tenant.Secret, prevDK *prevDynakube.DynaKube) {
+func InstallPreviousVersion(builder *features.FeatureBuilder, level features.Level, secretConfig tenant.Secret, prevDK *prevDynakube.DynaKube) {
 	CreatePreviousVersion(builder, level, secretConfig.TokensWithSettingsScope(), prevDK)
 	VerifyStartupPreviousVersion(builder, level, prevDK)
 }

@@ -42,7 +42,7 @@ func Feature(t *testing.T) features.Feature {
 	builder.Teardown(sampleAppCloudNative.Uninstall())
 
 	// install operator and dynakubeComponents
-	dynakubeComponents.Install(builder, &secretConfig, dynakubeCloudNative)
+	dynakubeComponents.Install(builder, secretConfig, dynakubeCloudNative)
 
 	// apply sample apps
 	builder.Assess("(cloudnative) install sample app", sampleAppCloudNative.Install())

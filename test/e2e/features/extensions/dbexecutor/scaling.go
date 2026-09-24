@@ -40,7 +40,7 @@ func WithHPA(t *testing.T) features.Feature {
 
 	testDynakube := componentDynakube.New(options...)
 
-	componentDynakube.Install(builder, &secretConfig, testDynakube)
+	componentDynakube.Install(builder, secretConfig, testDynakube)
 
 	testHPA := &autoscalingv1.HorizontalPodAutoscaler{
 		ObjectMeta: metav1.ObjectMeta{
@@ -82,7 +82,7 @@ func EnforceReplicas(t *testing.T) features.Feature {
 
 	testDynakube := componentDynakube.New(options...)
 
-	componentDynakube.Install(builder, &secretConfig, testDynakube)
+	componentDynakube.Install(builder, secretConfig, testDynakube)
 
 	builder.Assess("scale executor deployment replicas to 3", k8sdeployment.Update(testDynakube.Extensions().GetDatabaseDatasourceName(testDatabaseID), testDynakube.Namespace, func(d *appsv1.Deployment) {
 		d.Spec.Replicas = scaleReplicas

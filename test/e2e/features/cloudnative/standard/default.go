@@ -73,7 +73,7 @@ func Feature(t *testing.T, istioEnabled bool, withCSI bool) features.Feature {
 	builder.Assess("create sample namespace", sampleApp.InstallNamespace())
 
 	// Register dynakube install
-	dynakube.Install(builder, &secretConfig, testDynakube)
+	dynakube.Install(builder, secretConfig, testDynakube)
 	builder.Assess("install sample app", sampleApp.Install())
 
 	// Register actual test

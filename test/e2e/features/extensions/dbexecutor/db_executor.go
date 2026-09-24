@@ -33,7 +33,7 @@ func Feature(t *testing.T) features.Feature {
 
 	testDynakube := componentDynakube.New(options...)
 
-	componentDynakube.Install(builder, &secretConfig, testDynakube)
+	componentDynakube.Install(builder, secretConfig, testDynakube)
 
 	builder.Assess("active gate pod is running", activegate.CheckContainer(testDynakube))
 

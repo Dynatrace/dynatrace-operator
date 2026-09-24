@@ -45,7 +45,7 @@ func GenerateMetadata(t *testing.T) features.Feature {
 	testDynakube := componentDynakube.New(options...)
 
 	// Register Dynakube install
-	componentDynakube.Install(builder, &secretConfig, testDynakube)
+	componentDynakube.Install(builder, secretConfig, testDynakube)
 	builder.Assess("OneAgent started", k8sdaemonset.IsReady(testDynakube.OneAgent().GetDaemonsetName(), testDynakube.Namespace))
 	builder.Assess("active gate pod is running", activegate.CheckContainer(testDynakube))
 

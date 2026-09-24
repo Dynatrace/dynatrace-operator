@@ -31,7 +31,7 @@ func Feature(t *testing.T) features.Feature {
 		dynakubeComponents.WithClassicFullStackSpec(&oneagent.HostInjectSpec{}),
 	)
 
-	dynakubeComponents.Install(builder, &secretConfig, testDynakube)
+	dynakubeComponents.Install(builder, secretConfig, testDynakube)
 
 	return builder.Feature()
 }

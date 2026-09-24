@@ -27,7 +27,7 @@ func MetadataOnly(t *testing.T) features.Feature {
 
 	sampleApp := newSampleApp(t, testDynakube, ns, testDynakube.MetadataEnrichment().GetNamespaceSelector().MatchLabels)
 
-	dynakubeComponents.Install(builder, &secretConfig, testDynakube)
+	dynakubeComponents.Install(builder, secretConfig, testDynakube)
 	installSampleApp(builder, sampleApp)
 
 	builder.Assess("initcontainer contains args with additionalAttributes", assessInitContainerArgs(sampleApp, globalAttrs))

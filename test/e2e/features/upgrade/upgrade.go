@@ -138,7 +138,7 @@ func buildUpgradeFeature(t *testing.T, releaseTag string, opts upgradeOptions) f
 
 	previousVersionDynakube := &dynakubev1beta5.DynaKube{}
 	require.NoError(t, previousVersionDynakube.ConvertFrom(testDynakube))
-	dynakube.InstallPreviousVersion(builder, helpers.LevelAssess, &secretConfig, previousVersionDynakube)
+	dynakube.InstallPreviousVersion(builder, helpers.LevelAssess, secretConfig, previousVersionDynakube)
 
 	builder.Assess("create sample namespace", sampleApp.InstallNamespace())
 	builder.Assess("install sample app", sampleApp.Install())

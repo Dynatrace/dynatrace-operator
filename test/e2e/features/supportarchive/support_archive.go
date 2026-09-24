@@ -112,7 +112,7 @@ func Feature(t *testing.T) features.Feature {
 		})
 	builder.Assess("create AG TLS secret", k8ssecret.Create(agSecret))
 
-	dynakubeComponents.Install(builder, &secretConfig, testDynakube)
+	dynakubeComponents.Install(builder, secretConfig, testDynakube)
 	edgeconnectComponents.Install(builder, nil, testEdgeConnect)
 	builder.Assess("check EC configuration on the tenant", edgeconnectComponents.CheckECExistsOnTheTenant(edgeconnectSecretConfig, edgeConnectTenantConfig))
 

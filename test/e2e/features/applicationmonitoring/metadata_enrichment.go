@@ -48,7 +48,7 @@ func MetadataEnrichment(t *testing.T) features.Feature {
 		sample.WithNamespaceLabels(injectEverythingLabels),
 	)
 
-	dynakubeComponents.Install(builder, &secretConfig, testDynakube)
+	dynakubeComponents.Install(builder, secretConfig, testDynakube)
 	builder.Assess("Installing sample app", sampleApp.Install())
 	builder.Assess("Checking dt_metadata.json content", assessMetadataEnrichmentHasDeprecatedAttributes(sampleApp))
 	builder.WithTeardown("Uninstalling sample app", sampleApp.Uninstall())

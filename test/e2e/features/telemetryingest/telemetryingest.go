@@ -58,7 +58,7 @@ func WithPublicActiveGate(t *testing.T) features.Feature {
 
 	testDynakube := componentDynakube.New(options...)
 
-	componentDynakube.Install(builder, &secretConfig, testDynakube)
+	componentDynakube.Install(builder, secretConfig, testDynakube)
 
 	builder.Assess("otel collector started", k8sstatefulset.IsReady(testDynakube.OTelCollectorStatefulsetName(), testDynakube.Namespace))
 	builder.Assess("otel collector config created", checkOTelCollectorConfig(testDynakube))
@@ -87,7 +87,7 @@ func WithLocalActiveGateAndCleanup(t *testing.T) features.Feature {
 	require.NoError(t, err, "failed to create ag-tls secret")
 	builder.Assess("create AG TLS secret", k8ssecret.Create(agSecret))
 
-	componentDynakube.Install(builder, &secretConfig, testDynakube)
+	componentDynakube.Install(builder, secretConfig, testDynakube)
 	builder.Assess("active gate pod is running", checkActiveGateContainer(testDynakube))
 
 	builder.Assess("otel collector started", k8sstatefulset.IsReady(testDynakube.OTelCollectorStatefulsetName(), testDynakube.Namespace))
@@ -134,7 +134,7 @@ func WithTelemetryIngestEndpointTLS(t *testing.T) features.Feature {
 
 	builder.Assess("create OTel collector endpoint TLS secret", k8ssecret.Create(tlsSecret))
 
-	componentDynakube.Install(builder, &secretConfig, testDynakube)
+	componentDynakube.Install(builder, secretConfig, testDynakube)
 
 	builder.Assess("otel collector started", k8sstatefulset.IsReady(testDynakube.OTelCollectorStatefulsetName(), testDynakube.Namespace))
 	builder.Assess("otel collector config created", checkOTelCollectorConfig(testDynakube))
@@ -160,7 +160,7 @@ func OTelCollectorConfigUpdate(t *testing.T) features.Feature {
 
 	testDynakubeZipkin := componentDynakube.New(optionsZipkin...)
 
-	componentDynakube.Install(builder, &secretConfig, testDynakubeZipkin)
+	componentDynakube.Install(builder, secretConfig, testDynakubeZipkin)
 
 	builder.Assess("otel collector started", k8sstatefulset.IsReady(testDynakubeZipkin.OTelCollectorStatefulsetName(), testDynakubeZipkin.Namespace))
 	builder.Assess("otel collector config created", checkOTelCollectorConfig(testDynakubeZipkin))

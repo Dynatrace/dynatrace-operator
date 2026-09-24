@@ -35,7 +35,7 @@ func ImageVolumeNoCSI(t *testing.T) features.Feature {
 		dynakubeComponents.WithCodeModulesImage(codeModuleImage),
 	)
 
-	dynakubeComponents.Install(builder, &secretConfig, appOnlyDynakube)
+	dynakubeComponents.Install(builder, secretConfig, appOnlyDynakube)
 
 	sampleApp := sample.NewApp(t, appOnlyDynakube, sample.AsDeployment())
 	builder.Assess("install sample app", sampleApp.Install())

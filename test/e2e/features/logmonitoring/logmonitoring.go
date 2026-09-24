@@ -76,7 +76,7 @@ func Feature(t *testing.T) features.Feature {
 		})
 	builder.Assess("create AG TLS secret", k8ssecret.Create(agSecret))
 
-	componentDynakube.Install(builder, &secretConfig, testDynakube)
+	componentDynakube.Install(builder, secretConfig, testDynakube)
 
 	builder.Assess("active gate pod is running", activegate.CheckContainer(testDynakube))
 
@@ -115,7 +115,7 @@ func WithOptionalScopes(t *testing.T) features.Feature {
 
 	testDynakube := componentDynakube.New(options...)
 
-	componentDynakube.InstallWithoutSettingsScopes(builder, &secretConfig, testDynakube)
+	componentDynakube.InstallWithoutSettingsScopes(builder, secretConfig, testDynakube)
 
 	builder.Assess("active gate pod is running", activegate.CheckContainer(testDynakube))
 

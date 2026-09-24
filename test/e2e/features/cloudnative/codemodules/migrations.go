@@ -41,7 +41,7 @@ func MigrateToImage(t *testing.T) features.Feature {
 	builder.Assess("create sample namespace", sampleApp.InstallNamespace())
 
 	// Register dynakubeComponents install
-	dynakubeComponents.Install(builder, &secretConfig, appDynakube)
+	dynakubeComponents.Install(builder, secretConfig, appDynakube)
 
 	// Register sample app install
 	builder.Assess("install sample app", sampleApp.Install())
@@ -89,7 +89,7 @@ func MigrateToNodeImagePull(t *testing.T) features.Feature {
 	builder.Assess("create sample namespace", sampleApp.InstallNamespace())
 
 	// Register dynakubeComponents install
-	dynakubeComponents.Install(builder, &secretConfig, appDynakube)
+	dynakubeComponents.Install(builder, secretConfig, appDynakube)
 
 	// Register sample app install
 	builder.Assess("install sample app", sampleApp.Install())

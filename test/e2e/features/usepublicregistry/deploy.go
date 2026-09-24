@@ -161,7 +161,7 @@ func oneAgentFeature(t *testing.T, featureName, dkName, override string) feature
 
 	testDynakube := dynakubeComponents.New(options...)
 
-	dynakubeComponents.Install(builder, &secretConfig, testDynakube)
+	dynakubeComponents.Install(builder, secretConfig, testDynakube)
 
 	builder.Assess("OneAgent DaemonSet ready",
 		k8sdaemonset.IsReady(testDynakube.OneAgent().GetDaemonsetName(), testDynakube.Namespace))
@@ -191,7 +191,7 @@ func activeGateFeature(t *testing.T, featureName, dkName, override string) featu
 
 	testDynakube := dynakubeComponents.New(options...)
 
-	dynakubeComponents.Install(builder, &secretConfig, testDynakube)
+	dynakubeComponents.Install(builder, secretConfig, testDynakube)
 
 	builder.Assess("ActiveGate StatefulSet ready",
 		k8sstatefulset.IsReady(activegate.GetActiveGateStateFulSetName(testDynakube), testDynakube.Namespace))
@@ -232,7 +232,7 @@ func codeModulesFeature(t *testing.T, featureName, dkName, sampleNamespaceName, 
 
 	builder.Assess("create sample namespace", sampleApp.InstallNamespace())
 
-	dynakubeComponents.Install(builder, &secretConfig, testDynakube)
+	dynakubeComponents.Install(builder, secretConfig, testDynakube)
 
 	builder.Assess("install sample app", sampleApp.Install())
 	cloudnative.AssessSampleInitContainers(builder, sampleApp)
@@ -275,7 +275,7 @@ func codeModulesWithCSIFeature(t *testing.T, featureName, dkName, sampleNamespac
 
 	builder.Assess("create sample namespace", sampleApp.InstallNamespace())
 
-	dynakubeComponents.Install(builder, &secretConfig, testDynakube)
+	dynakubeComponents.Install(builder, secretConfig, testDynakube)
 
 	builder.Assess("install sample app", sampleApp.Install())
 	builder.Assess("CodeModules status reports public-registry source",
@@ -349,7 +349,7 @@ func dbExecutorFeature(t *testing.T, featureName, dkName, override string) featu
 
 	testDynakube := dynakubeComponents.New(options...)
 
-	dynakubeComponents.Install(builder, &secretConfig, testDynakube)
+	dynakubeComponents.Install(builder, secretConfig, testDynakube)
 
 	builder.Assess("active gate pod is running", activegate.CheckContainer(testDynakube))
 
@@ -411,7 +411,7 @@ func kspmFeature(t *testing.T, featureName, dkName, override string) features.Fe
 
 	testDynakube := dynakubeComponents.New(options...)
 
-	dynakubeComponents.Install(builder, &secretConfig, testDynakube)
+	dynakubeComponents.Install(builder, secretConfig, testDynakube)
 
 	builder.Assess("active gate pod is running", activegate.CheckContainer(testDynakube))
 	builder.Assess("KSPM node config collector started",
@@ -442,7 +442,7 @@ func telemetryIngestFeature(t *testing.T, featureName, dkName, override string) 
 
 	testDynakube := dynakubeComponents.New(options...)
 
-	dynakubeComponents.Install(builder, &secretConfig, testDynakube)
+	dynakubeComponents.Install(builder, secretConfig, testDynakube)
 
 	builder.Assess("otel collector started",
 		k8sstatefulset.IsReady(testDynakube.OTelCollectorStatefulsetName(), testDynakube.Namespace))
@@ -517,7 +517,7 @@ func logMonFeature(t *testing.T, featureName, dkName, override string) features.
 		})
 	builder.Assess("create AG TLS secret", k8ssecret.Create(agSecret))
 
-	dynakubeComponents.Install(builder, &secretConfig, testDynakube)
+	dynakubeComponents.Install(builder, secretConfig, testDynakube)
 
 	builder.Assess("active gate pod is running", activegate.CheckContainer(testDynakube))
 
@@ -569,7 +569,7 @@ func allFeaturesWithImageOverridesFeature(t *testing.T, featureName, dkName stri
 
 	agStatefulSetName := activegate.GetActiveGateStateFulSetName(testDynakube)
 
-	dynakubeComponents.Install(builder, &secretConfig, testDynakube)
+	dynakubeComponents.Install(builder, secretConfig, testDynakube)
 
 	builder.Assess("OneAgent DaemonSet ready",
 		k8sdaemonset.IsReady(testDynakube.OneAgent().GetDaemonsetName(), testDynakube.Namespace))

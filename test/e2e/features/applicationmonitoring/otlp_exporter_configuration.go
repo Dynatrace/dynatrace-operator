@@ -113,7 +113,7 @@ func OTLPExporterConfiguration(t *testing.T) features.Feature {
 		},
 	}
 
-	dynakubeComponents.Install(builder, &secretConfig, testDynakube)
+	dynakubeComponents.Install(builder, secretConfig, testDynakube)
 
 	for _, tc := range testCases {
 		builder.Assess(fmt.Sprintf("%s: Installing sample app", tc.name), tc.app.Install())

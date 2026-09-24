@@ -109,7 +109,7 @@ func feature(t *testing.T, featureName, sampleNS string, imageOpts []dynakube.Op
 
 	builder.Assess("create sample namespace", sampleApp.InstallNamespace())
 
-	dynakube.Install(builder, &secretConfig, testDynakube)
+	dynakube.Install(builder, secretConfig, testDynakube)
 
 	builder.Assess("install sample app", sampleApp.Install())
 	cloudnative.AssessSampleInitContainers(builder, sampleApp)
@@ -185,7 +185,7 @@ func featureLogMonitoring(t *testing.T, featureName, imageURI string) features.F
 
 	testDynakube := dynakube.New(options...)
 
-	dynakube.Install(builder, &secretConfig, testDynakube)
+	dynakube.Install(builder, secretConfig, testDynakube)
 
 	builder.Assess("LogMonitoring DaemonSet started", k8sdaemonset.IsReady(testDynakube.LogMonitoring().GetDaemonSetName(), testDynakube.Namespace))
 	builder.Assess("LogMonitoring DaemonSet uses expected image",
@@ -225,7 +225,7 @@ func featureTagAndDigest(t *testing.T, featureName, tagURI, digestURI, expectedT
 
 	testDynakube := dynakube.New(options...)
 
-	dynakube.Install(builder, &secretConfig, testDynakube)
+	dynakube.Install(builder, secretConfig, testDynakube)
 
 	builder.Assess("LogMonitoring DaemonSet started", k8sdaemonset.IsReady(testDynakube.LogMonitoring().GetDaemonSetName(), testDynakube.Namespace))
 	builder.Assess("LogMonitoring DaemonSet uses expected image",

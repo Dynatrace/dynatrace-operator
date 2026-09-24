@@ -26,7 +26,7 @@ func HostAgentPGC(t *testing.T) features.Feature {
 		componentDynakube.WithHostMonitoringSpec(&oneagent.HostInjectSpec{}),
 	)
 
-	componentDynakube.Install(builder, &secretConfig, testDynakube)
+	componentDynakube.Install(builder, secretConfig, testDynakube)
 	builder.Assess("OneAgent started", k8sdaemonset.IsReady(testDynakube.OneAgent().GetDaemonsetName(), testDynakube.Namespace))
 	builder.Assess("PGC file present in OA pods", pgc.WaitForFileInAllPods(testDynakube))
 

@@ -33,7 +33,7 @@ func OTLPExporterConfig(t *testing.T) features.Feature {
 
 	sampleApp := newSampleApp(t, testDynakube, ns, testDynakube.Spec.OTLPExporterConfiguration.NamespaceSelector.MatchLabels)
 
-	dynakubeComponents.Install(builder, &secretConfig, testDynakube)
+	dynakubeComponents.Install(builder, secretConfig, testDynakube)
 	installSampleApp(builder, sampleApp)
 
 	builder.Assess("OTEL_RESOURCE_ATTRIBUTES contains merged OTLP resource attributes", assessOTLPInjectionAttributes(testDynakube, sampleApp, expectedOTLP))

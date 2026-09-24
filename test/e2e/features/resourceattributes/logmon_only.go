@@ -47,7 +47,7 @@ func LogmonOnly(t *testing.T) features.Feature {
 
 	testDynakube := componentDynakube.New(options...)
 
-	componentDynakube.Install(builder, &secretConfig, testDynakube)
+	componentDynakube.Install(builder, secretConfig, testDynakube)
 	builder.Assess("LogMonitoring DaemonSet is ready", k8sdaemonset.IsReady(testDynakube.LogMonitoring().GetDaemonSetName(), testDynakube.Namespace))
 
 	builder.Assess("LogMonitoring init container args contain global resource attributes", assessLogMonitoringInitArgs(testDynakube, globalAttrs))

@@ -46,7 +46,7 @@ func Feature(t *testing.T) features.Feature {
 	sampleApp := sample.NewApp(t, testDynakube, sample.AsDeployment())
 	builder.Assess("create sample namespace", sampleApp.InstallNamespace())
 
-	dynakubeComponents.Install(builder, &secretConfig, testDynakube)
+	dynakubeComponents.Install(builder, secretConfig, testDynakube)
 	builder.Assess("install sample app", sampleApp.Install())
 
 	// Phase 1: verify CSI injection is active before migration.

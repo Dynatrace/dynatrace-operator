@@ -37,7 +37,7 @@ func FeatureSplitAG(t *testing.T) features.Feature {
 		componentDynakube.WithKubernetesMonitoringRegistration(),
 	)
 
-	componentDynakube.Install(builder, &secretConfig, testDynakube)
+	componentDynakube.Install(builder, secretConfig, testDynakube)
 
 	builder.Assess("generic activegate statefulset is ready",
 		k8sstatefulset.IsReady(agHelper.GetActiveGateStateFulSetName(testDynakube), testDynakube.Namespace))
@@ -94,7 +94,7 @@ func FeatureRestartTriggers(t *testing.T) features.Feature {
 		componentDynakube.WithKubernetesMonitoringRegistration(),
 	)
 
-	componentDynakube.Install(builder, &secretConfig, testDynakube)
+	componentDynakube.Install(builder, secretConfig, testDynakube)
 
 	builder.Assess("kubemon statefulset is ready",
 		k8sstatefulset.IsReady(testDynakube.KubernetesMonitoring().GetStatefulSetName(), testDynakube.Namespace))

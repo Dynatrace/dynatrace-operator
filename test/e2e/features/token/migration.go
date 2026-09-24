@@ -34,7 +34,7 @@ func FromPlatformToAPIToken(t *testing.T) features.Feature {
 
 	testDynakube := componentDynakube.New(options...)
 
-	componentDynakube.Install(builder, &secretConfig, testDynakube)
+	componentDynakube.Install(builder, secretConfig, testDynakube)
 
 	builder.Assess("update tenant secret to api token",
 		tenant.CreateTenantSecret(secretConfig.ClassicTokens(), testDynakube.Name, testDynakube.Namespace))
@@ -61,7 +61,7 @@ func FromAPIToPlatformToken(t *testing.T) features.Feature {
 		componentDynakube.WithCustomPullSecret(e2econst.DevRegistryPullSecretName),
 	)
 
-	componentDynakube.Install(builder, &secretConfig, testDynakube)
+	componentDynakube.Install(builder, secretConfig, testDynakube)
 
 	builder.Assess("update tenant secret to platform token",
 		tenant.CreateTenantSecret(secretConfig.PlatformTokens(), testDynakube.Name, testDynakube.Namespace))

@@ -33,7 +33,7 @@ func Feature(t *testing.T) features.Feature {
 
 	testDynakube := componentDynakube.New(options...)
 
-	componentDynakube.Install(builder, &secretConfig, testDynakube)
+	componentDynakube.Install(builder, secretConfig, testDynakube)
 
 	builder.Assess("active gate pod is running", activegate.CheckContainer(testDynakube))
 
@@ -60,7 +60,7 @@ func FeatureWithKubemon(t *testing.T) features.Feature {
 
 	testDynakube := componentDynakube.New(options...)
 
-	componentDynakube.Install(builder, &secretConfig, testDynakube)
+	componentDynakube.Install(builder, secretConfig, testDynakube)
 
 	builder.Assess("kubemon statefulset is ready", k8sstatefulset.WaitFor(testDynakube.KubernetesMonitoring().GetStatefulSetName(), testDynakube.Namespace))
 
@@ -93,7 +93,7 @@ func OptionalScopes(t *testing.T) features.Feature {
 
 	testDynakube := componentDynakube.New(options...)
 
-	componentDynakube.InstallWithoutSettingsScopes(builder, &secretConfig, testDynakube)
+	componentDynakube.InstallWithoutSettingsScopes(builder, secretConfig, testDynakube)
 
 	builder.Assess("active gate pod is running", activegate.CheckContainer(testDynakube))
 

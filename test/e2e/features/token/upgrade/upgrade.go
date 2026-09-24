@@ -36,7 +36,7 @@ func FromAPIToPlatformToken(t *testing.T, releaseTag string) features.Feature {
 
 	previousVersionDynakube := &dynakubev1beta5.DynaKube{}
 	require.NoError(t, previousVersionDynakube.ConvertFrom(testDynakube))
-	componentDynakube.InstallPreviousVersion(builder, helpers.LevelAssess, &secretConfig, previousVersionDynakube)
+	componentDynakube.InstallPreviousVersion(builder, helpers.LevelAssess, secretConfig, previousVersionDynakube)
 
 	builder.Assess("update tenant secret to platform token",
 		tenant.CreateTenantSecret(secretConfig.PlatformTokens(), testDynakube.Name, testDynakube.Namespace))

@@ -31,7 +31,7 @@ func WithHPA(t *testing.T) features.Feature {
 		dynakubeComponents.WithActiveGate(),
 		dynakubeComponents.WithAPIURL(secretConfig.APIURL))
 
-	dynakubeComponents.Install(builder, &secretConfig, testDynakube)
+	dynakubeComponents.Install(builder, secretConfig, testDynakube)
 
 	activeGateSSName := activegate.GetActiveGateStateFulSetName(testDynakube)
 
@@ -67,7 +67,7 @@ func EnforceReplicas(t *testing.T) features.Feature {
 		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
 		dynakubeComponents.WithActiveGateReplicas(baseReplicas))
 
-	dynakubeComponents.Install(builder, &secretConfig, testDynakube)
+	dynakubeComponents.Install(builder, secretConfig, testDynakube)
 
 	activeGateSSName := activegate.GetActiveGateStateFulSetName(testDynakube)
 

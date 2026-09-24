@@ -27,7 +27,7 @@ func WithoutCSI(t *testing.T) features.Feature {
 	testDynakube := dynakube.New(options...)
 
 	// Register dynakube install
-	dynakube.Install(builder, &secretConfig, testDynakube)
+	dynakube.Install(builder, secretConfig, testDynakube)
 
 	builder.Assess("one agent started", k8sdaemonset.IsReady(testDynakube.OneAgent().GetDaemonsetName(), testDynakube.Namespace))
 

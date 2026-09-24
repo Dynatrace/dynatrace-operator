@@ -65,7 +65,7 @@ func Combined(t *testing.T) features.Feature {
 
 	sampleApp := newSampleApp(t, testDynakube, ns, injectEverythingLabels)
 
-	dynakubeComponents.Install(builder, &secretConfig, testDynakube)
+	dynakubeComponents.Install(builder, secretConfig, testDynakube)
 	builder.Assess("OneAgent DaemonSet is ready", k8sdaemonset.IsReady(testDynakube.OneAgent().GetDaemonsetName(), testDynakube.Namespace))
 	builder.Assess("ActiveGate is running", activegate.CheckContainer(testDynakube))
 

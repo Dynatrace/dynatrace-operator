@@ -44,7 +44,7 @@ func InstallWithCSI(t *testing.T) features.Feature {
 
 	builder.Assess("create sample namespace", sampleApp.InstallNamespace())
 
-	dynakubeComponents.Install(builder, &secretConfig, appMonDynakube)
+	dynakubeComponents.Install(builder, secretConfig, appMonDynakube)
 
 	builder.Assess("check if jobs completed", jobsAreCompleted(appMonDynakube))
 

@@ -100,7 +100,7 @@ func InstallFromImage(t *testing.T) features.Feature {
 	builder.Assess("create sample namespace", sampleApp.InstallNamespace())
 
 	// Register dynakubeComponents install
-	dynakubeComponents.Install(builder, &secretConfigs[0], cloudNativeDynakube)
+	dynakubeComponents.Install(builder, secretConfigs[0], cloudNativeDynakube)
 
 	// Register sample app install
 	builder.Assess("install sample app", sampleApp.Install())
@@ -110,7 +110,7 @@ func InstallFromImage(t *testing.T) features.Feature {
 
 	builder.Assess("codemodules have been downloaded", ImageHasBeenDownloaded(cloudNativeDynakube))
 	builder.Assess("checking storage used", measureDiskUsage(appDynakube.Namespace, storageMap))
-	dynakubeComponents.Install(builder, &secretConfigs[1], appDynakube)
+	dynakubeComponents.Install(builder, secretConfigs[1], appDynakube)
 	builder.Assess("storage size has not increased", diskUsageDoesNotIncrease(appDynakube.Namespace, storageMap))
 	builder.Assess("volumes are mounted correctly", VolumesAreMountedCorrectly(*sampleApp))
 
@@ -165,7 +165,7 @@ func WithProxy(t *testing.T, proxySpec *value.Source) features.Feature {
 	proxy.IsDynatraceNamespaceCutOff(builder, cloudNativeDynakube)
 
 	// Register dynakubeComponents install
-	dynakubeComponents.Install(builder, &secretConfigs[0], cloudNativeDynakube)
+	dynakubeComponents.Install(builder, secretConfigs[0], cloudNativeDynakube)
 
 	// Register sample app install
 	builder.Assess("install sample app", sampleApp.Install())
@@ -241,7 +241,7 @@ func WithProxyAndAGCert(t *testing.T, proxySpec *value.Source) features.Feature 
 	proxy.IsDynatraceNamespaceCutOff(builder, cloudNativeDynakube)
 
 	// Register dynakubeComponents install
-	dynakubeComponents.Install(builder, &secretConfigs[0], cloudNativeDynakube)
+	dynakubeComponents.Install(builder, secretConfigs[0], cloudNativeDynakube)
 
 	// Register sample app install
 	builder.Assess("install sample app", sampleApp.Install())
@@ -292,7 +292,7 @@ func WithProxyAndAutomaticAGCert(t *testing.T, proxySpec *value.Source) features
 	proxy.IsDynatraceNamespaceCutOff(builder, cloudNativeDynakube)
 
 	// Register dynakubeComponents install
-	dynakubeComponents.Install(builder, &secretConfigs[0], cloudNativeDynakube)
+	dynakubeComponents.Install(builder, secretConfigs[0], cloudNativeDynakube)
 
 	// Register sample app install
 	builder.Assess("install sample app", sampleApp.Install())
@@ -374,7 +374,7 @@ func WithProxyCAAndAGCert(t *testing.T, proxySpec *value.Source) features.Featur
 	proxy.IsDynatraceNamespaceCutOff(builder, cloudNativeDynakube)
 
 	// Register dynakubeComponents install
-	dynakubeComponents.Install(builder, &secretConfigs[0], cloudNativeDynakube)
+	dynakubeComponents.Install(builder, secretConfigs[0], cloudNativeDynakube)
 
 	// Register sample app install
 	builder.Assess("install sample app", sampleApp.Install())
@@ -436,7 +436,7 @@ func WithProxyCAAndAutomaticAGCert(t *testing.T, proxySpec *value.Source) featur
 	proxy.IsDynatraceNamespaceCutOff(builder, cloudNativeDynakube)
 
 	// Register dynakubeComponents install
-	dynakubeComponents.Install(builder, &secretConfigs[0], cloudNativeDynakube)
+	dynakubeComponents.Install(builder, secretConfigs[0], cloudNativeDynakube)
 
 	// Register sample app install
 	builder.Assess("install sample app", sampleApp.Install())

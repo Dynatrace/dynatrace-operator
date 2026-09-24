@@ -32,7 +32,7 @@ func ImageVolume(t *testing.T) features.Feature {
 		dynakubeComponents.WithCloudNativeSpec(cnfsSpec),
 	)
 
-	dynakubeComponents.Install(builder, &secretConfig, cloudNativeDynakube)
+	dynakubeComponents.Install(builder, secretConfig, cloudNativeDynakube)
 
 	sampleApp := sample.NewApp(t, cloudNativeDynakube, sample.AsDeployment())
 	builder.Assess("install sample app", sampleApp.Install())
