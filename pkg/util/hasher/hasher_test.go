@@ -122,10 +122,10 @@ func TestGenerateSecureHash(t *testing.T) {
 }
 
 func TestIsDifferent(t *testing.T) {
-	testDeployment := appsv1.Deployment{}
-	testDeployment.Name = "deployment"
-	testDaemonSet := appsv1.DaemonSet{}
-	testDaemonSet.Name = "daemonset"
+	testDeployment := appsv1.Deployment{
+		Name: "deployment"}
+	testDaemonSet := appsv1.DaemonSet{
+		Name: "daemonset"}
 
 	t.Run("different", func(t *testing.T) {
 		isDifferent, err := IsDifferent(testDeployment, testDaemonSet)
@@ -140,14 +140,14 @@ func TestIsDifferent(t *testing.T) {
 }
 
 func TestIsAnnotationDifferent(t *testing.T) {
-	testDeployment := appsv1.Deployment{}
-	testDeployment.Annotations = map[string]string{
-		AnnotationHash: "hash1",
-	}
-	testDaemonSet := appsv1.DaemonSet{}
-	testDaemonSet.Annotations = map[string]string{
-		AnnotationHash: "hash2",
-	}
+	testDeployment := appsv1.Deployment{
+		Annotations: map[string]string{
+			AnnotationHash: "hash1",
+		}}
+	testDaemonSet := appsv1.DaemonSet{
+		Annotations: map[string]string{
+			AnnotationHash: "hash2",
+		}}
 
 	t.Run("different", func(t *testing.T) {
 		isDifferent := IsAnnotationDifferent(&testDeployment.ObjectMeta, &testDaemonSet.ObjectMeta)
@@ -165,10 +165,10 @@ func TestAddAnnotation(t *testing.T) {
 		require.Error(t, err)
 	})
 	t.Run("append to annotations", func(t *testing.T) {
-		testDaemonSet := appsv1.DaemonSet{}
-		testDaemonSet.Annotations = map[string]string{
-			"something": "else",
-		}
+		testDaemonSet := appsv1.DaemonSet{
+			Annotations: map[string]string{
+				"something": "else",
+			}}
 		err := AddAnnotation(&testDaemonSet)
 		require.NoError(t, err)
 		assert.Len(t, testDaemonSet.Annotations, 2)

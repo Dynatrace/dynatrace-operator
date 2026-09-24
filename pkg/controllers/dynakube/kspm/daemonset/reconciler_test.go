@@ -80,9 +80,9 @@ func TestReconcile(t *testing.T) {
 	t.Run("Only runs when required, and cleans up condition + daemonset", func(t *testing.T) {
 		dk := createDynakube(false)
 
-		previousDaemonSet := appsv1.DaemonSet{}
-		previousDaemonSet.Name = dk.KSPM().GetDaemonSetName()
-		previousDaemonSet.Namespace = dk.Namespace
+		previousDaemonSet := appsv1.DaemonSet{
+			Name:      dk.KSPM().GetDaemonSetName(),
+			Namespace: dk.Namespace}
 		mockK8sClient := fake.NewClient(&previousDaemonSet)
 
 		k8sconditions.SetDaemonSetCreated(dk.Conditions(), conditionType, "this is a test")
