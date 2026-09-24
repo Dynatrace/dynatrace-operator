@@ -65,7 +65,7 @@ func TestGetOneAgentDeploymentType(t *testing.T) {
 				OneAgent: test.oneAgentSpec,
 			},
 		}
-		deploymentType := GetOneAgentDeploymentType(*dk)
+		deploymentType := GetOneAgentDeploymentType(dk)
 		assert.Equal(t, test.expectedDeploymentType, deploymentType)
 	}
 }

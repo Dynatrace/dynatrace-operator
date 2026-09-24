@@ -30,10 +30,10 @@ import (
 // unit test and its golden files.
 
 const (
-	integrationNamespace   = "dynatrace"
-	integrationPMName      = "lifecycle"
-	integrationDynaKubeRef = "dk"
-	integrationImage       = "registry.example.com/gateway:1.2.3"
+	integrationNamespace    = "dynatrace"
+	integrationPMName       = "lifecycle"
+	integrationDynaKubeName = "dk"
+	integrationImage        = "registry.example.com/gateway:1.2.3"
 )
 
 type lifecycleDeps struct {
@@ -51,7 +51,7 @@ func TestReconcileLifecycle(t *testing.T) {
 
 	pm := &prometheusmonitoring.PrometheusMonitoring{
 		ObjectMeta: metav1.ObjectMeta{Name: integrationPMName, Namespace: integrationNamespace},
-		Spec:       prometheusmonitoring.PrometheusMonitoringSpec{DynaKubeRef: integrationDynaKubeRef},
+		Spec:       prometheusmonitoring.PrometheusMonitoringSpec{DynaKubeName: integrationDynaKubeName},
 	}
 	integrationtests.CreateKubernetesObject(t, clt, pm)
 
@@ -68,7 +68,7 @@ func TestReconcileLifecycle(t *testing.T) {
 		// A custom pull secret is set so imagePullSecrets is a non-empty value, letting the
 		// stabilize phase prove it reconciles without spurious Update calls.
 		dk: &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{Name: integrationDynaKubeRef, Namespace: integrationNamespace},
+			ObjectMeta: metav1.ObjectMeta{Name: integrationDynaKubeName, Namespace: integrationNamespace},
 			Spec:       dynakube.DynaKubeSpec{CustomPullSecret: "custom-pull-secret"},
 		},
 		imageClient: imageClient,

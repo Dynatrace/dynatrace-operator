@@ -302,6 +302,8 @@ rbac:
   kspm:
     create: true
     annotations: {}
+  operator:
+    annotations: {}
   prometheus:
     create: true
   supportability: true

@@ -26,7 +26,7 @@ var testPrometheusMonitoring = &prometheusmonitoring.PrometheusMonitoring{
 		Namespace: "test-namespace",
 	},
 	Spec: prometheusmonitoring.PrometheusMonitoringSpec{
-		DynaKubeRef: "test-dynakube",
+		DynaKubeName: "test-dynakube",
 	},
 }
 

@@ -17,9 +17,9 @@ type Builder struct {
 	modifiers []Modifier
 }
 
-func NewBuilder(data appsv1.StatefulSet) Builder {
+func NewBuilder(data *appsv1.StatefulSet) Builder {
 	return Builder{
-		data:      &data,
+		data:      data,
 		modifiers: []Modifier{},
 	}
 }
@@ -30,20 +30,19 @@ func (b *Builder) AddModifier(modifiers ...Modifier) *Builder {
 	return b
 }
 
-func (b Builder) Build() (appsv1.StatefulSet, error) {
-	var data appsv1.StatefulSet
+func (b Builder) Build() (*appsv1.StatefulSet, error) {
 	if b.data == nil {
-		b.data = &data
+		b.data = &appsv1.StatefulSet{}
 	}
 
 	for _, m := range b.modifiers {
 		if m.Enabled() {
 			err := m.Modify(b.data)
 			if err != nil {
-				return *b.data, err
+				return b.data, err
 			}
 		}
 	}
 
-	return *b.data, nil
+	return b.data, nil
 }

@@ -18,7 +18,7 @@ import (
 func TestAddSplitMounts(t *testing.T) {
 	t.Run("should add both oneagent and enrichment mounts if enabled", func(t *testing.T) {
 		container := &corev1.Container{Name: "test-container"}
-		dk := dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				OneAgent: oneagent.Spec{
 					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{},
@@ -41,7 +41,7 @@ func TestAddSplitMounts(t *testing.T) {
 
 	t.Run("should add only enrichment mounts if oneagent is disabled", func(t *testing.T) {
 		container := &corev1.Container{Name: "test-container"}
-		dk := dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				MetadataEnrichment: metadataenrichment.Spec{
 					Enabled: new(true),
@@ -61,7 +61,7 @@ func TestAddSplitMounts(t *testing.T) {
 
 	t.Run("should add both mounts even if enrichment is disabled", func(t *testing.T) {
 		container := &corev1.Container{Name: "test-container"}
-		dk := dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				OneAgent: oneagent.Spec{
 					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{},
@@ -84,7 +84,7 @@ func TestAddSplitMounts(t *testing.T) {
 
 	t.Run("should add nothing if both are disabled", func(t *testing.T) {
 		container := &corev1.Container{Name: "test-container"}
-		dk := dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				MetadataEnrichment: metadataenrichment.Spec{
 					Enabled: new(false),

@@ -39,7 +39,7 @@ func Combined(t *testing.T) features.Feature {
 		"otlp.only.key":          "otlp-only-value",
 	}
 
-	testDynakube := *dynakubeComponents.New(
+	testDynakube := dynakubeComponents.New(
 		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
 		dynakubeComponents.WithCloudNativeSpec(cloudnative.DefaultCloudNativeSpec()),
 		dynakubeComponents.WithMetadataEnrichment(),
@@ -63,11 +63,11 @@ func Combined(t *testing.T) features.Feature {
 		testDynakube.Spec.OTLPExporterConfiguration.NamespaceSelector.MatchLabels,
 	)
 
-	sampleApp := newSampleApp(t, &testDynakube, ns, injectEverythingLabels)
+	sampleApp := newSampleApp(t, testDynakube, ns, injectEverythingLabels)
 
-	dynakubeComponents.Install(builder, &secretConfig, testDynakube)
+	dynakubeComponents.Install(builder, secretConfig, testDynakube)
 	builder.Assess("OneAgent DaemonSet is ready", k8sdaemonset.IsReady(testDynakube.OneAgent().GetDaemonsetName(), testDynakube.Namespace))
-	builder.Assess("ActiveGate is running", activegate.CheckContainer(&testDynakube))
+	builder.Assess("ActiveGate is running", activegate.CheckContainer(testDynakube))
 
 	builder.Assess("OneAgent dt_node_metadata.properties contains merged OneAgent resource attributes", assessDTNodeMetadataProperties(testDynakube, expectedOneAgent))
 	builder.Assess("ActiveGate deployment.properties ConfigMap contains global resource attributes", assessActiveGateDeploymentProperties(testDynakube, globalAttrs))
@@ -84,7 +84,7 @@ func Combined(t *testing.T) features.Feature {
 	return builder.Feature()
 }
 
-func assessActiveGateDeploymentProperties(dk dynakube.DynaKube, expected map[string]string) features.Func {
+func assessActiveGateDeploymentProperties(dk *dynakube.DynaKube, expected map[string]string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		var cm corev1.ConfigMap
 		err := envConfig.Client().Resources().Get(ctx, dk.ActiveGate().GetDeploymentPropertiesConfigMapName(), dk.Namespace, &cm)

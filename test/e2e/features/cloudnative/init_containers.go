@@ -33,7 +33,8 @@ func checkInitContainers(sampleApp *sample.App) features.Func {
 		pods := sampleApp.ListPods(ctx, t, resources)
 		require.NotEmpty(t, pods.Items)
 
-		for _, pod := range pods.Items {
+		for i := range pods.Items {
+			pod := &pods.Items[i]
 			if pod.DeletionTimestamp != nil {
 				continue
 			}

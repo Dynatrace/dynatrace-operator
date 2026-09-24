@@ -28,7 +28,7 @@ func FindRootOwnerOfPod(ctx context.Context, clt client.Client, request dtwebhoo
 			Kind:       request.Pod.Kind,
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: k8spod.GetName(*request.Pod),
+			Name: k8spod.GetName(request.Pod),
 			// pod.Namespace is empty at this point in the webhook injection
 			Namespace:       request.Namespace.Name,
 			OwnerReferences: request.Pod.OwnerReferences,

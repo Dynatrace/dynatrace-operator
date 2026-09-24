@@ -40,7 +40,7 @@ func OTLPExporterConfiguration(t *testing.T) features.Feature {
 	builder := features.New("otlp-exporter-configuration")
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
-	testDynakube := *dynakubeComponents.New(
+	testDynakube := dynakubeComponents.New(
 		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
 		dynakubeComponents.WithApplicationMonitoringSpec(&oneagent.ApplicationMonitoringSpec{}),
 	)
@@ -73,7 +73,7 @@ func OTLPExporterConfiguration(t *testing.T) features.Feature {
 	testCases := []testCase{
 		{
 			name: "deployment matching namespace selector",
-			app: sample.NewApp(t, &testDynakube,
+			app: sample.NewApp(t, testDynakube,
 				sample.WithName("deploy-otlp"),
 				sample.AsDeployment(),
 				sample.WithNamespaceLabels(matchingLabels),
@@ -84,7 +84,7 @@ func OTLPExporterConfiguration(t *testing.T) features.Feature {
 		},
 		{
 			name: "pod matching namespace selector",
-			app: sample.NewApp(t, &testDynakube,
+			app: sample.NewApp(t, testDynakube,
 				sample.WithName("pod-otlp"),
 				sample.WithNamespaceLabels(matchingLabels),
 				sample.WithAnnotations(metadataAnnotations),
@@ -94,7 +94,7 @@ func OTLPExporterConfiguration(t *testing.T) features.Feature {
 		},
 		{
 			name: "deployment non-matching namespace selector",
-			app: sample.NewApp(t, &testDynakube,
+			app: sample.NewApp(t, testDynakube,
 				sample.WithName("deploy-no-otlp"),
 				sample.AsDeployment(),
 				sample.WithNamespaceLabels(nonMatchingLabels),
@@ -104,7 +104,7 @@ func OTLPExporterConfiguration(t *testing.T) features.Feature {
 		},
 		{
 			name: "pod non-matching namespace selector",
-			app: sample.NewApp(t, &testDynakube,
+			app: sample.NewApp(t, testDynakube,
 				sample.WithName("pod-no-otlp"),
 				sample.WithNamespaceLabels(nonMatchingLabels),
 			),
@@ -113,7 +113,7 @@ func OTLPExporterConfiguration(t *testing.T) features.Feature {
 		},
 	}
 
-	dynakubeComponents.Install(builder, &secretConfig, testDynakube)
+	dynakubeComponents.Install(builder, secretConfig, testDynakube)
 
 	for _, tc := range testCases {
 		builder.Assess(fmt.Sprintf("%s: Installing sample app", tc.name), tc.app.Install())
@@ -128,7 +128,7 @@ func OTLPExporterConfiguration(t *testing.T) features.Feature {
 func podHasOTLPExporterEnvVarsInjected(app *sample.App, expectedBase string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		pod := app.GetPod(ctx, t, envConfig.Client().Resources())
-		assertOTLPEnvVarsPresentWithResourceAttributes(t, &pod, expectedBase)
+		assertOTLPEnvVarsPresentWithResourceAttributes(t, pod, expectedBase)
 
 		return ctx
 	}
@@ -137,7 +137,7 @@ func podHasOTLPExporterEnvVarsInjected(app *sample.App, expectedBase string) fea
 func podHasNoOTLPExporterEnvVarsInjected(app *sample.App, _ string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		pod := app.GetPod(ctx, t, envConfig.Client().Resources())
-		assertOTLPEnvVarsAbsent(t, &pod)
+		assertOTLPEnvVarsAbsent(t, pod)
 
 		return ctx
 	}
@@ -147,7 +147,7 @@ func deploymentPodsHaveOTLPExporterEnvVarsInjected(app *sample.App, expectedBase
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		query := k8sdeployment.NewQuery(ctx, envConfig.Client().Resources(), client.ObjectKey{Name: app.Name(), Namespace: app.Namespace()})
 
-		err := query.ForEachPod(func(p corev1.Pod) { assertOTLPEnvVarsPresentWithResourceAttributes(t, &p, expectedBase) })
+		err := query.ForEachPod(func(p *corev1.Pod) { assertOTLPEnvVarsPresentWithResourceAttributes(t, p, expectedBase) })
 		require.NoError(t, err)
 
 		return ctx
@@ -157,7 +157,7 @@ func deploymentPodsHaveOTLPExporterEnvVarsInjected(app *sample.App, expectedBase
 func deploymentPodsHaveNoOTLPExporterEnvVarsInjected(app *sample.App, _ string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		query := k8sdeployment.NewQuery(ctx, envConfig.Client().Resources(), client.ObjectKey{Name: app.Name(), Namespace: app.Namespace()})
-		err := query.ForEachPod(func(p corev1.Pod) { assertOTLPEnvVarsAbsent(t, &p) })
+		err := query.ForEachPod(func(p *corev1.Pod) { assertOTLPEnvVarsAbsent(t, p) })
 		require.NoError(t, err)
 
 		return ctx

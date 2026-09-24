@@ -12,7 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/sanitize"
 )
 
-func getInitArgs(dk dynakube.DynaKube) []string {
+func getInitArgs(dk *dynakube.DynaKube) []string {
 	baseArgs := []string{
 		fmt.Sprintf("-p k8s.cluster.uid=$(%s)", clusterUIDEnv),
 		fmt.Sprintf("-p k8s.node.name=$(%s)", nodeNameEnv),

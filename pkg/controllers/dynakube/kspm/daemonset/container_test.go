@@ -21,7 +21,7 @@ func TestGetContainer(t *testing.T) {
 	tenant := "test-tenant"
 
 	t.Run("get main container", func(t *testing.T) {
-		dk := dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				KSPM: &kspm.Spec{},
 			},
@@ -46,7 +46,7 @@ func TestGetContainer(t *testing.T) {
 
 	// the image itself comes from the status, see TestImageResolution
 	t.Run("pull policy is taken from the image-ref", func(t *testing.T) {
-		dk := dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				KSPM: &kspm.Spec{},
 			},

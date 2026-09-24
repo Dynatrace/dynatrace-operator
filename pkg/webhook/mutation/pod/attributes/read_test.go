@@ -573,21 +573,21 @@ func TestGetFromEnrichmentRulesPrecedence(t *testing.T) {
 func TestGetMetadataAnnotations(t *testing.T) {
 	t.Run("collects namespace, workload and pod annotations, and enrichment rules", func(t *testing.T) {
 		attrs := newPodAttrs()
-		ns := corev1.Namespace{
+		ns := &corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{metadataenrichment.Prefix + "ns-key": "ns-val"},
 				Labels:      map[string]string{"env": "prod"},
 			},
 		}
-		pod := corev1.Pod{
+		pod := &corev1.Pod{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{metadataenrichment.Prefix + "pod-key": "pod-val"},
 			},
 		}
-		workloadInfo := workload.Info{
+		workloadInfo := &workload.Info{
 			Annotations: map[string]string{metadataenrichment.Prefix + "workload-key": "workload-val"},
 		}
-		dk := dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			Status: dynakube.DynaKubeStatus{
 				MetadataEnrichment: metadataenrichment.Status{
 					Rules: []metadataenrichment.Rule{
@@ -597,7 +597,7 @@ func TestGetMetadataAnnotations(t *testing.T) {
 			},
 		}
 
-		attrs.readMetadataAnnotations(dtwebhook.BaseRequest{Pod: &pod, Namespace: ns, DynaKube: dk}, &workloadInfo)
+		attrs.readMetadataAnnotations(dtwebhook.BaseRequest{Pod: pod, Namespace: ns, DynaKube: dk}, workloadInfo)
 
 		assert.Equal(t, "ns-val", attrs.namespaceAnnotations["ns-key"])
 		assert.Equal(t, "workload-val", attrs.workloadAnnotations["workload-key"])
@@ -813,12 +813,12 @@ func createTestMutationRequest(t *testing.T, dk *dynakube.DynaKube, annotations 
 
 	return dtwebhook.NewMutationRequest(
 		t.Context(),
-		*getTestNamespace(dk),
+		getTestNamespace(dk),
 		&corev1.Container{
 			Name: dtwebhook.InstallContainerName,
 		},
 		getTestPod(annotations),
-		*dk,
+		dk,
 	)
 }
 
@@ -894,7 +894,7 @@ func TestReadWorkloadInfoAttributes(t *testing.T) {
 		}
 		request := dtwebhook.BaseRequest{
 			Pod:       &pod,
-			Namespace: corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "my-ns"}},
+			Namespace: &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "my-ns"}},
 		}
 
 		workloadInfo, err := attrs.readWorkloadInfoAttributes(ctx, request, fake.NewClient())
@@ -931,7 +931,7 @@ func TestReadWorkloadInfoAttributes(t *testing.T) {
 		}
 		request := dtwebhook.BaseRequest{
 			Pod:       &pod,
-			Namespace: corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "my-ns"}},
+			Namespace: &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "my-ns"}},
 		}
 
 		workloadInfo, err := attrs.readWorkloadInfoAttributes(ctx, request, fake.NewClient(&daemonSet))
@@ -958,7 +958,7 @@ func TestReadWorkloadInfoAttributes(t *testing.T) {
 		}
 		request := dtwebhook.BaseRequest{
 			Pod:       &pod,
-			Namespace: corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "my-ns"}},
+			Namespace: &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "my-ns"}},
 		}
 		failClient := fake.NewClientWithInterceptors(interceptor.Funcs{
 			Get: func(ctx context.Context, c client.WithWatch, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
@@ -979,7 +979,7 @@ func TestReadPodAttributes(t *testing.T) {
 			Pod: &corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{Namespace: "my-ns"},
 			},
-			DynaKube: dynakube.DynaKube{},
+			DynaKube: &dynakube.DynaKube{},
 		}
 
 		attrs.readPodAttributes(request)
@@ -1008,7 +1008,7 @@ func TestReadPodAttributes(t *testing.T) {
 			Pod: &corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{Namespace: "my-ns"},
 			},
-			DynaKube: dynakube.DynaKube{},
+			DynaKube: &dynakube.DynaKube{},
 		}
 
 		attrs.readPodAttributes(request)
@@ -1023,7 +1023,7 @@ func TestReadPodAttributes(t *testing.T) {
 		attrs := newPodAttrs()
 		request := dtwebhook.BaseRequest{
 			Pod: &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Namespace: "ns"}},
-			DynaKube: dynakube.DynaKube{
+			DynaKube: &dynakube.DynaKube{
 				Status: dynakube.DynaKubeStatus{
 					KubeSystemUUID:        "uid-123",
 					KubernetesClusterName: "my-cluster",

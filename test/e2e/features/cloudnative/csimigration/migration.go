@@ -38,15 +38,15 @@ func Feature(t *testing.T) features.Feature {
 	builder := features.New("cloudnative-csi-migration")
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
-	testDynakube := *dynakubeComponents.New(
+	testDynakube := dynakubeComponents.New(
 		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
 		dynakubeComponents.WithCloudNativeSpec(cloudnative.DefaultCloudNativeSpec()),
 	)
 
-	sampleApp := sample.NewApp(t, &testDynakube, sample.AsDeployment())
+	sampleApp := sample.NewApp(t, testDynakube, sample.AsDeployment())
 	builder.Assess("create sample namespace", sampleApp.InstallNamespace())
 
-	dynakubeComponents.Install(builder, &secretConfig, testDynakube)
+	dynakubeComponents.Install(builder, secretConfig, testDynakube)
 	builder.Assess("install sample app", sampleApp.Install())
 
 	// Phase 1: verify CSI injection is active before migration.

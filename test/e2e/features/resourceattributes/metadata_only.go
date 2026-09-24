@@ -18,16 +18,16 @@ func MetadataOnly(t *testing.T) features.Feature {
 	secretConfig := tenant.GetSingleTenantSecret(t)
 	ns := "resource-attributes-metadata-only"
 
-	testDynakube := *dynakubeComponents.New(
+	testDynakube := dynakubeComponents.New(
 		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
 		dynakubeComponents.WithMetadataEnrichment(),
 		dynakubeComponents.WithNameBasedMetadataEnrichmentNamespaceSelector(),
 		dynakubeComponents.WithResourceAttributes(globalAttrs),
 	)
 
-	sampleApp := newSampleApp(t, &testDynakube, ns, testDynakube.MetadataEnrichment().GetNamespaceSelector().MatchLabels)
+	sampleApp := newSampleApp(t, testDynakube, ns, testDynakube.MetadataEnrichment().GetNamespaceSelector().MatchLabels)
 
-	dynakubeComponents.Install(builder, &secretConfig, testDynakube)
+	dynakubeComponents.Install(builder, secretConfig, testDynakube)
 	installSampleApp(builder, sampleApp)
 
 	builder.Assess("initcontainer contains args with additionalAttributes", assessInitContainerArgs(sampleApp, globalAttrs))

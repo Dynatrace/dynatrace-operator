@@ -19,7 +19,7 @@ const (
 	tokenEnv              = "DT_K8S_NODE_CONFIGURATION_COLLECTOR_TOKEN"
 )
 
-func getEnvs(dk dynakube.DynaKube, tenantUUID string) []corev1.EnvVar {
+func getEnvs(dk *dynakube.DynaKube, tenantUUID string) []corev1.EnvVar {
 	envs := []corev1.EnvVar{
 		{
 			Name: nodeNameEnv,
@@ -48,7 +48,7 @@ func getEnvs(dk dynakube.DynaKube, tenantUUID string) []corev1.EnvVar {
 	return envs
 }
 
-func getActiveGateEndpointTemplate(dk dynakube.DynaKube, tenantUUID string) string {
+func getActiveGateEndpointTemplate(dk *dynakube.DynaKube, tenantUUID string) string {
 	activeGateEndpointTemplate := "https://%s.%s/e/%s/api/v2/kubernetes/node-config"
 
 	serviceName := capability.BuildServiceName(dk.Name)

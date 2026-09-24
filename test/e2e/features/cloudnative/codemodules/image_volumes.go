@@ -25,16 +25,16 @@ func ImageVolume(t *testing.T) features.Feature {
 	builder := features.New("cnfs-codemodules-with-image-volumes")
 	secretConfig := tenant.GetSingleTenantSecret(t)
 	cnfsSpec := codeModulesCloudNativeSpec(t)
-	cloudNativeDynakube := *dynakubeComponents.New(
+	cloudNativeDynakube := dynakubeComponents.New(
 		dynakubeComponents.WithName("codemodules-image-volumes"),
 		dynakubeComponents.WithAnnotations(map[string]string{exp.OAImageVolumeKey: "true"}),
 		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
 		dynakubeComponents.WithCloudNativeSpec(cnfsSpec),
 	)
 
-	dynakubeComponents.Install(builder, &secretConfig, cloudNativeDynakube)
+	dynakubeComponents.Install(builder, secretConfig, cloudNativeDynakube)
 
-	sampleApp := sample.NewApp(t, &cloudNativeDynakube, sample.AsDeployment())
+	sampleApp := sample.NewApp(t, cloudNativeDynakube, sample.AsDeployment())
 	builder.Assess("install sample app", sampleApp.Install())
 	builder.Assess("check injection with image volume of additional pod", codemodules.CheckImageVolumeInjection(sampleApp, cnfsSpec.CodeModulesImage))
 	builder.Teardown(sampleApp.Uninstall())

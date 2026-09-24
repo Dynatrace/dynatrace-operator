@@ -227,9 +227,8 @@ func TestAddConfigVolume(t *testing.T) {
 func TestAddConfigVolumeMount(t *testing.T) {
 	t.Run("should add common config volume mount if split mounts is disabled", func(t *testing.T) {
 		container := &corev1.Container{Name: "test-container"}
-		dk := dynakube.DynaKube{}
 		request := &dtwebhook.BaseRequest{
-			DynaKube: dk,
+			DynaKube: &dynakube.DynaKube{},
 			Pod:      &corev1.Pod{},
 		}
 
@@ -241,7 +240,7 @@ func TestAddConfigVolumeMount(t *testing.T) {
 
 	t.Run("should add split mounts for oneagent if split mounts is enabled", func(t *testing.T) {
 		container := &corev1.Container{Name: "test-container"}
-		dk := dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				OneAgent: oneagent.Spec{
 					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{},
@@ -270,7 +269,7 @@ func TestAddConfigVolumeMount(t *testing.T) {
 
 	t.Run("should add split mounts for both if split mounts is enabled", func(t *testing.T) {
 		container := &corev1.Container{Name: "test-container"}
-		dk := dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				OneAgent: oneagent.Spec{
 					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{},
@@ -302,7 +301,7 @@ func TestAddConfigVolumeMount(t *testing.T) {
 
 	t.Run("should add split mounts for metadataenrichment if enabled", func(t *testing.T) {
 		container := &corev1.Container{Name: "test-container"}
-		dk := dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				MetadataEnrichment: metadataenrichment.Spec{
 					Enabled: new(true),
@@ -330,7 +329,7 @@ func TestAddConfigVolumeMount(t *testing.T) {
 
 	t.Run("should add split mounts for metadataenrichment if classicFullStack is enabled", func(t *testing.T) {
 		container := &corev1.Container{Name: "test-container"}
-		dk := dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				OneAgent: oneagent.Spec{
 					ClassicFullStack: &oneagent.HostInjectSpec{},

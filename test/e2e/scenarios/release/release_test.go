@@ -93,11 +93,3 @@ func TestRelease_manifest_upgrade_19(t *testing.T) {
 func TestRelease_manifest_upgrade_18(t *testing.T) {
 	testEnv.Test(t, upgrade.ManifestFeature(t, releaseTag18))
 }
-
-func TestRelease_manifest_upgrade_17(t *testing.T) {
-	testEnv.Test(t, upgrade.ManifestFeature(t, releaseTag17))
-}
-
-func TestRelease_manifest_upgrade_16(t *testing.T) {
-	testEnv.Test(t, upgrade.ManifestFeature(t, releaseTag16))
-}

@@ -115,8 +115,8 @@ func assertNotContainsMappings(t *testing.T, unexpectedMappingKeys []string, con
 	}
 }
 
-func getTestNamespace(annotations map[string]string) corev1.Namespace {
-	return corev1.Namespace{
+func getTestNamespace(annotations map[string]string) *corev1.Namespace {
+	return &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        "test-ns",
 			Labels:      map[string]string{},

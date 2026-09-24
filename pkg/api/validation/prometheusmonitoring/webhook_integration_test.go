@@ -105,7 +105,7 @@ func newTestPrometheusMonitoring(name string) *prometheusmonitoring.PrometheusMo
 			Namespace: metav1.NamespaceDefault,
 		},
 		Spec: prometheusmonitoring.PrometheusMonitoringSpec{
-			DynaKubeRef: "test-dynakube",
+			DynaKubeName: "test-dynakube",
 		},
 	}
 }

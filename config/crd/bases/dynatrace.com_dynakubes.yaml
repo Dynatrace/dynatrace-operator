@@ -6452,6 +6452,10 @@ spec:
                         additionalProperties:
                           type: string
                         type: object
+                      args:
+                        items:
+                          type: string
+                        type: array
                       imageRef:
                         properties:
                           digest:

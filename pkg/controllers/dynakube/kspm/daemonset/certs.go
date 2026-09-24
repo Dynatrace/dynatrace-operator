@@ -15,7 +15,7 @@ const (
 	certFileEnv    = "DT_CA_CERTIFICATE_FILE"
 )
 
-func getCertVolume(dk dynakube.DynaKube) corev1.Volume {
+func getCertVolume(dk *dynakube.DynaKube) corev1.Volume {
 	secretName := dk.ActiveGate().GetTLSSecretName()
 	if dk.IsKubemonEnabled() {
 		secretName = dk.KubernetesMonitoring().GetTLSSecretName()

@@ -68,7 +68,7 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 			},
 		}
 
-		namespace := corev1.Namespace{
+		namespace := &corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: namespaceName,
 			},
@@ -76,7 +76,7 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 
 		request := mutator.BaseRequest{Pod: &pod, Namespace: namespace}
 
-		client := fake.NewClient(&pod, &deployment, &daemonSet, &namespace)
+		client := fake.NewClient(&pod, &deployment, &daemonSet, namespace)
 
 		workloadInfo, err := FindRootOwnerOfPod(ctx, client, request)
 		require.NoError(t, err)
@@ -95,7 +95,7 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 			},
 		}
 
-		namespace := corev1.Namespace{
+		namespace := &corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: namespaceName,
 			},
@@ -134,7 +134,7 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 			},
 		}
 
-		namespace := corev1.Namespace{
+		namespace := &corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: namespaceName,
 			},
@@ -168,7 +168,7 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 			},
 		}
 
-		namespace := corev1.Namespace{
+		namespace := &corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: namespaceName,
 			},
@@ -227,7 +227,7 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 			},
 		}
 
-		namespace := corev1.Namespace{
+		namespace := &corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: namespaceName,
 			},
@@ -235,7 +235,7 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 
 		request := mutator.BaseRequest{Pod: &pod, Namespace: namespace}
 
-		client := fake.NewClient(&pod, &deployment, &secret, &namespace)
+		client := fake.NewClient(&pod, &deployment, &secret, namespace)
 
 		workloadInfo, err := FindRootOwnerOfPod(ctx, client, request)
 		require.NoError(t, err)
@@ -258,7 +258,7 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 			},
 		}
 
-		namespace := corev1.Namespace{
+		namespace := &corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: namespaceName,
 			},
@@ -306,7 +306,7 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 		}
 		require.NoError(t, controllerutil.SetControllerReference(replicaSet, pod, scheme.Scheme))
 
-		request := mutator.BaseRequest{Pod: pod, Namespace: corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: namespaceName}}}
+		request := mutator.BaseRequest{Pod: pod, Namespace: &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: namespaceName}}}
 
 		client := fake.NewClient(deployment, replicaSet, pod)
 
@@ -333,7 +333,7 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 			},
 		}
 
-		namespace := corev1.Namespace{
+		namespace := &corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: namespaceName,
 			},

@@ -23,7 +23,7 @@ func TestGetContainer(t *testing.T) {
 	tenantUUID := "test-uuid"
 
 	t.Run("get main container", func(t *testing.T) {
-		dk := dynakube.DynaKube{}
+		dk := &dynakube.DynaKube{}
 		mainContainer := getContainer(dk, tenantUUID, "")
 
 		require.NotEmpty(t, mainContainer)
@@ -42,7 +42,7 @@ func TestGetContainer(t *testing.T) {
 	t.Run("image-ref is respected", func(t *testing.T) {
 		expectedRepo := "my-test-repo"
 		expectedTag := "my-test-tag"
-		dk := dynakube.DynaKube{}
+		dk := &dynakube.DynaKube{}
 		dk.Spec.Templates.LogMonitoring = &logmonitoring.TemplateSpec{
 			ImageRef: image.Ref{
 				Repository: expectedRepo,
@@ -65,7 +65,7 @@ func TestGetContainer(t *testing.T) {
 			corev1.ResourceCPU:    resource.MustParse("200m"),
 			corev1.ResourceMemory: resource.MustParse("256Mi"),
 		}
-		dk := dynakube.DynaKube{}
+		dk := &dynakube.DynaKube{}
 		dk.Spec.Templates.LogMonitoring = &logmonitoring.TemplateSpec{
 			Resources: corev1.ResourceRequirements{
 				Requests: requests,
@@ -87,7 +87,7 @@ func TestGetInitContainer(t *testing.T) {
 	tenantUUID := "test-uuid"
 
 	t.Run("get main container", func(t *testing.T) {
-		dk := dynakube.DynaKube{}
+		dk := &dynakube.DynaKube{}
 		dk.Status.KubernetesClusterMEID = "test-me-id"
 		dk.Status.KubernetesClusterName = "test-cluster-name"
 
@@ -111,7 +111,7 @@ func TestGetInitContainer(t *testing.T) {
 	t.Run("image-ref is respected", func(t *testing.T) {
 		expectedRepo := "my-test-repo"
 		expectedTag := "my-test-tag"
-		dk := dynakube.DynaKube{}
+		dk := &dynakube.DynaKube{}
 		dk.Spec.Templates.LogMonitoring = &logmonitoring.TemplateSpec{
 			ImageRef: image.Ref{
 				Repository: expectedRepo,
@@ -134,7 +134,7 @@ func TestGetInitContainer(t *testing.T) {
 			corev1.ResourceCPU:    resource.MustParse("200m"),
 			corev1.ResourceMemory: resource.MustParse("256Mi"),
 		}
-		dk := dynakube.DynaKube{}
+		dk := &dynakube.DynaKube{}
 		dk.Spec.Templates.LogMonitoring = &logmonitoring.TemplateSpec{
 			Resources: corev1.ResourceRequirements{
 				Requests: requests,
@@ -150,7 +150,7 @@ func TestGetInitContainer(t *testing.T) {
 	})
 
 	t.Run("get main container without the use of metadata", func(t *testing.T) {
-		dk := dynakube.DynaKube{}
+		dk := &dynakube.DynaKube{}
 		initContainer := getInitContainer(dk, tenantUUID, "")
 
 		require.NotEmpty(t, initContainer)
@@ -168,7 +168,7 @@ func TestSecurityContext(t *testing.T) {
 	tenantUUID := "test-uuid"
 
 	t.Run("get base securityContext", func(t *testing.T) {
-		dk := dynakube.DynaKube{}
+		dk := &dynakube.DynaKube{}
 		sc := getBaseSecurityContext(dk)
 
 		require.NotNil(t, sc)
@@ -187,7 +187,7 @@ func TestSecurityContext(t *testing.T) {
 
 	t.Run("set seccomp is present", func(t *testing.T) {
 		expectedSeccomp := "test-seccomp"
-		dk := dynakube.DynaKube{}
+		dk := &dynakube.DynaKube{}
 		dk.Spec.Templates.LogMonitoring = &logmonitoring.TemplateSpec{SecCompProfile: expectedSeccomp}
 		sc := getBaseSecurityContext(dk)
 
@@ -200,7 +200,7 @@ func TestSecurityContext(t *testing.T) {
 	})
 
 	t.Run("main and init container securityContext differ only in capabilities", func(t *testing.T) {
-		dk := dynakube.DynaKube{}
+		dk := &dynakube.DynaKube{}
 		initContainer := getInitContainer(dk, tenantUUID, "")
 		mainContainer := getContainer(dk, tenantUUID, "")
 
@@ -214,7 +214,7 @@ func TestSecurityContext(t *testing.T) {
 	})
 
 	t.Run("ocp scenario, OA needs to be privileged", func(t *testing.T) {
-		dk := dynakube.DynaKube{}
+		dk := &dynakube.DynaKube{}
 		dk.Annotations = map[string]string{
 			exp.OAPrivilegedKey: "true",
 		}
@@ -227,7 +227,7 @@ func TestSecurityContext(t *testing.T) {
 		assert.True(t, *sc.AllowPrivilegeEscalation)
 	})
 
-	appArmorDK := dynakube.DynaKube{
+	appArmorDK := &dynakube.DynaKube{
 		Spec: dynakube.DynaKubeSpec{
 			Templates: dynakube.TemplatesSpec{
 				LogMonitoring: &logmonitoring.TemplateSpec{

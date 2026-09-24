@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -24,26 +23,6 @@ var podSpec = corev1.PodSpec{
 			Name: containerName,
 		},
 	},
-}
-
-var pod = corev1.Pod{
-	ObjectMeta: metav1.ObjectMeta{
-		Name: podName,
-	},
-	Spec: podSpec,
-}
-
-func TestFindInPod(t *testing.T) {
-	t.Run("container is found in pod", func(t *testing.T) {
-		containerInPod, err := FindInPod(pod, containerName)
-		require.NoError(t, err)
-		require.NotNil(t, containerInPod)
-	})
-	t.Run("container is not found in pod", func(t *testing.T) {
-		containerInPod, err := FindInPod(pod, doNotFindName)
-		require.Error(t, err)
-		require.Nil(t, containerInPod)
-	})
 }
 
 func TestFindInPodSpec(t *testing.T) {

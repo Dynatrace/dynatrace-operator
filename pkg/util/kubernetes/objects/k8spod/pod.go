@@ -25,7 +25,7 @@ func Get(ctx context.Context, clt client.Reader, name, namespace string) (*corev
 
 // GetName returns the name of the pod.
 // During the webhook injection the pod.Name is not always set yet, in which case it returns the pod.GeneraName
-func GetName(pod corev1.Pod) string {
+func GetName(pod *corev1.Pod) string {
 	if pod.Name != "" {
 		return pod.Name
 	}

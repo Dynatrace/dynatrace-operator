@@ -28,7 +28,7 @@ func FeatureSplitAG(t *testing.T) features.Feature {
 
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
-	testDynakube := *componentDynakube.New(
+	testDynakube := componentDynakube.New(
 		componentDynakube.WithAPIURL(secretConfig.APIURL),
 		componentDynakube.WithActiveGateModules(
 			activegate.RoutingCapability.DisplayName,
@@ -37,10 +37,10 @@ func FeatureSplitAG(t *testing.T) features.Feature {
 		componentDynakube.WithKubernetesMonitoringRegistration(),
 	)
 
-	componentDynakube.Install(builder, &secretConfig, testDynakube)
+	componentDynakube.Install(builder, secretConfig, testDynakube)
 
 	builder.Assess("generic activegate statefulset is ready",
-		k8sstatefulset.IsReady(agHelper.GetActiveGateStateFulSetName(&testDynakube), testDynakube.Namespace))
+		k8sstatefulset.IsReady(agHelper.GetActiveGateStateFulSetName(testDynakube), testDynakube.Namespace))
 
 	builder.Assess("kubemon statefulset is ready",
 		k8sstatefulset.IsReady(testDynakube.KubernetesMonitoring().GetStatefulSetName(), testDynakube.Namespace))
@@ -79,7 +79,7 @@ func FeatureSplitAG(t *testing.T) features.Feature {
 		componentDynakube.WaitForConditionAbsent(testDynakube, kubemon.KubeMonAvailableConditionType))
 
 	builder.Assess("generic activegate statefulset is still ready",
-		k8sstatefulset.IsReady(agHelper.GetActiveGateStateFulSetName(&testDynakube), testDynakube.Namespace))
+		k8sstatefulset.IsReady(agHelper.GetActiveGateStateFulSetName(testDynakube), testDynakube.Namespace))
 
 	return builder.Feature()
 }
@@ -89,12 +89,12 @@ func FeatureRestartTriggers(t *testing.T) features.Feature {
 
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
-	testDynakube := *componentDynakube.New(
+	testDynakube := componentDynakube.New(
 		componentDynakube.WithAPIURL(secretConfig.APIURL),
 		componentDynakube.WithKubernetesMonitoringRegistration(),
 	)
 
-	componentDynakube.Install(builder, &secretConfig, testDynakube)
+	componentDynakube.Install(builder, secretConfig, testDynakube)
 
 	builder.Assess("kubemon statefulset is ready",
 		k8sstatefulset.IsReady(testDynakube.KubernetesMonitoring().GetStatefulSetName(), testDynakube.Namespace))

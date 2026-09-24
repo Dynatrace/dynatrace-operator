@@ -318,7 +318,7 @@ func TestNoProxyInjector_Inject(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			dk := makeDynakube(tt.args.activeGateEnabled, tt.args.featureFlagDisabled, tt.expectMutated)
 
-			inj := &noProxyInjector{dk: *dk}
+			inj := &noProxyInjector{dk: dk}
 
 			c := &corev1.Container{}
 
