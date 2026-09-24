@@ -73,7 +73,7 @@ func newSampleApp(t *testing.T, dk *dynakube.DynaKube, ns string, labels map[str
 
 	return sample.NewApp(t, dk,
 		sample.WithName(sampleAppName),
-		sample.WithNamespace(*k8snamespace.New(ns)),
+		sample.WithNamespace(k8snamespace.New(ns)),
 		sample.AsDeployment(),
 		sample.WithNamespaceLabels(labels),
 	)
@@ -108,7 +108,7 @@ func assessInitContainerArgs(app *sample.App, expected map[string]string) featur
 	}
 }
 
-func assessDTMetadataFiles(dk dynakube.DynaKube, app *sample.App, expected map[string]string) features.Func {
+func assessDTMetadataFiles(dk *dynakube.DynaKube, app *sample.App, expected map[string]string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resource := envConfig.Client().Resources()
 		pod := app.GetPod(ctx, t, resource)
@@ -138,7 +138,7 @@ func assessDTMetadataFiles(dk dynakube.DynaKube, app *sample.App, expected map[s
 	}
 }
 
-func assessDTNodeMetadataProperties(dk dynakube.DynaKube, expected map[string]string) features.Func {
+func assessDTNodeMetadataProperties(dk *dynakube.DynaKube, expected map[string]string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		r := envConfig.Client().Resources()
 		q := k8sdaemonset.NewQuery(ctx, r, client.ObjectKey{
@@ -148,7 +148,7 @@ func assessDTNodeMetadataProperties(dk dynakube.DynaKube, expected map[string]st
 
 		expectedDefaults := buildExpectedNodeDefaults(ctx, t, envConfig, dk)
 		forbidden := forbiddenAttrs(expected)
-		err := q.ForEachPod(func(pod corev1.Pod) {
+		err := q.ForEachPod(func(pod *corev1.Pod) {
 			properties := metadataenrichment.GetNodeMetadataPropertiesFromPod(ctx, t, r, pod)
 			for k, v := range expected {
 				assert.Equalf(t, v, properties[k], "dt_node_metadata.properties key %q in pod %s", k, pod.Name)
@@ -166,12 +166,12 @@ func assessDTNodeMetadataProperties(dk dynakube.DynaKube, expected map[string]st
 	}
 }
 
-func assessOTLPInjectionAttributes(dk dynakube.DynaKube, app *sample.App, expected map[string]string) features.Func {
+func assessOTLPInjectionAttributes(dk *dynakube.DynaKube, app *sample.App, expected map[string]string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resource := envConfig.Client().Resources()
 		query := k8sdeployment.NewQuery(ctx, resource, client.ObjectKey{Name: app.Name(), Namespace: app.Namespace()})
 
-		err := query.ForEachPod(func(p corev1.Pod) {
+		err := query.ForEachPod(func(p *corev1.Pod) {
 			require.NotEmptyf(t, p.Spec.Containers, "pod %s has no containers", p.Name)
 			gotAttrs, ok := resourceattributes.NewAttributesFromEnv(p.Spec.Containers[0].Env, resourceattributes.OTelResourceAttributesEnv)
 			require.Truef(t, ok, "OTEL_RESOURCE_ATTRIBUTES missing on pod %s", p.Name)
@@ -201,7 +201,7 @@ func assessOTLPInjectionAttributesAbsent(app *sample.App) features.Func {
 		resource := envConfig.Client().Resources()
 		query := k8sdeployment.NewQuery(ctx, resource, client.ObjectKey{Name: app.Name(), Namespace: app.Namespace()})
 
-		err := query.ForEachPod(func(p corev1.Pod) {
+		err := query.ForEachPod(func(p *corev1.Pod) {
 			require.NotEmptyf(t, p.Spec.Containers, "pod %s has no containers", p.Name)
 			_, ok := resourceattributes.NewAttributesFromEnv(p.Spec.Containers[0].Env, resourceattributes.OTelResourceAttributesEnv)
 			assert.Falsef(t, ok, "%s must be absent on pod %s when OTLP is not configured", resourceattributes.OTelResourceAttributesEnv, p.Name)
@@ -250,7 +250,7 @@ func forbiddenAttrs(expected map[string]string) map[string]string {
 	return forbidden
 }
 
-func buildExpectedOTLPDefaults(ctx context.Context, t *testing.T, envConfig *envconf.Config, dk dynakube.DynaKube, app *sample.App) map[string]string {
+func buildExpectedOTLPDefaults(ctx context.Context, t *testing.T, envConfig *envconf.Config, dk *dynakube.DynaKube, app *sample.App) map[string]string {
 	expectedDefaults := make(map[string]string)
 	maps.Copy(expectedDefaults, buildExpectedDefaults(ctx, t, envConfig, dk, app))
 	maps.Copy(expectedDefaults, buildExpectedPodDefaultsOTLP())
@@ -258,7 +258,7 @@ func buildExpectedOTLPDefaults(ctx context.Context, t *testing.T, envConfig *env
 	return expectedDefaults
 }
 
-func buildExpectedMetadataEnrichmentDefaults(ctx context.Context, t *testing.T, envConfig *envconf.Config, dk dynakube.DynaKube, app *sample.App) map[string]string {
+func buildExpectedMetadataEnrichmentDefaults(ctx context.Context, t *testing.T, envConfig *envconf.Config, dk *dynakube.DynaKube, app *sample.App) map[string]string {
 	expectedDefaults := make(map[string]string)
 	maps.Copy(expectedDefaults, buildExpectedDefaults(ctx, t, envConfig, dk, app))
 	maps.Copy(expectedDefaults, buildExpectedPodDefaultsMetadataEnrichment(ctx, t, envConfig, app))
@@ -266,10 +266,10 @@ func buildExpectedMetadataEnrichmentDefaults(ctx context.Context, t *testing.T, 
 	return expectedDefaults
 }
 
-func buildExpectedDefaults(ctx context.Context, t *testing.T, envConfig *envconf.Config, dk dynakube.DynaKube, app *sample.App) map[string]string {
+func buildExpectedDefaults(ctx context.Context, t *testing.T, envConfig *envconf.Config, dk *dynakube.DynaKube, app *sample.App) map[string]string {
 	expectedDefaults := make(map[string]string)
 
-	err := envConfig.Client().Resources().Get(ctx, dk.Name, dk.Namespace, &dk)
+	err := envConfig.Client().Resources().Get(ctx, dk.Name, dk.Namespace, dk)
 	require.NoError(t, err)
 
 	expectedDefaults["k8s.workload.kind"] = app.Kind()
@@ -283,8 +283,8 @@ func buildExpectedDefaults(ctx context.Context, t *testing.T, envConfig *envconf
 	return expectedDefaults
 }
 
-func buildExpectedNodeDefaults(ctx context.Context, t *testing.T, envConfig *envconf.Config, dk dynakube.DynaKube) map[string]string {
-	err := envConfig.Client().Resources().Get(ctx, dk.Name, dk.Namespace, &dk)
+func buildExpectedNodeDefaults(ctx context.Context, t *testing.T, envConfig *envconf.Config, dk *dynakube.DynaKube) map[string]string {
+	err := envConfig.Client().Resources().Get(ctx, dk.Name, dk.Namespace, dk)
 	require.NoError(t, err)
 
 	return map[string]string{

@@ -36,7 +36,7 @@ func Feature(t *testing.T) features.Feature {
 
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
-	dk := *dynakube.New(
+	dk := dynakube.New(
 		dynakube.WithAPIURL(secretConfig.APIURL),
 	)
 
@@ -67,7 +67,7 @@ func Feature(t *testing.T) features.Feature {
 
 	enablePrometheus(builder)
 
-	dynakube.Install(builder, &secretConfig, dk)
+	dynakube.Install(builder, secretConfig, dk)
 
 	builder.Assess("created PrometheusMonitoring", k8sobject.Create(pm))
 	builder.Assess("PrometheusMonitoring becomes ready", waitForPhase(pm, status.Running))
@@ -117,7 +117,7 @@ func PublicRegistry(t *testing.T) features.Feature {
 
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
-	dk := *dynakube.New(
+	dk := dynakube.New(
 		dynakube.WithAPIURL(secretConfig.APIURL),
 		dynakube.WithCustomPullSecret(consts.DevRegistryPullSecretName),
 	)
@@ -134,7 +134,7 @@ func PublicRegistry(t *testing.T) features.Feature {
 
 	enablePrometheus(builder)
 
-	dynakube.Install(builder, &secretConfig, dk)
+	dynakube.Install(builder, secretConfig, dk)
 
 	builder.Assess("created PrometheusMonitoring", k8sobject.Create(pm))
 	builder.Assess("PrometheusMonitoring becomes ready", waitForPhase(pm, status.Running))

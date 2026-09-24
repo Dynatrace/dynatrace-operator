@@ -48,8 +48,8 @@ func (ec *EdgeConnect) IsK8SAutomationEnabled() bool {
 	return ec.Spec.KubernetesAutomation != nil && ec.Spec.KubernetesAutomation.Enabled
 }
 
-func (ec *EdgeConnect) EmptyPullSecret() corev1.Secret {
-	return corev1.Secret{
+func (ec *EdgeConnect) EmptyPullSecret() *corev1.Secret {
+	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      ec.Spec.CustomPullSecret,
 			Namespace: ec.Namespace,

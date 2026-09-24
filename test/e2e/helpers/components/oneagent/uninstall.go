@@ -33,14 +33,14 @@ var (
 	uninstallOneAgentDaemonSetPath = filepath.Join(project.TestDataDir(), "oneagent/uninstall-oneagent.yaml")
 )
 
-func RunClassicUninstall(builder *features.FeatureBuilder, level features.Level, testDynakube dynakube.DynaKube) {
+func RunClassicUninstall(builder *features.FeatureBuilder, level features.Level, testDynakube *dynakube.DynaKube) {
 	builder.WithStep("clean up OneAgent files from nodes", level, createUninstallDaemonSet(testDynakube))
 	builder.WithStep("wait for daemonset", level, waitForUninstallDaemonset(testDynakube.Namespace))
 	builder.WithStep("OneAgent files removed from nodes", level, executeUninstall(testDynakube.Namespace))
 	builder.WithStep("clean up removed", level, removeUninstallDaemonset(testDynakube.Namespace))
 }
 
-func createUninstallDaemonSet(dk dynakube.DynaKube) features.Func {
+func createUninstallDaemonSet(dk *dynakube.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		uninstallDaemonSet := manifests.ObjectFromFile[*appsv1.DaemonSet](t, uninstallOneAgentDaemonSetPath)
 		uninstallDaemonSet.Namespace = dk.Namespace
@@ -73,7 +73,7 @@ func removeUninstallDaemonset(namespace string) features.Func {
 }
 
 func cleanUpNodeConsumer(ctx context.Context, t *testing.T, resource *resources.Resources) k8sdaemonset.PodConsumer {
-	return func(pod corev1.Pod) {
+	return func(pod *corev1.Pod) {
 		stdOut := bytes.NewBuffer([]byte{})
 		stdErr := bytes.NewBuffer([]byte{})
 		if err := resource.ExecInPod(ctx, pod.Namespace, pod.Name, "uninstall-oneagent", []string{"/bin/sh", "-c", "chroot /mnt/root /opt/dynatrace/oneagent/agent/uninstall.sh"}, stdOut, stdErr); err != nil {

@@ -37,31 +37,31 @@ func Feature(t *testing.T) features.Feature {
 		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
 	}
 
-	dynakubeClassicFullStack := *dynakubeComponents.New(
+	dynakubeClassicFullStack := dynakubeComponents.New(
 		append(commonOptions, dynakubeComponents.WithClassicFullStackSpec(&oneagent.HostInjectSpec{}))...,
 	)
 
-	sampleAppClassic := sample.NewApp(t, &dynakubeClassicFullStack,
+	sampleAppClassic := sample.NewApp(t, dynakubeClassicFullStack,
 		sample.AsDeployment(),
 		sample.WithName(sampleAppsClassicName),
 	)
-	dynakubeComponents.Install(builder, &secretConfig, dynakubeClassicFullStack)
+	dynakubeComponents.Install(builder, secretConfig, dynakubeClassicFullStack)
 	builder.Assess("install sample app", sampleAppClassic.Install())
 
 	// change dynakube to cloud native
-	dynakubeCloudNative := *dynakubeComponents.New(
+	dynakubeCloudNative := dynakubeComponents.New(
 		append(commonOptions, dynakubeComponents.WithCloudNativeSpec(cloudnative.DefaultCloudNativeSpec()))...,
 	)
 
 	dynakubeComponents.Delete(builder, helpers.LevelAssess, dynakubeClassicFullStack)
 	oneagenthelper.RunClassicUninstall(builder, helpers.LevelAssess, dynakubeClassicFullStack)
-	sampleAppCloudNative := sample.NewApp(t, &dynakubeCloudNative,
+	sampleAppCloudNative := sample.NewApp(t, dynakubeCloudNative,
 		sample.AsDeployment(),
 		sample.WithName(sampleAppsCloudNativeName),
 	)
 	builder.Assess("create sample app namespace", sampleAppCloudNative.InstallNamespace())
 
-	dynakubeComponents.Install(builder, &secretConfig, dynakubeCloudNative)
+	dynakubeComponents.Install(builder, secretConfig, dynakubeCloudNative)
 
 	// apply sample apps
 	builder.Assess("install sample app", sampleAppCloudNative.Install())

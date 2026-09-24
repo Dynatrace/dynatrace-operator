@@ -68,10 +68,10 @@ func (watcher *CertificateWatcher) watchForCertificatesSecret(ctx context.Contex
 }
 
 func (watcher *CertificateWatcher) updateCertificatesFromSecret(ctx context.Context) (bool, error) {
-	var secret corev1.Secret
+	secret := &corev1.Secret{}
 
 	err := watcher.apiReader.Get(ctx,
-		client.ObjectKey{Name: watcher.certificateSecretName, Namespace: watcher.namespace}, &secret)
+		client.ObjectKey{Name: watcher.certificateSecretName, Namespace: watcher.namespace}, secret)
 	if err != nil {
 		return false, err
 	}
@@ -99,7 +99,7 @@ func (watcher *CertificateWatcher) updateCertificatesFromSecret(ctx context.Cont
 	return true, nil
 }
 
-func (watcher *CertificateWatcher) ensureCertificateFile(secret corev1.Secret, filename string) (bool, error) {
+func (watcher *CertificateWatcher) ensureCertificateFile(secret *corev1.Secret, filename string) (bool, error) {
 	f := filepath.Join(watcher.certificateDirectory, filename)
 
 	data, err := os.ReadFile(f)

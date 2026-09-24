@@ -36,7 +36,7 @@ func addNetworkZoneEnv(container *corev1.Container, networkZone string) {
 	)
 }
 
-func addVersionDetectionEnvs(container *corev1.Container, namespace corev1.Namespace) {
+func addVersionDetectionEnvs(container *corev1.Container, namespace *corev1.Namespace) {
 	labelMapping := NewVersionLabelMapping(namespace)
 	for envName, fieldPath := range labelMapping {
 		if k8senv.Contains(container.Env, envName) {

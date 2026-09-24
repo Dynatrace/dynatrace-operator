@@ -184,7 +184,7 @@ func TestIsEnabled(t *testing.T) {
 
 			mut := NewMutator(fake.NewClient())
 
-			req := &dtwebhook.MutationRequest{BaseRequest: &dtwebhook.BaseRequest{Pod: pod, DynaKube: dk, Namespace: *ns}}
+			req := &dtwebhook.MutationRequest{BaseRequest: &dtwebhook.BaseRequest{Pod: pod, DynaKube: dk, Namespace: ns}}
 
 			assert.Equal(t, test.withCSI, mut.IsEnabled(t.Context(), req.BaseRequest))
 
@@ -249,7 +249,8 @@ func TestMutate(t *testing.T) {
 		request := dtwebhook.MutationRequest{
 			Context: t.Context(),
 			BaseRequest: &dtwebhook.BaseRequest{
-				Pod: pod.DeepCopy(),
+				Namespace: &corev1.Namespace{},
+				Pod:       pod.DeepCopy(),
 				DynaKube: &dynakube.DynaKube{
 					Spec: dynakube.DynaKubeSpec{
 						MetadataEnrichment: metadataenrichment.Spec{
@@ -358,7 +359,7 @@ func TestMutate(t *testing.T) {
 								},
 							},
 						},
-						Namespace: corev1.Namespace{
+						Namespace: &corev1.Namespace{
 							ObjectMeta: metav1.ObjectMeta{
 								Name: pod.Namespace,
 								Annotations: map[string]string{
@@ -566,19 +567,17 @@ func TestMutate_ResourceAttributes(t *testing.T) {
 					Namespace: podNamespace,
 				},
 			}
-			initContainer := corev1.Container{Args: []string{}}
-			dk := &dynakube.DynaKube{Spec: tc.dkSpec}
 
 			request := dtwebhook.MutationRequest{
 				Context: t.Context(),
 				BaseRequest: &dtwebhook.BaseRequest{
 					Pod:      pod,
-					DynaKube: dk,
-					Namespace: corev1.Namespace{
+					DynaKube: &dynakube.DynaKube{Spec: tc.dkSpec},
+					Namespace: &corev1.Namespace{
 						ObjectMeta: metav1.ObjectMeta{Name: podNamespace},
 					},
 				},
-				InstallContainer: &initContainer,
+				InstallContainer: &corev1.Container{Args: []string{}},
 			}
 
 			mut := NewMutator(fake.NewClient())
@@ -604,7 +603,7 @@ func createTestMutationRequest(t *testing.T, dk *dynakube.DynaKube, annotations 
 
 	return dtwebhook.NewMutationRequest(
 		t.Context(),
-		*getTestNamespace(dk),
+		getTestNamespace(dk),
 		&corev1.Container{
 			Name: dtwebhook.InstallContainerName,
 		},

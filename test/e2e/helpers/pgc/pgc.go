@@ -27,7 +27,7 @@ import (
 
 const FilePath = "/mnt/volume_storage_mount/opt/agent/conf/" + bootstrapperconfig.DeclarativeInputFileName
 
-func WaitForFileInAllPods(dk dynakube.DynaKube) features.Func {
+func WaitForFileInAllPods(dk *dynakube.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		r := envConfig.Client().Resources()
 
@@ -41,7 +41,7 @@ func WaitForFileInAllPods(dk dynakube.DynaKube) features.Func {
 	}
 }
 
-func allPodsHaveFile(ctx context.Context, r *resources.Resources, dk dynakube.DynaKube) (bool, error) {
+func allPodsHaveFile(ctx context.Context, r *resources.Resources, dk *dynakube.DynaKube) (bool, error) {
 	q := k8sdaemonset.NewQuery(ctx, r, client.ObjectKey{
 		Name:      dk.OneAgent().GetDaemonsetName(),
 		Namespace: dk.Namespace,
@@ -51,7 +51,7 @@ func allPodsHaveFile(ctx context.Context, r *resources.Resources, dk dynakube.Dy
 	podCount := 0
 	var firstExecErr error
 
-	err := q.ForEachPod(func(pod corev1.Pod) {
+	err := q.ForEachPod(func(pod *corev1.Pod) {
 		podCount++
 
 		if !allFound || len(pod.Spec.Containers) == 0 {

@@ -393,7 +393,7 @@ func (controller *Controller) registryClientProvider(ec *edgeconnect.EdgeConnect
 			registry.WithContext(ctx),
 			registry.WithAPIReader(controller.apiReader),
 			registry.WithTransport(transport),
-			registry.WithKeyChainSecret(&keyChainSecret),
+			registry.WithKeyChainSecret(keyChainSecret),
 		)
 		if err != nil {
 			log.Debug("failed to create registry client", "secretName", keyChainSecret.Name)

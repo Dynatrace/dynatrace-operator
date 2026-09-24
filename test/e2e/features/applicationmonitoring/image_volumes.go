@@ -28,16 +28,16 @@ func ImageVolumeNoCSI(t *testing.T) features.Feature {
 	builder := features.New("app-monitoring-with-image-volumes-without-csi")
 	secretConfig := tenant.GetSingleTenantSecret(t)
 	codeModuleImage := registry.GetLatestCodeModulesImageTagURI(t)
-	appOnlyDynakube := *dynakubeComponents.New(
+	appOnlyDynakube := dynakubeComponents.New(
 		dynakubeComponents.WithAnnotations(map[string]string{exp.OAImageVolumeKey: "true"}),
 		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
 		dynakubeComponents.WithApplicationMonitoringSpec(&oneagent.ApplicationMonitoringSpec{}),
 		dynakubeComponents.WithCodeModulesImage(codeModuleImage),
 	)
 
-	dynakubeComponents.Install(builder, &secretConfig, appOnlyDynakube)
+	dynakubeComponents.Install(builder, secretConfig, appOnlyDynakube)
 
-	sampleApp := sample.NewApp(t, &appOnlyDynakube, sample.AsDeployment())
+	sampleApp := sample.NewApp(t, appOnlyDynakube, sample.AsDeployment())
 	builder.Assess("install sample app", sampleApp.Install())
 	builder.Assess("check injection with image volume of additional pod", codemodules.CheckImageVolumeInjection(sampleApp, codeModuleImage))
 

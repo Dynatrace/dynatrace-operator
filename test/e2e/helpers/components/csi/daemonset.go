@@ -44,7 +44,7 @@ func WaitForDaemonset(namespace string) env.Func {
 }
 
 func cleanUpPodConsumer(ctx context.Context, resource *resources.Resources) k8sdaemonset.PodConsumer {
-	return func(p corev1.Pod) {
+	return func(p *corev1.Pod) {
 		_, _ = k8spod.Exec(ctx, resource, p, "server", "rm", "-rf", dtcsi.DataPath)
 	}
 }

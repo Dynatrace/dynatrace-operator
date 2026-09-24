@@ -103,14 +103,14 @@ func LabelVersionDetection(t *testing.T) features.Feature {
 	builder := features.New("label-version")
 
 	secretConfig := tenant.GetSingleTenantSecret(t)
-	defaultDynakube := *dynakubeComponents.New(
+	defaultDynakube := dynakubeComponents.New(
 		dynakubeComponents.WithName("dynakube-components-default"),
 		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
 		dynakubeComponents.WithApplicationMonitoringSpec(&oneagent.ApplicationMonitoringSpec{}),
 		dynakubeComponents.WithNameBasedOneAgentNamespaceSelector(),
 	)
 
-	labelVersionDynakube := *dynakubeComponents.New(
+	labelVersionDynakube := dynakubeComponents.New(
 		dynakubeComponents.WithName("dynakube-components-labels"),
 		dynakubeComponents.WithAnnotations(map[string]string{exp.InjectionLabelVersionDetectionKey: "true"}),
 		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
@@ -125,8 +125,8 @@ func LabelVersionDetection(t *testing.T) features.Feature {
 		buildPreservedBuildLabelSampleApp(t, labelVersionDynakube),
 		buildInvalidBuildLabelSampleApp(t, labelVersionDynakube),
 	}
-	dynakubeComponents.Install(builder, &secretConfig, defaultDynakube)
-	dynakubeComponents.Install(builder, &secretConfig, labelVersionDynakube)
+	dynakubeComponents.Install(builder, secretConfig, defaultDynakube)
+	dynakubeComponents.Install(builder, secretConfig, labelVersionDynakube)
 
 	// Register actual test (+sample cleanup)
 	installSampleApplications(builder, sampleApps)
@@ -159,11 +159,12 @@ func assertBuildLabels(sampleApp *sample.App, expectedBuildLabels map[string]bui
 		kubeResources := envConfig.Client().Resources()
 		pods := sampleApp.ListPods(ctx, t, kubeResources)
 
-		for _, pod := range pods.Items {
+		for i := range pods.Items {
+			pod := &pods.Items[i]
 			appContainer := pod.Spec.Containers[0]
 			assert.Equal(t, sampleApp.ContainerName(), appContainer.Name, "%s namespace", sampleApp.Namespace())
 
-			assertReferences(t, &pod, sampleApp, expectedBuildLabels)
+			assertReferences(t, pod, sampleApp, expectedBuildLabels)
 
 			assertValues(ctx, t, envConfig.Client().Resources(), pod, sampleApp, expectedBuildLabels)
 		}
@@ -202,13 +203,13 @@ func assertReferences(t *testing.T, pod *corev1.Pod, sampleApp *sample.App, expe
 	}
 }
 
-func assertValues(ctx context.Context, t *testing.T, resource *resources.Resources, pod corev1.Pod, sampleApp *sample.App, expectedBuildLabels map[string]buildLabel) { //nolint:revive // argument-limit
+func assertValues(ctx context.Context, t *testing.T, resource *resources.Resources, pod *corev1.Pod, sampleApp *sample.App, expectedBuildLabels map[string]buildLabel) { //nolint:revive // argument-limit
 	for _, variableName := range []string{dtReleaseVersion, dtReleaseProduct, dtReleaseStage, dtReleaseBuildVersion} {
 		assertValue(ctx, t, resource, pod, sampleApp, variableName, expectedBuildLabels[variableName].value)
 	}
 }
 
-func assertValue(ctx context.Context, t *testing.T, resource *resources.Resources, pod corev1.Pod, sampleApp *sample.App, variableName string, expectedValue string) { //nolint:revive // argument-limit
+func assertValue(ctx context.Context, t *testing.T, resource *resources.Resources, pod *corev1.Pod, sampleApp *sample.App, variableName string, expectedValue string) { //nolint:revive // argument-limit
 	echoCommand := shell.Shell(shell.Echo(fmt.Sprintf("$%s", variableName)))
 	executionResult, err := k8spod.Exec(ctx, resource, pod, sampleApp.ContainerName(), echoCommand...)
 	require.NoError(t, err)
@@ -218,20 +219,20 @@ func assertValue(ctx context.Context, t *testing.T, resource *resources.Resource
 	assert.Equal(t, expectedValue, stdOut, "%s:%s pod - %s variable has invalid value", pod.Namespace, pod.Name, variableName)
 }
 
-func buildDisabledBuildLabelNamespace(dk dynakube.DynaKube) corev1.Namespace {
-	return *k8snamespace.New(disabledBuildLabelsNamespace, k8snamespace.WithLabels(dk.OneAgent().GetNamespaceSelector().MatchLabels))
+func buildDisabledBuildLabelNamespace(dk *dynakube.DynaKube) *corev1.Namespace {
+	return k8snamespace.New(disabledBuildLabelsNamespace, k8snamespace.WithLabels(dk.OneAgent().GetNamespaceSelector().MatchLabels))
 }
 
-func buildDisabledBuildLabelSampleApp(t *testing.T, dk dynakube.DynaKube) *sample.App {
-	return sample.NewApp(t, &dk, sample.AsDeployment(), sample.WithNamespace(buildDisabledBuildLabelNamespace(dk)))
+func buildDisabledBuildLabelSampleApp(t *testing.T, dk *dynakube.DynaKube) *sample.App {
+	return sample.NewApp(t, dk, sample.AsDeployment(), sample.WithNamespace(buildDisabledBuildLabelNamespace(dk)))
 }
 
-func buildDefaultBuildLabelNamespace(dk dynakube.DynaKube) corev1.Namespace {
-	return *k8snamespace.New(defaultBuildLabelsNamespace, k8snamespace.WithLabels(dk.OneAgent().GetNamespaceSelector().MatchLabels))
+func buildDefaultBuildLabelNamespace(dk *dynakube.DynaKube) *corev1.Namespace {
+	return k8snamespace.New(defaultBuildLabelsNamespace, k8snamespace.WithLabels(dk.OneAgent().GetNamespaceSelector().MatchLabels))
 }
 
-func buildDefaultBuildLabelSampleApp(t *testing.T, dk dynakube.DynaKube) *sample.App {
-	sampleApp := sample.NewApp(t, &dk,
+func buildDefaultBuildLabelSampleApp(t *testing.T, dk *dynakube.DynaKube) *sample.App {
+	sampleApp := sample.NewApp(t, dk,
 		sample.AsDeployment(),
 		sample.WithNamespace(buildDefaultBuildLabelNamespace(dk)),
 		sample.WithLabels(map[string]string{
@@ -247,8 +248,8 @@ func buildDefaultBuildLabelSampleApp(t *testing.T, dk dynakube.DynaKube) *sample
 	return sampleApp
 }
 
-func buildCustomBuildLabelNamespace(dk dynakube.DynaKube) corev1.Namespace {
-	return *k8snamespace.New(
+func buildCustomBuildLabelNamespace(dk *dynakube.DynaKube) *corev1.Namespace {
+	return k8snamespace.New(
 		customBuildLabelsNamespace,
 		k8snamespace.WithLabels(dk.OneAgent().GetNamespaceSelector().MatchLabels),
 		k8snamespace.WithAnnotation(map[string]string{
@@ -260,8 +261,8 @@ func buildCustomBuildLabelNamespace(dk dynakube.DynaKube) corev1.Namespace {
 	)
 }
 
-func buildCustomBuildLabelSampleApp(t *testing.T, dk dynakube.DynaKube) *sample.App {
-	sampleApp := sample.NewApp(t, &dk,
+func buildCustomBuildLabelSampleApp(t *testing.T, dk *dynakube.DynaKube) *sample.App {
+	sampleApp := sample.NewApp(t, dk,
 		sample.AsDeployment(),
 		sample.WithNamespace(buildCustomBuildLabelNamespace(dk)),
 		sample.WithLabels(map[string]string{
@@ -277,8 +278,8 @@ func buildCustomBuildLabelSampleApp(t *testing.T, dk dynakube.DynaKube) *sample.
 	return sampleApp
 }
 
-func buildPreservedBuildLabelNamespace(dk dynakube.DynaKube) corev1.Namespace {
-	return *k8snamespace.New(
+func buildPreservedBuildLabelNamespace(dk *dynakube.DynaKube) *corev1.Namespace {
+	return k8snamespace.New(
 		preservedBuildLabelsNamespace,
 		k8snamespace.WithLabels(dk.OneAgent().GetNamespaceSelector().MatchLabels),
 		k8snamespace.WithAnnotation(map[string]string{
@@ -290,8 +291,8 @@ func buildPreservedBuildLabelNamespace(dk dynakube.DynaKube) corev1.Namespace {
 	)
 }
 
-func buildPreservedBuildLabelSampleApp(t *testing.T, dk dynakube.DynaKube) *sample.App {
-	sampleApp := sample.NewApp(t, &dk,
+func buildPreservedBuildLabelSampleApp(t *testing.T, dk *dynakube.DynaKube) *sample.App {
+	sampleApp := sample.NewApp(t, dk,
 		sample.AsDeployment(),
 		sample.WithNamespace(buildPreservedBuildLabelNamespace(dk)),
 		sample.WithLabels(map[string]string{
@@ -345,8 +346,8 @@ func buildPreservedBuildLabelSampleApp(t *testing.T, dk dynakube.DynaKube) *samp
 	return sampleApp
 }
 
-func buildInvalidBuildLabelNamespace(dk dynakube.DynaKube) corev1.Namespace {
-	return *k8snamespace.New(
+func buildInvalidBuildLabelNamespace(dk *dynakube.DynaKube) *corev1.Namespace {
+	return k8snamespace.New(
 		invalidBuildLabelsNamespace,
 		k8snamespace.WithLabels(dk.OneAgent().GetNamespaceSelector().MatchLabels),
 		k8snamespace.WithAnnotation(map[string]string{
@@ -356,8 +357,8 @@ func buildInvalidBuildLabelNamespace(dk dynakube.DynaKube) corev1.Namespace {
 	)
 }
 
-func buildInvalidBuildLabelSampleApp(t *testing.T, dk dynakube.DynaKube) *sample.App {
-	sampleApp := sample.NewApp(t, &dk,
+func buildInvalidBuildLabelSampleApp(t *testing.T, dk *dynakube.DynaKube) *sample.App {
+	sampleApp := sample.NewApp(t, dk,
 		sample.AsDeployment(),
 		sample.WithNamespace(buildInvalidBuildLabelNamespace(dk)),
 		sample.WithLabels(map[string]string{

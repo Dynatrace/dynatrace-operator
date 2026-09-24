@@ -25,7 +25,7 @@ const (
 )
 
 func createBuilderForTesting() builder.Builder {
-	base := appsv1.StatefulSet{
+	base := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "testing",
 		},
@@ -55,9 +55,8 @@ func createBuilderForTesting() builder.Builder {
 			},
 		},
 	}
-	builder := builder.NewBuilder(base)
 
-	return builder
+	return builder.NewBuilder(base)
 }
 
 func getBaseDynakube() dynakube.DynaKube {

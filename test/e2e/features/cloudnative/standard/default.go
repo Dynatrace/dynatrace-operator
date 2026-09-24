@@ -61,19 +61,19 @@ func Feature(t *testing.T, istioEnabled bool, withCSI bool) features.Feature {
 	if istioEnabled {
 		options = append(options, dynakube.WithIstioIntegration())
 	}
-	testDynakube := *dynakube.New(options...)
+	testDynakube := dynakube.New(options...)
 	// Register sample app install
 	namespaceOptions := []k8snamespace.Option{}
 	if istioEnabled {
 		namespaceOptions = append(namespaceOptions, k8snamespace.WithIstio())
 	}
-	sampleNamespace := *k8snamespace.New("cloudnative-sample", namespaceOptions...)
-	sampleApp := sample.NewApp(t, &testDynakube, sample.WithNamespace(sampleNamespace), sample.AsDeployment())
+	sampleNamespace := k8snamespace.New("cloudnative-sample", namespaceOptions...)
+	sampleApp := sample.NewApp(t, testDynakube, sample.WithNamespace(sampleNamespace), sample.AsDeployment())
 
 	builder.Assess("create sample namespace", sampleApp.InstallNamespace())
 
 	// Register dynakube install
-	dynakube.Install(builder, &secretConfig, testDynakube)
+	dynakube.Install(builder, secretConfig, testDynakube)
 	builder.Assess("install sample app", sampleApp.Install())
 
 	// Register actual test
