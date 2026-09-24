@@ -7,7 +7,6 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -99,19 +98,19 @@ func TestGetOneAgentImagePullPolicy(t *testing.T) {
 	})
 
 	t.Run("CNFS", func(t *testing.T) {
-		oneAgent := OneAgent{Spec: &Spec{CloudNativeFullStack: &CloudNativeFullStackSpec{HostInjectSpec: HostInjectSpec{ImagePullPolicy: corev1.PullAlways}}}}
+		oneAgent := OneAgent{Spec: &Spec{CloudNativeFullStack: &CloudNativeFullStackSpec{ImagePullPolicy: corev1.PullAlways}}}
 		assert.Equal(t, corev1.PullAlways, oneAgent.GetImagePullPolicy())
 	})
 }
 
 func TestGetCodeModulesImagePullPolicy(t *testing.T) {
 	t.Run("CNFS", func(t *testing.T) {
-		oneAgent := OneAgent{Spec: &Spec{CloudNativeFullStack: &CloudNativeFullStackSpec{AppInjectionSpec: AppInjectionSpec{CodeModulesImagePullPolicy: "foo"}}}}
+		oneAgent := OneAgent{Spec: &Spec{CloudNativeFullStack: &CloudNativeFullStackSpec{CodeModulesImagePullPolicy: "foo"}}}
 		assert.EqualValues(t, "foo", oneAgent.GetCodeModulesImagePullPolicy())
 	})
 
 	t.Run("appmonitoring", func(t *testing.T) {
-		oneAgent := OneAgent{Spec: &Spec{ApplicationMonitoring: &ApplicationMonitoringSpec{AppInjectionSpec: AppInjectionSpec{CodeModulesImagePullPolicy: "foo"}}}}
+		oneAgent := OneAgent{Spec: &Spec{ApplicationMonitoring: &ApplicationMonitoringSpec{CodeModulesImagePullPolicy: "foo"}}}
 		assert.EqualValues(t, "foo", oneAgent.GetCodeModulesImagePullPolicy())
 	})
 }
@@ -125,13 +124,13 @@ func TestCodeModulesVersion(t *testing.T) {
 	testVersion := "1.2.3"
 
 	t.Run("use status", func(t *testing.T) {
-		codeModulesStatus := &CodeModulesStatus{VersionStatus: status.VersionStatus{Version: testVersion}}
+		codeModulesStatus := &CodeModulesStatus{Version: testVersion}
 		oneAgent := NewOneAgent(&Spec{}, &Status{}, codeModulesStatus, "", "", false, false, nil)
 		version := oneAgent.GetCodeModulesVersion()
 		assert.Equal(t, testVersion, version)
 	})
 	t.Run("use version ", func(t *testing.T) {
-		codeModulesStatus := &CodeModulesStatus{VersionStatus: status.VersionStatus{Version: "other"}}
+		codeModulesStatus := &CodeModulesStatus{Version: "other"}
 		oneAgent := NewOneAgent(&Spec{
 			ApplicationMonitoring: &ApplicationMonitoringSpec{Version: testVersion},
 		}, &Status{}, codeModulesStatus, "", "", false, false, nil)
@@ -184,12 +183,10 @@ func TestGetOneAgentEnvironment(t *testing.T) {
 		oneAgent := OneAgent{
 			Spec: &Spec{
 				CloudNativeFullStack: &CloudNativeFullStackSpec{
-					HostInjectSpec: HostInjectSpec{
-						Env: []corev1.EnvVar{
-							{
-								Name:  "cloudNative",
-								Value: "true",
-							},
+					Env: []corev1.EnvVar{
+						{
+							Name:  "cloudNative",
+							Value: "true",
 						},
 					},
 				},
@@ -224,10 +221,8 @@ func TestOneAgentHostGroup(t *testing.T) {
 	t.Run("get host group from cloudNativeFullstack.args", func(t *testing.T) {
 		dk := OneAgent{Spec: &Spec{
 			CloudNativeFullStack: &CloudNativeFullStackSpec{
-				HostInjectSpec: HostInjectSpec{
-					Args: []string{
-						"--set-host-group=arg",
-					},
+				Args: []string{
+					"--set-host-group=arg",
 				},
 			},
 		},
@@ -248,10 +243,8 @@ func TestOneAgentHostGroup(t *testing.T) {
 	t.Run("get host group if both methods used", func(t *testing.T) {
 		dk := OneAgent{Spec: &Spec{
 			CloudNativeFullStack: &CloudNativeFullStackSpec{
-				HostInjectSpec: HostInjectSpec{
-					Args: []string{
-						"--set-host-group=arg",
-					},
+				Args: []string{
+					"--set-host-group=arg",
 				},
 			},
 			HostGroup: "field",
@@ -266,23 +259,21 @@ func TestOneAgentArgumentsMap(t *testing.T) {
 	t.Run("straight forward argument list", func(t *testing.T) {
 		dk := OneAgent{Spec: &Spec{
 			CloudNativeFullStack: &CloudNativeFullStackSpec{
-				HostInjectSpec: HostInjectSpec{
-					Args: []string{
-						"--set-host-id-source=k8s-node-name",
-						"--set-host-property=OperatorVersion=$(DT_OPERATOR_VERSION)",
-						"--set-host-property=dt.security_context=kubernetes_clusters",
-						"--set-host-property=dynakube-name=$(CUSTOM_CRD_NAME)",
-						"--set-no-proxy=",
-						"--set-proxy=",
-						"--set-tenant=$(DT_TENANT)",
-						"--set-server=dynatrace.com",
-						"--set-host-property=prop1=val1",
-						"--set-host-property=prop2=val2",
-						"--set-host-property=prop3=val3",
-						"--set-host-tag=tag1",
-						"--set-host-tag=tag2",
-						"--set-host-tag=tag3",
-					},
+				Args: []string{
+					"--set-host-id-source=k8s-node-name",
+					"--set-host-property=OperatorVersion=$(DT_OPERATOR_VERSION)",
+					"--set-host-property=dt.security_context=kubernetes_clusters",
+					"--set-host-property=dynakube-name=$(CUSTOM_CRD_NAME)",
+					"--set-no-proxy=",
+					"--set-proxy=",
+					"--set-tenant=$(DT_TENANT)",
+					"--set-server=dynatrace.com",
+					"--set-host-property=prop1=val1",
+					"--set-host-property=prop2=val2",
+					"--set-host-property=prop3=val3",
+					"--set-host-tag=tag1",
+					"--set-host-tag=tag2",
+					"--set-host-tag=tag3",
 				},
 			},
 			HostGroup: "field",
@@ -318,13 +309,11 @@ func TestOneAgentArgumentsMap(t *testing.T) {
 	t.Run("multiple --set-host-property arguments", func(t *testing.T) {
 		dk := OneAgent{Spec: &Spec{
 			CloudNativeFullStack: &CloudNativeFullStackSpec{
-				HostInjectSpec: HostInjectSpec{
-					Args: []string{
-						"--set-host-property=prop1=val1",
-						"--set-host-property=prop2=val2",
-						"--set-host-property=prop3=val3",
-						"--set-host-property=prop3=val3",
-					},
+				Args: []string{
+					"--set-host-property=prop1=val1",
+					"--set-host-property=prop2=val2",
+					"--set-host-property=prop3=val3",
+					"--set-host-property=prop3=val3",
 				},
 			},
 			HostGroup: "field",
@@ -342,14 +331,12 @@ func TestOneAgentArgumentsMap(t *testing.T) {
 	t.Run("multiple --set-host-tag arguments", func(t *testing.T) {
 		dk := OneAgent{Spec: &Spec{
 			CloudNativeFullStack: &CloudNativeFullStackSpec{
-				HostInjectSpec: HostInjectSpec{
-					Args: []string{
-						"--set-host-tag=tag1=1",
-						"--set-host-tag=tag1=2",
-						"--set-host-tag=tag1=3",
-						"--set-host-tag=tag2",
-						"--set-host-tag=tag3",
-					},
+				Args: []string{
+					"--set-host-tag=tag1=1",
+					"--set-host-tag=tag1=2",
+					"--set-host-tag=tag1=3",
+					"--set-host-tag=tag2",
+					"--set-host-tag=tag3",
 				},
 			},
 			HostGroup: "field",
@@ -369,12 +356,10 @@ func TestOneAgentArgumentsMap(t *testing.T) {
 	t.Run("arguments without value", func(t *testing.T) {
 		dk := OneAgent{Spec: &Spec{
 			CloudNativeFullStack: &CloudNativeFullStackSpec{
-				HostInjectSpec: HostInjectSpec{
-					Args: []string{
-						"--enable-feature-a",
-						"--enable-feature-b",
-						"--enable-feature-c",
-					},
+				Args: []string{
+					"--enable-feature-a",
+					"--enable-feature-b",
+					"--enable-feature-c",
 				},
 			},
 			HostGroup: "field",
@@ -451,10 +436,8 @@ func TestOneAgent_IsAutoUpdateEnabled(t *testing.T) {
 				name: "Cloud Native Full Stack - version",
 				spec: &Spec{
 					CloudNativeFullStack: &CloudNativeFullStackSpec{
-						HostInjectSpec: HostInjectSpec{
-							Version: "version",
-							Image:   "",
-						},
+						Version: "version",
+						Image:   "",
 					},
 				},
 				autoUpdateEnabled: false,
@@ -463,10 +446,8 @@ func TestOneAgent_IsAutoUpdateEnabled(t *testing.T) {
 				name: "Cloud Native Full Stack - image",
 				spec: &Spec{
 					CloudNativeFullStack: &CloudNativeFullStackSpec{
-						HostInjectSpec: HostInjectSpec{
-							Version: "",
-							Image:   "image",
-						},
+						Version: "",
+						Image:   "image",
 					},
 				},
 				autoUpdateEnabled: false,
@@ -578,9 +559,7 @@ func TestOneAgent_GetResourceAttributes(t *testing.T) {
 		{
 			name: "cloudNativeFullStack with additional wins",
 			spec: &Spec{CloudNativeFullStack: &CloudNativeFullStackSpec{
-				HostInjectSpec: HostInjectSpec{
-					AdditionalResourceAttributes: map[string]string{"shared": "cnf"},
-				},
+				AdditionalResourceAttributes: map[string]string{"shared": "cnf"},
 			}},
 			global:   map[string]string{"shared": "global"},
 			expected: map[string]string{"shared": "cnf"},

@@ -25,7 +25,6 @@ import (
 	dtversion "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // Tests for the version reconciler's auto-update flow.
@@ -215,7 +214,7 @@ func TestAutoUpdateVersionReconciler(t *testing.T) {
 // reconciler always calls the version API on every reconcile loop.
 func newCloudNativeDynaKube() *dynakube.DynaKube {
 	return &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{Name: "test-dk", Namespace: testNamespace},
+		Name: "test-dk", Namespace: testNamespace,
 		Spec: dynakube.DynaKubeSpec{
 			APIURL: testAPIURL,
 			OneAgent: oneagent.Spec{
@@ -229,7 +228,7 @@ func newCloudNativeDynaKube() *dynakube.DynaKube {
 // that IsEnabled() returns true and the ActiveGate version is reconciled.
 func newActiveGateDynaKube() *dynakube.DynaKube {
 	return &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{Name: "test-dk", Namespace: testNamespace},
+		Name: "test-dk", Namespace: testNamespace,
 		Spec: dynakube.DynaKubeSpec{
 			APIURL: testAPIURL,
 			ActiveGate: activegate.Spec{
@@ -244,10 +243,8 @@ func newActiveGateDynaKube() *dynakube.DynaKube {
 // image-discovery API instead of the version API.
 func newPublicRegistryDynaKube() *dynakube.DynaKube {
 	return &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-dk",
-			Namespace: testNamespace,
-		},
+		Name:      "test-dk",
+		Namespace: testNamespace,
 		Spec: dynakube.DynaKubeSpec{
 			APIURL: testAPIURL,
 			OneAgent: oneagent.Spec{

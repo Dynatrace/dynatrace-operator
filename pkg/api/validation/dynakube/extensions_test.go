@@ -13,7 +13,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/stretchr/testify/assert"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const testDynakubeName = "dynakube"
@@ -64,10 +63,8 @@ func TestExtensionsWithoutKubernetesMonitoringRegistration(t *testing.T) {
 
 func createStandaloneExtensionsDynakube(name, apiURL string) *dynakube.DynaKube {
 	dk := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: testNamespace,
-		},
+		Name:      name,
+		Namespace: testNamespace,
 		Spec: dynakube.DynaKubeSpec{
 			APIURL: apiURL,
 			Templates: dynakube.TemplatesSpec{

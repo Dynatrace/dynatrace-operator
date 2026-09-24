@@ -51,10 +51,8 @@ func TestReconcileSecretReplicationLifecycle(t *testing.T) {
 	labelNamespace(t, clt, lifecycleNamespaceB, "b")
 
 	dk := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      lifecycleDynaKube,
-			Namespace: lifecycleNamespace,
-		},
+		Name:      lifecycleDynaKube,
+		Namespace: lifecycleNamespace,
 		Spec: dynakube.DynaKubeSpec{
 			APIURL: lifecycleAPIURL,
 			OneAgent: oneagent.Spec{
@@ -78,7 +76,7 @@ func TestReconcileSecretReplicationLifecycle(t *testing.T) {
 	integrationtests.CreateDynakube(t, clt, dk)
 
 	integrationtests.CreateKubernetesObject(t, clt, &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{Name: dk.Tokens(), Namespace: dk.Namespace},
+		Name: dk.Tokens(), Namespace: dk.Namespace,
 		Data: map[string][]byte{
 			token.APIKey:        []byte("test-api-token"),
 			token.PaaSKey:       []byte("test-paas-token"),

@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestGenerateHash(t *testing.T) {
@@ -47,9 +46,7 @@ func TestGenerateHash(t *testing.T) {
 		{
 			title: "PodTemplate",
 			in: corev1.PodTemplate{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "my-pod",
-				},
+				Name:     "my-pod",
 				Template: corev1.PodTemplateSpec{Spec: corev1.PodSpec{Containers: []corev1.Container{{Name: "my-container"}}}},
 			},
 		},
@@ -103,9 +100,7 @@ func TestGenerateSecureHash(t *testing.T) {
 		{
 			title: "PodTemplate",
 			in: corev1.PodTemplate{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "my-pod",
-				},
+				Name:     "my-pod",
 				Template: corev1.PodTemplateSpec{Spec: corev1.PodSpec{Containers: []corev1.Container{{Name: "my-container"}}}},
 			},
 		},

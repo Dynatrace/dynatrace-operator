@@ -496,10 +496,8 @@ func createDynakube(isEnabled bool) *dynakube.DynaKube {
 	}
 
 	return &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: dkNamespace,
-			Name:      dkName,
-		},
+		Namespace: dkNamespace,
+		Name:      dkName,
 		Spec: dynakube.DynaKubeSpec{
 			APIURL:        "test-url",
 			LogMonitoring: logMonitoring,

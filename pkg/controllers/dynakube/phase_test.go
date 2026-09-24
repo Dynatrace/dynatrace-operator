@@ -20,16 +20,13 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func TestActiveGatePhaseChanges(t *testing.T) {
 	dk := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      testName,
-			Namespace: testNamespace,
-		},
+		Name:      testName,
+		Namespace: testNamespace,
 		Spec: dynakube.DynaKubeSpec{
 			ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}},
 		},
@@ -89,11 +86,9 @@ func TestActiveGatePhaseChanges(t *testing.T) {
 
 func createStatefulset(namespace, name string, replicas, readyReplicas int32) *appsv1.StatefulSet {
 	return &appsv1.StatefulSet{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:       name,
-			Namespace:  namespace,
-			Generation: 1,
-		},
+		Name:       name,
+		Namespace:  namespace,
+		Generation: 1,
 		Spec: appsv1.StatefulSetSpec{
 			Replicas: &replicas,
 		},
@@ -114,10 +109,8 @@ func createOutdatedStatefulset(namespace, name string, replicas int32) *appsv1.S
 
 func TestOneAgentPhaseChanges(t *testing.T) {
 	dk := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      testName,
-			Namespace: testNamespace,
-		},
+		Name:      testName,
+		Namespace: testNamespace,
 		Spec: dynakube.DynaKubeSpec{
 			OneAgent: oneagent.Spec{
 				ClassicFullStack: &oneagent.HostInjectSpec{},
@@ -165,10 +158,8 @@ func TestOneAgentPhaseChanges(t *testing.T) {
 
 func createDaemonSet(namespace, name string, replicas, readyReplicas int32) *appsv1.DaemonSet {
 	return &appsv1.DaemonSet{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
-		},
+		Name:      name,
+		Namespace: namespace,
 		Status: appsv1.DaemonSetStatus{
 			CurrentNumberScheduled: replicas,
 			NumberReady:            readyReplicas,
@@ -178,10 +169,8 @@ func createDaemonSet(namespace, name string, replicas, readyReplicas int32) *app
 
 func TestExtensionsExecutionControllerPhaseChanges(t *testing.T) {
 	dk := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      testName,
-			Namespace: testNamespace,
-		},
+		Name:      testName,
+		Namespace: testNamespace,
 		Spec: dynakube.DynaKubeSpec{
 			Extensions: &extensions.Spec{Databases: []extensions.DatabaseSpec{{ID: "test"}}},
 		},
@@ -230,10 +219,8 @@ func TestExtensionsExecutionControllerPhaseChanges(t *testing.T) {
 func TestOTelCollectorPhaseChanges(t *testing.T) {
 	t.Run("telemetryingest enabled", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-			},
+			Name:      testName,
+			Namespace: testNamespace,
 			Spec: dynakube.DynaKubeSpec{
 				TelemetryIngest: &telemetryingest.Spec{},
 			},
@@ -288,7 +275,7 @@ func TestOTelCollectorPhaseChanges(t *testing.T) {
 
 	t.Run("telemetryingest not enabled -> running", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{Name: testName, Namespace: testNamespace},
+			Name: testName, Namespace: testNamespace,
 		}
 		fakeClient := fake.NewClient()
 		controller := &Controller{
@@ -302,10 +289,8 @@ func TestOTelCollectorPhaseChanges(t *testing.T) {
 
 func TestExtensionsDatabasesPhaseChanges(t *testing.T) {
 	dk := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      testName,
-			Namespace: testNamespace,
-		},
+		Name:      testName,
+		Namespace: testNamespace,
 		Spec: dynakube.DynaKubeSpec{
 			Extensions: &extensions.Spec{Databases: []extensions.DatabaseSpec{{}}},
 		},
@@ -378,10 +363,8 @@ func TestExtensionsDatabasesPhaseChanges(t *testing.T) {
 
 func TestLogAgentPhaseChanges(t *testing.T) {
 	dk := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      testName,
-			Namespace: testNamespace,
-		},
+		Name:      testName,
+		Namespace: testNamespace,
 		Spec: dynakube.DynaKubeSpec{
 			LogMonitoring: &logmonitoring.Spec{},
 			Templates: dynakube.TemplatesSpec{
@@ -435,10 +418,8 @@ func TestLogAgentPhaseChanges(t *testing.T) {
 
 func TestKSPMPhaseChanges(t *testing.T) {
 	dk := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      testName,
-			Namespace: testNamespace,
-		},
+		Name:      testName,
+		Namespace: testNamespace,
 		Spec: dynakube.DynaKubeSpec{
 			KSPM: &kspm.Spec{},
 			Templates: dynakube.TemplatesSpec{
@@ -492,10 +473,8 @@ func TestKSPMPhaseChanges(t *testing.T) {
 
 func TestDynakubePhaseChanges(t *testing.T) {
 	dk := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      testName,
-			Namespace: testNamespace,
-		},
+		Name:      testName,
+		Namespace: testNamespace,
 		Spec: dynakube.DynaKubeSpec{
 			OneAgent: oneagent.Spec{
 				ClassicFullStack: &oneagent.HostInjectSpec{},
@@ -614,11 +593,9 @@ func TestDynakubePhaseChanges(t *testing.T) {
 
 func createDeployment(dk *dynakube.DynaKube, replicas, readyReplicas int32) *appsv1.Deployment {
 	return &appsv1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "foo",
-			Namespace: dk.Namespace,
-			Labels:    k8slabel.NewAppLabels(k8slabel.DatabaseSQLExecutorLabel, dk.Name, k8slabel.DatabaseSQLExecutorLabel, "").BuildLabels(),
-		},
+		Name:      "foo",
+		Namespace: dk.Namespace,
+		Labels:    k8slabel.NewAppLabels(k8slabel.DatabaseSQLExecutorLabel, dk.Name, k8slabel.DatabaseSQLExecutorLabel, "").BuildLabels(),
 		Spec: appsv1.DeploymentSpec{
 			Replicas: &replicas,
 		},

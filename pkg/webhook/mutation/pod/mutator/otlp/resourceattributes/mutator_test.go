@@ -72,13 +72,12 @@ func Test_Mutator_Mutate(t *testing.T) {
 		},
 	}
 
-	deployment := &appsv1.Deployment{ObjectMeta: metav1.ObjectMeta{Name: "web", Namespace: "ns"}}
+	deployment := &appsv1.Deployment{Name: "web", Namespace: "ns"}
 	deploymentOwner := metav1.OwnerReference{APIVersion: "apps/v1", Kind: "Deployment", Name: "web", Controller: new(true)}
-	replicaSetOwned := &appsv1.ReplicaSet{ObjectMeta: metav1.ObjectMeta{
+	replicaSetOwned := &appsv1.ReplicaSet{
 		Name:            "web-1234567890",
 		Namespace:       "ns",
-		OwnerReferences: []metav1.OwnerReference{deploymentOwner},
-	}}
+		OwnerReferences: []metav1.OwnerReference{deploymentOwner}}
 
 	tests := []mutatorTestCase{
 		{
@@ -88,29 +87,25 @@ func Test_Mutator_Mutate(t *testing.T) {
 				deployment,
 			},
 			namespace: &corev1.Namespace{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "ns",
-					Labels: map[string]string{
-						testSecContextLabel:     "privileged",
-						testCustomMetadataLabel: "custom-namespace-metadata",
-					},
-					Annotations: map[string]string{
-						testCostCenterAnnotation:     "finance",
-						testCustomMetadataAnnotation: "custom-namespace-annotation-metadata",
-					},
+				Name: "ns",
+				Labels: map[string]string{
+					testSecContextLabel:     "privileged",
+					testCustomMetadataLabel: "custom-namespace-metadata",
+				},
+				Annotations: map[string]string{
+					testCostCenterAnnotation:     "finance",
+					testCustomMetadataAnnotation: "custom-namespace-annotation-metadata",
 				},
 			},
 			pod: &corev1.Pod{
-				ObjectMeta: metav1.ObjectMeta{
-					Namespace:   "ns",
-					Annotations: map[string]string{"metadata.dynatrace.com/foo": "bar"},
-					OwnerReferences: []metav1.OwnerReference{
-						{
-							APIVersion: "apps/v1",
-							Kind:       "ReplicaSet",
-							Name:       replicaSetOwned.Name,
-							Controller: new(true),
-						},
+				Namespace:   "ns",
+				Annotations: map[string]string{"metadata.dynatrace.com/foo": "bar"},
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						APIVersion: "apps/v1",
+						Kind:       "ReplicaSet",
+						Name:       replicaSetOwned.Name,
+						Controller: new(true),
 					},
 				},
 				Spec: corev1.PodSpec{Containers: []corev1.Container{{Name: "c1"}}},
@@ -142,23 +137,19 @@ func Test_Mutator_Mutate(t *testing.T) {
 			name: "preserves existing Attributes and appends new ones (statefulset)",
 			objects: []runtime.Object{
 				&appsv1.StatefulSet{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "db", Namespace: "ns",
-					},
+					Name: "db", Namespace: "ns",
 				},
 			},
-			namespace: &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "ns"}},
+			namespace: &corev1.Namespace{Name: "ns"},
 			pod: &corev1.Pod{
-				ObjectMeta: metav1.ObjectMeta{
-					Namespace:   "ns",
-					Annotations: map[string]string{"metadata.dynatrace.com": "xyz"},
-					OwnerReferences: []metav1.OwnerReference{
-						{
-							APIVersion: "apps/v1",
-							Kind:       "StatefulSet",
-							Name:       "db",
-							Controller: new(true),
-						},
+				Namespace:   "ns",
+				Annotations: map[string]string{"metadata.dynatrace.com": "xyz"},
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						APIVersion: "apps/v1",
+						Kind:       "StatefulSet",
+						Name:       "db",
+						Controller: new(true),
 					},
 				},
 				Spec: corev1.PodSpec{Containers: []corev1.Container{{Name: "c1", Env: []corev1.EnvVar{{Name: "OTEL_RESOURCE_ATTRIBUTES", Value: "foo=bar,five=even,john=dow"}}}}},
@@ -189,17 +180,13 @@ func Test_Mutator_Mutate(t *testing.T) {
 			objects: nil,
 
 			pod: &corev1.Pod{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "pod1",
-					Namespace: "ns",
-				},
-				TypeMeta: metav1.TypeMeta{
-					Kind:       "Pod",
-					APIVersion: "v1",
-				},
-				Spec: corev1.PodSpec{Containers: []corev1.Container{{Name: "c1"}}},
+				Name:       "pod1",
+				Namespace:  "ns",
+				Kind:       "Pod",
+				APIVersion: "v1",
+				Spec:       corev1.PodSpec{Containers: []corev1.Container{{Name: "c1"}}},
 			},
-			namespace: &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "ns"}},
+			namespace: &corev1.Namespace{Name: "ns"},
 			wantAttributes: map[string][]string{
 				"c1": {
 					"k8s.workload.name=pod1",
@@ -220,18 +207,16 @@ func Test_Mutator_Mutate(t *testing.T) {
 		},
 		{
 			name:      "multiple containers all mutated (job)",
-			objects:   []runtime.Object{&batchv1.Job{ObjectMeta: metav1.ObjectMeta{Name: "jobx", Namespace: "ns"}}},
-			namespace: &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "ns"}},
+			objects:   []runtime.Object{&batchv1.Job{Name: "jobx", Namespace: "ns"}},
+			namespace: &corev1.Namespace{Name: "ns"},
 			pod: &corev1.Pod{
-				ObjectMeta: metav1.ObjectMeta{
-					Namespace: "ns",
-					OwnerReferences: []metav1.OwnerReference{
-						{
-							APIVersion: "batch/v1",
-							Kind:       "Job",
-							Name:       "jobx",
-							Controller: new(true),
-						},
+				Namespace: "ns",
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						APIVersion: "batch/v1",
+						Kind:       "Job",
+						Name:       "jobx",
+						Controller: new(true),
 					},
 				},
 				Spec: corev1.PodSpec{Containers: []corev1.Container{{Name: "c1"}, {Name: "c2"}}},
@@ -274,11 +259,9 @@ func Test_Mutator_Mutate(t *testing.T) {
 			name:      "container excluded via annotation is skipped",
 			objects:   nil,
 			pod: &corev1.Pod{
-				ObjectMeta: metav1.ObjectMeta{
-					Namespace:   "ns",
-					Annotations: map[string]string{"container.inject.dynatrace.com/c1": "false"},
-				},
-				Spec: corev1.PodSpec{Containers: []corev1.Container{{Name: "c1"}}},
+				Namespace:   "ns",
+				Annotations: map[string]string{"container.inject.dynatrace.com/c1": "false"},
+				Spec:        corev1.PodSpec{Containers: []corev1.Container{{Name: "c1"}}},
 			},
 			wantAttributes: map[string][]string{
 				"c1": {}, // should be empty, nothing injected
@@ -414,10 +397,10 @@ func Test_Mutator_EncodesAttributeValues(t *testing.T) {
 			baseDK.Status.KubernetesClusterMEID = "cluster-meid"
 
 			pod := &corev1.Pod{
-				ObjectMeta: metav1.ObjectMeta{Namespace: "ns", Annotations: tt.annotations},
-				Spec:       corev1.PodSpec{Containers: []corev1.Container{{Name: "c1"}}},
+				Namespace: "ns", Annotations: tt.annotations,
+				Spec: corev1.PodSpec{Containers: []corev1.Container{{Name: "c1"}}},
 			}
-			namespace := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "ns"}}
+			namespace := &corev1.Namespace{Name: "ns"}
 
 			client := fake.NewClientBuilder().WithScheme(scheme.Scheme).Build()
 			req := dtwebhook.NewMutationRequest(t.Context(), namespace, nil, pod, baseDK)
@@ -432,17 +415,15 @@ func Test_Mutator_EncodesAttributeValues(t *testing.T) {
 
 // Abort mutation if owner reference cannot be resolved, be consistent with metadata mutator
 func Test_Mutator_MutateNoOwner(t *testing.T) {
-	namespace := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "ns"}}
+	namespace := &corev1.Namespace{Name: "ns"}
 	pod := &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "ns",
-			OwnerReferences: []metav1.OwnerReference{
-				{
-					APIVersion: "apps/v1",
-					Kind:       "ReplicaSet",
-					Name:       "ghost-rs",
-					Controller: new(true),
-				},
+		Namespace: "ns",
+		OwnerReferences: []metav1.OwnerReference{
+			{
+				APIVersion: "apps/v1",
+				Kind:       "ReplicaSet",
+				Name:       "ghost-rs",
+				Controller: new(true),
 			},
 		},
 		Spec: corev1.PodSpec{Containers: []corev1.Container{{Name: "c1"}}},
@@ -471,15 +452,13 @@ func Test_Mutator_Reinvoke(t *testing.T) {
 	baseDK.Status.KubernetesClusterName = "cluster-name"
 
 	pod := &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "ns",
-			OwnerReferences: []metav1.OwnerReference{
-				{
-					APIVersion: "apps/v1",
-					Kind:       "StatefulSet",
-					Name:       "db",
-					Controller: new(true),
-				},
+		Namespace: "ns",
+		OwnerReferences: []metav1.OwnerReference{
+			{
+				APIVersion: "apps/v1",
+				Kind:       "StatefulSet",
+				Name:       "db",
+				Controller: new(true),
 			},
 		},
 		Spec: corev1.PodSpec{Containers: []corev1.Container{{Name: "c1"}}},
@@ -493,7 +472,7 @@ func Test_Mutator_Reinvoke(t *testing.T) {
 		BaseRequest: &dtwebhook.BaseRequest{
 			Pod:       pod,
 			DynaKube:  baseDK,
-			Namespace: &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: pod.Namespace}},
+			Namespace: &corev1.Namespace{Name: pod.Namespace},
 		},
 	}
 
@@ -515,11 +494,11 @@ func TestMutate_OTLPResourceAttributes(t *testing.T) {
 		containerVal  = "container-value"
 	)
 
-	baseNamespace := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: testNamespace}}
+	baseNamespace := &corev1.Namespace{Name: testNamespace}
 
 	newPod := func(containerEnv ...corev1.EnvVar) *corev1.Pod {
 		return &corev1.Pod{
-			ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: testNamespace},
+			Name: "pod1", Namespace: testNamespace,
 			Spec: corev1.PodSpec{
 				Containers: []corev1.Container{{Name: containerName, Env: containerEnv}},
 			},
@@ -672,12 +651,12 @@ func TestMutate_AnnotationWriter(t *testing.T) {
 			},
 		},
 	}
-	namespace := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: testNamespace}}
+	namespace := &corev1.Namespace{Name: testNamespace}
 
 	t.Run("AnnotationWriter is set after Mutate", func(t *testing.T) {
 		pod := &corev1.Pod{
-			ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: testNamespace},
-			Spec:       corev1.PodSpec{Containers: []corev1.Container{{Name: "c1"}}},
+			Name: "pod1", Namespace: testNamespace,
+			Spec: corev1.PodSpec{Containers: []corev1.Container{{Name: "c1"}}},
 		}
 
 		client := fake.NewClientBuilder().WithScheme(scheme.Scheme).Build()
@@ -689,8 +668,8 @@ func TestMutate_AnnotationWriter(t *testing.T) {
 
 	t.Run("OTLP additionalResourceAttributes win in JSON annotation (clean pod)", func(t *testing.T) {
 		pod := &corev1.Pod{
-			ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: testNamespace},
-			Spec:       corev1.PodSpec{Containers: []corev1.Container{{Name: "c1"}}},
+			Name: "pod1", Namespace: testNamespace,
+			Spec: corev1.PodSpec{Containers: []corev1.Container{{Name: "c1"}}},
 		}
 
 		client := fake.NewClientBuilder().WithScheme(scheme.Scheme).Build()
@@ -714,12 +693,10 @@ func TestMutate_AnnotationWriter(t *testing.T) {
 		const userValue = "user-set-value"
 
 		pod := &corev1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "pod1",
-				Namespace: testNamespace,
-				Annotations: map[string]string{
-					metadataenrichment.Prefix + collisionKey: userValue,
-				},
+			Name:      "pod1",
+			Namespace: testNamespace,
+			Annotations: map[string]string{
+				metadataenrichment.Prefix + collisionKey: userValue,
 			},
 			Spec: corev1.PodSpec{Containers: []corev1.Container{{Name: "c1"}}},
 		}

@@ -39,7 +39,7 @@ func TestReconcile(t *testing.T) {
 	ctx := t.Context()
 	latestAgentVersion := "1.2.3.4-5"
 	dynakubeTemplate := dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace},
+		Namespace: testNamespace,
 		Spec: dynakube.DynaKubeSpec{
 			APIURL: testAPIURL,
 			OneAgent: oneagent.Spec{
@@ -163,10 +163,8 @@ func setupPullSecret(t *testing.T, fakeClient client.Client, dk dynakube.DynaKub
 
 func createTestPullSecret(t *testing.T, fakeClient client.Client, dk dynakube.DynaKube) error {
 	return fakeClient.Create(t.Context(), &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: dk.Namespace,
-			Name:      dk.TenantRegistryPullSecretName(),
-		},
+		Namespace: dk.Namespace,
+		Name:      dk.TenantRegistryPullSecretName(),
 		Data: map[string][]byte{
 			".dockerconfigjson": []byte("{}"),
 		},

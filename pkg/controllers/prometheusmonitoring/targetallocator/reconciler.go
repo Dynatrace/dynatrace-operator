@@ -157,7 +157,7 @@ func (r *Reconciler) reconcileConfigMap(ctx context.Context, s *reconcileScope) 
 		return err
 	}
 
-	cm := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: s.Spec.GetDeploymentName(), Namespace: s.Owner.Namespace}}
+	cm := &corev1.ConfigMap{Name: s.Spec.GetDeploymentName(), Namespace: s.Owner.Namespace}
 
 	err = k8sobject.RetryCreateOrUpdate(ctx, r, cm, func() error {
 		s.AppLabels.MergeInto(cm)
@@ -201,7 +201,7 @@ func (r *Reconciler) reconcileDeployment(ctx context.Context, s *reconcileScope)
 		return fmt.Errorf("resolve image: %w", err)
 	}
 
-	deploy := &appsv1.Deployment{ObjectMeta: metav1.ObjectMeta{Name: s.Spec.GetDeploymentName(), Namespace: s.Owner.Namespace}}
+	deploy := &appsv1.Deployment{Name: s.Spec.GetDeploymentName(), Namespace: s.Owner.Namespace}
 
 	err := k8sobject.RetryCreateOrUpdate(ctx, r, deploy, func() error {
 		mutateDeployment(deploy, s)
@@ -221,7 +221,7 @@ func (r *Reconciler) reconcileService(ctx context.Context, s *reconcileScope) er
 	log := logd.FromContext(ctx)
 	log.Debug("reconciling service")
 
-	svc := &corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: s.Spec.GetDeploymentName(), Namespace: s.Owner.Namespace}}
+	svc := &corev1.Service{Name: s.Spec.GetDeploymentName(), Namespace: s.Owner.Namespace}
 
 	return k8sobject.RetryCreateOrUpdate(ctx, r, svc, func() error {
 		s.AppLabels.MergeInto(svc)
@@ -326,12 +326,10 @@ func buildContainer(spec *prometheusmonitoring.TargetAllocator, imageURI string,
 			},
 		},
 		LivenessProbe: &corev1.Probe{
-			ProbeHandler: corev1.ProbeHandler{
-				HTTPGet: &corev1.HTTPGetAction{
-					Scheme: corev1.URISchemeHTTP,
-					Path:   "/livez",
-					Port:   intstr.FromString(insecurePortName),
-				},
+			HTTPGet: &corev1.HTTPGetAction{
+				Scheme: corev1.URISchemeHTTP,
+				Path:   "/livez",
+				Port:   intstr.FromString(insecurePortName),
 			},
 			InitialDelaySeconds:           15,
 			PeriodSeconds:                 20,
@@ -341,12 +339,10 @@ func buildContainer(spec *prometheusmonitoring.TargetAllocator, imageURI string,
 			TerminationGracePeriodSeconds: currentLivenessProbe.TerminationGracePeriodSeconds,
 		},
 		ReadinessProbe: &corev1.Probe{
-			ProbeHandler: corev1.ProbeHandler{
-				HTTPGet: &corev1.HTTPGetAction{
-					Scheme: corev1.URISchemeHTTP,
-					Path:   "/readyz",
-					Port:   intstr.FromString(insecurePortName),
-				},
+			HTTPGet: &corev1.HTTPGetAction{
+				Scheme: corev1.URISchemeHTTP,
+				Path:   "/readyz",
+				Port:   intstr.FromString(insecurePortName),
 			},
 			InitialDelaySeconds:           5,
 			PeriodSeconds:                 10,
@@ -364,16 +360,12 @@ func buildVolumes(spec *prometheusmonitoring.TargetAllocator) []corev1.Volume {
 	volumes := []corev1.Volume{
 		{
 			Name: configVolume,
-			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: spec.GetDeploymentName(),
-					},
-					Items: []corev1.KeyToPath{
-						{Key: configFile, Path: configFile},
-					},
-					DefaultMode: new(int32(0o644)),
+			ConfigMap: &corev1.ConfigMapVolumeSource{
+				Name: spec.GetDeploymentName(),
+				Items: []corev1.KeyToPath{
+					{Key: configFile, Path: configFile},
 				},
+				DefaultMode: new(int32(0o644)),
 			},
 		},
 	}

@@ -39,10 +39,8 @@ var dummyLabels = map[string]string{
 }
 
 var dummyNamespace = corev1.Namespace{
-	ObjectMeta: metav1.ObjectMeta{
-		Name:   "dummy",
-		Labels: dummyLabels,
-	},
+	Name:   "dummy",
+	Labels: dummyLabels,
 }
 
 var dummyLabels2 = map[string]string{
@@ -50,10 +48,8 @@ var dummyLabels2 = map[string]string{
 }
 
 var dummyNamespace2 = corev1.Namespace{
-	ObjectMeta: metav1.ObjectMeta{
-		Name:   "dummy2",
-		Labels: dummyLabels2,
-	},
+	Name:   "dummy2",
+	Labels: dummyLabels2,
 }
 
 func TestDynakubeValidator_Handle(t *testing.T) {
@@ -64,15 +60,11 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 				APIURL: testAPIURL,
 				OneAgent: oneagent.Spec{
 					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
-						HostInjectSpec: oneagent.HostInjectSpec{
-							NodeSelector: map[string]string{
-								"node": "1",
-							},
+						NodeSelector: map[string]string{
+							"node": "1",
 						},
-						AppInjectionSpec: oneagent.AppInjectionSpec{
-							NamespaceSelector: metav1.LabelSelector{
-								MatchLabels: dummyLabels,
-							},
+						NamespaceSelector: metav1.LabelSelector{
+							MatchLabels: dummyLabels,
 						},
 					},
 				},
@@ -91,15 +83,11 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 					APIURL: testAPIURL,
 					OneAgent: oneagent.Spec{
 						CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
-							HostInjectSpec: oneagent.HostInjectSpec{
-								NodeSelector: map[string]string{
-									"node": "2",
-								},
+							NodeSelector: map[string]string{
+								"node": "2",
 							},
-							AppInjectionSpec: oneagent.AppInjectionSpec{
-								NamespaceSelector: metav1.LabelSelector{
-									MatchLabels: dummyLabels2,
-								},
+							NamespaceSelector: metav1.LabelSelector{
+								MatchLabels: dummyLabels2,
 							},
 						},
 					},
@@ -116,18 +104,14 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 				fmt.Sprintf(errorNodeSelectorConflict, "conflict2"),
 			},
 			&dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      testName,
-					Namespace: testNamespace,
-				},
+				Name:      testName,
+				Namespace: testNamespace,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: "",
 					OneAgent: oneagent.Spec{
 						CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
-							AppInjectionSpec: oneagent.AppInjectionSpec{
-								NamespaceSelector: metav1.LabelSelector{
-									MatchLabels: dummyLabels,
-								},
+							NamespaceSelector: metav1.LabelSelector{
+								MatchLabels: dummyLabels,
 							},
 						},
 					},
@@ -140,28 +124,22 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 				},
 			},
 			&dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "conflict1",
-					Namespace: testNamespace,
-				},
+				Name:      "conflict1",
+				Namespace: testNamespace,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
 					OneAgent: oneagent.Spec{
 						ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
-							AppInjectionSpec: oneagent.AppInjectionSpec{
-								NamespaceSelector: metav1.LabelSelector{
-									MatchLabels: dummyLabels,
-								},
+							NamespaceSelector: metav1.LabelSelector{
+								MatchLabels: dummyLabels,
 							},
 						},
 					},
 				},
 			},
 			&dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "conflict2",
-					Namespace: testNamespace,
-				},
+				Name:      "conflict2",
+				Namespace: testNamespace,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
 					OneAgent: oneagent.Spec{
@@ -175,10 +153,8 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 func Test_getDynakube(t *testing.T) {
 	t.Run("v1beta5 to latest", func(t *testing.T) {
 		v1beta5Dk := &v1beta5.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-			},
+			Name:      testName,
+			Namespace: testNamespace,
 			Spec: v1beta5.DynaKubeSpec{
 				APIURL: testAPIURL,
 			},

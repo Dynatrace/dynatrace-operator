@@ -223,10 +223,8 @@ func TestReconciler_ReconcileService(t *testing.T) {
 
 func createDynakube() *dynakube.DynaKube {
 	return &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: testNamespace,
-			Name:      testName,
-		},
+		Namespace: testNamespace,
+		Name:      testName,
 		Spec: dynakube.DynaKubeSpec{
 			Templates: dynakube.TemplatesSpec{
 				ExtensionExecutionController: extensions.ExecutionControllerSpec{

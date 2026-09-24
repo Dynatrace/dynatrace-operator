@@ -13,7 +13,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/hostevent"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -78,7 +77,7 @@ func (bc benchmarkConfig) SetupDTServerMock(b *testing.B) *httptest.Server {
 func (bc benchmarkConfig) SetupDKs(b *testing.B, clt client.Client, dtURL string) {
 	b.Helper()
 
-	require.NoError(b, clt.Create(b.Context(), &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: testNamespace}}))
+	require.NoError(b, clt.Create(b.Context(), &corev1.Namespace{Name: testNamespace}))
 
 	for i := range bc.NumDynakubes {
 		// Create secret first

@@ -23,7 +23,7 @@ import (
 
 func TestRetryCreateOrUpate(t *testing.T) {
 	t.Run("create", func(t *testing.T) {
-		obj := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "test"}, Data: map[string]string{"foo": "bar"}}
+		obj := &corev1.ConfigMap{Name: "test", Data: map[string]string{"foo": "bar"}}
 		var calls int
 		c := fake.NewClientWithInterceptors(interceptor.Funcs{
 			Create: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.CreateOption) error {
@@ -40,7 +40,7 @@ func TestRetryCreateOrUpate(t *testing.T) {
 	})
 
 	t.Run("on conflict", func(t *testing.T) {
-		obj := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "test"}}
+		obj := &corev1.ConfigMap{Name: "test"}
 		var calls int
 		c := fake.NewClientWithInterceptors(interceptor.Funcs{
 			Update: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.UpdateOption) error {
@@ -65,7 +65,7 @@ func TestRetryCreateOrUpate(t *testing.T) {
 	})
 
 	t.Run("on generic error", func(t *testing.T) {
-		obj := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "test"}}
+		obj := &corev1.ConfigMap{Name: "test"}
 		expectErr := k8serrors.NewAlreadyExists(schema.GroupResource{}, obj.GetName())
 
 		var calls int
@@ -100,7 +100,7 @@ func TestRetryCreateOrUpate(t *testing.T) {
 
 func TestApplyStatus(t *testing.T) {
 	t.Run("ok", func(t *testing.T) {
-		deploy := &appsv1.Deployment{ObjectMeta: metav1.ObjectMeta{Name: "bar", Namespace: "foo", Generation: 123}}
+		deploy := &appsv1.Deployment{Name: "bar", Namespace: "foo", Generation: 123}
 		c := fake.NewClientWithManagedFields(deploy.DeepCopy())
 		deploy.Status.ObservedGeneration = 123
 		require.NoError(t, ApplyStatus(t.Context(), c, deploy))

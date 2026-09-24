@@ -98,11 +98,9 @@ func buildContainer(dk *dynakube.DynaKube, dbSpec extensions.DatabaseSpec, image
 		Args:            buildContainerArgs(dk),
 		Env:             buildContainerEnvs(),
 		LivenessProbe: &corev1.Probe{
-			ProbeHandler: corev1.ProbeHandler{
-				HTTPGet: &corev1.HTTPGetAction{
-					Path: livenessProbePath,
-					Port: intstr.IntOrString{IntVal: probePort},
-				},
+			HTTPGet: &corev1.HTTPGetAction{
+				Path: livenessProbePath,
+				Port: intstr.IntOrString{IntVal: probePort},
 			},
 			InitialDelaySeconds: 15,
 			PeriodSeconds:       10,
@@ -111,11 +109,9 @@ func buildContainer(dk *dynakube.DynaKube, dbSpec extensions.DatabaseSpec, image
 			SuccessThreshold:    1,
 		},
 		ReadinessProbe: &corev1.Probe{
-			ProbeHandler: corev1.ProbeHandler{
-				HTTPGet: &corev1.HTTPGetAction{
-					Path: readinessProbePath,
-					Port: intstr.IntOrString{IntVal: probePort},
-				},
+			HTTPGet: &corev1.HTTPGetAction{
+				Path: readinessProbePath,
+				Port: intstr.IntOrString{IntVal: probePort},
 			},
 			InitialDelaySeconds: 10,
 			PeriodSeconds:       5,
@@ -192,39 +188,33 @@ func buildVolumes(dk *dynakube.DynaKube, dbSpec extensions.DatabaseSpec) []corev
 
 	volumes := []corev1.Volume{
 		{
-			Name: tmpVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{},
-			},
+			Name:     tmpVolumeName,
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
 		},
 		{
 			Name: tokenVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: dk.Extensions().GetTokenSecretName(),
-					Items: []corev1.KeyToPath{
-						{
-							Key:  consts.DatasourceTokenSecretKey,
-							Path: tokenVolumeName,
-						},
+			Secret: &corev1.SecretVolumeSource{
+				SecretName: dk.Extensions().GetTokenSecretName(),
+				Items: []corev1.KeyToPath{
+					{
+						Key:  consts.DatasourceTokenSecretKey,
+						Path: tokenVolumeName,
 					},
-					DefaultMode: mode,
 				},
+				DefaultMode: mode,
 			},
 		},
 		{
 			Name: certsVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: dk.Extensions().GetTLSSecretName(),
-					Items: []corev1.KeyToPath{
-						{
-							Key:  consts.TLSCrtDataName,
-							Path: consts.TLSCrtDataName,
-						},
+			Secret: &corev1.SecretVolumeSource{
+				SecretName: dk.Extensions().GetTLSSecretName(),
+				Items: []corev1.KeyToPath{
+					{
+						Key:  consts.TLSCrtDataName,
+						Path: consts.TLSCrtDataName,
 					},
-					DefaultMode: mode,
 				},
+				DefaultMode: mode,
 			},
 		},
 	}
@@ -232,16 +222,12 @@ func buildVolumes(dk *dynakube.DynaKube, dbSpec extensions.DatabaseSpec) []corev
 	if dk.Spec.TrustedCAs != "" {
 		volumes = append(volumes, corev1.Volume{
 			Name: customCertsVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: dk.Spec.TrustedCAs,
-					},
-					Items: []corev1.KeyToPath{
-						{
-							Key:  dynakube.TrustedCAKey,
-							Path: customCertsFileName,
-						},
+			ConfigMap: &corev1.ConfigMapVolumeSource{
+				Name: dk.Spec.TrustedCAs,
+				Items: []corev1.KeyToPath{
+					{
+						Key:  dynakube.TrustedCAKey,
+						Path: customCertsFileName,
 					},
 				},
 			},

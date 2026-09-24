@@ -17,21 +17,16 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/validation"
 )
 
 func TestNameStartsWithDigit(t *testing.T) {
 	t.Run("dynakube name starts with digit", func(t *testing.T) {
 		assertDenied(t, []string{errorNoDNS1053Label}, &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "1dynakube",
-			},
+			Name: "1dynakube",
 		})
 		assertAllowed(t, &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "dynakube",
-			},
+			Name: "dynakube",
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: "https://tenantid.doma.in/api",
 			},
@@ -65,9 +60,7 @@ func TestNameTooLong(t *testing.T) {
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
 			dk := &dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: strings.Repeat("a", test.crNameLength),
-				},
+				Name: strings.Repeat("a", test.crNameLength),
 				Spec: test.spec,
 			}
 			dk.Spec.APIURL = "https://tenantid.doma.in/api"
@@ -108,9 +101,7 @@ func TestNameTooLong(t *testing.T) {
 
 func TestInvalidNameErrorMatches(t *testing.T) {
 	dk := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "foo.bar",
-		},
+		Name: "foo.bar",
 		Spec: dynakube.DynaKubeSpec{
 			APIURL: "https://tenantid.doma.in/api",
 		},
@@ -122,9 +113,7 @@ func TestInvalidNameErrorMatches(t *testing.T) {
 
 func TestNoNameViolationOnTooLongName(t *testing.T) {
 	dk := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: strings.Repeat("a", 64),
-		},
+		Name: strings.Repeat("a", 64),
 		Spec: dynakube.DynaKubeSpec{
 			APIURL: "https://tenantid.doma.in/api",
 		},

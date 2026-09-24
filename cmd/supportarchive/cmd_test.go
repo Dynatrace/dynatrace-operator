@@ -11,7 +11,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
 )
 
@@ -22,16 +21,12 @@ func TestGetAppName(t *testing.T) {
 
 	fakeClientSet := fake.NewClientset(
 		&corev1.Pod{
-			TypeMeta: metav1.TypeMeta{
-				Kind:       "Pod",
-				APIVersion: "v1",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      alternativeOperatorName,
-				Namespace: alternativeNamespace,
-				Labels: map[string]string{
-					k8slabel.AppNameLabel: alternativeOperatorName,
-				},
+			Kind:       "Pod",
+			APIVersion: "v1",
+			Name:       alternativeOperatorName,
+			Namespace:  alternativeNamespace,
+			Labels: map[string]string{
+				k8slabel.AppNameLabel: alternativeOperatorName,
 			},
 			Spec: corev1.PodSpec{
 				Containers: []corev1.Container{

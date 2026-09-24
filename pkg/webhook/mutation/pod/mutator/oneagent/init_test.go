@@ -26,7 +26,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 //nolint:revive // ignore maximum number of lines per function exceeded
@@ -347,8 +346,8 @@ func TestMutateInitContainer(t *testing.T) {
 		installconfig.SetModulesOverride(t, installconfig.Modules{})
 
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{Name: "dynakube"},
-			Spec:       dynakube.DynaKubeSpec{OneAgent: oneagent.Spec{ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{}}},
+			Name: "dynakube",
+			Spec: dynakube.DynaKubeSpec{OneAgent: oneagent.Spec{ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{}}},
 		}
 		dk.Status.CodeModules.Version = "latest"
 
@@ -369,8 +368,8 @@ func TestMutateInitContainer(t *testing.T) {
 		installconfig.SetModulesOverride(t, installconfig.Modules{})
 
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{Name: "dynakube"},
-			Spec:       dynakube.DynaKubeSpec{OneAgent: oneagent.Spec{ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{}}},
+			Name: "dynakube",
+			Spec: dynakube.DynaKubeSpec{OneAgent: oneagent.Spec{ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{}}},
 		}
 		dk.Status.CodeModules.Version = "latest"
 
@@ -390,10 +389,8 @@ func TestMutateInitContainer(t *testing.T) {
 		image := "myimage.io:latest"
 		dk := createAppMonDKwithImage(t, image)
 		pod := &corev1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{
-					AnnotationVolumeType: ImageVolumeType,
-				},
+			Annotations: map[string]string{
+				AnnotationVolumeType: ImageVolumeType,
 			},
 		}
 
@@ -426,10 +423,8 @@ func TestMutateInitContainer(t *testing.T) {
 		image := "myimage.io:latest"
 		dk := createAppMonDKwithImage(t, image)
 		pod := &corev1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{
-					AnnotationVolumeType: ImageVolumeType,
-				},
+			Annotations: map[string]string{
+				AnnotationVolumeType: ImageVolumeType,
 			},
 		}
 
@@ -497,7 +492,7 @@ func TestMutateInitContainer(t *testing.T) {
 		pod := &corev1.Pod{}
 		// pre-populate with a non-CSI volume under the same name to trigger the conflict
 		pod.Spec.Volumes = []corev1.Volume{
-			{Name: BinVolumeName, VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}}},
+			{Name: BinVolumeName, EmptyDir: &corev1.EmptyDirVolumeSource{}},
 		}
 
 		request := &webhook.MutationRequest{
@@ -522,7 +517,7 @@ func TestMutateInitContainer(t *testing.T) {
 		pod := &corev1.Pod{}
 		// pre-populate with a non-emptyDir volume under the same name to trigger the conflict
 		pod.Spec.Volumes = []corev1.Volume{
-			{Name: BinVolumeName, VolumeSource: corev1.VolumeSource{HostPath: &corev1.HostPathVolumeSource{Path: "/some/path"}}},
+			{Name: BinVolumeName, HostPath: &corev1.HostPathVolumeSource{Path: "/some/path"}},
 		}
 
 		request := &webhook.MutationRequest{
@@ -541,10 +536,8 @@ func TestMutateInitContainer(t *testing.T) {
 		image := "myimage.io:latest"
 		dk := createAppMonDKwithImage(t, image)
 		pod := &corev1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{
-					AnnotationVolumeType: ImageVolumeType,
-				},
+			Annotations: map[string]string{
+				AnnotationVolumeType: ImageVolumeType,
 			},
 		}
 
@@ -598,7 +591,7 @@ func TestMutateInitContainer(t *testing.T) {
 		pod := &corev1.Pod{}
 		// pre-populate with a volume referencing a different image to trigger the conflict
 		pod.Spec.Volumes = []corev1.Volume{
-			{Name: BinVolumeName, VolumeSource: corev1.VolumeSource{Image: &corev1.ImageVolumeSource{Reference: "other-image:v1"}}},
+			{Name: BinVolumeName, Image: &corev1.ImageVolumeSource{Reference: "other-image:v1"}},
 		}
 
 		request := &webhook.MutationRequest{
@@ -618,10 +611,8 @@ func TestMutateInitContainer(t *testing.T) {
 		dk := createAppMonDKwithImage(t, image)
 		dk.Annotations[exp.OAImageVolumeKey] = "true"
 		pod := &corev1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{
-					AnnotationVolumeType: EphemeralVolumeType,
-				},
+			Annotations: map[string]string{
+				AnnotationVolumeType: EphemeralVolumeType,
 			},
 		}
 
@@ -653,13 +644,11 @@ func TestMutateInitContainer(t *testing.T) {
 func createAppMonDKwithImage(t *testing.T, image string) *dynakube.DynaKube {
 	t.Helper()
 	dk := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{Name: "image-volume-scenario", Annotations: map[string]string{}},
+		Name: "image-volume-scenario", Annotations: map[string]string{},
 		Spec: dynakube.DynaKubeSpec{
 			OneAgent: oneagent.Spec{
 				ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
-					AppInjectionSpec: oneagent.AppInjectionSpec{
-						CodeModulesImage: image,
-					},
+					CodeModulesImage: image,
 				},
 			},
 		},

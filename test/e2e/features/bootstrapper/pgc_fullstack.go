@@ -31,9 +31,7 @@ func PGCWithCloudNativeFullStack(t *testing.T) features.Feature {
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
 	fullStackSpec := &oneagent.CloudNativeFullStackSpec{
-		AppInjectionSpec: oneagent.AppInjectionSpec{
-			CodeModulesImage: registry.GetLatestCodeModulesImageTagURI(t),
-		},
+		CodeModulesImage: registry.GetLatestCodeModulesImageTagURI(t),
 	}
 
 	dk := dynakubeComponents.New(

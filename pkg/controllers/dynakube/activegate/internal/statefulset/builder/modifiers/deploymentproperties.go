@@ -42,16 +42,12 @@ func (mod DeploymentPropertiesModifier) getVolumes() []corev1.Volume {
 	return []corev1.Volume{
 		{
 			Name: consts.DeploymentPropertiesVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: mod.dk.ActiveGate().GetDeploymentPropertiesConfigMapName(),
-					},
-					Items: []corev1.KeyToPath{
-						{
-							Key:  consts.DeploymentPropertiesFileName,
-							Path: consts.DeploymentPropertiesFileName,
-						},
+			ConfigMap: &corev1.ConfigMapVolumeSource{
+				Name: mod.dk.ActiveGate().GetDeploymentPropertiesConfigMapName(),
+				Items: []corev1.KeyToPath{
+					{
+						Key:  consts.DeploymentPropertiesFileName,
+						Path: consts.DeploymentPropertiesFileName,
 					},
 				},
 			},

@@ -9,7 +9,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -25,10 +24,8 @@ func TestTroubleshootNamespace(t *testing.T) {
 		clt := fake.NewClientBuilder().
 			WithScheme(scheme.Scheme).
 			WithObjects(&corev1.Namespace{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: testNamespace,
-					UID:  testUID,
-				},
+				Name: testNamespace,
+				UID:  testUID,
 			}).
 			Build()
 
@@ -38,10 +35,8 @@ func TestTroubleshootNamespace(t *testing.T) {
 		clt := fake.NewClientBuilder().
 			WithScheme(scheme.Scheme).
 			WithObjects(&corev1.Namespace{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: testOtherNamespace,
-					UID:  testUID,
-				},
+				Name: testOtherNamespace,
+				UID:  testUID,
 			}).
 			Build()
 
@@ -51,10 +46,8 @@ func TestTroubleshootNamespace(t *testing.T) {
 		clt := fake.NewClientBuilder().
 			WithScheme(scheme.Scheme).
 			WithObjects(&corev1.Namespace{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: testNamespace,
-					UID:  testUID,
-				},
+				Name: testNamespace,
+				UID:  testUID,
 			}).
 			Build()
 

@@ -50,12 +50,10 @@ type Option func(dk *dynakube.DynaKube)
 
 func New(opts ...Option) *dynakube.DynaKube {
 	dk := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        defaultName,
-			Namespace:   operator.DefaultNamespace,
-			Annotations: map[string]string{},
-		},
-		Spec: dynakube.DynaKubeSpec{},
+		Name:        defaultName,
+		Namespace:   operator.DefaultNamespace,
+		Annotations: map[string]string{},
+		Spec:        dynakube.DynaKubeSpec{},
 	}
 	for _, opt := range opts {
 		opt(dk)

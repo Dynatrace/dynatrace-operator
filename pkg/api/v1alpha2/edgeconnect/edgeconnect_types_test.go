@@ -9,7 +9,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/stretchr/testify/require"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func Test_EdgeConnect_Image(t *testing.T) {
@@ -37,10 +36,8 @@ func Test_EdgeConnect_Image(t *testing.T) {
 func Test_EdgeConnect_HostMappings(t *testing.T) {
 	t.Run("Get HostMappings", func(t *testing.T) {
 		e := EdgeConnect{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-edgeconnect",
-				Namespace: "test-namespace",
-			},
+			Name:      "test-edgeconnect",
+			Namespace: "test-namespace",
 			Status: EdgeConnectStatus{
 				KubeSystemUID: "test-kube-system-uid",
 			},

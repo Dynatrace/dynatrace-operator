@@ -10,7 +10,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/stretchr/testify/assert"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestBuildContent(t *testing.T) {
@@ -57,10 +56,8 @@ func TestBuildContent(t *testing.T) {
 
 	t.Run("no-proxy value", func(t *testing.T) {
 		content := BuildContent(&dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{
-					exp.NoProxyKey: "1.2.3.4",
-				},
+			Annotations: map[string]string{
+				exp.NoProxyKey: "1.2.3.4",
 			},
 			Spec: dynakube.DynaKubeSpec{
 				Proxy: &value.Source{
@@ -73,10 +70,8 @@ func TestBuildContent(t *testing.T) {
 
 	t.Run("resource attributes and no-proxy", func(t *testing.T) {
 		content := BuildContent(&dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{
-					exp.NoProxyKey: "1.2.3.4",
-				},
+			Annotations: map[string]string{
+				exp.NoProxyKey: "1.2.3.4",
 			},
 			Spec: dynakube.DynaKubeSpec{
 				ResourceAttributes: map[string]string{

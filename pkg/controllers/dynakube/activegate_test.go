@@ -12,15 +12,12 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestReconcileActiveGate(t *testing.T) {
 	dkBase := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "this-is-a-name",
-			Namespace: "dynatrace",
-		},
+		Name:      "this-is-a-name",
+		Namespace: "dynatrace",
 		Spec: dynakube.DynaKubeSpec{
 			ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}},
 		},

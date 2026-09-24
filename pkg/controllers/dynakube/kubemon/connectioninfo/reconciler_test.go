@@ -18,7 +18,6 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
@@ -145,8 +144,8 @@ func TestReconcileRotationFailures(t *testing.T) {
 
 		return []client.Object{
 			dk,
-			&corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: dk.KubernetesMonitoring().GetConnectionInfoConfigMapName(), Namespace: testNamespace}},
-			&corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: dk.KubernetesMonitoring().GetTenantSecretName(), Namespace: testNamespace}},
+			&corev1.ConfigMap{Name: dk.KubernetesMonitoring().GetConnectionInfoConfigMapName(), Namespace: testNamespace},
+			&corev1.Secret{Name: dk.KubernetesMonitoring().GetTenantSecretName(), Namespace: testNamespace},
 		}
 	}
 
@@ -240,11 +239,11 @@ func TestReconcileCleanup(t *testing.T) {
 
 			objs := []client.Object{dk}
 			if test.seedConfigMap {
-				objs = append(objs, &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: dk.KubernetesMonitoring().GetConnectionInfoConfigMapName(), Namespace: testNamespace}})
+				objs = append(objs, &corev1.ConfigMap{Name: dk.KubernetesMonitoring().GetConnectionInfoConfigMapName(), Namespace: testNamespace})
 			}
 
 			if test.seedSecret {
-				objs = append(objs, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: dk.KubernetesMonitoring().GetTenantSecretName(), Namespace: testNamespace}})
+				objs = append(objs, &corev1.Secret{Name: dk.KubernetesMonitoring().GetTenantSecretName(), Namespace: testNamespace})
 			}
 
 			fakeClient := fake.NewClient(objs...)
@@ -261,10 +260,8 @@ func TestReconcileCleanup(t *testing.T) {
 
 func newTestDynaKube() *dynakube.DynaKube {
 	dk := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      testName,
-			Namespace: testNamespace,
-		},
+		Name:      testName,
+		Namespace: testNamespace,
 		Spec: dynakube.DynaKubeSpec{
 			APIURL:               "https://tenant.live.dynatrace.com/api",
 			KubernetesMonitoring: &kubemonapi.Spec{},

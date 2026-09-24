@@ -19,7 +19,6 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
@@ -27,11 +26,9 @@ import (
 func TestKubemonDisabled(t *testing.T) {
 	t.Run("no existing service/cert, reconcile completes without error", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-dk",
-				Namespace: "dynatrace",
-			},
-			Spec: dynakube.DynaKubeSpec{},
+			Name:      "test-dk",
+			Namespace: "dynatrace",
+			Spec:      dynakube.DynaKubeSpec{},
 		}
 		err := gateway.NewReconciler(fake.NewClient(dk)).Reconcile(t.Context(), dk)
 		require.NoError(t, err)
@@ -39,23 +36,17 @@ func TestKubemonDisabled(t *testing.T) {
 
 	t.Run("existing service/cert are removed from the cluster", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-dk",
-				Namespace: "dynatrace",
-			},
-			Spec: dynakube.DynaKubeSpec{},
+			Name:      "test-dk",
+			Namespace: "dynatrace",
+			Spec:      dynakube.DynaKubeSpec{},
 		}
 		existingSvc := &corev1.Service{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      gateway.ServiceName(dk.Name),
-				Namespace: dk.Namespace,
-			},
+			Name:      gateway.ServiceName(dk.Name),
+			Namespace: dk.Namespace,
 		}
 		existingSecret := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      dk.KubernetesMonitoring().GetAutoTLSSecretName(),
-				Namespace: dk.Namespace,
-			},
+			Name:      dk.KubernetesMonitoring().GetAutoTLSSecretName(),
+			Namespace: dk.Namespace,
 		}
 		fakeClient := fake.NewClient(dk, existingSvc, existingSecret)
 
@@ -75,10 +66,8 @@ func TestKubemonDisabled(t *testing.T) {
 func TestKubemonEnabled(t *testing.T) {
 	t.Run("no service/cert is created when KSPM is disabled", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-dk",
-				Namespace: "dynatrace",
-			},
+			Name:      "test-dk",
+			Namespace: "dynatrace",
 			Spec: dynakube.DynaKubeSpec{
 				KubernetesMonitoring: &kubemonapi.Spec{},
 			},
@@ -98,25 +87,19 @@ func TestKubemonEnabled(t *testing.T) {
 
 	t.Run("existing service/cert are removed when KSPM is disabled", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-dk",
-				Namespace: "dynatrace",
-			},
+			Name:      "test-dk",
+			Namespace: "dynatrace",
 			Spec: dynakube.DynaKubeSpec{
 				KubernetesMonitoring: &kubemonapi.Spec{},
 			},
 		}
 		existingSvc := &corev1.Service{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      gateway.ServiceName(dk.Name),
-				Namespace: dk.Namespace,
-			},
+			Name:      gateway.ServiceName(dk.Name),
+			Namespace: dk.Namespace,
 		}
 		existingSecret := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      dk.KubernetesMonitoring().GetAutoTLSSecretName(),
-				Namespace: dk.Namespace,
-			},
+			Name:      dk.KubernetesMonitoring().GetAutoTLSSecretName(),
+			Namespace: dk.Namespace,
 		}
 		fakeClient := fake.NewClient(dk, existingSvc, existingSecret)
 
@@ -133,10 +116,8 @@ func TestKubemonEnabled(t *testing.T) {
 
 	t.Run("service has expected configuration", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-dk",
-				Namespace: "dynatrace",
-			},
+			Name:      "test-dk",
+			Namespace: "dynatrace",
 			Spec: dynakube.DynaKubeSpec{
 				KubernetesMonitoring: &kubemonapi.Spec{},
 				KSPM:                 &kspm.Spec{},
@@ -154,10 +135,8 @@ func TestKubemonEnabled(t *testing.T) {
 
 	t.Run("service creation failure is propagated", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-dk",
-				Namespace: "dynatrace",
-			},
+			Name:      "test-dk",
+			Namespace: "dynatrace",
 			Spec: dynakube.DynaKubeSpec{
 				KubernetesMonitoring: &kubemonapi.Spec{},
 				KSPM:                 &kspm.Spec{},
@@ -180,10 +159,8 @@ func TestKubemonEnabled(t *testing.T) {
 
 	t.Run("automatic TLS secret is not created if custom secret is specified", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-dk",
-				Namespace: "dynatrace",
-			},
+			Name:      "test-dk",
+			Namespace: "dynatrace",
 			Spec: dynakube.DynaKubeSpec{
 				KubernetesMonitoring: &kubemonapi.Spec{
 					TLSCertsRef: &kubemonapi.TLSCertsRef{
@@ -204,10 +181,8 @@ func TestKubemonEnabled(t *testing.T) {
 
 	t.Run("existing automatic TLS secret is removed from the cluster if custom secret is specified", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-dk",
-				Namespace: "dynatrace",
-			},
+			Name:      "test-dk",
+			Namespace: "dynatrace",
 			Spec: dynakube.DynaKubeSpec{
 				KubernetesMonitoring: &kubemonapi.Spec{
 					TLSCertsRef: &kubemonapi.TLSCertsRef{
@@ -218,16 +193,12 @@ func TestKubemonEnabled(t *testing.T) {
 			},
 		}
 		customSecret := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "custom-secret",
-				Namespace: dk.Namespace,
-			},
+			Name:      "custom-secret",
+			Namespace: dk.Namespace,
 		}
 		existingSecret := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      dk.KubernetesMonitoring().GetAutoTLSSecretName(),
-				Namespace: dk.Namespace,
-			},
+			Name:      dk.KubernetesMonitoring().GetAutoTLSSecretName(),
+			Namespace: dk.Namespace,
 		}
 		fakeClient := fake.NewClient(dk, existingSecret, customSecret)
 
@@ -241,10 +212,8 @@ func TestKubemonEnabled(t *testing.T) {
 
 	t.Run("automatic TLS secret has expected configuration", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-dk",
-				Namespace: "dynatrace",
-			},
+			Name:      "test-dk",
+			Namespace: "dynatrace",
 			Spec: dynakube.DynaKubeSpec{
 				KubernetesMonitoring: &kubemonapi.Spec{},
 				KSPM:                 &kspm.Spec{},

@@ -423,10 +423,8 @@ func TestTlsSecretHashAnnotationHandling(t *testing.T) {
 				return c.Get(ctx, key, obj, opts...)
 			},
 		}, &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      dk.ActiveGate().GetTLSSecretName(),
-				Namespace: dk.Namespace,
-			},
+			Name:      dk.ActiveGate().GetTLSSecretName(),
+			Namespace: dk.Namespace,
 			Data: map[string][]byte{
 				"tls.key": []byte("foo"),
 			},
@@ -452,10 +450,8 @@ func TestTlsSecretHashAnnotationHandling(t *testing.T) {
 				return c.Get(ctx, key, obj, opts...)
 			},
 		}, &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      dk.KubernetesMonitoring().GetTLSSecretName(),
-				Namespace: dk.Namespace,
-			},
+			Name:      dk.KubernetesMonitoring().GetTLSSecretName(),
+			Namespace: dk.Namespace,
 			Data: map[string][]byte{
 				"tls.key": []byte("foo"),
 			},
@@ -474,10 +470,8 @@ func createDynakube(isEnabled bool) *dynakube.DynaKube {
 	}
 
 	return &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: dkNamespace,
-			Name:      dkName,
-		},
+		Namespace: dkNamespace,
+		Name:      dkName,
 		Spec: dynakube.DynaKubeSpec{
 			APIURL: "test-url",
 			KSPM:   kspmSpec,

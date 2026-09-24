@@ -17,7 +17,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -133,10 +132,8 @@ func TestCreateOrUpdateIfNecessary(t *testing.T) {
 		fakeClient := fake.NewClient()
 		certSecret := newCertificateSecret(&appsv1.Deployment{})
 		certSecret.secret = &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      buildSecretName(),
-				Namespace: testNamespace,
-			},
+			Name:      buildSecretName(),
+			Namespace: testNamespace,
 		}
 		certSecret.certificates = &Certs{
 			Data: map[string][]byte{testKey: testValue1},
@@ -157,10 +154,8 @@ func TestCreateOrUpdateIfNecessary(t *testing.T) {
 		fakeClient := fake.NewClient()
 		certSecret := newCertificateSecret(&appsv1.Deployment{})
 		certSecret.secret = &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      buildSecretName(),
-				Namespace: testNamespace,
-			},
+			Name:      buildSecretName(),
+			Namespace: testNamespace,
 		}
 		certSecret.certificates = &Certs{
 			Data: map[string][]byte{testKey: testValue1},

@@ -37,17 +37,15 @@ const testImage = "registry.example.com/scraper:1.2.3"
 
 func newTestPM(name, namespace string) *prometheusmonitoring.PrometheusMonitoring {
 	return &prometheusmonitoring.PrometheusMonitoring{
-		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace, UID: types.UID("pm-uid")},
+		Name: name, Namespace: namespace, UID: types.UID("pm-uid"),
 		Spec: prometheusmonitoring.PrometheusMonitoringSpec{
 			Scraper: prometheusmonitoring.ScraperSpec{
-				PodSpec: prometheusmonitoring.PodSpec{
-					Resources: corev1.ResourceRequirements{
-						Limits: corev1.ResourceList{
-							corev1.ResourceMemory: resource.MustParse("250Mi"),
-						},
-						Requests: corev1.ResourceList{
-							corev1.ResourceMemory: resource.MustParse("125Mi"),
-						},
+				Resources: corev1.ResourceRequirements{
+					Limits: corev1.ResourceList{
+						corev1.ResourceMemory: resource.MustParse("250Mi"),
+					},
+					Requests: corev1.ResourceList{
+						corev1.ResourceMemory: resource.MustParse("125Mi"),
 					},
 				},
 				TargetsPollInterval: new(metav1.Duration{Duration: 60 * time.Second}),
@@ -70,7 +68,7 @@ func newTestScopeWithDynaKube(pm *prometheusmonitoring.PrometheusMonitoring, dk 
 }
 
 func newTestDynaKube() *dynakube.DynaKube {
-	return &dynakube.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: "dk", Namespace: "dynatrace"}}
+	return &dynakube.DynaKube{Name: "dk", Namespace: "dynatrace"}
 }
 
 func createErrorClient(createErr error) client.Client {
@@ -136,11 +134,10 @@ func TestReconcileConfigMap(t *testing.T) {
 	t.Run("merge labels", func(t *testing.T) {
 		pm := newTestPM("pm", "dynatrace")
 		s := newTestScope(pm)
-		existing := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{
+		existing := &corev1.ConfigMap{
 			Name:      s.Spec.GetDeploymentName(),
 			Namespace: pm.Namespace,
-			Labels:    map[string]string{"custom": "value", k8slabel.AppInstanceLabel: "override"},
-		}}
+			Labels:    map[string]string{"custom": "value", k8slabel.AppInstanceLabel: "override"}}
 		c := fake.NewClient(existing)
 		r := &Reconciler{Client: c}
 

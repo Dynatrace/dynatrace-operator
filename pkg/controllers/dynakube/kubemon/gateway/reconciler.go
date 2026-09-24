@@ -17,7 +17,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -67,10 +66,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 func (r *Reconciler) createService(ctx context.Context, dk *dynakube.DynaKube) error {
 	desired := kubemonService(dk)
 	svc := &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      desired.Name,
-			Namespace: desired.Namespace,
-		},
+		Name:      desired.Name,
+		Namespace: desired.Namespace,
 	}
 
 	return k8sobject.RetryCreateOrUpdate(ctx, r.client, svc, func() error {
@@ -106,11 +103,9 @@ func kubemonService(dk *dynakube.DynaKube) *corev1.Service {
 	labels := k8slabel.New(k8slabel.KubeMonComponentLabel, dk.Name, "")
 
 	return &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      ServiceName(dk.Name),
-			Namespace: dk.Namespace,
-			Labels:    labels.AsMap(),
-		},
+		Name:      ServiceName(dk.Name),
+		Namespace: dk.Namespace,
+		Labels:    labels.AsMap(),
 		Spec: corev1.ServiceSpec{
 			Type:     corev1.ServiceTypeClusterIP,
 			Selector: labels.AsSelector(),
@@ -128,10 +123,8 @@ func (r *Reconciler) createTLSSecret(ctx context.Context, dk *dynakube.DynaKube)
 	desired := tlsSecretSpec(dk, certificateData)
 
 	secret := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      desired.Name,
-			Namespace: desired.Namespace,
-		},
+		Name:      desired.Name,
+		Namespace: desired.Namespace,
 	}
 
 	return k8sobject.RetryCreateOrUpdate(ctx, r.client, secret, func() error {
@@ -185,12 +178,10 @@ func tlsSecretSpec(dk *dynakube.DynaKube, data map[string][]byte) *corev1.Secret
 	labels := k8slabel.New(k8slabel.KubeMonComponentLabel, dk.Name, "")
 
 	return &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      dk.KubernetesMonitoring().GetAutoTLSSecretName(),
-			Namespace: dk.Namespace,
-			Labels:    labels.AsMap(),
-		},
-		Data: data,
-		Type: corev1.SecretTypeOpaque,
+		Name:      dk.KubernetesMonitoring().GetAutoTLSSecretName(),
+		Namespace: dk.Namespace,
+		Labels:    labels.AsMap(),
+		Data:      data,
+		Type:      corev1.SecretTypeOpaque,
 	}
 }

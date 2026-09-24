@@ -20,7 +20,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -78,10 +77,8 @@ func (r *Reconciler) reconcileSelfSignedTLSSecret(ctx context.Context, dk *dynak
 
 func (r *Reconciler) deleteSelfSignedTLSSecret(ctx context.Context, dk *dynakube.DynaKube) error {
 	err := r.secrets.Delete(ctx, &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      dk.ActiveGate().GetAutoTLSSecretName(),
-			Namespace: dk.Namespace,
-		},
+		Name:      dk.ActiveGate().GetAutoTLSSecretName(),
+		Namespace: dk.Namespace,
 	})
 
 	if k8serrors.IsNotFound(err) {

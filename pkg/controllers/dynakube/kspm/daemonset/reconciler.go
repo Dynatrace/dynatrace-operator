@@ -22,7 +22,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -74,7 +73,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, imageClient dtimage.Client, 
 
 		defer meta.RemoveStatusCondition(dk.Conditions(), conditionType)
 
-		err := r.daemonset.Delete(ctx, &appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dk.KSPM().GetDaemonSetName(), Namespace: dk.Namespace}})
+		err := r.daemonset.Delete(ctx, &appsv1.DaemonSet{Name: dk.KSPM().GetDaemonSetName(), Namespace: dk.Namespace})
 		if err != nil {
 			log.Error(err, "failed to clean-up KSPM daemonset")
 		}

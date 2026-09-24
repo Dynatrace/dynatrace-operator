@@ -51,10 +51,8 @@ func (inst *Installer) buildJob(name, targetDir string) (*batchv1.Job, error) {
 
 	hostVolume := corev1.Volume{
 		Name: volumeName,
-		VolumeSource: corev1.VolumeSource{
-			HostPath: &corev1.HostPathVolumeSource{
-				Path: k8senv.GetCSIDataDir(),
-			},
+		HostPath: &corev1.HostPathVolumeSource{
+			Path: k8senv.GetCSIDataDir(),
 		},
 	}
 

@@ -28,10 +28,8 @@ const (
 func TestReconciler_Reconcile(t *testing.T) {
 	t.Run("ActiveGate disabled", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: testNamespace,
-				Name:      testDynakubeName,
-			},
+			Namespace: testNamespace,
+			Name:      testDynakubeName,
 		}
 		fakeClient := fake.NewClient()
 		r := NewReconciler(fakeClient, fakeClient)
@@ -49,10 +47,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 
 	t.Run("custom ActiveGate TLS secret exists", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: testNamespace,
-				Name:      testDynakubeName,
-			},
+			Namespace: testNamespace,
+			Name:      testDynakubeName,
 			Spec: dynakube.DynaKubeSpec{
 				ActiveGate: activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{
@@ -78,12 +74,10 @@ func TestReconciler_Reconcile(t *testing.T) {
 
 	t.Run("automatic-tls-certificate feature disabled", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: testNamespace,
-				Name:      testDynakubeName,
-				Annotations: map[string]string{
-					exp.AGAutomaticTLSCertificateKey: "false",
-				},
+			Namespace: testNamespace,
+			Name:      testDynakubeName,
+			Annotations: map[string]string{
+				exp.AGAutomaticTLSCertificateKey: "false",
 			},
 			Spec: dynakube.DynaKubeSpec{
 				ActiveGate: activegate.Spec{
@@ -109,10 +103,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 
 	t.Run("secret created", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: testNamespace,
-				Name:      testDynakubeName,
-			},
+			Namespace: testNamespace,
+			Name:      testDynakubeName,
 			Spec: dynakube.DynaKubeSpec{
 				ActiveGate: activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{
@@ -141,10 +133,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 
 	t.Run("secret deleted", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: testNamespace,
-				Name:      testDynakubeName,
-			},
+			Namespace: testNamespace,
+			Name:      testDynakubeName,
 			Spec: dynakube.DynaKubeSpec{
 				ActiveGate: activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{

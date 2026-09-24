@@ -22,7 +22,6 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -30,17 +29,13 @@ var anyCtx = mock.MatchedBy(func(context.Context) bool { return true })
 
 func TestHandleImpl(t *testing.T) {
 	initSecret := corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      consts.BootstrapperInitSecretName,
-			Namespace: testNamespaceName,
-		},
+		Name:      consts.BootstrapperInitSecretName,
+		Namespace: testNamespaceName,
 	}
 
 	certsSecret := corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      consts.BootstrapperInitCertsSecretName,
-			Namespace: testNamespaceName,
-		},
+		Name:      consts.BootstrapperInitCertsSecretName,
+		Namespace: testNamespaceName,
 	}
 
 	t.Run("injection disabled => do not execute handler", func(t *testing.T) {
@@ -82,18 +77,14 @@ func TestHandleImpl(t *testing.T) {
 		request := createTestMutationRequest(t, getTestDynakubeWithAGCerts())
 
 		source := corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      bootstrapperconfig.GetSourceConfigSecretName(request.DynaKube.Name),
-				Namespace: request.DynaKube.Namespace,
-			},
-			Data: map[string][]byte{"data": []byte("beep")},
+			Name:      bootstrapperconfig.GetSourceConfigSecretName(request.DynaKube.Name),
+			Namespace: request.DynaKube.Namespace,
+			Data:      map[string][]byte{"data": []byte("beep")},
 		}
 		sourceCerts := corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      bootstrapperconfig.GetSourceCertsSecretName(request.DynaKube.Name),
-				Namespace: request.DynaKube.Namespace,
-			},
-			Data: map[string][]byte{"certs": []byte("very secure")},
+			Name:      bootstrapperconfig.GetSourceCertsSecretName(request.DynaKube.Name),
+			Namespace: request.DynaKube.Namespace,
+			Data:      map[string][]byte{"certs": []byte("very secure")},
 		}
 
 		oaMutator := webhookmock.NewMutator(t)
@@ -127,19 +118,15 @@ func TestHandleImpl(t *testing.T) {
 		request := createTestMutationRequest(t, getTestDynakube())
 
 		source := corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      bootstrapperconfig.GetSourceConfigSecretName(request.DynaKube.Name),
-				Namespace: request.DynaKube.Namespace,
-			},
-			Data: map[string][]byte{"data": []byte("beep")},
+			Name:      bootstrapperconfig.GetSourceConfigSecretName(request.DynaKube.Name),
+			Namespace: request.DynaKube.Namespace,
+			Data:      map[string][]byte{"data": []byte("beep")},
 		}
 
 		sourceCerts := corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      bootstrapperconfig.GetSourceCertsSecretName(request.DynaKube.Name),
-				Namespace: request.DynaKube.Namespace,
-			},
-			Data: map[string][]byte{"certs": []byte("very secure")},
+			Name:      bootstrapperconfig.GetSourceCertsSecretName(request.DynaKube.Name),
+			Namespace: request.DynaKube.Namespace,
+			Data:      map[string][]byte{"certs": []byte("very secure")},
 		}
 
 		oaMutator := webhookmock.NewMutator(t)
@@ -285,10 +272,8 @@ func getInjectedPod(t *testing.T) *corev1.Pod {
 	t.Helper()
 
 	pod := &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      testPodName,
-			Namespace: testNamespaceName,
-		},
+		Name:      testPodName,
+		Namespace: testNamespaceName,
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{
 				{
@@ -305,10 +290,8 @@ func getInjectedPod(t *testing.T) *corev1.Pod {
 			},
 			Volumes: []corev1.Volume{
 				{
-					Name: "volume",
-					VolumeSource: corev1.VolumeSource{
-						EmptyDir: &corev1.EmptyDirVolumeSource{},
-					},
+					Name:     "volume",
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
 				},
 			},
 		},
@@ -340,10 +323,8 @@ func TestSetDynatraceInjectedAnnotation(t *testing.T) {
 		request := dtwebhook.MutationRequest{
 			BaseRequest: &dtwebhook.BaseRequest{
 				Pod: &corev1.Pod{
-					ObjectMeta: metav1.ObjectMeta{
-						Annotations: map[string]string{
-							dtwebhook.AnnotationDynatraceReason: "beep",
-						},
+					Annotations: map[string]string{
+						dtwebhook.AnnotationDynatraceReason: "beep",
 					},
 				},
 			},
@@ -364,11 +345,9 @@ func createTestMutationRequest(t *testing.T, dk *dynakube.DynaKube) *dtwebhook.M
 
 func getTestNamespace() *corev1.Namespace {
 	return &corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: testNamespaceName,
-			Labels: map[string]string{
-				dtwebhook.InjectionInstanceLabel: testDynakubeName,
-			},
+		Name: testNamespaceName,
+		Labels: map[string]string{
+			dtwebhook.InjectionInstanceLabel: testDynakubeName,
 		},
 	}
 }

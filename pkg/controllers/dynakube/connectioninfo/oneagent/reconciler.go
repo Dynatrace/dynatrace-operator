@@ -18,7 +18,6 @@ import (
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -42,7 +41,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, oaClient oneagent.Client, dk
 			return nil // no condition == nothing is there to clean up
 		}
 
-		err := r.secrets.Delete(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: dk.OneAgent().GetTenantSecret(), Namespace: dk.Namespace}})
+		err := r.secrets.Delete(ctx, &corev1.Secret{Name: dk.OneAgent().GetTenantSecret(), Namespace: dk.Namespace})
 		if err != nil {
 			log.Error(err, "failed to clean-up OneAgent tenant-secret")
 		}

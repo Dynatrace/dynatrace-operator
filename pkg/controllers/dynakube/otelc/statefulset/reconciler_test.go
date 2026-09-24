@@ -576,10 +576,8 @@ func TestReconcileReplicas(t *testing.T) {
 			objs := []client.Object{&tokenSecret, &configMap}
 			if tc.existingReplicas != nil {
 				objs = append(objs, &appsv1.StatefulSet{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      dk.OTelCollectorStatefulsetName(),
-						Namespace: dk.Namespace,
-					},
+					Name:      dk.OTelCollectorStatefulsetName(),
+					Namespace: dk.Namespace,
 					Spec: appsv1.StatefulSetSpec{
 						Replicas: tc.existingReplicas,
 						Selector: &metav1.LabelSelector{MatchLabels: buildAppLabels(dk.Name).BuildMatchLabels()},
@@ -642,11 +640,9 @@ func TestAppArmorAnnotationHandling(t *testing.T) {
 
 func getTestDynakube() *dynakube.DynaKube {
 	dk := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        testDynakubeName,
-			Namespace:   testNamespaceName,
-			Annotations: map[string]string{},
-		},
+		Name:        testDynakubeName,
+		Namespace:   testNamespaceName,
+		Annotations: map[string]string{},
 		Spec: dynakube.DynaKubeSpec{
 			Templates: dynakube.TemplatesSpec{
 				OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{
@@ -697,10 +693,8 @@ func mockTLSSecret(t *testing.T, client client.Client, dk *dynakube.DynaKube) cl
 
 func getTokens(name string, namespace string) corev1.Secret {
 	return corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
-		},
+		Name:      name,
+		Namespace: namespace,
 		Data: map[string][]byte{
 			token.APIKey:        []byte("test"),
 			token.DataIngestKey: []byte("test"),
@@ -710,10 +704,8 @@ func getTokens(name string, namespace string) corev1.Secret {
 
 func getTLSSecret(name string, namespace string, crt string, key string) corev1.Secret {
 	return corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
-		},
+		Name:      name,
+		Namespace: namespace,
 		Data: map[string][]byte{
 			consts.TLSCrtDataName: []byte(crt),
 			consts.TLSKeyDataName: []byte(key),
@@ -723,10 +715,8 @@ func getTLSSecret(name string, namespace string, crt string, key string) corev1.
 
 func getConfigConfigMap(name string, namespace string) corev1.ConfigMap {
 	return corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name + otelcconsts.TelemetryCollectorConfigmapSuffix,
-			Namespace: namespace,
-		},
+		Name:      name + otelcconsts.TelemetryCollectorConfigmapSuffix,
+		Namespace: namespace,
 		Data: map[string]string{
 			otelcconsts.ConfigFieldName: "test",
 		},

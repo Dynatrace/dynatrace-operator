@@ -42,11 +42,9 @@ func (mod CertificatesModifier) getVolumes() []corev1.Volume {
 	return []corev1.Volume{
 		{
 			Name: consts.CertsVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName:  mod.dk.ActiveGate().GetTLSSecretName(),
-					DefaultMode: new(int32(0o640)),
-				},
+			Secret: &corev1.SecretVolumeSource{
+				SecretName:  mod.dk.ActiveGate().GetTLSSecretName(),
+				DefaultMode: new(int32(0o640)),
 			},
 		},
 	}

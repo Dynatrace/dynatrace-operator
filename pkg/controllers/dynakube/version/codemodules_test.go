@@ -10,7 +10,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
@@ -32,10 +31,8 @@ func TestCodeModulesUpdater(t *testing.T) {
 			Spec: dynakube.DynaKubeSpec{
 				OneAgent: oneagent.Spec{
 					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
-						Version: testVersion, //nolint:staticcheck
-						AppInjectionSpec: oneagent.AppInjectionSpec{
-							CodeModulesImage: testImage,
-						},
+						Version:          testVersion, //nolint:staticcheck
+						CodeModulesImage: testImage,
 					},
 				},
 			},
@@ -137,9 +134,7 @@ func TestCodeModulesIsEnabled(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			Status: dynakube.DynaKubeStatus{
 				CodeModules: oneagent.CodeModulesStatus{
-					VersionStatus: status.VersionStatus{
-						Version: "prev",
-					},
+					Version: "prev",
 				},
 			},
 		}
@@ -159,9 +154,7 @@ func TestCodeModulesIsEnabled(t *testing.T) {
 
 func oldCodeModulesStatus() oneagent.CodeModulesStatus {
 	return oneagent.CodeModulesStatus{
-		VersionStatus: status.VersionStatus{
-			ImageID: "prev",
-		},
+		ImageID: "prev",
 	}
 }
 
@@ -177,10 +170,8 @@ func TestCodeModulesLatestImageInfo(t *testing.T) {
 
 	newDK := func(registry string) *dynakube.DynaKube {
 		return &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{
-					exp.UsePublicRegistryKey: "true",
-				},
+			Annotations: map[string]string{
+				exp.UsePublicRegistryKey: "true",
 			},
 			Spec: dynakube.DynaKubeSpec{
 				OneAgent: oneagent.Spec{

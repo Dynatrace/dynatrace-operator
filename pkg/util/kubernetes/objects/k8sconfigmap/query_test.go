@@ -30,9 +30,7 @@ const (
 
 func createDeployment() *appsv1.Deployment {
 	return &appsv1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: testDeploymentName,
-		},
+		Name: testDeploymentName,
 	}
 }
 
@@ -51,11 +49,9 @@ func TestQuery(t *testing.T) {
 
 func testGetConfigMap(t *testing.T) {
 	configMap := corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      testConfigMapName,
-			Namespace: testNamespace,
-		},
-		Data: map[string]string{testKey1: testConfigMapValue},
+		Name:      testConfigMapName,
+		Namespace: testNamespace,
+		Data:      map[string]string{testKey1: testConfigMapValue},
 	}
 	fakeClient := fake.NewClient(&configMap)
 	configMapQuery := Query(fakeClient, fakeClient)
@@ -70,11 +66,9 @@ func testCreateConfigMap(t *testing.T) {
 	fakeClient := fake.NewClient()
 	configMapQuery := Query(fakeClient, fakeClient)
 	configMap := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      testConfigMapName,
-			Namespace: testNamespace,
-		},
-		Data: map[string]string{testKey1: testConfigMapValue},
+		Name:      testConfigMapName,
+		Namespace: testNamespace,
+		Data:      map[string]string{testKey1: testConfigMapValue},
 	}
 
 	err := configMapQuery.Create(t.Context(), configMap)
@@ -90,11 +84,9 @@ func testCreateConfigMap(t *testing.T) {
 
 func testUpdateConfigMap(t *testing.T) {
 	configMap := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      testConfigMapName,
-			Namespace: testNamespace,
-		},
-		Data: map[string]string{testKey1: testConfigMapValue},
+		Name:      testConfigMapName,
+		Namespace: testNamespace,
+		Data:      map[string]string{testKey1: testConfigMapValue},
 	}
 	fakeClient := fake.NewClient()
 	configMapQuery := Query(fakeClient, fakeClient)
@@ -120,11 +112,9 @@ func testUpdateConfigMap(t *testing.T) {
 
 func testCreateOrUpdateConfigMap(t *testing.T) {
 	configMap := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      testConfigMapName,
-			Namespace: testNamespace,
-		},
-		Data: map[string]string{testKey1: testConfigMapValue},
+		Name:      testConfigMapName,
+		Namespace: testNamespace,
+		Data:      map[string]string{testKey1: testConfigMapValue},
 	}
 	fakeClient := fake.NewClient()
 	configMapQuery := Query(fakeClient, fakeClient)
@@ -141,11 +131,9 @@ func testCreateOrUpdateConfigMap(t *testing.T) {
 
 	fakeClient = fake.NewClient(configMap)
 	configMap = &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      testConfigMapName,
-			Namespace: testNamespace,
-		},
-		Data: nil,
+		Name:      testConfigMapName,
+		Namespace: testNamespace,
+		Data:      nil,
 	}
 	configMapQuery.KubeClient = fakeClient
 
@@ -166,12 +154,10 @@ func testIdenticalConfigMapIsNotUpdated(t *testing.T) {
 		"label": "test",
 	}
 	fakeClient := fake.NewClient(&corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      testConfigMapName,
-			Namespace: testNamespace,
-			Labels:    labels,
-		},
-		Data: data,
+		Name:      testConfigMapName,
+		Namespace: testNamespace,
+		Labels:    labels,
+		Data:      data,
 	})
 	configMap := createTestConfigMap(labels, data)
 	configMapQuery := Query(fakeClient, fakeClient)
@@ -187,12 +173,10 @@ func testUpdateConfigMapWhenDataChanged(t *testing.T) {
 		"label": "test",
 	}
 	fakeClient := fake.NewClient(&corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      testConfigMapName,
-			Namespace: testNamespace,
-			Labels:    labels,
-		},
-		Data: map[string]string{},
+		Name:      testConfigMapName,
+		Namespace: testNamespace,
+		Labels:    labels,
+		Data:      map[string]string{},
 	})
 	configMap := createTestConfigMap(labels, data)
 	configMapQuery := Query(fakeClient, fakeClient)
@@ -214,12 +198,10 @@ func testUpdateConfigMapWhenLabelsChanged(t *testing.T) {
 		"label": "test",
 	}
 	fakeClient := fake.NewClient(&corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      testConfigMapName,
-			Namespace: testNamespace,
-			Labels:    map[string]string{},
-		},
-		Data: data,
+		Name:      testConfigMapName,
+		Namespace: testNamespace,
+		Labels:    map[string]string{},
+		Data:      data,
 	})
 	configMap := createTestConfigMap(labels, data)
 	configMapQuery := Query(fakeClient, fakeClient)
@@ -241,11 +223,9 @@ func testCreateConfigMapInTargetNamespace(t *testing.T) {
 		"label": "test",
 	}
 	fakeClient := fake.NewClient(&corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      testConfigMapName,
-			Namespace: "other",
-		},
-		Data: map[string]string{},
+		Name:      testConfigMapName,
+		Namespace: "other",
+		Data:      map[string]string{},
 	})
 	configMap := createTestConfigMap(labels, data)
 	configMapQuery := Query(fakeClient, fakeClient)
@@ -270,12 +250,10 @@ func testDeleteConfigMap(t *testing.T) {
 		"label": "test",
 	}
 	fakeClient := fake.NewClient(&corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      testConfigMapName,
-			Namespace: testNamespace,
-			Labels:    labels,
-		},
-		Data: data,
+		Name:      testConfigMapName,
+		Namespace: testNamespace,
+		Labels:    labels,
+		Data:      data,
 	})
 	configMap := createTestConfigMap(labels, data)
 	configMapQuery := Query(fakeClient, fakeClient)
@@ -292,11 +270,9 @@ func testHashAnnotationAfterCreate(t *testing.T) {
 	fakeClient := fake.NewClient()
 	configMapQuery := Query(fakeClient, fakeClient)
 	configMap := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      testConfigMapName,
-			Namespace: testNamespace,
-		},
-		Data: map[string]string{testKey1: testConfigMapValue},
+		Name:      testConfigMapName,
+		Namespace: testNamespace,
+		Data:      map[string]string{testKey1: testConfigMapValue},
 	}
 
 	err := configMapQuery.Create(t.Context(), configMap)
@@ -319,13 +295,11 @@ func testHashAnnotationAfterCreate(t *testing.T) {
 
 func createTestConfigMap(labels map[string]string, data map[string]string) *corev1.ConfigMap {
 	configMap := &corev1.ConfigMap{
-		TypeMeta: metav1.TypeMeta{},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      testConfigMapName,
-			Namespace: testNamespace,
-			Labels:    labels,
-		},
-		Data: data,
+		TypeMeta:  metav1.TypeMeta{},
+		Name:      testConfigMapName,
+		Namespace: testNamespace,
+		Labels:    labels,
+		Data:      data,
 	}
 
 	return configMap

@@ -29,13 +29,11 @@ type nodeTaintAnalysisCollector struct {
 
 func newNodeTaintAnalysisCollector(ctx context.Context, log logd.Logger, supportArchive archiver, namespace string, apiReader client.Reader) collector {
 	return nodeTaintAnalysisCollector{
-		collectorCommon: collectorCommon{
-			log:            log,
-			supportArchive: supportArchive,
-		},
-		ctx:       ctx,
-		apiReader: apiReader,
-		namespace: namespace,
+		log:            log,
+		supportArchive: supportArchive,
+		ctx:            ctx,
+		apiReader:      apiReader,
+		namespace:      namespace,
 	}
 }
 

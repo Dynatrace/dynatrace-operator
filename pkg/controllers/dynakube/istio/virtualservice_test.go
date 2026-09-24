@@ -11,7 +11,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	istio "istio.io/api/networking/v1beta1"
 	istiov1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -33,11 +32,9 @@ func TestVirtualServiceGeneration(t *testing.T) {
 
 	t.Run("generate for tls connection", func(t *testing.T) {
 		expected := &istiov1beta1.VirtualService{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-				Labels:    buildTestLabels(),
-			},
+			Name:      testName,
+			Namespace: testNamespace,
+			Labels:    buildTestLabels(),
 			Spec: istio.VirtualService{
 				Hosts: []string{testHost},
 				Tls: []*istio.TLSRoute{{
@@ -64,11 +61,9 @@ func TestVirtualServiceGeneration(t *testing.T) {
 	})
 	t.Run("generate for http connection", func(t *testing.T) {
 		expected := &istiov1beta1.VirtualService{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-				Labels:    buildTestLabels(),
-			},
+			Name:      testName,
+			Namespace: testNamespace,
+			Labels:    buildTestLabels(),
 			Spec: istio.VirtualService{
 				Hosts: []string{testHost},
 				Http: []*istio.HTTPRoute{{

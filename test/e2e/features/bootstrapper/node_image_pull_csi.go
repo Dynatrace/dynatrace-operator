@@ -31,7 +31,7 @@ func InstallWithCSI(t *testing.T) features.Feature {
 
 	appMonDynakube := dynakubeComponents.New(
 		dynakubeComponents.WithName("app-codemodules"),
-		dynakubeComponents.WithApplicationMonitoringSpec(&oneagent.ApplicationMonitoringSpec{AppInjectionSpec: oneagent.AppInjectionSpec{CodeModulesImage: registry.GetLatestCodeModulesImageTagURI(t)}}),
+		dynakubeComponents.WithApplicationMonitoringSpec(&oneagent.ApplicationMonitoringSpec{CodeModulesImage: registry.GetLatestCodeModulesImageTagURI(t)}),
 		dynakubeComponents.WithAnnotations(map[string]string{exp.OANodeImagePullKey: "true"}),
 		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
 	)
