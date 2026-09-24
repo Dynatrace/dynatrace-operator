@@ -175,7 +175,8 @@ func GetRelevantDynaKubes(ctx context.Context, apiReader client.Reader) ([]dynak
 // GetOverlayMountsIn returns the overlay mounts that are mounted somewhere under baseFolder.
 func GetOverlayMountsIn(ctx context.Context, mounter mount.Interface, baseFolder string) ([]OverlayMount, error) {
 	return collectOverlayMounts(ctx, mounter, func(overlayMount OverlayMount) bool {
-		return isUnder(overlayMount.Path, baseFolder)
+		ok, _ := isSubfolder(overlayMount.Path, baseFolder)
+		return ok
 	})
 }
 
@@ -187,7 +188,8 @@ func GetOverlayMountsIn(ctx context.Context, mounter mount.Interface, baseFolder
 func GetOverlayMountsWithLowerDirIn(ctx context.Context, mounter mount.Interface, baseFolder string) ([]OverlayMount, error) {
 	return collectOverlayMounts(ctx, mounter, func(overlayMount OverlayMount) bool {
 		return slices.ContainsFunc(overlayMount.LowerDirs, func(lowerDir string) bool {
-			return isUnder(lowerDir, baseFolder)
+			ok, _ := isSubfolder(lowerDir, baseFolder)
+			return ok
 		})
 	})
 }
@@ -283,8 +285,10 @@ func splitLowerDirs(value string) []string {
 	return lowerDirs
 }
 
-// isUnder reports whether path is inside baseFolder, comparing whole path components so that
-// for example /database is not considered to be under /data.
-func isUnder(path, baseFolder string) bool {
-	return strings.HasPrefix(path, filepath.Clean(baseFolder)+string(os.PathSeparator))
+func isSubfolder(child, parent string) (bool, error) {
+	rel, err := filepath.Rel(parent, child)
+	if err != nil {
+		return false, err
+	}
+	return !strings.HasPrefix(rel, ".."), nil
 }
