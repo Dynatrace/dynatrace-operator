@@ -398,12 +398,12 @@ func waitForShutdown(name string, namespace string) features.Func {
 func createAgTLSSecret(namespace string) (*corev1.Secret, error) {
 	agCrt, err := os.ReadFile(filepath.Join(project.TestDataDir(), consts.AgCertificate))
 	if err != nil {
-		return &corev1.Secret{}, err
+		return nil, err
 	}
 
 	agP12, err := os.ReadFile(filepath.Join(project.TestDataDir(), consts.AgCertificateAndPrivateKey))
 	if err != nil {
-		return &corev1.Secret{}, err
+		return nil, err
 	}
 
 	return k8ssecret.New(consts.AgSecretName, namespace,
