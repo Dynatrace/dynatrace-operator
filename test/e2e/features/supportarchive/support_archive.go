@@ -94,7 +94,7 @@ func Feature(t *testing.T) features.Feature {
 	)
 
 	// create OAuth client secret related to the specific EdgeConnect configuration on the tenant
-	builder.Assess("create client secret", tenant.CreateClientSecret(&edgeConnectTenantConfig.Secret, edgeconnectComponents.BuildOAuthClientSecretName(testEdgeConnect.Name), testEdgeConnect.Namespace))
+	builder.Assess("create client secret", tenant.CreateClientSecret(edgeConnectTenantConfig.Secret, edgeconnectComponents.BuildOAuthClientSecretName(testEdgeConnect.Name), testEdgeConnect.Namespace))
 
 	builder.Assess("deploy injected namespace", k8snamespace.Create(k8snamespace.New(testAppNameInjected, k8snamespace.WithLabels(injectLabels))))
 	builder.Assess("deploy NOT injected namespace", k8snamespace.Create(k8snamespace.New(testAppNameNotInjected)))
@@ -113,7 +113,7 @@ func Feature(t *testing.T) features.Feature {
 	builder.Assess("create AG TLS secret", k8ssecret.Create(agSecret))
 
 	dynakubeComponents.Install(builder, secretConfig, testDynakube)
-	edgeconnectComponents.Install(builder, nil, testEdgeConnect)
+	edgeconnectComponents.Install(builder, tenant.EdgeConnectSecret{}, testEdgeConnect)
 	builder.Assess("check EC configuration on the tenant", edgeconnectComponents.CheckECExistsOnTheTenant(edgeconnectSecretConfig, edgeConnectTenantConfig))
 
 	// check if components are running

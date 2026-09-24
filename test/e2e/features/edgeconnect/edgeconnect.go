@@ -61,9 +61,9 @@ func NormalModeFeature(t *testing.T) features.Feature {
 	)
 
 	// create OAuth client secret related to the specific EdgeConnect configuration on the tenant
-	builder.Assess("create client secret", tenant.CreateClientSecret(&edgeConnectTenantConfig.Secret, ecComponents.BuildOAuthClientSecretName(testEdgeConnect.Name), testEdgeConnect.Namespace))
+	builder.Assess("create client secret", tenant.CreateClientSecret(edgeConnectTenantConfig.Secret, ecComponents.BuildOAuthClientSecretName(testEdgeConnect.Name), testEdgeConnect.Namespace))
 
-	ecComponents.Install(builder, nil, testEdgeConnect)
+	ecComponents.Install(builder, tenant.EdgeConnectSecret{}, testEdgeConnect)
 
 	builder.Assess("check EC configuration on the tenant", ecComponents.CheckECExistsOnTheTenant(secretConfig, edgeConnectTenantConfig))
 	builder.Assess("delete EdgeConnect CR", ecComponents.Delete(testEdgeConnect))
@@ -112,7 +112,7 @@ func provisionerModeFeature(t *testing.T, featureName, expectedImage string, opt
 	}, opts...)
 	testEdgeConnect := ecComponents.New(ecOpts...)
 
-	ecComponents.Install(builder, &secretConfig, testEdgeConnect)
+	ecComponents.Install(builder, secretConfig, testEdgeConnect)
 
 	builder.Assess("get tenant config", getTenantConfig(testECname, secretConfig, edgeConnectTenantConfig))
 	builder.Assess("get EC status", ecComponents.Get(testEdgeConnect))
@@ -172,7 +172,7 @@ func WithHTTPProxy(t *testing.T) features.Feature {
 	proxy.CutOffDynatraceNamespace(builder, proxy.ProxySpec)
 	proxy.IsDynatraceNamespaceCutOff(builder, dummyDynakube)
 
-	ecComponents.Install(builder, &secretConfig, testEdgeConnect)
+	ecComponents.Install(builder, secretConfig, testEdgeConnect)
 
 	builder.Assess("get tenant config", getTenantConfig(testECname, secretConfig, edgeConnectTenantConfig))
 	builder.Assess("get EC status", ecComponents.Get(testEdgeConnect))
@@ -237,7 +237,7 @@ func WithHTTPSProxy(t *testing.T) features.Feature {
 	proxy.CutOffDynatraceNamespace(builder, proxy.HTTPSProxySpec)
 	proxy.IsDynatraceNamespaceCutOff(builder, dummyDynakube)
 
-	ecComponents.Install(builder, &secretConfig, testEdgeConnect)
+	ecComponents.Install(builder, secretConfig, testEdgeConnect)
 
 	builder.Assess("get tenant config", getTenantConfig(testECname, secretConfig, edgeConnectTenantConfig))
 	builder.Assess("get EC status", ecComponents.Get(testEdgeConnect))
@@ -275,7 +275,7 @@ func AutomationModeFeature(t *testing.T) features.Feature {
 
 	builder.Assess("create ServiceAccount", createServiceAccount())
 
-	ecComponents.Install(builder, &secretConfig, testEdgeConnect)
+	ecComponents.Install(builder, secretConfig, testEdgeConnect)
 
 	builder.Assess("get tenant config", getTenantConfig(testECname, secretConfig, edgeConnectTenantConfig))
 	builder.Assess("get EC status", ecComponents.Get(testEdgeConnect))
