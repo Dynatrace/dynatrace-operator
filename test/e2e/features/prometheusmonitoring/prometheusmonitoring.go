@@ -46,7 +46,7 @@ func Feature(t *testing.T) features.Feature {
 			Namespace: operator.DefaultNamespace,
 		},
 		Spec: pmapi.PrometheusMonitoringSpec{
-			DynaKubeRef: dk.Name,
+			DynaKubeName: dk.Name,
 			TargetAllocator: pmapi.TargetAllocatorSpec{
 				PodSpec: pmapi.PodSpec{
 					Image: registry.GetLatestImageTagURI(t, defaultTargetAllocatorRepo, targetAllocatorImageEnvVar),
@@ -128,7 +128,7 @@ func PublicRegistry(t *testing.T) features.Feature {
 			Namespace: operator.DefaultNamespace,
 		},
 		Spec: pmapi.PrometheusMonitoringSpec{
-			DynaKubeRef: dk.Name,
+			DynaKubeName: dk.Name,
 		},
 	}
 
