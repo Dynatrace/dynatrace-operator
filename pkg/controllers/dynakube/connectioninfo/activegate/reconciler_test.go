@@ -50,7 +50,7 @@ func TestReconcile(t *testing.T) {
 			Status: metav1.ConditionTrue,
 		})
 
-		fakeClient := fake.NewClient(buildActiveGateSecret(*dk, testTenantUUID))
+		fakeClient := fake.NewClient(buildActiveGateSecret(dk, testTenantUUID))
 		dtClient := agclientmock.NewClient(t)
 
 		r := NewReconciler(fakeClient, fakeClient)
@@ -96,7 +96,7 @@ func TestReconcile(t *testing.T) {
 		dtClient := agclientmock.NewClient(t)
 		dtClient.EXPECT().GetConnectionInfo(anyCtx).Return(getTestActiveGateConnectionInfo(), nil).Once()
 
-		fakeClient := fake.NewClient(dk, buildActiveGateSecret(*dk, testTenantUUID))
+		fakeClient := fake.NewClient(dk, buildActiveGateSecret(dk, testTenantUUID))
 		dk.Status.ActiveGate.ConnectionInfo = communication.ConnectionInfo{
 			TenantUUID: testOutdated,
 			Endpoints:  testOutdated,
@@ -168,7 +168,7 @@ func getTestDynakube() *dynakube.DynaKube {
 	}
 }
 
-func buildActiveGateSecret(dk dynakube.DynaKube, token string) *corev1.Secret {
+func buildActiveGateSecret(dk *dynakube.DynaKube, token string) *corev1.Secret {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      dk.ActiveGate().GetTenantSecretName(),

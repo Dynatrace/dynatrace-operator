@@ -111,11 +111,11 @@ func assessActiveGate(builder *features.FeatureBuilder, dk *dynakube.DynaKube) {
 }
 
 func assessActiveGateHTTPSEndpoint(builder *features.FeatureBuilder, dk *dynakube.DynaKube) {
-	curlActiveGateHTTPS(builder, *dk)
+	curlActiveGateHTTPS(builder, dk)
 }
 
 func assessActiveGateHTTPEndpoint(builder *features.FeatureBuilder, dk *dynakube.DynaKube) {
-	curlActiveGateHTTP(builder, *dk)
+	curlActiveGateHTTP(builder, dk)
 }
 
 func checkIfAgHasContainers(dk *dynakube.DynaKube) features.Func {

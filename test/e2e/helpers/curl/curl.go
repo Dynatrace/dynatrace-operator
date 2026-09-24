@@ -91,7 +91,7 @@ func WithReadinessProbe(probe *corev1.Probe) Option {
 	}
 }
 
-func WithProxy(dk dynakube.DynaKube) Option {
+func WithProxy(dk *dynakube.DynaKube) Option {
 	return func(curlPod *corev1.Pod) {
 		if dk.HasProxy() {
 			proxyEnv := corev1.EnvVar{
