@@ -28,17 +28,17 @@ func TestNormalResponse(t *testing.T) {
 		probeTimeout: time.Second,
 	}
 
-	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+	server := httptest.NewTestServer(t, http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		if req.URL.String() == "/healthz" {
 			livenessprobeServer.probeRequest(rw, req)
 		}
 	}))
-	defer server.Close()
+	client := server.Client()
 
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/healthz", server.URL), nil)
 	require.NoError(t, err)
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := client.Do(req)
 	require.NoError(t, err)
 
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
@@ -53,17 +53,17 @@ func TestDelayedResponse(t *testing.T) {
 		probeTimeout: time.Second,
 	}
 
-	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+	server := httptest.NewTestServer(t, http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		if req.URL.String() == "/healthz" {
 			livenessprobeServer.probeRequest(rw, req)
 		}
 	}))
-	defer server.Close()
+	client := server.Client()
 
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/healthz", server.URL), nil)
 	require.NoError(t, err)
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := client.Do(req)
 	require.NoError(t, err)
 
 	assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)

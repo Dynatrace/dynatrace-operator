@@ -132,6 +132,11 @@ linters:
         - fieldalignment
     misspell:
       locale: US
+    modernize:
+      disable:
+        # Rewriting embedded field literals is tracked separately in ICP-8939,
+        # enable once the codebase has been migrated.
+        - embedlit
     mnd:
       checks:
         - argument
