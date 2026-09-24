@@ -36,7 +36,7 @@ func TestReconcile(t *testing.T) {
 
 		reconciler := NewReconciler()
 
-		err := reconciler.Reconcile(ctx, nil, &dk)
+		err := reconciler.Reconcile(ctx, nil, dk)
 
 		require.NoError(t, err)
 	})
@@ -50,7 +50,7 @@ func TestReconcile(t *testing.T) {
 		dtClient := settingsmock.NewClient(t)
 		reconciler := NewReconciler()
 
-		err := reconciler.Reconcile(ctx, dtClient, &dk)
+		err := reconciler.Reconcile(ctx, dtClient, dk)
 
 		require.NoError(t, err)
 		assert.Empty(t, dk.Status.MetadataEnrichment.Rules)
@@ -65,7 +65,7 @@ func TestReconcile(t *testing.T) {
 		dtClient := settingsmock.NewClient(t)
 		reconciler := NewReconciler()
 
-		err := reconciler.Reconcile(ctx, dtClient, &dk)
+		err := reconciler.Reconcile(ctx, dtClient, dk)
 
 		require.NoError(t, err)
 		assert.Empty(t, dk.Status.MetadataEnrichment.Rules)
@@ -75,7 +75,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("update if outdated", func(t *testing.T) {
 		dk := createDynaKube()
-		optionalscope.SetAvailable(&dk, token.ScopeSettingsRead)
+		optionalscope.SetAvailable(dk, token.ScopeSettingsRead)
 
 		expectedResponse := createRules()
 		specialMessage := "TESTING" // if the special message changes == condition updated
@@ -90,7 +90,7 @@ func TestReconcile(t *testing.T) {
 			timeProvider: futureTime,
 		}
 
-		err := reconciler.Reconcile(ctx, dtClient, &dk)
+		err := reconciler.Reconcile(ctx, dtClient, dk)
 
 		require.NoError(t, err)
 		assert.Equal(t, createRules(), dk.Status.MetadataEnrichment.Rules)
@@ -101,7 +101,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("set rules correctly", func(t *testing.T) {
 		dk := createDynaKube()
-		optionalscope.SetAvailable(&dk, token.ScopeSettingsRead)
+		optionalscope.SetAvailable(dk, token.ScopeSettingsRead)
 
 		expectedResponse := createRules()
 
@@ -109,7 +109,7 @@ func TestReconcile(t *testing.T) {
 		dtClient.EXPECT().GetRules(anyCtx, dk.Status.KubeSystemUUID, dk.Status.KubernetesClusterMEID).Return(expectedResponse, nil)
 		reconciler := NewReconciler()
 
-		err := reconciler.Reconcile(ctx, dtClient, &dk)
+		err := reconciler.Reconcile(ctx, dtClient, dk)
 
 		require.NoError(t, err)
 		assert.Equal(t, createRules(), dk.Status.MetadataEnrichment.Rules)
@@ -120,7 +120,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("no rules if only node image pull is set", func(t *testing.T) {
 		dk := createDynaKube()
-		optionalscope.SetAvailable(&dk, token.ScopeSettingsRead)
+		optionalscope.SetAvailable(dk, token.ScopeSettingsRead)
 		dk.Spec.MetadataEnrichment.Enabled = new(false)
 
 		dk.Annotations = map[string]string{
@@ -130,7 +130,7 @@ func TestReconcile(t *testing.T) {
 		dtClient := settingsmock.NewClient(t)
 		reconciler := NewReconciler()
 
-		err := reconciler.Reconcile(ctx, dtClient, &dk)
+		err := reconciler.Reconcile(ctx, dtClient, dk)
 
 		require.NoError(t, err)
 		assert.Empty(t, dk.Status.MetadataEnrichment.Rules)
@@ -138,13 +138,13 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("set api-error condition in case of fail", func(t *testing.T) {
 		dk := createDynaKube()
-		optionalscope.SetAvailable(&dk, token.ScopeSettingsRead)
+		optionalscope.SetAvailable(dk, token.ScopeSettingsRead)
 
 		dtClient := settingsmock.NewClient(t)
 		dtClient.EXPECT().GetRules(anyCtx, dk.Status.KubeSystemUUID, dk.Status.KubernetesClusterMEID).Return(nil, errors.New("BOOM"))
 		reconciler := NewReconciler()
 
-		err := reconciler.Reconcile(ctx, dtClient, &dk)
+		err := reconciler.Reconcile(ctx, dtClient, dk)
 
 		require.Error(t, err)
 		assert.Empty(t, dk.Status.MetadataEnrichment.Rules)
@@ -158,7 +158,7 @@ func TestReconcile(t *testing.T) {
 		dtClient := settingsmock.NewClient(t)
 		reconciler := NewReconciler()
 
-		err := reconciler.Reconcile(ctx, dtClient, &dk)
+		err := reconciler.Reconcile(ctx, dtClient, dk)
 
 		require.NoError(t, err)
 		assert.Empty(t, dk.Status.MetadataEnrichment.Rules)
@@ -176,7 +176,7 @@ func TestReconcile(t *testing.T) {
 		dtClient.EXPECT().GetRules(anyCtx, dk.Status.KubeSystemUUID, dk.Status.KubernetesClusterMEID).Return(nil, &core.HTTPError{StatusCode: 403})
 		reconciler := NewReconciler()
 
-		err := reconciler.Reconcile(ctx, dtClient, &dk)
+		err := reconciler.Reconcile(ctx, dtClient, dk)
 
 		require.NoError(t, err)
 		assert.Empty(t, dk.Status.MetadataEnrichment.Rules)
@@ -186,8 +186,8 @@ func TestReconcile(t *testing.T) {
 	})
 }
 
-func createDynaKube() dynakube.DynaKube {
-	return dynakube.DynaKube{
+func createDynaKube() *dynakube.DynaKube {
+	return &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "rules-dk",
 		},

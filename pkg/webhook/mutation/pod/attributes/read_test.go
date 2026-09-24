@@ -145,7 +145,7 @@ func TestGetPodAnnotationAttributes(t *testing.T) {
 
 func TestGetFromEnrichmentRules(t *testing.T) {
 	// for rules that only read from the namespace, neither the pod nor the workload carry metadata
-	applyRules := func(attrs *Pod, ns corev1.Namespace, dk dynakube.DynaKube) {
+	applyRules := func(attrs *Pod, ns corev1.Namespace, dk *dynakube.DynaKube) {
 		attrs.applyEnrichmentRules(dk.Status.MetadataEnrichment.Rules, &ns, &workload.Info{}, &corev1.Pod{})
 	}
 
@@ -166,7 +166,7 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 			},
 		}
 
-		applyRules(attrs, ns, dk)
+		applyRules(attrs, ns, &dk)
 
 		expectedKey := metadataenrichment.GetEmptyTargetEnrichmentKey(string(metadataenrichment.LabelRule), "env")
 		assert.Equal(t, "production", attrs.rules[expectedKey])
@@ -190,7 +190,7 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 			},
 		}
 
-		applyRules(attrs, ns, dk)
+		applyRules(attrs, ns, &dk)
 
 		assert.Equal(t, "staging", attrs.rules["custom.env"])
 		assert.Len(t, attrs.rules, 1)
@@ -213,7 +213,7 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 			},
 		}
 
-		applyRules(attrs, ns, dk)
+		applyRules(attrs, ns, &dk)
 
 		assert.Equal(t, "backend", attrs.rules["team.name"])
 	})
@@ -230,7 +230,7 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 			},
 		}
 
-		applyRules(attrs, corev1.Namespace{}, dk)
+		applyRules(attrs, corev1.Namespace{}, &dk)
 
 		assert.Empty(t, attrs.rules)
 	})
@@ -256,7 +256,7 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 			},
 		}
 
-		applyRules(attrs, ns, dk)
+		applyRules(attrs, ns, &dk)
 
 		envKey := metadataenrichment.GetEmptyTargetEnrichmentKey(string(metadataenrichment.LabelRule), "env")
 		assert.Equal(t, "prod", attrs.rules[envKey])
@@ -280,7 +280,7 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 			},
 		}
 
-		applyRules(attrs, ns, dk)
+		applyRules(attrs, ns, &dk)
 
 		assert.Equal(t, "production", attrs.rules["custom.env"])
 		assert.Len(t, attrs.rules, 1)
@@ -303,7 +303,7 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 			},
 		}
 
-		applyRules(attrs, ns, dk)
+		applyRules(attrs, ns, &dk)
 
 		expectedKey := metadataenrichment.GetEmptyTargetEnrichmentKey(string(metadataenrichment.K8sNamespaceLabelRule), "env")
 		assert.Equal(t, "production", attrs.rules[expectedKey])
@@ -327,7 +327,7 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 			},
 		}
 
-		applyRules(attrs, ns, dk)
+		applyRules(attrs, ns, &dk)
 
 		assert.Equal(t, "backend", attrs.rules["team.name"])
 		assert.Len(t, attrs.rules, 1)
@@ -345,7 +345,7 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 			},
 		}
 
-		applyRules(attrs, corev1.Namespace{}, dk)
+		applyRules(attrs, corev1.Namespace{}, &dk)
 
 		assert.Empty(t, attrs.rules)
 	})
@@ -362,7 +362,7 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 			},
 		}
 
-		applyRules(attrs, corev1.Namespace{}, dk)
+		applyRules(attrs, corev1.Namespace{}, &dk)
 
 		assert.Equal(t, "my-literal-value", attrs.rules["dt.custom"])
 		assert.Len(t, attrs.rules, 1)

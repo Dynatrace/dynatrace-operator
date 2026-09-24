@@ -45,7 +45,7 @@ func TestNoProxyConsistency(t *testing.T) {
 	t.Run("NO_PROXY matches DT_ENDPOINT if proxy is set and local AG defined", func(t *testing.T) {
 		dk := createDynaKube(true)
 
-		clt := createClient(t, &dk)
+		clt := createClient(t, dk)
 
 		dtEndpoint, noProxy := reconcile(t, ctx, clt, dk)
 
@@ -59,7 +59,7 @@ func TestNoProxyConsistency(t *testing.T) {
 	t.Run("NO_PROXY does not contain DT_ENDPOINT if proxy is set and cluster AG defined", func(t *testing.T) {
 		dk := createDynaKube(false)
 
-		clt := createClient(t, &dk)
+		clt := createClient(t, dk)
 
 		dtEndpoint, noProxy := reconcile(t, ctx, clt, dk)
 
@@ -81,8 +81,8 @@ func createClient(t *testing.T, dk *dynakube.DynaKube) client.WithWatch {
 	return fake.NewFakeClient(testTokensSecret, testConfig)
 }
 
-func createDynaKube(activeGateEnabled bool) dynakube.DynaKube {
-	dk := dynakube.DynaKube{
+func createDynaKube(activeGateEnabled bool) *dynakube.DynaKube {
+	dk := &dynakube.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test-dk",
 			Namespace: "test-namespace",
@@ -124,11 +124,11 @@ func createDynaKube(activeGateEnabled bool) dynakube.DynaKube {
 	return dk
 }
 
-func reconcile(t *testing.T, ctx context.Context, clt client.WithWatch, dk dynakube.DynaKube) (dtEndpoint string, noProxy string) {
+func reconcile(t *testing.T, ctx context.Context, clt client.WithWatch, dk *dynakube.DynaKube) (dtEndpoint string, noProxy string) {
 	t.Helper()
 
 	er := endpoint.NewReconciler(clt, clt)
-	err := er.Reconcile(ctx, &dk)
+	err := er.Reconcile(ctx, dk)
 	require.NoError(t, err)
 
 	var apiEndpointConfigMap corev1.ConfigMap
@@ -139,7 +139,7 @@ func reconcile(t *testing.T, ctx context.Context, clt client.WithWatch, dk dynak
 	require.True(t, ok)
 
 	sr := statefulset.NewReconciler(clt, clt)
-	err = sr.Reconcile(ctx, imageclientmock.NewClient(t), &dk)
+	err = sr.Reconcile(ctx, imageclientmock.NewClient(t), dk)
 	require.NoError(t, err)
 
 	var otelcSts appsv1.StatefulSet

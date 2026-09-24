@@ -73,7 +73,7 @@ func TestReconcile(t *testing.T) {
 		dk := dynakubeTemplate.DeepCopy()
 		fakeClient := fake.NewClient()
 
-		setupPullSecret(t, fakeClient, *dk)
+		setupPullSecret(t, fakeClient, dk)
 
 		ctx := t.Context()
 		dkStatus := &dk.Status
@@ -155,13 +155,13 @@ func TestNeedsUpdate(t *testing.T) {
 	})
 }
 
-func setupPullSecret(t *testing.T, fakeClient client.Client, dk dynakube.DynaKube) {
+func setupPullSecret(t *testing.T, fakeClient client.Client, dk *dynakube.DynaKube) {
 	t.Helper()
 	err := createTestPullSecret(t, fakeClient, dk)
 	require.NoError(t, err)
 }
 
-func createTestPullSecret(t *testing.T, fakeClient client.Client, dk dynakube.DynaKube) error {
+func createTestPullSecret(t *testing.T, fakeClient client.Client, dk *dynakube.DynaKube) error {
 	return fakeClient.Create(t.Context(), &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: dk.Namespace,
