@@ -367,10 +367,7 @@ func GetLatestOTelCollectorImageDigestURI(t *testing.T) string {
 
 func WithExtensionsEECImageRef(t *testing.T, imageURI string) Option {
 	return func(dk *dynakube.DynaKube) {
-		if applyImageRef(t, dk, &dk.Spec.Templates.ExtensionExecutionController.ImageRef, imageURI, defaultEECRepo) {
-			// Disable legacy mounts when using a non-default image
-			dk.Annotations["feature.dynatrace.com/use-eec-legacy-mounts"] = "false"
-		}
+		applyImageRef(t, dk, &dk.Spec.Templates.ExtensionExecutionController.ImageRef, imageURI, defaultEECRepo)
 	}
 }
 
@@ -472,24 +469,20 @@ func WithExtensionsDBExecutorImageRef(t *testing.T, imageURI string) Option {
 	}
 }
 
-func applyImageRef(t *testing.T, dk *dynakube.DynaKube, imageRef *image.Ref, imageURI, defaultRepo string) bool {
+func applyImageRef(t *testing.T, dk *dynakube.DynaKube, imageRef *image.Ref, imageURI, defaultRepo string) {
 	t.Helper()
 
 	imageRef.Repository, imageRef.Tag, imageRef.Digest = registry.ParseImageURI(imageURI)
 
-	return applyCustomPullSecretIfNeeded(t, dk, imageRef.Repository, defaultRepo)
+	applyCustomPullSecretIfNeeded(t, dk, imageRef.Repository, defaultRepo)
 }
 
 // applyCustomPullSecretIfNeeded sets CustomPullSecret when the resolved image repo differs from the default.
-func applyCustomPullSecretIfNeeded(t *testing.T, dk *dynakube.DynaKube, repository, defaultRepo string) bool {
+func applyCustomPullSecretIfNeeded(t *testing.T, dk *dynakube.DynaKube, repository, defaultRepo string) {
 	t.Helper()
 
 	if repository != defaultRepo {
 		dk.Spec.CustomPullSecret = consts.DevRegistryPullSecretName
 		t.Logf("image repo %s differs from default %s, setting custom pull secret", repository, defaultRepo)
-
-		return true
 	}
-
-	return false
 }

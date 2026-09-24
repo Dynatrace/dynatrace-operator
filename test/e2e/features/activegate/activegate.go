@@ -61,7 +61,7 @@ var (
 // the *Gateway* process is reachable via *Gateway service*.
 func Feature(t *testing.T, proxySpec *value.Source) features.Feature {
 	secretConfig := tenant.GetSingleTenantSecret(t)
-	testDynakube := *dynakubeComponents.New(
+	testDynakube := dynakubeComponents.New(
 		dynakubeComponents.WithActiveGate(),
 		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
 		dynakubeComponents.WithProxy(proxySpec))
@@ -72,10 +72,10 @@ func Feature(t *testing.T, proxySpec *value.Source) features.Feature {
 	proxy.IsDynatraceNamespaceCutOff(builder, testDynakube)
 
 	// Register actual test
-	dynakubeComponents.Install(builder, &secretConfig, testDynakube)
-	assessActiveGate(builder, &testDynakube)
+	dynakubeComponents.Install(builder, secretConfig, testDynakube)
+	assessActiveGate(builder, testDynakube)
 
-	assessReadOnlyActiveGate(builder, &testDynakube)
+	assessReadOnlyActiveGate(builder, testDynakube)
 
 	// only activegate capabilities are used in this test
 	// make sure that if separate kubemon activegate is not used - it does not create separate statefulset and secret
@@ -158,8 +158,8 @@ func checkMountPoints(dk *dynakube.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		kubeResources := envConfig.Client().Resources()
 
-		var activeGatePod corev1.Pod
-		require.NoError(t, kubeResources.Get(ctx, activegate.GetActiveGatePodName(dk), dk.Namespace, &activeGatePod))
+		activeGatePod := &corev1.Pod{}
+		require.NoError(t, kubeResources.Get(ctx, activegate.GetActiveGatePodName(dk), dk.Namespace, activeGatePod))
 
 		for name, mountPoints := range agMounts {
 			assertMountPointsExist(ctx, t, kubeResources, activeGatePod, name, mountPoints)
@@ -169,7 +169,7 @@ func checkMountPoints(dk *dynakube.DynaKube) features.Func {
 	}
 }
 
-func assertMountPointsExist(ctx context.Context, t *testing.T, resources *resources.Resources, pod corev1.Pod, containerName string, mountPoints []string) { //nolint:revive // argument-limit
+func assertMountPointsExist(ctx context.Context, t *testing.T, resources *resources.Resources, pod *corev1.Pod, containerName string, mountPoints []string) { //nolint:revive // argument-limit
 	readFileCommand := shell.ReadFile("/proc/mounts")
 	executionResult, err := k8spod.Exec(ctx, resources, pod, containerName, readFileCommand...)
 	require.NoError(t, err)
@@ -261,8 +261,8 @@ func checkReadOnlySettings(dk *dynakube.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		kubeResources := envConfig.Client().Resources()
 
-		var activeGatePod corev1.Pod
-		require.NoError(t, kubeResources.WithNamespace(dk.Namespace).Get(ctx, activegate.GetActiveGatePodName(dk), dk.Namespace, &activeGatePod))
+		activeGatePod := &corev1.Pod{}
+		require.NoError(t, kubeResources.WithNamespace(dk.Namespace).Get(ctx, activegate.GetActiveGatePodName(dk), dk.Namespace, activeGatePod))
 
 		require.NotNil(t, activeGatePod.Spec)
 		require.NotEmpty(t, activeGatePod.Spec.InitContainers)
@@ -276,7 +276,7 @@ func checkReadOnlySettings(dk *dynakube.DynaKube) features.Func {
 	}
 }
 
-func assertReadOnlyRootFilesystems(t *testing.T, activeGatePod corev1.Pod) {
+func assertReadOnlyRootFilesystems(t *testing.T, activeGatePod *corev1.Pod) {
 	var initContainer *corev1.Container
 	for _, c := range activeGatePod.Spec.InitContainers {
 		if !strings.Contains(c.Name, "istio") {
@@ -292,7 +292,7 @@ func assertReadOnlyRootFilesystems(t *testing.T, activeGatePod corev1.Pod) {
 	assert.True(t, *activeGatePod.Spec.Containers[0].SecurityContext.ReadOnlyRootFilesystem, "Container should have ReadOnly filesystem")
 }
 
-func assertReadOnlyVolumes(t *testing.T, activeGatePod corev1.Pod) {
+func assertReadOnlyVolumes(t *testing.T, activeGatePod *corev1.Pod) {
 	require.NotNil(t, activeGatePod.Spec)
 	require.NotEmpty(t, activeGatePod.Spec.Containers)
 
@@ -334,7 +334,7 @@ func assertReadOnlyVolumes(t *testing.T, activeGatePod corev1.Pod) {
 	}
 }
 
-func assertReadOnlyVolumeMounts(t *testing.T, activeGatePod corev1.Pod) {
+func assertReadOnlyVolumeMounts(t *testing.T, activeGatePod *corev1.Pod) {
 	expectedVolumeMounts := []corev1.VolumeMount{
 		{
 			ReadOnly:  false,

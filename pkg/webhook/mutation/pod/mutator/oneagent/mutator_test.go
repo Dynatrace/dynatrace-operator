@@ -188,7 +188,7 @@ func TestIsEnabled(t *testing.T) {
 			dk := &dynakube.DynaKube{}
 			test.dkMods(dk)
 
-			req := &dtwebhook.MutationRequest{BaseRequest: &dtwebhook.BaseRequest{Pod: pod, DynaKube: dk, Namespace: *ns}}
+			req := &dtwebhook.MutationRequest{BaseRequest: &dtwebhook.BaseRequest{Pod: pod, DynaKube: dk, Namespace: ns}}
 
 			assert.Equal(t, test.enabled, IsEnabled(req.BaseRequest))
 		})
@@ -417,7 +417,7 @@ func TestAddOneAgentToContainer(t *testing.T) {
 			},
 		}
 		addVolumeMounts(&container, installPath, isImageVolume(baseReq))
-		addOneAgentEnvsToContainer(baseReq.DynaKube, &container, corev1.Namespace{}, installPath, "")
+		addOneAgentEnvsToContainer(baseReq.DynaKube, &container, &corev1.Namespace{}, installPath, "")
 
 		assert.Len(t, container.VolumeMounts, 2) // preload,bin
 
@@ -452,7 +452,7 @@ func TestAddOneAgentToContainer(t *testing.T) {
 		}
 		runtimeClassName := "gvisor"
 
-		addOneAgentEnvsToContainer(dk, &container, corev1.Namespace{}, installPath, runtimeClassName)
+		addOneAgentEnvsToContainer(dk, &container, &corev1.Namespace{}, installPath, runtimeClassName)
 
 		runtimeClassEnv := k8senv.Find(container.Env, PodRuntimeClassEnv)
 		require.NotNil(t, runtimeClassEnv)

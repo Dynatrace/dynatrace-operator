@@ -929,7 +929,7 @@ func Test_addActiveGateCertVolume(t *testing.T) {
 func createTestMutationRequest(t *testing.T, dk *dynakube.DynaKube) *mutator.MutationRequest {
 	t.Helper()
 
-	return mutator.NewMutationRequest(t.Context(), *getTestNamespace(), nil, getTestPod(), dk)
+	return mutator.NewMutationRequest(t.Context(), getTestNamespace(), nil, getTestPod(), dk)
 }
 
 func getTestNamespace() *corev1.Namespace {

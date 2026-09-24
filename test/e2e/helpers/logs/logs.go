@@ -40,7 +40,7 @@ func WriteOperatorLogToFile(ctx context.Context, envConfig *envconf.Config, t *t
 	logFile, err := os.Create(filepath.Join(resultsDir, t.Name()+operatorLogFileSuffix))
 	require.NoError(t, err)
 
-	err = k8sdeployment.NewQuery(ctx, resources, client.ObjectKey{Name: operator.DeploymentName, Namespace: operator.DefaultNamespace}).ForEachPod(func(pod corev1.Pod) {
+	err = k8sdeployment.NewQuery(ctx, resources, client.ObjectKey{Name: operator.DeploymentName, Namespace: operator.DefaultNamespace}).ForEachPod(func(pod *corev1.Pod) {
 		err = copyLogStream(ctx, clientset, logFile, logParams{
 			namespace:     pod.Namespace,
 			podName:       pod.Name,

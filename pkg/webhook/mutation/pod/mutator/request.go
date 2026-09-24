@@ -12,7 +12,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func NewMutationRequest(ctx context.Context, namespace corev1.Namespace, installContainer *corev1.Container, pod *corev1.Pod, dk *dynakube.DynaKube) *MutationRequest {
+func NewMutationRequest(ctx context.Context, namespace *corev1.Namespace, installContainer *corev1.Container, pod *corev1.Pod, dk *dynakube.DynaKube) *MutationRequest {
 	return &MutationRequest{
 		BaseRequest:      newBaseRequest(pod, namespace, dk),
 		Context:          ctx,
@@ -42,7 +42,7 @@ type ReinvocationRequest struct {
 	*BaseRequest
 }
 
-func newBaseRequest(pod *corev1.Pod, namespace corev1.Namespace, dk *dynakube.DynaKube) *BaseRequest {
+func newBaseRequest(pod *corev1.Pod, namespace *corev1.Namespace, dk *dynakube.DynaKube) *BaseRequest {
 	return &BaseRequest{
 		Pod:       pod,
 		DynaKube:  dk,
@@ -61,7 +61,7 @@ type PodAnnotationWriter interface {
 // BaseRequest is the base request for all mutation requests
 type BaseRequest struct {
 	Pod       *corev1.Pod
-	Namespace corev1.Namespace
+	Namespace *corev1.Namespace
 	DynaKube  *dynakube.DynaKube
 	// AnnotationWriter is set by the last mutator to run (initial mutation and
 	// reinvocation). webhook.Handle writes pod annotations via this writer after

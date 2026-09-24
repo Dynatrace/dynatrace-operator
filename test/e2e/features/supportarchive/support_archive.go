@@ -47,8 +47,8 @@ const (
 )
 
 type CustomResources struct {
-	dk dynakube.DynaKube
-	ec edgeconnect.EdgeConnect
+	dk *dynakube.DynaKube
+	ec *edgeconnect.EdgeConnect
 }
 
 // Setup: DTO with CSI driver
@@ -65,7 +65,7 @@ func Feature(t *testing.T) features.Feature {
 		"inject": "me",
 	}
 
-	testDynakube := *dynakubeComponents.New(
+	testDynakube := dynakubeComponents.New(
 		dynakubeComponents.WithOneAgentNamespaceSelector(metav1.LabelSelector{
 			MatchLabels: injectLabels,
 		}),
@@ -85,7 +85,7 @@ func Feature(t *testing.T) features.Feature {
 
 	builder.Assess("create EC configuration on the tenant", edgeconnectComponents.CreateTenantConfig(testECname, edgeconnectSecretConfig, edgeConnectTenantConfig, testHostPattern))
 
-	testEdgeConnect := *edgeconnectComponents.New(
+	testEdgeConnect := edgeconnectComponents.New(
 		edgeconnectComponents.WithName(testECname),
 		edgeconnectComponents.WithAPIServer(edgeconnectSecretConfig.APIServer),
 		edgeconnectComponents.WithOAuthClientSecret(edgeconnectComponents.BuildOAuthClientSecretName(testECname)),
@@ -94,10 +94,10 @@ func Feature(t *testing.T) features.Feature {
 	)
 
 	// create OAuth client secret related to the specific EdgeConnect configuration on the tenant
-	builder.Assess("create client secret", tenant.CreateClientSecret(&edgeConnectTenantConfig.Secret, edgeconnectComponents.BuildOAuthClientSecretName(testEdgeConnect.Name), testEdgeConnect.Namespace))
+	builder.Assess("create client secret", tenant.CreateClientSecret(edgeConnectTenantConfig.Secret, edgeconnectComponents.BuildOAuthClientSecretName(testEdgeConnect.Name), testEdgeConnect.Namespace))
 
-	builder.Assess("deploy injected namespace", k8snamespace.Create(*k8snamespace.New(testAppNameInjected, k8snamespace.WithLabels(injectLabels))))
-	builder.Assess("deploy NOT injected namespace", k8snamespace.Create(*k8snamespace.New(testAppNameNotInjected)))
+	builder.Assess("deploy injected namespace", k8snamespace.Create(k8snamespace.New(testAppNameInjected, k8snamespace.WithLabels(injectLabels))))
+	builder.Assess("deploy NOT injected namespace", k8snamespace.Create(k8snamespace.New(testAppNameNotInjected)))
 
 	agCrt, err := os.ReadFile(filepath.Join(project.TestDataDir(), consts.AgCertificate))
 	require.NoError(t, err)
@@ -112,8 +112,8 @@ func Feature(t *testing.T) features.Feature {
 		})
 	builder.Assess("create AG TLS secret", k8ssecret.Create(agSecret))
 
-	dynakubeComponents.Install(builder, &secretConfig, testDynakube)
-	edgeconnectComponents.Install(builder, nil, testEdgeConnect)
+	dynakubeComponents.Install(builder, secretConfig, testDynakube)
+	edgeconnectComponents.Install(builder, tenant.EdgeConnectSecret{}, testEdgeConnect)
 	builder.Assess("check EC configuration on the tenant", edgeconnectComponents.CheckECExistsOnTheTenant(edgeconnectSecretConfig, edgeConnectTenantConfig))
 
 	// check if components are running
@@ -133,7 +133,7 @@ func Feature(t *testing.T) features.Feature {
 	return builder.Feature()
 }
 
-func testSupportArchiveCommand(testDynakube dynakube.DynaKube, testEdgeConnect edgeconnect.EdgeConnect, collectManaged bool) features.Func {
+func testSupportArchiveCommand(testDynakube *dynakube.DynaKube, testEdgeConnect *edgeconnect.EdgeConnect, collectManaged bool) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		commandLineArguments := []string{"--stdout"}
 		if !collectManaged {
@@ -178,7 +178,7 @@ func executeSupportArchiveCommand(ctx context.Context, t *testing.T, envConfig *
 	command := slices.Concat([]string{"/usr/local/bin/dynatrace-operator", "support-archive"}, cmdLineArguments)
 
 	executionResult, err := k8spod.Exec(ctx, envConfig.Client().Resources(),
-		operatorPods[0],
+		&operatorPods[0],
 		operator.ContainerName,
 		command...,
 	)

@@ -214,8 +214,8 @@ func (dst *DynaKube) fromActiveGateSpec(src *dynakubelatest.DynaKube) { //nolint
 }
 
 func (dst *DynaKube) fromStatus(src *dynakubelatest.DynaKube) {
-	dst.fromOneAgentStatus(*src)
-	dst.fromActiveGateStatus(*src)
+	dst.fromOneAgentStatus(src)
+	dst.fromActiveGateStatus(src)
 	dst.Status.CodeModules = oneagent.CodeModulesStatus{
 		VersionStatus: src.Status.CodeModules.VersionStatus,
 	}
@@ -241,7 +241,7 @@ func (dst *DynaKube) fromStatus(src *dynakubelatest.DynaKube) {
 	dst.Status.Conditions = src.Status.Conditions
 }
 
-func (dst *DynaKube) fromOneAgentStatus(src dynakubelatest.DynaKube) { //nolint:dupl
+func (dst *DynaKube) fromOneAgentStatus(src *dynakubelatest.DynaKube) { //nolint:dupl
 	dst.Status.OneAgent.VersionStatus = src.Status.OneAgent.VersionStatus
 
 	dst.Status.OneAgent.Instances = map[string]oneagent.Instance{}
@@ -258,7 +258,7 @@ func (dst *DynaKube) fromOneAgentStatus(src dynakubelatest.DynaKube) { //nolint:
 	dst.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts = make([]oneagent.CommunicationHostStatus, 0)
 }
 
-func (dst *DynaKube) fromActiveGateStatus(src dynakubelatest.DynaKube) {
+func (dst *DynaKube) fromActiveGateStatus(src *dynakubelatest.DynaKube) {
 	dst.Status.ActiveGate.VersionStatus = src.Status.ActiveGate.VersionStatus
 	dst.Status.ActiveGate.ConnectionInfo = src.Status.ActiveGate.ConnectionInfo
 	dst.Status.ActiveGate.ServiceIPs = src.Status.ActiveGate.ServiceIPs

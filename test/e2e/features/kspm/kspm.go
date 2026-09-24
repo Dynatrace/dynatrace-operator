@@ -31,15 +31,15 @@ func Feature(t *testing.T) features.Feature {
 		componentDynakube.WithActiveGate(),
 	}
 
-	testDynakube := *componentDynakube.New(options...)
+	testDynakube := componentDynakube.New(options...)
 
-	componentDynakube.Install(builder, &secretConfig, testDynakube)
+	componentDynakube.Install(builder, secretConfig, testDynakube)
 
-	builder.Assess("active gate pod is running", activegate.CheckContainer(&testDynakube))
+	builder.Assess("active gate pod is running", activegate.CheckContainer(testDynakube))
 
 	builder.Assess("kspm node config collector started", k8sdaemonset.IsReady(testDynakube.KSPM().GetDaemonSetName(), testDynakube.Namespace))
 
-	builder.Assess("check if KSPM settings were created on tenant", componentKspm.CheckKSPMSettingsExistOnTenant(secretConfig, &testDynakube))
+	builder.Assess("check if KSPM settings were created on tenant", componentKspm.CheckKSPMSettingsExistOnTenant(secretConfig, testDynakube))
 
 	return builder.Feature()
 }
@@ -58,15 +58,15 @@ func FeatureWithKubemon(t *testing.T) features.Feature {
 		componentDynakube.WithKubernetesMonitoringRegistration(),
 	}
 
-	testDynakube := *componentDynakube.New(options...)
+	testDynakube := componentDynakube.New(options...)
 
-	componentDynakube.Install(builder, &secretConfig, testDynakube)
+	componentDynakube.Install(builder, secretConfig, testDynakube)
 
 	builder.Assess("kubemon statefulset is ready", k8sstatefulset.WaitFor(testDynakube.KubernetesMonitoring().GetStatefulSetName(), testDynakube.Namespace))
 
 	builder.Assess("kspm node config collector started", k8sdaemonset.IsReady(testDynakube.KSPM().GetDaemonSetName(), testDynakube.Namespace))
 
-	builder.Assess("check if KSPM settings were created on tenant", componentKspm.CheckKSPMSettingsExistOnTenant(secretConfig, &testDynakube))
+	builder.Assess("check if KSPM settings were created on tenant", componentKspm.CheckKSPMSettingsExistOnTenant(secretConfig, testDynakube))
 
 	return builder.Feature()
 }
@@ -91,11 +91,11 @@ func OptionalScopes(t *testing.T) features.Feature {
 		componentDynakube.WithActiveGate(),
 	}
 
-	testDynakube := *componentDynakube.New(options...)
+	testDynakube := componentDynakube.New(options...)
 
-	componentDynakube.InstallWithoutSettingsScopes(builder, &secretConfig, testDynakube)
+	componentDynakube.InstallWithoutSettingsScopes(builder, secretConfig, testDynakube)
 
-	builder.Assess("active gate pod is running", activegate.CheckContainer(&testDynakube))
+	builder.Assess("active gate pod is running", activegate.CheckContainer(testDynakube))
 
 	builder.Assess("kspm node config collector started", k8sdaemonset.IsReady(testDynakube.KSPM().GetDaemonSetName(), testDynakube.Namespace))
 

@@ -40,7 +40,7 @@ const (
 
 func TestNewDockerKeychain(t *testing.T) {
 	t.Run("secret not found, try without secret", func(t *testing.T) {
-		pullSecret := corev1.Secret{
+		pullSecret := &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test-secret",
 				Namespace: "dynatrace",
@@ -53,7 +53,7 @@ func TestNewDockerKeychain(t *testing.T) {
 	})
 
 	t.Run("invalid format of docker secret dockerconfigjson", func(t *testing.T) {
-		pullSecret := corev1.Secret{
+		pullSecret := &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test-secret",
 				Namespace: "dynatrace",
@@ -62,7 +62,7 @@ func TestNewDockerKeychain(t *testing.T) {
 				".dockerconfigjson": []byte("invalid format"),
 			},
 		}
-		client := fake.NewClientWithIndex(&pullSecret)
+		client := fake.NewClientWithIndex(pullSecret)
 
 		_, err := NewDockerKeychain(t.Context(), client, pullSecret)
 		require.Error(t, err)
@@ -74,7 +74,7 @@ func TestNewDockerKeychain(t *testing.T) {
 	})
 
 	t.Run("valid config provided", func(t *testing.T) {
-		pullSecret := corev1.Secret{
+		pullSecret := &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test-secret",
 				Namespace: "dynatrace",
@@ -84,7 +84,7 @@ func TestNewDockerKeychain(t *testing.T) {
 			},
 			Type: corev1.SecretTypeDockerConfigJson,
 		}
-		client := fake.NewClientWithIndex(&pullSecret)
+		client := fake.NewClientWithIndex(pullSecret)
 
 		keychain, err := NewDockerKeychain(t.Context(), client, pullSecret)
 		require.NoError(t, err)

@@ -25,11 +25,11 @@ import (
 
 type MutateFn func(ss *appsv1.StatefulSet)
 
-func Get(ctx context.Context, resource *resources.Resources, name, namespace string) (appsv1.StatefulSet, error) {
-	var stateFulSet appsv1.StatefulSet
-	err := resource.Get(ctx, name, namespace, &stateFulSet)
+func Get(ctx context.Context, resource *resources.Resources, name, namespace string) (*appsv1.StatefulSet, error) {
+	statefulSet := &appsv1.StatefulSet{}
+	err := resource.Get(ctx, name, namespace, statefulSet)
 
-	return stateFulSet, err
+	return statefulSet, err
 }
 
 func Update(name, namespace string, mFns ...MutateFn) features.Func {

@@ -89,7 +89,7 @@ type ExecutionResult struct {
 	StdErr *bytes.Buffer
 }
 
-func Exec(ctx context.Context, resource *resources.Resources, pod corev1.Pod, container string, command ...string) (*ExecutionResult, error) {
+func Exec(ctx context.Context, resource *resources.Resources, pod *corev1.Pod, container string, command ...string) (*ExecutionResult, error) {
 	result := &ExecutionResult{
 		StdOut: &bytes.Buffer{},
 		StdErr: &bytes.Buffer{},

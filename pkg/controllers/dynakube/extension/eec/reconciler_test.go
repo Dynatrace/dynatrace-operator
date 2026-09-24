@@ -126,8 +126,8 @@ func disableAutomaticAGCertificate(dk *dynakube.DynaKube) {
 	dk.Annotations[exp.AGAutomaticTLSCertificateKey] = "false"
 }
 
-func disableLegacyVolumeMounts(dk *dynakube.DynaKube) {
-	dk.Annotations[exp.UseEECLegacyMountsKey] = "false"
+func enableLegacyVolumeMounts(dk *dynakube.DynaKube) {
+	dk.Annotations[exp.UseEECLegacyMountsKey] = "true"
 }
 
 func TestConditions(t *testing.T) {
@@ -292,26 +292,6 @@ func TestEnvironmentVariables(t *testing.T) {
 
 		assert.Equal(t, corev1.EnvVar{Name: envTenantID, Value: dk.Status.ActiveGate.ConnectionInfo.TenantUUID}, statefulSet.Spec.Template.Spec.Containers[0].Env[0])
 		assert.Equal(t, corev1.EnvVar{Name: envServerURL, Value: buildActiveGateServiceName(dk) + "." + dk.Namespace + ":443"}, statefulSet.Spec.Template.Spec.Containers[0].Env[1])
-		assert.Equal(t, corev1.EnvVar{Name: envEECTokenPath, Value: runtimeMountPath + eecTokenMountPath + "/" + eecConsts.TokenSecretKey}, statefulSet.Spec.Template.Spec.Containers[0].Env[2])
-		assert.Equal(t, corev1.EnvVar{Name: envEECIngestPort, Value: strconv.Itoa(consts.ExtensionsDatasourceTargetPort)}, statefulSet.Spec.Template.Spec.Containers[0].Env[3])
-		assert.Equal(t, corev1.EnvVar{Name: envExtensionsModuleExecPathName, Value: envExtensionsModuleExecPath}, statefulSet.Spec.Template.Spec.Containers[0].Env[4])
-		assert.Equal(t, corev1.EnvVar{Name: envDsInstallDirName, Value: envDsInstallDir}, statefulSet.Spec.Template.Spec.Containers[0].Env[5])
-		assert.Equal(t, corev1.EnvVar{Name: envK8sClusterID, Value: dk.Status.KubeSystemUUID}, statefulSet.Spec.Template.Spec.Containers[0].Env[6])
-		assert.Equal(t, corev1.EnvVar{Name: envK8sClusterName, Value: dk.Status.KubernetesClusterName}, statefulSet.Spec.Template.Spec.Containers[0].Env[7])
-		assert.Equal(t, corev1.EnvVar{Name: envK8sExtServiceURL, Value: "https://" + dk.Name + eecConsts.ExtensionControllerSuffix + "." + dk.Namespace}, statefulSet.Spec.Template.Spec.Containers[0].Env[8])
-		assert.Equal(t, corev1.EnvVar{Name: envDSTokenPath, Value: runtimeMountPath + eecTokenMountPath + "/" + consts.DatasourceTokenSecretKey}, statefulSet.Spec.Template.Spec.Containers[0].Env[9])
-		assert.Equal(t, corev1.EnvVar{Name: envHTTPSCertPathPem, Value: runtimeMountPath + envEECHTTPSCertPathPem}, statefulSet.Spec.Template.Spec.Containers[0].Env[10])
-		assert.Equal(t, corev1.EnvVar{Name: envHTTPSPrivKeyPathPem, Value: runtimeMountPath + envEECHTTPSPrivKeyPathPem}, statefulSet.Spec.Template.Spec.Containers[0].Env[11])
-		assert.NotContains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envRuntimeConfigMountPath, Value: runtimeMountPath + customConfigMountPath + "/" + runtimeConfigurationFilename})
-		assert.NotContains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envCustomCertificateMountPath, Value: runtimeMountPath + customCertificateMountPath})
-		assert.NotContains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envRuntimeConfigMountPath, Value: customConfigMountPath + "/" + runtimeConfigurationFilename})
-		assert.NotContains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envCustomCertificateMountPath, Value: customCertificateMountPath})
-
-		disableLegacyVolumeMounts(dk)
-		statefulSet = getStatefulset(t, dk)
-
-		assert.Equal(t, corev1.EnvVar{Name: envTenantID, Value: dk.Status.ActiveGate.ConnectionInfo.TenantUUID}, statefulSet.Spec.Template.Spec.Containers[0].Env[0])
-		assert.Equal(t, corev1.EnvVar{Name: envServerURL, Value: buildActiveGateServiceName(dk) + "." + dk.Namespace + ":443"}, statefulSet.Spec.Template.Spec.Containers[0].Env[1])
 		assert.Equal(t, corev1.EnvVar{Name: envEECTokenPath, Value: eecTokenMountPath + "/" + eecConsts.TokenSecretKey}, statefulSet.Spec.Template.Spec.Containers[0].Env[2])
 		assert.Equal(t, corev1.EnvVar{Name: envEECIngestPort, Value: strconv.Itoa(consts.ExtensionsDatasourceTargetPort)}, statefulSet.Spec.Template.Spec.Containers[0].Env[3])
 		assert.Equal(t, corev1.EnvVar{Name: envExtensionsModuleExecPathName, Value: envExtensionsModuleExecPath}, statefulSet.Spec.Template.Spec.Containers[0].Env[4])
@@ -326,6 +306,26 @@ func TestEnvironmentVariables(t *testing.T) {
 		assert.NotContains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envCustomCertificateMountPath, Value: runtimeMountPath + customCertificateMountPath})
 		assert.NotContains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envRuntimeConfigMountPath, Value: customConfigMountPath + "/" + runtimeConfigurationFilename})
 		assert.NotContains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envCustomCertificateMountPath, Value: customCertificateMountPath})
+
+		enableLegacyVolumeMounts(dk)
+		statefulSet = getStatefulset(t, dk)
+
+		assert.Equal(t, corev1.EnvVar{Name: envTenantID, Value: dk.Status.ActiveGate.ConnectionInfo.TenantUUID}, statefulSet.Spec.Template.Spec.Containers[0].Env[0])
+		assert.Equal(t, corev1.EnvVar{Name: envServerURL, Value: buildActiveGateServiceName(dk) + "." + dk.Namespace + ":443"}, statefulSet.Spec.Template.Spec.Containers[0].Env[1])
+		assert.Equal(t, corev1.EnvVar{Name: envEECTokenPath, Value: runtimeMountPath + eecTokenMountPath + "/" + eecConsts.TokenSecretKey}, statefulSet.Spec.Template.Spec.Containers[0].Env[2])
+		assert.Equal(t, corev1.EnvVar{Name: envEECIngestPort, Value: strconv.Itoa(consts.ExtensionsDatasourceTargetPort)}, statefulSet.Spec.Template.Spec.Containers[0].Env[3])
+		assert.Equal(t, corev1.EnvVar{Name: envExtensionsModuleExecPathName, Value: envExtensionsModuleExecPath}, statefulSet.Spec.Template.Spec.Containers[0].Env[4])
+		assert.Equal(t, corev1.EnvVar{Name: envDsInstallDirName, Value: envDsInstallDir}, statefulSet.Spec.Template.Spec.Containers[0].Env[5])
+		assert.Equal(t, corev1.EnvVar{Name: envK8sClusterID, Value: dk.Status.KubeSystemUUID}, statefulSet.Spec.Template.Spec.Containers[0].Env[6])
+		assert.Equal(t, corev1.EnvVar{Name: envK8sClusterName, Value: dk.Status.KubernetesClusterName}, statefulSet.Spec.Template.Spec.Containers[0].Env[7])
+		assert.Equal(t, corev1.EnvVar{Name: envK8sExtServiceURL, Value: "https://" + dk.Name + eecConsts.ExtensionControllerSuffix + "." + dk.Namespace}, statefulSet.Spec.Template.Spec.Containers[0].Env[8])
+		assert.Equal(t, corev1.EnvVar{Name: envDSTokenPath, Value: runtimeMountPath + eecTokenMountPath + "/" + consts.DatasourceTokenSecretKey}, statefulSet.Spec.Template.Spec.Containers[0].Env[9])
+		assert.Equal(t, corev1.EnvVar{Name: envHTTPSCertPathPem, Value: runtimeMountPath + envEECHTTPSCertPathPem}, statefulSet.Spec.Template.Spec.Containers[0].Env[10])
+		assert.Equal(t, corev1.EnvVar{Name: envHTTPSPrivKeyPathPem, Value: runtimeMountPath + envEECHTTPSPrivKeyPathPem}, statefulSet.Spec.Template.Spec.Containers[0].Env[11])
+		assert.NotContains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envRuntimeConfigMountPath, Value: runtimeMountPath + customConfigMountPath + "/" + runtimeConfigurationFilename})
+		assert.NotContains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envCustomCertificateMountPath, Value: runtimeMountPath + customCertificateMountPath})
+		assert.NotContains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envRuntimeConfigMountPath, Value: customConfigMountPath + "/" + runtimeConfigurationFilename})
+		assert.NotContains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envCustomCertificateMountPath, Value: customCertificateMountPath})
 	})
 
 	t.Run("environment variables with custom EEC tls certificate", func(t *testing.T) {
@@ -333,13 +333,13 @@ func TestEnvironmentVariables(t *testing.T) {
 		dk.Spec.Templates.ExtensionExecutionController.TLSRefName = "custom-tls"
 
 		statefulSet := getStatefulset(t, dk)
-		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envHTTPSCertPathPem, Value: runtimeMountPath + envEECHTTPSCertPathPem})
-		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envHTTPSPrivKeyPathPem, Value: runtimeMountPath + envEECHTTPSPrivKeyPathPem})
-
-		disableLegacyVolumeMounts(dk)
-		statefulSet = getStatefulset(t, dk)
 		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envHTTPSCertPathPem, Value: envEECHTTPSCertPathPem})
 		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envHTTPSPrivKeyPathPem, Value: envEECHTTPSPrivKeyPathPem})
+
+		enableLegacyVolumeMounts(dk)
+		statefulSet = getStatefulset(t, dk)
+		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envHTTPSCertPathPem, Value: runtimeMountPath + envEECHTTPSCertPathPem})
+		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envHTTPSPrivKeyPathPem, Value: runtimeMountPath + envEECHTTPSPrivKeyPathPem})
 	})
 
 	t.Run("environment variables with custom EEC config", func(t *testing.T) {
@@ -347,11 +347,11 @@ func TestEnvironmentVariables(t *testing.T) {
 		dk.Spec.Templates.ExtensionExecutionController.CustomConfig = "abc"
 
 		statefulSet := getStatefulset(t, dk)
-		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envRuntimeConfigMountPath, Value: runtimeMountPath + customConfigMountPath + "/" + runtimeConfigurationFilename})
-
-		disableLegacyVolumeMounts(dk)
-		statefulSet = getStatefulset(t, dk)
 		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envRuntimeConfigMountPath, Value: customConfigMountPath + "/" + runtimeConfigurationFilename})
+
+		enableLegacyVolumeMounts(dk)
+		statefulSet = getStatefulset(t, dk)
+		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envRuntimeConfigMountPath, Value: runtimeMountPath + customConfigMountPath + "/" + runtimeConfigurationFilename})
 	})
 
 	t.Run("environment variables with certificate for extension signature verification", func(t *testing.T) {
@@ -359,11 +359,11 @@ func TestEnvironmentVariables(t *testing.T) {
 		dk.Spec.Templates.ExtensionExecutionController.CustomExtensionCertificates = "test"
 
 		statefulSet := getStatefulset(t, dk)
-		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envCustomCertificateMountPath, Value: runtimeMountPath + customCertificateMountPath})
-
-		disableLegacyVolumeMounts(dk)
-		statefulSet = getStatefulset(t, dk)
 		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envCustomCertificateMountPath, Value: customCertificateMountPath})
+
+		enableLegacyVolumeMounts(dk)
+		statefulSet = getStatefulset(t, dk)
+		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{Name: envCustomCertificateMountPath, Value: runtimeMountPath + customCertificateMountPath})
 	})
 }
 
@@ -372,6 +372,7 @@ func TestLegacyVolumeMounts(t *testing.T) {
 
 	t.Run("volume mounts, AG cert disabled", func(t *testing.T) {
 		dk := getTestDynakube()
+		enableLegacyVolumeMounts(dk)
 		disableAutomaticAGCertificate(dk)
 		statefulSet := getStatefulset(t, dk)
 		expectedVolumeMounts := []corev1.VolumeMount{
@@ -404,7 +405,9 @@ func TestLegacyVolumeMounts(t *testing.T) {
 		assert.Equal(t, expectedVolumeMounts, statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts)
 	})
 	t.Run("volume mounts", func(t *testing.T) {
-		statefulSet := getStatefulset(t, getTestDynakube())
+		dk := getTestDynakube()
+		enableLegacyVolumeMounts(dk)
+		statefulSet := getStatefulset(t, dk)
 		expectedVolumeMounts := []corev1.VolumeMount{
 			{
 				Name:      consts.ExtensionsTokensVolumeName,
@@ -441,6 +444,7 @@ func TestLegacyVolumeMounts(t *testing.T) {
 	})
 	t.Run("volume mounts with PVC, AG cert disabled", func(t *testing.T) {
 		dk := getTestDynakube()
+		enableLegacyVolumeMounts(dk)
 		disableAutomaticAGCertificate(dk)
 		dk.Spec.Templates.ExtensionExecutionController.PersistentVolumeClaim = &corev1.PersistentVolumeClaimSpec{
 			Resources: corev1.VolumeResourceRequirements{
@@ -481,6 +485,7 @@ func TestLegacyVolumeMounts(t *testing.T) {
 	})
 	t.Run("volume mounts when set custom EEC tls certificate", func(t *testing.T) {
 		dk := getTestDynakube()
+		enableLegacyVolumeMounts(dk)
 		dk.Spec.Templates.ExtensionExecutionController.TLSRefName = "custom-tls"
 		statefulSet := getStatefulset(t, dk)
 		expectedVolumeMount := corev1.VolumeMount{
@@ -492,6 +497,7 @@ func TestLegacyVolumeMounts(t *testing.T) {
 	})
 	t.Run("volume mounts when set certificate for extension signature verification", func(t *testing.T) {
 		dk := getTestDynakube()
+		enableLegacyVolumeMounts(dk)
 		dk.Spec.Templates.ExtensionExecutionController.CustomExtensionCertificates = "custom-certs"
 		statefulSet := getStatefulset(t, dk)
 		expectedVolumeMount := corev1.VolumeMount{
@@ -503,6 +509,7 @@ func TestLegacyVolumeMounts(t *testing.T) {
 	})
 	t.Run("volume mounts with custom configuration, AG cert disabled", func(t *testing.T) {
 		dk := getTestDynakube()
+		enableLegacyVolumeMounts(dk)
 		disableAutomaticAGCertificate(dk)
 		dk.Spec.Templates.ExtensionExecutionController.CustomConfig = testCustomConfigConfigMapName
 		statefulSet := getStatefulset(t, dk)
@@ -542,6 +549,7 @@ func TestLegacyVolumeMounts(t *testing.T) {
 	})
 	t.Run("volume mounts with custom configuration", func(t *testing.T) {
 		dk := getTestDynakube()
+		enableLegacyVolumeMounts(dk)
 		dk.Spec.Templates.ExtensionExecutionController.CustomConfig = testCustomConfigConfigMapName
 		statefulSet := getStatefulset(t, dk)
 		expectedVolumeMounts := []corev1.VolumeMount{
@@ -588,7 +596,6 @@ func TestLegacyVolumeMounts(t *testing.T) {
 func TestVolumeMounts(t *testing.T) {
 	t.Run("volume mounts, AG cert disabled", func(t *testing.T) {
 		dk := getTestDynakube()
-		disableLegacyVolumeMounts(dk)
 		disableAutomaticAGCertificate(dk)
 		statefulSet := getStatefulset(t, dk)
 
@@ -614,7 +621,6 @@ func TestVolumeMounts(t *testing.T) {
 
 	t.Run("volume mounts", func(t *testing.T) {
 		dk := getTestDynakube()
-		disableLegacyVolumeMounts(dk)
 		statefulSet := getStatefulset(t, dk)
 
 		expectedVolumeMounts := []corev1.VolumeMount{
@@ -644,7 +650,6 @@ func TestVolumeMounts(t *testing.T) {
 
 	t.Run("volume mounts with PVC, AG cert disabled", func(t *testing.T) {
 		dk := getTestDynakube()
-		disableLegacyVolumeMounts(dk)
 		disableAutomaticAGCertificate(dk)
 		dk.Spec.Templates.ExtensionExecutionController.PersistentVolumeClaim = &corev1.PersistentVolumeClaimSpec{
 			Resources: corev1.VolumeResourceRequirements{
@@ -678,7 +683,6 @@ func TestVolumeMounts(t *testing.T) {
 
 	t.Run("volume mounts when set custom EEC tls certificate", func(t *testing.T) {
 		dk := getTestDynakube()
-		disableLegacyVolumeMounts(dk)
 		dk.Spec.Templates.ExtensionExecutionController.TLSRefName = "custom-tls"
 		statefulSet := getStatefulset(t, dk)
 
@@ -692,7 +696,6 @@ func TestVolumeMounts(t *testing.T) {
 
 	t.Run("volume mounts when set certificate for extension signature verification", func(t *testing.T) {
 		dk := getTestDynakube()
-		disableLegacyVolumeMounts(dk)
 		dk.Spec.Templates.ExtensionExecutionController.CustomExtensionCertificates = "custom-certs"
 		statefulSet := getStatefulset(t, dk)
 
@@ -706,7 +709,6 @@ func TestVolumeMounts(t *testing.T) {
 
 	t.Run("volume mounts with custom configuration, AG cert disabled", func(t *testing.T) {
 		dk := getTestDynakube()
-		disableLegacyVolumeMounts(dk)
 		disableAutomaticAGCertificate(dk)
 		dk.Spec.Templates.ExtensionExecutionController.CustomConfig = testCustomConfigConfigMapName
 
@@ -739,7 +741,6 @@ func TestVolumeMounts(t *testing.T) {
 
 	t.Run("volume mounts with custom configuration", func(t *testing.T) {
 		dk := getTestDynakube()
-		disableLegacyVolumeMounts(dk)
 		dk.Spec.Templates.ExtensionExecutionController.CustomConfig = testCustomConfigConfigMapName
 
 		statefulSet := getStatefulset(t, dk)
@@ -926,7 +927,6 @@ func TestTolerations(t *testing.T) {
 func TestPersistentVolumeClaim(t *testing.T) {
 	t.Run("default PVC", func(t *testing.T) {
 		dk := getTestDynakube()
-		disableLegacyVolumeMounts(dk)
 		statefulSet := getStatefulset(t, dk)
 
 		require.Len(t, statefulSet.Spec.VolumeClaimTemplates, 1)
@@ -952,6 +952,7 @@ func TestPersistentVolumeClaim(t *testing.T) {
 
 	t.Run("legacy mounts default PVC size", func(t *testing.T) {
 		dk := getTestDynakube()
+		enableLegacyVolumeMounts(dk)
 		statefulSet := getStatefulset(t, dk)
 
 		assert.Equal(t, statefulSet.Spec.VolumeClaimTemplates[0].Spec.Resources.Requests[corev1.ResourceStorage], resource.MustParse("1Gi"))
@@ -1093,6 +1094,7 @@ func TestUpdateStrategy(t *testing.T) {
 func TestLegacyVolumes(t *testing.T) {
 	t.Run("volumes without PVC, AG cert disabled", func(t *testing.T) {
 		dk := getTestDynakube()
+		enableLegacyVolumeMounts(dk)
 		disableAutomaticAGCertificate(dk)
 		dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume = new(true)
 
@@ -1143,6 +1145,7 @@ func TestLegacyVolumes(t *testing.T) {
 
 	t.Run("volumes without PVC", func(t *testing.T) {
 		dk := getTestDynakube()
+		enableLegacyVolumeMounts(dk)
 		dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume = new(true)
 
 		statefulSet := getStatefulset(t, dk)
@@ -1207,6 +1210,7 @@ func TestLegacyVolumes(t *testing.T) {
 
 	t.Run("volumes with PVC, AG cert disabled", func(t *testing.T) {
 		dk := getTestDynakube()
+		enableLegacyVolumeMounts(dk)
 		disableAutomaticAGCertificate(dk)
 		dk.Spec.Templates.ExtensionExecutionController.PersistentVolumeClaim = &corev1.PersistentVolumeClaimSpec{
 			Resources: corev1.VolumeResourceRequirements{
@@ -1257,6 +1261,7 @@ func TestLegacyVolumes(t *testing.T) {
 
 	t.Run("volumes with PVC", func(t *testing.T) {
 		dk := getTestDynakube()
+		enableLegacyVolumeMounts(dk)
 		dk.Spec.Templates.ExtensionExecutionController.PersistentVolumeClaim = &corev1.PersistentVolumeClaimSpec{
 			Resources: corev1.VolumeResourceRequirements{
 				Requests: corev1.ResourceList{
@@ -1321,6 +1326,7 @@ func TestLegacyVolumes(t *testing.T) {
 
 	t.Run("volumes without PVC and with custom configuration, AG cert disabled", func(t *testing.T) {
 		dk := getTestDynakube()
+		enableLegacyVolumeMounts(dk)
 		disableAutomaticAGCertificate(dk)
 		dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume = new(true)
 		dk.Spec.Templates.ExtensionExecutionController.CustomConfig = testCustomConfigConfigMapName
@@ -1382,6 +1388,7 @@ func TestLegacyVolumes(t *testing.T) {
 
 	t.Run("volumes without PVC and with custom configuration", func(t *testing.T) {
 		dk := getTestDynakube()
+		enableLegacyVolumeMounts(dk)
 		dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume = new(true)
 		dk.Spec.Templates.ExtensionExecutionController.CustomConfig = testCustomConfigConfigMapName
 
@@ -1459,7 +1466,6 @@ func TestLegacyVolumes(t *testing.T) {
 func TestVolumes(t *testing.T) {
 	t.Run("volumes without PVC, AG cert disabled", func(t *testing.T) {
 		dk := getTestDynakube()
-		disableLegacyVolumeMounts(dk)
 		disableAutomaticAGCertificate(dk)
 		dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume = new(true)
 
@@ -1498,7 +1504,6 @@ func TestVolumes(t *testing.T) {
 
 	t.Run("volumes without PVC", func(t *testing.T) {
 		dk := getTestDynakube()
-		disableLegacyVolumeMounts(dk)
 		dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume = new(true)
 
 		statefulSet := getStatefulset(t, dk)
@@ -1551,7 +1556,6 @@ func TestVolumes(t *testing.T) {
 
 	t.Run("volumes with PVC, AG cert disabled", func(t *testing.T) {
 		dk := getTestDynakube()
-		disableLegacyVolumeMounts(dk)
 		disableAutomaticAGCertificate(dk)
 		dk.Spec.Templates.ExtensionExecutionController.PersistentVolumeClaim = &corev1.PersistentVolumeClaimSpec{
 			Resources: corev1.VolumeResourceRequirements{
@@ -1590,7 +1594,6 @@ func TestVolumes(t *testing.T) {
 
 	t.Run("volumes with PVC", func(t *testing.T) {
 		dk := getTestDynakube()
-		disableLegacyVolumeMounts(dk)
 		dk.Spec.Templates.ExtensionExecutionController.PersistentVolumeClaim = &corev1.PersistentVolumeClaimSpec{
 			Resources: corev1.VolumeResourceRequirements{
 				Requests: corev1.ResourceList{
@@ -1643,7 +1646,6 @@ func TestVolumes(t *testing.T) {
 
 	t.Run("volumes without PVC and with custom configuration, AG cert disabled", func(t *testing.T) {
 		dk := getTestDynakube()
-		disableLegacyVolumeMounts(dk)
 		disableAutomaticAGCertificate(dk)
 		dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume = new(true)
 		dk.Spec.Templates.ExtensionExecutionController.CustomConfig = testCustomConfigConfigMapName
@@ -1693,7 +1695,6 @@ func TestVolumes(t *testing.T) {
 
 	t.Run("volumes without PVC and with custom configuration", func(t *testing.T) {
 		dk := getTestDynakube()
-		disableLegacyVolumeMounts(dk)
 		dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume = new(true)
 		dk.Spec.Templates.ExtensionExecutionController.CustomConfig = testCustomConfigConfigMapName
 
@@ -1772,8 +1773,9 @@ func TestVolumes(t *testing.T) {
 		statefulSet := getStatefulset(t, dk)
 		require.Contains(t, statefulSet.Spec.Template.Spec.Volumes, expectedVolume)
 
-		disableLegacyVolumeMounts(dk)
+		enableLegacyVolumeMounts(dk)
 		statefulSet = getStatefulset(t, dk)
+
 		require.Contains(t, statefulSet.Spec.Template.Spec.Volumes, expectedVolume)
 	})
 
@@ -1794,7 +1796,7 @@ func TestVolumes(t *testing.T) {
 		statefulSet := getStatefulset(t, dk)
 		require.Contains(t, statefulSet.Spec.Template.Spec.Volumes, expectedVolume)
 
-		disableLegacyVolumeMounts(dk)
+		enableLegacyVolumeMounts(dk)
 		statefulSet = getStatefulset(t, dk)
 		require.Contains(t, statefulSet.Spec.Template.Spec.Volumes, expectedVolume)
 	})
@@ -1842,7 +1844,6 @@ func TestActiveGateVolumes(t *testing.T) {
 
 	t.Run("volumes with custom ActiveGate tls certificate", func(t *testing.T) {
 		dk := getTestDynakube()
-		disableLegacyVolumeMounts(dk)
 		dk.Spec.ActiveGate.TLSSecretName = tlsSecretName
 		statefulSet := getStatefulset(t, dk)
 
@@ -1856,7 +1857,6 @@ func TestActiveGateVolumes(t *testing.T) {
 
 	t.Run("volumes with automatically created ActiveGate tls certificate", func(t *testing.T) {
 		dk := getTestDynakube()
-		disableLegacyVolumeMounts(dk)
 		statefulSet := getStatefulset(t, dk)
 
 		require.NotEmpty(t, statefulSet.Spec.Template.Spec.Containers)
@@ -1869,7 +1869,6 @@ func TestActiveGateVolumes(t *testing.T) {
 
 	t.Run("volumes without custom ActiveGate tls certificate", func(t *testing.T) {
 		dk := getTestDynakube()
-		disableLegacyVolumeMounts(dk)
 		disableAutomaticAGCertificate(dk)
 		statefulSet := getStatefulset(t, dk)
 
@@ -1883,7 +1882,6 @@ func TestActiveGateVolumes(t *testing.T) {
 
 	t.Run("volumes with TrustedCAs certificates, AG cert disabled", func(t *testing.T) {
 		dk := getTestDynakube()
-		disableLegacyVolumeMounts(dk)
 		disableAutomaticAGCertificate(dk)
 		dk.Spec.TrustedCAs = "custom-tls"
 		statefulSet := getStatefulset(t, dk)
@@ -1898,7 +1896,6 @@ func TestActiveGateVolumes(t *testing.T) {
 
 	t.Run("volumes with TrustedCAs certificates and automatically created ActiveGate tls certificate", func(t *testing.T) {
 		dk := getTestDynakube()
-		disableLegacyVolumeMounts(dk)
 		dk.Spec.TrustedCAs = "custom-tls"
 		statefulSet := getStatefulset(t, dk)
 

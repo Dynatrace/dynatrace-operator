@@ -29,7 +29,7 @@ import (
 func MetadataEnrichment(t *testing.T) features.Feature {
 	builder := features.New("metadata-enrichment")
 	secretConfig := tenant.GetSingleTenantSecret(t)
-	testDynakube := *dynakubeComponents.New(
+	testDynakube := dynakubeComponents.New(
 		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
 		dynakubeComponents.WithMetadataEnrichment(),
 		dynakubeComponents.WithApplicationMonitoringSpec(&oneagent.ApplicationMonitoringSpec{}),
@@ -43,12 +43,12 @@ func MetadataEnrichment(t *testing.T) features.Feature {
 		testDynakube.MetadataEnrichment().GetNamespaceSelector().MatchLabels,
 	)
 
-	sampleApp := sample.NewApp(t, &testDynakube,
+	sampleApp := sample.NewApp(t, testDynakube,
 		sample.WithName("pod-with-dt-attributes"),
 		sample.WithNamespaceLabels(injectEverythingLabels),
 	)
 
-	dynakubeComponents.Install(builder, &secretConfig, testDynakube)
+	dynakubeComponents.Install(builder, secretConfig, testDynakube)
 	builder.Assess("Installing sample app", sampleApp.Install())
 	builder.Assess("Checking dt_metadata.json content", assessMetadataEnrichmentHasDeprecatedAttributes(sampleApp))
 	builder.WithTeardown("Uninstalling sample app", sampleApp.Uninstall())
@@ -58,7 +58,7 @@ func MetadataEnrichment(t *testing.T) features.Feature {
 
 func assessMetadataEnrichmentHasDeprecatedAttributes(samplePod *sample.App) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		testPod := samplePod.ListPods(ctx, t, envConfig.Client().Resources()).Items[0]
+		testPod := &samplePod.ListPods(ctx, t, envConfig.Client().Resources()).Items[0]
 		enrichmentMetadata := metadataenrichment.GetMetadataJSONFromPod(ctx, t, envConfig.Client().Resources(), testPod)
 
 		assert.Equal(t, "pod", enrichmentMetadata.DTWorkloadKind)

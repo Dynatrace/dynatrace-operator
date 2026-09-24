@@ -37,7 +37,7 @@ func WithHPARegular(t *testing.T) features.Feature {
 
 	builder.Assess("create EC configuration on the tenant", ecComponents.CreateTenantConfig(testECname, secretConfig, edgeConnectTenantConfig, testHostPattern))
 
-	testEdgeConnect := *ecComponents.New(
+	testEdgeConnect := ecComponents.New(
 		// this tenantConfigName should match with tenant edgeConnect tenantConfigName
 		ecComponents.WithName(testECname),
 		ecComponents.WithAPIServer(secretConfig.APIServer),
@@ -47,9 +47,9 @@ func WithHPARegular(t *testing.T) features.Feature {
 	)
 
 	// create OAuth client secret related to the specific EdgeConnect configuration on the tenant
-	builder.Assess("create client secret", tenant.CreateClientSecret(&edgeConnectTenantConfig.Secret, ecComponents.BuildOAuthClientSecretName(testEdgeConnect.Name), testEdgeConnect.Namespace))
+	builder.Assess("create client secret", tenant.CreateClientSecret(edgeConnectTenantConfig.Secret, ecComponents.BuildOAuthClientSecretName(testEdgeConnect.Name), testEdgeConnect.Namespace))
 
-	ecComponents.Install(builder, nil, testEdgeConnect)
+	ecComponents.Install(builder, tenant.EdgeConnectSecret{}, testEdgeConnect)
 
 	testHPA := &autoscalingv1.HorizontalPodAutoscaler{
 		ObjectMeta: metav1.ObjectMeta{
@@ -86,7 +86,7 @@ func WithHPAProvisioner(t *testing.T) features.Feature {
 	testECname := uuid.NewString()
 	testHostPattern := fmt.Sprintf("%s.e2eTestHostPattern.internal.org", testECname)
 
-	testEdgeConnect := *ecComponents.New(
+	testEdgeConnect := ecComponents.New(
 		ecComponents.WithName(testECname),
 		ecComponents.WithAPIServer(secretConfig.APIServer),
 		ecComponents.WithOAuthClientSecret(ecComponents.BuildOAuthClientSecretName(testECname)),
@@ -96,7 +96,7 @@ func WithHPAProvisioner(t *testing.T) features.Feature {
 		ecComponents.WithHostPattern(testHostPattern),
 	)
 
-	ecComponents.Install(builder, &secretConfig, testEdgeConnect)
+	ecComponents.Install(builder, secretConfig, testEdgeConnect)
 
 	builder.Assess("get tenant config", getTenantConfig(testECname, secretConfig, edgeConnectTenantConfig))
 
@@ -136,7 +136,7 @@ func EnforceReplicasRegular(t *testing.T) features.Feature {
 
 	builder.Assess("create EC configuration on the tenant", ecComponents.CreateTenantConfig(testECname, secretConfig, edgeConnectTenantConfig, testHostPattern))
 
-	testEdgeConnect := *ecComponents.New(
+	testEdgeConnect := ecComponents.New(
 		// this tenantConfigName should match with tenant edgeConnect tenantConfigName
 		ecComponents.WithName(testECname),
 		ecComponents.WithAPIServer(secretConfig.APIServer),
@@ -147,9 +147,9 @@ func EnforceReplicasRegular(t *testing.T) features.Feature {
 	)
 
 	// create OAuth client secret related to the specific EdgeConnect configuration on the tenant
-	builder.Assess("create client secret", tenant.CreateClientSecret(&edgeConnectTenantConfig.Secret, ecComponents.BuildOAuthClientSecretName(testEdgeConnect.Name), testEdgeConnect.Namespace))
+	builder.Assess("create client secret", tenant.CreateClientSecret(edgeConnectTenantConfig.Secret, ecComponents.BuildOAuthClientSecretName(testEdgeConnect.Name), testEdgeConnect.Namespace))
 
-	ecComponents.Install(builder, nil, testEdgeConnect)
+	ecComponents.Install(builder, tenant.EdgeConnectSecret{}, testEdgeConnect)
 
 	builder.Assess("scale EC deployment replicas to 3", k8sdeployment.Update(testEdgeConnect.Name, testEdgeConnect.Namespace, func(d *appsv1.Deployment) {
 		d.Spec.Replicas = scaleReplicas
@@ -172,7 +172,7 @@ func EnforceReplicasProvisioner(t *testing.T) features.Feature {
 	testECname := uuid.NewString()
 	testHostPattern := fmt.Sprintf("%s.e2eTestHostPattern.internal.org", testECname)
 
-	testEdgeConnect := *ecComponents.New(
+	testEdgeConnect := ecComponents.New(
 		ecComponents.WithName(testECname),
 		ecComponents.WithAPIServer(secretConfig.APIServer),
 		ecComponents.WithOAuthClientSecret(ecComponents.BuildOAuthClientSecretName(testECname)),
@@ -183,7 +183,7 @@ func EnforceReplicasProvisioner(t *testing.T) features.Feature {
 		ecComponents.WithReplicas(baseReplicas),
 	)
 
-	ecComponents.Install(builder, &secretConfig, testEdgeConnect)
+	ecComponents.Install(builder, secretConfig, testEdgeConnect)
 
 	builder.Assess("get tenant config", getTenantConfig(testECname, secretConfig, edgeConnectTenantConfig))
 

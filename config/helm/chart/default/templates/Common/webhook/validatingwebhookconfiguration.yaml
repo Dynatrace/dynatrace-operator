@@ -91,6 +91,7 @@ webhooks:
     timeoutSeconds: {{.Values.webhook.validatingWebhook.timeoutSeconds}}
     sideEffects: None
     matchPolicy: Exact
+{{- if (.Values.experimental).enablePrometheus }}
   - admissionReviewVersions:
       - v1
     clientConfig:
@@ -112,3 +113,4 @@ webhooks:
     timeoutSeconds: {{.Values.webhook.validatingWebhook.timeoutSeconds}}
     sideEffects: None
     matchPolicy: Exact
+{{- end }}
