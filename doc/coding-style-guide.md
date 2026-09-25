@@ -138,7 +138,7 @@ The rule applies to all top-level types that implement `metav1.Object` — i.e.,
 - CRD types: `*dynakube.DynaKube`, `*edgeconnect.EdgeConnect`, `*prometheusmonitoring.PrometheusMonitoring`
 - Kubernetes API objects: `*appsv1.StatefulSet`, `*appsv1.DaemonSet`, `*appsv1.Deployment`, `*corev1.Pod`, `*corev1.Secret`, `*admissionregistrationv1.MutatingWebhookConfiguration`, etc.
 
-Reasoning: these types are large; copying them is expensive and produces subtle bugs when the caller mutates the value after passing it.
+Reasoning: Kubernetes objects define their methods on pointer receivers, so a value type does not satisfy interfaces like `client.Object`. Using a value forces wrapping or explicit referencing at every call site. Copying is also expensive and produces subtle bugs when the caller mutates the value after passing it.
 
 ```go
 // ✓ pointer parameter
