@@ -111,7 +111,7 @@ func (certSecret *certificateSecret) areWebhookConfigsValid(configs []*admission
 }
 
 func (certSecret *certificateSecret) isCRDConversionValid(crd *apiextensionsv1.CustomResourceDefinition) bool {
-	return !hasConversionWebhook(*crd) || certSecret.isBundleValid(crd.Spec.Conversion.Webhook.ClientConfig.CABundle)
+	return !hasConversionWebhook(crd) || certSecret.isBundleValid(crd.Spec.Conversion.Webhook.ClientConfig.CABundle)
 }
 
 func (certSecret *certificateSecret) isBundleValid(bundle []byte) bool {
