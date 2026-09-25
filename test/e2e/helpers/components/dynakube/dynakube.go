@@ -232,12 +232,16 @@ func update(dk *dynakube.DynaKube) features.Func {
 	}
 }
 
-// TriggerReconciliation forces an immediate reconcile
+// TriggerReconciliation forces an immediate reconcile and waits for status to update
 func TriggerReconciliation(builder *features.FeatureBuilder, dk *dynakube.DynaKube) {
-	builder.WithStep("triggered dynakube reconciliation", features.LevelAssess, triggerReconciliation(dk))
+	builder.WithStep("triggered dynakube reconciliation", features.LevelAssess, triggerReconciliation(dk, true))
 }
 
-func triggerReconciliation(dk *dynakube.DynaKube) features.Func {
+func TriggerReconciliationWithoutWait(builder *features.FeatureBuilder, dk *dynakube.DynaKube) {
+	builder.WithStep("triggered dynakube reconciliation without wait", features.LevelAssess, triggerReconciliation(dk, false))
+}
+
+func triggerReconciliation(dk *dynakube.DynaKube, waitForStatus bool) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resources := envConfig.Client().Resources()
 
@@ -252,12 +256,14 @@ func triggerReconciliation(dk *dynakube.DynaKube) features.Func {
 		current.Annotations["test.dynatrace.com/reconcile-trigger"] = time.Now().Format(time.RFC3339Nano)
 		require.NoError(t, resources.Update(ctx, &current))
 
-		err := wait.For(conditions.New(resources).ResourceMatch(&current, func(object k8s.Object) bool {
-			updated, ok := object.(*dynakube.DynaKube)
+		if waitForStatus {
+			err := wait.For(conditions.New(resources).ResourceMatch(&current, func(object k8s.Object) bool {
+				updated, ok := object.(*dynakube.DynaKube)
 
-			return ok && updated.Status.UpdatedTimestamp.After(beforeTime)
-		}), wait.WithTimeout(2*time.Minute))
-		require.NoError(t, err)
+				return ok && updated.Status.UpdatedTimestamp.After(beforeTime)
+			}), wait.WithTimeout(2*time.Minute))
+			require.NoError(t, err)
+		}
 
 		return ctx
 	}

@@ -37,7 +37,7 @@ func Test_selectTag(t *testing.T) {
 			"1.327.30.20251107-111521-python",
 			"1.329.91.20260908-125356",
 			"1.329.67.20260112-133153-java",
-		}, true)
+		}, 0, true)
 		assert.Empty(t, got)
 	})
 
@@ -52,17 +52,32 @@ func Test_selectTag(t *testing.T) {
 			"latest",
 			"1.327.30.20251107-111521-python",
 			"1.329.67.20260112-133153-java",
-		}, false)
+		}, 0, false)
 		assert.Empty(t, got)
 	})
 
 	t.Run("with FIPS", func(t *testing.T) {
-		got := selectTag(tags, true)
+		got := selectTag(tags, 0, true)
 		assert.Equal(t, "1.331.64.20260903-230837-fips", got)
 	})
 
 	t.Run("without FIPS", func(t *testing.T) {
-		got := selectTag(tags, false)
+		got := selectTag(tags, 0, false)
 		assert.Equal(t, "1.331.64.20260903-230837", got)
+	})
+
+	t.Run("previous with FIPS", func(t *testing.T) {
+		got := selectTag(tags, 1, true)
+		assert.Equal(t, "1.315.25.20250527-232755-fips", got)
+	})
+
+	t.Run("previous without FIPS", func(t *testing.T) {
+		got := selectTag(tags, 1, false)
+		assert.Equal(t, "1.329.91.20260908-125356", got)
+	})
+
+	t.Run("offset beyond available tags returns empty", func(t *testing.T) {
+		got := selectTag([]string{"1.329.91.20260908-125356"}, 1, false)
+		assert.Empty(t, got)
 	})
 }
