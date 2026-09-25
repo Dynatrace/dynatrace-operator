@@ -31,12 +31,15 @@ const (
 	agPublicECR = "public.ecr.aws/dynatrace/dynatrace-activegate"
 	oaPublicECR = "public.ecr.aws/dynatrace/dynatrace-oneagent"
 	cmPublicECR = "public.ecr.aws/dynatrace/dynatrace-codemodules"
+
+	cmPreviousImageDefault = "public.ecr.aws/dynatrace/dynatrace-codemodules:1.337.60.20260603-063549"
 )
 
 const (
-	agImageEnv = "E2E_AG_IMAGE"
-	oaImageEnv = "E2E_OA_IMAGE"
-	cmImageEnv = "E2E_ECR_CODEMODULES_IMAGE"
+	agImageEnv         = "E2E_AG_IMAGE"
+	oaImageEnv         = "E2E_OA_IMAGE"
+	cmImageEnv         = "E2E_ECR_CODEMODULES_IMAGE"
+	cmPreviousImageEnv = "E2E_ECR_CODEMODULES_IMAGE_PREVIOUS"
 
 	agDigestImageEnv = "E2E_AG_IMAGE_DIGEST"
 	oaDigestImageEnv = "E2E_OA_IMAGE_DIGEST"
@@ -150,6 +153,20 @@ func GetLatestCodeModulesImageTagURI(t *testing.T) string {
 	t.Helper()
 
 	return getLatestImageURI(t, cmPublicECR, cmImageEnv, platform.IsFIPS(), false)
+}
+
+func GetPreviousCodeModulesImageTagURI(t *testing.T) string {
+	t.Helper()
+
+	if val := os.Getenv(cmPreviousImageEnv); val != "" {
+		t.Logf("using image from env %s: %s", cmPreviousImageEnv, val)
+
+		return val
+	}
+
+	t.Logf("using default previous codemodules image: %s", cmPreviousImageDefault)
+
+	return cmPreviousImageDefault
 }
 
 func GetLatestActiveGateImageDigestURI(t *testing.T) string {

@@ -116,6 +116,10 @@ test/e2e/classic/switchmodes:
 test/e2e/cloudnative/codemodules:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/standard -run "cloudnative_codemodules_image" $(SKIPCLEANUP)
 
+## Runs CloudNative codemodules cleanup e2e test only, verifies that injected pods keep their agent files across a codemodule upgrade
+test/e2e/cloudnative/codemodules-cleanup:
+	$(GOTESTCMD) -timeout 40m ./test/e2e/scenarios/standard -run "codemodules_cleanup_keeps_mounted" $(SKIPCLEANUP)
+
 ## Runs CloudNative codemodules e2e migrate to image only
 test/e2e/cloudnative/codemodules-migrate-to-image:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/standard -run "codemodules_migrate_to_image" $(SKIPCLEANUP)

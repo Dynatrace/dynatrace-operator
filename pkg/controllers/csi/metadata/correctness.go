@@ -176,6 +176,7 @@ func GetRelevantDynaKubes(ctx context.Context, apiReader client.Reader) ([]dynak
 func GetOverlayMountsIn(ctx context.Context, mounter mount.Interface, baseFolder string) ([]OverlayMount, error) {
 	return collectOverlayMounts(ctx, mounter, func(overlayMount OverlayMount) bool {
 		ok, _ := isSubfolder(overlayMount.Path, baseFolder)
+
 		return ok
 	})
 }
@@ -189,6 +190,7 @@ func GetOverlayMountsWithLowerDirIn(ctx context.Context, mounter mount.Interface
 	return collectOverlayMounts(ctx, mounter, func(overlayMount OverlayMount) bool {
 		return slices.ContainsFunc(overlayMount.LowerDirs, func(lowerDir string) bool {
 			ok, _ := isSubfolder(lowerDir, baseFolder)
+
 			return ok
 		})
 	})
@@ -290,5 +292,6 @@ func isSubfolder(child, parent string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
+
 	return !strings.HasPrefix(rel, ".."), nil
 }
