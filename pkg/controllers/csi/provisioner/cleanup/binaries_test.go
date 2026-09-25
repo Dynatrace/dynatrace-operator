@@ -65,7 +65,7 @@ func TestRemoveUnusedBinaries(t *testing.T) {
 			require.NoError(t, os.MkdirAll(cleaner.path.LatestAgentBinaryForDynaKube(tenantName), os.ModePerm))
 		}
 
-		cleaner.removeUnusedBinaries(t.Context(), []dynakube.DynaKube{dk}, state)
+		cleaner.removeUnusedBinaries(t.Context(), []*dynakube.DynaKube{dk}, state)
 
 		for _, version := range unusedVersions {
 			assert.NoDirExists(t, cleaner.path.AgentSharedBinaryDirForAgent(version))
@@ -203,14 +203,14 @@ func TestCollectRelevantLatestBins(t *testing.T) {
 	t.Run("no dk -> do nothing", func(t *testing.T) {
 		cleaner := createCleaner(t)
 
-		relevantBins := cleaner.collectRelevantLatestBins(t.Context(), []dynakube.DynaKube{})
+		relevantBins := cleaner.collectRelevantLatestBins(t.Context(), []*dynakube.DynaKube{})
 
 		require.Empty(t, relevantBins)
 	})
 	t.Run("no relevant dk -> do nothing", func(t *testing.T) {
 		cleaner := createCleaner(t)
 
-		relevantBins := cleaner.collectRelevantLatestBins(t.Context(), []dynakube.DynaKube{
+		relevantBins := cleaner.collectRelevantLatestBins(t.Context(), []*dynakube.DynaKube{
 			createHostMonDK(t, "hostmon", "url"),
 		})
 
@@ -225,7 +225,7 @@ func TestCollectRelevantLatestBins(t *testing.T) {
 		require.NoError(t, os.MkdirAll(cleaner.path.DynaKubeDir(dk.Name), os.ModePerm))
 		require.NoError(t, os.Symlink(relevantBin, cleaner.path.LatestAgentBinaryForDynaKube(dk.Name)))
 
-		relevantBins := cleaner.collectRelevantLatestBins(t.Context(), []dynakube.DynaKube{
+		relevantBins := cleaner.collectRelevantLatestBins(t.Context(), []*dynakube.DynaKube{
 			dk,
 		})
 
@@ -237,7 +237,7 @@ func TestCollectRelevantLatestBins(t *testing.T) {
 func TestRemoveOldBinarySymlinks(t *testing.T) {
 	t.Run("no dk -> remove everything", func(t *testing.T) {
 		cleaner := createCleaner(t)
-		dks := []dynakube.DynaKube{}
+		dks := []*dynakube.DynaKube{}
 
 		binDirs := []string{"test1", "test2"}
 
@@ -259,7 +259,7 @@ func TestRemoveOldBinarySymlinks(t *testing.T) {
 
 	t.Run("dk -> don't remove", func(t *testing.T) {
 		cleaner := createCleaner(t)
-		dks := []dynakube.DynaKube{
+		dks := []*dynakube.DynaKube{
 			createCloudNativeDK(t, "cloudnative", "-"),
 			createAppMonDK(t, "appmon", "-"),
 		}
@@ -288,7 +288,7 @@ func TestRemoveOldBinarySymlinks(t *testing.T) {
 
 	t.Run("dk.Name == tenantUUID -> don't remove", func(t *testing.T) {
 		cleaner := createCleaner(t)
-		dks := []dynakube.DynaKube{
+		dks := []*dynakube.DynaKube{
 			createCloudNativeDK(t, "cloudnative", "-"),
 			createAppMonDK(t, "appmon", "-"),
 		}
@@ -322,7 +322,7 @@ func mockMountPoints(t *testing.T, cleaner *Cleaner, mountPoints ...mount.MountP
 	cleaner.mounter = mount.NewFakeMounter(mountPoints)
 }
 
-func createAppMonDK(t *testing.T, name, apiURL string) dynakube.DynaKube {
+func createAppMonDK(t *testing.T, name, apiURL string) *dynakube.DynaKube {
 	t.Helper()
 
 	dk := createBaseDK(t, name, apiURL)
@@ -331,10 +331,10 @@ func createAppMonDK(t *testing.T, name, apiURL string) dynakube.DynaKube {
 	return dk
 }
 
-func createBaseDK(t *testing.T, name, apiURL string) dynakube.DynaKube {
+func createBaseDK(t *testing.T, name, apiURL string) *dynakube.DynaKube {
 	t.Helper()
 
-	return dynakube.DynaKube{
+	return &dynakube.DynaKube{
 		Name: name,
 		Spec: dynakube.DynaKubeSpec{
 			APIURL: apiURL,

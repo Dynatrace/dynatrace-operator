@@ -152,7 +152,7 @@ func (checker *CorrectnessChecker) migrateHostMounts(ctx context.Context) {
 	}
 }
 
-func GetRelevantDynaKubes(ctx context.Context, apiReader client.Reader) ([]dynakube.DynaKube, error) {
+func GetRelevantDynaKubes(ctx context.Context, apiReader client.Reader) ([]*dynakube.DynaKube, error) {
 	var dkList dynakube.DynaKubeList
 
 	err := apiReader.List(ctx, &dkList, client.InNamespace(k8senv.DefaultNamespace()))
@@ -160,9 +160,10 @@ func GetRelevantDynaKubes(ctx context.Context, apiReader client.Reader) ([]dynak
 		return nil, err
 	}
 
-	var relevantDks []dynakube.DynaKube
+	var relevantDks []*dynakube.DynaKube
 
-	for _, dk := range dkList.Items {
+	for i := range dkList.Items {
+		dk := &dkList.Items[i]
 		if dk.OneAgent().IsAppInjectionNeeded() || dk.OneAgent().IsReadOnlyFSSupported() {
 			relevantDks = append(relevantDks, dk)
 		}
