@@ -204,8 +204,9 @@ func testConfigMaps(t *testing.T, clt client.Client) {
 
 	t.Run("a custom CA on the DynaKube reaches the gateway exporter and the pod", func(t *testing.T) {
 		integrationtests.CreateKubernetesObject(t, clt, &corev1.ConfigMap{
-			ObjectMeta: metav1.ObjectMeta{Name: "custom-cas", Namespace: f.ns},
-			Data:       map[string]string{"certs": "-----BEGIN CERTIFICATE-----"},
+			Name:      "custom-cas",
+			Namespace: f.ns,
+			Data:      map[string]string{"certs": "-----BEGIN CERTIFICATE-----"},
 		})
 		f.dk.Spec.TrustedCAs = "custom-cas"
 		require.NoError(t, clt.Update(t.Context(), f.dk))
@@ -537,7 +538,8 @@ func testSecrets(t *testing.T, clt client.Client) {
 		f.assertReconcileSuccessfully(t)
 
 		integrationtests.CreateKubernetesObject(t, clt, &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{Name: "other-tokens", Namespace: f.ns},
+			Name:      "other-tokens",
+			Namespace: f.ns,
 			Data: map[string][]byte{
 				token.APIKey:        []byte(testAPIToken),
 				token.DataIngestKey: []byte(testDataIngestToken),
@@ -572,9 +574,10 @@ func testSecrets(t *testing.T, clt client.Client) {
 		const pullSecretName = "custom-pull-secret"
 
 		integrationtests.CreateKubernetesObject(t, clt, &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{Name: pullSecretName, Namespace: f.ns},
-			Type:       corev1.SecretTypeDockerConfigJson,
-			Data:       map[string][]byte{corev1.DockerConfigJsonKey: []byte(`{"auths":{}}`)},
+			Name:      pullSecretName,
+			Namespace: f.ns,
+			Type:      corev1.SecretTypeDockerConfigJson,
+			Data:      map[string][]byte{corev1.DockerConfigJsonKey: []byte(`{"auths":{}}`)},
 		})
 		f.dk.Spec.CustomPullSecret = pullSecretName
 		require.NoError(t, clt.Update(t.Context(), f.dk))
@@ -655,8 +658,9 @@ func (f *fixture) assertProxySecretIsReferenced(t *testing.T, clt client.Client)
 	const proxySecretName = "proxy-secret"
 
 	integrationtests.CreateKubernetesObject(t, clt, &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{Name: proxySecretName, Namespace: f.ns},
-		Data:       map[string][]byte{dynakube.ProxyKey: []byte("http://proxy.example.com:3128")},
+		Name:      proxySecretName,
+		Namespace: f.ns,
+		Data:      map[string][]byte{dynakube.ProxyKey: []byte("http://proxy.example.com:3128")},
 	})
 	f.dk.Spec.Proxy = &value.Source{ValueFrom: proxySecretName}
 	require.NoError(t, clt.Update(t.Context(), f.dk))

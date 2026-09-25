@@ -33,7 +33,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -835,7 +834,8 @@ func newFixture(t *testing.T, clt client.Client, name string) *fixture {
 	integrationtests.CreateNamespace(t, clt, ns)
 
 	integrationtests.CreateKubernetesObject(t, clt, &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{Name: testDynaKubeName, Namespace: ns},
+		Name:      testDynaKubeName,
+		Namespace: ns,
 		Data: map[string][]byte{
 			token.APIKey:        []byte(testAPIToken),
 			token.DataIngestKey: []byte(testDataIngestToken),
@@ -843,9 +843,10 @@ func newFixture(t *testing.T, clt client.Client, name string) *fixture {
 	})
 
 	dk := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{Name: testDynaKubeName, Namespace: ns},
-		Spec:       dynakube.DynaKubeSpec{APIURL: testAPIURL},
-		Status:     dynakube.DynaKubeStatus{Phase: status.Running, KubernetesClusterName: testClusterName},
+		Name:      testDynaKubeName,
+		Namespace: ns,
+		Spec:      dynakube.DynaKubeSpec{APIURL: testAPIURL},
+		Status:    dynakube.DynaKubeStatus{Phase: status.Running, KubernetesClusterName: testClusterName},
 	}
 	integrationtests.CreateDynakube(t, clt, dk)
 
@@ -868,7 +869,7 @@ func createDefaultedPrometheusMonitoring(t *testing.T, clt client.Client, ns str
 	obj.SetNamespace(ns)
 
 	require.NoError(t, unstructured.SetNestedMap(obj.Object, map[string]any{
-		"dynaKubeRef": testDynaKubeName,
+		"dynaKubeName": testDynaKubeName,
 	}, "spec"))
 
 	integrationtests.CreateKubernetesObject(t, clt, obj)
@@ -917,7 +918,7 @@ func newReconcilerWithImages(t *testing.T, clt client.Client, images map[image.C
 }
 
 func (f *fixture) request() ctrl.Request {
-	return ctrl.Request{NamespacedName: types.NamespacedName{Name: f.pm.Name, Namespace: f.ns}}
+	return ctrl.Request{Name: f.pm.Name, Namespace: f.ns}
 }
 
 func (f *fixture) reconcile(t *testing.T) error {
