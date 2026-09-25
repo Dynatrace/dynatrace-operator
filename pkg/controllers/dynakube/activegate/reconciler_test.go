@@ -573,9 +573,9 @@ func TestServiceCreation(t *testing.T) {
 		}
 	}
 
-	getTestActiveGateService := func(t *testing.T, fakeClient client.Client) corev1.Service {
-		var activegateService corev1.Service
-		err := fakeClient.Get(t.Context(), client.ObjectKey{Name: testServiceName, Namespace: testNamespace}, &activegateService)
+	getTestActiveGateService := func(t *testing.T, fakeClient client.Client) *corev1.Service {
+		activegateService := &corev1.Service{}
+		err := fakeClient.Get(t.Context(), client.ObjectKey{Name: testServiceName, Namespace: testNamespace}, activegateService)
 
 		require.NoError(t, err)
 
