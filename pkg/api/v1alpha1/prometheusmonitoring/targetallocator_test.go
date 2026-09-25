@@ -9,17 +9,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewTargetAllocator(t *testing.T) {
+func TestTargetAllocator(t *testing.T) {
 	spec := &TargetAllocatorSpec{}
 
 	ta := NewTargetAllocator(spec, "pm")
 
+	// The wrapper aliases the spec rather than copying it, so a change through the accessor is
+	// visible on the PrometheusMonitoring it came from.
 	assert.Same(t, spec, ta.TargetAllocatorSpec)
-	assert.Equal(t, "pm"+TargetAllocatorNameSuffix, ta.GetDeploymentName())
-}
-
-func TestTargetAllocator_GetDeploymentName(t *testing.T) {
-	ta := NewTargetAllocator(&TargetAllocatorSpec{}, "pm")
-
 	assert.Equal(t, "pm-allocator", ta.GetDeploymentName())
 }
