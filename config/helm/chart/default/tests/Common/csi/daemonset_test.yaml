@@ -45,6 +45,22 @@ tests:
             key: ToBeDeletedByClusterAutoscaler
             operator: Exists
 
+  # ICP-9922: without HostToContainer the provisioner's mount namespace never receives the app
+  # mounts the server container creates, so the garbage collection cannot tell which code modules
+  # are still in use and deletes them from under running pods.
+  - it: should let the provisioner see app mounts created after it started
+    set:
+      platform: kubernetes
+      csidriver.enabled: true
+    asserts:
+    - contains:
+        path: spec.template.spec.containers[1].volumeMounts #provisioner
+        content:
+          mountPath: "/var/lib/kubelet/pods/"
+          name: mountpoint-dir
+          readOnly: true
+          mountPropagation: HostToContainer
+
   - it: should set the env cleanupPeriod
     set:
       platform: kubernetes
