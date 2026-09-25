@@ -6,10 +6,9 @@ package image
 import (
 	"context"
 	"fmt"
-	"io"
 	"net/http"
+	"net/http/httptest"
 	"os"
-	"strings"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -81,12 +80,6 @@ func TestNewImageInstaller(t *testing.T) {
 	assert.NotNil(t, in)
 }
 
-type RoundTripFunc func(req *http.Request) *http.Response
-
-func (f RoundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
-	return f(req), nil
-}
-
 func TestInstaller_InstallAgent(t *testing.T) {
 	ctx := context.Background()
 
@@ -100,12 +93,10 @@ func TestInstaller_InstallAgent(t *testing.T) {
 		targetDir string
 	}
 
-	transport := RoundTripFunc(func(req *http.Request) *http.Response {
-		return &http.Response{
-			StatusCode: http.StatusOK,
-			Body:       io.NopCloser(strings.NewReader(`OK`)),
-		}
-	})
+	srv := httptest.NewTestServer(t, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`OK`))
+	}))
+	transport := srv.Client().Transport
 
 	tests := []struct {
 		name    string

@@ -5,11 +5,9 @@ package activegate
 
 import (
 	"fmt"
-	"io"
 	"net/http"
+	"net/http/httptest"
 	"net/url"
-	"strings"
-	"sync/atomic"
 	"testing"
 	"testing/synctest"
 	"time"
@@ -26,10 +24,11 @@ const testConnectionInfoCacheTTL = time.Minute
 
 func TestReconcile_ConnectionInfoCache(t *testing.T) {
 	t.Run("uses cached connection info within TTL", func(t *testing.T) {
-		transport := newFakeCITransport(
+		recorder := newResponseRecorder(
 			agConnectionInfoBody(testTenantUUID, testTenantToken, testTenantEndpoints),
 		)
-		agClient := newConnectionInfoAGClient(t, transport, testConnectionInfoCacheTTL)
+		s := httptest.NewTestServer(t, recorder)
+		agClient := newConnectionInfoAGClient(t, s.Client().Transport, testConnectionInfoCacheTTL)
 		dk := getTestDynakube()
 		fakeClient := fake.NewClient(dk)
 		r := NewReconciler(fakeClient, fakeClient)
@@ -37,57 +36,49 @@ func TestReconcile_ConnectionInfoCache(t *testing.T) {
 		require.NoError(t, r.Reconcile(t.Context(), agClient, dk))
 		require.NoError(t, r.Reconcile(t.Context(), agClient, dk))
 
-		transport.assertCalls(t, 1, "second reconcile must be served from cache")
+		assert.Equal(t, 1, recorder.calls, "second reconcile must be served from cache")
 	})
 
 	t.Run("fetches fresh connection info after cache TTL expires", func(t *testing.T) {
-		const updatedUUID = "updated-uuid"
-		transport := newFakeCITransport(
-			agConnectionInfoBody(testTenantUUID, testTenantToken, testTenantEndpoints),
-			agConnectionInfoBody(updatedUUID, testTenantToken, testTenantEndpoints),
-		)
-		agClient := newConnectionInfoAGClient(t, transport, testConnectionInfoCacheTTL)
-		dk := getTestDynakube()
-		fakeClient := fake.NewClient(dk)
-		r := NewReconciler(fakeClient, fakeClient)
-
 		synctest.Test(t, func(t *testing.T) {
+			const updatedUUID = "updated-uuid"
+			recorder := newResponseRecorder(
+				agConnectionInfoBody(testTenantUUID, testTenantToken, testTenantEndpoints),
+				agConnectionInfoBody(updatedUUID, testTenantToken, testTenantEndpoints),
+			)
+			s := httptest.NewTestServer(t, recorder)
+			agClient := newConnectionInfoAGClient(t, s.Client().Transport, testConnectionInfoCacheTTL)
+			dk := getTestDynakube()
+			fakeClient := fake.NewClient(dk)
+			r := NewReconciler(fakeClient, fakeClient)
+
 			require.NoError(t, r.Reconcile(t.Context(), agClient, dk))
 
 			time.Sleep(testConnectionInfoCacheTTL + time.Second)
 
 			require.NoError(t, r.Reconcile(t.Context(), agClient, dk))
-		})
 
-		assert.Equal(t, updatedUUID, dk.Status.ActiveGate.ConnectionInfo.TenantUUID)
-		transport.assertCalls(t, 2)
+			assert.Equal(t, updatedUUID, dk.Status.ActiveGate.ConnectionInfo.TenantUUID)
+			assert.Equal(t, 2, recorder.calls)
+		})
 	})
 }
 
-type fakeCITransport struct {
-	calls  atomic.Int64
+type responseRecorder struct {
+	calls  int
 	bodies []string
 }
 
-func newFakeCITransport(bodies ...string) *fakeCITransport {
-	return &fakeCITransport{bodies: bodies}
+func newResponseRecorder(bodies ...string) *responseRecorder {
+	return &responseRecorder{bodies: bodies}
 }
 
-func (ft *fakeCITransport) assertCalls(t *testing.T, expected int64, msgAndArgs ...any) {
-	t.Helper()
-	assert.Equal(t, expected, ft.calls.Load(), msgAndArgs...)
-}
-
-func (ft *fakeCITransport) RoundTrip(r *http.Request) (*http.Response, error) {
-	idx := int(ft.calls.Add(1)) - 1
-	body := ft.bodies[min(idx, len(ft.bodies)-1)]
-
-	return &http.Response{
-		StatusCode: http.StatusOK,
-		Header:     http.Header{"Content-Type": {"application/json"}},
-		Body:       io.NopCloser(strings.NewReader(body)),
-		Request:    r,
-	}, nil
+func (r *responseRecorder) ServeHTTP(w http.ResponseWriter, _ *http.Request) {
+	idx := r.calls
+	body := r.bodies[min(idx, len(r.bodies)-1)]
+	w.Header().Set("Content-Type", "application/json")
+	w.Write([]byte(body))
+	r.calls++
 }
 
 func newConnectionInfoAGClient(t *testing.T, transport http.RoundTripper, ttl time.Duration) agclient.Client {
@@ -99,7 +90,8 @@ func newConnectionInfoAGClient(t *testing.T, transport http.RoundTripper, ttl ti
 	return agclient.NewClient(core.NewClient(core.Config{
 		BaseURL:    u,
 		HTTPClient: &http.Client{Transport: middleware.NewCacheRoundTripper(transport, ttl)},
-		PaasToken:  t.Name(),
+		// Set to t.Name() so each subtest has an isolated namespace in the global cache.
+		PaasToken: t.Name(),
 	}))
 }
 

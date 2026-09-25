@@ -6,6 +6,7 @@ package authtoken
 import (
 	"context"
 	"testing"
+	"testing/synctest"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -78,122 +79,124 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, k8sconditions.SecretCreatedReason, condition.Reason)
 	})
 	t.Run("reconcile outdated auth token", func(t *testing.T) {
-		dk := newDynaKube()
+		synctest.Test(t, func(t *testing.T) {
+			dk := newDynaKube()
 
-		clt := fake.NewClientBuilder().Build()
+			clt := fake.NewClientBuilder().Build()
 
-		agCl := agclientmock.NewClient(t)
-		agCl.EXPECT().GetAuthToken(anyCtx, dk.Name).Return(testAgAuthTokenResponse, nil).Twice()
-		r := NewReconciler(clt, clt)
+			agCl := agclientmock.NewClient(t)
+			agCl.EXPECT().GetAuthToken(anyCtx, dk.Name).Return(testAgAuthTokenResponse, nil).Twice()
+			r := NewReconciler(clt, clt)
 
-		// create secret
-		err := r.Reconcile(t.Context(), agCl, dk)
-		require.NoError(t, err)
+			// create secret
+			err := r.Reconcile(t.Context(), agCl, dk)
+			require.NoError(t, err)
 
-		condition := meta.FindStatusCondition(*dk.Conditions(), activeGateAuthTokenSecretConditionType)
-		assert.Equal(t, metav1.ConditionTrue, condition.Status)
-		assert.Equal(t, k8sconditions.SecretCreatedReason, condition.Reason)
-		firstTransition := condition.LastTransitionTime
+			condition := meta.FindStatusCondition(*dk.Conditions(), activeGateAuthTokenSecretConditionType)
+			assert.Equal(t, metav1.ConditionTrue, condition.Status)
+			assert.Equal(t, k8sconditions.SecretCreatedReason, condition.Reason)
+			firstTransition := condition.LastTransitionTime
 
-		authToken, err := r.secrets.Get(t.Context(), types.NamespacedName{
-			Namespace: dk.Namespace,
-			Name:      dk.ActiveGate().GetAuthTokenSecretName(),
+			authToken, err := r.secrets.Get(t.Context(), types.NamespacedName{
+				Namespace: dk.Namespace,
+				Name:      dk.ActiveGate().GetAuthTokenSecretName(),
+			})
+			require.NoError(t, err)
+			assert.NotEmpty(t, authToken.Data[ActiveGateAuthTokenName])
+
+			// the fake client does not set CreationTimestamp, so stamp it as "created now"
+			authToken.Data = map[string][]byte{ActiveGateAuthTokenName: []byte(testToken)}
+			authToken.CreationTimestamp = metav1.Time{Time: time.Now()}
+			err = r.secrets.Update(t.Context(), authToken)
+			require.NoError(t, err)
+
+			firstCreationTimestamp := authToken.CreationTimestamp
+
+			// let the token age past the rotation interval
+			synctest.Sleep(AuthTokenRotationInterval + 5*time.Second)
+
+			// update secret
+			err = r.Reconcile(t.Context(), agCl, dk)
+			require.NoError(t, err)
+
+			condition = meta.FindStatusCondition(*dk.Conditions(), activeGateAuthTokenSecretConditionType)
+			assert.Equal(t, metav1.ConditionTrue, condition.Status)
+			assert.Equal(t, k8sconditions.SecretCreatedReason, condition.Reason)
+			secondTransition := condition.LastTransitionTime
+
+			authToken, err = r.secrets.Get(t.Context(), types.NamespacedName{
+				Namespace: dk.Namespace,
+				Name:      dk.ActiveGate().GetAuthTokenSecretName(),
+			})
+			require.NoError(t, err)
+			assert.NotEmpty(t, authToken.Data[ActiveGateAuthTokenName])
+			secondCreationTimestamp := authToken.CreationTimestamp
+
+			// token has been changed
+			assert.NotEqual(t, authToken.Data[ActiveGateAuthTokenName], []byte(testToken))
+			assert.NotEqual(t, firstCreationTimestamp, secondCreationTimestamp)
+			assert.NotEqual(t, secondTransition, firstTransition)
 		})
-		require.NoError(t, err)
-		assert.NotEmpty(t, authToken.Data[ActiveGateAuthTokenName])
-
-		// "initialize" the secret as if it was created a month ago
-		authToken.Data = map[string][]byte{ActiveGateAuthTokenName: []byte(testToken)}
-		// time.Round is called because client.Update(secret)->json.Marshall(secret) rounds CreationTimestamp to seconds
-		authToken.CreationTimestamp = metav1.Time{Time: time.Now().Round(1 * time.Second).Add(-AuthTokenRotationInterval).Add(-5 * time.Second)}
-		err = r.secrets.Update(t.Context(), authToken)
-		require.NoError(t, err)
-
-		firstCreationTimestamp := authToken.CreationTimestamp
-
-		// let's "wait", small difference needed to compare LastTransitionTime
-		time.Sleep(1 * time.Second)
-
-		// update secret
-		err = r.Reconcile(t.Context(), agCl, dk)
-		require.NoError(t, err)
-
-		condition = meta.FindStatusCondition(*dk.Conditions(), activeGateAuthTokenSecretConditionType)
-		assert.Equal(t, metav1.ConditionTrue, condition.Status)
-		assert.Equal(t, k8sconditions.SecretCreatedReason, condition.Reason)
-		secondTransition := condition.LastTransitionTime
-
-		authToken, err = r.secrets.Get(t.Context(), types.NamespacedName{
-			Namespace: dk.Namespace,
-			Name:      dk.ActiveGate().GetAuthTokenSecretName(),
-		})
-		require.NoError(t, err)
-		assert.NotEmpty(t, authToken.Data[ActiveGateAuthTokenName])
-		secondCreationTimestamp := authToken.CreationTimestamp
-
-		// token has been changed
-		assert.NotEqual(t, authToken.Data[ActiveGateAuthTokenName], []byte(testToken))
-		assert.NotEqual(t, firstCreationTimestamp, secondCreationTimestamp)
-		assert.NotEqual(t, secondTransition, firstTransition)
 	})
 	t.Run("reconcile valid auth token", func(t *testing.T) {
-		dk := newDynaKube()
+		synctest.Test(t, func(t *testing.T) {
+			dk := newDynaKube()
 
-		clt := fake.NewClientBuilder().Build()
+			clt := fake.NewClientBuilder().Build()
 
-		agCl := agclientmock.NewClient(t)
-		agCl.EXPECT().GetAuthToken(anyCtx, dk.Name).Return(testAgAuthTokenResponse, nil).Once()
-		r := NewReconciler(clt, clt)
+			agCl := agclientmock.NewClient(t)
+			agCl.EXPECT().GetAuthToken(anyCtx, dk.Name).Return(testAgAuthTokenResponse, nil).Once()
+			r := NewReconciler(clt, clt)
 
-		// create secret
-		err := r.Reconcile(t.Context(), agCl, dk)
-		require.NoError(t, err)
+			// create secret
+			err := r.Reconcile(t.Context(), agCl, dk)
+			require.NoError(t, err)
 
-		condition := meta.FindStatusCondition(*dk.Conditions(), activeGateAuthTokenSecretConditionType)
-		assert.Equal(t, metav1.ConditionTrue, condition.Status)
-		assert.Equal(t, k8sconditions.SecretCreatedReason, condition.Reason)
-		firstTransition := condition.LastTransitionTime
+			condition := meta.FindStatusCondition(*dk.Conditions(), activeGateAuthTokenSecretConditionType)
+			assert.Equal(t, metav1.ConditionTrue, condition.Status)
+			assert.Equal(t, k8sconditions.SecretCreatedReason, condition.Reason)
+			firstTransition := condition.LastTransitionTime
 
-		authToken, err := r.secrets.Get(t.Context(), types.NamespacedName{
-			Namespace: dk.Namespace,
-			Name:      dk.ActiveGate().GetAuthTokenSecretName(),
+			authToken, err := r.secrets.Get(t.Context(), types.NamespacedName{
+				Namespace: dk.Namespace,
+				Name:      dk.ActiveGate().GetAuthTokenSecretName(),
+			})
+
+			require.NoError(t, err)
+			assert.NotEmpty(t, authToken.Data[ActiveGateAuthTokenName])
+
+			// the fake client does not set CreationTimestamp, so stamp it as "created now"
+			authToken.Data = map[string][]byte{ActiveGateAuthTokenName: []byte(testToken)}
+			authToken.CreationTimestamp = metav1.Time{Time: time.Now()}
+			err = r.secrets.Update(t.Context(), authToken)
+			require.NoError(t, err)
+
+			firstCreationTimestamp := authToken.CreationTimestamp
+
+			// age the token to just before the rotation interval, so it is still valid
+			synctest.Sleep(AuthTokenRotationInterval - time.Minute)
+
+			// do not update secret
+			err = r.Reconcile(t.Context(), agCl, dk)
+			require.NoError(t, err)
+
+			condition = meta.FindStatusCondition(*dk.Conditions(), activeGateAuthTokenSecretConditionType)
+			assert.Equal(t, metav1.ConditionTrue, condition.Status)
+			assert.Equal(t, k8sconditions.SecretCreatedReason, condition.Reason)
+			secondTransition := condition.LastTransitionTime
+
+			authToken, err = r.secrets.Get(t.Context(), types.NamespacedName{
+				Namespace: dk.Namespace,
+				Name:      dk.ActiveGate().GetAuthTokenSecretName(),
+			})
+			require.NoError(t, err)
+			assert.NotEmpty(t, authToken.Data[ActiveGateAuthTokenName])
+			secondCreationTimestamp := authToken.CreationTimestamp
+
+			// token hasn't been changed
+			assert.Equal(t, authToken.Data[ActiveGateAuthTokenName], []byte(testToken))
+			assert.Equal(t, firstCreationTimestamp, secondCreationTimestamp)
+			assert.Equal(t, secondTransition, firstTransition)
 		})
-
-		require.NoError(t, err)
-		assert.NotEmpty(t, authToken.Data[ActiveGateAuthTokenName])
-
-		// "initialize" the secret as if it was created a month ago
-		authToken.Data = map[string][]byte{ActiveGateAuthTokenName: []byte(testToken)}
-		// time.Round is called because client.Update(secret)->json.Marshall(secret) rounds CreationTimestamp to seconds
-		authToken.CreationTimestamp = metav1.Time{Time: time.Now().Round(1 * time.Second).Add(-AuthTokenRotationInterval).Add(1 * time.Minute)}
-		err = r.secrets.Update(t.Context(), authToken)
-		require.NoError(t, err)
-
-		firstCreationTimestamp := authToken.CreationTimestamp
-
-		// let's "wait", small difference needed to compare LastTransitionTime
-		time.Sleep(1 * time.Second)
-
-		// do not update secret
-		err = r.Reconcile(t.Context(), agCl, dk)
-		require.NoError(t, err)
-
-		condition = meta.FindStatusCondition(*dk.Conditions(), activeGateAuthTokenSecretConditionType)
-		assert.Equal(t, metav1.ConditionTrue, condition.Status)
-		assert.Equal(t, k8sconditions.SecretCreatedReason, condition.Reason)
-		secondTransition := condition.LastTransitionTime
-
-		authToken, err = r.secrets.Get(t.Context(), types.NamespacedName{
-			Namespace: dk.Namespace,
-			Name:      dk.ActiveGate().GetAuthTokenSecretName(),
-		})
-		require.NoError(t, err)
-		assert.NotEmpty(t, authToken.Data[ActiveGateAuthTokenName])
-		secondCreationTimestamp := authToken.CreationTimestamp
-
-		// token hasn't been changed
-		assert.Equal(t, authToken.Data[ActiveGateAuthTokenName], []byte(testToken))
-		assert.Equal(t, firstCreationTimestamp, secondCreationTimestamp)
-		assert.Equal(t, secondTransition, firstTransition)
 	})
 }

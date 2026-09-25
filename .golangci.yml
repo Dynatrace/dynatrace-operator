@@ -101,7 +101,6 @@ linters:
             - github.com/google/go-containerregistry
             - github.com/docker/cli
             - github.com/go-gormigrate/gormigrate
-            - github.com/google/uuid
             - github.com/kubernetes-csi/csi-lib-utils/connection
             - github.com/kubernetes-csi/csi-lib-utils/rpc
           deny:
@@ -132,6 +131,11 @@ linters:
         - fieldalignment
     misspell:
       locale: US
+    modernize:
+      disable:
+        # Rewriting embedded field literals is tracked separately in ICP-8939,
+        # enable once the codebase has been migrated.
+        - embedlit
     mnd:
       checks:
         - argument

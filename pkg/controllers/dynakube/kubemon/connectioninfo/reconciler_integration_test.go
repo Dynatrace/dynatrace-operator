@@ -6,11 +6,9 @@ package connectioninfo_test
 import (
 	"context"
 	"fmt"
-	"io"
 	"net/http"
+	"net/http/httptest"
 	"net/url"
-	"strings"
-	"sync/atomic"
 	"testing"
 	"time"
 
@@ -247,24 +245,26 @@ func TestConnectionInfoCache(t *testing.T) {
 	integrationtests.CreateDynakube(t, clt, dk)
 
 	t.Run("uses cached connection info within TTL", func(t *testing.T) {
-		transport := newFakeCITransport(
+		recorder := newResponseRecorder(
 			kubemonConnectionInfoBody(integrationTenantUUID, integrationTenantToken, integrationEndpoints),
 		)
-		agClient := newKubemonConnectionInfoClient(t, transport, time.Minute)
+		s := httptest.NewTestServer(t, recorder)
+		agClient := newKubemonConnectionInfoClient(t, s.Client().Transport, time.Minute)
 
 		require.NoError(t, reconciler.Reconcile(t.Context(), agClient, dk))
 		require.NoError(t, reconciler.Reconcile(t.Context(), agClient, dk))
 
-		transport.assertCalls(t, 1, "second reconcile must be served from cache")
+		assert.Equal(t, 1, recorder.calls, "second reconcile must be served from cache")
 	})
 
 	t.Run("fetches fresh connection info after cache TTL expires", func(t *testing.T) {
 		const shortTTL = 10 * time.Millisecond
-		transport := newFakeCITransport(
+		recorder := newResponseRecorder(
 			kubemonConnectionInfoBody(integrationTenantUUID, integrationTenantToken, integrationEndpoints),
 			kubemonConnectionInfoBody(integrationTenantUUID, integrationTenantToken, integrationRotatedEndpoints),
 		)
-		agClient := newKubemonConnectionInfoClient(t, transport, shortTTL)
+		s := httptest.NewTestServer(t, recorder)
+		agClient := newKubemonConnectionInfoClient(t, s.Client().Transport, shortTTL)
 
 		require.NoError(t, reconciler.Reconcile(t.Context(), agClient, dk))
 
@@ -273,43 +273,35 @@ func TestConnectionInfoCache(t *testing.T) {
 		require.NoError(t, reconciler.Reconcile(t.Context(), agClient, dk))
 
 		assert.Equal(t, integrationRotatedEndpoints, dk.Status.KubernetesMonitoring.ConnectionInfo.Endpoints)
-		transport.assertCalls(t, 2)
+		assert.Equal(t, 2, recorder.calls)
 	})
 }
 
-// --- Fake transport ----------------------------------------------------------
+// --- Response recorder -------------------------------------------------------
 
-type fakeCITransport struct {
-	calls  atomic.Int64
+// responseRecorder serves preset JSON bodies in sequence, repeating the last one once the
+// list is exhausted, and counts how many requests got past the response cache.
+type responseRecorder struct {
+	calls  int
 	bodies []string
 }
 
-func newFakeCITransport(bodies ...string) *fakeCITransport {
-	return &fakeCITransport{bodies: bodies}
+func newResponseRecorder(bodies ...string) *responseRecorder {
+	return &responseRecorder{bodies: bodies}
 }
 
-func (ft *fakeCITransport) assertCalls(t *testing.T, expected int64, msgAndArgs ...any) {
-	t.Helper()
-	assert.Equal(t, expected, ft.calls.Load(), msgAndArgs...)
-}
-
-func (ft *fakeCITransport) RoundTrip(r *http.Request) (*http.Response, error) {
-	idx := int(ft.calls.Add(1)) - 1
-	body := ft.bodies[min(idx, len(ft.bodies)-1)]
-
-	return &http.Response{
-		StatusCode: http.StatusOK,
-		Header:     http.Header{"Content-Type": {"application/json"}},
-		Body:       io.NopCloser(strings.NewReader(body)),
-		Request:    r,
-	}, nil
+func (r *responseRecorder) ServeHTTP(w http.ResponseWriter, _ *http.Request) {
+	idx := r.calls
+	body := r.bodies[min(idx, len(r.bodies)-1)]
+	w.Header().Set("Content-Type", "application/json")
+	w.Write([]byte(body))
+	r.calls++
 }
 
 // --- Client constructor ------------------------------------------------------
 
 // newKubemonConnectionInfoClient builds a real agclient.ClientImpl whose HTTP transport
-// is the given fakeCITransport wrapped in a cache round-tripper with the specified TTL.
-// PaasToken is set to t.Name() so each subtest has an isolated namespace in the global cache.
+// is the given transport wrapped in a cache round-tripper with the specified TTL.
 func newKubemonConnectionInfoClient(t *testing.T, transport http.RoundTripper, ttl time.Duration) agclient.Client {
 	t.Helper()
 
@@ -319,7 +311,8 @@ func newKubemonConnectionInfoClient(t *testing.T, transport http.RoundTripper, t
 	return agclient.NewClient(core.NewClient(core.Config{
 		BaseURL:    u,
 		HTTPClient: &http.Client{Transport: middleware.NewCacheRoundTripper(transport, ttl)},
-		PaasToken:  t.Name(),
+		// Set to t.Name() so each subtest has an isolated namespace in the global cache.
+		PaasToken: t.Name(),
 	}))
 }
 
