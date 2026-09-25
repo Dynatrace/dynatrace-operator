@@ -124,19 +124,19 @@ func TestImageResolution(t *testing.T) {
 	ctx := t.Context()
 	anyCtx := mock.MatchedBy(func(context.Context) bool { return true })
 
-	reconcileDaemonSet := func(t *testing.T, dk *dynakube.DynaKube, imageClient *imageclientmock.Client) (appsv1.DaemonSet, error) {
+	reconcileDaemonSet := func(t *testing.T, dk *dynakube.DynaKube, imageClient *imageclientmock.Client) (*appsv1.DaemonSet, error) {
 		t.Helper()
 
 		mockK8sClient := fake.NewClient()
 
 		err := NewReconciler(mockK8sClient, mockK8sClient).Reconcile(ctx, imageClient, dk)
 		if err != nil {
-			return appsv1.DaemonSet{}, err
+			return nil, err
 		}
 
-		var daemonset appsv1.DaemonSet
+		daemonset := &appsv1.DaemonSet{}
 
-		err = mockK8sClient.Get(ctx, types.NamespacedName{Name: dk.KSPM().GetDaemonSetName(), Namespace: dk.Namespace}, &daemonset)
+		err = mockK8sClient.Get(ctx, types.NamespacedName{Name: dk.KSPM().GetDaemonSetName(), Namespace: dk.Namespace}, daemonset)
 		require.NoError(t, err)
 
 		return daemonset, nil
