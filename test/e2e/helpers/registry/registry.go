@@ -44,6 +44,11 @@ const (
 	cmDigestImageEnv = "E2E_ECR_CODEMODULES_IMAGE_DIGEST"
 )
 
+const (
+	latestTagOffset = 0
+	prevTagOffset   = 1
+)
+
 var (
 	latestImageURIs  = map[string]string{}
 	latestDigestURIs = map[string]string{}
@@ -58,7 +63,7 @@ var (
 func GetLatestImageTagURI(t *testing.T, repoURI, envVar string) string {
 	t.Helper()
 
-	return getLatestTagImageURI(t, repoURI, 0, envVar, false)
+	return getLatestTagImageURI(t, repoURI, envVar, false)
 }
 
 func GetLatestImageDigestURI(t *testing.T, repoURI, envVar string) string {
@@ -67,7 +72,7 @@ func GetLatestImageDigestURI(t *testing.T, repoURI, envVar string) string {
 	return getLatestDigestImageURI(t, repoURI, envVar, false)
 }
 
-func getLatestTagImageURI(t *testing.T, repoURI string, offset int, envVar string, fips bool) string {
+func getLatestTagImageURI(t *testing.T, repoURI, envVar string, fips bool) string {
 	t.Helper()
 
 	if val := os.Getenv(envVar); val != "" {
@@ -76,7 +81,19 @@ func getLatestTagImageURI(t *testing.T, repoURI string, offset int, envVar strin
 		return val
 	}
 
-	return resolveLatestTagURI(t, repoURI, offset, fips)
+	return resolveTagURIWithOffset(t, repoURI, latestTagOffset, fips)
+}
+
+func getPrevTagImageURI(t *testing.T, repoURI, envVar string, fips bool) string {
+	t.Helper()
+
+	if val := os.Getenv(envVar); val != "" {
+		t.Logf("using image from env %s: %s", envVar, val)
+
+		return val
+	}
+
+	return resolveTagURIWithOffset(t, repoURI, prevTagOffset, fips)
 }
 
 func getLatestDigestImageURI(t *testing.T, repoURI, envVar string, fips bool) string {
@@ -88,12 +105,12 @@ func getLatestDigestImageURI(t *testing.T, repoURI, envVar string, fips bool) st
 		return val
 	}
 
-	tagURI := resolveLatestTagURI(t, repoURI, 0, fips)
+	tagURI := resolveTagURIWithOffset(t, repoURI, latestTagOffset, fips)
 
 	return resolveLatestDigestURI(t, repoURI, tagURI)
 }
 
-func resolveLatestTagURI(t *testing.T, repoURI string, offset int, fips bool) string {
+func resolveTagURIWithOffset(t *testing.T, repoURI string, offset int, fips bool) string {
 	t.Helper()
 
 	cacheKey := fmt.Sprintf("%s@%d", repoURI, offset)
@@ -103,7 +120,7 @@ func resolveLatestTagURI(t *testing.T, repoURI string, offset int, fips bool) st
 		return uri
 	}
 
-	uri := fetchLatestURIFromRegistry(t, repoURI, offset, fips)
+	uri := fetchTagURIFromRegistry(t, repoURI, offset, fips)
 	latestImageURIs[cacheKey] = uri
 	t.Logf("resolved image: %s", uri)
 
@@ -148,25 +165,25 @@ func resolveLatestDigestURI(t *testing.T, repoURI, tagURI string) string {
 func GetLatestActiveGateImageTagURI(t *testing.T) string {
 	t.Helper()
 
-	return getLatestTagImageURI(t, agPublicECR, 0, agImageEnv, platform.IsFIPS())
+	return getLatestTagImageURI(t, agPublicECR, agImageEnv, platform.IsFIPS())
 }
 
 func GetLatestOneAgentImageTagURI(t *testing.T) string {
 	t.Helper()
 
-	return getLatestTagImageURI(t, oaPublicECR, 0, oaImageEnv, platform.IsFIPS())
+	return getLatestTagImageURI(t, oaPublicECR, oaImageEnv, platform.IsFIPS())
 }
 
 func GetLatestCodeModulesImageTagURI(t *testing.T) string {
 	t.Helper()
 
-	return getLatestTagImageURI(t, cmPublicECR, 0, cmImageEnv, platform.IsFIPS())
+	return getLatestTagImageURI(t, cmPublicECR, cmImageEnv, platform.IsFIPS())
 }
 
 func GetPreviousCodeModulesImageTagURI(t *testing.T) string {
 	t.Helper()
 
-	return getLatestTagImageURI(t, cmPublicECR, 1, cmPreviousImageEnv, platform.IsFIPS())
+	return getPrevTagImageURI(t, cmPublicECR, cmPreviousImageEnv, platform.IsFIPS())
 }
 
 func GetLatestActiveGateImageDigestURI(t *testing.T) string {
@@ -203,7 +220,7 @@ func isRateLimited(err error) bool {
 	return errors.As(err, &transportErr) && transportErr.StatusCode == http.StatusTooManyRequests
 }
 
-func fetchLatestURIFromRegistry(t *testing.T, repoURI string, offset int, fips bool) string {
+func fetchTagURIFromRegistry(t *testing.T, repoURI string, offset int, fips bool) string {
 	t.Helper()
 
 	repo, err := name.NewRepository(repoURI)
