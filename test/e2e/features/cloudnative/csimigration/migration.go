@@ -57,7 +57,7 @@ func Feature(t *testing.T) features.Feature {
 	builder.Assess("redeploy operator with migration mode", enableMigrationMode)
 	// VerifyInstall (inside enableMigrationMode) only confirms the operator pod is ready, not that it has reconciled.
 	// Without this, WaitForDaemonset may see the pre-rollout ready state and return before the rollout is triggered.
-	dynakubeComponents.TriggerReconciliation(builder, testDynakube)
+	dynakubeComponents.TriggerReconciliation(builder, &testDynakube)
 	// Must wait for DaemonSet rollout: ensures all OneAgent pods have dropped their CSI volumes before
 	// Phase 5 removes the CSI DaemonSet entirely (avoids stuck Terminating pods on unmount).
 	builder.Assess("oneagent daemonset rolled out after migration mode enabled", oneagentComponents.WaitForDaemonset(testDynakube.OneAgent().GetDaemonsetName(), testDynakube.Namespace))

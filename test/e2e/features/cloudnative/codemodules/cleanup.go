@@ -73,7 +73,7 @@ func CleanupKeepsMountedCodeModules(t *testing.T) features.Feature {
 	sampleNamespace := k8snamespace.New("codemodules-cleanup-sample", k8snamespace.WithLabels(labels))
 
 	sampleApp := sample.NewApp(t, &testDynakube,
-		sample.WithNamespace(sampleNamespace),
+		sample.WithNamespace(*sampleNamespace),
 	)
 
 	builder.WithSetup("install operator with fast cleanup period", helpers.ToFeatureFunc(
@@ -81,7 +81,7 @@ func CleanupKeepsMountedCodeModules(t *testing.T) features.Feature {
 
 	builder.Assess("create sample namespace", sampleApp.InstallNamespace())
 
-	dynakubeComponents.Install(builder, secretConfig, &testDynakube)
+	dynakubeComponents.Install(builder, &secretConfig, testDynakube)
 
 	builder.Assess("install sample app", sampleApp.Install())
 	cloudnative.AssessSampleInitContainers(builder, sampleApp)
@@ -89,7 +89,7 @@ func CleanupKeepsMountedCodeModules(t *testing.T) features.Feature {
 	builder.Assess("remember the codemodule of the injected pod", recordInjectedCodeModule(sampleApp, snapshot))
 
 	latestDynakube := newAppMonDynakube(secretConfig.APIURL, latestImage)
-	dynakubeComponents.Update(builder, &latestDynakube)
+	dynakubeComponents.Update(builder, latestDynakube)
 
 	builder.Assess("new codemodule has been downloaded", waitForNewCodeModuleToBeLinked(testDynakube, snapshot))
 	builder.Assess("two codemodules are present before cleanup", assertCodeModuleCount(testDynakube, snapshot, doubleCodeModulesCnt))
@@ -150,7 +150,7 @@ func readCodeModuleDir(ctx context.Context, t *testing.T, resource *resources.Re
 
 	command := shell.GrepMounts(oacommon.DefaultInstallPath)
 
-	result, err := k8spod.Exec(ctx, resource, pod, container, command...)
+	result, err := k8spod.Exec(ctx, resource, *pod, container, command...)
 	require.NoError(t, err)
 
 	for option := range strings.SplitSeq(result.StdOut.String(), ",") {
@@ -169,7 +169,7 @@ func recordInjectedCodeModule(sampleApp *sample.App, snapshot *codeModulesSnapsh
 		resource := envConfig.Client().Resources()
 		pod := sampleApp.GetPod(ctx, t, resource)
 
-		snapshot.codeModuleDir = readCodeModuleDir(ctx, t, resource, pod, sampleApp.ContainerName())
+		snapshot.codeModuleDir = readCodeModuleDir(ctx, t, resource, &pod, sampleApp.ContainerName())
 		snapshot.injectedPodNodeName = pod.Spec.NodeName
 
 		t.Logf("pod %s on %s is mounted from %s", pod.Name, snapshot.injectedPodNodeName, snapshot.codeModuleDir)
@@ -212,7 +212,7 @@ func readLatestCodeModule(ctx context.Context, resource *resources.Resources, po
 	latestLink := path.Join(dataPath, dtcsi.SharedDynaKubesDir, dynakubeName, "latest-codemodule")
 	command := shell.ReadLink(latestLink)
 
-	result, err := k8spod.Exec(ctx, resource, pod, provisionerContainerName, command...)
+	result, err := k8spod.Exec(ctx, resource, *pod, provisionerContainerName, command...)
 	if err != nil {
 		return "", err
 	}
@@ -228,9 +228,9 @@ func csiPodOnNode(ctx context.Context, t *testing.T, resource *resources.Resourc
 	err := k8sdaemonset.NewQuery(ctx, resource, client.ObjectKey{
 		Name:      csi.DaemonSetName,
 		Namespace: namespace,
-	}).ForEachPod(func(pod *corev1.Pod) {
+	}).ForEachPod(func(pod corev1.Pod) {
 		if pod.Spec.NodeName == nodeName {
-			csiPod = *pod
+			csiPod = pod
 		}
 	})
 	require.NoError(t, err)
@@ -242,7 +242,7 @@ func csiPodOnNode(ctx context.Context, t *testing.T, resource *resources.Resourc
 func listCodeModules(ctx context.Context, resource *resources.Resources, pod *corev1.Pod) ([]string, error) {
 	listCommand := shell.ListDirectory(dataPath + dtcsi.SharedAgentBinDir)
 
-	result, err := k8spod.Exec(ctx, resource, pod, provisionerContainerName, listCommand...)
+	result, err := k8spod.Exec(ctx, resource, *pod, provisionerContainerName, listCommand...)
 	if err != nil {
 		return nil, err
 	}
