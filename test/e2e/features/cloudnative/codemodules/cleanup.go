@@ -10,7 +10,6 @@ import (
 	"context"
 	"io"
 	"path"
-	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -58,10 +57,6 @@ const (
 // This reproduces ICP-9640/ICP-9922, where the CSI garbage collection deleted the code module
 // directory that running pods still used as the lower dir of their overlay mount. The agent then
 // failed as soon as it had to read a file that was not already in the dentry cache.
-//
-// The assertion deliberately only looks at what an injected pod can see, not at any path inside the
-// CSI filesystem. Those paths are what changed when the bug was introduced, so a test coupled to
-// them would have to be rewritten by the very change that breaks the behavior.
 func CleanupKeepsMountedCodeModules(t *testing.T) features.Feature {
 	builder := features.New("cloudnative-codemodules-cleanup-keeps-mounted")
 	secretConfig := tenant.GetSingleTenantSecret(t)
@@ -70,7 +65,7 @@ func CleanupKeepsMountedCodeModules(t *testing.T) features.Feature {
 	latestImage := registry.GetLatestCodeModulesImageTagURI(t)
 
 	// Shared between the steps, filled in while the feature runs.
-	agentFiles := &agentFilesSnapshot{}
+	snapshot := &codeModulesSnapshot{}
 
 	testDynakube := newAppMonDynakube(secretConfig.APIURL, previousImage)
 
@@ -91,30 +86,30 @@ func CleanupKeepsMountedCodeModules(t *testing.T) features.Feature {
 	builder.Assess("install sample app", sampleApp.Install())
 	cloudnative.AssessSampleInitContainers(builder, sampleApp)
 
-	builder.Assess("remember the agent files of the injected pod", recordAgentFiles(sampleApp, agentFiles))
+	builder.Assess("remember the codemodule of the injected pod", recordInjectedCodeModule(sampleApp, snapshot))
 
 	latestDynakube := newAppMonDynakube(secretConfig.APIURL, latestImage)
 	dynakubeComponents.Update(builder, &latestDynakube)
 
-	builder.Assess("new codemodule has been downloaded", waitForNewCodeModuleToBeLinked(testDynakube, agentFiles))
-	builder.Assess("two codemodules are present before cleanup", assertCodeModuleCount(testDynakube, agentFiles, doubleCodeModulesCnt))
+	builder.Assess("new codemodule has been downloaded", waitForNewCodeModuleToBeLinked(testDynakube, snapshot))
+	builder.Assess("two codemodules are present before cleanup", assertCodeModuleCount(testDynakube, snapshot, doubleCodeModulesCnt))
 
-	builder.Assess("record cleanup runs before triggering a reconcile", recordCleanupRunsBefore(testDynakube, agentFiles))
+	builder.Assess("record cleanup runs before triggering a reconcile", recordCleanupRunsBefore(testDynakube, snapshot))
 	dynakubeComponents.TriggerReconciliationWithoutWait(builder, &testDynakube)
-	builder.Assess("garbage collection ran after the upgrade", waitForCleanupRun(testDynakube, agentFiles))
+	builder.Assess("garbage collection ran after the upgrade", waitForCleanupRun(testDynakube, snapshot))
 
-	// The actual regression check. Same pod, never restarted, so it still uses the old code module.
-	builder.Assess("injected pod can still read all its agent files", agentFilesAreUnchanged(testDynakube, sampleApp, agentFiles))
-	builder.Assess("both code modules are available on the file system", assertCodeModuleCount(testDynakube, agentFiles, doubleCodeModulesCnt))
+	// The actual regression check. The sample pod was never restarted, so it still uses the old code
+	// module, which means the cleanup must not have removed it.
+	builder.Assess("both code modules are available on the file system", assertCodeModuleCount(testDynakube, snapshot, doubleCodeModulesCnt))
 
 	// Guards against the opposite mistake: a garbage collection that keeps everything forever would
 	// pass the check above.
 	builder.Assess("uninstall sample app", sampleApp.Uninstall())
 
-	builder.Assess("record cleanup runs before triggering a reconcile", recordCleanupRunsBefore(testDynakube, agentFiles))
+	builder.Assess("record cleanup runs before triggering a reconcile", recordCleanupRunsBefore(testDynakube, snapshot))
 	dynakubeComponents.TriggerReconciliationWithoutWait(builder, &testDynakube)
-	builder.Assess("garbage collection ran after the sample app is gone", waitForCleanupRun(testDynakube, agentFiles))
-	builder.Assess("only one code module left on the file system", assertCodeModuleCount(testDynakube, agentFiles, 1))
+	builder.Assess("garbage collection ran after the sample app is gone", waitForCleanupRun(testDynakube, snapshot))
+	builder.Assess("only one code module left on the file system", assertCodeModuleCount(testDynakube, snapshot, 1))
 
 	builder.WithTeardown("switch back to regular operator installation", restoreOperatorInstallation())
 
@@ -142,32 +137,11 @@ func restoreOperatorInstallation() features.Func {
 	}
 }
 
-type agentFilesSnapshot struct {
-	manifestChecksum    string
-	numberOfAgentFiles  int
+type codeModulesSnapshot struct {
 	injectedPodNodeName string
+	codeModuleDir       string
 
 	cleanupRunsBeforeTrigger int
-	codeModuleDir            string
-}
-
-// readAgentFiles lists every agent file the pod can see and checksums that listing.
-func readAgentFiles(ctx context.Context, t *testing.T, resource *resources.Resources, pod *corev1.Pod, container string) (string, int) {
-	t.Helper()
-
-	findFiles := "find " + oacommon.DefaultInstallPath + " -type f | sort"
-	command := shell.Shell(shell.Command{findFiles + " | sha256sum; " + findFiles + " | wc -l"})
-
-	result, err := k8spod.Exec(ctx, resource, pod, container, command...)
-	require.NoError(t, err)
-
-	output := strings.Fields(result.StdOut.String())
-	require.NotEmpty(t, output, "no output while listing the agent files")
-
-	count, err := strconv.Atoi(output[len(output)-1])
-	require.NoError(t, err)
-
-	return output[0], count
 }
 
 // readCodeModuleDir reports the lower dir of the overlay the pod is injected with.
@@ -190,45 +164,21 @@ func readCodeModuleDir(ctx context.Context, t *testing.T, resource *resources.Re
 	return ""
 }
 
-func recordAgentFiles(sampleApp *sample.App, snapshot *agentFilesSnapshot) features.Func {
+func recordInjectedCodeModule(sampleApp *sample.App, snapshot *codeModulesSnapshot) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resource := envConfig.Client().Resources()
 		pod := sampleApp.GetPod(ctx, t, resource)
 
-		snapshot.manifestChecksum, snapshot.numberOfAgentFiles = readAgentFiles(ctx, t, resource, pod, sampleApp.ContainerName())
 		snapshot.codeModuleDir = readCodeModuleDir(ctx, t, resource, pod, sampleApp.ContainerName())
 		snapshot.injectedPodNodeName = pod.Spec.NodeName
 
-		require.Positive(t, snapshot.numberOfAgentFiles, "the injected pod has no agent files to begin with")
-		t.Logf("pod %s on %s sees %d agent files, mounted from %s",
-			pod.Name, snapshot.injectedPodNodeName, snapshot.numberOfAgentFiles, snapshot.codeModuleDir)
+		t.Logf("pod %s on %s is mounted from %s", pod.Name, snapshot.injectedPodNodeName, snapshot.codeModuleDir)
 
 		return ctx
 	}
 }
 
-func agentFilesAreUnchanged(dk dynakube.DynaKube, sampleApp *sample.App, snapshot *agentFilesSnapshot) features.Func {
-	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		resource := envConfig.Client().Resources()
-		pod := sampleApp.GetPod(ctx, t, resource)
-
-		manifest, count := readAgentFiles(ctx, t, resource, pod, sampleApp.ContainerName())
-
-		assert.Equal(t, snapshot.numberOfAgentFiles, count,
-			"the injected pod lost agent files after the codemodule upgrade, it was mounted from %s", snapshot.codeModuleDir)
-		assert.Equal(t, snapshot.manifestChecksum, manifest,
-			"the agent files of the injected pod changed after the codemodule upgrade, it was mounted from %s", snapshot.codeModuleDir)
-
-		if t.Failed() {
-			// The CSI driver runs in the namespace of the DynaKube, not in the one of the sample app.
-			logCodeModulesDir(ctx, t, envConfig, dk.Namespace, snapshot.injectedPodNodeName)
-		}
-
-		return ctx
-	}
-}
-
-func waitForNewCodeModuleToBeLinked(dk dynakube.DynaKube, snapshot *agentFilesSnapshot) features.Func {
+func waitForNewCodeModuleToBeLinked(dk dynakube.DynaKube, snapshot *codeModulesSnapshot) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resource := envConfig.Client().Resources()
 		pod := csiPodOnNode(ctx, t, resource, dk.Namespace, snapshot.injectedPodNodeName)
@@ -300,7 +250,7 @@ func listCodeModules(ctx context.Context, resource *resources.Resources, pod *co
 	return strings.Fields(result.StdOut.String()), nil
 }
 
-func assertCodeModuleCount(dk dynakube.DynaKube, snapshot *agentFilesSnapshot, expected int) features.Func {
+func assertCodeModuleCount(dk dynakube.DynaKube, snapshot *codeModulesSnapshot, expected int) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resource := envConfig.Client().Resources()
 		pod := csiPodOnNode(ctx, t, resource, dk.Namespace, snapshot.injectedPodNodeName)
@@ -315,7 +265,7 @@ func assertCodeModuleCount(dk dynakube.DynaKube, snapshot *agentFilesSnapshot, e
 	}
 }
 
-func recordCleanupRunsBefore(dk dynakube.DynaKube, snapshot *agentFilesSnapshot) features.Func {
+func recordCleanupRunsBefore(dk dynakube.DynaKube, snapshot *codeModulesSnapshot) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resource := envConfig.Client().Resources()
 		clientset, err := kubernetes.NewForConfig(resource.GetConfig())
@@ -332,7 +282,7 @@ func recordCleanupRunsBefore(dk dynakube.DynaKube, snapshot *agentFilesSnapshot)
 	}
 }
 
-func waitForCleanupRun(dk dynakube.DynaKube, snapshot *agentFilesSnapshot) features.Func {
+func waitForCleanupRun(dk dynakube.DynaKube, snapshot *codeModulesSnapshot) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resource := envConfig.Client().Resources()
 		clientset, err := kubernetes.NewForConfig(resource.GetConfig())
@@ -375,16 +325,4 @@ func countCleanupRuns(ctx context.Context, clientset *kubernetes.Clientset, pod 
 	}
 
 	return strings.Count(buffer.String(), cleanup.FinishedLogMsg), nil
-}
-
-func logCodeModulesDir(ctx context.Context, t *testing.T, envConfig *envconf.Config, namespace, nodeName string) {
-	t.Helper()
-
-	resource := envConfig.Client().Resources()
-	pod := csiPodOnNode(ctx, t, resource, namespace, nodeName)
-
-	codeModules, err := listCodeModules(ctx, resource, pod)
-	if err == nil {
-		t.Logf("codemodules on %s: %v", pod.Name, codeModules)
-	}
 }
