@@ -229,6 +229,10 @@ spec:
           - mountPath: {{ include "dynatrace-operator.CSIMountPointDir" . }}
             name: mountpoint-dir # needed for garbage-collection
             readOnly: true
+            # Without this the mount namespace of this container is private, so it never sees the
+            # app mounts the server container creates after this container started, and the
+            # garbage-collection would delete code modules that are still in use.
+            mountPropagation: HostToContainer
         # Used to make a gRPC request (GetPluginInfo()) to the driver to get driver name and driver contain
         # - Needs access to the csi socket, needs to read/write to it, needs root permissions to do so.
         # Used for registering the driver with kubelet
