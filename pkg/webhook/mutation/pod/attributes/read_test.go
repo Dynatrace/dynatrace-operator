@@ -145,18 +145,18 @@ func TestGetPodAnnotationAttributes(t *testing.T) {
 
 func TestGetFromEnrichmentRules(t *testing.T) {
 	// for rules that only read from the namespace, neither the pod nor the workload carry metadata
-	applyRules := func(attrs *Pod, ns corev1.Namespace, dk *dynakube.DynaKube) {
-		attrs.applyEnrichmentRules(dk.Status.MetadataEnrichment.Rules, &ns, &workload.Info{}, &corev1.Pod{})
+	applyRules := func(attrs *Pod, ns *corev1.Namespace, dk *dynakube.DynaKube) {
+		attrs.applyEnrichmentRules(dk.Status.MetadataEnrichment.Rules, ns, &workload.Info{}, &corev1.Pod{})
 	}
 
 	t.Run("LabelRule without target stores under computed rules key", func(t *testing.T) {
 		attrs := newPodAttrs()
-		ns := corev1.Namespace{
+		ns := &corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
 				Labels: map[string]string{"env": "production"},
 			},
 		}
-		dk := dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			Status: dynakube.DynaKubeStatus{
 				MetadataEnrichment: metadataenrichment.Status{
 					Rules: []metadataenrichment.Rule{
@@ -166,7 +166,7 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 			},
 		}
 
-		applyRules(attrs, ns, &dk)
+		applyRules(attrs, ns, dk)
 
 		expectedKey := metadataenrichment.GetEmptyTargetEnrichmentKey(string(metadataenrichment.LabelRule), "env")
 		assert.Equal(t, "production", attrs.rules[expectedKey])
@@ -175,12 +175,12 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 
 	t.Run("LabelRule with target stores in rules under the target key", func(t *testing.T) {
 		attrs := newPodAttrs()
-		ns := corev1.Namespace{
+		ns := &corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
 				Labels: map[string]string{"env": "staging"},
 			},
 		}
-		dk := dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			Status: dynakube.DynaKubeStatus{
 				MetadataEnrichment: metadataenrichment.Status{
 					Rules: []metadataenrichment.Rule{
@@ -190,7 +190,7 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 			},
 		}
 
-		applyRules(attrs, ns, &dk)
+		applyRules(attrs, ns, dk)
 
 		assert.Equal(t, "staging", attrs.rules["custom.env"])
 		assert.Len(t, attrs.rules, 1)
@@ -198,12 +198,12 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 
 	t.Run("AnnotationRule reads from namespace annotations", func(t *testing.T) {
 		attrs := newPodAttrs()
-		ns := corev1.Namespace{
+		ns := &corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{"team": "backend"},
 			},
 		}
-		dk := dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			Status: dynakube.DynaKubeStatus{
 				MetadataEnrichment: metadataenrichment.Status{
 					Rules: []metadataenrichment.Rule{
@@ -213,14 +213,14 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 			},
 		}
 
-		applyRules(attrs, ns, &dk)
+		applyRules(attrs, ns, dk)
 
 		assert.Equal(t, "backend", attrs.rules["team.name"])
 	})
 
 	t.Run("rule whose source is absent from namespace is skipped", func(t *testing.T) {
 		attrs := newPodAttrs()
-		dk := dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			Status: dynakube.DynaKubeStatus{
 				MetadataEnrichment: metadataenrichment.Status{
 					Rules: []metadataenrichment.Rule{
@@ -230,14 +230,14 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 			},
 		}
 
-		applyRules(attrs, corev1.Namespace{}, &dk)
+		applyRules(attrs, &corev1.Namespace{}, dk)
 
 		assert.Empty(t, attrs.rules)
 	})
 
 	t.Run("mix of target and no-target rules routes correctly", func(t *testing.T) {
 		attrs := newPodAttrs()
-		ns := corev1.Namespace{
+		ns := &corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
 				Labels: map[string]string{
 					"env":  "prod",
@@ -245,7 +245,7 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 				},
 			},
 		}
-		dk := dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			Status: dynakube.DynaKubeStatus{
 				MetadataEnrichment: metadataenrichment.Status{
 					Rules: []metadataenrichment.Rule{
@@ -256,7 +256,7 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 			},
 		}
 
-		applyRules(attrs, ns, &dk)
+		applyRules(attrs, ns, dk)
 
 		envKey := metadataenrichment.GetEmptyTargetEnrichmentKey(string(metadataenrichment.LabelRule), "env")
 		assert.Equal(t, "prod", attrs.rules[envKey])
@@ -265,12 +265,12 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 
 	t.Run("K8S_NAMESPACE_LABEL with target stores in rules", func(t *testing.T) {
 		attrs := newPodAttrs()
-		ns := corev1.Namespace{
+		ns := &corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
 				Labels: map[string]string{"env": "production"},
 			},
 		}
-		dk := dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			Status: dynakube.DynaKubeStatus{
 				MetadataEnrichment: metadataenrichment.Status{
 					Rules: []metadataenrichment.Rule{
@@ -280,7 +280,7 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 			},
 		}
 
-		applyRules(attrs, ns, &dk)
+		applyRules(attrs, ns, dk)
 
 		assert.Equal(t, "production", attrs.rules["custom.env"])
 		assert.Len(t, attrs.rules, 1)
@@ -288,12 +288,12 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 
 	t.Run("K8S_NAMESPACE_LABEL without target stores under computed rules key", func(t *testing.T) {
 		attrs := newPodAttrs()
-		ns := corev1.Namespace{
+		ns := &corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
 				Labels: map[string]string{"env": "production"},
 			},
 		}
-		dk := dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			Status: dynakube.DynaKubeStatus{
 				MetadataEnrichment: metadataenrichment.Status{
 					Rules: []metadataenrichment.Rule{
@@ -303,7 +303,7 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 			},
 		}
 
-		applyRules(attrs, ns, &dk)
+		applyRules(attrs, ns, dk)
 
 		expectedKey := metadataenrichment.GetEmptyTargetEnrichmentKey(string(metadataenrichment.K8sNamespaceLabelRule), "env")
 		assert.Equal(t, "production", attrs.rules[expectedKey])
@@ -312,12 +312,12 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 
 	t.Run("K8S_NAMESPACE_ANNOTATION with target stores in rules", func(t *testing.T) {
 		attrs := newPodAttrs()
-		ns := corev1.Namespace{
+		ns := &corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{"team": "backend"},
 			},
 		}
-		dk := dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			Status: dynakube.DynaKubeStatus{
 				MetadataEnrichment: metadataenrichment.Status{
 					Rules: []metadataenrichment.Rule{
@@ -327,7 +327,7 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 			},
 		}
 
-		applyRules(attrs, ns, &dk)
+		applyRules(attrs, ns, dk)
 
 		assert.Equal(t, "backend", attrs.rules["team.name"])
 		assert.Len(t, attrs.rules, 1)
@@ -335,7 +335,7 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 
 	t.Run("K8S_NAMESPACE_LABEL with absent source is skipped", func(t *testing.T) {
 		attrs := newPodAttrs()
-		dk := dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			Status: dynakube.DynaKubeStatus{
 				MetadataEnrichment: metadataenrichment.Status{
 					Rules: []metadataenrichment.Rule{
@@ -345,14 +345,14 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 			},
 		}
 
-		applyRules(attrs, corev1.Namespace{}, &dk)
+		applyRules(attrs, &corev1.Namespace{}, dk)
 
 		assert.Empty(t, attrs.rules)
 	})
 
 	t.Run("CUSTOM with target stores literal source in rules", func(t *testing.T) {
 		attrs := newPodAttrs()
-		dk := dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			Status: dynakube.DynaKubeStatus{
 				MetadataEnrichment: metadataenrichment.Status{
 					Rules: []metadataenrichment.Rule{
@@ -362,7 +362,7 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 			},
 		}
 
-		applyRules(attrs, corev1.Namespace{}, &dk)
+		applyRules(attrs, &corev1.Namespace{}, dk)
 
 		assert.Equal(t, "my-literal-value", attrs.rules["dt.custom"])
 		assert.Len(t, attrs.rules, 1)
