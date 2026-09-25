@@ -656,14 +656,14 @@ func TestOneAgentArguments(t *testing.T) {
 func TestNoHostIdSourceArgument(t *testing.T) {
 	type oneAgentArgumentTest struct {
 		testName      string
-		dk            dynakube.DynaKube
+		dk            *dynakube.DynaKube
 		expectedError string
 	}
 
 	testcases := []oneAgentArgumentTest{
 		{
 			testName: "host id source argument in cloud native full stack",
-			dk: dynakube.DynaKube{
+			dk: &dynakube.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "dynakube",
 					Namespace: testNamespace,
@@ -686,7 +686,7 @@ func TestNoHostIdSourceArgument(t *testing.T) {
 		},
 		{
 			testName: "no host id source argument in cloud native full stack",
-			dk: dynakube.DynaKube{
+			dk: &dynakube.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "dynakube",
 					Namespace: testNamespace,
@@ -708,7 +708,7 @@ func TestNoHostIdSourceArgument(t *testing.T) {
 		},
 		{
 			testName: "host id source argument in host monitoring stack",
-			dk: dynakube.DynaKube{
+			dk: &dynakube.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "dynakube",
 					Namespace: testNamespace,
@@ -732,9 +732,9 @@ func TestNoHostIdSourceArgument(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.testName, func(t *testing.T) {
 			if tc.expectedError == "" {
-				assertAllowedWithoutWarnings(t, &tc.dk)
+				assertAllowedWithoutWarnings(t, tc.dk)
 			} else {
-				assertDenied(t, []string{tc.expectedError}, &tc.dk)
+				assertDenied(t, []string{tc.expectedError}, tc.dk)
 			}
 		})
 	}
@@ -831,13 +831,13 @@ func TestDeprecatedOneAgentVersion(t *testing.T) {
 	}
 	testcases := []struct {
 		name            string
-		dk              dynakube.DynaKube
+		dk              *dynakube.DynaKube
 		apiToken        *corev1.Secret
 		expectedWarning string
 	}{
 		{
 			"classic fullstack",
-			dynakube.DynaKube{
+			&dynakube.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "dynakube",
 					Namespace: testNamespace,
@@ -854,7 +854,7 @@ func TestDeprecatedOneAgentVersion(t *testing.T) {
 		},
 		{
 			"host monitoring",
-			dynakube.DynaKube{
+			&dynakube.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "dynakube",
 					Namespace: testNamespace,
@@ -871,7 +871,7 @@ func TestDeprecatedOneAgentVersion(t *testing.T) {
 		},
 		{
 			"host monitoring + public registry ff",
-			dynakube.DynaKube{
+			&dynakube.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "dynakube",
 					Namespace: testNamespace,
@@ -891,7 +891,7 @@ func TestDeprecatedOneAgentVersion(t *testing.T) {
 		},
 		{
 			"host monitoring + public registry ff + image specified",
-			dynakube.DynaKube{
+			&dynakube.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "dynakube",
 					Namespace: testNamespace,
@@ -912,7 +912,7 @@ func TestDeprecatedOneAgentVersion(t *testing.T) {
 		},
 		{
 			"cloudnative fullstack",
-			dynakube.DynaKube{
+			&dynakube.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "dynakube",
 					Namespace: testNamespace,
@@ -931,7 +931,7 @@ func TestDeprecatedOneAgentVersion(t *testing.T) {
 		},
 		{
 			"cloudnative fullstack + public registry ff",
-			dynakube.DynaKube{
+			&dynakube.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "dynakube",
 					Namespace: testNamespace,
@@ -953,7 +953,7 @@ func TestDeprecatedOneAgentVersion(t *testing.T) {
 		},
 		{
 			"cloudnative fullstack + public registry ff + image specified",
-			dynakube.DynaKube{
+			&dynakube.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "dynakube",
 					Namespace: testNamespace,
@@ -976,7 +976,7 @@ func TestDeprecatedOneAgentVersion(t *testing.T) {
 		},
 		{
 			"app monitoring",
-			dynakube.DynaKube{
+			&dynakube.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "dynakube",
 					Namespace: testNamespace,
@@ -993,7 +993,7 @@ func TestDeprecatedOneAgentVersion(t *testing.T) {
 		},
 		{
 			"app monitoring + public registry ff",
-			dynakube.DynaKube{
+			&dynakube.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "dynakube",
 					Namespace: testNamespace,
@@ -1013,7 +1013,7 @@ func TestDeprecatedOneAgentVersion(t *testing.T) {
 		},
 		{
 			"app monitoring + platform token",
-			dynakube.DynaKube{
+			&dynakube.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "dynakube",
 					Namespace: testNamespace,
@@ -1030,7 +1030,7 @@ func TestDeprecatedOneAgentVersion(t *testing.T) {
 		},
 		{
 			"app monitoring + platform token + image specified",
-			dynakube.DynaKube{
+			&dynakube.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "dynakube",
 					Namespace: testNamespace,
@@ -1054,7 +1054,7 @@ func TestDeprecatedOneAgentVersion(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			deprecatedDK := &tc.dk
+			deprecatedDK := tc.dk
 			warnings, err := assertAllowed(t, deprecatedDK, tc.apiToken)
 			require.NoError(t, err, "creation")
 			require.Len(t, warnings, 1)
