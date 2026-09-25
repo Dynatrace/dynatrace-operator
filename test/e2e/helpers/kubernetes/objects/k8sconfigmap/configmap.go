@@ -17,8 +17,8 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-func New(name, namespace string, data map[string]string) corev1.ConfigMap {
-	return corev1.ConfigMap{
+func New(name, namespace string, data map[string]string) *corev1.ConfigMap {
+	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
@@ -27,12 +27,12 @@ func New(name, namespace string, data map[string]string) corev1.ConfigMap {
 	}
 }
 
-func Create(configMap corev1.ConfigMap) features.Func {
+func Create(configMap *corev1.ConfigMap) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		err := envConfig.Client().Resources().Create(ctx, &configMap)
+		err := envConfig.Client().Resources().Create(ctx, configMap)
 		if err != nil {
 			if k8serrors.IsAlreadyExists(err) {
-				err = envConfig.Client().Resources().Update(ctx, &configMap)
+				err = envConfig.Client().Resources().Update(ctx, configMap)
 			}
 			require.NoError(t, err)
 		}
@@ -41,9 +41,9 @@ func Create(configMap corev1.ConfigMap) features.Func {
 	}
 }
 
-func Delete(configMap corev1.ConfigMap) features.Func {
+func Delete(configMap *corev1.ConfigMap) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		err := envConfig.Client().Resources().Delete(ctx, &configMap)
+		err := envConfig.Client().Resources().Delete(ctx, configMap)
 		if err != nil {
 			if k8serrors.IsNotFound(err) {
 				err = nil

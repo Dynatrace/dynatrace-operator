@@ -25,7 +25,7 @@ spec:
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
-    - jsonPath: .spec.dynaKubeRef
+    - jsonPath: .spec.dynaKubeName
       name: DynaKube
       type: string
     - jsonPath: .status.phase
@@ -60,7 +60,7 @@ spec:
           spec:
             description: spec defines the desired state of PrometheusMonitoring
             properties:
-              dynaKubeRef:
+              dynaKubeName:
                 description: |-
                   Name of the DynaKube in the same namespace that provides all connection
                   settings (apiUrl, tokens, proxy, networkZone, trustedCAs, ActiveGate, etc.).
@@ -4051,7 +4051,7 @@ spec:
                     type: array
                 type: object
             required:
-            - dynaKubeRef
+            - dynaKubeName
             type: object
           status:
             description: status defines the observed state of PrometheusMonitoring

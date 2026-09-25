@@ -97,15 +97,15 @@ func Delete(namespaceName string) features.Func {
 	}
 }
 
-func Create(namespace corev1.Namespace) features.Func {
+func Create(namespace *corev1.Namespace) features.Func {
 	return helpers.ToFeatureFunc(CreateForEnv(namespace), true)
 }
 
-func CreateForEnv(namespace corev1.Namespace) env.Func {
+func CreateForEnv(namespace *corev1.Namespace) env.Func {
 	return func(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
-		err := envConfig.Client().Resources().Create(ctx, &namespace)
+		err := envConfig.Client().Resources().Create(ctx, namespace)
 		if k8serrors.IsAlreadyExists(err) {
-			err = envConfig.Client().Resources().Update(ctx, &namespace)
+			err = envConfig.Client().Resources().Update(ctx, namespace)
 		}
 		if err != nil {
 			return ctx, err
@@ -117,7 +117,7 @@ func CreateForEnv(namespace corev1.Namespace) env.Func {
 
 var networkAttachmentPath = filepath.Join(project.TestDataDir(), "network/ocp-istio-cni.yaml")
 
-func AddIstioNetworkAttachment(namespace corev1.Namespace) func(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
+func AddIstioNetworkAttachment(namespace *corev1.Namespace) env.Func {
 	return func(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
 		isOpenshift, err := platform.NewResolver().IsOpenshift()
 		if err != nil {

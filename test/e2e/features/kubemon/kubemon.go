@@ -14,6 +14,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
 	agHelper "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/activegate"
 	componentDynakube "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
+	k8sobject "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8ssecret"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sstatefulset"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
@@ -28,7 +29,7 @@ func FeatureSplitAG(t *testing.T) features.Feature {
 
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
-	testDynakube := *componentDynakube.New(
+	testDynakube := componentDynakube.New(
 		componentDynakube.WithAPIURL(secretConfig.APIURL),
 		componentDynakube.WithActiveGateModules(
 			activegate.RoutingCapability.DisplayName,
@@ -37,10 +38,10 @@ func FeatureSplitAG(t *testing.T) features.Feature {
 		componentDynakube.WithKubernetesMonitoringRegistration(),
 	)
 
-	componentDynakube.Install(builder, &secretConfig, testDynakube)
+	componentDynakube.Install(builder, secretConfig, testDynakube)
 
 	builder.Assess("generic activegate statefulset is ready",
-		k8sstatefulset.IsReady(agHelper.GetActiveGateStateFulSetName(&testDynakube), testDynakube.Namespace))
+		k8sstatefulset.IsReady(agHelper.GetActiveGateStateFulSetName(testDynakube), testDynakube.Namespace))
 
 	builder.Assess("kubemon statefulset is ready",
 		k8sstatefulset.IsReady(testDynakube.KubernetesMonitoring().GetStatefulSetName(), testDynakube.Namespace))
@@ -53,6 +54,12 @@ func FeatureSplitAG(t *testing.T) features.Feature {
 
 	builder.Assess("KubernetesMonitoringAvailable condition is True",
 		componentDynakube.CheckCondition(testDynakube, kubemon.KubeMonAvailableConditionType, metav1.ConditionTrue))
+
+	// Note: A best effort check, if other tests already did the registration then it only checks that we get the results of that.
+	builder.Assess("registration was successful",
+		k8sobject.Expect(testDynakube.Name, testDynakube.Namespace, func(dk *dynakubeapi.DynaKube) bool {
+			return dk.Status.KubernetesClusterMEID != "" && dk.Status.KubernetesClusterName != ""
+		}))
 
 	// remove kubemon from dynakube and make sure it was cleaned up properly.
 	// Fetch the live cluster state first so fields like CustomPullSecret that were
@@ -79,7 +86,7 @@ func FeatureSplitAG(t *testing.T) features.Feature {
 		componentDynakube.WaitForConditionAbsent(testDynakube, kubemon.KubeMonAvailableConditionType))
 
 	builder.Assess("generic activegate statefulset is still ready",
-		k8sstatefulset.IsReady(agHelper.GetActiveGateStateFulSetName(&testDynakube), testDynakube.Namespace))
+		k8sstatefulset.IsReady(agHelper.GetActiveGateStateFulSetName(testDynakube), testDynakube.Namespace))
 
 	return builder.Feature()
 }
@@ -89,12 +96,12 @@ func FeatureRestartTriggers(t *testing.T) features.Feature {
 
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
-	testDynakube := *componentDynakube.New(
+	testDynakube := componentDynakube.New(
 		componentDynakube.WithAPIURL(secretConfig.APIURL),
 		componentDynakube.WithKubernetesMonitoringRegistration(),
 	)
 
-	componentDynakube.Install(builder, &secretConfig, testDynakube)
+	componentDynakube.Install(builder, secretConfig, testDynakube)
 
 	builder.Assess("kubemon statefulset is ready",
 		k8sstatefulset.IsReady(testDynakube.KubernetesMonitoring().GetStatefulSetName(), testDynakube.Namespace))

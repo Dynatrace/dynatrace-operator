@@ -15,15 +15,15 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func CreateTestdataTLSSecret(namespace string, name string, keyFile string, crtFile string) (corev1.Secret, error) {
+func CreateTestdataTLSSecret(namespace string, name string, keyFile string, crtFile string) (*corev1.Secret, error) {
 	tlsCrt, err := os.ReadFile(filepath.Join(project.TestDataDir(), crtFile))
 	if err != nil {
-		return corev1.Secret{}, err
+		return &corev1.Secret{}, err
 	}
 
 	tlsKey, err := os.ReadFile(filepath.Join(project.TestDataDir(), keyFile))
 	if err != nil {
-		return corev1.Secret{}, err
+		return &corev1.Secret{}, err
 	}
 
 	tlsSecret := k8ssecret.New(name, namespace,

@@ -57,10 +57,10 @@ func (statefulSetBuilder Builder) CreateStatefulSet() (*appsv1.StatefulSet, erro
 	mods := modifiers.GenerateAllModifiers(statefulSetBuilder.dynakube, statefulSetBuilder.capability, statefulSetBuilder.envMap)
 	sts, err := activeGateBuilder.AddModifier(mods...).Build()
 
-	return &sts, err
+	return sts, err
 }
 
-func (statefulSetBuilder Builder) getBase() appsv1.StatefulSet {
+func (statefulSetBuilder Builder) getBase() *appsv1.StatefulSet {
 	var sts appsv1.StatefulSet
 
 	sts.Kind = "StatefulSet"
@@ -75,7 +75,7 @@ func (statefulSetBuilder Builder) getBase() appsv1.StatefulSet {
 	// The annotation is needed for addTemplateSpec so remove it afterwards
 	sts.Spec.Template.Annotations = k8ssecuritycontext.RemoveAppArmorAnnotation(sts.Spec.Template.Annotations, consts.ActiveGateContainerName)
 
-	return sts
+	return &sts
 }
 
 func (statefulSetBuilder Builder) getBaseObjectMeta() metav1.ObjectMeta {

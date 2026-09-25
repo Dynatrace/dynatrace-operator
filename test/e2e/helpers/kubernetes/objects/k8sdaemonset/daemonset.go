@@ -27,7 +27,7 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-type PodConsumer func(pod corev1.Pod)
+type PodConsumer func(pod *corev1.Pod)
 
 type Query struct {
 	ctx       context.Context
@@ -43,9 +43,9 @@ func NewQuery(ctx context.Context, resource *resources.Resources, objectKey clie
 	}
 }
 
-func (query *Query) Get() (appsv1.DaemonSet, error) {
-	var daemonSet appsv1.DaemonSet
-	err := query.resource.Get(query.ctx, query.objectKey.Name, query.objectKey.Namespace, &daemonSet)
+func (query *Query) Get() (*appsv1.DaemonSet, error) {
+	daemonSet := &appsv1.DaemonSet{}
+	err := query.resource.Get(query.ctx, query.objectKey.Name, query.objectKey.Namespace, daemonSet)
 
 	return daemonSet, err
 }
@@ -64,8 +64,8 @@ func (query *Query) ForEachPod(actionFunc PodConsumer) error {
 		return err
 	}
 
-	for _, pod := range pods.Items {
-		actionFunc(pod)
+	for i := range pods.Items {
+		actionFunc(&pods.Items[i])
 	}
 
 	return nil

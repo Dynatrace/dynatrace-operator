@@ -31,11 +31,11 @@ func Feature(t *testing.T) features.Feature {
 		componentDynakube.WithActiveGate(),
 	}
 
-	testDynakube := *componentDynakube.New(options...)
+	testDynakube := componentDynakube.New(options...)
 
-	componentDynakube.Install(builder, &secretConfig, testDynakube)
+	componentDynakube.Install(builder, secretConfig, testDynakube)
 
-	builder.Assess("active gate pod is running", activegate.CheckContainer(&testDynakube))
+	builder.Assess("active gate pod is running", activegate.CheckContainer(testDynakube))
 
 	builder.Assess("extensions execution controller started", k8sstatefulset.IsReady(testDynakube.Extensions().GetExecutionControllerStatefulsetName(), testDynakube.Namespace))
 

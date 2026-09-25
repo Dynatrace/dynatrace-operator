@@ -56,13 +56,13 @@ func WithPublicActiveGate(t *testing.T) features.Feature {
 		componentDynakube.WithOTelCollectorImageRef(t, componentDynakube.GetLatestOTelCollectorImageTagURI(t)),
 	}
 
-	testDynakube := *componentDynakube.New(options...)
+	testDynakube := componentDynakube.New(options...)
 
-	componentDynakube.Install(builder, &secretConfig, testDynakube)
+	componentDynakube.Install(builder, secretConfig, testDynakube)
 
 	builder.Assess("otel collector started", k8sstatefulset.IsReady(testDynakube.OTelCollectorStatefulsetName(), testDynakube.Namespace))
-	builder.Assess("otel collector config created", checkOTelCollectorConfig(&testDynakube))
-	builder.Assess("otel collector service created", checkOTelCollectorService(&testDynakube))
+	builder.Assess("otel collector config created", checkOTelCollectorConfig(testDynakube))
+	builder.Assess("otel collector service created", checkOTelCollectorService(testDynakube))
 
 	return builder.Feature()
 }
@@ -81,19 +81,19 @@ func WithLocalActiveGateAndCleanup(t *testing.T) features.Feature {
 		componentDynakube.WithActiveGateTLSSecret(consts.AgSecretName),
 	}
 
-	testDynakube := *componentDynakube.New(optionsTelemetryIngestEnabled...)
+	testDynakube := componentDynakube.New(optionsTelemetryIngestEnabled...)
 
 	agSecret, err := createAgTLSSecret(testDynakube.Namespace)
 	require.NoError(t, err, "failed to create ag-tls secret")
 	builder.Assess("create AG TLS secret", k8ssecret.Create(agSecret))
 
-	componentDynakube.Install(builder, &secretConfig, testDynakube)
-	builder.Assess("active gate pod is running", checkActiveGateContainer(&testDynakube))
+	componentDynakube.Install(builder, secretConfig, testDynakube)
+	builder.Assess("active gate pod is running", checkActiveGateContainer(testDynakube))
 
 	builder.Assess("otel collector started", k8sstatefulset.IsReady(testDynakube.OTelCollectorStatefulsetName(), testDynakube.Namespace))
-	builder.Assess("otel collector config created", checkOTelCollectorConfig(&testDynakube))
-	builder.Assess("otel collector service created", checkOTelCollectorService(&testDynakube))
-	builder.Assess("otel collector endpoint configmap created", checkOTelCollectorEndpointConfigMap(&testDynakube))
+	builder.Assess("otel collector config created", checkOTelCollectorConfig(testDynakube))
+	builder.Assess("otel collector service created", checkOTelCollectorService(testDynakube))
+	builder.Assess("otel collector endpoint configmap created", checkOTelCollectorEndpointConfigMap(testDynakube))
 
 	optionsTelemetryIngestDisabled := []componentDynakube.Option{
 		componentDynakube.WithAPIURL(secretConfig.APIURL),
@@ -103,13 +103,13 @@ func WithLocalActiveGateAndCleanup(t *testing.T) features.Feature {
 		componentDynakube.WithActiveGateTLSSecret(consts.AgSecretName),
 	}
 
-	testDynakubeNoTelemetryIngest := *componentDynakube.New(optionsTelemetryIngestDisabled...)
+	testDynakubeNoTelemetryIngest := componentDynakube.New(optionsTelemetryIngestDisabled...)
 	componentDynakube.Update(builder, testDynakubeNoTelemetryIngest)
 
 	builder.Assess("otel collector shutdown", waitForShutdown(testDynakubeNoTelemetryIngest.OTelCollectorStatefulsetName(), testDynakubeNoTelemetryIngest.Namespace))
-	builder.Assess("otel collector config removed", checkOTelCollectorConfigRemoved(&testDynakubeNoTelemetryIngest))
-	builder.Assess("otel collector service removed", checkOTelCollectorServiceRemoved(&testDynakubeNoTelemetryIngest))
-	builder.Assess("otel collector endpoint configmap removed", checkOTelCollectorEndpointConfigMapRemoved(&testDynakubeNoTelemetryIngest))
+	builder.Assess("otel collector config removed", checkOTelCollectorConfigRemoved(testDynakubeNoTelemetryIngest))
+	builder.Assess("otel collector service removed", checkOTelCollectorServiceRemoved(testDynakubeNoTelemetryIngest))
+	builder.Assess("otel collector endpoint configmap removed", checkOTelCollectorEndpointConfigMapRemoved(testDynakubeNoTelemetryIngest))
 
 	return builder.Feature()
 }
@@ -127,19 +127,19 @@ func WithTelemetryIngestEndpointTLS(t *testing.T) features.Feature {
 		componentDynakube.WithTelemetryIngestEndpointTLS(consts.TelemetryIngestTLSSecretName),
 	}
 
-	testDynakube := *componentDynakube.New(options...)
+	testDynakube := componentDynakube.New(options...)
 
 	tlsSecret, err := tls.CreateTestdataTLSSecret(testDynakube.Namespace, consts.TelemetryIngestTLSSecretName, TelemetryIngestTLSKey, TelemetryIngestTLSCrt)
 	require.NoError(t, err, "failed to create TLS secret for otel collector endpoints")
 
 	builder.Assess("create OTel collector endpoint TLS secret", k8ssecret.Create(tlsSecret))
 
-	componentDynakube.Install(builder, &secretConfig, testDynakube)
+	componentDynakube.Install(builder, secretConfig, testDynakube)
 
 	builder.Assess("otel collector started", k8sstatefulset.IsReady(testDynakube.OTelCollectorStatefulsetName(), testDynakube.Namespace))
-	builder.Assess("otel collector config created", checkOTelCollectorConfig(&testDynakube))
-	builder.Assess("otel collector service created", checkOTelCollectorService(&testDynakube))
-	builder.Assess("otel collector endpoint configmap created", checkOTelCollectorEndpointConfigMap(&testDynakube))
+	builder.Assess("otel collector config created", checkOTelCollectorConfig(testDynakube))
+	builder.Assess("otel collector service created", checkOTelCollectorService(testDynakube))
+	builder.Assess("otel collector endpoint configmap created", checkOTelCollectorEndpointConfigMap(testDynakube))
 
 	builder.WithTeardown("deleted OTel collector endpoint TLS secret", k8ssecret.Delete(tlsSecret))
 
@@ -158,20 +158,20 @@ func OTelCollectorConfigUpdate(t *testing.T) features.Feature {
 		componentDynakube.WithOTelCollectorImageRef(t, componentDynakube.GetLatestOTelCollectorImageTagURI(t)),
 	}
 
-	testDynakubeZipkin := *componentDynakube.New(optionsZipkin...)
+	testDynakubeZipkin := componentDynakube.New(optionsZipkin...)
 
-	componentDynakube.Install(builder, &secretConfig, testDynakubeZipkin)
+	componentDynakube.Install(builder, secretConfig, testDynakubeZipkin)
 
 	builder.Assess("otel collector started", k8sstatefulset.IsReady(testDynakubeZipkin.OTelCollectorStatefulsetName(), testDynakubeZipkin.Namespace))
-	builder.Assess("otel collector config created", checkOTelCollectorConfig(&testDynakubeZipkin))
-	builder.Assess("otel collector service created", checkOTelCollectorService(&testDynakubeZipkin))
-	builder.Assess("otel collector endpoint configmap created", checkOTelCollectorEndpointConfigMap(&testDynakubeZipkin))
+	builder.Assess("otel collector config created", checkOTelCollectorConfig(testDynakubeZipkin))
+	builder.Assess("otel collector service created", checkOTelCollectorService(testDynakubeZipkin))
+	builder.Assess("otel collector endpoint configmap created", checkOTelCollectorEndpointConfigMap(testDynakubeZipkin))
 
 	var zipkinConfigResourceVersion string
-	builder.Assess("otel collector zipkin configuration timestamp", getOTelCollectorConfigResourceVersion(&testDynakubeZipkin, &zipkinConfigResourceVersion))
+	builder.Assess("otel collector zipkin configuration timestamp", getOTelCollectorConfigResourceVersion(testDynakubeZipkin, &zipkinConfigResourceVersion))
 
 	var zipkinPodStartTS time.Time
-	builder.Assess("otel collector zipkin pod creation timestamp", getOTelCollectorPodTimestamp(&testDynakubeZipkin, &zipkinPodStartTS))
+	builder.Assess("otel collector zipkin pod creation timestamp", getOTelCollectorPodTimestamp(testDynakubeZipkin, &zipkinPodStartTS))
 
 	optionsJaeger := []componentDynakube.Option{
 		componentDynakube.WithAPIURL(secretConfig.APIURL),
@@ -179,15 +179,15 @@ func OTelCollectorConfigUpdate(t *testing.T) features.Feature {
 		componentDynakube.WithOTelCollectorImageRef(t, componentDynakube.GetLatestOTelCollectorImageTagURI(t)),
 	}
 
-	testDynakubeJaeger := *componentDynakube.New(optionsJaeger...)
+	testDynakubeJaeger := componentDynakube.New(optionsJaeger...)
 	componentDynakube.Update(builder, testDynakubeJaeger)
 
 	builder.Assess("otel collector updated", k8sstatefulset.WaitFor(testDynakubeJaeger.OTelCollectorStatefulsetName(), testDynakubeJaeger.Namespace))
-	builder.Assess("otel collector config updated", checkOTelCollectorConfig(&testDynakubeJaeger))
-	builder.Assess("otel collector service updated", checkOTelCollectorService(&testDynakubeJaeger))
+	builder.Assess("otel collector config updated", checkOTelCollectorConfig(testDynakubeJaeger))
+	builder.Assess("otel collector service updated", checkOTelCollectorService(testDynakubeJaeger))
 
 	var jaegerConfigResourceVersion string
-	builder.Assess("otel collector jaeger configuration timestamp", getOTelCollectorConfigResourceVersion(&testDynakubeJaeger, &jaegerConfigResourceVersion))
+	builder.Assess("otel collector jaeger configuration timestamp", getOTelCollectorConfigResourceVersion(testDynakubeJaeger, &jaegerConfigResourceVersion))
 	builder.Assess("otel collector jaeger configuration updated", func(ctx context.Context, t *testing.T, config *envconf.Config) context.Context {
 		assert.NotEqual(t, jaegerConfigResourceVersion, zipkinConfigResourceVersion)
 
@@ -195,7 +195,7 @@ func OTelCollectorConfigUpdate(t *testing.T) features.Feature {
 	})
 
 	var jaegerPodStartTS time.Time
-	builder.Assess("otel collector jaeger pod creation timestamp", getOTelCollectorPodTimestamp(&testDynakubeJaeger, &jaegerPodStartTS))
+	builder.Assess("otel collector jaeger pod creation timestamp", getOTelCollectorPodTimestamp(testDynakubeJaeger, &jaegerPodStartTS))
 	builder.Assess("otel collector jaeger pod restarted", func(ctx context.Context, t *testing.T, config *envconf.Config) context.Context {
 		assert.Greater(t, jaegerPodStartTS, zipkinPodStartTS)
 
@@ -395,15 +395,15 @@ func waitForShutdown(name string, namespace string) features.Func {
 	}
 }
 
-func createAgTLSSecret(namespace string) (corev1.Secret, error) {
+func createAgTLSSecret(namespace string) (*corev1.Secret, error) {
 	agCrt, err := os.ReadFile(filepath.Join(project.TestDataDir(), consts.AgCertificate))
 	if err != nil {
-		return corev1.Secret{}, err
+		return nil, err
 	}
 
 	agP12, err := os.ReadFile(filepath.Join(project.TestDataDir(), consts.AgCertificateAndPrivateKey))
 	if err != nil {
-		return corev1.Secret{}, err
+		return nil, err
 	}
 
 	return k8ssecret.New(consts.AgSecretName, namespace,

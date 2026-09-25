@@ -102,19 +102,19 @@ func feature(t *testing.T, featureName, sampleNS string, imageOpts []dynakube.Op
 	}, imageOpts...,
 	)
 
-	testDynakube := *dynakube.New(options...)
+	testDynakube := dynakube.New(options...)
 
-	sampleNamespace := *k8snamespace.New(sampleNS)
-	sampleApp := sample.NewApp(t, &testDynakube, sample.WithNamespace(sampleNamespace), sample.AsDeployment())
+	sampleNamespace := k8snamespace.New(sampleNS)
+	sampleApp := sample.NewApp(t, testDynakube, sample.WithNamespace(sampleNamespace), sample.AsDeployment())
 
 	builder.Assess("create sample namespace", sampleApp.InstallNamespace())
 
-	dynakube.Install(builder, &secretConfig, testDynakube)
+	dynakube.Install(builder, secretConfig, testDynakube)
 
 	builder.Assess("install sample app", sampleApp.Install())
 	cloudnative.AssessSampleInitContainers(builder, sampleApp)
 
-	agStatefulSetName := activegate.GetActiveGateStateFulSetName(&testDynakube)
+	agStatefulSetName := activegate.GetActiveGateStateFulSetName(testDynakube)
 	builder.Assess("ActiveGate started", k8sstatefulset.IsReady(agStatefulSetName, testDynakube.Namespace))
 	builder.Assess("EEC started", k8sstatefulset.IsReady(testDynakube.Extensions().GetExecutionControllerStatefulsetName(), testDynakube.Namespace))
 	builder.Assess("KSPM node config collector started", k8sdaemonset.IsReady(testDynakube.KSPM().GetDaemonSetName(), testDynakube.Namespace))
@@ -137,7 +137,7 @@ func feature(t *testing.T, featureName, sampleNS string, imageOpts []dynakube.Op
 
 	builder.Assess("CodeModules status reports expected image",
 		func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-			require.NoError(t, envConfig.Client().Resources().Get(ctx, testDynakube.Name, testDynakube.Namespace, &testDynakube))
+			require.NoError(t, envConfig.Client().Resources().Get(ctx, testDynakube.Name, testDynakube.Namespace, testDynakube))
 			assert.Equal(t, images.codeModules, testDynakube.Status.CodeModules.ImageID)
 
 			return ctx
@@ -183,9 +183,9 @@ func featureLogMonitoring(t *testing.T, featureName, imageURI string) features.F
 		}))
 	}
 
-	testDynakube := *dynakube.New(options...)
+	testDynakube := dynakube.New(options...)
 
-	dynakube.Install(builder, &secretConfig, testDynakube)
+	dynakube.Install(builder, secretConfig, testDynakube)
 
 	builder.Assess("LogMonitoring DaemonSet started", k8sdaemonset.IsReady(testDynakube.LogMonitoring().GetDaemonSetName(), testDynakube.Namespace))
 	builder.Assess("LogMonitoring DaemonSet uses expected image",
@@ -223,9 +223,9 @@ func featureTagAndDigest(t *testing.T, featureName, tagURI, digestURI, expectedT
 		}))
 	}
 
-	testDynakube := *dynakube.New(options...)
+	testDynakube := dynakube.New(options...)
 
-	dynakube.Install(builder, &secretConfig, testDynakube)
+	dynakube.Install(builder, secretConfig, testDynakube)
 
 	builder.Assess("LogMonitoring DaemonSet started", k8sdaemonset.IsReady(testDynakube.LogMonitoring().GetDaemonSetName(), testDynakube.Namespace))
 	builder.Assess("LogMonitoring DaemonSet uses expected image",

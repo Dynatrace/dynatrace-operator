@@ -17,7 +17,7 @@ type PrometheusMonitoringSpec struct { //nolint:revive
 	// settings (apiUrl, tokens, proxy, networkZone, trustedCAs, ActiveGate, etc.).
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:MinLength=1
-	DynaKubeRef string `json:"dynaKubeRef"`
+	DynaKubeName string `json:"dynaKubeName"`
 
 	// Configures the Target Allocator, which holds all Prometheus service
 	// discovery metadata and distributes scrape targets across the scraper pool.
@@ -48,7 +48,7 @@ type PrometheusMonitoringSpec struct { //nolint:revive
 // +kubebuilder:storageversion
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:path=prometheusmonitorings,scope=Namespaced,categories=dynatrace,shortName={pm,pms}
-// +kubebuilder:printcolumn:name="DynaKube",type=string,JSONPath=`.spec.dynaKubeRef`
+// +kubebuilder:printcolumn:name="DynaKube",type=string,JSONPath=`.spec.dynaKubeName`
 // +kubebuilder:printcolumn:name="Status",type=string,JSONPath=`.status.phase`
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
 

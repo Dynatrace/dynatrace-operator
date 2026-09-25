@@ -70,7 +70,7 @@ func NewDockerKeychains(ctx context.Context, apiReader client.Reader, namespaceN
 	return keychain, nil
 }
 
-func NewDockerKeychain(ctx context.Context, apiReader client.Reader, pullSecret corev1.Secret) (authn.Keychain, error) {
+func NewDockerKeychain(ctx context.Context, apiReader client.Reader, pullSecret *corev1.Secret) (authn.Keychain, error) {
 	ctx, log := logd.NewFromContext(ctx, "oci-keychain")
 	keychain := &DockerKeychain{}
 
@@ -78,13 +78,13 @@ func NewDockerKeychain(ctx context.Context, apiReader client.Reader, pullSecret 
 		return keychain, nil
 	}
 
-	if err := apiReader.Get(ctx, client.ObjectKey{Namespace: pullSecret.Namespace, Name: pullSecret.Name}, &pullSecret); err != nil {
+	if err := apiReader.Get(ctx, client.ObjectKey{Namespace: pullSecret.Namespace, Name: pullSecret.Name}, pullSecret); err != nil {
 		log.Info("No registry pull secret loaded", "name", pullSecret.Name, "namespace", pullSecret.Namespace, "err", err)
 
 		return keychain, nil
 	}
 
-	dockerAuths, err := extractDockerAuthsFromSecret(&pullSecret)
+	dockerAuths, err := extractDockerAuthsFromSecret(pullSecret)
 	if err != nil {
 		log.Info("failed to parse pull secret content", "name", pullSecret.Name, "namespace", pullSecret.Namespace)
 

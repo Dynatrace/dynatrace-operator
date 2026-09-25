@@ -36,21 +36,21 @@ func PGCWithCloudNativeFullStack(t *testing.T) features.Feature {
 		},
 	}
 
-	dk := *dynakubeComponents.New(
+	dk := dynakubeComponents.New(
 		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
 		// we need kubernetesClusterMEID to PGC work
 		dynakubeComponents.WithActiveGateModules(activegate.KubeMonCapability.DisplayName),
 		dynakubeComponents.WithCloudNativeSpec(fullStackSpec),
 	)
 
-	sampleNamespace := *k8snamespace.New("pgc-fullstack-sample")
-	sampleApp := sample.NewApp(t, &dk,
+	sampleNamespace := k8snamespace.New("pgc-fullstack-sample")
+	sampleApp := sample.NewApp(t, dk,
 		sample.WithNamespace(sampleNamespace),
 		sample.AsDeployment(),
 	)
 
 	builder.Assess("create sample namespace", sampleApp.InstallNamespace())
-	dynakubeComponents.Install(builder, &secretConfig, dk)
+	dynakubeComponents.Install(builder, secretConfig, dk)
 	builder.Assess("install sample app", sampleApp.Install())
 	builder.Assess("check bootstrapper secret has PGC data", checkBootstrapperSecret(sampleApp))
 	builder.Assess("verify bootstrapper files mounted in pod", verifyBootstrapperFilesMounted(sampleApp))

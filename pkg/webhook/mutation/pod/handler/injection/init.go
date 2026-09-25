@@ -22,7 +22,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func (h *Handler) createInitContainerBase(ctx context.Context, pod *corev1.Pod, dk dynakube.DynaKube) *corev1.Container {
+func (h *Handler) createInitContainerBase(ctx context.Context, pod *corev1.Pod, dk *dynakube.DynaKube) *corev1.Container {
 	args := []arg.Arg{
 		{
 			Name:  configure.ConfigFolderFlag,
@@ -34,7 +34,7 @@ func (h *Handler) createInitContainerBase(ctx context.Context, pod *corev1.Pod, 
 		},
 	}
 
-	if bootstrapperconfig.NeedsDownloadConfig(&dk) {
+	if bootstrapperconfig.NeedsDownloadConfig(dk) {
 		args = append(args, arg.Arg{
 			Name:  bootstrapper.BaseURL,
 			Value: dk.APIURL(),
@@ -57,7 +57,7 @@ func (h *Handler) createInitContainerBase(ctx context.Context, pod *corev1.Pod, 
 	return initContainer
 }
 
-func areErrorsSuppressed(pod *corev1.Pod, dk dynakube.DynaKube) bool {
+func areErrorsSuppressed(pod *corev1.Pod, dk *dynakube.DynaKube) bool {
 	return maputils.GetField(pod.Annotations, dtwebhook.AnnotationFailurePolicy, dk.FF().GetInjectionFailurePolicy()) != "fail" // safer than == silent
 }
 
@@ -85,7 +85,7 @@ func defaultInitContainerResources() corev1.ResourceRequirements {
 	}
 }
 
-func securityContextForInitContainer(ctx context.Context, pod *corev1.Pod, dk dynakube.DynaKube, isOpenShift bool) *corev1.SecurityContext {
+func securityContextForInitContainer(ctx context.Context, pod *corev1.Pod, dk *dynakube.DynaKube, isOpenShift bool) *corev1.SecurityContext {
 	initSecurityCtx := corev1.SecurityContext{
 		ReadOnlyRootFilesystem:   new(true),
 		AllowPrivilegeEscalation: new(false),
@@ -104,10 +104,10 @@ func securityContextForInitContainer(ctx context.Context, pod *corev1.Pod, dk dy
 
 	addSeccompProfile(&initSecurityCtx, dk)
 
-	return combineSecurityContexts(ctx, initSecurityCtx, *pod)
+	return combineSecurityContexts(ctx, initSecurityCtx, pod)
 }
 
-func combineSecurityContexts(ctx context.Context, baseSecurityCtx corev1.SecurityContext, pod corev1.Pod) *corev1.SecurityContext {
+func combineSecurityContexts(ctx context.Context, baseSecurityCtx corev1.SecurityContext, pod *corev1.Pod) *corev1.SecurityContext {
 	containerSecurityCtx := &corev1.SecurityContext{}
 	if len(pod.Spec.Containers) > 0 {
 		containerSecurityCtx = pod.Spec.Containers[0].SecurityContext
@@ -162,7 +162,7 @@ func getValidatedID(ctx context.Context, value string) *int64 {
 	return new(int64(parsed))
 }
 
-func addSeccompProfile(ctx *corev1.SecurityContext, dk dynakube.DynaKube) {
+func addSeccompProfile(ctx *corev1.SecurityContext, dk *dynakube.DynaKube) {
 	if dk.FF().HasInitSeccomp() {
 		ctx.SeccompProfile = &corev1.SeccompProfile{Type: corev1.SeccompProfileTypeRuntimeDefault}
 	}

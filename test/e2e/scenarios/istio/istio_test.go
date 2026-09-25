@@ -34,8 +34,8 @@ func TestMain(m *testing.M) {
 	cfg = environment.GetStandardKubeClusterEnvConfig()
 	testEnv = env.NewWithConfig(cfg)
 
-	nsWithIstio := *k8snamespace.New(operator.DefaultNamespace, k8snamespace.WithIstio())
-	nsWithoutIstio := *k8snamespace.New(operator.DefaultNamespace)
+	nsWithIstio := k8snamespace.New(operator.DefaultNamespace, k8snamespace.WithIstio())
+	nsWithoutIstio := k8snamespace.New(operator.DefaultNamespace)
 	testEnv.BeforeEachTest(istio.AssertIstioNamespace())
 	testEnv.BeforeEachTest(istio.AssertIstiodDeployment())
 	testEnv.Setup(

@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtversion"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/platform"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
@@ -56,16 +57,16 @@ var (
 func GetLatestImageTagURI(t *testing.T, repoURI, envVar string) string {
 	t.Helper()
 
-	return getLatestImageURI(t, repoURI, envVar, false)
+	return getLatestImageURI(t, repoURI, envVar, false, false)
 }
 
 func GetLatestImageDigestURI(t *testing.T, repoURI, envVar string) string {
 	t.Helper()
 
-	return getLatestImageURI(t, repoURI, envVar, true)
+	return getLatestImageURI(t, repoURI, envVar, false, true)
 }
 
-func getLatestImageURI(t *testing.T, repoURI, envVar string, digest bool) string {
+func getLatestImageURI(t *testing.T, repoURI, envVar string, fips, digest bool) string {
 	t.Helper()
 
 	if val := os.Getenv(envVar); val != "" {
@@ -74,7 +75,7 @@ func getLatestImageURI(t *testing.T, repoURI, envVar string, digest bool) string
 		return val
 	}
 
-	tagURI := resolveLatestTagURI(t, repoURI)
+	tagURI := resolveLatestTagURI(t, repoURI, fips)
 	if !digest {
 		return tagURI
 	}
@@ -82,7 +83,7 @@ func getLatestImageURI(t *testing.T, repoURI, envVar string, digest bool) string
 	return resolveLatestDigestURI(t, repoURI, tagURI)
 }
 
-func resolveLatestTagURI(t *testing.T, repoURI string) string {
+func resolveLatestTagURI(t *testing.T, repoURI string, fips bool) string {
 	t.Helper()
 
 	if uri, ok := latestImageURIs[repoURI]; ok {
@@ -91,14 +92,14 @@ func resolveLatestTagURI(t *testing.T, repoURI string) string {
 		return uri
 	}
 
-	uri := fetchLatestURIFromRegistry(t, repoURI)
+	uri := fetchLatestURIFromRegistry(t, repoURI, fips)
 	latestImageURIs[repoURI] = uri
 	t.Logf("resolved newest image: %s", uri)
 
 	return uri
 }
 
-func resolveLatestDigestURI(t *testing.T, repoURI string, tagURI string) string {
+func resolveLatestDigestURI(t *testing.T, repoURI, tagURI string) string {
 	t.Helper()
 
 	if uri, ok := latestDigestURIs[repoURI]; ok {
@@ -136,37 +137,37 @@ func resolveLatestDigestURI(t *testing.T, repoURI string, tagURI string) string 
 func GetLatestActiveGateImageTagURI(t *testing.T) string {
 	t.Helper()
 
-	return GetLatestImageTagURI(t, agPublicECR, agImageEnv)
+	return getLatestImageURI(t, agPublicECR, agImageEnv, platform.IsFIPS(), false)
 }
 
 func GetLatestOneAgentImageTagURI(t *testing.T) string {
 	t.Helper()
 
-	return GetLatestImageTagURI(t, oaPublicECR, oaImageEnv)
+	return getLatestImageURI(t, oaPublicECR, oaImageEnv, platform.IsFIPS(), false)
 }
 
 func GetLatestCodeModulesImageTagURI(t *testing.T) string {
 	t.Helper()
 
-	return GetLatestImageTagURI(t, cmPublicECR, cmImageEnv)
+	return getLatestImageURI(t, cmPublicECR, cmImageEnv, platform.IsFIPS(), false)
 }
 
 func GetLatestActiveGateImageDigestURI(t *testing.T) string {
 	t.Helper()
 
-	return GetLatestImageDigestURI(t, agPublicECR, agDigestImageEnv)
+	return getLatestImageURI(t, agPublicECR, agDigestImageEnv, platform.IsFIPS(), true)
 }
 
 func GetLatestOneAgentImageDigestURI(t *testing.T) string {
 	t.Helper()
 
-	return GetLatestImageDigestURI(t, oaPublicECR, oaDigestImageEnv)
+	return getLatestImageURI(t, oaPublicECR, oaDigestImageEnv, platform.IsFIPS(), true)
 }
 
 func GetLatestCodeModulesImageDigestURI(t *testing.T) string {
 	t.Helper()
 
-	return GetLatestImageDigestURI(t, cmPublicECR, cmDigestImageEnv)
+	return getLatestImageURI(t, cmPublicECR, cmDigestImageEnv, platform.IsFIPS(), true)
 }
 
 func ParseImageURI(imageURI string) (repository, tag, digest string) {
@@ -185,7 +186,7 @@ func isRateLimited(err error) bool {
 	return errors.As(err, &transportErr) && transportErr.StatusCode == http.StatusTooManyRequests
 }
 
-func fetchLatestURIFromRegistry(t *testing.T, repoURI string) string {
+func fetchLatestURIFromRegistry(t *testing.T, repoURI string, fips bool) string {
 	t.Helper()
 
 	repo, err := name.NewRepository(repoURI)
@@ -204,24 +205,41 @@ func fetchLatestURIFromRegistry(t *testing.T, repoURI string) string {
 	})
 	require.NoError(t, err)
 
+	tag := selectTag(tags, fips)
+	require.NotEmpty(t, tag, "no valid semver tags found for %s", repoURI)
+
+	return fmt.Sprintf("%s:%s", repoURI, tag)
+}
+
+var (
+	endsWithTech = regexp.MustCompile("[a-z-]+$")
+	endsWithFIPS = regexp.MustCompile("-[0-9]+-fips$")
+)
+
+func selectTag(tags []string, fips bool) string {
+	result := make([]string, 0, len(tags))
+
 	// We should skip tags that are technology-specific or sha digests,
 	// e.g., "latest", "1.327.30.20251107-111521-python", "sha256:abcd1234..."
 	// and find maximum among the remaining tags.
-	endsWithTech := regexp.MustCompile("[a-z-]+$")
-	filteredTags := []string{}
+	// If FIPS is enabled, then only TIMESTAMP-fips images should match.
 	for _, tag := range tags {
-		if !strings.HasPrefix(tag, "sha") && !endsWithTech.MatchString(tag) {
-			filteredTags = append(filteredTags, tag)
+		if (fips && endsWithFIPS.MatchString(tag)) ||
+			(!fips && !strings.HasPrefix(tag, "sha") && !endsWithTech.MatchString(tag)) {
+			result = append(result, tag)
 		}
 	}
-	slices.SortFunc(filteredTags, func(a, b string) int {
+
+	slices.SortFunc(result, func(a, b string) int {
 		semverA, _ := dtversion.ToSemver(a)
 		semverB, _ := dtversion.ToSemver(b)
 
 		return semver.Compare(semverA, semverB)
 	})
 
-	require.NotEmpty(t, filteredTags, "no valid semver tags found for %s", repoURI)
+	if len(result) == 0 {
+		return ""
+	}
 
-	return fmt.Sprintf("%s:%s", repoURI, filteredTags[len(filteredTags)-1])
+	return result[len(result)-1]
 }

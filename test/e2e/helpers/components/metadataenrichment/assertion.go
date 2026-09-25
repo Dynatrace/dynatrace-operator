@@ -34,7 +34,7 @@ type Metadata struct {
 	DTWorkloadName string `json:"dt.kubernetes.workload.name,omitempty"`
 }
 
-func GetMetadataJSONFromPod(ctx context.Context, t *testing.T, resource *resources.Resources, enrichedPod corev1.Pod) Metadata {
+func GetMetadataJSONFromPod(ctx context.Context, t *testing.T, resource *resources.Resources, enrichedPod *corev1.Pod) Metadata {
 	content := readMetadataFile(ctx, t, resource, enrichedPod, MetadataFile)
 
 	var enrichmentMetadata Metadata
@@ -44,30 +44,30 @@ func GetMetadataJSONFromPod(ctx context.Context, t *testing.T, resource *resourc
 	return enrichmentMetadata
 }
 
-func GetRawMetadataFromPod(ctx context.Context, t *testing.T, resource *resources.Resources, enrichedPod corev1.Pod) []byte {
+func GetRawMetadataFromPod(ctx context.Context, t *testing.T, resource *resources.Resources, enrichedPod *corev1.Pod) []byte {
 	return readMetadataFile(ctx, t, resource, enrichedPod, MetadataFile)
 }
 
-func GetMetadataMapFromPod(ctx context.Context, t *testing.T, resource *resources.Resources, enrichedPod corev1.Pod) map[string]string {
+func GetMetadataMapFromPod(ctx context.Context, t *testing.T, resource *resources.Resources, enrichedPod *corev1.Pod) map[string]string {
 	var metadata map[string]string
 	require.NoError(t, json.Unmarshal(GetRawMetadataFromPod(ctx, t, resource, enrichedPod), &metadata))
 
 	return metadata
 }
 
-func GetMetadataPropertiesFromPod(ctx context.Context, t *testing.T, resource *resources.Resources, enrichedPod corev1.Pod) map[string]string {
+func GetMetadataPropertiesFromPod(ctx context.Context, t *testing.T, resource *resources.Resources, enrichedPod *corev1.Pod) map[string]string {
 	properties := readMetadataFile(ctx, t, resource, enrichedPod, PropertiesFile)
 
 	return parseProperties(string(properties))
 }
 
-func GetNodeMetadataPropertiesFromPod(ctx context.Context, t *testing.T, resource *resources.Resources, enrichedPod corev1.Pod) map[string]string {
+func GetNodeMetadataPropertiesFromPod(ctx context.Context, t *testing.T, resource *resources.Resources, enrichedPod *corev1.Pod) map[string]string {
 	properties := readMetadataFile(ctx, t, resource, enrichedPod, NodePropertiesFile)
 
 	return parseProperties(string(properties))
 }
 
-func readMetadataFile(ctx context.Context, t *testing.T, resource *resources.Resources, enrichedPod corev1.Pod, path string) []byte {
+func readMetadataFile(ctx context.Context, t *testing.T, resource *resources.Resources, enrichedPod *corev1.Pod, path string) []byte {
 	require.NotEmpty(t, enrichedPod.Spec.Containers)
 	enrichedContainer := enrichedPod.Spec.Containers[0].Name
 	readMetadataCommand := shell.ReadFile(path)

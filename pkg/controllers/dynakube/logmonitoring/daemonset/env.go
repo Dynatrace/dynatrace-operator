@@ -30,7 +30,7 @@ const (
 	ruxitConfigPath = "/var/lib/dynatrace/oneagent/agent/config/ruxitagentproc.conf"
 )
 
-func getInitEnvs(dk dynakube.DynaKube) []corev1.EnvVar {
+func getInitEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 	envs := []corev1.EnvVar{
 		{
 			Name: nodeNameEnv,

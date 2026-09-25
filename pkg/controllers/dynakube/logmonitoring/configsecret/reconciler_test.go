@@ -185,8 +185,8 @@ func checkSecretForValue(t *testing.T, k8sClient client.Client, dk *dynakube.Dyn
 		expectedLines = append(expectedLines, proxyKey+"="+proxyURL)
 	}
 
-	if createNoProxyValue(*dk) != "" {
-		expectedLines = append(expectedLines, noProxyKey+"="+createNoProxyValue(*dk))
+	if createNoProxyValue(dk) != "" {
+		expectedLines = append(expectedLines, noProxyKey+"="+createNoProxyValue(dk))
 	}
 
 	slices.Sort(expectedLines)
@@ -275,14 +275,14 @@ func TestAddAnnotations(t *testing.T) {
 	type testCase struct {
 		title       string
 		annotations map[string]string
-		dk          dynakube.DynaKube
+		dk          *dynakube.DynaKube
 		expectedOut map[string]string
 	}
 
 	cases := []testCase{
 		{
 			title: "nil map doesn't break it",
-			dk: dynakube.DynaKube{
+			dk: &dynakube.DynaKube{
 				Status: dynakube.DynaKubeStatus{
 					OneAgent: oneagent.Status{
 						ConnectionInfo: communication.ConnectionInfo{
@@ -298,7 +298,7 @@ func TestAddAnnotations(t *testing.T) {
 		},
 		{
 			title: "existing annotations are untouched",
-			dk: dynakube.DynaKube{
+			dk: &dynakube.DynaKube{
 				Status: dynakube.DynaKubeStatus{
 					OneAgent: oneagent.Status{
 						ConnectionInfo: communication.ConnectionInfo{
@@ -317,7 +317,7 @@ func TestAddAnnotations(t *testing.T) {
 		},
 		{
 			title: "network-zone respected",
-			dk: dynakube.DynaKube{
+			dk: &dynakube.DynaKube{
 				Spec: dynakube.DynaKubeSpec{
 					NetworkZone: "test-zone",
 				},
@@ -337,7 +337,7 @@ func TestAddAnnotations(t *testing.T) {
 		},
 		{
 			title: "proxy respected",
-			dk: dynakube.DynaKube{
+			dk: &dynakube.DynaKube{
 				Spec: dynakube.DynaKubeSpec{
 					Proxy: &value.Source{Value: "doesn't matter"},
 				},
@@ -358,7 +358,7 @@ func TestAddAnnotations(t *testing.T) {
 		},
 		{
 			title: "no-proxy respected",
-			dk: dynakube.DynaKube{
+			dk: &dynakube.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
 						exp.NoProxyKey: "no-proxy",

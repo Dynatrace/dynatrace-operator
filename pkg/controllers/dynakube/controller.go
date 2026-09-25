@@ -553,7 +553,7 @@ func (controller *Controller) verifyTokenScopes(ctx context.Context, dtClient to
 	log := logd.FromContext(ctx)
 	tokens := controller.tokens.AddFeatureScopesToTokens()
 
-	optionalScopes, err := tokens.VerifyScopes(ctx, dtClient, *dk)
+	optionalScopes, err := tokens.VerifyScopes(ctx, dtClient, dk)
 	if err != nil {
 		return err
 	}

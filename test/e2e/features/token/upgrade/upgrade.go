@@ -28,15 +28,15 @@ func FromAPIToPlatformToken(t *testing.T, releaseTag string) features.Feature {
 	builder.Assess("install operator "+releaseTag, helpers.ToFeatureFunc(operator.Install(releaseTag, withCSI), true))
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
-	testDynakube := *componentDynakube.New(
+	testDynakube := componentDynakube.New(
 		componentDynakube.WithAPIURL(secretConfig.APIURL),
 		componentDynakube.WithCustomPullSecret(e2econst.DevRegistryPullSecretName),
 		componentDynakube.WithHostMonitoringSpec(&oneagent.HostInjectSpec{}),
 	)
 
 	previousVersionDynakube := &dynakubev1beta5.DynaKube{}
-	require.NoError(t, previousVersionDynakube.ConvertFrom(&testDynakube))
-	componentDynakube.InstallPreviousVersion(builder, helpers.LevelAssess, &secretConfig, *previousVersionDynakube)
+	require.NoError(t, previousVersionDynakube.ConvertFrom(testDynakube))
+	componentDynakube.InstallPreviousVersion(builder, helpers.LevelAssess, secretConfig, previousVersionDynakube)
 
 	builder.Assess("update tenant secret to platform token",
 		tenant.CreateTenantSecret(secretConfig.PlatformTokens(), testDynakube.Name, testDynakube.Namespace))

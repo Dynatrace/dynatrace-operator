@@ -42,7 +42,7 @@ func TestToken_String(t *testing.T) {
 }
 
 func TestTokenVerifyScopesNoFeatures(t *testing.T) {
-	optionalScopes, err := (&Token{}).verifyScopes(t.Context(), nil, dynakube.DynaKube{})
+	optionalScopes, err := (&Token{}).verifyScopes(t.Context(), nil, &dynakube.DynaKube{})
 	require.NoError(t, err)
 	assert.Empty(t, optionalScopes)
 }

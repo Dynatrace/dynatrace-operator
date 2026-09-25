@@ -11,29 +11,29 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
 )
 
-func getDynaKubeWithCerts(t *testing.T) dynakube.DynaKube {
+func getDynaKubeWithCerts(t *testing.T) *dynakube.DynaKube {
 	t.Helper()
 
-	dk := dynakube.DynaKube{}
+	dk := &dynakube.DynaKube{}
 	dk.ActiveGate().TLSSecretName = "test"
 	dk.ActiveGate().Capabilities = []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}
 
 	return dk
 }
 
-func getDynaKubeWithAutomaticCerts(t *testing.T) dynakube.DynaKube {
+func getDynaKubeWithAutomaticCerts(t *testing.T) *dynakube.DynaKube {
 	t.Helper()
 
-	dk := dynakube.DynaKube{}
+	dk := &dynakube.DynaKube{}
 	dk.ActiveGate().Capabilities = []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}
 
 	return dk
 }
 
-func getDynaKubeWithKubemonCerts(t *testing.T) dynakube.DynaKube {
+func getDynaKubeWithKubemonCerts(t *testing.T) *dynakube.DynaKube {
 	t.Helper()
 
-	dk := dynakube.DynaKube{
+	dk := &dynakube.DynaKube{
 		Spec: dynakube.DynaKubeSpec{
 			KubernetesMonitoring: &kubemon.Spec{
 				TLSCertsRef: &kubemon.TLSCertsRef{
@@ -46,10 +46,10 @@ func getDynaKubeWithKubemonCerts(t *testing.T) dynakube.DynaKube {
 	return dk
 }
 
-func getDynaKubeWithKubemonAutomaticCerts(t *testing.T) dynakube.DynaKube {
+func getDynaKubeWithKubemonAutomaticCerts(t *testing.T) *dynakube.DynaKube {
 	t.Helper()
 
-	dk := dynakube.DynaKube{
+	dk := &dynakube.DynaKube{
 		Spec: dynakube.DynaKubeSpec{
 			KubernetesMonitoring: &kubemon.Spec{},
 		},

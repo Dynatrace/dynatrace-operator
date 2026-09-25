@@ -16,7 +16,7 @@ type DeploymentMetadata struct {
 	DeploymentType string
 }
 
-func GetOneAgentDeploymentType(dk dynakube.DynaKube) string {
+func GetOneAgentDeploymentType(dk *dynakube.DynaKube) string {
 	switch {
 	case dk.OneAgent().IsHostMonitoringMode():
 		return HostMonitoringDeploymentType

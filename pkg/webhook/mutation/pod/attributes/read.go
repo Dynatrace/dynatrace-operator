@@ -17,8 +17,8 @@ import (
 )
 
 func (attrs *Pod) readMetadataAnnotations(request mutator.BaseRequest, workloadInfo *workload.Info) {
-	attrs.applyEnrichmentRules(request.DynaKube.Status.MetadataEnrichment.Rules, &request.Namespace, workloadInfo, request.Pod)
-	attrs.readNamespaceAnnotationAttributes(&request.Namespace)
+	attrs.applyEnrichmentRules(request.DynaKube.Status.MetadataEnrichment.Rules, request.Namespace, workloadInfo, request.Pod)
+	attrs.readNamespaceAnnotationAttributes(request.Namespace)
 	attrs.readWorkloadAnnotationAttributes(workloadInfo)
 	attrs.readPodAnnotationAttributes(request.Pod)
 }

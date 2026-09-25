@@ -45,7 +45,7 @@ func (r *Reconciler) addOneAgentDeploymentMetadata(dk *dynakube.DynaKube, config
 		return
 	}
 
-	configMapData[OneAgentMetadataKey] = NewDeploymentMetadata(r.clusterID, GetOneAgentDeploymentType(*dk)).AsString()
+	configMapData[OneAgentMetadataKey] = NewDeploymentMetadata(r.clusterID, GetOneAgentDeploymentType(dk)).AsString()
 }
 
 func (r *Reconciler) addActiveGateDeploymentMetadata(dk *dynakube.DynaKube, configMapData map[string]string) {

@@ -184,7 +184,7 @@ func TestIsEnabled(t *testing.T) {
 
 			mut := NewMutator(fake.NewClient())
 
-			req := &dtwebhook.MutationRequest{BaseRequest: &dtwebhook.BaseRequest{Pod: pod, DynaKube: *dk, Namespace: *ns}}
+			req := &dtwebhook.MutationRequest{BaseRequest: &dtwebhook.BaseRequest{Pod: pod, DynaKube: dk, Namespace: ns}}
 
 			assert.Equal(t, test.withCSI, mut.IsEnabled(t.Context(), req.BaseRequest))
 
@@ -249,8 +249,9 @@ func TestMutate(t *testing.T) {
 		request := dtwebhook.MutationRequest{
 			Context: t.Context(),
 			BaseRequest: &dtwebhook.BaseRequest{
-				Pod: pod.DeepCopy(),
-				DynaKube: dynakube.DynaKube{
+				Namespace: &corev1.Namespace{},
+				Pod:       pod.DeepCopy(),
+				DynaKube: &dynakube.DynaKube{
 					Spec: dynakube.DynaKubeSpec{
 						MetadataEnrichment: metadataenrichment.Spec{
 							Enabled: new(true),
@@ -321,7 +322,7 @@ func TestMutate(t *testing.T) {
 					Context: t.Context(),
 					BaseRequest: &dtwebhook.BaseRequest{
 						Pod: pod,
-						DynaKube: dynakube.DynaKube{
+						DynaKube: &dynakube.DynaKube{
 							ObjectMeta: metav1.ObjectMeta{
 								Annotations: tc.annotations,
 							},
@@ -358,7 +359,7 @@ func TestMutate(t *testing.T) {
 								},
 							},
 						},
-						Namespace: corev1.Namespace{
+						Namespace: &corev1.Namespace{
 							ObjectMeta: metav1.ObjectMeta{
 								Name: pod.Namespace,
 								Annotations: map[string]string{
@@ -566,19 +567,17 @@ func TestMutate_ResourceAttributes(t *testing.T) {
 					Namespace: podNamespace,
 				},
 			}
-			initContainer := corev1.Container{Args: []string{}}
-			dk := dynakube.DynaKube{Spec: tc.dkSpec}
 
 			request := dtwebhook.MutationRequest{
 				Context: t.Context(),
 				BaseRequest: &dtwebhook.BaseRequest{
 					Pod:      pod,
-					DynaKube: dk,
-					Namespace: corev1.Namespace{
+					DynaKube: &dynakube.DynaKube{Spec: tc.dkSpec},
+					Namespace: &corev1.Namespace{
 						ObjectMeta: metav1.ObjectMeta{Name: podNamespace},
 					},
 				},
-				InstallContainer: &initContainer,
+				InstallContainer: &corev1.Container{Args: []string{}},
 			}
 
 			mut := NewMutator(fake.NewClient())
@@ -604,12 +603,12 @@ func createTestMutationRequest(t *testing.T, dk *dynakube.DynaKube, annotations 
 
 	return dtwebhook.NewMutationRequest(
 		t.Context(),
-		*getTestNamespace(dk),
+		getTestNamespace(dk),
 		&corev1.Container{
 			Name: dtwebhook.InstallContainerName,
 		},
 		getTestPod(annotations),
-		*dk,
+		dk,
 	)
 }
 
@@ -682,7 +681,7 @@ func TestAddContainerAttributes(t *testing.T) {
 				},
 			},
 		},
-		DynaKube: dynakube.DynaKube{
+		DynaKube: &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				MetadataEnrichment: metadataenrichment.Spec{
 					Enabled: new(true),
@@ -743,7 +742,8 @@ func TestAddContainerAttributes(t *testing.T) {
 
 		request := dtwebhook.MutationRequest{
 			BaseRequest: &dtwebhook.BaseRequest{
-				Pod: &pod,
+				DynaKube: &dynakube.DynaKube{},
+				Pod:      &pod,
 			},
 			InstallContainer: &initContainer,
 		}
@@ -782,7 +782,8 @@ func TestAddContainerAttributes(t *testing.T) {
 
 		request := dtwebhook.MutationRequest{
 			BaseRequest: &dtwebhook.BaseRequest{
-				Pod: &pod,
+				DynaKube: &dynakube.DynaKube{},
+				Pod:      &pod,
 			},
 			InstallContainer: &initContainer,
 		}
@@ -821,7 +822,8 @@ func TestAddContainerAttributes(t *testing.T) {
 
 		request := dtwebhook.MutationRequest{
 			BaseRequest: &dtwebhook.BaseRequest{
-				Pod: &pod,
+				DynaKube: &dynakube.DynaKube{},
+				Pod:      &pod,
 			},
 			InstallContainer: &initContainer,
 		}
@@ -847,7 +849,7 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 					},
 				},
 			},
-			DynaKube: dynakube.DynaKube{
+			DynaKube: &dynakube.DynaKube{
 				Spec: dynakube.DynaKubeSpec{
 					MetadataEnrichment: metadataenrichment.Spec{
 						Enabled: new(metadataEnrichment),
@@ -978,7 +980,7 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 		request := dtwebhook.MutationRequest{
 			BaseRequest: &dtwebhook.BaseRequest{
 				Pod: &pod,
-				DynaKube: dynakube.DynaKube{
+				DynaKube: &dynakube.DynaKube{
 					Spec: dynakube.DynaKubeSpec{
 						MetadataEnrichment: metadataenrichment.Spec{
 							Enabled: new(true),
@@ -1033,7 +1035,7 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 		request := dtwebhook.MutationRequest{
 			BaseRequest: &dtwebhook.BaseRequest{
 				Pod: &pod,
-				DynaKube: dynakube.DynaKube{
+				DynaKube: &dynakube.DynaKube{
 					Spec: dynakube.DynaKubeSpec{
 						MetadataEnrichment: metadataenrichment.Spec{
 							Enabled: new(true),
@@ -1087,7 +1089,7 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 		request := dtwebhook.MutationRequest{
 			BaseRequest: &dtwebhook.BaseRequest{
 				Pod: &pod,
-				DynaKube: dynakube.DynaKube{
+				DynaKube: &dynakube.DynaKube{
 					Spec: dynakube.DynaKubeSpec{
 						MetadataEnrichment: metadataenrichment.Spec{
 							Enabled: new(true),
@@ -1149,7 +1151,7 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 		request := dtwebhook.MutationRequest{
 			BaseRequest: &dtwebhook.BaseRequest{
 				Pod: &pod,
-				DynaKube: dynakube.DynaKube{
+				DynaKube: &dynakube.DynaKube{
 					Spec: dynakube.DynaKubeSpec{
 						MetadataEnrichment: metadataenrichment.Spec{
 							Enabled: new(true),
@@ -1203,7 +1205,7 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 		request := dtwebhook.MutationRequest{
 			BaseRequest: &dtwebhook.BaseRequest{
 				Pod: &pod,
-				DynaKube: dynakube.DynaKube{
+				DynaKube: &dynakube.DynaKube{
 					Spec: dynakube.DynaKubeSpec{
 						MetadataEnrichment: metadataenrichment.Spec{
 							Enabled: new(false),
@@ -1257,7 +1259,7 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 		request := dtwebhook.MutationRequest{
 			BaseRequest: &dtwebhook.BaseRequest{
 				Pod: &pod,
-				DynaKube: dynakube.DynaKube{
+				DynaKube: &dynakube.DynaKube{
 					Spec: dynakube.DynaKubeSpec{
 						MetadataEnrichment: metadataenrichment.Spec{
 							Enabled: new(true),
@@ -1291,7 +1293,7 @@ func TestInitResources(t *testing.T) {
 			},
 		}
 
-		dk := dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				MetadataEnrichment: metadataenrichment.Spec{InitResources: customResources},
 			},
@@ -1301,7 +1303,7 @@ func TestInitResources(t *testing.T) {
 	})
 
 	t.Run("falls back to defaults when initResources is not set", func(t *testing.T) {
-		dk := dynakube.DynaKube{}
+		dk := &dynakube.DynaKube{}
 
 		expected := corev1.ResourceRequirements{
 			Requests: k8sresource.NewResourceList("30m", "30Mi"),

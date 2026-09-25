@@ -188,7 +188,7 @@ func TestIsEnabled(t *testing.T) {
 			dk := &dynakube.DynaKube{}
 			test.dkMods(dk)
 
-			req := &dtwebhook.MutationRequest{BaseRequest: &dtwebhook.BaseRequest{Pod: pod, DynaKube: *dk, Namespace: *ns}}
+			req := &dtwebhook.MutationRequest{BaseRequest: &dtwebhook.BaseRequest{Pod: pod, DynaKube: dk, Namespace: ns}}
 
 			assert.Equal(t, test.enabled, IsEnabled(req.BaseRequest))
 		})
@@ -406,7 +406,7 @@ func TestAddOneAgentToContainer(t *testing.T) {
 		container := corev1.Container{}
 
 		baseReq := &dtwebhook.BaseRequest{
-			DynaKube: dynakube.DynaKube{
+			DynaKube: &dynakube.DynaKube{
 				Spec: dynakube.DynaKubeSpec{
 					OneAgent:    oneagent.Spec{ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{}},
 					NetworkZone: networkZone,
@@ -417,7 +417,7 @@ func TestAddOneAgentToContainer(t *testing.T) {
 			},
 		}
 		addVolumeMounts(&container, installPath, isImageVolume(baseReq))
-		addOneAgentEnvsToContainer(baseReq.DynaKube, &container, corev1.Namespace{}, installPath, "")
+		addOneAgentEnvsToContainer(baseReq.DynaKube, &container, &corev1.Namespace{}, installPath, "")
 
 		assert.Len(t, container.VolumeMounts, 2) // preload,bin
 
@@ -445,14 +445,14 @@ func TestAddOneAgentToContainer(t *testing.T) {
 
 	t.Run("add runtime class env when runtimeClassName is set", func(t *testing.T) {
 		container := corev1.Container{}
-		dk := dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				OneAgent: oneagent.Spec{ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{}},
 			},
 		}
 		runtimeClassName := "gvisor"
 
-		addOneAgentEnvsToContainer(dk, &container, corev1.Namespace{}, installPath, runtimeClassName)
+		addOneAgentEnvsToContainer(dk, &container, &corev1.Namespace{}, installPath, runtimeClassName)
 
 		runtimeClassEnv := k8senv.Find(container.Env, PodRuntimeClassEnv)
 		require.NotNil(t, runtimeClassEnv)
@@ -488,7 +488,7 @@ func createTestMutationRequestWithoutInjectedContainers(t *testing.T) *dtwebhook
 				},
 				Status: corev1.PodStatus{},
 			},
-			DynaKube: dynakube.DynaKube{
+			DynaKube: &dynakube.DynaKube{
 				Spec: dynakube.DynaKubeSpec{OneAgent: oneagent.Spec{
 					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
 						AppInjectionSpec: oneagent.AppInjectionSpec{

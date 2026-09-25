@@ -6,6 +6,7 @@
 package prometheusmonitoring
 
 import (
+	"os"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
@@ -33,10 +34,13 @@ const (
 
 func Feature(t *testing.T) features.Feature {
 	builder := features.New("lifecycle")
+	if os.Getenv("OLM") == "true" {
+		t.Skip("Skipping Prometheus tests with OLM installation")
+	}
 
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
-	dk := *dynakube.New(
+	dk := dynakube.New(
 		dynakube.WithAPIURL(secretConfig.APIURL),
 	)
 
@@ -46,7 +50,7 @@ func Feature(t *testing.T) features.Feature {
 			Namespace: operator.DefaultNamespace,
 		},
 		Spec: pmapi.PrometheusMonitoringSpec{
-			DynaKubeRef: dk.Name,
+			DynaKubeName: dk.Name,
 			TargetAllocator: pmapi.TargetAllocatorSpec{
 				PodSpec: pmapi.PodSpec{
 					Image: registry.GetLatestImageTagURI(t, defaultTargetAllocatorRepo, targetAllocatorImageEnvVar),
@@ -67,7 +71,7 @@ func Feature(t *testing.T) features.Feature {
 
 	enablePrometheus(builder)
 
-	dynakube.Install(builder, &secretConfig, dk)
+	dynakube.Install(builder, secretConfig, dk)
 
 	builder.Assess("created PrometheusMonitoring", k8sobject.Create(pm))
 	builder.Assess("PrometheusMonitoring becomes ready", waitForPhase(pm, status.Running))
@@ -113,11 +117,14 @@ func Feature(t *testing.T) features.Feature {
 
 func PublicRegistry(t *testing.T) features.Feature {
 	builder := features.New("public-registry")
+	if os.Getenv("OLM") == "true" {
+		t.Skip("Skipping Prometheus tests with OLM installation")
+	}
 	builder.Assess("devregistry pull secret exists", k8sobject.Expect(consts.DevRegistryPullSecretName, operator.DefaultNamespace, k8sobject.SecretExists))
 
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
-	dk := *dynakube.New(
+	dk := dynakube.New(
 		dynakube.WithAPIURL(secretConfig.APIURL),
 		dynakube.WithCustomPullSecret(consts.DevRegistryPullSecretName),
 	)
@@ -128,13 +135,13 @@ func PublicRegistry(t *testing.T) features.Feature {
 			Namespace: operator.DefaultNamespace,
 		},
 		Spec: pmapi.PrometheusMonitoringSpec{
-			DynaKubeRef: dk.Name,
+			DynaKubeName: dk.Name,
 		},
 	}
 
 	enablePrometheus(builder)
 
-	dynakube.Install(builder, &secretConfig, dk)
+	dynakube.Install(builder, secretConfig, dk)
 
 	builder.Assess("created PrometheusMonitoring", k8sobject.Create(pm))
 	builder.Assess("PrometheusMonitoring becomes ready", waitForPhase(pm, status.Running))
