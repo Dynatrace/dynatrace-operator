@@ -265,8 +265,6 @@ linters:
           disabled: true
         - name: package-naming
           disabled: true
-        - name: multiline-if-init
-          disabled: true
     importas:
       no-unaliased: true
       alias:
