@@ -82,6 +82,7 @@ jobs:
     environment: E2E
     runs-on:
       - operator-e2e
+    timeout-minutes: 720 # default is 360 (8h)
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
