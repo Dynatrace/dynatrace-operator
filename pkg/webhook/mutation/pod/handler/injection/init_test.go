@@ -271,11 +271,11 @@ func createTestHandler(oaMut, metaMut dtwebhook.Mutator, objects ...client.Objec
 func TestAddInitContainerToPod(t *testing.T) {
 	t.Run("adds common volumes/mounts", func(t *testing.T) {
 		pod := &corev1.Pod{}
-		initContainer := corev1.Container{}
+		initContainer := &corev1.Container{}
 
-		addInitContainerToPod(t.Context(), pod, &initContainer)
+		addInitContainerToPod(t.Context(), pod, initContainer)
 
-		assert.Contains(t, pod.Spec.InitContainers, initContainer)
+		assert.Contains(t, pod.Spec.InitContainers, *initContainer)
 		require.Len(t, pod.Spec.Volumes, 2)
 		assert.True(t, k8svolume.Contains(pod.Spec.Volumes, volumes.ConfigVolumeName))
 		assert.True(t, k8svolume.Contains(pod.Spec.Volumes, volumes.InputVolumeName))

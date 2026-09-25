@@ -402,7 +402,7 @@ func TestAddOneAgentToContainer(t *testing.T) {
 	installPath := "install/path"
 
 	t.Run("add everything", func(t *testing.T) {
-		container := corev1.Container{}
+		container := &corev1.Container{}
 
 		baseReq := &dtwebhook.BaseRequest{
 			DynaKube: &dynakube.DynaKube{
@@ -415,8 +415,8 @@ func TestAddOneAgentToContainer(t *testing.T) {
 				},
 			},
 		}
-		addVolumeMounts(&container, installPath, isImageVolume(baseReq))
-		addOneAgentEnvsToContainer(baseReq.DynaKube, &container, &corev1.Namespace{}, installPath, "")
+		addVolumeMounts(container, installPath, isImageVolume(baseReq))
+		addOneAgentEnvsToContainer(baseReq.DynaKube, container, &corev1.Namespace{}, installPath, "")
 
 		assert.Len(t, container.VolumeMounts, 2) // preload,bin
 
@@ -439,7 +439,7 @@ func TestAddOneAgentToContainer(t *testing.T) {
 		runtimeClassEnv := k8senv.Find(container.Env, PodRuntimeClassEnv)
 		assert.Nil(t, runtimeClassEnv)
 
-		assert.True(t, containerIsInjected(container, nil))
+		assert.True(t, containerIsInjected(*container, nil))
 	})
 
 	t.Run("add runtime class env when runtimeClassName is set", func(t *testing.T) {

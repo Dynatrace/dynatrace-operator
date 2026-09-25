@@ -307,20 +307,20 @@ func getInjectedPod(t *testing.T) *corev1.Pod {
 
 func TestSetDynatraceInjectedAnnotation(t *testing.T) {
 	t.Run("add annotation", func(t *testing.T) {
-		request := dtwebhook.MutationRequest{
+		request := &dtwebhook.MutationRequest{
 			BaseRequest: &dtwebhook.BaseRequest{
 				Pod: &corev1.Pod{},
 			},
 		}
 
-		annotations.SetInjected(&request, dtwebhook.AnnotationDynatraceInjected, dtwebhook.AnnotationDynatraceReason)
+		annotations.SetInjected(request, dtwebhook.AnnotationDynatraceInjected, dtwebhook.AnnotationDynatraceReason)
 
 		require.Len(t, request.Pod.Annotations, 1)
 		assert.Equal(t, "true", request.Pod.Annotations[dtwebhook.AnnotationDynatraceInjected])
 	})
 
 	t.Run("remove reason annotation", func(t *testing.T) {
-		request := dtwebhook.MutationRequest{
+		request := &dtwebhook.MutationRequest{
 			BaseRequest: &dtwebhook.BaseRequest{
 				Pod: &corev1.Pod{
 					Annotations: map[string]string{
@@ -330,7 +330,7 @@ func TestSetDynatraceInjectedAnnotation(t *testing.T) {
 			},
 		}
 
-		annotations.SetInjected(&request, dtwebhook.AnnotationDynatraceInjected, dtwebhook.AnnotationDynatraceReason)
+		annotations.SetInjected(request, dtwebhook.AnnotationDynatraceInjected, dtwebhook.AnnotationDynatraceReason)
 
 		require.Len(t, request.Pod.Annotations, 1)
 		assert.Equal(t, "true", request.Pod.Annotations[dtwebhook.AnnotationDynatraceInjected])

@@ -532,7 +532,7 @@ func TestUpdateStrategy(t *testing.T) {
 }
 
 func TestTempVolume(t *testing.T) {
-	myPVCSpec := corev1.PersistentVolumeClaimSpec{
+	myPVCSpec := &corev1.PersistentVolumeClaimSpec{
 		StorageClassName: new("test"),
 		VolumeName:       "foo-pv",
 	}
@@ -581,39 +581,39 @@ func TestTempVolume(t *testing.T) {
 		},
 		{
 			name:             "custom PVC and no EmptyDir when VolumeClaimTemplate != nil, TelemetryIngest enabled, UseEphemeralVolume = false",
-			pvc:              &myPVCSpec,
+			pvc:              myPVCSpec,
 			telemetryIngest:  &telemetryingest.Spec{},
 			useEphemeral:     false,
 			emptyDirExpected: false,
 			pvcExpected:      true,
-			expectedPvcSpec:  myPVCSpec,
+			expectedPvcSpec:  *myPVCSpec,
 		},
 		{
 			name:             "custom PVC and no EmptyDir when VolumeClaimTemplate != nil, TelemetryIngest enabled, UseEphemeralVolume = true",
-			pvc:              &myPVCSpec,
+			pvc:              myPVCSpec,
 			telemetryIngest:  &telemetryingest.Spec{},
 			useEphemeral:     true,
 			emptyDirExpected: false,
 			pvcExpected:      true,
-			expectedPvcSpec:  myPVCSpec,
+			expectedPvcSpec:  *myPVCSpec,
 		},
 		{
 			name:             "custom PVC and no EmptyDir when VolumeClaimTemplate != nil, TelemetryIngest not enabled, UseEphemeralVolume = false",
-			pvc:              &myPVCSpec,
+			pvc:              myPVCSpec,
 			telemetryIngest:  nil,
 			useEphemeral:     false,
 			emptyDirExpected: false,
 			pvcExpected:      true,
-			expectedPvcSpec:  myPVCSpec,
+			expectedPvcSpec:  *myPVCSpec,
 		},
 		{
 			name:             "custom PVC and no EmptyDir when VolumeClaimTemplate != nil, TelemetryIngest not enabled, UseEphemeralVolume = true",
-			pvc:              &myPVCSpec,
+			pvc:              myPVCSpec,
 			telemetryIngest:  nil,
 			useEphemeral:     true,
 			emptyDirExpected: false,
 			pvcExpected:      true,
-			expectedPvcSpec:  myPVCSpec,
+			expectedPvcSpec:  *myPVCSpec,
 		},
 	}
 

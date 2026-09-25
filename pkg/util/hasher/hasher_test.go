@@ -140,11 +140,11 @@ func TestIsDifferent(t *testing.T) {
 }
 
 func TestIsAnnotationDifferent(t *testing.T) {
-	testDeployment := appsv1.Deployment{
+	testDeployment := &appsv1.Deployment{
 		Annotations: map[string]string{
 			AnnotationHash: "hash1",
 		}}
-	testDaemonSet := appsv1.DaemonSet{
+	testDaemonSet := &appsv1.DaemonSet{
 		Annotations: map[string]string{
 			AnnotationHash: "hash2",
 		}}
