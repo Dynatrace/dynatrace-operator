@@ -27,6 +27,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
+	kspmtoken "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kspm/token"
 	kubemonauthtoken "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/authtoken"
 	kubemonconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/connectioninfo"
 	kubemoncustomproperties "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/customproperties"
@@ -83,6 +84,10 @@ type istioReconciler interface {
 	ReconcileActiveGate(ctx context.Context, dk *dynakube.DynaKube) error
 }
 
+type kspmTokenReconciler interface {
+	Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
+}
+
 // Reconciler orchestrates the kubemon operand. Sub-reconciler fields are interfaces so they
 // can be mocked in tests.
 type Reconciler struct {
@@ -94,6 +99,7 @@ type Reconciler struct {
 	deploymentPropertiesReconciler deploymentPropertiesReconciler
 	gatewayReconciler              gatewayReconciler
 	istioReconciler                istioReconciler
+	kspmTokenReconciler            kspmTokenReconciler
 }
 
 func NewReconciler(kubeClient client.Client) *Reconciler {
@@ -106,6 +112,7 @@ func NewReconciler(kubeClient client.Client) *Reconciler {
 		deploymentPropertiesReconciler: deploymentproperties.NewReconciler(kubeClient),
 		gatewayReconciler:              gateway.NewReconciler(kubeClient),
 		istioReconciler:                istio.NewReconciler(kubeClient, kubeClient),
+		kspmTokenReconciler:            kspmtoken.NewReconciler(kubeClient, kubeClient),
 	}
 }
 
@@ -146,6 +153,10 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtcli
 	}
 
 	if err = r.gatewayReconciler.Reconcile(ctx, dk); err != nil {
+		return err
+	}
+
+	if err = r.kspmTokenReconciler.Reconcile(ctx, dk); err != nil {
 		return err
 	}
 

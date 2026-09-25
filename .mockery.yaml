@@ -100,6 +100,7 @@ packages:
       customPropertiesReconciler:
       tlsReconciler:
       versionReconciler:
+      kspmTokenReconciler:
   github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon:
     config:
       dir: "{{.InterfaceDir}}"
@@ -115,6 +116,7 @@ packages:
       gatewayReconciler:
       statefulsetReconciler:
       istioReconciler:
+      kspmTokenReconciler:
   github.com/Dynatrace/dynatrace-operator/pkg/controllers/prometheusmonitoring:
     config:
       dir: "{{.InterfaceDir}}"
