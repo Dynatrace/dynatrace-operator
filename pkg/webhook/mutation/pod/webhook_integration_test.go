@@ -9,6 +9,7 @@ import (
 	"maps"
 	"strings"
 	"testing"
+	"uuid"
 
 	podattr "github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit/configure/attributes/pod"
 	"github.com/Dynatrace/dynatrace-operator/cmd/bootstrapper"
@@ -36,7 +37,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/otlp/resourceattributes"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/volumes"
 	"github.com/Dynatrace/dynatrace-operator/test/integrationtests"
-	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
@@ -177,7 +177,7 @@ func TestWebhook(t *testing.T) { //nolint:revive // Function too long
 							APIVersion: "apps/v1",
 							Kind:       "Deployment",
 							Name:       "missing",
-							UID:        types.UID(uuid.NewString()),
+							UID:        types.UID(uuid.New().String()),
 							Controller: new(true),
 						},
 					}
@@ -250,7 +250,7 @@ func TestWebhook(t *testing.T) { //nolint:revive // Function too long
 		t.Run("conflicting otlp activegate cert volume", func(t *testing.T) {
 			dk := getReadyOTLPDynaKube()
 			dk.Spec.ActiveGate.Capabilities = []activegate.CapabilityDisplayName{activegate.RoutingCapability.DisplayName}
-			dk.Status.OneAgent.ConnectionInfo.TenantUUID = uuid.NewString()
+			dk.Status.OneAgent.ConnectionInfo.TenantUUID = uuid.New().String()
 
 			integrationtests.CreateDynakube(t, clt, dk)
 			integrationtests.CreateKubernetesObject(t, clt, getOTLPExporterSecret(testNamespace))
@@ -266,7 +266,7 @@ func TestWebhook(t *testing.T) { //nolint:revive // Function too long
 		t.Run("otlp exporter activegate certificate secret missing", func(t *testing.T) {
 			dk := getReadyOTLPDynaKube()
 			dk.Spec.ActiveGate.Capabilities = []activegate.CapabilityDisplayName{activegate.RoutingCapability.DisplayName}
-			dk.Status.OneAgent.ConnectionInfo.TenantUUID = uuid.NewString()
+			dk.Status.OneAgent.ConnectionInfo.TenantUUID = uuid.New().String()
 			integrationtests.CreateDynakube(t, clt, dk)
 			integrationtests.CreateKubernetesObject(t, clt, getOTLPExporterSecret(testNamespace))
 
@@ -628,7 +628,7 @@ func TestWebhook(t *testing.T) { //nolint:revive // Function too long
 		}
 
 		t.Run("otlp exporter activegate", func(t *testing.T) {
-			tenantUUID := uuid.NewString()
+			tenantUUID := uuid.New().String()
 
 			dk := getReadyOTLPDynaKube()
 			dk.Spec.ActiveGate.Capabilities = []activegate.CapabilityDisplayName{activegate.RoutingCapability.DisplayName}
@@ -784,7 +784,7 @@ func testMetadataJSON(t *testing.T, clt client.Client, tt metadataJSONTestCase) 
 	}
 	if len(tt.oaAttributes) > 0 {
 		dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{AdditionalResourceAttributes: tt.oaAttributes}
-		dk.Status.OneAgent.ConnectionInfo.TenantUUID = uuid.NewString()
+		dk.Status.OneAgent.ConnectionInfo.TenantUUID = uuid.New().String()
 		dk.Status.CodeModules.Version = "1.2.3"
 	}
 	if len(tt.otlpAttributes) > 0 {
@@ -870,7 +870,7 @@ func testBootstrapperArgs(t *testing.T, clt client.Client, tt bootstrapperArgsTe
 			MetadataEnrichment:    metadataenrichment.Status{Rules: tt.rules},
 			OneAgent: oneagent.Status{
 				ConnectionInfo: communication.ConnectionInfo{
-					TenantUUID: uuid.NewString(),
+					TenantUUID: uuid.New().String(),
 				},
 			},
 			CodeModules: oneagent.CodeModulesStatus{
@@ -1225,7 +1225,7 @@ func getReadyCNFSDynaKube() *dynakube.DynaKube {
 			KubeSystemUUID:        testClusterUUID,
 			OneAgent: oneagent.Status{
 				ConnectionInfo: communication.ConnectionInfo{
-					TenantUUID: uuid.NewString(),
+					TenantUUID: uuid.New().String(),
 				},
 			},
 			CodeModules: oneagent.CodeModulesStatus{

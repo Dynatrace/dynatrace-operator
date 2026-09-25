@@ -2,8 +2,6 @@ module github.com/Dynatrace/dynatrace-operator
 
 go 1.27.0
 
-toolchain go1.27.1
-
 require (
 	github.com/Dynatrace/dynatrace-bootstrapper v1.4.3
 	github.com/container-storage-interface/spec v1.13.0
@@ -11,7 +9,6 @@ require (
 	github.com/evanphx/json-patch v5.9.11+incompatible
 	github.com/go-logr/logr v1.4.4
 	github.com/google/go-containerregistry v0.22.1
-	github.com/google/uuid v1.6.0
 	github.com/klauspost/compress v1.20.0
 	github.com/kubernetes-csi/csi-lib-utils v0.25.0
 	github.com/opencontainers/go-digest v1.0.0
@@ -82,6 +79,7 @@ require (
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/gnostic-models v0.7.1 // indirect
 	github.com/google/go-tpm v0.9.8 // indirect
+	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/websocket v1.5.4-0.20250319132907-e064f32e3674 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.29.0 // indirect
 	github.com/hashicorp/go-version v1.9.0 // indirect

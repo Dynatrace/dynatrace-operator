@@ -5,11 +5,9 @@ package version
 
 import (
 	"fmt"
-	"io"
 	"net/http"
+	"net/http/httptest"
 	"net/url"
-	"strings"
-	"sync"
 	"testing"
 	"time"
 
@@ -27,7 +25,7 @@ import (
 
 // Tests for the EdgeConnect version reconciler's auto update flow.
 //
-// The fleet management side uses the real dtimage.Client backed by a fake transport, so
+// The fleet management side uses the real dtimage.Client backed by an in-memory httptest server, so
 // the assertions cover the whole path down to the HTTP request, including the registry query
 // parameter. The OCI registry fallback is mocked, because it talks to a container registry through
 // go containerregistry rather than through the Dynatrace API client.
@@ -50,71 +48,76 @@ const (
 func TestAutoUpdateVersionReconciler(t *testing.T) {
 	t.Run("auto update enabled", func(t *testing.T) {
 		t.Run("sets initial status from the fleet management response", func(t *testing.T) {
-			transport := newFakeTransport(containerImagesBody(firstImageURI))
+			recorder := newResponseRecorder(containerImagesBody(firstImageURI))
+			s := httptest.NewTestServer(t, recorder)
 			ec := newAutoUpdateEdgeConnect(t, true)
 			now := timeprovider.New().Freeze()
 
-			require.NoError(t, reconcile(t, ec, transport, now, nil))
+			require.NoError(t, reconcile(t, ec, s.Client().Transport, now, nil))
 
 			assert.Equal(t, firstImageURI, ec.Status.Version.ImageID)
 			assert.Equal(t, "1.2.3", ec.Status.Version.Version)
 			assert.Equal(t, status.PublicRegistryVersionSource, ec.Status.Version.Source)
-			transport.assertCalls(t, 1)
+			assert.Len(t, recorder.requests, 1)
 		})
 
 		t.Run("does not probe again within the threshold", func(t *testing.T) {
-			transport := newFakeTransport(containerImagesBody(firstImageURI), containerImagesBody(updatedImageURI))
+			recorder := newResponseRecorder(containerImagesBody(firstImageURI), containerImagesBody(updatedImageURI))
+			s := httptest.NewTestServer(t, recorder)
 			ec := newAutoUpdateEdgeConnect(t, true)
 			now := timeprovider.New().Freeze()
 
-			require.NoError(t, reconcile(t, ec, transport, now, nil))
-			require.NoError(t, reconcile(t, ec, transport, now, nil))
+			require.NoError(t, reconcile(t, ec, s.Client().Transport, now, nil))
+			require.NoError(t, reconcile(t, ec, s.Client().Transport, now, nil))
 
 			assert.Equal(t, firstImageURI, ec.Status.Version.ImageID)
-			transport.assertCalls(t, 1, "second reconcile must be throttled by minRequestThreshold")
+			assert.Len(t, recorder.requests, 1, "second reconcile must be throttled by minRequestThreshold")
 		})
 
 		t.Run("probes again once the threshold expired", func(t *testing.T) {
-			transport := newFakeTransport(containerImagesBody(firstImageURI), containerImagesBody(updatedImageURI))
+			recorder := newResponseRecorder(containerImagesBody(firstImageURI), containerImagesBody(updatedImageURI))
+			s := httptest.NewTestServer(t, recorder)
 			ec := newAutoUpdateEdgeConnect(t, true)
 			now := timeprovider.New().Freeze()
 
-			require.NoError(t, reconcile(t, ec, transport, now, nil))
+			require.NoError(t, reconcile(t, ec, s.Client().Transport, now, nil))
 			require.Equal(t, firstImageURI, ec.Status.Version.ImageID)
 
 			now.Set(now.Now().Add(minRequestThreshold + time.Second))
-			require.NoError(t, reconcile(t, ec, transport, now, nil))
+			require.NoError(t, reconcile(t, ec, s.Client().Transport, now, nil))
 
 			assert.Equal(t, updatedImageURI, ec.Status.Version.ImageID)
 			assert.Equal(t, "1.2.4", ec.Status.Version.Version)
-			transport.assertCalls(t, 2)
+			assert.Len(t, recorder.requests, 2)
 		})
 	})
 
 	t.Run("auto update disabled", func(t *testing.T) {
 		t.Run("still resolves the initial image", func(t *testing.T) {
-			transport := newFakeTransport(containerImagesBody(firstImageURI))
+			recorder := newResponseRecorder(containerImagesBody(firstImageURI))
+			s := httptest.NewTestServer(t, recorder)
 			ec := newAutoUpdateEdgeConnect(t, false)
 			now := timeprovider.New().Freeze()
 
-			require.NoError(t, reconcile(t, ec, transport, now, nil))
+			require.NoError(t, reconcile(t, ec, s.Client().Transport, now, nil))
 
 			assert.Equal(t, firstImageURI, ec.Status.Version.ImageID)
-			transport.assertCalls(t, 1, "an EdgeConnect without an image has to resolve one regardless of auto update")
+			assert.Len(t, recorder.requests, 1, "an EdgeConnect without an image has to resolve one regardless of auto update")
 		})
 
 		t.Run("does not probe again once the threshold expired", func(t *testing.T) {
-			transport := newFakeTransport(containerImagesBody(firstImageURI), containerImagesBody(updatedImageURI))
+			recorder := newResponseRecorder(containerImagesBody(firstImageURI), containerImagesBody(updatedImageURI))
+			s := httptest.NewTestServer(t, recorder)
 			ec := newAutoUpdateEdgeConnect(t, false)
 			now := timeprovider.New().Freeze()
 
-			require.NoError(t, reconcile(t, ec, transport, now, nil))
+			require.NoError(t, reconcile(t, ec, s.Client().Transport, now, nil))
 
 			now.Set(now.Now().Add(minRequestThreshold + time.Second))
-			require.NoError(t, reconcile(t, ec, transport, now, nil))
+			require.NoError(t, reconcile(t, ec, s.Client().Transport, now, nil))
 
 			assert.Equal(t, firstImageURI, ec.Status.Version.ImageID)
-			transport.assertCalls(t, 1, "auto update is disabled, so an expired threshold must not trigger a probe")
+			assert.Len(t, recorder.requests, 1, "auto update is disabled, so an expired threshold must not trigger a probe")
 		})
 	})
 
@@ -122,102 +125,109 @@ func TestAutoUpdateVersionReconciler(t *testing.T) {
 	// could never move an EdgeConnect to or away from their own registry.
 	t.Run("publicRegistryOverride without auto update", func(t *testing.T) {
 		t.Run("is passed to fleet management as a query parameter", func(t *testing.T) {
-			transport := newFakeTransport(containerImagesBody(overrideImageURI))
+			recorder := newResponseRecorder(containerImagesBody(overrideImageURI))
+			s := httptest.NewTestServer(t, recorder)
 			ec := newAutoUpdateEdgeConnect(t, false)
 			ec.Spec.PublicRegistryOverride = overrideRegistry
 			now := timeprovider.New().Freeze()
 
-			require.NoError(t, reconcile(t, ec, transport, now, nil))
+			require.NoError(t, reconcile(t, ec, s.Client().Transport, now, nil))
 
 			assert.Equal(t, overrideImageURI, ec.Status.Version.ImageID)
 			assert.Equal(t, status.PublicRegistryWithOverrideVersionSource, ec.Status.Version.Source)
-			assert.Equal(t, overrideRegistry, transport.queryParam(t, 0, "registry"))
+			assert.Equal(t, overrideRegistry, recorder.queryParam(t, 0, "registry"))
 		})
 
 		t.Run("adding it probes again", func(t *testing.T) {
-			transport := newFakeTransport(containerImagesBody(firstImageURI), containerImagesBody(overrideImageURI))
+			recorder := newResponseRecorder(containerImagesBody(firstImageURI), containerImagesBody(overrideImageURI))
+			s := httptest.NewTestServer(t, recorder)
 			ec := newAutoUpdateEdgeConnect(t, false)
 			now := timeprovider.New().Freeze()
 
-			require.NoError(t, reconcile(t, ec, transport, now, nil))
+			require.NoError(t, reconcile(t, ec, s.Client().Transport, now, nil))
 			require.Equal(t, firstImageURI, ec.Status.Version.ImageID)
 
 			ec.Spec.PublicRegistryOverride = overrideRegistry
-			require.NoError(t, reconcile(t, ec, transport, now, nil))
+			require.NoError(t, reconcile(t, ec, s.Client().Transport, now, nil))
 
 			assert.Equal(t, overrideImageURI, ec.Status.Version.ImageID)
-			assert.Equal(t, overrideRegistry, transport.queryParam(t, 1, "registry"))
-			transport.assertCalls(t, 2, "adding an override must not wait for the threshold")
+			assert.Equal(t, overrideRegistry, recorder.queryParam(t, 1, "registry"))
+			assert.Len(t, recorder.requests, 2, "adding an override must not wait for the threshold")
 		})
 
 		t.Run("removing it probes again", func(t *testing.T) {
-			transport := newFakeTransport(containerImagesBody(overrideImageURI), containerImagesBody(firstImageURI))
+			recorder := newResponseRecorder(containerImagesBody(overrideImageURI), containerImagesBody(firstImageURI))
+			s := httptest.NewTestServer(t, recorder)
 			ec := newAutoUpdateEdgeConnect(t, false)
 			ec.Spec.PublicRegistryOverride = overrideRegistry
 			now := timeprovider.New().Freeze()
 
-			require.NoError(t, reconcile(t, ec, transport, now, nil))
+			require.NoError(t, reconcile(t, ec, s.Client().Transport, now, nil))
 			require.Equal(t, overrideImageURI, ec.Status.Version.ImageID)
 
 			ec.Spec.PublicRegistryOverride = ""
-			require.NoError(t, reconcile(t, ec, transport, now, nil))
+			require.NoError(t, reconcile(t, ec, s.Client().Transport, now, nil))
 
 			assert.Equal(t, firstImageURI, ec.Status.Version.ImageID)
 			assert.Equal(t, status.PublicRegistryVersionSource, ec.Status.Version.Source)
-			assert.Empty(t, transport.queryParam(t, 1, "registry"), "the override is gone, so the registry must not be requested")
-			transport.assertCalls(t, 2, "removing an override must not wait for the threshold")
+			assert.Empty(t, recorder.queryParam(t, 1, "registry"), "the override is gone, so the registry must not be requested")
+			assert.Len(t, recorder.requests, 2, "removing an override must not wait for the threshold")
 		})
 
 		t.Run("switching it to another registry probes again", func(t *testing.T) {
-			transport := newFakeTransport(containerImagesBody(overrideImageURI), containerImagesBody(otherImageURI))
+			recorder := newResponseRecorder(containerImagesBody(overrideImageURI), containerImagesBody(otherImageURI))
+			s := httptest.NewTestServer(t, recorder)
 			ec := newAutoUpdateEdgeConnect(t, false)
 			ec.Spec.PublicRegistryOverride = overrideRegistry
 			now := timeprovider.New().Freeze()
 
-			require.NoError(t, reconcile(t, ec, transport, now, nil))
+			require.NoError(t, reconcile(t, ec, s.Client().Transport, now, nil))
 			require.Equal(t, overrideImageURI, ec.Status.Version.ImageID)
 
 			ec.Spec.PublicRegistryOverride = otherRegistry
-			require.NoError(t, reconcile(t, ec, transport, now, nil))
+			require.NoError(t, reconcile(t, ec, s.Client().Transport, now, nil))
 
 			assert.Equal(t, otherImageURI, ec.Status.Version.ImageID)
-			assert.Equal(t, otherRegistry, transport.queryParam(t, 1, "registry"))
-			transport.assertCalls(t, 2, "switching an override must not wait for the threshold")
+			assert.Equal(t, otherRegistry, recorder.queryParam(t, 1, "registry"))
+			assert.Len(t, recorder.requests, 2, "switching an override must not wait for the threshold")
 		})
 
 		t.Run("leaving it unchanged does not probe again", func(t *testing.T) {
-			transport := newFakeTransport(containerImagesBody(overrideImageURI))
+			recorder := newResponseRecorder(containerImagesBody(overrideImageURI))
+			s := httptest.NewTestServer(t, recorder)
 			ec := newAutoUpdateEdgeConnect(t, false)
 			ec.Spec.PublicRegistryOverride = overrideRegistry
 			now := timeprovider.New().Freeze()
 
-			require.NoError(t, reconcile(t, ec, transport, now, nil))
-			require.NoError(t, reconcile(t, ec, transport, now, nil))
+			require.NoError(t, reconcile(t, ec, s.Client().Transport, now, nil))
+			require.NoError(t, reconcile(t, ec, s.Client().Transport, now, nil))
 
 			assert.Equal(t, overrideImageURI, ec.Status.Version.ImageID)
-			transport.assertCalls(t, 1, "an unchanged override must not force a probe")
+			assert.Len(t, recorder.requests, 1, "an unchanged override must not force a probe")
 		})
 	})
 
 	t.Run("fleet management unavailable", func(t *testing.T) {
 		t.Run("falls back to the OCI registry", func(t *testing.T) {
-			transport := newFakeTransport(serverErrorBody())
+			recorder := newResponseRecorder(serverErrorBody())
+			s := httptest.NewTestServer(t, recorder)
 			ec := newAutoUpdateEdgeConnect(t, true)
 			now := timeprovider.New().Freeze()
 
 			fakeRegistry := registrymock.NewImageGetter(t)
 			fakeRegistry.EXPECT().GetImageVersion(anyCtx, ec.Image()).Return(fakeRegistryImageVersion(), nil)
 
-			require.NoError(t, reconcile(t, ec, transport, now, fakeRegistry))
+			require.NoError(t, reconcile(t, ec, s.Client().Transport, now, fakeRegistry))
 
 			assert.Equal(t, fakeImageURI, ec.Status.Version.ImageID)
 			assert.Equal(t, fakeImageVersion, ec.Status.Version.Version)
 			assert.Equal(t, status.PublicRegistryVersionSource, ec.Status.Version.Source)
-			transport.assertCalls(t, 1)
+			assert.Len(t, recorder.requests, 1)
 		})
 
 		t.Run("fails the reconcile when the OCI registry is unavailable too", func(t *testing.T) {
-			transport := newFakeTransport(serverErrorBody())
+			recorder := newResponseRecorder(serverErrorBody())
+			s := httptest.NewTestServer(t, recorder)
 			ec := newAutoUpdateEdgeConnect(t, true)
 			now := timeprovider.New().Freeze()
 
@@ -225,23 +235,24 @@ func TestAutoUpdateVersionReconciler(t *testing.T) {
 			fakeRegistry.EXPECT().GetImageVersion(anyCtx, ec.Image()).
 				Return(registry.ImageVersion{}, assert.AnError)
 
-			require.Error(t, reconcile(t, ec, transport, now, fakeRegistry))
+			require.Error(t, reconcile(t, ec, s.Client().Transport, now, fakeRegistry))
 			assert.Empty(t, ec.Status.Version.ImageID)
 		})
 	})
 
 	t.Run("custom image never contacts fleet management", func(t *testing.T) {
-		transport := newFakeTransport(containerImagesBody(firstImageURI))
+		recorder := newResponseRecorder(containerImagesBody(firstImageURI))
+		s := httptest.NewTestServer(t, recorder)
 		ec := newAutoUpdateEdgeConnect(t, true)
 		ec.Spec.ImageRef.Repository = "my.registry.io/custom/edgeconnect"
 		ec.Spec.ImageRef.Tag = "4.5.6"
 		now := timeprovider.New().Freeze()
 
-		require.NoError(t, reconcile(t, ec, transport, now, nil))
+		require.NoError(t, reconcile(t, ec, s.Client().Transport, now, nil))
 
 		assert.Equal(t, "my.registry.io/custom/edgeconnect:4.5.6", ec.Status.Version.ImageID)
 		assert.Equal(t, status.CustomImageVersionSource, ec.Status.Version.Source)
-		transport.assertCalls(t, 0, "a custom image is taken over as-is")
+		assert.Empty(t, recorder.requests, "a custom image is taken over as-is")
 	})
 }
 
@@ -277,8 +288,8 @@ func newAutoUpdateEdgeConnect(t *testing.T, autoUpdate bool) *edgeconnect.EdgeCo
 	return ec
 }
 
-// newImageClient builds the real fleet management image client on top of an in-process transport, so
-// the request the reconciler produces is asserted rather than mocked away.
+// newImageClient builds the real fleet management image client on top of the test server's
+// transport, so the request the reconciler produces is asserted rather than mocked away.
 func newImageClient(t *testing.T, transport http.RoundTripper) dtimage.Client {
 	t.Helper()
 
@@ -288,13 +299,12 @@ func newImageClient(t *testing.T, transport http.RoundTripper) dtimage.Client {
 	}))
 }
 
-// --- fake transport --------------------------------------------------------
+// --- response recorder -----------------------------------------------------
 
-// fakeTransport is an in-process http.RoundTripper that serves preset responses in sequence,
-// repeating the last one once the list is exhausted. It records every request URL so tests can
-// assert on the query parameters the reconciler sent.
-type fakeTransport struct {
-	mutex     sync.Mutex
+// responseRecorder serves preset responses in sequence, repeating the last one once the list is
+// exhausted. It records every request URL so tests can assert on the query parameters the
+// reconciler sent, and the number of recorded requests is the number of calls that reached it.
+type responseRecorder struct {
 	responses []fakeResponse
 	requests  []*url.URL
 }
@@ -304,46 +314,28 @@ type fakeResponse struct {
 	status int
 }
 
-func newFakeTransport(responses ...fakeResponse) *fakeTransport {
-	return &fakeTransport{responses: responses}
+func newResponseRecorder(responses ...fakeResponse) *responseRecorder {
+	return &responseRecorder{responses: responses}
 }
 
-func (ft *fakeTransport) RoundTrip(r *http.Request) (*http.Response, error) {
-	ft.mutex.Lock()
-	defer ft.mutex.Unlock()
-
-	idx := len(ft.requests)
-	ft.requests = append(ft.requests, r.URL)
-
+func (rec *responseRecorder) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	idx := len(rec.requests)
+	rec.requests = append(rec.requests, r.URL)
 	// stay on the last response once the list is exhausted
-	response := ft.responses[min(idx, len(ft.responses)-1)]
-
-	return &http.Response{
-		StatusCode: response.status,
-		Header:     http.Header{"Content-Type": {"application/json"}},
-		Body:       io.NopCloser(strings.NewReader(response.body)),
-		Request:    r,
-	}, nil
-}
-
-func (ft *fakeTransport) assertCalls(t *testing.T, expected int, msgAndArgs ...any) {
-	t.Helper()
-	ft.mutex.Lock()
-	defer ft.mutex.Unlock()
-
-	assert.Len(t, ft.requests, expected, msgAndArgs...)
+	response := rec.responses[min(idx, len(rec.responses)-1)]
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(response.status)
+	w.Write([]byte(response.body))
 }
 
 // queryParam returns the value the given request sent for name, so tests can assert that
 // publicRegistryOverride reached the endpoint.
-func (ft *fakeTransport) queryParam(t *testing.T, requestIdx int, name string) string {
+func (rec *responseRecorder) queryParam(t *testing.T, requestIdx int, name string) string {
 	t.Helper()
-	ft.mutex.Lock()
-	defer ft.mutex.Unlock()
 
-	require.Greater(t, len(ft.requests), requestIdx, "no request recorded at index %d", requestIdx)
+	require.Greater(t, len(rec.requests), requestIdx, "no request recorded at index %d", requestIdx)
 
-	return ft.requests[requestIdx].Query().Get(name)
+	return rec.requests[requestIdx].Query().Get(name)
 }
 
 // --- response body helpers -------------------------------------------------

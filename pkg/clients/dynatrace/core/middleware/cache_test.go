@@ -147,9 +147,7 @@ func TestRunPeriodicCacheCleanup(t *testing.T) {
 
 			go RunPeriodicCacheCleanup(t.Context(), 2*time.Minute)
 
-			time.Sleep(4 * time.Minute)
-
-			synctest.Wait()
+			synctest.Sleep(4 * time.Minute)
 		})
 
 		assert.Empty(t, c.entries)

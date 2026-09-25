@@ -39,14 +39,14 @@ func TestProxy(t *testing.T) {
 
 		require.NoError(t, err)
 
-		checkProxyForURL(t, *transport, proxyRawURL, "http://working.url", true)
-		checkProxyForURL(t, *transport, proxyRawURL, "https://working.url", true)
+		checkProxyForURL(t, transport, proxyRawURL, "http://working.url", true)
+		checkProxyForURL(t, transport, proxyRawURL, "https://working.url", true)
 
-		checkProxyForURL(t, *transport, proxyRawURL, "http://url.working", true)
-		checkProxyForURL(t, *transport, proxyRawURL, "https://url.working", true)
+		checkProxyForURL(t, transport, proxyRawURL, "http://url.working", true)
+		checkProxyForURL(t, transport, proxyRawURL, "https://url.working", true)
 
-		checkProxyForURL(t, *transport, proxyRawURL, "http://proxied.url", false)
-		checkProxyForURL(t, *transport, proxyRawURL, "https://proxied.url", false)
+		checkProxyForURL(t, transport, proxyRawURL, "http://proxied.url", false)
+		checkProxyForURL(t, transport, proxyRawURL, "https://proxied.url", false)
 	})
 }
 
@@ -78,7 +78,7 @@ func TestSkipCertCheck(t *testing.T) {
 	})
 }
 
-func checkProxyForURL(t *testing.T, transport http.Transport, proxyRawURL, targetRawURL string, noProxy bool) {
+func checkProxyForURL(t *testing.T, transport *http.Transport, proxyRawURL, targetRawURL string, noProxy bool) {
 	targetURL, err := url.Parse(targetRawURL)
 	require.NoError(t, err)
 
