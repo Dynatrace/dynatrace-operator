@@ -69,3 +69,11 @@ func (c Command) String() string {
 func Echo(msg string) Command {
 	return Command{"echo", msg}
 }
+
+func ReadLink(path string) Command {
+	return Command{"readlink", path}
+}
+
+func GrepMounts(mountEntry string) Command {
+	return Command{"grep", " " + mountEntry + " ", "/proc/self/mounts"}
+}

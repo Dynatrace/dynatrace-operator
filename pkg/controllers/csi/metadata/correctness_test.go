@@ -23,11 +23,47 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
+// testAppMountPath is where app mounts actually live since the overlay is mounted directly at the
+// kubelet target path. It is deliberately outside of the CSI root dir.
+const testAppMountPath = "/var/lib/kubelet/pods/6baaf3c7-1403-450b-b49a-86c08121a955/volumes/kubernetes.io~csi/oneagent-bin/mount"
+
+const testCodeModulesBase = "/data/codemodules"
+
+// testCodeModuleDir is base64 encoded, so it ends in the padding character, which must survive parsing.
+const testCodeModuleDir = testCodeModulesBase + "/cHVibGljLmVjci5hd3MvZHluYXRyYWNlL2R5bmF0cmFjZS1jb2RlbW9kdWxlczoxLjMzOS44NC4yMDI2MDkwMy0xNjMzMzc="
+
+func newAppMountPoint(path, lowerDirOpt string) mount.MountPoint {
+	return mount.MountPoint{
+		Device: "overlay",
+		Path:   path,
+		Type:   "overlay",
+		Opts: []string{
+			lowerDirOpt,
+			"upperdir=/data/appmounts/csi-a3dd8a9ab6e64e92efca99a0d180da60ab807f0e31a04e11edb451311130211c/var",
+			"workdir=/data/appmounts/csi-a3dd8a9ab6e64e92efca99a0d180da60ab807f0e31a04e11edb451311130211c/work",
+		},
+	}
+}
+
+// containerRootMountPoint is the overlay of the container the code itself runs in. It is always
+// present in the mount table and must never be considered relevant.
+func containerRootMountPoint() mount.MountPoint {
+	return mount.MountPoint{
+		Device: "overlay",
+		Path:   "/",
+		Type:   "overlay",
+		Opts: []string{
+			"lowerdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/72/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/71/fs",
+			"upperdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/73/fs",
+			"workdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/73/work",
+		},
+	}
+}
+
 func TestGetRelevantOverlayMounts(t *testing.T) {
 	t.Run("get only relevant mounts", func(t *testing.T) {
 		baseFolder := "/test/folder"
 		expectedPath := baseFolder + "/some/sub/folder"
-		expectedLowerDir := "/data/codemodules/cXVheS5pby9keW5hdHJhY2UvZHluYXRyYWNlLWJvb3RzdHJhcHBlcjpzbmFwc2hvdA=="
 		expectedUpperDir := "/data/appmounts/csi-a3dd8a9ab6e64e92efca99a0d180da60ab807f0e31a04e11edb451311130211c/var"
 		expectedWorkDir := "/data/appmounts/csi-a3dd8a9ab6e64e92efca99a0d180da60ab807f0e31a04e11edb451311130211c/work"
 
@@ -36,7 +72,7 @@ func TestGetRelevantOverlayMounts(t *testing.T) {
 			Path:   expectedPath,
 			Type:   "overlay",
 			Opts: []string{
-				"lowerdir=" + expectedLowerDir,
+				"lowerdir=" + testCodeModuleDir,
 				"upperdir=" + expectedUpperDir,
 				"workdir=" + expectedWorkDir,
 			},
@@ -54,19 +90,19 @@ func TestGetRelevantOverlayMounts(t *testing.T) {
 			},
 		})
 
-		mounts, err := GetRelevantOverlayMounts(mounter, baseFolder)
+		mounts, err := GetOverlayMountsIn(t.Context(), mounter, baseFolder)
 		require.NoError(t, err)
 		require.NotNil(t, mounts)
 		require.Len(t, mounts, 1)
 		assert.Equal(t, expectedPath, mounts[0].Path)
-		assert.Equal(t, expectedLowerDir, mounts[0].LowerDir)
+		assert.Equal(t, []string{testCodeModuleDir}, mounts[0].LowerDirs)
 		assert.Equal(t, expectedUpperDir, mounts[0].UpperDir)
 		assert.Equal(t, expectedWorkDir, mounts[0].WorkDir)
 	})
 
 	t.Run("works with no mount points", func(t *testing.T) {
 		mounter := mount.NewFakeMounter([]mount.MountPoint{})
-		mounts, err := GetRelevantOverlayMounts(mounter, "")
+		mounts, err := GetOverlayMountsIn(t.Context(), mounter, "/test")
 		require.NoError(t, err)
 		require.NotNil(t, mounts)
 		require.Empty(t, mounts)
@@ -83,10 +119,119 @@ func TestGetRelevantOverlayMounts(t *testing.T) {
 				Type:   "overlay",
 			},
 		})
-		mounts, err := GetRelevantOverlayMounts(mounter, "/test")
+		mounts, err := GetOverlayMountsIn(t.Context(), mounter, "/test")
 		require.NoError(t, err)
 		require.NotNil(t, mounts)
 		require.Empty(t, mounts)
+	})
+
+	t.Run("app mounts at the kubelet target path are not mounted under the CSI root", func(t *testing.T) {
+		mounter := mount.NewFakeMounter([]mount.MountPoint{
+			newAppMountPoint(testAppMountPath, "lowerdir="+testCodeModuleDir),
+		})
+
+		mounts, err := GetOverlayMountsIn(t.Context(), mounter, "/data")
+		require.NoError(t, err)
+		assert.Empty(t, mounts)
+	})
+
+	t.Run("matches whole path components only", func(t *testing.T) {
+		mounter := mount.NewFakeMounter([]mount.MountPoint{
+			newAppMountPoint("/database/something", "lowerdir="+testCodeModuleDir),
+		})
+
+		mounts, err := GetOverlayMountsIn(t.Context(), mounter, "/data")
+		require.NoError(t, err)
+		assert.Empty(t, mounts)
+	})
+}
+
+func TestGetOverlayMountsWithLowerDirIn(t *testing.T) {
+	t.Run("finds app mount that is mounted outside of the CSI root", func(t *testing.T) {
+		mounter := mount.NewFakeMounter([]mount.MountPoint{
+			newAppMountPoint(testAppMountPath, "lowerdir="+testCodeModuleDir),
+			containerRootMountPoint(),
+			{Device: "not-relevant-mount-type"},
+		})
+
+		mounts, err := GetOverlayMountsWithLowerDirIn(t.Context(), mounter, testCodeModulesBase)
+		require.NoError(t, err)
+		require.Len(t, mounts, 1)
+		assert.Equal(t, testAppMountPath, mounts[0].Path)
+		assert.Equal(t, []string{testCodeModuleDir}, mounts[0].LowerDirs)
+	})
+
+	t.Run("ignores the overlay of the container itself", func(t *testing.T) {
+		mounter := mount.NewFakeMounter([]mount.MountPoint{containerRootMountPoint()})
+
+		mounts, err := GetOverlayMountsWithLowerDirIn(t.Context(), mounter, testCodeModulesBase)
+		require.NoError(t, err)
+		assert.Empty(t, mounts)
+	})
+
+	t.Run("splits colon separated lower dirs", func(t *testing.T) {
+		otherDir := testCodeModulesBase + "/1.2.3"
+		mounter := mount.NewFakeMounter([]mount.MountPoint{
+			newAppMountPoint(testAppMountPath, "lowerdir="+testCodeModuleDir+":"+otherDir),
+		})
+
+		mounts, err := GetOverlayMountsWithLowerDirIn(t.Context(), mounter, testCodeModulesBase)
+		require.NoError(t, err)
+		require.Len(t, mounts, 1)
+		assert.Equal(t, []string{testCodeModuleDir, otherDir}, mounts[0].LowerDirs)
+	})
+
+	t.Run("is relevant if any lower dir is under the base folder", func(t *testing.T) {
+		mounter := mount.NewFakeMounter([]mount.MountPoint{
+			newAppMountPoint(testAppMountPath, "lowerdir=/somewhere/else:"+testCodeModuleDir),
+		})
+
+		mounts, err := GetOverlayMountsWithLowerDirIn(t.Context(), mounter, testCodeModulesBase)
+		require.NoError(t, err)
+		require.Len(t, mounts, 1)
+		assert.Equal(t, []string{"/somewhere/else", testCodeModuleDir}, mounts[0].LowerDirs)
+	})
+
+	t.Run("understands the lowerdir+ option of newer kernels", func(t *testing.T) {
+		mounter := mount.NewFakeMounter([]mount.MountPoint{
+			newAppMountPoint(testAppMountPath, "lowerdir+="+testCodeModuleDir),
+		})
+
+		mounts, err := GetOverlayMountsWithLowerDirIn(t.Context(), mounter, testCodeModulesBase)
+		require.NoError(t, err)
+		require.Len(t, mounts, 1)
+		assert.Equal(t, []string{testCodeModuleDir}, mounts[0].LowerDirs)
+	})
+
+	t.Run("keeps escaped separators in a lower dir", func(t *testing.T) {
+		escapedDir := testCodeModulesBase + "/weird:name"
+		mounter := mount.NewFakeMounter([]mount.MountPoint{
+			newAppMountPoint(testAppMountPath, `lowerdir=`+testCodeModulesBase+`/weird\:name`),
+		})
+
+		mounts, err := GetOverlayMountsWithLowerDirIn(t.Context(), mounter, testCodeModulesBase)
+		require.NoError(t, err)
+		require.Len(t, mounts, 1)
+		assert.Equal(t, []string{escapedDir}, mounts[0].LowerDirs)
+	})
+
+	t.Run("matches whole path components only", func(t *testing.T) {
+		mounter := mount.NewFakeMounter([]mount.MountPoint{
+			newAppMountPoint(testAppMountPath, "lowerdir=/data/codemodules-backup/1.2.3"),
+		})
+
+		mounts, err := GetOverlayMountsWithLowerDirIn(t.Context(), mounter, testCodeModulesBase)
+		require.NoError(t, err)
+		assert.Empty(t, mounts)
+	})
+
+	t.Run("works with no mount points", func(t *testing.T) {
+		mounter := mount.NewFakeMounter([]mount.MountPoint{})
+
+		mounts, err := GetOverlayMountsWithLowerDirIn(t.Context(), mounter, testCodeModulesBase)
+		require.NoError(t, err)
+		require.NotNil(t, mounts)
+		assert.Empty(t, mounts)
 	})
 }
 

@@ -234,14 +234,15 @@ func setPhase(pm *prometheusmonitoring.PrometheusMonitoring, err error) error {
 // SetupWithManager sets up the controller with the Manager.
 func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	// Add an index for the dynaKubeName to allow using MatchingFields
-	if err := mgr.GetFieldIndexer().IndexField(context.TODO(), &prometheusmonitoring.PrometheusMonitoring{}, "spec.dynaKubeName", func(obj client.Object) []string {
+	err := mgr.GetFieldIndexer().IndexField(context.TODO(), &prometheusmonitoring.PrometheusMonitoring{}, "spec.dynaKubeName", func(obj client.Object) []string {
 		pm, ok := obj.(*prometheusmonitoring.PrometheusMonitoring)
 		if !ok {
 			return nil
 		}
 
 		return []string{pm.Spec.DynaKubeName}
-	}); err != nil {
+	})
+	if err != nil {
 		return fmt.Errorf("add dynaKubeName index: %w", err)
 	}
 
