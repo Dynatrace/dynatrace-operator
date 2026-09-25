@@ -23,7 +23,7 @@ func TestQuery(t *testing.T) {
 		annotations := map[string]string{hasher.AnnotationHash: "hash"}
 		depl := createTestDeploymentWithMatchLabels(deploymentName, namespaceName, annotations, nil)
 
-		created, err := Query(fakeClient, fakeClient).CreateOrUpdate(t.Context(), &depl)
+		created, err := Query(fakeClient, fakeClient).CreateOrUpdate(t.Context(), depl)
 
 		require.NoError(t, err)
 		assert.True(t, created)
@@ -34,9 +34,9 @@ func TestQuery(t *testing.T) {
 		oldDepl := createTestDeploymentWithMatchLabels(deploymentName, namespaceName, oldAnnotations, nil)
 		newAnnotations := map[string]string{hasher.AnnotationHash: "new"}
 		newDepl := createTestDeploymentWithMatchLabels(deploymentName, namespaceName, newAnnotations, nil)
-		fakeClient := fake.NewClient(&oldDepl)
+		fakeClient := fake.NewClient(oldDepl)
 
-		updated, err := Query(fakeClient, fakeClient).CreateOrUpdate(t.Context(), &newDepl)
+		updated, err := Query(fakeClient, fakeClient).CreateOrUpdate(t.Context(), newDepl)
 
 		require.NoError(t, err)
 		assert.True(t, updated)
@@ -48,14 +48,14 @@ func TestQuery(t *testing.T) {
 		newAnnotations := map[string]string{hasher.AnnotationHash: "old"}
 		newDepl := createTestDeploymentWithMatchLabels(deploymentName, namespaceName, newAnnotations, nil)
 		newDepl.Spec.Replicas = new(int32(2))
-		fakeClient := fake.NewClient(&oldDepl)
+		fakeClient := fake.NewClient(oldDepl)
 
-		updated, err := Query(fakeClient, fakeClient).CreateOrUpdate(t.Context(), &newDepl)
+		updated, err := Query(fakeClient, fakeClient).CreateOrUpdate(t.Context(), newDepl)
 
 		require.NoError(t, err)
 		assert.True(t, updated)
 
-		d, err := Query(fakeClient, fakeClient).Get(t.Context(), client.ObjectKeyFromObject(&newDepl))
+		d, err := Query(fakeClient, fakeClient).Get(t.Context(), client.ObjectKeyFromObject(newDepl))
 		require.NoError(t, err)
 		assert.Equal(t, *newDepl.Spec.Replicas, *d.Spec.Replicas)
 	})
@@ -63,9 +63,9 @@ func TestQuery(t *testing.T) {
 		oldAnnotations := map[string]string{hasher.AnnotationHash: "old"}
 		oldDepl := createTestDeploymentWithMatchLabels(deploymentName, namespaceName, oldAnnotations, nil)
 
-		fakeClient := fake.NewClient(&oldDepl)
+		fakeClient := fake.NewClient(oldDepl)
 
-		updated, err := Query(fakeClient, fakeClient).CreateOrUpdate(t.Context(), &oldDepl)
+		updated, err := Query(fakeClient, fakeClient).CreateOrUpdate(t.Context(), oldDepl)
 		require.NoError(t, err)
 		assert.False(t, updated)
 	})
@@ -77,9 +77,9 @@ func TestQuery(t *testing.T) {
 		newAnnotations := map[string]string{hasher.AnnotationHash: "new"}
 		newMatchLabels := map[string]string{"match": "new"}
 		newDepl := createTestDeploymentWithMatchLabels(deploymentName, namespaceName, newAnnotations, newMatchLabels)
-		fakeClient := fake.NewClient(&oldDepl)
+		fakeClient := fake.NewClient(oldDepl)
 
-		updated, err := Query(fakeClient, fakeClient).CreateOrUpdate(t.Context(), &newDepl)
+		updated, err := Query(fakeClient, fakeClient).CreateOrUpdate(t.Context(), newDepl)
 
 		require.NoError(t, err)
 		assert.True(t, updated)
@@ -98,22 +98,22 @@ func TestQuery(t *testing.T) {
 		oldAnnotations := map[string]string{hasher.AnnotationHash: "old"}
 		oldDepl := createTestDeploymentWithMatchLabels(deploymentName, namespaceName, oldAnnotations, matchLabels)
 
-		created, err := Query(fakeClient, fakeClient).WithOwner(&dummyOwner).CreateOrUpdate(t.Context(), &oldDepl)
+		created, err := Query(fakeClient, fakeClient).WithOwner(dummyOwner).CreateOrUpdate(t.Context(), oldDepl)
 		require.NoError(t, err)
 		assert.True(t, created)
 
-		actual, err := Query(fakeClient, fakeClient).Get(t.Context(), client.ObjectKeyFromObject(&oldDepl))
+		actual, err := Query(fakeClient, fakeClient).Get(t.Context(), client.ObjectKeyFromObject(oldDepl))
 		require.NoError(t, err)
 		assert.NotEmpty(t, actual.OwnerReferences)
 
 		newAnnotations := map[string]string{hasher.AnnotationHash: "new"}
 		newDepl := createTestDeploymentWithMatchLabels(deploymentName, namespaceName, newAnnotations, matchLabels)
 
-		updated, err := Query(fakeClient, fakeClient).WithOwner(&dummyOwner).CreateOrUpdate(t.Context(), &newDepl)
+		updated, err := Query(fakeClient, fakeClient).WithOwner(dummyOwner).CreateOrUpdate(t.Context(), newDepl)
 		require.NoError(t, err)
 		assert.True(t, updated)
 
-		actual, err = Query(fakeClient, fakeClient).Get(t.Context(), client.ObjectKeyFromObject(&newDepl))
+		actual, err = Query(fakeClient, fakeClient).Get(t.Context(), client.ObjectKeyFromObject(newDepl))
 		require.NoError(t, err)
 		assert.NotEmpty(t, actual.OwnerReferences)
 		assert.Equal(t, matchLabels, actual.Spec.Selector.MatchLabels)
