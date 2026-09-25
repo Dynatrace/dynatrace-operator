@@ -112,7 +112,7 @@ func CleanupKeepsMountedCodeModules(t *testing.T) features.Feature {
 	builder.Assess("record cleanup runs before triggering a reconcile", recordCleanupRunsBefore(testDynakube, agentFiles))
 	dynakubeComponents.TriggerReconciliationWithoutWait(builder, testDynakube)
 	builder.Assess("garbage collection ran after the sample app is gone", waitForCleanupRun(testDynakube, agentFiles))
-	builder.Assess("only one code module left on the file system", assertCodeModuleCount(testDynakube, agentFiles, 2))
+	builder.Assess("only one code module left on the file system", assertCodeModuleCount(testDynakube, agentFiles, 1))
 
 	builder.WithTeardown("switch back to regular operator installation", restoreOperatorInstallation())
 
