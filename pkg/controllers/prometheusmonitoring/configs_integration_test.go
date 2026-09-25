@@ -51,12 +51,9 @@ type collectorConfig struct {
 // targetAllocatorConfig mirrors the fields of targetallocator.Config that the wiring depends on.
 type targetAllocatorConfig struct {
 	ListenAddr         string                `json:"listen_addr"`
-	AllocationStrategy string                `json:"allocation_strategy"`
-	FilterStrategy     string                `json:"filter_strategy"`
 	CollectorNamespace string                `json:"collector_namespace"`
 	CollectorSelector  *metav1.LabelSelector `json:"collector_selector"`
 	PrometheusCR       struct {
-		Enabled                         bool                  `json:"enabled"`
 		ScrapeInterval                  string                `json:"scrape_interval"`
 		PodMonitorSelector              *metav1.LabelSelector `json:"pod_monitor_selector"`
 		ServiceMonitorSelector          *metav1.LabelSelector `json:"service_monitor_selector"`
@@ -72,9 +69,8 @@ type targetAllocatorConfig struct {
 // scraperReceiver is the prometheus receiver in target-allocator mode.
 type scraperReceiver struct {
 	TargetAllocator struct {
-		Endpoint    string `json:"endpoint"`
-		Interval    string `json:"interval"`
-		CollectorID string `json:"collector_id"`
+		Endpoint string `json:"endpoint"`
+		Interval string `json:"interval"`
 	} `json:"target_allocator"`
 }
 
@@ -108,34 +104,20 @@ type bearerTokenAuth struct {
 func (f *fixture) gatewayConfig(t *testing.T) collectorConfig {
 	t.Helper()
 
-	return unmarshalConfig[collectorConfig](t, f.configMap(t, f.pm.Gateway().GetStatefulSetName()), "relay")
+	return unmarshalConfig[collectorConfig](t, f.getConfigMap(t, f.pm.Gateway().GetStatefulSetName()), "relay")
 }
 
 func (f *fixture) scraperConfig(t *testing.T) collectorConfig {
 	t.Helper()
 
-	return unmarshalConfig[collectorConfig](t, f.configMap(t, f.pm.Scraper().GetDeploymentName()), "scraper")
+	return unmarshalConfig[collectorConfig](t, f.getConfigMap(t, f.pm.Scraper().GetDeploymentName()), "scraper")
 }
 
 func (f *fixture) targetAllocatorConfig(t *testing.T) targetAllocatorConfig {
 	t.Helper()
 
 	return unmarshalConfig[targetAllocatorConfig](t,
-		f.configMap(t, f.pm.TargetAllocator().GetDeploymentName()), "targetallocator.yaml")
-}
-
-// targetAllocatorPrometheusCR returns the rendered prometheus_cr block with its keys unparsed, for
-// checks that have to react to which keys are there rather than to their values.
-func (f *fixture) targetAllocatorPrometheusCR(t *testing.T) map[string]json.RawMessage {
-	t.Helper()
-
-	parsed := unmarshalConfig[struct {
-		PrometheusCR map[string]json.RawMessage `json:"prometheus_cr"`
-	}](t, f.configMap(t, f.pm.TargetAllocator().GetDeploymentName()), "targetallocator.yaml")
-
-	require.NotEmpty(t, parsed.PrometheusCR)
-
-	return parsed.PrometheusCR
+		f.getConfigMap(t, f.pm.TargetAllocator().GetDeploymentName()), "targetallocator.yaml")
 }
 
 func unmarshalConfig[T any](t *testing.T, cm *corev1.ConfigMap, key string) T {
@@ -167,10 +149,20 @@ func unmarshalInto[T any](t *testing.T, raw json.RawMessage, what string) T {
 // spec, so nothing here restates a field they already cover.
 func testConfigMaps(t *testing.T, clt client.Client) {
 	f := newFixture(t, clt, "configmaps")
-	f.reconcileSuccessfully(t)
+	f.assertReconcileSuccessfully(t)
 
 	t.Run("gateway collector config", func(t *testing.T) {
-		assertCollectorConfigConsistent(t, f.gatewayConfig(t))
+		cfg := f.gatewayConfig(t)
+		assertCollectorConfigConsistent(t, cfg)
+
+		// The transform processor tags every datapoint with the cluster name through a placeholder
+		// the container has to define, which no single-object golden file can check.
+		require.Contains(t, string(cfg.Processors["transform"]), "${env:K8S_CLUSTER_NAME}",
+			"the gateway config no longer reads the cluster name from the environment")
+
+		gatewayContainer := containerByName(t, gatewayWorkload(t, f).template, "gateway")
+		clusterName := envByName(t, gatewayContainer, "K8S_CLUSTER_NAME")
+		assert.Equal(t, testClusterName, clusterName.Value, "the cluster name must come from the DynaKube status")
 	})
 
 	t.Run("scraper collector config", func(t *testing.T) {
@@ -182,7 +174,7 @@ func testConfigMaps(t *testing.T, clt client.Client) {
 
 		// The config expands a placeholder the container has to define, which no single-object
 		// golden file can check.
-		f.assertEnvIsDefined(t, f.pm.Scraper().GetDeploymentName(), "scraper", "MY_POD_NAME")
+		envByName(t, containerByName(t, scraperWorkload(t, f).template, "scraper"), "MY_POD_NAME")
 	})
 
 	t.Run("target allocator config carries the CRD defaults", func(t *testing.T) {
@@ -217,13 +209,13 @@ func testConfigMaps(t *testing.T, clt client.Client) {
 		})
 		f.dk.Spec.TrustedCAs = "custom-cas"
 		require.NoError(t, clt.Update(t.Context(), f.dk))
-		f.reconcileSuccessfully(t)
+		f.assertReconcileSuccessfully(t)
 
 		exporter := unmarshalInto[otlpHTTPExporter](t, f.gatewayConfig(t).Exporters["otlp_http"], "gateway exporter")
 		require.NotEmpty(t, exporter.TLS.CAFile)
 
 		// The path in the config must be a path the pod actually has mounted.
-		sts := f.gatewayStatefulSet(t)
+		sts := f.getGatewayStatefulSet(t)
 		container := containerByName(t, &sts.Spec.Template, "gateway")
 		assertPathIsMounted(t, container, exporter.TLS.CAFile)
 
@@ -294,33 +286,18 @@ func assertPathIsMounted(t *testing.T, container corev1.Container, path string) 
 	assert.Failf(t, "path is not mounted", "%s is referenced in the config but no volumeMount covers it", path)
 }
 
-func (f *fixture) assertEnvIsDefined(t *testing.T, workload, containerName, envName string) {
-	t.Helper()
-
-	deploy := f.deployment(t, workload)
-	container := containerByName(t, &deploy.Spec.Template, containerName)
-
-	for _, env := range container.Env {
-		if env.Name == envName {
-			return
-		}
-	}
-
-	assert.Failf(t, "env not defined", "the config expands ${env:%s} but the container does not define it", envName)
-}
-
 // testWiring is the cross-component test: it verifies that the names and ports the configs point
 // at match the Service and container objects that actually exist, so the whole path
 // scraper -> target allocator and scraper -> gateway -> Dynatrace is consistent.
 func testWiring(t *testing.T, clt client.Client) {
 	f := newFixture(t, clt, "wiring")
-	f.reconcileSuccessfully(t)
+	f.assertReconcileSuccessfully(t)
 
 	t.Run("scraper reaches the target allocator", func(t *testing.T) {
 		receiver := unmarshalInto[scraperReceiver](t, f.scraperConfig(t).Receivers["prometheus"], "prometheus receiver")
 
 		host, port := splitEndpoint(t, receiver.TargetAllocator.Endpoint)
-		svc := f.service(t, f.pm.TargetAllocator().GetDeploymentName())
+		svc := f.getService(t, f.pm.TargetAllocator().GetDeploymentName())
 
 		assert.Equal(t, svc.Name+"."+svc.Namespace, host,
 			"the configured target allocator host must be the target allocator Service")
@@ -330,7 +307,7 @@ func testWiring(t *testing.T, clt client.Client) {
 
 		// ... and that Service port must land on a port the allocator container actually opens,
 		// on the address the allocator is configured to listen on.
-		taTemplate, _ := targetAllocatorPodSpec(t, f)
+		taTemplate := targetAllocatorWorkload(t, f).template
 		container := containerByName(t, taTemplate, "targetallocator")
 		containerPort := containerPortByName(t, container, svcPort.TargetPort.StrVal)
 
@@ -341,7 +318,7 @@ func testWiring(t *testing.T, clt client.Client) {
 
 	t.Run("target allocator finds the scraper pods", func(t *testing.T) {
 		cfg := f.targetAllocatorConfig(t)
-		scraperDeploy := f.deployment(t, f.pm.Scraper().GetDeploymentName())
+		scraperDeploy := f.getDeployment(t, f.pm.Scraper().GetDeploymentName())
 
 		assert.Equal(t, scraperDeploy.Namespace, cfg.CollectorNamespace)
 		require.NotNil(t, cfg.CollectorSelector)
@@ -357,7 +334,7 @@ func testWiring(t *testing.T, clt client.Client) {
 		exporter := unmarshalInto[loadBalancingExporter](t,
 			f.scraperConfig(t).Exporters["load_balancing"], "load_balancing exporter")
 
-		svc := f.service(t, f.pm.Gateway().GetStatefulSetName())
+		svc := f.getService(t, f.pm.Gateway().GetStatefulSetName())
 		assert.Equal(t, svc.Name+"."+svc.Namespace, exporter.Resolver.K8s.Service,
 			"the load balancing resolver must point at the gateway Service")
 		require.Len(t, exporter.Resolver.K8s.Ports, 1)
@@ -365,7 +342,7 @@ func testWiring(t *testing.T, clt client.Client) {
 		svcPort := servicePortByNumber(t, svc, exporter.Resolver.K8s.Ports[0])
 		assert.Equal(t, "otlp", svcPort.Name)
 
-		gwTemplate, _ := gatewayPodSpec(t, f)
+		gwTemplate := gatewayWorkload(t, f).template
 		container := containerByName(t, gwTemplate, "gateway")
 		containerPort := containerPortByName(t, container, svcPort.TargetPort.StrVal)
 
@@ -386,7 +363,7 @@ func testWiring(t *testing.T, clt client.Client) {
 
 		// The token must be read from a file the pod really mounts, from the DynaKube token
 		// Secret, and never be inlined into the config.
-		gwTemplate, _ := gatewayPodSpec(t, f)
+		gwTemplate := gatewayWorkload(t, f).template
 		container := containerByName(t, gwTemplate, "gateway")
 		assertPathIsMounted(t, container, auth.Filename)
 		f.assertTokenFileComesFromSecret(t, gwTemplate, auth.Filename)
@@ -529,7 +506,7 @@ func containerPortByName(t *testing.T, container corev1.Container, name string) 
 func testSecrets(t *testing.T, clt client.Client) {
 	t.Run("no token value is ever written in plain text", func(t *testing.T) {
 		f := newFixture(t, clt, "secrets-leak")
-		f.reconcileSuccessfully(t)
+		f.assertReconcileSuccessfully(t)
 
 		f.assertNoTokenLeak(t)
 	})
@@ -539,16 +516,16 @@ func testSecrets(t *testing.T, clt client.Client) {
 		// refreshes it in place and the bearertokenauth extension picks the new value up. Nothing
 		// derives from its content, so no hash may change and no pod may restart.
 		f := newFixture(t, clt, "secrets-rotation")
-		f.reconcileSuccessfully(t)
+		f.assertReconcileSuccessfully(t)
 
 		before := f.resourceVersions(t)
 		beforeHashes := f.configHashes(t)
 
-		secret := f.tokenSecret(t)
+		secret := f.getTokenSecret(t)
 		secret.Data[token.DataIngestKey] = []byte("dt0c01.ROTATEDDATAINGESTTOKENVALUE")
 		require.NoError(t, clt.Update(t.Context(), secret))
 
-		f.reconcileSuccessfully(t)
+		f.assertReconcileSuccessfully(t)
 
 		assert.Equal(t, before, f.resourceVersions(t))
 		assert.Equal(t, beforeHashes, f.configHashes(t))
@@ -557,22 +534,21 @@ func testSecrets(t *testing.T, clt client.Client) {
 
 	t.Run("a renamed token secret is followed", func(t *testing.T) {
 		f := newFixture(t, clt, "secrets-rename")
-		f.reconcileSuccessfully(t)
+		f.assertReconcileSuccessfully(t)
 
 		integrationtests.CreateKubernetesObject(t, clt, &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{Name: "other-tokens", Namespace: f.ns},
 			Data: map[string][]byte{
 				token.APIKey:        []byte(testAPIToken),
-				token.PaaSKey:       []byte(testPaaSToken),
 				token.DataIngestKey: []byte(testDataIngestToken),
 			},
 		})
 		f.dk.Spec.Tokens = "other-tokens"
 		require.NoError(t, clt.Update(t.Context(), f.dk))
 
-		f.reconcileSuccessfully(t)
+		f.assertReconcileSuccessfully(t)
 
-		sts := f.gatewayStatefulSet(t)
+		sts := f.getGatewayStatefulSet(t)
 		for _, volume := range sts.Spec.Template.Spec.Volumes {
 			f.assertVolumeSourceResolves(t, volume)
 		}
@@ -582,7 +558,7 @@ func testSecrets(t *testing.T, clt client.Client) {
 
 	t.Run("proxy credentials are referenced, never inlined", func(t *testing.T) {
 		f := newFixture(t, clt, "secrets-proxy")
-		f.reconcileSuccessfully(t)
+		f.assertReconcileSuccessfully(t)
 
 		f.assertProxySecretIsReferenced(t, clt)
 	})
@@ -603,10 +579,10 @@ func testSecrets(t *testing.T, clt client.Client) {
 		f.dk.Spec.CustomPullSecret = pullSecretName
 		require.NoError(t, clt.Update(t.Context(), f.dk))
 
-		f.reconcileSuccessfully(t)
+		f.assertReconcileSuccessfully(t)
 
 		for _, c := range components() {
-			tmpl, _ := c.podSpec(t, f)
+			tmpl := c.getWorkload(t, f).template
 
 			assert.Equalf(t, []corev1.LocalObjectReference{{Name: pullSecretName}}, tmpl.Spec.ImagePullSecrets,
 				"%s does not reference the DynaKube's custom pull secret", c.name)
@@ -644,7 +620,7 @@ func projectedSecretName(t *testing.T, volumes []corev1.Volume, volumeName strin
 func (f *fixture) assertNoTokenLeak(t *testing.T) {
 	t.Helper()
 
-	secrets := []string{testAPIToken, testPaaSToken, testDataIngestToken}
+	secrets := []string{testAPIToken, testDataIngestToken}
 
 	for _, want := range expectedManagedObjects(f.pm) {
 		obj := f.getManagedObject(t, want)
@@ -655,7 +631,7 @@ func (f *fixture) assertNoTokenLeak(t *testing.T) {
 		}
 	}
 
-	statusHaystack := renderForLeakCheck(t, f.storedPrometheusMonitoring(t))
+	statusHaystack := renderForLeakCheck(t, f.getStoredPrometheusMonitoring(t))
 	for _, secret := range secrets {
 		assert.NotContains(t, statusHaystack, secret, "the PrometheusMonitoring leaks a token value in plain text")
 	}
@@ -685,9 +661,9 @@ func (f *fixture) assertProxySecretIsReferenced(t *testing.T, clt client.Client)
 	f.dk.Spec.Proxy = &value.Source{ValueFrom: proxySecretName}
 	require.NoError(t, clt.Update(t.Context(), f.dk))
 
-	f.reconcileSuccessfully(t)
+	f.assertReconcileSuccessfully(t)
 
-	container := containerByName(t, &f.gatewayStatefulSet(t).Spec.Template, "gateway")
+	container := containerByName(t, &f.getGatewayStatefulSet(t).Spec.Template, "gateway")
 
 	var found int
 
