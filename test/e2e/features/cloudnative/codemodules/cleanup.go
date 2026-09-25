@@ -49,6 +49,7 @@ const (
 	cleanupRunTimeout         = 10 * time.Minute
 	cleanupPollInterval       = 15 * time.Second
 	codeModuleDownloadTimeout = 10 * time.Minute
+	doubleCodeModulesCnt      = 2
 )
 
 // CleanupKeepsMountedCodeModules verifies that upgrading the code module version does not take the
@@ -96,7 +97,7 @@ func CleanupKeepsMountedCodeModules(t *testing.T) features.Feature {
 	dynakubeComponents.Update(builder, &latestDynakube)
 
 	builder.Assess("new codemodule has been downloaded", waitForNewCodeModuleToBeLinked(testDynakube, agentFiles))
-	builder.Assess("two codemodules are present before cleanup", assertCodeModuleCount(testDynakube, agentFiles, 2))
+	builder.Assess("two codemodules are present before cleanup", assertCodeModuleCount(testDynakube, agentFiles, doubleCodeModulesCnt))
 
 	builder.Assess("record cleanup runs before triggering a reconcile", recordCleanupRunsBefore(testDynakube, agentFiles))
 	dynakubeComponents.TriggerReconciliationWithoutWait(builder, &testDynakube)
@@ -104,7 +105,7 @@ func CleanupKeepsMountedCodeModules(t *testing.T) features.Feature {
 
 	// The actual regression check. Same pod, never restarted, so it still uses the old code module.
 	builder.Assess("injected pod can still read all its agent files", agentFilesAreUnchanged(testDynakube, sampleApp, agentFiles))
-	builder.Assess("both code modules are available on the file system", assertCodeModuleCount(testDynakube, agentFiles, 2))
+	builder.Assess("both code modules are available on the file system", assertCodeModuleCount(testDynakube, agentFiles, doubleCodeModulesCnt))
 
 	// Guards against the opposite mistake: a garbage collection that keeps everything forever would
 	// pass the check above.
