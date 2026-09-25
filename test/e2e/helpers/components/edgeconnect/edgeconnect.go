@@ -42,7 +42,7 @@ type TenantConfig struct {
 // It also registers the deletion of these resources in reverse order.
 func Install(builder *features.FeatureBuilder, secretConfig tenant.EdgeConnectSecret, ec *edgeconnect.EdgeConnect) {
 	if secretConfig != (tenant.EdgeConnectSecret{}) {
-		builder.WithStep("create edgeconnect client Secret", features.LevelAssess, tenant.CreateClientSecret(secretConfig, BuildOAuthClientSecretName(ec.Name), ec.Namespace))
+		builder.WithStep("create edgeconnect client Secret", features.LevelAssess, tenant.CreateClientSecret(&secretConfig, BuildOAuthClientSecretName(ec.Name), ec.Namespace))
 	}
 	builder.WithStep(
 		fmt.Sprintf("'%s' edgeconnect created", ec.Name),
