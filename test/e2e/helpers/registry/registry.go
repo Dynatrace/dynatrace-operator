@@ -33,13 +33,19 @@ const (
 )
 
 const (
-	agImageEnv = "E2E_AG_IMAGE"
-	oaImageEnv = "E2E_OA_IMAGE"
-	cmImageEnv = "E2E_ECR_CODEMODULES_IMAGE"
+	agImageEnv         = "E2E_AG_IMAGE"
+	oaImageEnv         = "E2E_OA_IMAGE"
+	cmImageEnv         = "E2E_ECR_CODEMODULES_IMAGE"
+	cmPreviousImageEnv = "E2E_ECR_CODEMODULES_IMAGE_PREVIOUS"
 
 	agDigestImageEnv = "E2E_AG_IMAGE_DIGEST"
 	oaDigestImageEnv = "E2E_OA_IMAGE_DIGEST"
 	cmDigestImageEnv = "E2E_ECR_CODEMODULES_IMAGE_DIGEST"
+)
+
+const (
+	latestTagOffset = 0
+	prevTagOffset   = 1
 )
 
 var (
@@ -56,16 +62,16 @@ var (
 func GetLatestImageTagURI(t *testing.T, repoURI, envVar string) string {
 	t.Helper()
 
-	return getLatestImageURI(t, repoURI, envVar, false)
+	return getLatestTagImageURI(t, repoURI, envVar, false)
 }
 
 func GetLatestImageDigestURI(t *testing.T, repoURI, envVar string) string {
 	t.Helper()
 
-	return getLatestImageURI(t, repoURI, envVar, true)
+	return getLatestDigestImageURI(t, repoURI, envVar, false)
 }
 
-func getLatestImageURI(t *testing.T, repoURI, envVar string, digest bool) string {
+func getLatestTagImageURI(t *testing.T, repoURI, envVar string, fips bool) string {
 	t.Helper()
 
 	if val := os.Getenv(envVar); val != "" {
@@ -74,26 +80,48 @@ func getLatestImageURI(t *testing.T, repoURI, envVar string, digest bool) string
 		return val
 	}
 
-	tagURI := resolveLatestTagURI(t, repoURI)
-	if !digest {
-		return tagURI
+	return resolveTagURIWithOffset(t, repoURI, latestTagOffset, fips)
+}
+
+func getPrevTagImageURI(t *testing.T, repoURI, envVar string, fips bool) string {
+	t.Helper()
+
+	if val := os.Getenv(envVar); val != "" {
+		t.Logf("using image from env %s: %s", envVar, val)
+
+		return val
 	}
+
+	return resolveTagURIWithOffset(t, repoURI, prevTagOffset, fips)
+}
+
+func getLatestDigestImageURI(t *testing.T, repoURI, envVar string, fips bool) string {
+	t.Helper()
+
+	if val := os.Getenv(envVar); val != "" {
+		t.Logf("using image from env %s: %s", envVar, val)
+
+		return val
+	}
+
+	tagURI := resolveTagURIWithOffset(t, repoURI, latestTagOffset, fips)
 
 	return resolveLatestDigestURI(t, repoURI, tagURI)
 }
 
-func resolveLatestTagURI(t *testing.T, repoURI string) string {
+func resolveTagURIWithOffset(t *testing.T, repoURI string, offset int, fips bool) string {
 	t.Helper()
 
-	if uri, ok := latestImageURIs[repoURI]; ok {
-		t.Logf("using cached resolved newest image: %s", uri)
+	cacheKey := fmt.Sprintf("%s@%d", repoURI, offset)
+	if uri, ok := latestImageURIs[cacheKey]; ok {
+		t.Logf("using cached resolved image: %s", uri)
 
 		return uri
 	}
 
-	uri := fetchLatestURIFromRegistry(t, repoURI)
-	latestImageURIs[repoURI] = uri
-	t.Logf("resolved newest image: %s", uri)
+	uri := fetchTagURIFromRegistry(t, repoURI, offset, fips)
+	latestImageURIs[cacheKey] = uri
+	t.Logf("resolved image: %s", uri)
 
 	return uri
 }
@@ -136,37 +164,43 @@ func resolveLatestDigestURI(t *testing.T, repoURI string, tagURI string) string 
 func GetLatestActiveGateImageTagURI(t *testing.T) string {
 	t.Helper()
 
-	return GetLatestImageTagURI(t, agPublicECR, agImageEnv)
+	return getLatestTagImageURI(t, agPublicECR, agImageEnv, false)
 }
 
 func GetLatestOneAgentImageTagURI(t *testing.T) string {
 	t.Helper()
 
-	return GetLatestImageTagURI(t, oaPublicECR, oaImageEnv)
+	return getLatestTagImageURI(t, oaPublicECR, oaImageEnv, false)
 }
 
 func GetLatestCodeModulesImageTagURI(t *testing.T) string {
 	t.Helper()
 
-	return GetLatestImageTagURI(t, cmPublicECR, cmImageEnv)
+	return getLatestTagImageURI(t, cmPublicECR, cmImageEnv, false)
+}
+
+func GetPreviousCodeModulesImageTagURI(t *testing.T) string {
+	t.Helper()
+
+	return getPrevTagImageURI(t, cmPublicECR, cmPreviousImageEnv, false)
 }
 
 func GetLatestActiveGateImageDigestURI(t *testing.T) string {
 	t.Helper()
 
-	return GetLatestImageDigestURI(t, agPublicECR, agDigestImageEnv)
+	return getLatestDigestImageURI(t, agPublicECR, agDigestImageEnv, false)
 }
 
 func GetLatestOneAgentImageDigestURI(t *testing.T) string {
 	t.Helper()
 
-	return GetLatestImageDigestURI(t, oaPublicECR, oaDigestImageEnv)
+	return getLatestDigestImageURI(t, oaPublicECR, oaDigestImageEnv, false)
 }
 
 func GetLatestCodeModulesImageDigestURI(t *testing.T) string {
 	t.Helper()
 
-	return GetLatestImageDigestURI(t, cmPublicECR, cmDigestImageEnv)
+	return getLatestDigestImageURI(t, cmPublicECR, cmDigestImageEnv, false)
 }
 
 func ParseImageURI(imageURI string) (repository, tag, digest string) {
@@ -185,7 +219,7 @@ func isRateLimited(err error) bool {
 	return errors.As(err, &transportErr) && transportErr.StatusCode == http.StatusTooManyRequests
 }
 
-func fetchLatestURIFromRegistry(t *testing.T, repoURI string) string {
+func fetchTagURIFromRegistry(t *testing.T, repoURI string, offset int, fips bool) string {
 	t.Helper()
 
 	repo, err := name.NewRepository(repoURI)
@@ -204,24 +238,49 @@ func fetchLatestURIFromRegistry(t *testing.T, repoURI string) string {
 	})
 	require.NoError(t, err)
 
+	tag := selectTag(tags, offset, fips)
+	require.NotEmpty(t, tag, "no valid semver tags found for %s", repoURI)
+
+	return fmt.Sprintf("%s:%s", repoURI, tag)
+}
+
+var (
+	endsWithTech = regexp.MustCompile("[a-z-]+$")
+	endsWithFIPS = regexp.MustCompile("-[0-9]+-fips$")
+)
+
+func selectTag(tags []string, offset int, fips bool) string {
+	result := make([]string, 0, len(tags))
+
 	// We should skip tags that are technology-specific or sha digests,
 	// e.g., "latest", "1.327.30.20251107-111521-python", "sha256:abcd1234..."
 	// and find maximum among the remaining tags.
-	endsWithTech := regexp.MustCompile("[a-z-]+$")
-	filteredTags := []string{}
 	for _, tag := range tags {
-		if !strings.HasPrefix(tag, "sha") && !endsWithTech.MatchString(tag) {
-			filteredTags = append(filteredTags, tag)
+		if strings.HasPrefix(tag, "sha") {
+			continue
+		}
+
+		if fips {
+			if endsWithFIPS.MatchString(tag) {
+				result = append(result, tag)
+			}
+		} else {
+			if !endsWithTech.MatchString(tag) {
+				result = append(result, tag)
+			}
 		}
 	}
-	slices.SortFunc(filteredTags, func(a, b string) int {
+
+	slices.SortFunc(result, func(a, b string) int {
 		semverA, _ := dtversion.ToSemver(a)
 		semverB, _ := dtversion.ToSemver(b)
 
 		return semver.Compare(semverA, semverB)
 	})
 
-	require.NotEmpty(t, filteredTags, "no valid semver tags found for %s", repoURI)
+	if len(result) <= offset {
+		return ""
+	}
 
-	return fmt.Sprintf("%s:%s", repoURI, filteredTags[len(filteredTags)-1])
+	return result[len(result)-1-offset]
 }

@@ -5,7 +5,6 @@ package cleanup
 
 import (
 	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -28,21 +27,13 @@ func TestRemoveUnusedBinaries(t *testing.T) {
 		require.NoError(t, os.Symlink(relevantBin, cleaner.path.LatestAgentBinaryForDynaKube(dk.Name)))
 
 		// Setup still mounted bin -> should NOT be removed
+		// The mount point is the kubelet target path, outside of the CSI root dir, which is where
+		// app mounts actually live. Only the lower dir points back into the CSI filesystem.
 		expectedPath := cleaner.path.AppMountForID("example")
 		stillMountedBin := cleaner.path.AgentSharedBinaryDirForAgent("1.1.1")
 		require.NoError(t, os.MkdirAll(expectedPath, os.ModePerm))
 		require.NoError(t, os.MkdirAll(stillMountedBin, os.ModePerm))
-		relevantMountPoint := mount.MountPoint{
-			Device: "overlay",
-			Path:   expectedPath,
-			Type:   "overlay",
-			Opts: []string{
-				"lowerdir=" + stillMountedBin,
-				"upperdir=...",
-				"workdir=...",
-			},
-		}
-		mockMountPoints(t, cleaner, relevantMountPoint)
+		mockMountPoints(t, cleaner, newAppMountPoint(stillMountedBin))
 
 		// Setup unused bins -> should be removed
 		unusedVersions := []string{"1.0.0", "1.0.1", "1.1.0"}
@@ -175,28 +166,34 @@ func TestCollectStillMountedBins(t *testing.T) {
 	})
 	t.Run("get mounted bins", func(t *testing.T) {
 		cleaner := createCleaner(t)
-		cleaner.path.RootDir = filepath.Join(cleaner.path.RootDir, "special")
-		expectedPath := filepath.Join(cleaner.path.RootDir, "something")
-		expectedLowerDir := filepath.Join(cleaner.path.RootDir, "else")
+		expectedLowerDir := cleaner.path.AgentSharedBinaryDirForAgent("1.1.1")
 
-		relevantMountPoint := mount.MountPoint{
-			Device: "overlay",
-			Path:   expectedPath,
-			Type:   "overlay",
-			Opts: []string{
-				"lowerdir=" + expectedLowerDir,
-				"upperdir=...",
-				"workdir=...",
-			},
-		}
-
-		mockMountPoints(t, cleaner, relevantMountPoint)
+		mockMountPoints(t, cleaner, newAppMountPoint(expectedLowerDir))
 
 		relevantBins, err := cleaner.collectStillMountedBins(t.Context())
 
 		require.NoError(t, err)
 		require.Len(t, relevantBins, 1)
 		assert.True(t, relevantBins[expectedLowerDir])
+	})
+	t.Run("ignores overlays that don't use a code module", func(t *testing.T) {
+		cleaner := createCleaner(t)
+
+		mockMountPoints(t, cleaner, mount.MountPoint{
+			Device: "overlay",
+			Path:   "/",
+			Type:   "overlay",
+			Opts: []string{
+				"lowerdir=/var/lib/containerd/snapshots/72/fs:/var/lib/containerd/snapshots/71/fs",
+				"upperdir=/var/lib/containerd/snapshots/73/fs",
+				"workdir=/var/lib/containerd/snapshots/73/work",
+			},
+		})
+
+		relevantBins, err := cleaner.collectStillMountedBins(t.Context())
+
+		require.NoError(t, err)
+		assert.Empty(t, relevantBins)
 	})
 }
 
@@ -315,6 +312,21 @@ func TestRemoveOldBinarySymlinks(t *testing.T) {
 			assert.NoDirExists(t, cleaner.path.LatestAgentBinaryForDynaKube(folder))
 		}
 	})
+}
+
+// newAppMountPoint builds an overlay mount the way the CSI server creates it: mounted directly at
+// the kubelet target path, with only the lower dir pointing into the CSI filesystem.
+func newAppMountPoint(lowerDir string) mount.MountPoint {
+	return mount.MountPoint{
+		Device: "overlay",
+		Path:   "/var/lib/kubelet/pods/6baaf3c7-1403-450b-b49a-86c08121a955/volumes/kubernetes.io~csi/oneagent-bin/mount",
+		Type:   "overlay",
+		Opts: []string{
+			"lowerdir=" + lowerDir,
+			"upperdir=...",
+			"workdir=...",
+		},
+	}
 }
 
 func mockMountPoints(t *testing.T, cleaner *Cleaner, mountPoints ...mount.MountPoint) {

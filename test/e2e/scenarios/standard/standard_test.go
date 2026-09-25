@@ -67,6 +67,10 @@ func TestStandard_cloudnative_codemodules_image(t *testing.T) {
 	testEnv.Test(t, codemodules.InstallFromImage(t))
 }
 
+func TestStandard_cloudnative_codemodules_cleanup_keeps_mounted(t *testing.T) {
+	testEnv.Test(t, codemodules.CleanupKeepsMountedCodeModules(t))
+}
+
 func TestStandard_cloudnative_codemodules_migrate_to_image(t *testing.T) {
 	testEnv.Test(t, codemodules.MigrateToImage(t))
 }

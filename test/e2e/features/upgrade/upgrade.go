@@ -73,7 +73,7 @@ func Feature(t *testing.T, releaseTag string) features.Feature {
 	builder.Assess("upgrade operator", helpers.ToFeatureFunc(operator.InstallLocal(withCSI), true))
 
 	// Guarantees the operator reconciles after upgrade and before restarting the app
-	dynakube.TriggerReconciliation(builder, testDynakube)
+	dynakube.TriggerReconciliation(builder, &testDynakube)
 
 	builder.Assess("restart half of sample apps", sampleApp.Restart())
 	cloudnative.AssessSampleInitContainers(builder, sampleApp)
