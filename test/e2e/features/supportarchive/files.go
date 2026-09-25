@@ -26,6 +26,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sservice"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sstatefulset"
 	"github.com/stretchr/testify/require"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
@@ -131,8 +132,12 @@ func (r requiredFiles) getRequiredPodDiagnosticLogFiles(collectManaged bool) []s
 
 func (r requiredFiles) getRequiredReplicaSetFiles() []string {
 	replicaSets := k8sreplicaset.List(r.t, r.ctx, r.resources, r.dk.Namespace)
-	requiredFiles := make([]string, len(replicaSets.Items))
-	for i, replicaSet := range replicaSets.Items {
+	operatorReplicaSets := filter(replicaSets.Items, func(rs appsv1.ReplicaSet) bool {
+		return rs.Labels[k8slabel.AppNameLabel] == operator.DeploymentName ||
+			rs.Labels[k8slabel.AppManagedByLabel] == operator.DeploymentName
+	})
+	requiredFiles := make([]string, len(operatorReplicaSets))
+	for i, replicaSet := range operatorReplicaSets {
 		requiredFiles[i] = fmt.Sprintf("%s/%s/replicaset/%s%s",
 			supportarchive.ManifestsDirectoryName,
 			replicaSet.Namespace, replicaSet.Name,
@@ -171,8 +176,12 @@ func (r requiredFiles) getRequiredDaemonSetFiles() []string {
 
 func (r requiredFiles) getRequiredServiceFiles() []string {
 	services := k8sservice.List(r.t, r.ctx, r.resources, r.dk.Namespace)
-	requiredFiles := make([]string, len(services.Items))
-	for i, requiredService := range services.Items {
+	operatorServices := filter(services.Items, func(svc corev1.Service) bool {
+		return svc.Labels[k8slabel.AppNameLabel] == operator.DeploymentName ||
+			svc.Labels[k8slabel.AppManagedByLabel] == operator.DeploymentName
+	})
+	requiredFiles := make([]string, len(operatorServices))
+	for i, requiredService := range operatorServices {
 		requiredFiles[i] = fmt.Sprintf("%s/%s/service/%s%s",
 			supportarchive.ManifestsDirectoryName,
 			requiredService.Namespace,
