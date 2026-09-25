@@ -120,7 +120,26 @@ func resolveTagURIWithOffset(t *testing.T, repoURI string, offset int, fips bool
 		return uri
 	}
 
-	uri := fetchTagURIFromRegistry(t, repoURI, offset, fips)
+	repo, err := name.NewRepository(repoURI)
+	require.NoError(t, err)
+
+	var tags []string
+
+	err = retry.OnError(registryBackoff, isRateLimited, func() error {
+		var listErr error
+		tags, listErr = remote.List(repo)
+		if listErr != nil {
+			t.Logf("error listing tags for %s: %v", repoURI, listErr)
+		}
+
+		return listErr
+	})
+	require.NoError(t, err)
+
+	tag := selectTag(tags, offset, fips)
+	require.NotEmpty(t, tag, "no valid semver tags found for %s", repoURI)
+
+	uri := fmt.Sprintf("%s:%s", repoURI, tag)
 	latestImageURIs[cacheKey] = uri
 	t.Logf("resolved image: %s", uri)
 
@@ -218,31 +237,6 @@ func isRateLimited(err error) bool {
 	var transportErr *transport.Error
 
 	return errors.As(err, &transportErr) && transportErr.StatusCode == http.StatusTooManyRequests
-}
-
-func fetchTagURIFromRegistry(t *testing.T, repoURI string, offset int, fips bool) string {
-	t.Helper()
-
-	repo, err := name.NewRepository(repoURI)
-	require.NoError(t, err)
-
-	var tags []string
-
-	err = retry.OnError(registryBackoff, isRateLimited, func() error {
-		var listErr error
-		tags, listErr = remote.List(repo)
-		if listErr != nil {
-			t.Logf("error listing tags for %s: %v", repoURI, listErr)
-		}
-
-		return listErr
-	})
-	require.NoError(t, err)
-
-	tag := selectTag(tags, offset, fips)
-	require.NotEmpty(t, tag, "no valid semver tags found for %s", repoURI)
-
-	return fmt.Sprintf("%s:%s", repoURI, tag)
 }
 
 var (
