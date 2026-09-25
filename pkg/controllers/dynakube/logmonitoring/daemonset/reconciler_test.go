@@ -50,10 +50,10 @@ func TestReconcile(t *testing.T) {
 		dk.Spec.OneAgent.CloudNativeFullStack = &oneagent.CloudNativeFullStackSpec{}
 		k8sconditions.SetDaemonSetCreated(dk.Conditions(), ConditionType, "testing")
 
-		previousDaemonSet := appsv1.DaemonSet{
+		previousDaemonSet := &appsv1.DaemonSet{
 			Name:      dk.LogMonitoring().GetDaemonSetName(),
 			Namespace: dk.Namespace}
-		mockK8sClient := fake.NewClient(&previousDaemonSet)
+		mockK8sClient := fake.NewClient(previousDaemonSet)
 
 		reconciler := NewReconciler(mockK8sClient,
 			mockK8sClient)
@@ -135,10 +135,10 @@ func TestReconcile(t *testing.T) {
 	t.Run("Only runs when required, and cleans up condition + secret", func(t *testing.T) {
 		dk := createDynakube(false)
 
-		previousDaemonSet := appsv1.DaemonSet{
+		previousDaemonSet := &appsv1.DaemonSet{
 			Name:      dk.LogMonitoring().GetDaemonSetName(),
 			Namespace: dk.Namespace}
-		mockK8sClient := fake.NewClient(&previousDaemonSet)
+		mockK8sClient := fake.NewClient(previousDaemonSet)
 
 		k8sconditions.SetDaemonSetCreated(dk.Conditions(), ConditionType, "this is a test")
 

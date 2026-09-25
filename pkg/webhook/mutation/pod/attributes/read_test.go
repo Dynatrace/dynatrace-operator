@@ -27,14 +27,14 @@ import (
 func TestGetNamespaceAnnotationAttributes(t *testing.T) {
 	t.Run("stores keys with metadata prefix, stripping the prefix", func(t *testing.T) {
 		attrs := newPodAttrs()
-		ns := corev1.Namespace{
+		ns := &corev1.Namespace{
 			Annotations: map[string]string{
 				metadataenrichment.Prefix + "my.attr": "value1",
 				metadataenrichment.Prefix + "other":   "value2",
 			},
 		}
 
-		attrs.readNamespaceAnnotationAttributes(&ns)
+		attrs.readNamespaceAnnotationAttributes(ns)
 
 		assert.Equal(t, "value1", attrs.namespaceAnnotations["my.attr"])
 		assert.Equal(t, "value2", attrs.namespaceAnnotations["other"])
@@ -42,14 +42,14 @@ func TestGetNamespaceAnnotationAttributes(t *testing.T) {
 
 	t.Run("ignores keys without the metadata prefix", func(t *testing.T) {
 		attrs := newPodAttrs()
-		ns := corev1.Namespace{
+		ns := &corev1.Namespace{
 			Annotations: map[string]string{
 				"unrelated.annotation/key":         "ignored",
 				metadataenrichment.Prefix + "kept": "kept-value",
 			},
 		}
 
-		attrs.readNamespaceAnnotationAttributes(&ns)
+		attrs.readNamespaceAnnotationAttributes(ns)
 
 		assert.Len(t, attrs.namespaceAnnotations, 1)
 		assert.Equal(t, "kept-value", attrs.namespaceAnnotations["kept"])
@@ -65,14 +65,14 @@ func TestGetNamespaceAnnotationAttributes(t *testing.T) {
 func TestGetWorkloadAnnotationAttributes(t *testing.T) {
 	t.Run("stores keys with metadata prefix, stripping the prefix", func(t *testing.T) {
 		attrs := newPodAttrs()
-		workloadInfo := workload.Info{
+		workloadInfo := &workload.Info{
 			Annotations: map[string]string{
 				metadataenrichment.Prefix + "my.attr": "workload-value",
 				metadataenrichment.Prefix + "other":   "value2",
 			},
 		}
 
-		attrs.readWorkloadAnnotationAttributes(&workloadInfo)
+		attrs.readWorkloadAnnotationAttributes(workloadInfo)
 
 		assert.Equal(t, "workload-value", attrs.workloadAnnotations["my.attr"])
 		assert.Equal(t, "value2", attrs.workloadAnnotations["other"])
@@ -80,14 +80,14 @@ func TestGetWorkloadAnnotationAttributes(t *testing.T) {
 
 	t.Run("ignores keys without the metadata prefix", func(t *testing.T) {
 		attrs := newPodAttrs()
-		workloadInfo := workload.Info{
+		workloadInfo := &workload.Info{
 			Annotations: map[string]string{
 				"unrelated/key":                    "ignored",
 				metadataenrichment.Prefix + "kept": "kept-value",
 			},
 		}
 
-		attrs.readWorkloadAnnotationAttributes(&workloadInfo)
+		attrs.readWorkloadAnnotationAttributes(workloadInfo)
 
 		assert.Len(t, attrs.workloadAnnotations, 1)
 		assert.Equal(t, "kept-value", attrs.workloadAnnotations["kept"])
@@ -103,27 +103,27 @@ func TestGetWorkloadAnnotationAttributes(t *testing.T) {
 func TestGetPodAnnotationAttributes(t *testing.T) {
 	t.Run("stores keys with metadata prefix, stripping the prefix", func(t *testing.T) {
 		attrs := newPodAttrs()
-		pod := corev1.Pod{
+		pod := &corev1.Pod{
 			Annotations: map[string]string{
 				metadataenrichment.Prefix + "my.attr": "pod-value",
 			},
 		}
 
-		attrs.readPodAnnotationAttributes(&pod)
+		attrs.readPodAnnotationAttributes(pod)
 
 		assert.Equal(t, "pod-value", attrs.podAnnotations["my.attr"])
 	})
 
 	t.Run("ignores keys without the metadata prefix", func(t *testing.T) {
 		attrs := newPodAttrs()
-		pod := corev1.Pod{
+		pod := &corev1.Pod{
 			Annotations: map[string]string{
 				"unrelated/key":                    "ignored",
 				metadataenrichment.Prefix + "kept": "kept-value",
 			},
 		}
 
-		attrs.readPodAnnotationAttributes(&pod)
+		attrs.readPodAnnotationAttributes(pod)
 
 		assert.Len(t, attrs.podAnnotations, 1)
 	})
@@ -349,9 +349,9 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 	t.Run("K8S_WORKLOAD_LABEL reads from the workload's labels", func(t *testing.T) {
 		attrs := newPodAttrs()
 		rules := []metadataenrichment.Rule{{Type: metadataenrichment.K8sWorkloadLabelRule, Source: "env", Target: "custom.env"}}
-		workloadInfo := workload.Info{Labels: map[string]string{"env": "production"}}
+		workloadInfo := &workload.Info{Labels: map[string]string{"env": "production"}}
 
-		attrs.applyEnrichmentRules(rules, &corev1.Namespace{}, &workloadInfo, &corev1.Pod{})
+		attrs.applyEnrichmentRules(rules, &corev1.Namespace{}, workloadInfo, &corev1.Pod{})
 
 		assert.Equal(t, map[string]string{"custom.env": "production"}, attrs.rules)
 	})
@@ -359,9 +359,9 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 	t.Run("K8S_WORKLOAD_ANNOTATION reads from the workload's annotations, unfiltered by the metadata prefix", func(t *testing.T) {
 		attrs := newPodAttrs()
 		rules := []metadataenrichment.Rule{{Type: metadataenrichment.K8sWorkloadAnnotationRule, Source: "team", Target: "team.name"}}
-		workloadInfo := workload.Info{Annotations: map[string]string{"team": "backend"}}
+		workloadInfo := &workload.Info{Annotations: map[string]string{"team": "backend"}}
 
-		attrs.applyEnrichmentRules(rules, &corev1.Namespace{}, &workloadInfo, &corev1.Pod{})
+		attrs.applyEnrichmentRules(rules, &corev1.Namespace{}, workloadInfo, &corev1.Pod{})
 
 		assert.Equal(t, map[string]string{"team.name": "backend"}, attrs.rules)
 	})
@@ -369,9 +369,9 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 	t.Run("K8S_POD_LABEL reads from the pod's labels", func(t *testing.T) {
 		attrs := newPodAttrs()
 		rules := []metadataenrichment.Rule{{Type: metadataenrichment.K8sPodLabelRule, Source: "env", Target: "custom.env"}}
-		pod := corev1.Pod{Labels: map[string]string{"env": "staging"}}
+		pod := &corev1.Pod{Labels: map[string]string{"env": "staging"}}
 
-		attrs.applyEnrichmentRules(rules, &corev1.Namespace{}, &workload.Info{}, &pod)
+		attrs.applyEnrichmentRules(rules, &corev1.Namespace{}, &workload.Info{}, pod)
 
 		assert.Equal(t, map[string]string{"custom.env": "staging"}, attrs.rules)
 	})
@@ -379,9 +379,9 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 	t.Run("K8S_POD_ANNOTATION reads from the pod's annotations, unfiltered by the metadata prefix", func(t *testing.T) {
 		attrs := newPodAttrs()
 		rules := []metadataenrichment.Rule{{Type: metadataenrichment.K8sPodAnnotationRule, Source: "team", Target: "team.name"}}
-		pod := corev1.Pod{Annotations: map[string]string{"team": "frontend"}}
+		pod := &corev1.Pod{Annotations: map[string]string{"team": "frontend"}}
 
-		attrs.applyEnrichmentRules(rules, &corev1.Namespace{}, &workload.Info{}, &pod)
+		attrs.applyEnrichmentRules(rules, &corev1.Namespace{}, &workload.Info{}, pod)
 
 		assert.Equal(t, map[string]string{"team.name": "frontend"}, attrs.rules)
 	})
@@ -407,9 +407,9 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 			{Type: metadataenrichment.K8sPodLabelRule, Source: "env", Target: "pod.label"},
 		}
 		// a pod without a well-known controller owner is its own root owner, but a pod is not a workload
-		pod := corev1.Pod{Labels: map[string]string{"env": "production"}}
+		pod := &corev1.Pod{Labels: map[string]string{"env": "production"}}
 
-		attrs.applyEnrichmentRules(rules, &corev1.Namespace{}, &workload.Info{Kind: "pod", Name: "my-pod"}, &pod)
+		attrs.applyEnrichmentRules(rules, &corev1.Namespace{}, &workload.Info{Kind: "pod", Name: "my-pod"}, pod)
 
 		assert.Equal(t, map[string]string{"pod.label": "production"}, attrs.rules)
 	})
@@ -538,11 +538,11 @@ func TestGetFromEnrichmentRulesPrecedence(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			attrs := newPodAttrs()
-			ns := corev1.Namespace{Labels: tt.namespaceLabels, Annotations: tt.namespaceAnnotations}
-			pod := corev1.Pod{Labels: tt.podLabels, Annotations: tt.podAnnotations}
-			workloadInfo := workload.Info{Labels: tt.workloadLabels, Annotations: tt.workloadAnnotations}
+			ns := &corev1.Namespace{Labels: tt.namespaceLabels, Annotations: tt.namespaceAnnotations}
+			pod := &corev1.Pod{Labels: tt.podLabels, Annotations: tt.podAnnotations}
+			workloadInfo := &workload.Info{Labels: tt.workloadLabels, Annotations: tt.workloadAnnotations}
 
-			attrs.applyEnrichmentRules(tt.rules, &ns, &workloadInfo, &pod)
+			attrs.applyEnrichmentRules(tt.rules, ns, workloadInfo, pod)
 			assert.Equal(t, tt.expect, attrs.rules)
 		})
 	}
@@ -854,12 +854,12 @@ func TestReadWorkloadInfoAttributes(t *testing.T) {
 	t.Run("sets workload kind and name from pod with no owner (pod is its own root owner)", func(t *testing.T) {
 		ctx := t.Context()
 		attrs := newPodAttrs()
-		pod := corev1.Pod{
+		pod := &corev1.Pod{
 			Kind: "Pod", APIVersion: "v1",
 			Name: "my-pod", Namespace: "my-ns",
 		}
 		request := dtwebhook.BaseRequest{
-			Pod:       &pod,
+			Pod:       pod,
 			Namespace: &corev1.Namespace{Name: "my-ns"},
 		}
 
@@ -876,14 +876,14 @@ func TestReadWorkloadInfoAttributes(t *testing.T) {
 	t.Run("returns the owning workload's labels and annotations", func(t *testing.T) {
 		ctx := t.Context()
 		attrs := newPodAttrs()
-		daemonSet := appsv1.DaemonSet{
+		daemonSet := &appsv1.DaemonSet{
 			Kind: "DaemonSet", APIVersion: "apps/v1",
 			Name:        "my-ds",
 			Namespace:   "my-ns",
 			Labels:      map[string]string{"env": "production"},
 			Annotations: map[string]string{metadataenrichment.Prefix + "my.attr": "workload-value"},
 		}
-		pod := corev1.Pod{
+		pod := &corev1.Pod{
 			Kind: "Pod", APIVersion: "v1",
 			Name:      "my-pod",
 			Namespace: "my-ns",
@@ -892,11 +892,11 @@ func TestReadWorkloadInfoAttributes(t *testing.T) {
 			},
 		}
 		request := dtwebhook.BaseRequest{
-			Pod:       &pod,
+			Pod:       pod,
 			Namespace: &corev1.Namespace{Name: "my-ns"},
 		}
 
-		workloadInfo, err := attrs.readWorkloadInfoAttributes(ctx, request, fake.NewClient(&daemonSet))
+		workloadInfo, err := attrs.readWorkloadInfoAttributes(ctx, request, fake.NewClient(daemonSet))
 
 		require.NoError(t, err)
 		assert.Equal(t, "daemonset", attrs.workloadInfo[K8sWorkloadKindAttr])
@@ -908,7 +908,7 @@ func TestReadWorkloadInfoAttributes(t *testing.T) {
 	t.Run("propagates error when owner lookup fails", func(t *testing.T) {
 		ctx := t.Context()
 		attrs := newPodAttrs()
-		pod := corev1.Pod{
+		pod := &corev1.Pod{
 			Kind: "Pod", APIVersion: "v1",
 			Name:      "my-pod",
 			Namespace: "my-ns",
@@ -917,7 +917,7 @@ func TestReadWorkloadInfoAttributes(t *testing.T) {
 			},
 		}
 		request := dtwebhook.BaseRequest{
-			Pod:       &pod,
+			Pod:       pod,
 			Namespace: &corev1.Namespace{Name: "my-ns"},
 		}
 		failClient := fake.NewClientWithInterceptors(interceptor.Funcs{

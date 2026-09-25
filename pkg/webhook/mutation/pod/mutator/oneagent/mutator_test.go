@@ -443,7 +443,7 @@ func TestAddOneAgentToContainer(t *testing.T) {
 	})
 
 	t.Run("add runtime class env when runtimeClassName is set", func(t *testing.T) {
-		container := corev1.Container{}
+		container := &corev1.Container{}
 		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				OneAgent: oneagent.Spec{ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{}},
@@ -451,7 +451,7 @@ func TestAddOneAgentToContainer(t *testing.T) {
 		}
 		runtimeClassName := "gvisor"
 
-		addOneAgentEnvsToContainer(dk, &container, &corev1.Namespace{}, installPath, runtimeClassName)
+		addOneAgentEnvsToContainer(dk, container, &corev1.Namespace{}, installPath, runtimeClassName)
 
 		runtimeClassEnv := k8senv.Find(container.Env, PodRuntimeClassEnv)
 		require.NotNil(t, runtimeClassEnv)

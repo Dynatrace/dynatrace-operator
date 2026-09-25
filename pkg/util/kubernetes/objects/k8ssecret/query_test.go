@@ -100,10 +100,10 @@ func TestMultipleNamespaces(t *testing.T) {
 		secretQuery := Query(fakeClient, fakeClient)
 
 		// secret does not exist in this namespace => other secrets should still get deleted
-		ns := corev1.Namespace{
+		ns := &corev1.Namespace{
 			Name: "empty",
 		}
-		_ = fakeClient.Create(t.Context(), &ns)
+		_ = fakeClient.Create(t.Context(), ns)
 
 		namespaces := []string{"ns1", "ns2", "empty"}
 		err := secretQuery.DeleteForNamespaces(t.Context(), testSecretName, namespaces)
@@ -149,14 +149,14 @@ func TestMultipleSecrets(t *testing.T) {
 			},
 		}
 
-		secret := corev1.Secret{
+		secret := &corev1.Secret{
 			Name:      testSecretName,
 			Namespace: "ns1",
 			Data: map[string][]byte{
 				"samplekey": []byte("samplevalue"),
 			},
 		}
-		err := secretQuery.CreateOrUpdateForNamespaces(t.Context(), &secret, namespaces)
+		err := secretQuery.CreateOrUpdateForNamespaces(t.Context(), secret, namespaces)
 		require.NoError(t, err)
 
 		secrets, err := secretQuery.GetAllFromNamespaces(t.Context(), testSecretName)
@@ -195,7 +195,7 @@ func TestMultipleSecrets(t *testing.T) {
 				return errors.New("BOOM")
 			},
 		})
-		secret := corev1.Secret{
+		secret := &corev1.Secret{
 			Name: testSecretName,
 			Data: map[string][]byte{
 				"samplekey": []byte("samplevalue"),
@@ -214,7 +214,7 @@ func TestMultipleSecrets(t *testing.T) {
 		}
 		secretQuery := Query(boomClient, fakeReader)
 
-		err := secretQuery.CreateOrUpdateForNamespaces(t.Context(), &secret, namespaces)
+		err := secretQuery.CreateOrUpdateForNamespaces(t.Context(), secret, namespaces)
 		require.Error(t, err)
 		assert.NotEmpty(t, requestCounter)
 	})
@@ -274,14 +274,14 @@ func TestCreateOrUpdate(t *testing.T) {
 		// existing mocked secret in fakeClient
 		secretQuery := Query(fakeClient, fakeClient)
 		newValue := []byte("dGVzdCB2YWx1ZSBudW1iZXIgMg==")
-		updatedSecret := corev1.Secret{
+		updatedSecret := &corev1.Secret{
 			Name:      testSecretName,
 			Namespace: testNamespace,
 			Data: map[string][]byte{
 				testSecretDataKey: newValue,
 			},
 		}
-		updated, err := secretQuery.CreateOrUpdate(t.Context(), &updatedSecret)
+		updated, err := secretQuery.CreateOrUpdate(t.Context(), updatedSecret)
 		require.NoError(t, err)
 		require.True(t, updated)
 

@@ -38,11 +38,11 @@ func TestFindInPodSpec(t *testing.T) {
 
 func TestGetFirstInPodSpec(t *testing.T) {
 	t.Run("returns the first container", func(t *testing.T) {
-		spec := corev1.PodSpec{
+		spec := &corev1.PodSpec{
 			Containers: []corev1.Container{{Name: "first"}, {Name: "second"}},
 		}
 
-		assert.Equal(t, "first", GetFirstInPodSpec(&spec).Name)
+		assert.Equal(t, "first", GetFirstInPodSpec(spec).Name)
 	})
 	t.Run("returns the zero container when there are none", func(t *testing.T) {
 		assert.Equal(t, corev1.Container{}, GetFirstInPodSpec(&corev1.PodSpec{}))

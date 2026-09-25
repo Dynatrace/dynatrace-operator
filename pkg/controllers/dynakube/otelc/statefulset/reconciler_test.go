@@ -91,10 +91,10 @@ func TestReconcile(t *testing.T) {
 	t.Run("Only runs when required, and cleans up condition + statefulset", func(t *testing.T) {
 		dk := getTestDynakube()
 
-		previousSts := appsv1.StatefulSet{
+		previousSts := &appsv1.StatefulSet{
 			Name:      dk.OTelCollectorStatefulsetName(),
 			Namespace: dk.Namespace}
-		mockK8sClient := fake.NewClient(&previousSts)
+		mockK8sClient := fake.NewClient(previousSts)
 		mockK8sClient = mockTLSSecret(t, mockK8sClient, dk)
 
 		k8sconditions.SetStatefulSetCreated(dk.Conditions(), conditionType, "this is a test")

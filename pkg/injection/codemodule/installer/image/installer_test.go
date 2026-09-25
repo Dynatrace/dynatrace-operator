@@ -60,14 +60,14 @@ func TestNewImageInstaller(t *testing.T) {
 		Namespace: "dynakube",
 		Spec:      dynakube.DynaKubeSpec{},
 	}
-	pullSecret := corev1.Secret{
+	pullSecret := &corev1.Secret{
 		Name:      dk.PullSecretName(),
 		Namespace: dk.Namespace,
 	}
 	pullSecret.Data = map[string][]byte{
 		corev1.DockerConfigJsonKey: []byte(emptyDockerConfig),
 	}
-	fakeClient := fake.NewClientWithIndex(&pullSecret)
+	fakeClient := fake.NewClientWithIndex(pullSecret)
 
 	props := &Properties{
 		PathResolver: path,

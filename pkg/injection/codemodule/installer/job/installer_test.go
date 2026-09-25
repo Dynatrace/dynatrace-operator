@@ -50,7 +50,7 @@ func TestIsAlreadyPresent(t *testing.T) {
 
 func TestIsReady(t *testing.T) {
 	ctx := context.Background()
-	owner := dynakube.DynaKube{
+	owner := &dynakube.DynaKube{
 		Name:      "test-dk",
 		Namespace: "test",
 	}
@@ -62,7 +62,7 @@ func TestIsReady(t *testing.T) {
 		props := &Properties{
 			APIReader:    cl,
 			Client:       cl,
-			Owner:        &owner,
+			Owner:        owner,
 			PathResolver: metadata.PathResolver{RootDir: t.TempDir()},
 		}
 		inst := &Installer{
@@ -87,7 +87,7 @@ func TestIsReady(t *testing.T) {
 		props := &Properties{
 			APIReader:    setupInCompleteJob(t, name, owner.Namespace),
 			Client:       cl,
-			Owner:        &owner,
+			Owner:        owner,
 			PathResolver: metadata.PathResolver{RootDir: t.TempDir()},
 		}
 		inst := &Installer{
@@ -113,7 +113,7 @@ func TestIsReady(t *testing.T) {
 		props := &Properties{
 			APIReader:    cl,
 			Client:       cl,
-			Owner:        &owner,
+			Owner:        owner,
 			PathResolver: path,
 		}
 		inst := &Installer{

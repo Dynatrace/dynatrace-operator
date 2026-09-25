@@ -189,12 +189,12 @@ func TestAddLabels(t *testing.T) {
 		dk := getTestDynakube()
 		multiCapability := capability.NewMultiCapability(dk)
 		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
-		sts := appsv1.StatefulSet{}
+		sts := &appsv1.StatefulSet{}
 		appLabels := k8slabel.NewAppLabels(k8slabel.ActiveGateComponentLabel, builder.dynakube.Name, consts.MultiActiveGateName, "")
 		expectedLabels := appLabels.BuildLabels()
 		expectedSelectorLabels := metav1.LabelSelector{MatchLabels: appLabels.BuildMatchLabels()}
 
-		builder.addLabels(&sts)
+		builder.addLabels(sts)
 
 		require.NotEmpty(t, sts.Labels)
 		assert.Equal(t, expectedLabels, sts.Labels)
@@ -209,12 +209,12 @@ func TestAddLabels(t *testing.T) {
 		}
 		multiCapability := capability.NewMultiCapability(dk)
 		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
-		sts := appsv1.StatefulSet{}
+		sts := &appsv1.StatefulSet{}
 		appLabels := k8slabel.NewAppLabels(k8slabel.ActiveGateComponentLabel, builder.dynakube.Name, consts.MultiActiveGateName, "")
 		expectedTemplateLabels := appLabels.BuildLabels()
 		expectedTemplateLabels["test"] = "test"
 
-		builder.addLabels(&sts)
+		builder.addLabels(sts)
 
 		require.NotEmpty(t, sts.Spec.Template.Labels)
 		assert.Equal(t, expectedTemplateLabels, sts.Spec.Template.Labels)
@@ -228,9 +228,9 @@ func TestAddTemplateSpec(t *testing.T) {
 		dk := getTestDynakube()
 		multiCapability := capability.NewMultiCapability(dk)
 		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
-		sts := appsv1.StatefulSet{}
+		sts := &appsv1.StatefulSet{}
 
-		builder.addTemplateSpec(&sts)
+		builder.addTemplateSpec(sts)
 		spec := sts.Spec.Template.Spec
 
 		assert.NotEmpty(t, spec.Containers)
@@ -243,9 +243,9 @@ func TestAddTemplateSpec(t *testing.T) {
 		dk := getTestDynakube()
 		multiCapability := capability.NewMultiCapability(dk)
 		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
-		sts := appsv1.StatefulSet{}
+		sts := &appsv1.StatefulSet{}
 
-		builder.addTemplateSpec(&sts)
+		builder.addTemplateSpec(sts)
 		spec := sts.Spec.Template.Spec
 		require.NotNil(t, spec.AutomountServiceAccountToken)
 		assert.False(t, *spec.AutomountServiceAccountToken)
@@ -256,9 +256,9 @@ func TestAddTemplateSpec(t *testing.T) {
 		dk.Spec.ActiveGate.Capabilities = append(dk.Spec.ActiveGate.Capabilities, activegate.KubeMonCapability.DisplayName)
 		multiCapability := capability.NewMultiCapability(dk)
 		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
-		sts := appsv1.StatefulSet{}
+		sts := &appsv1.StatefulSet{}
 
-		builder.addTemplateSpec(&sts)
+		builder.addTemplateSpec(sts)
 		spec := sts.Spec.Template.Spec
 		assert.Contains(t, spec.ServiceAccountName, dk.ActiveGate().GetServiceAccountName())
 	})
@@ -272,9 +272,9 @@ func TestAddTemplateSpec(t *testing.T) {
 
 		multiCapability := capability.NewMultiCapability(dk)
 		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
-		sts := appsv1.StatefulSet{}
+		sts := &appsv1.StatefulSet{}
 
-		builder.addTemplateSpec(&sts)
+		builder.addTemplateSpec(sts)
 		spec := sts.Spec.Template.Spec
 
 		assert.Equal(t, testNodeSelector, spec.NodeSelector)
@@ -292,9 +292,9 @@ func TestAddTemplateSpec(t *testing.T) {
 		dk.Spec.ActiveGate.Tolerations = testTolerations
 		multiCapability := capability.NewMultiCapability(dk)
 		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
-		sts := appsv1.StatefulSet{}
+		sts := &appsv1.StatefulSet{}
 
-		builder.addTemplateSpec(&sts)
+		builder.addTemplateSpec(sts)
 		spec := sts.Spec.Template.Spec
 
 		for _, toleration := range testTolerations {
@@ -307,9 +307,9 @@ func TestAddTemplateSpec(t *testing.T) {
 		dk.Spec.ActiveGate.DNSPolicy = corev1.DNSPolicy(testDNSPolicy)
 		multiCapability := capability.NewMultiCapability(dk)
 		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
-		sts := appsv1.StatefulSet{}
+		sts := &appsv1.StatefulSet{}
 
-		builder.addTemplateSpec(&sts)
+		builder.addTemplateSpec(sts)
 		spec := sts.Spec.Template.Spec
 		assert.Equal(t, corev1.DNSPolicy(testDNSPolicy), spec.DNSPolicy)
 	})
@@ -319,9 +319,9 @@ func TestAddTemplateSpec(t *testing.T) {
 		dk.Spec.ActiveGate.PriorityClassName = testPriorityClass
 		multiCapability := capability.NewMultiCapability(dk)
 		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
-		sts := appsv1.StatefulSet{}
+		sts := &appsv1.StatefulSet{}
 
-		builder.addTemplateSpec(&sts)
+		builder.addTemplateSpec(sts)
 		spec := sts.Spec.Template.Spec
 
 		assert.Equal(t, testPriorityClass, spec.PriorityClassName)

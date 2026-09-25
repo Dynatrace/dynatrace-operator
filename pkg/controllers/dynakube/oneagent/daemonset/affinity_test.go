@@ -14,9 +14,9 @@ import (
 
 func TestAffinity(t *testing.T) {
 	t.Run("none tenant-registry DynaKube has all the architectures", func(t *testing.T) {
-		dk := dynakube.DynaKube{}
+		dk := &dynakube.DynaKube{}
 		dk.Status.OneAgent.Source = status.CustomImageVersionSource
-		dsBuilder := builder{dk: &dk}
+		dsBuilder := builder{dk: dk}
 		affinity := dsBuilder.affinity()
 		assert.NotContains(t, affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms, corev1.NodeSelectorTerm{
 			MatchExpressions: []corev1.NodeSelectorRequirement{
@@ -49,9 +49,9 @@ func TestAffinity(t *testing.T) {
 	})
 
 	t.Run("tenant-registry DynaKube has only AMD architectures", func(t *testing.T) {
-		dk := dynakube.DynaKube{}
+		dk := &dynakube.DynaKube{}
 		dk.Status.OneAgent.Source = status.TenantRegistryVersionSource
-		dsBuilder := builder{dk: &dk}
+		dsBuilder := builder{dk: dk}
 		affinity := dsBuilder.affinity()
 		assert.Contains(t, affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms, corev1.NodeSelectorTerm{
 			MatchExpressions: []corev1.NodeSelectorRequirement{

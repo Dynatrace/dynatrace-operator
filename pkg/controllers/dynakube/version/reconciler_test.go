@@ -139,7 +139,7 @@ func TestUpdateVersionStatuses(t *testing.T) {
 
 func TestNeedsUpdate(t *testing.T) {
 	t.Run("needs", func(t *testing.T) {
-		dk := dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				OneAgent: oneagent.Spec{
 					ClassicFullStack: &oneagent.HostInjectSpec{},
@@ -147,7 +147,7 @@ func TestNeedsUpdate(t *testing.T) {
 			},
 		}
 		reconciler := Reconciler{}
-		assert.True(t, reconciler.needsUpdate(t.Context(), newOneAgentUpdater(&dk, fake.NewClient(), nil, nil)))
+		assert.True(t, reconciler.needsUpdate(t.Context(), newOneAgentUpdater(dk, fake.NewClient(), nil, nil)))
 	})
 	t.Run("does not need", func(t *testing.T) {
 		r := Reconciler{}

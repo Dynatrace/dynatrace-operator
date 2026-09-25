@@ -35,8 +35,8 @@ func TestReader(t *testing.T) {
 func testReadTokens(t *testing.T) {
 	t.Run("error when tokens are not found", func(t *testing.T) {
 		clt := fake.NewClient()
-		dk := dynakube.DynaKube{}
-		reader := NewReader(clt, &dk)
+		dk := &dynakube.DynaKube{}
+		reader := NewReader(clt, dk)
 
 		_, err := reader.ReadTokens(t.Context())
 
@@ -44,11 +44,11 @@ func testReadTokens(t *testing.T) {
 		assert.True(t, k8serrors.IsNotFound(err))
 	})
 	t.Run("tokens are found if secret exists", func(t *testing.T) {
-		dk := dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			Name:      "dynakube",
 			Namespace: "dynatrace",
 		}
-		testSecret, err := k8ssecret.Build(&dk, "dynakube", map[string][]byte{
+		testSecret, err := k8ssecret.Build(dk, "dynakube", map[string][]byte{
 			APIKey:                 []byte(testAPIToken),
 			PaaSKey:                []byte(testPaasToken),
 			DataIngestKey:          []byte(testDataIngestToken),
@@ -56,9 +56,9 @@ func testReadTokens(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		clt := fake.NewClient(testSecret, &dk)
+		clt := fake.NewClient(testSecret, dk)
 
-		reader := NewReader(clt, &dk)
+		reader := NewReader(clt, dk)
 
 		tokens, err := reader.ReadTokens(t.Context())
 

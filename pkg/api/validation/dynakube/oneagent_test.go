@@ -398,7 +398,7 @@ func createDynakubeWithHostGroup(args []string, hostGroup string) *dynakube.Dyna
 }
 
 func TestIsOneAgentVersionValid(t *testing.T) {
-	dk := dynakube.DynaKube{
+	dk := &dynakube.DynaKube{
 		ObjectMeta: defaultDynakubeObjectMeta,
 		Spec: dynakube.DynaKubeSpec{
 			APIURL: testAPIURL,
@@ -433,14 +433,14 @@ func TestIsOneAgentVersionValid(t *testing.T) {
 	for _, validVersion := range validVersions {
 		dk.OneAgent().ClassicFullStack.Version = validVersion //nolint:staticcheck
 		t.Run(fmt.Sprintf("OneAgent custom version %s is allowed", validVersion), func(t *testing.T) {
-			assertAllowed(t, &dk)
+			assertAllowed(t, dk)
 		})
 	}
 
 	for _, invalidVersion := range invalidVersions {
 		dk.OneAgent().ClassicFullStack.Version = invalidVersion //nolint:staticcheck
 		t.Run(fmt.Sprintf("OneAgent custom version %s is not allowed", invalidVersion), func(t *testing.T) {
-			assertDenied(t, []string{versionInvalidMessage}, &dk)
+			assertDenied(t, []string{versionInvalidMessage}, dk)
 		})
 	}
 }
@@ -1027,7 +1027,7 @@ func Test_findDuplicates(t *testing.T) {
 
 func TestConflictingMaxUnavailableAnnotationWithRollingUpdate(t *testing.T) {
 	deprecatedAnnotation := map[string]string{exp.OAMaxUnavailableKey: "2"} //nolint:staticcheck
-	rollingUpdate := appsv1.RollingUpdateDaemonSet{MaxUnavailable: &intstr.IntOrString{Type: intstr.Int, IntVal: 2}}
+	rollingUpdate := &appsv1.RollingUpdateDaemonSet{MaxUnavailable: &intstr.IntOrString{Type: intstr.Int, IntVal: 2}}
 
 	type testCase struct {
 		name             string
@@ -1058,19 +1058,19 @@ func TestConflictingMaxUnavailableAnnotationWithRollingUpdate(t *testing.T) {
 		{
 			name:             "both annotation and rollingUpdate in ClassicFullStack",
 			annotation:       deprecatedAnnotation,
-			oaspec:           oneagent.Spec{ClassicFullStack: &oneagent.HostInjectSpec{RollingUpdate: &rollingUpdate}},
+			oaspec:           oneagent.Spec{ClassicFullStack: &oneagent.HostInjectSpec{RollingUpdate: rollingUpdate}},
 			expectedWarnings: 2, // deprecated flag + conflict with rolling update
 		},
 		{
 			name:             "both annotation and rollingUpdate in CloudNativeFullStack",
 			annotation:       deprecatedAnnotation,
-			oaspec:           oneagent.Spec{CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{RollingUpdate: &rollingUpdate}},
+			oaspec:           oneagent.Spec{CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{RollingUpdate: rollingUpdate}},
 			expectedWarnings: 2, // deprecated flag + conflict with rolling update
 		},
 		{
 			name:             "both annotation and rollingUpdate in HostMonitoring",
 			annotation:       deprecatedAnnotation,
-			oaspec:           oneagent.Spec{HostMonitoring: &oneagent.HostInjectSpec{RollingUpdate: &rollingUpdate}},
+			oaspec:           oneagent.Spec{HostMonitoring: &oneagent.HostInjectSpec{RollingUpdate: rollingUpdate}},
 			expectedWarnings: 2, // deprecated flag + conflict with rolling update
 		},
 	}

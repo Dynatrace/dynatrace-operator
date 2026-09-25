@@ -124,7 +124,7 @@ func TestReconcile(t *testing.T) {
 	})
 
 	t.Run("NoOneAgentCommunicationHostsError => bubble up error", func(t *testing.T) {
-		dk := dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			Name: dkName, Namespace: namespace,
 			Spec: dynakube.DynaKubeSpec{
 				APIURL:      "https://ENVIRONMENTID.live.dynatrace.com/api",
@@ -148,12 +148,12 @@ func TestReconcile(t *testing.T) {
 			versionReconciler:        createVersionReconcilerMock(t),
 		}
 
-		err := reconciler.Reconcile(ctx, &dk, &dynatrace.Client{}, createTokens())
+		err := reconciler.Reconcile(ctx, dk, &dynatrace.Client{}, createTokens())
 		require.ErrorIs(t, err, oaclient.NoCommunicationEndpointsError)
 	})
 
 	t.Run("version reconcile fail => return immediately and bubble up error", func(t *testing.T) {
-		dk := dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			Name: dkName, Namespace: namespace,
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: "https://ENVIRONMENTID.live.dynatrace.com/api",
@@ -164,7 +164,7 @@ func TestReconcile(t *testing.T) {
 		}
 
 		versionReconciler := newMockVersionReconciler(t)
-		versionReconciler.EXPECT().ReconcileOneAgent(anyCtx, &dk, mock.Anything, mock.Anything).Return(errors.New("BOOM")).Once()
+		versionReconciler.EXPECT().ReconcileOneAgent(anyCtx, dk, mock.Anything, mock.Anything).Return(errors.New("BOOM")).Once()
 
 		fakeClient := fake.NewClient()
 		reconciler := &Reconciler{
@@ -176,7 +176,7 @@ func TestReconcile(t *testing.T) {
 			versionReconciler:        versionReconciler,
 		}
 
-		err := reconciler.Reconcile(ctx, &dk, &dynatrace.Client{}, token.Tokens{})
+		err := reconciler.Reconcile(ctx, dk, &dynatrace.Client{}, token.Tokens{})
 		require.Error(t, err)
 	})
 }
@@ -492,7 +492,7 @@ func TestHasSpecChanged(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			r := Reconciler{apiReader: fake.NewClient()}
 			key := metav1.ObjectMeta{Name: "my-oneagent", Namespace: "my-namespace"}
-			oldInstance := dynakube.DynaKube{
+			oldInstance := &dynakube.DynaKube{
 				ObjectMeta: key,
 				Spec: dynakube.DynaKubeSpec{
 					OneAgent: oneagent.Spec{
@@ -500,7 +500,7 @@ func TestHasSpecChanged(t *testing.T) {
 					},
 				},
 			}
-			newInstance := dynakube.DynaKube{
+			newInstance := &dynakube.DynaKube{
 				ObjectMeta: key,
 				Spec: dynakube.DynaKubeSpec{
 					OneAgent: oneagent.Spec{
@@ -508,11 +508,11 @@ func TestHasSpecChanged(t *testing.T) {
 					},
 				},
 			}
-			test.mod(&oldInstance, &newInstance)
-			ds1, err := r.buildDesiredDaemonSet(t.Context(), &oldInstance)
+			test.mod(oldInstance, newInstance)
+			ds1, err := r.buildDesiredDaemonSet(t.Context(), oldInstance)
 			require.NoError(t, err)
 
-			ds2, err := r.buildDesiredDaemonSet(t.Context(), &newInstance)
+			ds2, err := r.buildDesiredDaemonSet(t.Context(), newInstance)
 			require.NoError(t, err)
 
 			assert.NotEmpty(t, ds1.Annotations[hasher.AnnotationHash])
