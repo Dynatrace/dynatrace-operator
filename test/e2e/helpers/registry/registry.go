@@ -258,5 +258,5 @@ func selectTag(tags []string, fips bool) string {
 		return ""
 	}
 
-	return fmt.Sprintf("%s:%s", repoURI, filteredTags[len(filteredTags)-1])
+	return result[len(result)-1]
 }

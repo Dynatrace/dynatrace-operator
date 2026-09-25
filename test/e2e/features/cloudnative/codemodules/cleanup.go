@@ -74,7 +74,7 @@ func CleanupKeepsMountedCodeModules(t *testing.T) features.Feature {
 	testDynakube := newAppMonDynakube(secretConfig.APIURL, previousImage)
 
 	labels := testDynakube.OneAgent().GetNamespaceSelector().MatchLabels
-	sampleNamespace := *k8snamespace.New("codemodules-cleanup-sample", k8snamespace.WithLabels(labels))
+	sampleNamespace := k8snamespace.New("codemodules-cleanup-sample", k8snamespace.WithLabels(labels))
 
 	sampleApp := sample.NewApp(t, &testDynakube,
 		sample.WithNamespace(sampleNamespace),
@@ -85,20 +85,21 @@ func CleanupKeepsMountedCodeModules(t *testing.T) features.Feature {
 
 	builder.Assess("create sample namespace", sampleApp.InstallNamespace())
 
-	dynakubeComponents.Install(builder, &secretConfig, testDynakube)
+	dynakubeComponents.Install(builder, secretConfig, &testDynakube)
 
 	builder.Assess("install sample app", sampleApp.Install())
 	cloudnative.AssessSampleInitContainers(builder, sampleApp)
 
 	builder.Assess("remember the agent files of the injected pod", recordAgentFiles(sampleApp, agentFiles))
 
-	dynakubeComponents.Update(builder, newAppMonDynakube(secretConfig.APIURL, latestImage))
+	latestDynakube := newAppMonDynakube(secretConfig.APIURL, latestImage)
+	dynakubeComponents.Update(builder, &latestDynakube)
 
 	builder.Assess("new codemodule has been downloaded", waitForNewCodeModuleToBeLinked(testDynakube, agentFiles))
 	builder.Assess("two codemodules are present before cleanup", assertCodeModuleCount(testDynakube, agentFiles, 2))
 
 	builder.Assess("record cleanup runs before triggering a reconcile", recordCleanupRunsBefore(testDynakube, agentFiles))
-	dynakubeComponents.TriggerReconciliationWithoutWait(builder, testDynakube)
+	dynakubeComponents.TriggerReconciliationWithoutWait(builder, &testDynakube)
 	builder.Assess("garbage collection ran after the upgrade", waitForCleanupRun(testDynakube, agentFiles))
 
 	// The actual regression check. Same pod, never restarted, so it still uses the old code module.
@@ -110,7 +111,7 @@ func CleanupKeepsMountedCodeModules(t *testing.T) features.Feature {
 	builder.Assess("uninstall sample app", sampleApp.Uninstall())
 
 	builder.Assess("record cleanup runs before triggering a reconcile", recordCleanupRunsBefore(testDynakube, agentFiles))
-	dynakubeComponents.TriggerReconciliationWithoutWait(builder, testDynakube)
+	dynakubeComponents.TriggerReconciliationWithoutWait(builder, &testDynakube)
 	builder.Assess("garbage collection ran after the sample app is gone", waitForCleanupRun(testDynakube, agentFiles))
 	builder.Assess("only one code module left on the file system", assertCodeModuleCount(testDynakube, agentFiles, 1))
 
@@ -119,14 +120,14 @@ func CleanupKeepsMountedCodeModules(t *testing.T) features.Feature {
 	return builder.Feature()
 }
 
-func newAppMonDynakube(apiUrl, codeModulesImage string) dynakube.DynaKube {
+func newAppMonDynakube(apiURL, codeModulesImage string) dynakube.DynaKube {
 	return *dynakubeComponents.New(
 		dynakubeComponents.WithName("codemodules-cleanup"),
 		dynakubeComponents.WithApplicationMonitoringSpec(&oneagent.ApplicationMonitoringSpec{}),
 		dynakubeComponents.WithCodeModulesImage(codeModulesImage),
 		dynakubeComponents.WithNameBasedOneAgentNamespaceSelector(),
 		dynakubeComponents.WithNameBasedMetadataEnrichmentNamespaceSelector(),
-		dynakubeComponents.WithAPIURL(apiUrl),
+		dynakubeComponents.WithAPIURL(apiURL),
 	)
 }
 
@@ -150,7 +151,7 @@ type agentFilesSnapshot struct {
 }
 
 // readAgentFiles lists every agent file the pod can see and checksums that listing.
-func readAgentFiles(ctx context.Context, t *testing.T, resource *resources.Resources, pod corev1.Pod, container string) (string, int) {
+func readAgentFiles(ctx context.Context, t *testing.T, resource *resources.Resources, pod *corev1.Pod, container string) (string, int) {
 	t.Helper()
 
 	findFiles := "find " + oacommon.DefaultInstallPath + " -type f | sort"
@@ -169,7 +170,7 @@ func readAgentFiles(ctx context.Context, t *testing.T, resource *resources.Resou
 }
 
 // readCodeModuleDir reports the lower dir of the overlay the pod is injected with.
-func readCodeModuleDir(ctx context.Context, t *testing.T, resource *resources.Resources, pod corev1.Pod, container string) string {
+func readCodeModuleDir(ctx context.Context, t *testing.T, resource *resources.Resources, pod *corev1.Pod, container string) string {
 	t.Helper()
 
 	command := shell.GrepMounts(oacommon.DefaultInstallPath)
@@ -256,7 +257,7 @@ func waitForNewCodeModuleToBeLinked(dk dynakube.DynaKube, snapshot *agentFilesSn
 }
 
 // readLatestCodeModule reads the symlink from /data/_dynakube/<name>/latest-codemodule
-func readLatestCodeModule(ctx context.Context, resource *resources.Resources, pod corev1.Pod, dynakubeName string) (string, error) {
+func readLatestCodeModule(ctx context.Context, resource *resources.Resources, pod *corev1.Pod, dynakubeName string) (string, error) {
 	latestLink := path.Join(dataPath, dtcsi.SharedDynaKubesDir, dynakubeName, "latest-codemodule")
 	command := shell.ReadLink(latestLink)
 
@@ -268,7 +269,7 @@ func readLatestCodeModule(ctx context.Context, resource *resources.Resources, po
 	return strings.TrimSpace(result.StdOut.String()), nil
 }
 
-func csiPodOnNode(ctx context.Context, t *testing.T, resource *resources.Resources, namespace, nodeName string) corev1.Pod {
+func csiPodOnNode(ctx context.Context, t *testing.T, resource *resources.Resources, namespace, nodeName string) *corev1.Pod {
 	t.Helper()
 
 	var csiPod corev1.Pod
@@ -276,18 +277,18 @@ func csiPodOnNode(ctx context.Context, t *testing.T, resource *resources.Resourc
 	err := k8sdaemonset.NewQuery(ctx, resource, client.ObjectKey{
 		Name:      csi.DaemonSetName,
 		Namespace: namespace,
-	}).ForEachPod(func(pod corev1.Pod) {
+	}).ForEachPod(func(pod *corev1.Pod) {
 		if pod.Spec.NodeName == nodeName {
-			csiPod = pod
+			csiPod = *pod
 		}
 	})
 	require.NoError(t, err)
 	require.NotEmpty(t, csiPod.Name, "no csi driver pod found on node %s", nodeName)
 
-	return csiPod
+	return &csiPod
 }
 
-func listCodeModules(ctx context.Context, resource *resources.Resources, pod corev1.Pod) ([]string, error) {
+func listCodeModules(ctx context.Context, resource *resources.Resources, pod *corev1.Pod) ([]string, error) {
 	listCommand := shell.ListDirectory(dataPath + dtcsi.SharedAgentBinDir)
 
 	result, err := k8spod.Exec(ctx, resource, pod, provisionerContainerName, listCommand...)
@@ -357,7 +358,7 @@ func waitForCleanupRun(dk dynakube.DynaKube, snapshot *agentFilesSnapshot) featu
 	}
 }
 
-func countCleanupRuns(ctx context.Context, clientset *kubernetes.Clientset, pod corev1.Pod) (int, error) {
+func countCleanupRuns(ctx context.Context, clientset *kubernetes.Clientset, pod *corev1.Pod) (int, error) {
 	logStream, err := clientset.CoreV1().Pods(pod.Namespace).GetLogs(pod.Name, &corev1.PodLogOptions{
 		Container: provisionerContainerName,
 	}).Stream(ctx)
