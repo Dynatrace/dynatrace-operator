@@ -94,7 +94,7 @@ func Feature(t *testing.T) features.Feature {
 	)
 
 	// create OAuth client secret related to the specific EdgeConnect configuration on the tenant
-	builder.Assess("create client secret", tenant.CreateClientSecret(edgeConnectTenantConfig.Secret, edgeconnectComponents.BuildOAuthClientSecretName(testEdgeConnect.Name), testEdgeConnect.Namespace))
+	builder.Assess("create client secret", tenant.CreateClientSecret(&edgeConnectTenantConfig.Secret, edgeconnectComponents.BuildOAuthClientSecretName(testEdgeConnect.Name), testEdgeConnect.Namespace))
 
 	builder.Assess("deploy injected namespace", k8snamespace.Create(k8snamespace.New(testAppNameInjected, k8snamespace.WithLabels(injectLabels))))
 	builder.Assess("deploy NOT injected namespace", k8snamespace.Create(k8snamespace.New(testAppNameNotInjected)))
