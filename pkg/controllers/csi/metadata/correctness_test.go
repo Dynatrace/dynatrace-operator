@@ -91,8 +91,8 @@ func TestGetRelevantOverlayMounts(t *testing.T) {
 }
 
 func TestGetRelevantDynaKubes(t *testing.T) {
-	makeDK := func(name string, oaSpec oneagent.Spec) dynakube.DynaKube {
-		return dynakube.DynaKube{
+	makeDK := func(name string, oaSpec oneagent.Spec) *dynakube.DynaKube {
+		return &dynakube.DynaKube{
 			Name: name, Namespace: "dynatrace",
 			Spec: dynakube.DynaKubeSpec{OneAgent: oaSpec},
 		}
@@ -142,11 +142,11 @@ func TestMigrateAppMounts(t *testing.T) {
 
 func TestMigrateHostMounts(t *testing.T) {
 	apiReader := buildReader(t,
-		dynakube.DynaKube{
+		&dynakube.DynaKube{
 			Name: "skip", Namespace: "dynatrace",
 			Spec: dynakube.DynaKubeSpec{OneAgent: oneagent.Spec{ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{}}},
 		},
-		dynakube.DynaKube{
+		&dynakube.DynaKube{
 			Name: "test", Namespace: "dynatrace",
 			Spec: dynakube.DynaKubeSpec{
 				APIURL:   "/e/tenant/api", // UUID: tenant
@@ -184,14 +184,10 @@ func TestMigrateHostMounts(t *testing.T) {
 	})
 }
 
-func buildReader(t *testing.T, dks ...dynakube.DynaKube) client.Reader {
+func buildReader(t *testing.T, objs ...client.Object) client.Reader {
 	t.Helper()
 	scheme := runtime.NewScheme()
 	require.NoError(t, latest.AddToScheme(scheme))
-	objs := make([]client.Object, len(dks))
-	for i, dk := range dks {
-		objs[i] = &dk
-	}
 
 	return fake.NewClientBuilder().
 		WithScheme(scheme).
