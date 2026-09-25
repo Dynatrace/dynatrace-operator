@@ -138,7 +138,7 @@ func (r *Reconciler) reconcileConfigMap(ctx context.Context, s *reconcileScope) 
 		return fmt.Errorf("render gateway config: %w", err)
 	}
 
-	cm := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: s.Owner.Namespace}}
+	cm := &corev1.ConfigMap{Name: name, Namespace: s.Owner.Namespace}
 
 	err = k8sobject.RetryCreateOrUpdate(ctx, r, cm, func() error {
 		s.AppLabels.MergeInto(cm)
@@ -187,7 +187,7 @@ func (r *Reconciler) reconcileStatefulset(ctx context.Context, s *reconcileScope
 		return fmt.Errorf("resolve image: %w", err)
 	}
 
-	sts := &appsv1.StatefulSet{ObjectMeta: metav1.ObjectMeta{Name: s.Spec.GetStatefulSetName(), Namespace: s.Owner.Namespace}}
+	sts := &appsv1.StatefulSet{Name: s.Spec.GetStatefulSetName(), Namespace: s.Owner.Namespace}
 
 	err := k8sobject.RetryCreateOrUpdate(ctx, r, sts, func() error {
 		mutateStatefulSet(sts, s)
@@ -282,9 +282,7 @@ func buildContainer(s *reconcileScope, current corev1.Container) corev1.Containe
 			Capabilities:             &corev1.Capabilities{Drop: []corev1.Capability{"ALL"}},
 		},
 		LivenessProbe: &corev1.Probe{
-			ProbeHandler: corev1.ProbeHandler{
-				HTTPGet: &corev1.HTTPGetAction{Scheme: corev1.URISchemeHTTP, Path: "/", Port: intstr.FromInt32(healthCheckPort)},
-			},
+			HTTPGet:                       &corev1.HTTPGetAction{Scheme: corev1.URISchemeHTTP, Path: "/", Port: intstr.FromInt32(healthCheckPort)},
 			InitialDelaySeconds:           15,
 			PeriodSeconds:                 20,
 			TimeoutSeconds:                currentLivenessProbe.TimeoutSeconds,
@@ -293,9 +291,7 @@ func buildContainer(s *reconcileScope, current corev1.Container) corev1.Containe
 			TerminationGracePeriodSeconds: currentLivenessProbe.TerminationGracePeriodSeconds,
 		},
 		ReadinessProbe: &corev1.Probe{
-			ProbeHandler: corev1.ProbeHandler{
-				HTTPGet: &corev1.HTTPGetAction{Scheme: corev1.URISchemeHTTP, Path: "/", Port: intstr.FromInt32(healthCheckPort)},
-			},
+			HTTPGet:                       &corev1.HTTPGetAction{Scheme: corev1.URISchemeHTTP, Path: "/", Port: intstr.FromInt32(healthCheckPort)},
 			InitialDelaySeconds:           5,
 			PeriodSeconds:                 10,
 			TimeoutSeconds:                currentReadinessProbe.TimeoutSeconds,
@@ -352,8 +348,8 @@ func proxyEnv(name string, src *value.Source) corev1.EnvVar {
 			Name: name,
 			ValueFrom: &corev1.EnvVarSource{
 				SecretKeyRef: &corev1.SecretKeySelector{
-					LocalObjectReference: corev1.LocalObjectReference{Name: src.ValueFrom},
-					Key:                  dynakube.ProxyKey,
+					Name: src.ValueFrom,
+					Key:  dynakube.ProxyKey,
 				},
 			},
 		}
@@ -383,28 +379,24 @@ func buildVolumes(s *reconcileScope) []corev1.Volume {
 	volumes := []corev1.Volume{
 		{
 			Name: configVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{Name: s.Spec.GetStatefulSetName()},
-					Items:                []corev1.KeyToPath{{Key: gatewayConfigKey, Path: relayConfigFile}},
-					DefaultMode:          defaultMode,
-				},
+			ConfigMap: &corev1.ConfigMapVolumeSource{
+				Name:        s.Spec.GetStatefulSetName(),
+				Items:       []corev1.KeyToPath{{Key: gatewayConfigKey, Path: relayConfigFile}},
+				DefaultMode: defaultMode,
 			},
 		},
 		{
 			Name: tokenVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				Projected: &corev1.ProjectedVolumeSource{
-					// Group-readable, not world-readable: the pod's fsGroup grants read access to
-					// the container without exposing the file to any other UID.
-					DefaultMode: new(int32(0o440)),
-					Sources: []corev1.VolumeProjection{
-						{
-							Secret: &corev1.SecretProjection{
-								LocalObjectReference: corev1.LocalObjectReference{Name: dk.Tokens()},
-								Items: []corev1.KeyToPath{
-									{Key: token.DataIngestKey, Path: tokenFileName},
-								},
+			Projected: &corev1.ProjectedVolumeSource{
+				// Group-readable, not world-readable: the pod's fsGroup grants read access to
+				// the container without exposing the file to any other UID.
+				DefaultMode: new(int32(0o440)),
+				Sources: []corev1.VolumeProjection{
+					{
+						Secret: &corev1.SecretProjection{
+							Name: dk.Tokens(),
+							Items: []corev1.KeyToPath{
+								{Key: token.DataIngestKey, Path: tokenFileName},
 							},
 						},
 					},
@@ -416,12 +408,10 @@ func buildVolumes(s *reconcileScope) []corev1.Volume {
 	if dk.Spec.TrustedCAs != "" {
 		volumes = append(volumes, corev1.Volume{
 			Name: cacertsVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{Name: dk.Spec.TrustedCAs},
-					Items:                []corev1.KeyToPath{{Key: "certs", Path: trustedCAFile}},
-					DefaultMode:          defaultMode,
-				},
+			ConfigMap: &corev1.ConfigMapVolumeSource{
+				Name:        dk.Spec.TrustedCAs,
+				Items:       []corev1.KeyToPath{{Key: "certs", Path: trustedCAFile}},
+				DefaultMode: defaultMode,
 			},
 		})
 	}
@@ -445,7 +435,7 @@ func buildVolumeMounts(s *reconcileScope) []corev1.VolumeMount {
 }
 
 func (r *Reconciler) reconcileService(ctx context.Context, s *reconcileScope) error {
-	svc := &corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: s.Spec.GetStatefulSetName(), Namespace: s.Owner.Namespace}}
+	svc := &corev1.Service{Name: s.Spec.GetStatefulSetName(), Namespace: s.Owner.Namespace}
 
 	return k8sobject.RetryCreateOrUpdate(ctx, r, svc, func() error {
 		s.AppLabels.MergeInto(svc)

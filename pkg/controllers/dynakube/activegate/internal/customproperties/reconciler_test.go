@@ -14,7 +14,6 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -29,10 +28,8 @@ const (
 func TestReconciler_Reconcile(t *testing.T) {
 	t.Run("Create works with minimal setup", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-			}}
+			Name:      testName,
+			Namespace: testNamespace}
 
 		r := NewReconciler(nil, nil)
 		err := r.Reconcile(t.Context(), dk, "", &value.Source{})
@@ -41,10 +38,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 
 	t.Run("no-proxy value is not written to custom properties secret", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-			},
+			Name:      testName,
+			Namespace: testNamespace,
 			Spec: dynakube.DynaKubeSpec{
 				Proxy: &value.Source{
 					Value: "test",
@@ -70,10 +65,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 	t.Run("Create custom properties secret without no-proxy value", func(t *testing.T) {
 		valueSource := value.Source{Value: testValue}
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-			},
+			Name:      testName,
+			Namespace: testNamespace,
 			Spec: dynakube.DynaKubeSpec{
 				Proxy: &value.Source{
 					Value: "test",
@@ -105,17 +98,13 @@ func TestReconciler_Reconcile(t *testing.T) {
 	t.Run("Always copy custom properties to secret", func(t *testing.T) {
 		valueSource := value.Source{ValueFrom: testKey}
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-			},
+			Name:      testName,
+			Namespace: testNamespace,
 		}
 
 		fakeClient := fake.NewClient(dk, &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testKey,
-				Namespace: testNamespace,
-			},
+			Name:      testKey,
+			Namespace: testNamespace,
 			Data: map[string][]byte{
 				DataKey: []byte(testValue),
 			},
@@ -138,10 +127,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 	t.Run("Create creates custom properties secret", func(t *testing.T) {
 		valueSource := value.Source{Value: testValue}
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-			}}
+			Name:      testName,
+			Namespace: testNamespace}
 		fakeClient := fake.NewClient(dk)
 		r := NewReconciler(fakeClient, fakeClient)
 		err := r.Reconcile(t.Context(), dk, testOwner, &valueSource)
@@ -160,10 +147,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 	t.Run("Create updates custom properties only if data changed", func(t *testing.T) {
 		valueSource := value.Source{Value: testValue}
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-			}}
+			Name:      testName,
+			Namespace: testNamespace}
 		fakeClient := fake.NewClient(dk)
 		r := NewReconciler(fakeClient, fakeClient)
 		err := r.Reconcile(t.Context(), dk, testOwner, &valueSource)

@@ -40,10 +40,8 @@ var (
 
 func newDynaKube() *dynakube.DynaKube {
 	return &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: testNamespace,
-			Name:      testDynakubeName,
-		},
+		Namespace: testNamespace,
+		Name:      testDynakubeName,
 		Spec: dynakube.DynaKubeSpec{
 			APIURL: "https://testing.dev.dynatracelabs.com/api",
 			ActiveGate: activegate.Spec{

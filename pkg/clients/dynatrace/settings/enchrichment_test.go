@@ -54,10 +54,10 @@ func TestGetRulesSetting(t *testing.T) {
 
 	newResponse := getRulesResponse{
 		Items: []ruleItem{
-			{Value: ruleItemValue{ingestEnrichmentConfig: ingestEnrichmentConfig{Type: metadataenrichment.K8sNamespaceLabelRule, ValueSource: "source-1", Target: "target-1"}}},
-			{Value: ruleItemValue{ingestEnrichmentConfig: ingestEnrichmentConfig{Type: metadataenrichment.K8sNamespaceAnnotationRule, ValueSource: "source-2", Target: "target-2"}}},
-			{Value: ruleItemValue{ingestEnrichmentConfig: ingestEnrichmentConfig{Type: "FOO", ValueSource: "source-3", Target: "target-3"}}},
-			{Value: ruleItemValue{ingestEnrichmentConfig: ingestEnrichmentConfig{Type: metadataenrichment.CustomRule, ValueSource: "source-4", Target: "target-4", Condition: "true"}}},
+			{Value: ruleItemValue{Type: metadataenrichment.K8sNamespaceLabelRule, ValueSource: "source-1", Target: "target-1"}},
+			{Value: ruleItemValue{Type: metadataenrichment.K8sNamespaceAnnotationRule, ValueSource: "source-2", Target: "target-2"}},
+			{Value: ruleItemValue{Type: "FOO", ValueSource: "source-3", Target: "target-3"}},
+			{Value: ruleItemValue{Type: metadataenrichment.CustomRule, ValueSource: "source-4", Target: "target-4", Condition: "true"}},
 		},
 	}
 
@@ -552,8 +552,8 @@ func Test_enrichmentSchemaModel(t *testing.T) {
 
 	expectNew := getRulesResponse{
 		Items: []ruleItem{
-			{Value: ruleItemValue{ingestEnrichmentConfig: ingestEnrichmentConfig{Type: metadataenrichment.K8sNamespaceLabelRule, ValueSource: "test-label", Target: "dt.cost.product"}}},
-			{Value: ruleItemValue{ingestEnrichmentConfig: ingestEnrichmentConfig{Type: metadataenrichment.K8sNamespaceAnnotationRule, ValueSource: "my.test.annotation/value", Target: "dt.security_context"}}},
+			{Value: ruleItemValue{Type: metadataenrichment.K8sNamespaceLabelRule, ValueSource: "test-label", Target: "dt.cost.product"}},
+			{Value: ruleItemValue{Type: metadataenrichment.K8sNamespaceAnnotationRule, ValueSource: "my.test.annotation/value", Target: "dt.security_context"}},
 		},
 	}
 
@@ -613,8 +613,8 @@ func TestLogDroppedRules(t *testing.T) {
 			"no dropped rules",
 			getRulesResponse{
 				Items: []ruleItem{
-					{Value: ruleItemValue{ingestEnrichmentConfig: ingestEnrichmentConfig{Type: "K8S_NAMESPACE_LABEL", Target: "a", ValueSource: "a"}}},
-					{Value: ruleItemValue{ingestEnrichmentConfig: ingestEnrichmentConfig{Type: "K8S_NAMESPACE_LABEL", Target: "b", ValueSource: "b"}}},
+					{Value: ruleItemValue{Type: "K8S_NAMESPACE_LABEL", Target: "a", ValueSource: "a"}},
+					{Value: ruleItemValue{Type: "K8S_NAMESPACE_LABEL", Target: "b", ValueSource: "b"}},
 				},
 			},
 			nil,
@@ -623,10 +623,10 @@ func TestLogDroppedRules(t *testing.T) {
 			"log dropped rules",
 			getRulesResponse{
 				Items: []ruleItem{
-					{Value: ruleItemValue{ingestEnrichmentConfig: ingestEnrichmentConfig{Type: "K8S_NAMESPACE_LABEL", Target: "a", ValueSource: "a"}}},
-					{Value: ruleItemValue{ingestEnrichmentConfig: ingestEnrichmentConfig{Type: "K8S_NAMESPACE_LABEL", Target: "b", ValueSource: "b", Condition: "b"}}},
-					{Value: ruleItemValue{ingestEnrichmentConfig: ingestEnrichmentConfig{Type: "FOO", Target: "c", ValueSource: "c"}}},
-					{Value: ruleItemValue{ingestEnrichmentConfig: ingestEnrichmentConfig{Type: "K8S_NAMESPACE_LABEL", ValueSource: "d"}}},
+					{Value: ruleItemValue{Type: "K8S_NAMESPACE_LABEL", Target: "a", ValueSource: "a"}},
+					{Value: ruleItemValue{Type: "K8S_NAMESPACE_LABEL", Target: "b", ValueSource: "b", Condition: "b"}},
+					{Value: ruleItemValue{Type: "FOO", Target: "c", ValueSource: "c"}},
+					{Value: ruleItemValue{Type: "K8S_NAMESPACE_LABEL", ValueSource: "d"}},
 				},
 			},
 			[]any{

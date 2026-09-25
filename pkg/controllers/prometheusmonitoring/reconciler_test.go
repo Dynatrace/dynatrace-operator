@@ -22,14 +22,13 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
 
 func TestReconcile(t *testing.T) {
-	req := ctrl.Request{NamespacedName: types.NamespacedName{Name: "prometheusmonitoring", Namespace: "dynatrace"}}
+	req := ctrl.Request{Name: "prometheusmonitoring", Namespace: "dynatrace"}
 
 	assertReconcileDone := func(t *testing.T, r *Reconciler, req ctrl.Request) {
 		t.Helper()
@@ -55,7 +54,7 @@ func TestReconcile(t *testing.T) {
 	})
 
 	t.Run("get dynakube error", func(t *testing.T) {
-		pm := &prometheusmonitoring.PrometheusMonitoring{ObjectMeta: metav1.ObjectMeta{Name: req.Name, Namespace: req.Namespace}, Spec: prometheusmonitoring.PrometheusMonitoringSpec{DynaKubeName: "dk"}}
+		pm := &prometheusmonitoring.PrometheusMonitoring{Name: req.Name, Namespace: req.Namespace, Spec: prometheusmonitoring.PrometheusMonitoringSpec{DynaKubeName: "dk"}}
 		expectErr := k8serrors.NewInternalError(errors.New("BOOM"))
 		c := fake.NewClientWithInterceptors(interceptor.Funcs{
 			Get: func(ctx context.Context, client client.WithWatch, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
@@ -73,7 +72,7 @@ func TestReconcile(t *testing.T) {
 	})
 
 	t.Run("dynakube not found", func(t *testing.T) {
-		pm := &prometheusmonitoring.PrometheusMonitoring{ObjectMeta: metav1.ObjectMeta{Name: req.Name, Namespace: req.Namespace}, Spec: prometheusmonitoring.PrometheusMonitoringSpec{DynaKubeName: "dk"}}
+		pm := &prometheusmonitoring.PrometheusMonitoring{Name: req.Name, Namespace: req.Namespace, Spec: prometheusmonitoring.PrometheusMonitoringSpec{DynaKubeName: "dk"}}
 		c := fake.NewClient(pm)
 		assertReconcileDone(t, NewReconciler(c), req)
 		require.NoError(t, c.Get(t.Context(), client.ObjectKeyFromObject(pm), pm))
@@ -81,8 +80,8 @@ func TestReconcile(t *testing.T) {
 	})
 
 	t.Run("dynakube not running", func(t *testing.T) {
-		pm := &prometheusmonitoring.PrometheusMonitoring{ObjectMeta: metav1.ObjectMeta{Name: req.Name, Namespace: req.Namespace}, Spec: prometheusmonitoring.PrometheusMonitoringSpec{DynaKubeName: "dk"}}
-		dk := &dynakube.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: "dk", Namespace: req.Namespace}}
+		pm := &prometheusmonitoring.PrometheusMonitoring{Name: req.Name, Namespace: req.Namespace, Spec: prometheusmonitoring.PrometheusMonitoringSpec{DynaKubeName: "dk"}}
+		dk := &dynakube.DynaKube{Name: "dk", Namespace: req.Namespace}
 		c := fake.NewClient(pm, dk)
 		assertReconcileDone(t, NewReconciler(c), req)
 		require.NoError(t, c.Get(t.Context(), client.ObjectKeyFromObject(pm), pm))
@@ -90,8 +89,8 @@ func TestReconcile(t *testing.T) {
 	})
 
 	t.Run("no token secret", func(t *testing.T) {
-		pm := &prometheusmonitoring.PrometheusMonitoring{ObjectMeta: metav1.ObjectMeta{Name: req.Name, Namespace: req.Namespace}, Spec: prometheusmonitoring.PrometheusMonitoringSpec{DynaKubeName: "dk"}}
-		dk := &dynakube.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: "dk", Namespace: req.Namespace}, Status: dynakube.DynaKubeStatus{Phase: status.Running}}
+		pm := &prometheusmonitoring.PrometheusMonitoring{Name: req.Name, Namespace: req.Namespace, Spec: prometheusmonitoring.PrometheusMonitoringSpec{DynaKubeName: "dk"}}
+		dk := &dynakube.DynaKube{Name: "dk", Namespace: req.Namespace, Status: dynakube.DynaKubeStatus{Phase: status.Running}}
 		c := fake.NewClient(pm, dk)
 		assertReconcileDone(t, NewReconciler(c), req)
 		require.NoError(t, c.Get(t.Context(), client.ObjectKeyFromObject(pm), pm))
@@ -99,9 +98,9 @@ func TestReconcile(t *testing.T) {
 	})
 
 	t.Run("data-ingest token missing from secret", func(t *testing.T) {
-		pm := &prometheusmonitoring.PrometheusMonitoring{ObjectMeta: metav1.ObjectMeta{Name: req.Name, Namespace: req.Namespace}, Spec: prometheusmonitoring.PrometheusMonitoringSpec{DynaKubeName: "dk"}}
-		dk := &dynakube.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: "dk", Namespace: req.Namespace}, Status: dynakube.DynaKubeStatus{Phase: status.Running}}
-		secret := &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "dk", Namespace: req.Namespace}, Data: map[string][]byte{token.APIKey: []byte("api-token")}}
+		pm := &prometheusmonitoring.PrometheusMonitoring{Name: req.Name, Namespace: req.Namespace, Spec: prometheusmonitoring.PrometheusMonitoringSpec{DynaKubeName: "dk"}}
+		dk := &dynakube.DynaKube{Name: "dk", Namespace: req.Namespace, Status: dynakube.DynaKubeStatus{Phase: status.Running}}
+		secret := &corev1.Secret{Name: "dk", Namespace: req.Namespace, Data: map[string][]byte{token.APIKey: []byte("api-token")}}
 		c := fake.NewClient(pm, dk, secret)
 		assertReconcileDone(t, NewReconciler(c), req)
 		require.NoError(t, c.Get(t.Context(), client.ObjectKeyFromObject(pm), pm))
@@ -109,9 +108,9 @@ func TestReconcile(t *testing.T) {
 	})
 
 	t.Run("build client error", func(t *testing.T) {
-		pm := &prometheusmonitoring.PrometheusMonitoring{ObjectMeta: metav1.ObjectMeta{Name: req.Name, Namespace: req.Namespace}, Spec: prometheusmonitoring.PrometheusMonitoringSpec{DynaKubeName: "dk"}}
-		dk := &dynakube.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: "dk", Namespace: req.Namespace}, Status: dynakube.DynaKubeStatus{Phase: status.Running}}
-		secret := &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "dk", Namespace: req.Namespace}, Data: map[string][]byte{token.APIKey: []byte("api-token"), token.DataIngestKey: []byte("data-ingest-token")}}
+		pm := &prometheusmonitoring.PrometheusMonitoring{Name: req.Name, Namespace: req.Namespace, Spec: prometheusmonitoring.PrometheusMonitoringSpec{DynaKubeName: "dk"}}
+		dk := &dynakube.DynaKube{Name: "dk", Namespace: req.Namespace, Status: dynakube.DynaKubeStatus{Phase: status.Running}}
+		secret := &corev1.Secret{Name: "dk", Namespace: req.Namespace, Data: map[string][]byte{token.APIKey: []byte("api-token"), token.DataIngestKey: []byte("data-ingest-token")}}
 		c := fake.NewClient(pm, dk, secret)
 		r := NewReconciler(c)
 		expectErr := errors.New("boom")
@@ -127,9 +126,9 @@ func TestReconcile(t *testing.T) {
 	})
 
 	t.Run("target allocator error", func(t *testing.T) {
-		pm := &prometheusmonitoring.PrometheusMonitoring{ObjectMeta: metav1.ObjectMeta{Name: req.Name, Namespace: req.Namespace}, Spec: prometheusmonitoring.PrometheusMonitoringSpec{DynaKubeName: "dk"}}
-		dk := &dynakube.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: "dk", Namespace: req.Namespace}, Status: dynakube.DynaKubeStatus{Phase: status.Running}}
-		secret := &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "dk", Namespace: req.Namespace}, Data: map[string][]byte{token.APIKey: []byte("api-token"), token.DataIngestKey: []byte("data-ingest-token")}}
+		pm := &prometheusmonitoring.PrometheusMonitoring{Name: req.Name, Namespace: req.Namespace, Spec: prometheusmonitoring.PrometheusMonitoringSpec{DynaKubeName: "dk"}}
+		dk := &dynakube.DynaKube{Name: "dk", Namespace: req.Namespace, Status: dynakube.DynaKubeStatus{Phase: status.Running}}
+		secret := &corev1.Secret{Name: "dk", Namespace: req.Namespace, Data: map[string][]byte{token.APIKey: []byte("api-token"), token.DataIngestKey: []byte("data-ingest-token")}}
 
 		expectErr := errors.New("boom")
 		gm := newMockGatewayReconciler(t)
@@ -152,9 +151,9 @@ func TestReconcile(t *testing.T) {
 	})
 
 	t.Run("scraper error", func(t *testing.T) {
-		pm := &prometheusmonitoring.PrometheusMonitoring{ObjectMeta: metav1.ObjectMeta{Name: req.Name, Namespace: req.Namespace}, Spec: prometheusmonitoring.PrometheusMonitoringSpec{DynaKubeName: "dk"}}
-		dk := &dynakube.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: "dk", Namespace: req.Namespace}, Status: dynakube.DynaKubeStatus{Phase: status.Running}}
-		secret := &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "dk", Namespace: req.Namespace}, Data: map[string][]byte{token.APIKey: []byte("api-token"), token.DataIngestKey: []byte("data-ingest-token")}}
+		pm := &prometheusmonitoring.PrometheusMonitoring{Name: req.Name, Namespace: req.Namespace, Spec: prometheusmonitoring.PrometheusMonitoringSpec{DynaKubeName: "dk"}}
+		dk := &dynakube.DynaKube{Name: "dk", Namespace: req.Namespace, Status: dynakube.DynaKubeStatus{Phase: status.Running}}
+		secret := &corev1.Secret{Name: "dk", Namespace: req.Namespace, Data: map[string][]byte{token.APIKey: []byte("api-token"), token.DataIngestKey: []byte("data-ingest-token")}}
 
 		expectErr := errors.New("boom")
 		gm := newMockGatewayReconciler(t)

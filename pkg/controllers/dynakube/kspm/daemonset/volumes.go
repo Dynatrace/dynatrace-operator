@@ -60,11 +60,9 @@ func getTokenVolumeMount() corev1.VolumeMount {
 func getTokenVolume(dk *dynakube.DynaKube) corev1.Volume {
 	return corev1.Volume{
 		Name: tokenVolumeName,
-		VolumeSource: corev1.VolumeSource{
-			Secret: &corev1.SecretVolumeSource{
-				SecretName:  dk.KSPM().GetTokenSecretName(),
-				DefaultMode: new(int32(0o640)),
-			},
+		Secret: &corev1.SecretVolumeSource{
+			SecretName:  dk.KSPM().GetTokenSecretName(),
+			DefaultMode: new(int32(0o640)),
 		},
 	}
 }
@@ -87,11 +85,9 @@ func getNodeVolumes(mappedHostPaths []string) []corev1.Volume {
 	for i, path := range mappedHostPaths {
 		volumes[i] = corev1.Volume{
 			Name: getVolumeName(i + 1),
-			VolumeSource: corev1.VolumeSource{
-				HostPath: &corev1.HostPathVolumeSource{
-					Path: path,
-					Type: new(corev1.HostPathDirectory),
-				},
+			HostPath: &corev1.HostPathVolumeSource{
+				Path: path,
+				Type: new(corev1.HostPathDirectory),
 			},
 		}
 	}

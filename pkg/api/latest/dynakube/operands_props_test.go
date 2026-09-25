@@ -11,7 +11,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
 	"github.com/stretchr/testify/assert"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestIsKubemonEnabled(t *testing.T) {
@@ -77,7 +76,7 @@ func TestIsKubernetesMonitoringRegistrationEnabled(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			dk := &DynaKube{
-				ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{}},
+				Annotations: map[string]string{},
 			}
 			if tt.ff != nil {
 				dk.Annotations[exp.AGAutomaticK8sAPIMonitoringKey] = strconv.FormatBool(*tt.ff)

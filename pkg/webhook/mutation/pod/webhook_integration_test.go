@@ -21,7 +21,6 @@ import (
 	otlpspec "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	agconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
@@ -126,8 +125,8 @@ func TestWebhook(t *testing.T) { //nolint:revive // Function too long
 		// a volume with a source the mutators would never produce
 		hostPathVolume := func(name string) corev1.Volume {
 			return corev1.Volume{
-				Name:         name,
-				VolumeSource: corev1.VolumeSource{HostPath: &corev1.HostPathVolumeSource{Path: "/"}},
+				Name:     name,
+				HostPath: &corev1.HostPathVolumeSource{Path: "/"},
 			}
 		}
 
@@ -168,8 +167,8 @@ func TestWebhook(t *testing.T) { //nolint:revive // Function too long
 			{
 				"metadata owner lookup",
 				&dynakube.DynaKube{
-					ObjectMeta: metav1.ObjectMeta{Name: "dynakube", Namespace: testNamespace},
-					Spec:       dynakube.DynaKubeSpec{MetadataEnrichment: metadataenrichment.Spec{Enabled: new(true)}},
+					Name: "dynakube", Namespace: testNamespace,
+					Spec: dynakube.DynaKubeSpec{MetadataEnrichment: metadataenrichment.Spec{Enabled: new(true)}},
 				},
 				func(pod *corev1.Pod) {
 					pod.Annotations[metadatamutator.AnnotationInject] = "true"
@@ -765,13 +764,13 @@ type metadataJSONTestCase struct {
 func testMetadataJSON(t *testing.T, clt client.Client, tt metadataJSONTestCase) {
 	t.Helper()
 
-	ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "test"}}
+	ns := &corev1.Namespace{Name: "test"}
 	ns.Labels = maputils.MergeMap(tt.namespaceLabels, map[string]string{podmutator.InjectionInstanceLabel: "dynakube"})
 	ns.Annotations = tt.namespaceAnnotations
 	integrationtests.CreateKubernetesObject(t, clt, ns)
 
 	dk := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{Name: "dynakube", Namespace: testNamespace},
+		Name: "dynakube", Namespace: testNamespace,
 		Spec: dynakube.DynaKubeSpec{
 			ResourceAttributes: tt.resourceAttributes,
 			MetadataEnrichment: metadataenrichment.Spec{Enabled: new(true)},
@@ -843,26 +842,22 @@ type bootstrapperArgsTestCase struct {
 func testBootstrapperArgs(t *testing.T, clt client.Client, tt bootstrapperArgsTestCase) {
 	t.Helper()
 
-	ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "bootstrapper-args-test"}}
+	ns := &corev1.Namespace{Name: "bootstrapper-args-test"}
 	ns.Labels = maputils.MergeMap(tt.namespaceLabels, map[string]string{podmutator.InjectionInstanceLabel: "dynakube"})
 	ns.Annotations = tt.namespaceAnnotations
 	integrationtests.CreateKubernetesObject(t, clt, ns)
 	integrationtests.CreateKubernetesObject(t, clt, getBoostrapperSecret(ns.Name))
 
 	dk := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "dynakube",
-			Namespace: testNamespace,
-			Annotations: map[string]string{
-				exp.InjectionAutomaticKey: "true",
-			},
+		Name:      "dynakube",
+		Namespace: testNamespace,
+		Annotations: map[string]string{
+			exp.InjectionAutomaticKey: "true",
 		},
 		Spec: dynakube.DynaKubeSpec{
 			OneAgent: oneagent.Spec{
 				CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
-					HostInjectSpec: oneagent.HostInjectSpec{
-						AdditionalResourceAttributes: tt.oaAttributes,
-					},
+					AdditionalResourceAttributes: tt.oaAttributes,
 				},
 			},
 			MetadataEnrichment: metadataenrichment.Spec{Enabled: new(true)},
@@ -879,9 +874,7 @@ func testBootstrapperArgs(t *testing.T, clt client.Client, tt bootstrapperArgsTe
 				},
 			},
 			CodeModules: oneagent.CodeModulesStatus{
-				VersionStatus: status.VersionStatus{
-					Version: "1.2.3",
-				},
+				Version: "1.2.3",
 			},
 		},
 	}
@@ -970,7 +963,7 @@ func testOTLP(t *testing.T, clt client.Client, tt otlpTestCase) {
 
 	integrationtests.CreateKubernetesObject(t, clt, getOTLPExporterSecret(testNamespace))
 
-	ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "otlp-test"}}
+	ns := &corev1.Namespace{Name: "otlp-test"}
 	ns.Labels = maputils.MergeMap(tt.namespaceLabels, map[string]string{podmutator.InjectionInstanceLabel: "dynakube"})
 	ns.Annotations = tt.namespaceAnnotations
 	integrationtests.CreateKubernetesObject(t, clt, ns)
@@ -1099,9 +1092,7 @@ func getWebhookInstallOptions() envtest.WebhookInstallOptions {
 		MutatingWebhooks: []*admissionregistrationv1.MutatingWebhookConfiguration{
 			// TODO(avorima): Load this from a file using Paths
 			{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "dynatrace-webhook",
-				},
+				Name: "dynatrace-webhook",
 				Webhooks: []admissionregistrationv1.MutatingWebhook{
 					{
 						Name:               "webhook.pod.dynatrace.com",
@@ -1110,12 +1101,10 @@ func getWebhookInstallOptions() envtest.WebhookInstallOptions {
 						TimeoutSeconds:     new(int32(30)),
 						Rules: []admissionregistrationv1.RuleWithOperations{
 							{
-								Rule: admissionregistrationv1.Rule{
-									APIGroups:   []string{""},
-									APIVersions: []string{"v1"},
-									Resources:   []string{"pods"},
-									Scope:       new(admissionregistrationv1.NamespacedScope),
-								},
+								APIGroups:   []string{""},
+								APIVersions: []string{"v1"},
+								Resources:   []string{"pods"},
+								Scope:       new(admissionregistrationv1.NamespacedScope),
 								Operations: []admissionregistrationv1.OperationType{
 									admissionregistrationv1.Create,
 								},
@@ -1148,11 +1137,9 @@ func createPod(t *testing.T, clt client.Client, mutateFn func(*corev1.Pod)) *cor
 	t.Helper()
 
 	pod := &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        "pod-inject-test",
-			Namespace:   testNamespace,
-			Annotations: map[string]string{},
-		},
+		Name:        "pod-inject-test",
+		Namespace:   testNamespace,
+		Annotations: map[string]string{},
 		Spec: corev1.PodSpec{
 			RestartPolicy: corev1.RestartPolicyAlways,
 			Containers: []corev1.Container{
@@ -1175,10 +1162,8 @@ func createPod(t *testing.T, clt client.Client, mutateFn func(*corev1.Pod)) *cor
 
 func getDummyWebhookPod() *corev1.Pod {
 	return &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "dynatrace-webhook",
-			Namespace: testNamespace,
-		},
+		Name:      "dynatrace-webhook",
+		Namespace: testNamespace,
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{
 				{
@@ -1192,18 +1177,14 @@ func getDummyWebhookPod() *corev1.Pod {
 
 func getOwnerDeployment() *appsv1.Deployment {
 	return &appsv1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-deployment",
-			Namespace: testNamespace,
-		},
+		Name:      "test-deployment",
+		Namespace: testNamespace,
 		Spec: appsv1.DeploymentSpec{
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{"app": "test-app"},
 			},
 			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{"app": "test-app"},
-				},
+				Labels: map[string]string{"app": "test-app"},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
@@ -1219,23 +1200,19 @@ func getOwnerDeployment() *appsv1.Deployment {
 
 func getNamespace(name string) *corev1.Namespace {
 	return &corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
-			Labels: map[string]string{
-				podmutator.InjectionInstanceLabel: "dynakube",
-			},
+		Name: name,
+		Labels: map[string]string{
+			podmutator.InjectionInstanceLabel: "dynakube",
 		},
 	}
 }
 
 func getReadyCNFSDynaKube() *dynakube.DynaKube {
 	return &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "dynakube",
-			Namespace: testNamespace,
-			Annotations: map[string]string{
-				exp.InjectionAutomaticKey: "true",
-			},
+		Name:      "dynakube",
+		Namespace: testNamespace,
+		Annotations: map[string]string{
+			exp.InjectionAutomaticKey: "true",
 		},
 		Spec: dynakube.DynaKubeSpec{
 			OneAgent: oneagent.Spec{
@@ -1252,9 +1229,7 @@ func getReadyCNFSDynaKube() *dynakube.DynaKube {
 				},
 			},
 			CodeModules: oneagent.CodeModulesStatus{
-				VersionStatus: status.VersionStatus{
-					Version: "1.2.3",
-				},
+				Version: "1.2.3",
 			},
 		},
 	}
@@ -1262,12 +1237,10 @@ func getReadyCNFSDynaKube() *dynakube.DynaKube {
 
 func getReadyOTLPDynaKube() *dynakube.DynaKube {
 	return &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "dynakube",
-			Namespace: testNamespace,
-			Annotations: map[string]string{
-				exp.InjectionAutomaticKey: "true",
-			},
+		Name:      "dynakube",
+		Namespace: testNamespace,
+		Annotations: map[string]string{
+			exp.InjectionAutomaticKey: "true",
 		},
 		Spec: dynakube.DynaKubeSpec{
 			APIURL: apiURL,
@@ -1294,10 +1267,8 @@ func getReadyOTLPDynaKube() *dynakube.DynaKube {
 
 func getBoostrapperSecret(namespace string) *corev1.Secret {
 	return &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      consts.BootstrapperInitSecretName,
-			Namespace: namespace,
-		},
+		Name:      consts.BootstrapperInitSecretName,
+		Namespace: namespace,
 	}
 }
 
@@ -1305,10 +1276,8 @@ func getOTLPExporterSecret(namespace string) *corev1.Secret {
 	const dataIngestToken = "test-token"
 
 	return &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      consts.OTLPExporterSecretName,
-			Namespace: namespace,
-		},
+		Name:      consts.OTLPExporterSecretName,
+		Namespace: namespace,
 		Data: map[string][]byte{
 			token.APIKey:        []byte(dataIngestToken),
 			token.DataIngestKey: []byte(dataIngestToken),
@@ -1318,10 +1287,8 @@ func getOTLPExporterSecret(namespace string) *corev1.Secret {
 
 func getOTLPExporterCertsSecret(namespace string) *corev1.Secret {
 	return &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      consts.OTLPExporterCertsSecretName,
-			Namespace: namespace,
-		},
+		Name:      consts.OTLPExporterCertsSecretName,
+		Namespace: namespace,
 		Data: map[string][]byte{
 			consts.TLSCrtDataName: []byte("ag-cert-data"),
 		},

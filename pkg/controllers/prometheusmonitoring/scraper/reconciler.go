@@ -132,7 +132,7 @@ func (r *Reconciler) reconcileConfigMap(ctx context.Context, s *reconcileScope) 
 		return fmt.Errorf("render scraper config: %w", err)
 	}
 
-	cm := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: s.Spec.GetDeploymentName(), Namespace: s.Owner.Namespace}}
+	cm := &corev1.ConfigMap{Name: s.Spec.GetDeploymentName(), Namespace: s.Owner.Namespace}
 
 	err = k8sobject.RetryCreateOrUpdate(ctx, r, cm, func() error {
 		s.AppLabels.MergeInto(cm)
@@ -188,7 +188,7 @@ func (r *Reconciler) reconcileDeployment(ctx context.Context, s *reconcileScope)
 		return fmt.Errorf("resolve image: %w", err)
 	}
 
-	deploy := &appsv1.Deployment{ObjectMeta: metav1.ObjectMeta{Name: s.Spec.GetDeploymentName(), Namespace: s.Owner.Namespace}}
+	deploy := &appsv1.Deployment{Name: s.Spec.GetDeploymentName(), Namespace: s.Owner.Namespace}
 
 	err := k8sobject.RetryCreateOrUpdate(ctx, r, deploy, func() error {
 		mutateDeployment(deploy, s)
@@ -276,9 +276,7 @@ func buildContainer(s *reconcileScope, current corev1.Container) corev1.Containe
 			Capabilities:             &corev1.Capabilities{Drop: []corev1.Capability{"ALL"}},
 		},
 		LivenessProbe: &corev1.Probe{
-			ProbeHandler: corev1.ProbeHandler{
-				HTTPGet: &corev1.HTTPGetAction{Scheme: corev1.URISchemeHTTP, Path: "/", Port: intstr.FromInt32(healthCheckPort)},
-			},
+			HTTPGet:                       &corev1.HTTPGetAction{Scheme: corev1.URISchemeHTTP, Path: "/", Port: intstr.FromInt32(healthCheckPort)},
 			InitialDelaySeconds:           15,
 			PeriodSeconds:                 20,
 			TimeoutSeconds:                currentLivenessProbe.TimeoutSeconds,
@@ -287,9 +285,7 @@ func buildContainer(s *reconcileScope, current corev1.Container) corev1.Containe
 			TerminationGracePeriodSeconds: currentLivenessProbe.TerminationGracePeriodSeconds,
 		},
 		ReadinessProbe: &corev1.Probe{
-			ProbeHandler: corev1.ProbeHandler{
-				HTTPGet: &corev1.HTTPGetAction{Scheme: corev1.URISchemeHTTP, Path: "/", Port: intstr.FromInt32(healthCheckPort)},
-			},
+			HTTPGet:                       &corev1.HTTPGetAction{Scheme: corev1.URISchemeHTTP, Path: "/", Port: intstr.FromInt32(healthCheckPort)},
 			InitialDelaySeconds:           5,
 			PeriodSeconds:                 10,
 			TimeoutSeconds:                currentReadinessProbe.TimeoutSeconds,
@@ -341,12 +337,10 @@ func buildVolumes(s *reconcileScope) []corev1.Volume {
 	return []corev1.Volume{
 		{
 			Name: configVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{Name: s.Spec.GetDeploymentName()},
-					Items:                []corev1.KeyToPath{{Key: scraperConfigKey, Path: scraperConfigFile}},
-					DefaultMode:          defaultMode,
-				},
+			ConfigMap: &corev1.ConfigMapVolumeSource{
+				Name:        s.Spec.GetDeploymentName(),
+				Items:       []corev1.KeyToPath{{Key: scraperConfigKey, Path: scraperConfigFile}},
+				DefaultMode: defaultMode,
 			},
 		},
 	}

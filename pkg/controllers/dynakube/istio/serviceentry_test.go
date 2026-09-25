@@ -12,7 +12,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	istio "istio.io/api/networking/v1beta1"
 	istiov1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -31,11 +30,9 @@ func TestServiceEntryGeneration(t *testing.T) {
 
 	t.Run("generate with hostname", func(t *testing.T) {
 		expected := &istiov1beta1.ServiceEntry{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-				Labels:    buildTestLabels(),
-			},
+			Name:      testName,
+			Namespace: testNamespace,
+			Labels:    buildTestLabels(),
 			Spec: istio.ServiceEntry{
 				Hosts:    []string{testHost},
 				Location: istio.ServiceEntry_MESH_EXTERNAL,
@@ -65,11 +62,9 @@ func TestServiceEntryGeneration(t *testing.T) {
 	})
 	t.Run("generate with two different hostnames and same port", func(t *testing.T) {
 		expected := &istiov1beta1.ServiceEntry{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-				Labels:    buildTestLabels(),
-			},
+			Name:      testName,
+			Namespace: testNamespace,
+			Labels:    buildTestLabels(),
 			Spec: istio.ServiceEntry{
 				Hosts:    []string{testHost, testHost1},
 				Location: istio.ServiceEntry_MESH_EXTERNAL,
@@ -97,11 +92,9 @@ func TestServiceEntryGeneration(t *testing.T) {
 	t.Run("generate with Ip", func(t *testing.T) {
 		const testIP = "42.42.42.42"
 		expected := &istiov1beta1.ServiceEntry{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-				Labels:    buildTestLabels(),
-			},
+			Name:      testName,
+			Namespace: testNamespace,
+			Labels:    buildTestLabels(),
 			Spec: istio.ServiceEntry{
 				Hosts:     []string{ignoredSubdomain},
 				Addresses: []string{testIP + subnetMask},
@@ -137,11 +130,9 @@ func TestServiceEntryGeneration(t *testing.T) {
 		)
 
 		expected := &istiov1beta1.ServiceEntry{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-				Labels:    buildTestLabels(),
-			},
+			Name:      testName,
+			Namespace: testNamespace,
+			Labels:    buildTestLabels(),
 			Spec: istio.ServiceEntry{
 				Hosts:     []string{ignoredSubdomain},
 				Addresses: []string{testIP + subnetMask, testIP1 + subnetMask},
@@ -207,11 +198,9 @@ func TestBuildServiceEntryIp(t *testing.T) {
 
 func buildExpectedServiceEntryForHostname(_ *testing.T) *istiov1beta1.ServiceEntry {
 	return &istiov1beta1.ServiceEntry{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      testName,
-			Namespace: testNamespace,
-			Labels:    buildTestLabels(),
-		},
+		Name:      testName,
+		Namespace: testNamespace,
+		Labels:    buildTestLabels(),
 		Spec: istio.ServiceEntry{
 			Hosts: []string{testHost1},
 			Ports: []*istio.ServicePort{{
@@ -227,11 +216,9 @@ func buildExpectedServiceEntryForHostname(_ *testing.T) *istiov1beta1.ServiceEnt
 
 func buildExpectedServiceEntryForIP(_ *testing.T) *istiov1beta1.ServiceEntry {
 	return &istiov1beta1.ServiceEntry{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      testName,
-			Namespace: testNamespace,
-			Labels:    buildTestLabels(),
-		},
+		Name:      testName,
+		Namespace: testNamespace,
+		Labels:    buildTestLabels(),
 		Spec: istio.ServiceEntry{
 			Hosts:     []string{ignoredSubdomain},
 			Addresses: []string{"42.42.42.42" + subnetMask},

@@ -661,7 +661,7 @@ func Test_securityContextForInitContainer(t *testing.T) {
 		{
 			title: "init seccomp ff set to true",
 			dk: &dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{exp.InjectionSeccompKey: "true"}}, //nolint:staticcheck
+				Annotations: map[string]string{exp.InjectionSeccompKey: "true"}, //nolint:staticcheck
 			},
 			isOpenShift: true,
 			podSc:       corev1.PodSecurityContext{},
@@ -682,7 +682,7 @@ func Test_securityContextForInitContainer(t *testing.T) {
 		{
 			title: "init seccomp ff set to false",
 			dk: &dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{exp.InjectionSeccompKey: "false"}}, //nolint:staticcheck
+				Annotations: map[string]string{exp.InjectionSeccompKey: "false"}, //nolint:staticcheck
 			},
 			isOpenShift: true,
 			podSc:       corev1.PodSecurityContext{},
@@ -815,10 +815,8 @@ func getClassicFullStackSpec() oneagent.Spec {
 
 func getTestPod() *corev1.Pod {
 	return &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      testPodName,
-			Namespace: testNamespaceName,
-		},
+		Name:      testPodName,
+		Namespace: testNamespaceName,
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{
 				{
@@ -835,10 +833,8 @@ func getTestPod() *corev1.Pod {
 			},
 			Volumes: []corev1.Volume{
 				{
-					Name: "volume",
-					VolumeSource: corev1.VolumeSource{
-						EmptyDir: &corev1.EmptyDirVolumeSource{},
-					},
+					Name:     "volume",
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
 				},
 			},
 		},

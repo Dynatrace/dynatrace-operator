@@ -18,7 +18,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -56,17 +55,13 @@ func TestNewImageInstaller(t *testing.T) {
 	ctx := context.Background()
 	path := metadata.PathResolver{RootDir: t.TempDir()}
 	dk := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test",
-			Namespace: "dynakube",
-		},
-		Spec: dynakube.DynaKubeSpec{},
+		Name:      "test",
+		Namespace: "dynakube",
+		Spec:      dynakube.DynaKubeSpec{},
 	}
 	pullSecret := corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      dk.PullSecretName(),
-			Namespace: dk.Namespace,
-		},
+		Name:      dk.PullSecretName(),
+		Namespace: dk.Namespace,
 	}
 	pullSecret.Data = map[string][]byte{
 		corev1.DockerConfigJsonKey: []byte(emptyDockerConfig),
@@ -118,11 +113,9 @@ func TestInstaller_InstallAgent(t *testing.T) {
 					PathResolver: metadata.PathResolver{RootDir: t.TempDir()},
 					ImageURI:     testImageURL,
 					Dynakube: &dynakube.DynaKube{
-						ObjectMeta: metav1.ObjectMeta{
-							Name:      "test",
-							Namespace: "dynakube",
-						},
-						Spec: dynakube.DynaKubeSpec{},
+						Name:      "test",
+						Namespace: "dynakube",
+						Spec:      dynakube.DynaKubeSpec{},
 					},
 				},
 				transport: transport,

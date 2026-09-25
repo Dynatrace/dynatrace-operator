@@ -20,7 +20,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var anyCtx = mock.MatchedBy(func(context.Context) bool { return true })
@@ -258,10 +257,8 @@ func TestTokens_VerifyScopes(t *testing.T) {
 		{
 			title: "kubernetes-monitoring enabled - all scopes present",
 			dk: &dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{
-						"feature.dynatrace.com/automatic-kubernetes-api-monitoring": "true",
-					},
+				Annotations: map[string]string{
+					"feature.dynatrace.com/automatic-kubernetes-api-monitoring": "true",
 				},
 				Spec: dynakube.DynaKubeSpec{
 					ActiveGate: activegate.Spec{
@@ -287,10 +284,8 @@ func TestTokens_VerifyScopes(t *testing.T) {
 		{
 			title: "kubernetes-monitoring enabled - required scopes missing",
 			dk: &dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{
-						"feature.dynatrace.com/automatic-kubernetes-api-monitoring": "true",
-					},
+				Annotations: map[string]string{
+					"feature.dynatrace.com/automatic-kubernetes-api-monitoring": "true",
 				},
 				Spec: dynakube.DynaKubeSpec{
 					ActiveGate: activegate.Spec{
@@ -315,10 +310,8 @@ func TestTokens_VerifyScopes(t *testing.T) {
 		{
 			title: "kubernetes-monitoring enabled - optional scopes missing",
 			dk: &dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{
-						"feature.dynatrace.com/automatic-kubernetes-api-monitoring": "true",
-					},
+				Annotations: map[string]string{
+					"feature.dynatrace.com/automatic-kubernetes-api-monitoring": "true",
 				},
 				Spec: dynakube.DynaKubeSpec{
 					ActiveGate: activegate.Spec{

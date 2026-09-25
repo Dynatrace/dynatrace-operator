@@ -11,7 +11,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	imageclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/image"
@@ -29,17 +28,13 @@ func TestActiveGateUpdater(t *testing.T) {
 
 	t.Run("Getters work as expected", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{
-					exp.AGDisableUpdatesKey: "true", //nolint:staticcheck
-				},
+			Annotations: map[string]string{
+				exp.AGDisableUpdatesKey: "true", //nolint:staticcheck
 			},
 			Spec: dynakube.DynaKubeSpec{
 				ActiveGate: activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{activegate.DynatraceAPICapability.DisplayName},
-					CapabilityProperties: activegate.CapabilityProperties{
-						Image: testImage,
-					},
+					Image:        testImage,
 				},
 			},
 		}
@@ -67,9 +62,7 @@ func TestActiveGateUseDefault(t *testing.T) {
 			},
 			Status: dynakube.DynaKubeStatus{
 				ActiveGate: activegate.Status{
-					VersionStatus: status.VersionStatus{
-						Version: "prev",
-					},
+					Version: "prev",
 				},
 			},
 		}
@@ -94,9 +87,7 @@ func TestActiveGateIsEnabled(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			Status: dynakube.DynaKubeStatus{
 				ActiveGate: activegate.Status{
-					VersionStatus: status.VersionStatus{
-						Version: "prev",
-					},
+					Version: "prev",
 				},
 			},
 		}
@@ -117,10 +108,8 @@ func TestActiveGateLatestImageInfo(t *testing.T) {
 
 	newDK := func(registry string) *dynakube.DynaKube {
 		return &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{
-					exp.UsePublicRegistryKey: "true",
-				},
+			Annotations: map[string]string{
+				exp.UsePublicRegistryKey: "true",
 			},
 			Spec: dynakube.DynaKubeSpec{
 				ActiveGate: activegate.Spec{

@@ -19,7 +19,6 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
@@ -251,10 +250,8 @@ func TestReconcileK8SAPIFailures(t *testing.T) {
 
 func newTestDynaKube(mutators ...func(*dynakube.DynaKube)) *dynakube.DynaKube {
 	dk := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      testDynakubeName,
-			Namespace: testNamespace,
-		},
+		Name:      testDynakubeName,
+		Namespace: testNamespace,
 		Spec: dynakube.DynaKubeSpec{
 			APIURL:               "https://tenant.live.dynatrace.com/api",
 			KubernetesMonitoring: &kubemonapi.Spec{},
@@ -319,10 +316,8 @@ func assertDeploymentPropertiesSecretAbsent(t *testing.T, clt client.Client, dk 
 
 func newExistingDeploymentPropertiesSecret(dk *dynakube.DynaKube) *corev1.Secret {
 	return &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      dk.KubernetesMonitoring().GetDeploymentPropertiesSecretName(),
-			Namespace: dk.Namespace,
-		},
-		Data: map[string][]byte{agconsts.DeploymentPropertiesFileName: []byte("[resource_attributes]\na=b")},
+		Name:      dk.KubernetesMonitoring().GetDeploymentPropertiesSecretName(),
+		Namespace: dk.Namespace,
+		Data:      map[string][]byte{agconsts.DeploymentPropertiesFileName: []byte("[resource_attributes]\na=b")},
 	}
 }

@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -20,10 +19,8 @@ func Test_isAllowedSuffixAPIServer(t *testing.T) {
 	t.Run("happy apiServer", func(t *testing.T) {
 		for _, suffix := range allowedSuffix {
 			ec := &edgeconnect.EdgeConnect{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      testName,
-					Namespace: testNamespace,
-				},
+				Name:      testName,
+				Namespace: testNamespace,
 				Spec: edgeconnect.EdgeConnectSpec{
 					APIServer: "tenantid" + suffix,
 					OAuth: edgeconnect.OAuthSpec{

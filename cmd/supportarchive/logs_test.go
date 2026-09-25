@@ -41,14 +41,10 @@ func testLogCollection(t *testing.T, collectManagedLogs bool) {
 		createPod("pod3", k8slabel.AppManagedByLabel),
 		createPod("pod4", k8slabel.AppManagedByLabel),
 		&corev1.Pod{
-			TypeMeta: metav1.TypeMeta{
-				Kind:       "Pod",
-				APIVersion: "v1",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "rogue-foreign-pod",
-				Namespace: "dynatrace",
-			},
+			Kind:       "Pod",
+			APIVersion: "v1",
+			Name:       "rogue-foreign-pod",
+			Namespace:  "dynatrace",
 			Spec: corev1.PodSpec{
 				Containers: []corev1.Container{
 					{Name: "trojan-container"},
@@ -314,16 +310,12 @@ func createPod(name string, labelKey string) *corev1.Pod {
 	const namespace = "dynatrace"
 
 	return &corev1.Pod{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "Pod",
-			APIVersion: "v1",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
-			Labels: map[string]string{
-				labelKey: defaultOperatorAppName,
-			},
+		Kind:       "Pod",
+		APIVersion: "v1",
+		Name:       name,
+		Namespace:  namespace,
+		Labels: map[string]string{
+			labelKey: defaultOperatorAppName,
 		},
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{
@@ -336,9 +328,7 @@ func createPod(name string, labelKey string) *corev1.Pod {
 
 func createPodListOptions(labelKey string) metav1.ListOptions {
 	return metav1.ListOptions{
-		TypeMeta: metav1.TypeMeta{
-			Kind: "pod",
-		},
+		Kind:          "pod",
 		LabelSelector: fmt.Sprintf("%s=dynatrace-operator", labelKey),
 	}
 }

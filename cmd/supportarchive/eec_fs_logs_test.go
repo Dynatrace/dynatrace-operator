@@ -16,7 +16,6 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
 )
 
@@ -44,18 +43,14 @@ diag_executor.log
 func TestFsLog(t *testing.T) {
 	fakeClientSet := fake.NewClientset(
 		&corev1.Pod{
-			TypeMeta: metav1.TypeMeta{
-				Kind:       "Pod",
-				APIVersion: "v1",
+			Kind:       "Pod",
+			APIVersion: "v1",
+			Labels: map[string]string{
+				k8slabel.AppNameLabel:      LabelEECPodName,
+				k8slabel.AppManagedByLabel: "dynatrace-operator",
 			},
-			ObjectMeta: metav1.ObjectMeta{
-				Labels: map[string]string{
-					k8slabel.AppNameLabel:      LabelEECPodName,
-					k8slabel.AppManagedByLabel: "dynatrace-operator",
-				},
-				Name:      eecPodName,
-				Namespace: eecNamespace,
-			},
+			Name:      eecPodName,
+			Namespace: eecNamespace,
 			Spec: corev1.PodSpec{
 				Containers: []corev1.Container{
 					{Name: eecContainerName},

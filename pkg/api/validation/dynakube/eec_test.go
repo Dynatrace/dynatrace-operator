@@ -16,7 +16,6 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestExtensionExecutionControllerImage(t *testing.T) {
@@ -140,21 +139,17 @@ func TestExtensionExecutionControllerImage(t *testing.T) {
 func TestExtensionControllerImageNotRequired(t *testing.T) {
 	newDK := func() *dynakube.DynaKube {
 		return &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-			},
+			Name:      testName,
+			Namespace: testNamespace,
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testAPIURL,
 				ActiveGate: activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{
 						activegate.KubeMonCapability.DisplayName,
 					},
-					CapabilityProperties: activegate.CapabilityProperties{
-						Resources: corev1.ResourceRequirements{
-							Limits: corev1.ResourceList{
-								corev1.ResourceMemory: resource.MustParse("256Mi"),
-							},
+					Resources: corev1.ResourceRequirements{
+						Limits: corev1.ResourceList{
+							corev1.ResourceMemory: resource.MustParse("256Mi"),
 						},
 					},
 				},
@@ -290,11 +285,9 @@ func TestWarnIfmultipleDKwithExtensionsEnabled(t *testing.T) {
 		Capabilities: []activegate.CapabilityDisplayName{
 			activegate.KubeMonCapability.DisplayName,
 		},
-		CapabilityProperties: activegate.CapabilityProperties{
-			Resources: corev1.ResourceRequirements{
-				Limits: corev1.ResourceList{
-					corev1.ResourceCPU: resource.MustParse("1"),
-				},
+		Resources: corev1.ResourceRequirements{
+			Limits: corev1.ResourceList{
+				corev1.ResourceCPU: resource.MustParse("1"),
 			},
 		},
 	}
@@ -325,10 +318,8 @@ func TestWarnIfmultipleDKwithExtensionsEnabled(t *testing.T) {
 
 	t.Run("no warning different ApiUrls", func(t *testing.T) {
 		dk2 := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName + "second",
-				Namespace: testNamespace,
-			},
+			Name:      testName + "second",
+			Namespace: testNamespace,
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: "https://f.q.d.n/123",
 				Templates: dynakube.TemplatesSpec{
@@ -347,10 +338,8 @@ func TestWarnIfmultipleDKwithExtensionsEnabled(t *testing.T) {
 
 	t.Run("warning same ApiUrls", func(t *testing.T) {
 		dk2 := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName + "second",
-				Namespace: testNamespace,
-			},
+			Name:      testName + "second",
+			Namespace: testNamespace,
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testAPIURL,
 				Templates: dynakube.TemplatesSpec{
@@ -374,10 +363,8 @@ func TestWarnIfmultipleDKwithExtensionsEnabled(t *testing.T) {
 
 	t.Run("no warning same ApiUrls and for second dk: extensions feature is disabled", func(t *testing.T) {
 		dk2 := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName + "second",
-				Namespace: testNamespace,
-			},
+			Name:      testName + "second",
+			Namespace: testNamespace,
 			Spec: dynakube.DynaKubeSpec{
 				APIURL:     testAPIURL,
 				Extensions: nil,

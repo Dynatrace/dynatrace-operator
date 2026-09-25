@@ -8,7 +8,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/events"
 )
 
@@ -44,7 +43,7 @@ func SendPodUpdateEvent(recorder events.EventRecorder, dk *dynakube.DynaKube, po
 func SendMissingDynaKubeEvent(recorder events.EventRecorder, namespaceName, dynakubeName string) {
 	msg := fmt.Sprintf("Namespace '%s' is assigned to DynaKube instance '%s' but this instance doesn't exist", namespaceName, dynakubeName)
 	recorder.Eventf(
-		&dynakube.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: dynakubeName, Namespace: namespaceName}},
+		&dynakube.DynaKube{Name: dynakubeName, Namespace: namespaceName},
 		nil, // no related obj
 		corev1.EventTypeWarning,
 		missingDynakubeEvent,

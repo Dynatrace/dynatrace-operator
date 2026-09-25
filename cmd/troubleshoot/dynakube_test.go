@@ -14,7 +14,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -233,10 +232,8 @@ type testDynaKubeBuilder struct {
 func testNewDynakubeBuilder(namespace string, dynakubeName string) *testDynaKubeBuilder {
 	return &testDynaKubeBuilder{
 		dynakube: &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: namespace,
-				Name:      dynakubeName,
-			},
+			Namespace: namespace,
+			Name:      dynakubeName,
 		},
 	}
 }
@@ -334,9 +331,7 @@ func (builder *testDynaKubeBuilder) withCloudNativeFullStackCustomImage(image st
 		builder.dynakube.Spec.OneAgent.CloudNativeFullStack.Image = image
 	} else {
 		builder.dynakube.Spec.OneAgent.CloudNativeFullStack = &oneagent.CloudNativeFullStackSpec{
-			HostInjectSpec: oneagent.HostInjectSpec{
-				Image: image,
-			},
+			Image: image,
 		}
 	}
 	builder.dynakube.Status.OneAgent.ImageID = image
@@ -362,10 +357,8 @@ func (builder *testDynaKubeBuilder) withCloudNativeCodeModulesImage(image string
 		builder.dynakube.Spec.OneAgent.CloudNativeFullStack.CodeModulesImage = image
 	} else {
 		builder.dynakube.Spec.OneAgent.CloudNativeFullStack = &oneagent.CloudNativeFullStackSpec{
-			AppInjectionSpec: oneagent.AppInjectionSpec{
-				InitResources:    &corev1.ResourceRequirements{},
-				CodeModulesImage: image,
-			},
+			InitResources:    &corev1.ResourceRequirements{},
+			CodeModulesImage: image,
 		}
 	}
 	builder.dynakube.Status.CodeModules.ImageID = image
@@ -378,10 +371,8 @@ func (builder *testDynaKubeBuilder) withApplicationMonitoringCodeModulesImage(im
 		builder.dynakube.Spec.OneAgent.ApplicationMonitoring.CodeModulesImage = image
 	} else {
 		builder.dynakube.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{
-			AppInjectionSpec: oneagent.AppInjectionSpec{
-				InitResources:    &corev1.ResourceRequirements{},
-				CodeModulesImage: image,
-			},
+			InitResources:    &corev1.ResourceRequirements{},
+			CodeModulesImage: image,
 		}
 	}
 	builder.dynakube.Status.CodeModules.ImageID = image
@@ -404,11 +395,9 @@ func testNewSecretBuilder(namespace string, name string) *testSecretBuilder {
 
 	return &testSecretBuilder{
 		secret: &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: namespace,
-				Name:      name,
-			},
-			Data: secretData,
+			Namespace: namespace,
+			Name:      name,
+			Data:      secretData,
 		},
 	}
 }
@@ -430,9 +419,7 @@ func (builder *testSecretBuilder) build() *corev1.Secret {
 
 func testBuildNamespace(namespace string) *corev1.Namespace {
 	return &corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: namespace,
-			UID:  testUID,
-		},
+		Name: namespace,
+		UID:  testUID,
 	}
 }

@@ -42,11 +42,9 @@ func TestCheckActiveGateOOMKilled(t *testing.T) {
 
 	t.Run("ActiveGate pods found, none OOMKilled", func(t *testing.T) {
 		pod := &corev1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "dynakube-activegate-0",
-				Namespace: testNamespace,
-				Labels:    activeGateLabels,
-			},
+			Name:      "dynakube-activegate-0",
+			Namespace: testNamespace,
+			Labels:    activeGateLabels,
 			Status: corev1.PodStatus{
 				ContainerStatuses: []corev1.ContainerStatus{
 					{
@@ -72,11 +70,9 @@ func TestCheckActiveGateOOMKilled(t *testing.T) {
 	t.Run("ActiveGate pod with OOMKilled container", func(t *testing.T) {
 		finishedAt := time.Date(2026, 3, 31, 10, 0, 0, 0, time.UTC)
 		pod := &corev1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "dynakube-activegate-0",
-				Namespace: testNamespace,
-				Labels:    activeGateLabels,
-			},
+			Name:      "dynakube-activegate-0",
+			Namespace: testNamespace,
+			Labels:    activeGateLabels,
 			Status: corev1.PodStatus{
 				ContainerStatuses: []corev1.ContainerStatus{
 					{
@@ -111,11 +107,9 @@ func TestCheckActiveGateOOMKilled(t *testing.T) {
 	t.Run("multiple pods, one OOMKilled", func(t *testing.T) {
 		finishedAt := time.Date(2026, 3, 31, 10, 0, 0, 0, time.UTC)
 		oomPod := &corev1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "dynakube-activegate-0",
-				Namespace: testNamespace,
-				Labels:    activeGateLabels,
-			},
+			Name:      "dynakube-activegate-0",
+			Namespace: testNamespace,
+			Labels:    activeGateLabels,
 			Status: corev1.PodStatus{
 				ContainerStatuses: []corev1.ContainerStatus{
 					{
@@ -132,11 +126,9 @@ func TestCheckActiveGateOOMKilled(t *testing.T) {
 			},
 		}
 		healthyPod := &corev1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "dynakube-activegate-1",
-				Namespace: testNamespace,
-				Labels:    activeGateLabels,
-			},
+			Name:      "dynakube-activegate-1",
+			Namespace: testNamespace,
+			Labels:    activeGateLabels,
 			Status: corev1.PodStatus{
 				ContainerStatuses: []corev1.ContainerStatus{
 					{
@@ -163,11 +155,9 @@ func TestCheckActiveGateOOMKilled(t *testing.T) {
 	t.Run("pod with non-OOMKilled termination reason", func(t *testing.T) {
 		finishedAt := time.Date(2026, 3, 31, 10, 0, 0, 0, time.UTC)
 		pod := &corev1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "dynakube-activegate-0",
-				Namespace: testNamespace,
-				Labels:    activeGateLabels,
-			},
+			Name:      "dynakube-activegate-0",
+			Namespace: testNamespace,
+			Labels:    activeGateLabels,
 			Status: corev1.PodStatus{
 				ContainerStatuses: []corev1.ContainerStatus{
 					{

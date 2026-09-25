@@ -15,7 +15,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	batchv1 "k8s.io/api/batch/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -52,10 +51,8 @@ func TestIsAlreadyPresent(t *testing.T) {
 func TestIsReady(t *testing.T) {
 	ctx := context.Background()
 	owner := dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-dk",
-			Namespace: "test",
-		},
+		Name:      "test-dk",
+		Namespace: "test",
 	}
 	name := "job-1"
 	nodeName := "node-1"
@@ -143,10 +140,8 @@ func setupCompleteJob(t *testing.T, name, namespace string) client.Client {
 	t.Helper()
 
 	fakeJob := batchv1.Job{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
-		},
+		Name:      name,
+		Namespace: namespace,
 		Status: batchv1.JobStatus{
 			Succeeded: 1,
 		},
@@ -159,10 +154,8 @@ func setupInCompleteJob(t *testing.T, name, namespace string) client.Client {
 	t.Helper()
 
 	fakeJob := batchv1.Job{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
-		},
+		Name:      name,
+		Namespace: namespace,
 		Status: batchv1.JobStatus{
 			Succeeded: 0,
 		},

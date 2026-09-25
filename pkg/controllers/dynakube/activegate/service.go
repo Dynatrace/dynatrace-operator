@@ -16,7 +16,6 @@ import (
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -25,10 +24,8 @@ import (
 
 func (r *Reconciler) deleteService(ctx context.Context, dk *dynakube.DynaKube) error {
 	svc := corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      capability.BuildServiceName(dk.Name),
-			Namespace: dk.Namespace,
-		},
+		Name:      capability.BuildServiceName(dk.Name),
+		Namespace: dk.Namespace,
 	}
 
 	return client.IgnoreNotFound(r.client.Delete(ctx, &svc))
@@ -116,11 +113,9 @@ func CreateService(dk *dynakube.DynaKube) *corev1.Service {
 	coreLabels := k8slabel.NewCoreLabels(dk.Name, k8slabel.ActiveGateComponentLabel)
 
 	return &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      capability.BuildServiceName(dk.Name),
-			Namespace: dk.Namespace,
-			Labels:    coreLabels.BuildLabels(),
-		},
+		Name:      capability.BuildServiceName(dk.Name),
+		Namespace: dk.Namespace,
+		Labels:    coreLabels.BuildLabels(),
 		Spec: corev1.ServiceSpec{
 			Type:     corev1.ServiceTypeClusterIP,
 			Selector: buildSelectorLabels(dk.Name),

@@ -11,15 +11,12 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/stretchr/testify/assert"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestPublicRegistryOverrideWithoutPublicRegistry(t *testing.T) {
 	newDynakube := func() *dynakube.DynaKube {
 		return &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "test",
-			},
+			Name: "test",
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testAPIURL,
 			},
@@ -66,10 +63,8 @@ func TestPublicRegistryOverrideWithoutPublicRegistry(t *testing.T) {
 func TestPublicRegistryNotAllowedForClassic(t *testing.T) {
 	newClassicDynakube := func() *dynakube.DynaKube {
 		return &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-			},
+			Name:      testName,
+			Namespace: testNamespace,
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testAPIURL,
 				OneAgent: oneagent.Spec{
@@ -81,7 +76,7 @@ func TestPublicRegistryNotAllowedForClassic(t *testing.T) {
 
 	t.Run("non-classic mode returns no error", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{Name: testName, Namespace: testNamespace},
+			Name: testName, Namespace: testNamespace,
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testAPIURL,
 				OneAgent: oneagent.Spec{
@@ -141,11 +136,9 @@ func TestPublicRegistryNotAllowedForClassic(t *testing.T) {
 func TestPublicRegistryFlagIgnoredForPlatformToken(t *testing.T) {
 	newDynakube := func(annotations map[string]string) *dynakube.DynaKube {
 		return &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:        testName,
-				Namespace:   testNamespace,
-				Annotations: annotations,
-			},
+			Name:        testName,
+			Namespace:   testNamespace,
+			Annotations: annotations,
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testAPIURL,
 			},

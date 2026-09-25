@@ -47,17 +47,13 @@ func createDefaultReconciler(t *testing.T) (*Reconciler, client.WithWatch, *dyna
 	clt := fake.NewClientBuilder().
 		WithScheme(scheme.Scheme).
 		WithObjects(&corev1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: system.Namespace,
-				UID:  testUID,
-			},
+			Name: system.Namespace,
+			UID:  testUID,
 		}).
 		WithObjects(&corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName + activegate.AuthTokenSecretSuffix,
-				Namespace: testNamespace,
-			},
-			Data: map[string][]byte{authtoken.ActiveGateAuthTokenName: []byte(testToken)},
+			Name:      testName + activegate.AuthTokenSecretSuffix,
+			Namespace: testNamespace,
+			Data:      map[string][]byte{authtoken.ActiveGateAuthTokenName: []byte(testToken)},
 		}).
 		Build()
 	dk := &dynakube.DynaKube{
@@ -67,11 +63,9 @@ func createDefaultReconciler(t *testing.T) (*Reconciler, client.WithWatch, *dyna
 					activegate.RoutingCapability.DisplayName,
 				}},
 		},
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace:   testNamespace,
-			Name:        testName,
-			Annotations: map[string]string{},
-		}}
+		Namespace:   testNamespace,
+		Name:        testName,
+		Annotations: map[string]string{}}
 
 	r := NewReconciler(clt, clt)
 	require.NotNil(t, r)
@@ -162,10 +156,8 @@ func TestReconcile_GetCustomPropertyHash(t *testing.T) {
 	assert.Empty(t, hash)
 
 	err = clt.Create(t.Context(), &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      testName,
-			Namespace: testNamespace,
-		},
+		Name:      testName,
+		Namespace: testNamespace,
 		Data: map[string][]byte{
 			customproperties.DataKey: []byte(testValue),
 		},
@@ -185,10 +177,8 @@ func TestReconcile_GetActiveGateAuthTokenHash(t *testing.T) {
 	assert.NotEmpty(t, hash)
 
 	err = clt.Create(t.Context(), &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      dk.ActiveGate().GetAuthTokenSecretName(),
-			Namespace: dk.Namespace,
-		},
+		Name:      dk.ActiveGate().GetAuthTokenSecretName(),
+		Namespace: dk.Namespace,
 		Data: map[string][]byte{
 			authtoken.ActiveGateAuthTokenName: []byte(testValue),
 		},
@@ -256,7 +246,7 @@ func TestManageStatefulSet(t *testing.T) {
 		err := r.manageStatefulSet(ctx, dk, agCapability)
 		require.NoError(t, err)
 
-		statefulSet := &appsv1.StatefulSet{ObjectMeta: metav1.ObjectMeta{Namespace: dk.Namespace, Name: capability.BuildServiceName(dk.Name)}}
+		statefulSet := &appsv1.StatefulSet{Namespace: dk.Namespace, Name: capability.BuildServiceName(dk.Name)}
 		result, err := controllerutil.CreateOrUpdate(t.Context(), clt, statefulSet, func() error {
 			statefulSet.Labels[testName] = testValue
 
@@ -278,7 +268,7 @@ func TestManageStatefulSet(t *testing.T) {
 		err := r.manageStatefulSet(ctx, dk, agCapability)
 		require.NoError(t, err)
 
-		statefulSet := &appsv1.StatefulSet{ObjectMeta: metav1.ObjectMeta{Namespace: dk.Namespace, Name: capability.BuildServiceName(dk.Name)}}
+		statefulSet := &appsv1.StatefulSet{Namespace: dk.Namespace, Name: capability.BuildServiceName(dk.Name)}
 		result, err := controllerutil.CreateOrUpdate(t.Context(), clt, statefulSet, func() error {
 			statefulSet.Spec.Selector.MatchLabels["activegate"] = testValue
 
@@ -301,17 +291,13 @@ func TestStatefulSetUpdateWeakness(t *testing.T) {
 	clt := fake.NewClientBuilder().
 		WithScheme(scheme.Scheme).
 		WithObjects(&corev1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: system.Namespace,
-				UID:  testUID,
-			},
+			Name: system.Namespace,
+			UID:  testUID,
 		}).
 		WithObjects(&corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName + activegate.AuthTokenSecretSuffix,
-				Namespace: testNamespace,
-			},
-			Data: map[string][]byte{authtoken.ActiveGateAuthTokenName: []byte(testToken)},
+			Name:      testName + activegate.AuthTokenSecretSuffix,
+			Namespace: testNamespace,
+			Data:      map[string][]byte{authtoken.ActiveGateAuthTokenName: []byte(testToken)},
 		}).
 		Build()
 	dk := &dynakube.DynaKube{
@@ -321,10 +307,8 @@ func TestStatefulSetUpdateWeakness(t *testing.T) {
 					activegate.RoutingCapability.DisplayName,
 				}},
 		},
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: testNamespace,
-			Name:      testName,
-		},
+		Namespace: testNamespace,
+		Name:      testName,
 		Status: dynakube.DynaKubeStatus{
 			ActiveGate: activegate.Status{
 				ConnectionInfo: communication.ConnectionInfo{

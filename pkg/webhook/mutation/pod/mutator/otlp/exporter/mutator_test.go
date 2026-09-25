@@ -795,7 +795,7 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive // function-length
 	t.Run("existing activegate cert volume", func(t *testing.T) {
 		pod := getTestPod()
 		pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
-			Name: ActiveGateTrustedCertVolumeName, VolumeSource: corev1.VolumeSource{Secret: &corev1.SecretVolumeSource{SecretName: consts.OTLPExporterCertsSecretName}},
+			Name: ActiveGateTrustedCertVolumeName, Secret: &corev1.SecretVolumeSource{SecretName: consts.OTLPExporterCertsSecretName},
 		})
 		expectVolumes := pod.DeepCopy().Spec.Volumes
 
@@ -816,7 +816,7 @@ func TestMutator_Mutate(t *testing.T) { //nolint:revive // function-length
 	t.Run("conflicting activegate cert volume", func(t *testing.T) {
 		pod := getTestPod()
 		pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
-			Name: ActiveGateTrustedCertVolumeName, VolumeSource: corev1.VolumeSource{Secret: &corev1.SecretVolumeSource{SecretName: "foo-cert"}},
+			Name: ActiveGateTrustedCertVolumeName, Secret: &corev1.SecretVolumeSource{SecretName: "foo-cert"},
 		})
 
 		m := Mutator{}
@@ -934,11 +934,9 @@ func createTestMutationRequest(t *testing.T, dk *dynakube.DynaKube) *mutator.Mut
 
 func getTestNamespace() *corev1.Namespace {
 	return &corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: testNamespaceName,
-			Labels: map[string]string{
-				mutator.InjectionInstanceLabel: testDynakubeName,
-			},
+		Name: testNamespaceName,
+		Labels: map[string]string{
+			mutator.InjectionInstanceLabel: testDynakubeName,
 		},
 	}
 }
@@ -968,11 +966,9 @@ func getTestDynakubeMeta() metav1.ObjectMeta {
 
 func getTestPod() *corev1.Pod {
 	return &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        testPodName,
-			Namespace:   testNamespaceName,
-			Annotations: map[string]string{},
-		},
+		Name:        testPodName,
+		Namespace:   testNamespaceName,
+		Annotations: map[string]string{},
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{
 				{
@@ -988,10 +984,8 @@ func getTestPod() *corev1.Pod {
 			},
 			Volumes: []corev1.Volume{
 				{
-					Name: "volume",
-					VolumeSource: corev1.VolumeSource{
-						EmptyDir: &corev1.EmptyDirVolumeSource{},
-					},
+					Name:     "volume",
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
 				},
 			},
 		},

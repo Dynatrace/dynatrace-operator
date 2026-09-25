@@ -279,10 +279,8 @@ func (r *Reconciler) reconcileRollout(ctx context.Context, dk *dynakube.DynaKube
 
 		// remove old daemonset with feature in name
 		oldClassicDaemonset := &appsv1.DaemonSet{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      fmt.Sprintf("%s-%s", dk.Name, oldDsName),
-				Namespace: dk.Namespace,
-			},
+			Name:      fmt.Sprintf("%s-%s", dk.Name, oldDsName),
+			Namespace: dk.Namespace,
 		}
 
 		err = r.client.Delete(ctx, oldClassicDaemonset)
@@ -367,7 +365,7 @@ func (r *Reconciler) reconcileInstanceStatuses(ctx context.Context, dk *dynakube
 }
 
 func (r *Reconciler) removeOneAgentDaemonSet(ctx context.Context, dk *dynakube.DynaKube) error {
-	oneAgentDaemonSet := appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dk.OneAgent().GetDaemonsetName(), Namespace: dk.Namespace}}
+	oneAgentDaemonSet := appsv1.DaemonSet{Name: dk.OneAgent().GetDaemonsetName(), Namespace: dk.Namespace}
 
 	return client.IgnoreNotFound(r.client.Delete(ctx, &oneAgentDaemonSet))
 }

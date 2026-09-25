@@ -11,7 +11,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/events"
 )
 
@@ -19,10 +18,8 @@ func TestSendCRDVersionMismatch(t *testing.T) {
 	t.Run("sends event for DynaKube object", func(t *testing.T) {
 		recorder := events.NewFakeRecorder(10)
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-dynakube",
-				Namespace: "dynatrace",
-			},
+			Name:      "test-dynakube",
+			Namespace: "dynatrace",
 		}
 
 		SendCRDVersionMismatch(recorder, dk)
@@ -40,10 +37,8 @@ func TestSendCRDVersionMismatch(t *testing.T) {
 	t.Run("sends event for EdgeConnect object", func(t *testing.T) {
 		recorder := events.NewFakeRecorder(10)
 		ec := &edgeconnect.EdgeConnect{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-edgeconnect",
-				Namespace: "dynatrace",
-			},
+			Name:      "test-edgeconnect",
+			Namespace: "dynatrace",
 		}
 
 		SendCRDVersionMismatch(recorder, ec)
@@ -62,10 +57,8 @@ func TestSendCRDVersionMismatch(t *testing.T) {
 		recorder := events.NewFakeRecorder(10)
 		// Use a generic Kubernetes object to ensure interface compatibility
 		pod := &corev1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-pod",
-				Namespace: "default",
-			},
+			Name:      "test-pod",
+			Namespace: "default",
 		}
 
 		// Should compile and run without errors

@@ -55,9 +55,7 @@ func TestOneAgentIsEnabled(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			Status: dynakube.DynaKubeStatus{
 				OneAgent: oneagent.Status{
-					VersionStatus: status.VersionStatus{
-						Version: "prev",
-					},
+					Version:     "prev",
 					Healthcheck: newHealthConfig([]string{"run", "this"}),
 				},
 			},
@@ -142,11 +140,9 @@ func TestOneAgentUseDefault(t *testing.T) {
 			},
 			Status: dynakube.DynaKubeStatus{
 				OneAgent: oneagent.Status{
-					VersionStatus: status.VersionStatus{
-						ImageID: "some.registry.com:" + previousVersion,
-						Version: previousVersion,
-						Source:  status.TenantRegistryVersionSource,
-					},
+					ImageID: "some.registry.com:" + previousVersion,
+					Version: previousVersion,
+					Source:  status.TenantRegistryVersionSource,
 				},
 			},
 		}
@@ -176,11 +172,9 @@ func TestOneAgentUseDefault(t *testing.T) {
 			},
 			Status: dynakube.DynaKubeStatus{
 				OneAgent: oneagent.Status{
-					VersionStatus: status.VersionStatus{
-						ImageID: "some.registry.com:" + previousVersion,
-						Version: previousVersion,
-						Source:  status.TenantRegistryVersionSource,
-					},
+					ImageID: "some.registry.com:" + previousVersion,
+					Version: previousVersion,
+					Source:  status.TenantRegistryVersionSource,
 				},
 			},
 		}
@@ -330,10 +324,8 @@ func TestOneAgentLatestImageInfo(t *testing.T) {
 
 	newDK := func(registry string) *dynakube.DynaKube {
 		return &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{
-					exp.UsePublicRegistryKey: "true",
-				},
+			Annotations: map[string]string{
+				exp.UsePublicRegistryKey: "true",
 			},
 			Spec: dynakube.DynaKubeSpec{
 				OneAgent: oneagent.Spec{

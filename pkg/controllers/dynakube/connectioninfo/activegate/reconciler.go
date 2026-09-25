@@ -18,7 +18,6 @@ import (
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -44,7 +43,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, agClient agclient.Client, dk
 
 		dk.Status.ActiveGate.ConnectionInfo = communication.ConnectionInfo{}
 
-		err := r.secrets.Delete(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: dk.ActiveGate().GetTenantSecretName(), Namespace: dk.Namespace}})
+		err := r.secrets.Delete(ctx, &corev1.Secret{Name: dk.ActiveGate().GetTenantSecretName(), Namespace: dk.Namespace})
 		if err != nil {
 			log.Error(err, "failed to clean-up ActiveGate tenant-secret")
 		}

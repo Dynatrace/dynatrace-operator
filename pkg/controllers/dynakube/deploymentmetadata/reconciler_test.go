@@ -57,10 +57,8 @@ func TestReconcile(t *testing.T) {
 		dk := createTestDynakube(nil)
 		fakeClient := fake.NewClientBuilder().WithObjects(
 			&corev1.ConfigMap{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      GetDeploymentMetadataConfigMapName(testName),
-					Namespace: testNamespace,
-				},
+				Name:      GetDeploymentMetadataConfigMapName(testName),
+				Namespace: testNamespace,
 			},
 		).Build()
 		r := NewReconciler(fakeClient, fakeClient, clusterID)

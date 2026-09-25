@@ -12,7 +12,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/mount-utils"
 )
 
@@ -336,9 +335,7 @@ func createBaseDK(t *testing.T, name, apiURL string) dynakube.DynaKube {
 	t.Helper()
 
 	return dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
-		},
+		Name: name,
 		Spec: dynakube.DynaKubeSpec{
 			APIURL: apiURL,
 		},

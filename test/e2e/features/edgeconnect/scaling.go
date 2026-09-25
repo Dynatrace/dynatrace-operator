@@ -16,7 +16,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv1 "k8s.io/api/autoscaling/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
@@ -52,10 +51,8 @@ func WithHPARegular(t *testing.T) features.Feature {
 	ecComponents.Install(builder, tenant.EdgeConnectSecret{}, testEdgeConnect)
 
 	testHPA := &autoscalingv1.HorizontalPodAutoscaler{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-autoscaler",
-			Namespace: testEdgeConnect.Namespace,
-		},
+		Name:      "test-autoscaler",
+		Namespace: testEdgeConnect.Namespace,
 		Spec: autoscalingv1.HorizontalPodAutoscalerSpec{
 			ScaleTargetRef: autoscalingv1.CrossVersionObjectReference{
 				Kind:       "Deployment",
@@ -101,10 +98,8 @@ func WithHPAProvisioner(t *testing.T) features.Feature {
 	builder.Assess("get tenant config", getTenantConfig(testECname, secretConfig, edgeConnectTenantConfig))
 
 	testHPA := &autoscalingv1.HorizontalPodAutoscaler{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-autoscaler",
-			Namespace: testEdgeConnect.Namespace,
-		},
+		Name:      "test-autoscaler",
+		Namespace: testEdgeConnect.Namespace,
 		Spec: autoscalingv1.HorizontalPodAutoscalerSpec{
 			ScaleTargetRef: autoscalingv1.CrossVersionObjectReference{
 				Kind:       "Deployment",

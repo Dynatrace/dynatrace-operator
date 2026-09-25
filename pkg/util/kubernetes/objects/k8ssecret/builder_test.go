@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestBuild(t *testing.T) {
@@ -26,9 +25,7 @@ func TestBuild(t *testing.T) {
 
 	createDeployment := func() *appsv1.Deployment {
 		return &appsv1.Deployment{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: testDeploymentName,
-			},
+			Name: testDeploymentName,
 		}
 	}
 

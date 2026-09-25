@@ -20,7 +20,6 @@ import (
 	istiov1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
@@ -60,10 +59,8 @@ func TestReconcileIPServiceEntry(t *testing.T) {
 		ctx := t.Context()
 		dk := createTestDynaKube()
 		serviceEntry := &istiov1beta1.ServiceEntry{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      BuildNameForIPServiceEntry(dk.Name, component),
-				Namespace: dk.Namespace,
-			},
+			Name:      BuildNameForIPServiceEntry(dk.Name, component),
+			Namespace: dk.Namespace,
 		}
 		fakeClient := fake.NewClientWithIndex(serviceEntry)
 		reconciler := NewReconciler(fakeClient, fakeClient)
@@ -87,10 +84,8 @@ func TestReconcileIPServiceEntry(t *testing.T) {
 		require.NoError(t, err)
 
 		expectedServiceEntry := &istiov1beta1.ServiceEntry{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      BuildNameForIPServiceEntry(dk.Name, component),
-				Namespace: dk.Namespace,
-			},
+			Name:      BuildNameForIPServiceEntry(dk.Name, component),
+			Namespace: dk.Namespace,
 		}
 
 		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedServiceEntry), expectedServiceEntry)
@@ -119,16 +114,12 @@ func TestReconcileFQDNServiceEntry(t *testing.T) {
 		ctx := t.Context()
 		owner := createTestDynaKube()
 		serviceEntry := &istiov1beta1.ServiceEntry{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      BuildNameForFQDNServiceEntry(owner.GetName(), component),
-				Namespace: owner.GetNamespace(),
-			},
+			Name:      BuildNameForFQDNServiceEntry(owner.GetName(), component),
+			Namespace: owner.GetNamespace(),
 		}
 		virtualService := &istiov1beta1.VirtualService{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      BuildNameForFQDNServiceEntry(owner.GetName(), component),
-				Namespace: owner.GetNamespace(),
-			},
+			Name:      BuildNameForFQDNServiceEntry(owner.GetName(), component),
+			Namespace: owner.GetNamespace(),
 		}
 		fakeClient := fake.NewClientWithIndex(serviceEntry, virtualService)
 		reconciler := NewReconciler(fakeClient, fakeClient)
@@ -153,16 +144,12 @@ func TestReconcileFQDNServiceEntry(t *testing.T) {
 		require.NoError(t, err)
 
 		expectedServiceEntry := &istiov1beta1.ServiceEntry{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      BuildNameForFQDNServiceEntry(owner.GetName(), component),
-				Namespace: owner.GetNamespace(),
-			},
+			Name:      BuildNameForFQDNServiceEntry(owner.GetName(), component),
+			Namespace: owner.GetNamespace(),
 		}
 		expectedVirtualService := &istiov1beta1.VirtualService{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      BuildNameForFQDNServiceEntry(owner.GetName(), component),
-				Namespace: owner.GetNamespace(),
-			},
+			Name:      BuildNameForFQDNServiceEntry(owner.GetName(), component),
+			Namespace: owner.GetNamespace(),
 		}
 
 		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedServiceEntry), expectedServiceEntry)
@@ -217,16 +204,12 @@ func TestReconcileAPIUrl(t *testing.T) {
 		require.NoError(t, err)
 
 		expectedServiceEntry := &istiov1beta1.ServiceEntry{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      BuildNameForFQDNServiceEntry(dk.GetName(), OperatorComponent),
-				Namespace: dk.GetNamespace(),
-			},
+			Name:      BuildNameForFQDNServiceEntry(dk.GetName(), OperatorComponent),
+			Namespace: dk.GetNamespace(),
 		}
 		expectedVirtualService := &istiov1beta1.VirtualService{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      BuildNameForFQDNServiceEntry(dk.GetName(), OperatorComponent),
-				Namespace: dk.GetNamespace(),
-			},
+			Name:      BuildNameForFQDNServiceEntry(dk.GetName(), OperatorComponent),
+			Namespace: dk.GetNamespace(),
 		}
 
 		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedServiceEntry), expectedServiceEntry)
@@ -267,23 +250,17 @@ func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
 		require.NoError(t, err)
 
 		expectedFQDNServiceEntry := &istiov1beta1.ServiceEntry{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      BuildNameForFQDNServiceEntry(dk.GetName(), CodeModuleComponent),
-				Namespace: dk.GetNamespace(),
-			},
+			Name:      BuildNameForFQDNServiceEntry(dk.GetName(), CodeModuleComponent),
+			Namespace: dk.GetNamespace(),
 		}
 
 		expectedIPServiceEntry := &istiov1beta1.ServiceEntry{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      BuildNameForIPServiceEntry(dk.GetName(), CodeModuleComponent),
-				Namespace: dk.GetNamespace(),
-			},
+			Name:      BuildNameForIPServiceEntry(dk.GetName(), CodeModuleComponent),
+			Namespace: dk.GetNamespace(),
 		}
 		expectedVirtualService := &istiov1beta1.VirtualService{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      BuildNameForFQDNServiceEntry(dk.GetName(), CodeModuleComponent),
-				Namespace: dk.GetNamespace(),
-			},
+			Name:      BuildNameForFQDNServiceEntry(dk.GetName(), CodeModuleComponent),
+			Namespace: dk.GetNamespace(),
 		}
 
 		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedFQDNServiceEntry), expectedFQDNServiceEntry)
@@ -325,23 +302,17 @@ func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
 		require.NoError(t, err)
 
 		expectedFQDNServiceEntry := &istiov1beta1.ServiceEntry{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      BuildNameForFQDNServiceEntry(dk.GetName(), CodeModuleComponent),
-				Namespace: dk.GetNamespace(),
-			},
+			Name:      BuildNameForFQDNServiceEntry(dk.GetName(), CodeModuleComponent),
+			Namespace: dk.GetNamespace(),
 		}
 
 		expectedIPServiceEntry := &istiov1beta1.ServiceEntry{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      BuildNameForIPServiceEntry(dk.GetName(), CodeModuleComponent),
-				Namespace: dk.GetNamespace(),
-			},
+			Name:      BuildNameForIPServiceEntry(dk.GetName(), CodeModuleComponent),
+			Namespace: dk.GetNamespace(),
 		}
 		expectedVirtualService := &istiov1beta1.VirtualService{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      BuildNameForFQDNServiceEntry(dk.GetName(), CodeModuleComponent),
-				Namespace: dk.GetNamespace(),
-			},
+			Name:      BuildNameForFQDNServiceEntry(dk.GetName(), CodeModuleComponent),
+			Namespace: dk.GetNamespace(),
 		}
 
 		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedFQDNServiceEntry), expectedFQDNServiceEntry)
@@ -399,17 +370,13 @@ func TestReconcileActiveGateCommunicationHosts(t *testing.T) {
 		require.NoError(t, err)
 
 		expectedFQDNServiceEntry := &istiov1beta1.ServiceEntry{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      BuildNameForFQDNServiceEntry(dk.GetName(), ActiveGateComponent),
-				Namespace: dk.GetNamespace(),
-			},
+			Name:      BuildNameForFQDNServiceEntry(dk.GetName(), ActiveGateComponent),
+			Namespace: dk.GetNamespace(),
 		}
 
 		expectedVirtualService := &istiov1beta1.VirtualService{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      BuildNameForFQDNServiceEntry(dk.GetName(), ActiveGateComponent),
-				Namespace: dk.GetNamespace(),
-			},
+			Name:      BuildNameForFQDNServiceEntry(dk.GetName(), ActiveGateComponent),
+			Namespace: dk.GetNamespace(),
 		}
 
 		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedFQDNServiceEntry), expectedFQDNServiceEntry)
@@ -447,16 +414,12 @@ func TestReconcileActiveGateCommunicationHosts(t *testing.T) {
 		require.NoError(t, err)
 
 		expectedFQDNServiceEntry := &istiov1beta1.ServiceEntry{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      BuildNameForFQDNServiceEntry(dk.GetName(), ActiveGateComponent),
-				Namespace: dk.GetNamespace(),
-			},
+			Name:      BuildNameForFQDNServiceEntry(dk.GetName(), ActiveGateComponent),
+			Namespace: dk.GetNamespace(),
 		}
 		expectedVirtualService := &istiov1beta1.VirtualService{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      BuildNameForFQDNServiceEntry(dk.GetName(), ActiveGateComponent),
-				Namespace: dk.GetNamespace(),
-			},
+			Name:      BuildNameForFQDNServiceEntry(dk.GetName(), ActiveGateComponent),
+			Namespace: dk.GetNamespace(),
 		}
 
 		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedFQDNServiceEntry), expectedFQDNServiceEntry)
@@ -503,16 +466,12 @@ func TestReconcileActiveGateCommunicationHosts(t *testing.T) {
 		require.NoError(t, err)
 
 		expectedFQDNServiceEntry := &istiov1beta1.ServiceEntry{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      BuildNameForFQDNServiceEntry(dk.GetName(), ActiveGateComponent),
-				Namespace: dk.GetNamespace(),
-			},
+			Name:      BuildNameForFQDNServiceEntry(dk.GetName(), ActiveGateComponent),
+			Namespace: dk.GetNamespace(),
 		}
 		expectedVirtualService := &istiov1beta1.VirtualService{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      BuildNameForFQDNServiceEntry(dk.GetName(), ActiveGateComponent),
-				Namespace: dk.GetNamespace(),
-			},
+			Name:      BuildNameForFQDNServiceEntry(dk.GetName(), ActiveGateComponent),
+			Namespace: dk.GetNamespace(),
 		}
 
 		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedFQDNServiceEntry), expectedFQDNServiceEntry)
@@ -551,13 +510,9 @@ func createTestDynaKube() *dynakube.DynaKube {
 	endpoints := "https://abcd123.some.activegate.endpointurl.com:443"
 
 	return &dynakube.DynaKube{
-		TypeMeta: metav1.TypeMeta{
-			Kind: "DynaKube",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "owner",
-			Namespace: "test",
-		},
+		Kind:      "DynaKube",
+		Name:      "owner",
+		Namespace: "test",
 		Spec: dynakube.DynaKubeSpec{
 			APIURL: "https://test.dev.dynatracelabs.com/api",
 			ActiveGate: activegate.Spec{
