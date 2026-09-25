@@ -172,7 +172,7 @@ func readAgentFiles(ctx context.Context, t *testing.T, resource *resources.Resou
 func readCodeModuleDir(ctx context.Context, t *testing.T, resource *resources.Resources, pod corev1.Pod, container string) string {
 	t.Helper()
 
-	command := shell.Shell(shell.Command{"grep ' " + oacommon.DefaultInstallPath + " ' /proc/self/mounts"})
+	command := shell.GrepMounts(oacommon.DefaultInstallPath)
 
 	result, err := k8spod.Exec(ctx, resource, pod, container, command...)
 	require.NoError(t, err)
@@ -258,7 +258,7 @@ func waitForNewCodeModuleToBeLinked(dk dynakube.DynaKube, snapshot *agentFilesSn
 // readLatestCodeModule reads the symlink from /data/_dynakube/<name>/latest-codemodule
 func readLatestCodeModule(ctx context.Context, resource *resources.Resources, pod corev1.Pod, dynakubeName string) (string, error) {
 	latestLink := path.Join(dataPath, dtcsi.SharedDynaKubesDir, dynakubeName, "latest-codemodule")
-	command := shell.Shell(shell.Command{"readlink " + latestLink})
+	command := shell.ReadLink(latestLink)
 
 	result, err := k8spod.Exec(ctx, resource, pod, provisionerContainerName, command...)
 	if err != nil {
