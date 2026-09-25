@@ -123,7 +123,65 @@ Ordering of **function parameters** should be:
 
 Ordering of **return values** is more straightforward; the `err error` should always be the last, and AVOID returning more than two values. If more than two return values are needed, try splitting the logic or collecting the return values in a `struct`.
 
-So a full example: `func ExampleFunc(ctx context.Context, kubeClient client.Client, pod corev1.Pod, data string) (corev1.Pod, error) {...}`
+So a full example: `func ExampleFunc(ctx context.Context, kubeClient client.Client, pod *corev1.Pod, data string) (*corev1.Pod, error) {...}`
+
+## Pointers vs Pass-by-Value
+
+The general principle: pass large, mutable domain objects as pointers; pass small, flat data-carrier structs by value.
+
+### Large objects: CRD types and Kubernetes API objects
+
+Always use a pointer — in function parameters, return values, and struct fields.
+
+The rule applies to all top-level types that implement `metav1.Object` — i.e., anything you pass to `client.Client` or `client.Reader`. In practice this means:
+
+- CRD types: `*dynakube.DynaKube`, `*edgeconnect.EdgeConnect`, `*prometheusmonitoring.PrometheusMonitoring`
+- Kubernetes API objects: `*appsv1.StatefulSet`, `*appsv1.DaemonSet`, `*appsv1.Deployment`, `*corev1.Pod`, `*corev1.Secret`, `*admissionregistrationv1.MutatingWebhookConfiguration`, etc.
+
+Reasoning: Kubernetes objects define their methods on pointer receivers, so a value type does not satisfy interfaces like `client.Object`. Using a value forces wrapping or explicit referencing at every call site. Copying is also expensive and produces subtle bugs when the caller mutates the value after passing it.
+
+```go
+// ✓ pointer parameter
+func PassObject(ds *appsv1.DaemonSet) { ... }
+
+// ✓ pointer return value
+func ReturnObject() *appsv1.DaemonSet { ... }
+
+// ✓ pointer in struct field
+type AuthTokenModifier struct {
+    dk *dynakube.DynaKube
+}
+
+// ✓ - pointer receiver
+func (dk *dynakube.DynaKube) Method() { ... }
+
+
+// ✗ - value parameter copies the whole struct
+func PassObject(ds appsv1.DaemonSet) { ... }
+
+// ✗ - value return copies the whole struct
+func ReturnObject() appsv1.DaemonSet { ... }
+
+// ✗ - value receiver on a CRD type
+func (dk dynakube.DynaKube) Method() { ... }
+```
+
+### Small data-carrier structs
+
+Prefer passing by value for flat, read-only config bags with no mutation after construction. Use the zero value (e.g. `MyConfig{}`) instead of `nil` to express "no value provided".
+
+Exception: if the struct is not yet populated when the call is set up, pass a pointer or use a closure — Go evaluates arguments at the call site, so a by-value argument captures whatever is there at that moment.
+
+```go
+// ✗ - evaluated immediately; captures an empty Secret if config isn't populated yet
+steps.Add(tenant.CreateClientSecret(config.Secret))
+
+// ✓ - closure reads config.Secret at execution time
+steps.Add(func() { tenant.CreateClientSecret(config.Secret) })
+
+// ✓ - pointer reads the current value when the function actually runs
+steps.Add(tenant.CreateClientSecret(&config.Secret))
+```
 
 ## Cuddling of statements
 
@@ -282,7 +340,7 @@ func GetSecretName(dkName string) string {
   return dkName + logMonitoringSecretSuffix
 }
 
-func AddAnnotations(source map[string]string, dk dynakube.DynaKube) map[string]string {
+func AddAnnotations(source map[string]string, dk *dynakube.DynaKube) map[string]string {
   annotation := map[string]string{}
   if source != nil {
    annotation = maps.Clone(source)
@@ -488,11 +546,11 @@ to not overlap with package name `dynakube` or `edgeconnect`.
 For example:
 
 ```go
-dk := dynakube.DynaKube{}
+dk := &dynakube.DynaKube{}
 ```
 
 ```go
-ec := edgeconnect.EdgeConnect{}
+ec := &edgeconnect.EdgeConnect{}
 ```
 
 ```go

@@ -20,8 +20,8 @@ import (
 
 const ns = "dynatrace"
 
-func createTestDeploymentWithMatchLabels(name, namespace string, annotations, matchLabels map[string]string) appsv1.Deployment {
-	return appsv1.Deployment{
+func createTestDeploymentWithMatchLabels(name, namespace string, annotations, matchLabels map[string]string) *appsv1.Deployment {
+	return &appsv1.Deployment{
 		Name:        name,
 		Namespace:   namespace,
 		Annotations: annotations,

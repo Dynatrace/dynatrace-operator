@@ -233,14 +233,14 @@ func Test_optionsFromDynakube(t *testing.T) {
 	})
 
 	t.Run("returns error when proxy secret is missing", func(t *testing.T) {
-		dk := dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			Namespace: testNamespace,
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testAPIURL,
 				Proxy:  &value.Source{ValueFrom: testProxySecret},
 			},
 		}
-		_, err := optionsFromDynakube(t.Context(), fake.NewClient(), &dk, testAPIToken, testPaasToken, "", testConnectionTimeout)
+		_, err := optionsFromDynakube(t.Context(), fake.NewClient(), dk, testAPIToken, testPaasToken, "", testConnectionTimeout)
 
 		require.Error(t, err)
 	})
@@ -275,11 +275,11 @@ func Test_optionsFromDynakube(t *testing.T) {
 
 func TestNewClientFromDynakube(t *testing.T) {
 	t.Run("returns a fully initialized client", func(t *testing.T) {
-		dk := dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			Namespace: testNamespace,
 			Spec:      dynakube.DynaKubeSpec{APIURL: testAPIURL},
 		}
-		dtClient, err := NewClientFromDynakube(t.Context(), fake.NewClient(), &dk, testAPIToken, testPaasToken, "", testConnectionTimeout)
+		dtClient, err := NewClientFromDynakube(t.Context(), fake.NewClient(), dk, testAPIToken, testPaasToken, "", testConnectionTimeout)
 
 		require.NoError(t, err)
 		require.NotNil(t, dtClient)

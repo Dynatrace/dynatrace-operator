@@ -27,7 +27,7 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 	namespaceName := "test"
 
 	t.Run("should find the root owner of the pod", func(t *testing.T) {
-		pod := corev1.Pod{
+		pod := &corev1.Pod{
 			OwnerReferences: []metav1.OwnerReference{
 				{
 					APIVersion: "apps/v1",
@@ -40,7 +40,7 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 			Namespace: namespaceName,
 		}
 
-		deployment := appsv1.Deployment{
+		deployment := &appsv1.Deployment{
 			OwnerReferences: []metav1.OwnerReference{
 				{
 					APIVersion: "apps/v1",
@@ -53,7 +53,7 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 			Namespace: namespaceName,
 		}
 
-		daemonSet := appsv1.DaemonSet{
+		daemonSet := &appsv1.DaemonSet{
 			Kind:       "DaemonSet",
 			APIVersion: "apps/v1",
 			Name:       resourceName,
@@ -64,9 +64,9 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 			Name: namespaceName,
 		}
 
-		request := mutator.BaseRequest{Pod: &pod, Namespace: namespace}
+		request := mutator.BaseRequest{Pod: pod, Namespace: namespace}
 
-		client := fake.NewClient(&pod, &deployment, &daemonSet, namespace)
+		client := fake.NewClient(pod, deployment, daemonSet, namespace)
 
 		workloadInfo, err := FindRootOwnerOfPod(ctx, client, request)
 		require.NoError(t, err)
@@ -75,7 +75,7 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 	})
 
 	t.Run("should return Pod if owner references are empty", func(t *testing.T) {
-		pod := corev1.Pod{
+		pod := &corev1.Pod{
 			Kind:            "Pod",
 			OwnerReferences: []metav1.OwnerReference{},
 			Name:            resourceName,
@@ -85,9 +85,9 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 			Name: namespaceName,
 		}
 
-		request := mutator.BaseRequest{Pod: &pod, Namespace: namespace}
+		request := mutator.BaseRequest{Pod: pod, Namespace: namespace}
 
-		client := fake.NewClient(&pod)
+		client := fake.NewClient(pod)
 		workloadInfo, err := FindRootOwnerOfPod(ctx, client, request)
 		require.NoError(t, err)
 		assert.Equal(t, resourceName, workloadInfo.Name)
@@ -95,7 +95,7 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 	})
 
 	t.Run("should be pod if owner is not well known", func(t *testing.T) {
-		pod := corev1.Pod{
+		pod := &corev1.Pod{
 			Kind: "Pod",
 			OwnerReferences: []metav1.OwnerReference{
 				{
@@ -107,7 +107,7 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 			},
 			Name: resourceName,
 		}
-		secret := corev1.Secret{
+		secret := &corev1.Secret{
 			Name:      resourceName,
 			Namespace: namespaceName,
 		}
@@ -116,9 +116,9 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 			Name: namespaceName,
 		}
 
-		request := mutator.BaseRequest{Pod: &pod, Namespace: namespace}
+		request := mutator.BaseRequest{Pod: pod, Namespace: namespace}
 
-		client := fake.NewClient(&pod, &secret)
+		client := fake.NewClient(pod, secret)
 		workloadInfo, err := FindRootOwnerOfPod(ctx, client, request)
 		require.NoError(t, err)
 		assert.Equal(t, resourceName, workloadInfo.Name)
@@ -126,7 +126,7 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 	})
 
 	t.Run("should be pod if no controller is the owner", func(t *testing.T) {
-		pod := corev1.Pod{
+		pod := &corev1.Pod{
 			Kind: "Pod",
 			OwnerReferences: []metav1.OwnerReference{
 				{
@@ -144,16 +144,16 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 			Name: namespaceName,
 		}
 
-		request := mutator.BaseRequest{Pod: &pod, Namespace: namespace}
+		request := mutator.BaseRequest{Pod: pod, Namespace: namespace}
 
-		client := fake.NewClient(&pod)
+		client := fake.NewClient(pod)
 		workloadInfo, err := FindRootOwnerOfPod(ctx, client, request)
 		require.NoError(t, err)
 		assert.Equal(t, namespaceName, workloadInfo.Name)
 		assert.Equal(t, "pod", workloadInfo.Kind)
 	})
 	t.Run("should find the root owner of the pod if the root owner is unknown", func(t *testing.T) {
-		pod := corev1.Pod{
+		pod := &corev1.Pod{
 			OwnerReferences: []metav1.OwnerReference{
 				{
 					APIVersion: "apps/v1",
@@ -166,7 +166,7 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 			Namespace: namespaceName,
 		}
 
-		deployment := appsv1.Deployment{
+		deployment := &appsv1.Deployment{
 			Kind:       "Deployment",
 			APIVersion: "apps/v1",
 			OwnerReferences: []metav1.OwnerReference{
@@ -181,7 +181,7 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 			Namespace: namespaceName,
 		}
 
-		secret := corev1.Secret{
+		secret := &corev1.Secret{
 			Kind:      "Secret",
 			Name:      resourceName,
 			Namespace: namespaceName,
@@ -191,9 +191,9 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 			Name: namespaceName,
 		}
 
-		request := mutator.BaseRequest{Pod: &pod, Namespace: namespace}
+		request := mutator.BaseRequest{Pod: pod, Namespace: namespace}
 
-		client := fake.NewClient(&pod, &deployment, &secret, namespace)
+		client := fake.NewClient(pod, deployment, secret, namespace)
 
 		workloadInfo, err := FindRootOwnerOfPod(ctx, client, request)
 		require.NoError(t, err)
@@ -201,7 +201,7 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 		assert.Equal(t, "deployment", workloadInfo.Kind)
 	})
 	t.Run("should not make an api-call if workload is not well known", func(t *testing.T) {
-		pod := corev1.Pod{
+		pod := &corev1.Pod{
 			OwnerReferences: []metav1.OwnerReference{
 				{
 					APIVersion: "some.unknown.kind.com/v1alpha1",
@@ -218,7 +218,7 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 			Name: namespaceName,
 		}
 
-		request := mutator.BaseRequest{Pod: &pod, Namespace: namespace}
+		request := mutator.BaseRequest{Pod: pod, Namespace: namespace}
 
 		client := createFailK8sClient(t)
 
@@ -266,7 +266,7 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 	})
 
 	t.Run("should add annotation if owner lookup failed", func(t *testing.T) {
-		pod := corev1.Pod{
+		pod := &corev1.Pod{
 			OwnerReferences: []metav1.OwnerReference{
 				{
 					APIVersion: "apps/v1",
@@ -283,7 +283,7 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 			Name: namespaceName,
 		}
 
-		request := mutator.BaseRequest{Pod: &pod, Namespace: namespace}
+		request := mutator.BaseRequest{Pod: pod, Namespace: namespace}
 
 		client := createFailK8sClient(t)
 		_, err := FindRootOwnerOfPod(ctx, client, request)

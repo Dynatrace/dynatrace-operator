@@ -50,7 +50,7 @@ func TestArguments(t *testing.T) {
 		assert.Equal(t, expectedDefaultArguments, arguments)
 	})
 	t.Run("classic fullstack", func(t *testing.T) {
-		dk := dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testURL,
 				OneAgent: oneagent.Spec{
@@ -62,7 +62,7 @@ func TestArguments(t *testing.T) {
 		}
 		dsBuilder := classicFullStack{
 			builder{
-				dk:             &dk,
+				dk:             dk,
 				hostInjectSpec: dk.Spec.OneAgent.ClassicFullStack,
 				clusterID:      testClusterID,
 			},

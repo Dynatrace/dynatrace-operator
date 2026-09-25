@@ -48,18 +48,18 @@ func TestQuery(t *testing.T) {
 }
 
 func testGetConfigMap(t *testing.T) {
-	configMap := corev1.ConfigMap{
+	configMap := &corev1.ConfigMap{
 		Name:      testConfigMapName,
 		Namespace: testNamespace,
 		Data:      map[string]string{testKey1: testConfigMapValue},
 	}
-	fakeClient := fake.NewClient(&configMap)
+	fakeClient := fake.NewClient(configMap)
 	configMapQuery := Query(fakeClient, fakeClient)
 
 	foundConfigMap, err := configMapQuery.Get(t.Context(), client.ObjectKey{Name: testConfigMapName, Namespace: testNamespace})
 
 	require.NoError(t, err)
-	assert.True(t, isEqual(&configMap, foundConfigMap))
+	assert.True(t, isEqual(configMap, foundConfigMap))
 }
 
 func testCreateConfigMap(t *testing.T) {

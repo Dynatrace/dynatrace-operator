@@ -244,7 +244,7 @@ func TestMutate(t *testing.T) {
 	}
 
 	t.Run("metadata enrichment fails => error", func(t *testing.T) {
-		request := dtwebhook.MutationRequest{
+		request := &dtwebhook.MutationRequest{
 			Context: t.Context(),
 			BaseRequest: &dtwebhook.BaseRequest{
 				Namespace: &corev1.Namespace{},
@@ -261,7 +261,7 @@ func TestMutate(t *testing.T) {
 		}
 		mut := NewMutator(fake.NewClient())
 
-		err := mut.Mutate(&request)
+		err := mut.Mutate(request)
 		require.Error(t, err)
 	})
 	t.Run("metadata enrichment passes => additional args and annotations", func(t *testing.T) {
@@ -298,7 +298,7 @@ func TestMutate(t *testing.T) {
 
 		for _, tc := range testCases {
 			t.Run(tc.name, func(t *testing.T) {
-				initContainer := corev1.Container{
+				initContainer := &corev1.Container{
 					Args: []string{},
 				}
 				pod := pod.DeepCopy()
@@ -312,7 +312,7 @@ func TestMutate(t *testing.T) {
 
 				expectedPod := pod.DeepCopy()
 
-				request := dtwebhook.MutationRequest{
+				request := &dtwebhook.MutationRequest{
 					Context: t.Context(),
 					BaseRequest: &dtwebhook.BaseRequest{
 						Pod: pod,
@@ -364,12 +364,12 @@ func TestMutate(t *testing.T) {
 							},
 						},
 					},
-					InstallContainer: &initContainer,
+					InstallContainer: initContainer,
 				}
 
 				mut := NewMutator(fake.NewClient(owner, pod))
 
-				err := mut.Mutate(&request)
+				err := mut.Mutate(request)
 				require.NoError(t, err)
 				require.NotEqual(t, *expectedPod, *request.Pod)
 				require.NotEmpty(t, request.Pod.OwnerReferences)
@@ -552,7 +552,7 @@ func TestMutate_ResourceAttributes(t *testing.T) {
 				Namespace:  podNamespace,
 			}
 
-			request := dtwebhook.MutationRequest{
+			request := &dtwebhook.MutationRequest{
 				Context: t.Context(),
 				BaseRequest: &dtwebhook.BaseRequest{
 					Pod:      pod,
@@ -565,7 +565,7 @@ func TestMutate_ResourceAttributes(t *testing.T) {
 			}
 
 			mut := NewMutator(fake.NewClient())
-			err := mut.Mutate(&request)
+			err := mut.Mutate(request)
 			require.NoError(t, err)
 
 			for _, want := range tc.wantArgs {
@@ -669,7 +669,7 @@ func TestAddContainerAttributes(t *testing.T) {
 		},
 	}
 
-	validateContainerAttributes := func(t *testing.T, pod corev1.Pod, args []string) {
+	validateContainerAttributes := func(t *testing.T, pod *corev1.Pod, args []string) {
 		t.Helper()
 
 		require.NotEmpty(t, args)
@@ -704,10 +704,10 @@ func TestAddContainerAttributes(t *testing.T) {
 			Name:  "app-2-name",
 			Image: "registry2.example.com/repository/image:tag",
 		}
-		initContainer := corev1.Container{
+		initContainer := &corev1.Container{
 			Args: []string{},
 		}
-		pod := corev1.Pod{
+		pod := &corev1.Pod{
 			Spec: corev1.PodSpec{
 				Containers: []corev1.Container{
 					app1Container,
@@ -719,12 +719,12 @@ func TestAddContainerAttributes(t *testing.T) {
 		request := dtwebhook.MutationRequest{
 			BaseRequest: &dtwebhook.BaseRequest{
 				DynaKube: &dynakube.DynaKube{},
-				Pod:      &pod,
+				Pod:      pod,
 			},
-			InstallContainer: &initContainer,
+			InstallContainer: initContainer,
 		}
 
-		mutated, err := AddContainerAttributes(request.BaseRequest, &initContainer)
+		mutated, err := AddContainerAttributes(request.BaseRequest, initContainer)
 		require.NoError(t, err)
 		assert.True(t, mutated)
 
@@ -732,26 +732,26 @@ func TestAddContainerAttributes(t *testing.T) {
 	})
 
 	t.Run("no new container ==> no new arg", func(t *testing.T) {
-		app1Container := corev1.Container{
+		app1Container := &corev1.Container{
 			Name:  "app-1-name",
 			Image: "registry1.example.com/repository/image:tag",
 		}
-		volumes.AddConfigVolumeMount(&app1Container, vmBaseRequest)
+		volumes.AddConfigVolumeMount(app1Container, vmBaseRequest)
 
-		app2Container := corev1.Container{
+		app2Container := &corev1.Container{
 			Name:  "app-2-name",
 			Image: "registry2.example.com/repository/image:tag",
 		}
-		volumes.AddConfigVolumeMount(&app2Container, vmBaseRequest)
+		volumes.AddConfigVolumeMount(app2Container, vmBaseRequest)
 
-		initContainer := corev1.Container{
+		initContainer := &corev1.Container{
 			Args: []string{},
 		}
-		pod := corev1.Pod{
+		pod := &corev1.Pod{
 			Spec: corev1.PodSpec{
 				Containers: []corev1.Container{
-					app1Container,
-					app2Container,
+					*app1Container,
+					*app2Container,
 				},
 			},
 		}
@@ -759,12 +759,12 @@ func TestAddContainerAttributes(t *testing.T) {
 		request := dtwebhook.MutationRequest{
 			BaseRequest: &dtwebhook.BaseRequest{
 				DynaKube: &dynakube.DynaKube{},
-				Pod:      &pod,
+				Pod:      pod,
 			},
-			InstallContainer: &initContainer,
+			InstallContainer: initContainer,
 		}
 
-		mutated, err := AddContainerAttributes(request.BaseRequest, &initContainer)
+		mutated, err := AddContainerAttributes(request.BaseRequest, initContainer)
 
 		require.NoError(t, err)
 		assert.False(t, mutated)
@@ -773,24 +773,24 @@ func TestAddContainerAttributes(t *testing.T) {
 	})
 
 	t.Run("partially new => only add new", func(t *testing.T) {
-		app1Container := corev1.Container{
+		app1Container := &corev1.Container{
 			Name:  "app-1-name",
 			Image: "registry1.example.com/repository/image:tag",
 		}
-		volumes.AddConfigVolumeMount(&app1Container, vmBaseRequest)
+		volumes.AddConfigVolumeMount(app1Container, vmBaseRequest)
 
 		app2Container := corev1.Container{
 			Name:  "app-2-name",
 			Image: "registry2.example.com/repository/image:tag",
 		}
 
-		initContainer := corev1.Container{
+		initContainer := &corev1.Container{
 			Args: []string{},
 		}
-		pod := corev1.Pod{
+		pod := &corev1.Pod{
 			Spec: corev1.PodSpec{
 				Containers: []corev1.Container{
-					app1Container,
+					*app1Container,
 					app2Container,
 				},
 			},
@@ -799,12 +799,12 @@ func TestAddContainerAttributes(t *testing.T) {
 		request := dtwebhook.MutationRequest{
 			BaseRequest: &dtwebhook.BaseRequest{
 				DynaKube: &dynakube.DynaKube{},
-				Pod:      &pod,
+				Pod:      pod,
 			},
-			InstallContainer: &initContainer,
+			InstallContainer: initContainer,
 		}
 
-		mutated, err := AddContainerAttributes(request.BaseRequest, &initContainer)
+		mutated, err := AddContainerAttributes(request.BaseRequest, initContainer)
 
 		require.NoError(t, err)
 		assert.True(t, mutated)
@@ -840,7 +840,7 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 		return br
 	}
 
-	validateContainerAttributes := func(t *testing.T, pod corev1.Pod, args []string) {
+	validateContainerAttributes := func(t *testing.T, pod *corev1.Pod, args []string) {
 		t.Helper()
 
 		require.NotEmpty(t, args)
@@ -888,7 +888,7 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 		}
 	}
 
-	validateContainerAttributesforMetadataEnrichment := func(t *testing.T, pod corev1.Pod, args []string) {
+	validateContainerAttributesforMetadataEnrichment := func(t *testing.T, pod *corev1.Pod, args []string) {
 		t.Helper()
 
 		require.NotEmpty(t, args)
@@ -934,10 +934,10 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 			Name:  "app-2-name",
 			Image: "registry2.example.com/repository/image:tag",
 		}
-		initContainer := corev1.Container{
+		initContainer := &corev1.Container{
 			Args: []string{},
 		}
-		pod := corev1.Pod{
+		pod := &corev1.Pod{
 			Annotations: map[string]string{
 				dtwebhook.AnnotationInjectionSplitMounts: "true",
 			},
@@ -951,7 +951,7 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 
 		request := dtwebhook.MutationRequest{
 			BaseRequest: &dtwebhook.BaseRequest{
-				Pod: &pod,
+				Pod: pod,
 				DynaKube: &dynakube.DynaKube{
 					Spec: dynakube.DynaKubeSpec{
 						MetadataEnrichment: metadataenrichment.Spec{
@@ -963,10 +963,10 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 					},
 				},
 			},
-			InstallContainer: &initContainer,
+			InstallContainer: initContainer,
 		}
 
-		mutated, err := AddContainerAttributes(request.BaseRequest, &initContainer)
+		mutated, err := AddContainerAttributes(request.BaseRequest, initContainer)
 
 		require.NoError(t, err)
 		assert.True(t, mutated)
@@ -975,36 +975,36 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 	})
 
 	t.Run("no new container ==> no new arg", func(t *testing.T) {
-		app1Container := corev1.Container{
+		app1Container := &corev1.Container{
 			Name:  "app-1-name",
 			Image: "registry1.example.com/repository/image:tag",
 		}
-		volumes.AddConfigVolumeMount(&app1Container, vmBaseRequest(true, true))
+		volumes.AddConfigVolumeMount(app1Container, vmBaseRequest(true, true))
 
-		app2Container := corev1.Container{
+		app2Container := &corev1.Container{
 			Name:  "app-2-name",
 			Image: "registry2.example.com/repository/image:tag",
 		}
-		volumes.AddConfigVolumeMount(&app2Container, vmBaseRequest(true, true))
+		volumes.AddConfigVolumeMount(app2Container, vmBaseRequest(true, true))
 
-		initContainer := corev1.Container{
+		initContainer := &corev1.Container{
 			Args: []string{},
 		}
-		pod := corev1.Pod{
+		pod := &corev1.Pod{
 			Annotations: map[string]string{
 				dtwebhook.AnnotationInjectionSplitMounts: "true",
 			},
 			Spec: corev1.PodSpec{
 				Containers: []corev1.Container{
-					app1Container,
-					app2Container,
+					*app1Container,
+					*app2Container,
 				},
 			},
 		}
 
 		request := dtwebhook.MutationRequest{
 			BaseRequest: &dtwebhook.BaseRequest{
-				Pod: &pod,
+				Pod: pod,
 				DynaKube: &dynakube.DynaKube{
 					Spec: dynakube.DynaKubeSpec{
 						MetadataEnrichment: metadataenrichment.Spec{
@@ -1016,10 +1016,10 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 					},
 				},
 			},
-			InstallContainer: &initContainer,
+			InstallContainer: initContainer,
 		}
 
-		mutated, err := AddContainerAttributes(request.BaseRequest, &initContainer)
+		mutated, err := AddContainerAttributes(request.BaseRequest, initContainer)
 
 		require.NoError(t, err)
 		assert.False(t, mutated)
@@ -1028,27 +1028,27 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 	})
 
 	t.Run("partially new => only add new", func(t *testing.T) {
-		app1Container := corev1.Container{
+		app1Container := &corev1.Container{
 			Name:  "app-1-name",
 			Image: "registry1.example.com/repository/image:tag",
 		}
-		volumes.AddConfigVolumeMount(&app1Container, vmBaseRequest(true, true))
+		volumes.AddConfigVolumeMount(app1Container, vmBaseRequest(true, true))
 
 		app2Container := corev1.Container{
 			Name:  "app-2-name",
 			Image: "registry2.example.com/repository/image:tag",
 		}
 
-		initContainer := corev1.Container{
+		initContainer := &corev1.Container{
 			Args: []string{},
 		}
-		pod := corev1.Pod{
+		pod := &corev1.Pod{
 			Annotations: map[string]string{
 				dtwebhook.AnnotationInjectionSplitMounts: "true",
 			},
 			Spec: corev1.PodSpec{
 				Containers: []corev1.Container{
-					app1Container,
+					*app1Container,
 					app2Container,
 				},
 			},
@@ -1056,7 +1056,7 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 
 		request := dtwebhook.MutationRequest{
 			BaseRequest: &dtwebhook.BaseRequest{
-				Pod: &pod,
+				Pod: pod,
 				DynaKube: &dynakube.DynaKube{
 					Spec: dynakube.DynaKubeSpec{
 						MetadataEnrichment: metadataenrichment.Spec{
@@ -1068,10 +1068,10 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 					},
 				},
 			},
-			InstallContainer: &initContainer,
+			InstallContainer: initContainer,
 		}
 
-		mutated, err := AddContainerAttributes(request.BaseRequest, &initContainer)
+		mutated, err := AddContainerAttributes(request.BaseRequest, initContainer)
 
 		require.NoError(t, err)
 		assert.True(t, mutated)
@@ -1093,30 +1093,30 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 			},
 		}
 
-		app2Container := corev1.Container{
+		app2Container := &corev1.Container{
 			Name:  "app-2-name",
 			Image: "registry2.example.com/repository/image:tag",
 		}
-		volumes.AddConfigVolumeMount(&app2Container, vmBaseRequest(true, false))
+		volumes.AddConfigVolumeMount(app2Container, vmBaseRequest(true, false))
 
-		initContainer := corev1.Container{
+		initContainer := &corev1.Container{
 			Args: []string{},
 		}
-		pod := corev1.Pod{
+		pod := &corev1.Pod{
 			Annotations: map[string]string{
 				dtwebhook.AnnotationInjectionSplitMounts: "true",
 			},
 			Spec: corev1.PodSpec{
 				Containers: []corev1.Container{
 					app1Container,
-					app2Container,
+					*app2Container,
 				},
 			},
 		}
 
 		request := dtwebhook.MutationRequest{
 			BaseRequest: &dtwebhook.BaseRequest{
-				Pod: &pod,
+				Pod: pod,
 				DynaKube: &dynakube.DynaKube{
 					Spec: dynakube.DynaKubeSpec{
 						MetadataEnrichment: metadataenrichment.Spec{
@@ -1128,10 +1128,10 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 					},
 				},
 			},
-			InstallContainer: &initContainer,
+			InstallContainer: initContainer,
 		}
 
-		mutated, err := AddContainerAttributes(request.BaseRequest, &initContainer)
+		mutated, err := AddContainerAttributes(request.BaseRequest, initContainer)
 
 		require.NoError(t, err)
 		assert.True(t, mutated)
@@ -1151,10 +1151,10 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 			Image: "registry2.example.com/repository/image:tag",
 		}
 
-		initContainer := corev1.Container{
+		initContainer := &corev1.Container{
 			Args: []string{},
 		}
-		pod := corev1.Pod{
+		pod := &corev1.Pod{
 			Annotations: map[string]string{
 				dtwebhook.AnnotationInjectionSplitMounts: "true",
 			},
@@ -1168,7 +1168,7 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 
 		request := dtwebhook.MutationRequest{
 			BaseRequest: &dtwebhook.BaseRequest{
-				Pod: &pod,
+				Pod: pod,
 				DynaKube: &dynakube.DynaKube{
 					Spec: dynakube.DynaKubeSpec{
 						MetadataEnrichment: metadataenrichment.Spec{
@@ -1180,10 +1180,10 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 					},
 				},
 			},
-			InstallContainer: &initContainer,
+			InstallContainer: initContainer,
 		}
 
-		mutated, err := AddContainerAttributes(request.BaseRequest, &initContainer)
+		mutated, err := AddContainerAttributes(request.BaseRequest, initContainer)
 
 		require.NoError(t, err)
 		assert.True(t, mutated)
@@ -1203,10 +1203,10 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 			Image: "registry2.example.com/repository/image:tag",
 		}
 
-		initContainer := corev1.Container{
+		initContainer := &corev1.Container{
 			Args: []string{},
 		}
-		pod := corev1.Pod{
+		pod := &corev1.Pod{
 			Annotations: map[string]string{
 				dtwebhook.AnnotationInjectionSplitMounts: "true",
 			},
@@ -1220,7 +1220,7 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 
 		request := dtwebhook.MutationRequest{
 			BaseRequest: &dtwebhook.BaseRequest{
-				Pod: &pod,
+				Pod: pod,
 				DynaKube: &dynakube.DynaKube{
 					Spec: dynakube.DynaKubeSpec{
 						MetadataEnrichment: metadataenrichment.Spec{
@@ -1229,10 +1229,10 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 					},
 				},
 			},
-			InstallContainer: &initContainer,
+			InstallContainer: initContainer,
 		}
 
-		mutated, err := AddContainerAttributes(request.BaseRequest, &initContainer)
+		mutated, err := AddContainerAttributes(request.BaseRequest, initContainer)
 
 		require.NoError(t, err)
 		assert.True(t, mutated)

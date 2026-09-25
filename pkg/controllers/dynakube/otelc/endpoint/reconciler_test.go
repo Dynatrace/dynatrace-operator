@@ -38,7 +38,7 @@ func TestConfigMapCreation(t *testing.T) {
 	t.Run("creates config map if it does not exist", func(t *testing.T) {
 		dk := createDynaKube(true)
 
-		testConfigMap, err := k8sconfigmap.Build(&dk, dk.Name, map[string]string{
+		testConfigMap, err := k8sconfigmap.Build(dk, dk.Name, map[string]string{
 			token.APIKey: testAPIToken,
 		})
 		require.NoError(t, err)
@@ -47,7 +47,7 @@ func TestConfigMapCreation(t *testing.T) {
 
 		r := NewReconciler(clt, clt)
 
-		err = r.reconcileConfigMap(ctx, &dk)
+		err = r.reconcileConfigMap(ctx, dk)
 		require.NoError(t, err)
 
 		var apiEndpointConfigMap corev1.ConfigMap
@@ -72,7 +72,7 @@ func TestConfigMapCreation(t *testing.T) {
 		clt := schemeFake.NewClient(objs...)
 		r := NewReconciler(clt, clt)
 
-		err := r.Reconcile(ctx, &dk)
+		err := r.Reconcile(ctx, dk)
 		require.NoError(t, err)
 
 		var apiEndpointConfigmap corev1.ConfigMap
@@ -137,15 +137,15 @@ func Test_generateData(t *testing.T) {
 			clt := schemeFake.NewClient(objs...)
 			r := NewReconciler(clt, clt)
 
-			data, err := r.generateData(&dk)
+			data, err := r.generateData(dk)
 			require.NoError(t, err)
 			assert.Equal(t, tt.expectedData, data)
 		})
 	}
 }
 
-func createDynaKube(telemetryIngestEnabled bool) dynakube.DynaKube {
-	dk := dynakube.DynaKube{
+func createDynaKube(telemetryIngestEnabled bool) *dynakube.DynaKube {
+	dk := &dynakube.DynaKube{
 		Name:      "test-dk",
 		Namespace: "test-namespace",
 		Spec:      dynakube.DynaKubeSpec{},

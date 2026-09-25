@@ -18,7 +18,7 @@ import (
 var _ envModifier = ServicePortModifier{}
 var _ builder.Modifier = ServicePortModifier{}
 
-func NewServicePortModifier(dk dynakube.DynaKube, capability capability.Capability, envMap *prioritymap.Map) ServicePortModifier {
+func NewServicePortModifier(dk *dynakube.DynaKube, capability capability.Capability, envMap *prioritymap.Map) ServicePortModifier {
 	return ServicePortModifier{
 		dk:         dk,
 		capability: capability,
@@ -29,7 +29,7 @@ func NewServicePortModifier(dk dynakube.DynaKube, capability capability.Capabili
 type ServicePortModifier struct {
 	capability capability.Capability
 	envMap     *prioritymap.Map
-	dk         dynakube.DynaKube
+	dk         *dynakube.DynaKube
 }
 
 func (mod ServicePortModifier) Enabled() bool {
@@ -65,7 +65,7 @@ func (mod ServicePortModifier) getEnvs() []corev1.EnvVar {
 		[]corev1.EnvVar{
 			{
 				Name:  consts.EnvDTDNSEntryPoint,
-				Value: capability.BuildDNSEntryPoint(&mod.dk),
+				Value: capability.BuildDNSEntryPoint(mod.dk),
 			},
 		},
 		prioritymap.WithPriority(modifierEnvPriority))

@@ -20,14 +20,14 @@ var _ builder.Modifier = KSPMModifier{}
 
 const kspmTokenSecretHashAnnotation = api.InternalFlagPrefix + "kspm-token-secret-hash"
 
-func NewKSPMModifier(dk dynakube.DynaKube) KSPMModifier {
+func NewKSPMModifier(dk *dynakube.DynaKube) KSPMModifier {
 	return KSPMModifier{
 		dk: dk,
 	}
 }
 
 type KSPMModifier struct {
-	dk dynakube.DynaKube
+	dk *dynakube.DynaKube
 }
 
 func (mod KSPMModifier) Enabled() bool {

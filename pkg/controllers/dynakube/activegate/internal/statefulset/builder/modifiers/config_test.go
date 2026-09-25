@@ -50,8 +50,8 @@ func createBuilderForTesting() builder.Builder {
 	return builder.NewBuilder(base)
 }
 
-func getBaseDynakube() dynakube.DynaKube {
-	return dynakube.DynaKube{
+func getBaseDynakube() *dynakube.DynaKube {
+	return &dynakube.DynaKube{
 		Name:        testDynakubeName,
 		Namespace:   testNamespaceName,
 		Annotations: map[string]string{},
@@ -79,9 +79,9 @@ func enableAllModifiers(dk *dynakube.DynaKube, capability capability.Capability)
 func TestNoConflict(t *testing.T) {
 	t.Run("successfully modified", func(t *testing.T) {
 		dk := getBaseDynakube()
-		enableKubeMonCapability(&dk)
-		multiCapability := capability.NewMultiCapability(&dk)
-		enableAllModifiers(&dk, multiCapability)
+		enableKubeMonCapability(dk)
+		multiCapability := capability.NewMultiCapability(dk)
+		enableAllModifiers(dk, multiCapability)
 		mods := GenerateAllModifiers(dk, multiCapability, prioritymap.New())
 		builder := createBuilderForTesting()
 

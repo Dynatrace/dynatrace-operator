@@ -70,7 +70,7 @@ func TestBuildArgs(t *testing.T) {
 }
 
 func TestBuildJob(t *testing.T) {
-	owner := dynakube.DynaKube{
+	owner := &dynakube.DynaKube{
 		Name: "test-dk",
 	}
 	name := "job-1"
@@ -83,7 +83,7 @@ func TestBuildJob(t *testing.T) {
 		dataDir := setupDataDir(t)
 
 		props := &Properties{
-			Owner:        &owner,
+			Owner:        owner,
 			ImageURI:     imageURI,
 			PullSecrets:  pullSecrets,
 			PathResolver: metadata.PathResolver{RootDir: "root"},
@@ -141,7 +141,7 @@ func TestBuildJob(t *testing.T) {
 		settings.Job.PriorityClassName = "custom-priority-class"
 
 		props := &Properties{
-			Owner:        &owner,
+			Owner:        owner,
 			ImageURI:     imageURI,
 			PullSecrets:  pullSecrets,
 			PathResolver: metadata.PathResolver{RootDir: "root"},

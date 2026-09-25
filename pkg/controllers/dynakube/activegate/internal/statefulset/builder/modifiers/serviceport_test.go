@@ -16,7 +16,7 @@ import (
 func TestServicePortModify(t *testing.T) {
 	t.Run("successfully modified", func(t *testing.T) {
 		dk := getBaseDynakube()
-		multiCapability := capability.NewMultiCapability(&dk)
+		multiCapability := capability.NewMultiCapability(dk)
 		mod := NewServicePortModifier(dk, multiCapability, prioritymap.New())
 		builder := createBuilderForTesting()
 		expectedPorts := mod.getPorts()

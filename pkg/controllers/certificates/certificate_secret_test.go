@@ -66,13 +66,13 @@ func TestIsRecent(t *testing.T) {
 	})
 	t.Run("true if data is equal, false otherwise", func(t *testing.T) {
 		certSecret := newCertificateSecret(&appsv1.Deployment{})
-		secret := corev1.Secret{
+		secret := &corev1.Secret{
 			Data: map[string][]byte{testKey: testValue1},
 		}
 		certs := Certs{
 			Data: map[string][]byte{testKey: testValue1},
 		}
-		certSecret.secret = &secret
+		certSecret.secret = secret
 		certSecret.certificates = &certs
 
 		assert.True(t, certSecret.isRecent())
@@ -143,8 +143,8 @@ func TestCreateOrUpdateIfNecessary(t *testing.T) {
 
 		require.NoError(t, err)
 
-		newSecret := corev1.Secret{}
-		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: buildSecretName(), Namespace: testNamespace}, &newSecret)
+		newSecret := &corev1.Secret{}
+		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: buildSecretName(), Namespace: testNamespace}, newSecret)
 
 		require.NoError(t, err)
 		assert.NotNil(t, newSecret)
@@ -165,21 +165,21 @@ func TestCreateOrUpdateIfNecessary(t *testing.T) {
 
 		require.NoError(t, err)
 
-		newSecret := corev1.Secret{}
-		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: buildSecretName(), Namespace: testNamespace}, &newSecret)
+		newSecret := &corev1.Secret{}
+		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: buildSecretName(), Namespace: testNamespace}, newSecret)
 
 		require.NoError(t, err)
 		require.NotNil(t, newSecret)
 		require.Equal(t, certSecret.certificates.Data, newSecret.Data)
 
-		certSecret.secret = &newSecret
+		certSecret.secret = newSecret
 		certSecret.certificates.Data = map[string][]byte{testKey: testValue2}
 		certSecret.existsInCluster = true
 		err = certSecret.createOrUpdateIfNecessary(context.TODO(), fakeClient)
 
 		require.NoError(t, err)
 
-		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: buildSecretName(), Namespace: testNamespace}, &newSecret)
+		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: buildSecretName(), Namespace: testNamespace}, newSecret)
 
 		require.NoError(t, err)
 		assert.NotNil(t, newSecret)

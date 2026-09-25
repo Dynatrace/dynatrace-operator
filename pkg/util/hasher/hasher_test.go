@@ -140,11 +140,11 @@ func TestIsDifferent(t *testing.T) {
 }
 
 func TestIsAnnotationDifferent(t *testing.T) {
-	testDeployment := appsv1.Deployment{
+	testDeployment := &appsv1.Deployment{
 		Annotations: map[string]string{
 			AnnotationHash: "hash1",
 		}}
-	testDaemonSet := appsv1.DaemonSet{
+	testDaemonSet := &appsv1.DaemonSet{
 		Annotations: map[string]string{
 			AnnotationHash: "hash2",
 		}}
@@ -165,18 +165,18 @@ func TestAddAnnotation(t *testing.T) {
 		require.Error(t, err)
 	})
 	t.Run("append to annotations", func(t *testing.T) {
-		testDaemonSet := appsv1.DaemonSet{
+		testDaemonSet := &appsv1.DaemonSet{
 			Annotations: map[string]string{
 				"something": "else",
 			}}
-		err := AddAnnotation(&testDaemonSet)
+		err := AddAnnotation(testDaemonSet)
 		require.NoError(t, err)
 		assert.Len(t, testDaemonSet.Annotations, 2)
 		assert.NotEmpty(t, testDaemonSet.Annotations[AnnotationHash])
 	})
 	t.Run("create annotation map, if not there", func(t *testing.T) {
-		testDaemonSet := appsv1.DaemonSet{}
-		err := AddAnnotation(&testDaemonSet)
+		testDaemonSet := &appsv1.DaemonSet{}
+		err := AddAnnotation(testDaemonSet)
 		require.NoError(t, err)
 		assert.Len(t, testDaemonSet.Annotations, 1)
 		assert.NotEmpty(t, testDaemonSet.Annotations[AnnotationHash])

@@ -24,7 +24,7 @@ func TestRemoveHostMounts(t *testing.T) {
 
 	t.Run("no dk -> no relevant dirs -> remove all", func(t *testing.T) {
 		cleaner := createCleaner(t)
-		dks := []dynakube.DynaKube{}
+		dks := []*dynakube.DynaKube{}
 		hostFolders := []string{tenantUUID1, tenantUUID2, "random-name1", "random-name2"}
 
 		for _, folder := range hostFolders {
@@ -44,7 +44,7 @@ func TestRemoveHostMounts(t *testing.T) {
 
 	t.Run("relevant dk -> remove only orphans", func(t *testing.T) {
 		cleaner := createCleaner(t)
-		dks := []dynakube.DynaKube{
+		dks := []*dynakube.DynaKube{
 			createHostMonDK(t, "hostmon", apiURL1),
 			createCloudNativeDK(t, "cloudnative", apiURL2),
 		}
@@ -76,7 +76,7 @@ func TestRemoveHostMounts(t *testing.T) {
 
 	t.Run("don't remove mounted orphans", func(t *testing.T) {
 		cleaner := createCleaner(t)
-		dks := []dynakube.DynaKube{}
+		dks := []*dynakube.DynaKube{}
 		hostFolders := []string{tenantUUID1, tenantUUID2}
 		fakeMounter := mount.NewFakeMounter(nil)
 		fakeMounter.MountCheckErrors = map[string]error{}
@@ -111,7 +111,7 @@ func TestCollectRelevantHostDirs(t *testing.T) {
 
 	t.Run("no dk -> no relevant dirs", func(t *testing.T) {
 		cleaner := createCleaner(t)
-		dks := []dynakube.DynaKube{}
+		dks := []*dynakube.DynaKube{}
 
 		relevantDirs := cleaner.collectRelevantHostDirs(t.Context(), dks)
 
@@ -120,7 +120,7 @@ func TestCollectRelevantHostDirs(t *testing.T) {
 
 	t.Run("not-relevant dk -> no relevant dirs", func(t *testing.T) {
 		cleaner := createCleaner(t)
-		dks := []dynakube.DynaKube{
+		dks := []*dynakube.DynaKube{
 			createAppMonDK(t, "appmon1", apiURL1),
 			createAppMonDK(t, "appmon2", apiURL2),
 		}
@@ -132,7 +132,7 @@ func TestCollectRelevantHostDirs(t *testing.T) {
 
 	t.Run("relevant dks, but not existing -> current path always added", func(t *testing.T) {
 		cleaner := createCleaner(t)
-		dks := []dynakube.DynaKube{
+		dks := []*dynakube.DynaKube{
 			createHostMonDK(t, "hostmon", apiURL1),
 			createCloudNativeDK(t, "cloudnative", apiURL2),
 		}
@@ -149,7 +149,7 @@ func TestCollectRelevantHostDirs(t *testing.T) {
 
 	t.Run("relevant dk -> relevant dirs, deprecated(tenantUUID) location dir included if exists", func(t *testing.T) {
 		cleaner := createCleaner(t)
-		dks := []dynakube.DynaKube{
+		dks := []*dynakube.DynaKube{
 			createHostMonDK(t, "hostmon", apiURL1),
 			createCloudNativeDK(t, "cloudnative", apiURL2),
 			createAppMonDK(t, "appmon", apiURL1),
@@ -170,7 +170,7 @@ func TestCollectRelevantHostDirs(t *testing.T) {
 	})
 }
 
-func createHostMonDK(t *testing.T, name, apiURL string) dynakube.DynaKube {
+func createHostMonDK(t *testing.T, name, apiURL string) *dynakube.DynaKube {
 	t.Helper()
 
 	dk := createBaseDK(t, name, apiURL)
@@ -179,7 +179,7 @@ func createHostMonDK(t *testing.T, name, apiURL string) dynakube.DynaKube {
 	return dk
 }
 
-func createCloudNativeDK(t *testing.T, name, apiURL string) dynakube.DynaKube {
+func createCloudNativeDK(t *testing.T, name, apiURL string) *dynakube.DynaKube {
 	t.Helper()
 
 	dk := createBaseDK(t, name, apiURL)

@@ -43,7 +43,7 @@ func (c *Cleaner) isMountPoint(file string) (bool, error) {
 	return isMountPoint, err
 }
 
-func (c *Cleaner) removeHostMounts(ctx context.Context, dks []dynakube.DynaKube, fsState fsState) {
+func (c *Cleaner) removeHostMounts(ctx context.Context, dks []*dynakube.DynaKube, fsState fsState) {
 	log := logd.FromContext(ctx)
 
 	relevantHostDirs := c.collectRelevantHostDirs(ctx, dks)
@@ -77,7 +77,7 @@ func (c *Cleaner) removeHostMounts(ctx context.Context, dks []dynakube.DynaKube,
 	}
 }
 
-func (c *Cleaner) collectRelevantHostDirs(ctx context.Context, dks []dynakube.DynaKube) map[string]bool {
+func (c *Cleaner) collectRelevantHostDirs(ctx context.Context, dks []*dynakube.DynaKube) map[string]bool {
 	log := logd.FromContext(ctx)
 
 	hostDirs := map[string]bool{}

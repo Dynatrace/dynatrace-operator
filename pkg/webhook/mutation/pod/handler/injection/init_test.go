@@ -270,12 +270,12 @@ func createTestHandler(oaMut, metaMut dtwebhook.Mutator, objects ...client.Objec
 
 func TestAddInitContainerToPod(t *testing.T) {
 	t.Run("adds common volumes/mounts", func(t *testing.T) {
-		pod := corev1.Pod{}
-		initContainer := corev1.Container{}
+		pod := &corev1.Pod{}
+		initContainer := &corev1.Container{}
 
-		addInitContainerToPod(t.Context(), &pod, &initContainer)
+		addInitContainerToPod(t.Context(), pod, initContainer)
 
-		assert.Contains(t, pod.Spec.InitContainers, initContainer)
+		assert.Contains(t, pod.Spec.InitContainers, *initContainer)
 		require.Len(t, pod.Spec.Volumes, 2)
 		assert.True(t, k8svolume.Contains(pod.Spec.Volumes, volumes.ConfigVolumeName))
 		assert.True(t, k8svolume.Contains(pod.Spec.Volumes, volumes.InputVolumeName))
@@ -703,10 +703,10 @@ func Test_securityContextForInitContainer(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.title, func(t *testing.T) {
-			pod := corev1.Pod{}
+			pod := &corev1.Pod{}
 			pod.Spec.SecurityContext = &c.podSc
 
-			out := securityContextForInitContainer(t.Context(), &pod, c.dk, c.isOpenShift)
+			out := securityContextForInitContainer(t.Context(), pod, c.dk, c.isOpenShift)
 			require.NotNil(t, out)
 
 			assert.Equal(t, c.expectedOut, *out)

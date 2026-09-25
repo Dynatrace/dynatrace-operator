@@ -21,8 +21,8 @@ func setKubernetesMonitoringUsage(dk *dynakube.DynaKube, isUsed bool) {
 func TestKubernetesMonitoringEnabled(t *testing.T) {
 	t.Run("true", func(t *testing.T) {
 		dk := getBaseDynakube()
-		setKubernetesMonitoringUsage(&dk, true)
-		multiCapability := capability.NewMultiCapability(&dk)
+		setKubernetesMonitoringUsage(dk, true)
+		multiCapability := capability.NewMultiCapability(dk)
 
 		mod := NewKubernetesMonitoringModifier(dk, multiCapability)
 
@@ -31,8 +31,8 @@ func TestKubernetesMonitoringEnabled(t *testing.T) {
 
 	t.Run("false", func(t *testing.T) {
 		dk := getBaseDynakube()
-		setKubernetesMonitoringUsage(&dk, false)
-		multiCapability := capability.NewMultiCapability(&dk)
+		setKubernetesMonitoringUsage(dk, false)
+		multiCapability := capability.NewMultiCapability(dk)
 
 		mod := NewKubernetesMonitoringModifier(dk, multiCapability)
 
@@ -43,8 +43,8 @@ func TestKubernetesMonitoringEnabled(t *testing.T) {
 func TestKubernetesMonitoringModify(t *testing.T) {
 	t.Run("successfully modified", func(t *testing.T) {
 		dk := getBaseDynakube()
-		setKubernetesMonitoringUsage(&dk, true)
-		multiCapability := capability.NewMultiCapability(&dk)
+		setKubernetesMonitoringUsage(dk, true)
+		multiCapability := capability.NewMultiCapability(dk)
 		mod := NewKubernetesMonitoringModifier(dk, multiCapability)
 		builder := createBuilderForTesting()
 		expectedVolumes := mod.getVolumes()
@@ -64,8 +64,8 @@ func TestKubernetesMonitoringModify(t *testing.T) {
 	})
 	t.Run("successfully modified with readonly feature flag", func(t *testing.T) {
 		dk := getBaseDynakube()
-		setKubernetesMonitoringUsage(&dk, true)
-		multiCapability := capability.NewMultiCapability(&dk)
+		setKubernetesMonitoringUsage(dk, true)
+		multiCapability := capability.NewMultiCapability(dk)
 		mod := NewKubernetesMonitoringModifier(dk, multiCapability)
 		builder := createBuilderForTesting()
 		expectedVolumes := mod.getVolumes()

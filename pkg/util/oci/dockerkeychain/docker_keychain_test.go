@@ -104,7 +104,7 @@ func TestNewDockerKeychains(t *testing.T) {
 	})
 
 	t.Run("the same registry", func(t *testing.T) {
-		tenantPullSecret := corev1.Secret{
+		tenantPullSecret := &corev1.Secret{
 			Name:      tenantPullSecretName,
 			Namespace: "dynatrace",
 			Data: map[string][]byte{
@@ -112,7 +112,7 @@ func TestNewDockerKeychains(t *testing.T) {
 			},
 			Type: corev1.SecretTypeDockerConfigJson,
 		}
-		customPullSecret := corev1.Secret{
+		customPullSecret := &corev1.Secret{
 			Name:      customPullSecretName,
 			Namespace: "dynatrace",
 			Data: map[string][]byte{
@@ -120,7 +120,7 @@ func TestNewDockerKeychains(t *testing.T) {
 			},
 			Type: corev1.SecretTypeDockerConfigJson,
 		}
-		client := fake.NewClientWithIndex(&tenantPullSecret, &customPullSecret)
+		client := fake.NewClientWithIndex(tenantPullSecret, customPullSecret)
 
 		keychain, err := NewDockerKeychains(t.Context(), client, "dynatrace", []string{tenantPullSecretName, customPullSecretName})
 		require.NoError(t, err)
@@ -138,7 +138,7 @@ func TestNewDockerKeychains(t *testing.T) {
 	})
 
 	t.Run("different registries", func(t *testing.T) {
-		tenantPullSecret := corev1.Secret{
+		tenantPullSecret := &corev1.Secret{
 			Name:      tenantPullSecretName,
 			Namespace: "dynatrace",
 			Data: map[string][]byte{
@@ -146,7 +146,7 @@ func TestNewDockerKeychains(t *testing.T) {
 			},
 			Type: corev1.SecretTypeDockerConfigJson,
 		}
-		customPullSecret := corev1.Secret{
+		customPullSecret := &corev1.Secret{
 			Name:      customPullSecretName,
 			Namespace: "dynatrace",
 			Data: map[string][]byte{
@@ -154,7 +154,7 @@ func TestNewDockerKeychains(t *testing.T) {
 			},
 			Type: corev1.SecretTypeDockerConfigJson,
 		}
-		client := fake.NewClientWithIndex(&tenantPullSecret, &customPullSecret)
+		client := fake.NewClientWithIndex(tenantPullSecret, customPullSecret)
 
 		keychain, err := NewDockerKeychains(t.Context(), client, "dynatrace", []string{tenantPullSecretName, customPullSecretName})
 		require.NoError(t, err)
