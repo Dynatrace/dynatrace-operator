@@ -176,8 +176,12 @@ func (r requiredFiles) getRequiredDaemonSetFiles() []string {
 
 func (r requiredFiles) getRequiredServiceFiles() []string {
 	services := k8sservice.List(r.t, r.ctx, r.resources, r.dk.Namespace)
-	requiredFiles := make([]string, len(services.Items))
-	for i, requiredService := range services.Items {
+	operatorServices := filter(services.Items, func(svc corev1.Service) bool {
+		return svc.Labels[k8slabel.AppNameLabel] == operator.DeploymentName ||
+			svc.Labels[k8slabel.AppManagedByLabel] == operator.DeploymentName
+	})
+	requiredFiles := make([]string, len(operatorServices))
+	for i, requiredService := range operatorServices {
 		requiredFiles[i] = fmt.Sprintf("%s/%s/service/%s%s",
 			supportarchive.ManifestsDirectoryName,
 			requiredService.Namespace,
