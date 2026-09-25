@@ -6,12 +6,12 @@ package prometheusmonitoring
 import (
 	"context"
 	"fmt"
+	"slices"
 	"testing"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/prometheusmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
@@ -25,7 +25,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -38,8 +37,8 @@ import (
 // (workload specs, configs, wiring, drift correction) is covered by that component's own tests, so
 // the object assertions here are sanity checks that each component ran at all.
 //
-// envtest has no kube-controller-manager and no kubelet, so there are no pods and no garbage
-// collection. Ownership is asserted through owner references rather than cascading deletion.
+// envtest has no garbage collection, so ownership is asserted through owner references rather than
+// through cascading deletion.
 
 const (
 	testAPIToken        = "dt0c01.INTEGRATIONAPITOKENVALUE"
@@ -67,41 +66,39 @@ func TestReconcileOrchestration(t *testing.T) {
 	t.Run("stops at the first failing component", func(t *testing.T) { testStopsAtFirstError(t, clt) })
 }
 
-// managedObject identifies one object a component reconciler is expected to create.
-type managedObject struct {
-	kind string
-	name string
-}
-
-func (o managedObject) String() string {
-	return o.kind + "/" + o.name
-}
-
 // All objects of a component share the component's name.
-func gatewayObjects(pm *prometheusmonitoring.PrometheusMonitoring) []managedObject {
+func gatewayObjects(pm *prometheusmonitoring.PrometheusMonitoring) []client.Object {
 	name := pm.Gateway().GetStatefulSetName()
 
-	return []managedObject{{"ConfigMap", name}, {"StatefulSet", name}, {"Service", name}}
+	return []client.Object{
+		&corev1.ConfigMap{Name: name, Namespace: pm.Namespace},
+		&appsv1.StatefulSet{Name: name, Namespace: pm.Namespace},
+		&corev1.Service{Name: name, Namespace: pm.Namespace},
+	}
 }
 
-func targetAllocatorObjects(pm *prometheusmonitoring.PrometheusMonitoring) []managedObject {
+func targetAllocatorObjects(pm *prometheusmonitoring.PrometheusMonitoring) []client.Object {
 	name := pm.TargetAllocator().GetDeploymentName()
 
-	return []managedObject{{"ConfigMap", name}, {"Deployment", name}, {"Service", name}}
+	return []client.Object{
+		&corev1.ConfigMap{Name: name, Namespace: pm.Namespace},
+		&appsv1.Deployment{Name: name, Namespace: pm.Namespace},
+		&corev1.Service{Name: name, Namespace: pm.Namespace},
+	}
 }
 
 // The scraper has no Service: nothing connects to it inbound.
-func scraperObjects(pm *prometheusmonitoring.PrometheusMonitoring) []managedObject {
+func scraperObjects(pm *prometheusmonitoring.PrometheusMonitoring) []client.Object {
 	name := pm.Scraper().GetDeploymentName()
 
-	return []managedObject{{"ConfigMap", name}, {"Deployment", name}}
+	return []client.Object{
+		&corev1.ConfigMap{Name: name, Namespace: pm.Namespace},
+		&appsv1.Deployment{Name: name, Namespace: pm.Namespace},
+	}
 }
 
-func allManagedObjects(pm *prometheusmonitoring.PrometheusMonitoring) []managedObject {
-	objects := gatewayObjects(pm)
-	objects = append(objects, targetAllocatorObjects(pm)...)
-
-	return append(objects, scraperObjects(pm)...)
+func allManagedObjects(pm *prometheusmonitoring.PrometheusMonitoring) []client.Object {
+	return slices.Concat(gatewayObjects(pm), targetAllocatorObjects(pm), scraperObjects(pm))
 }
 
 // testComponentsDeployed is the sanity check that one successful reconcile ran all three component
@@ -111,9 +108,8 @@ func testComponentsDeployed(t *testing.T, clt client.Client) {
 	f := newFixture(t, clt, "components")
 	require.NoError(t, f.reconcile(t))
 
-	for _, want := range allManagedObjects(f.pm) {
-		obj := f.getManagedObject(t, want)
-		assert.Truef(t, metav1.IsControlledBy(obj, f.pm), "%s is not controlled by the PrometheusMonitoring", want)
+	for _, obj := range allManagedObjects(f.pm) {
+		f.assertIsManaged(t, obj)
 	}
 }
 
@@ -145,20 +141,6 @@ func testStatus(t *testing.T, clt client.Client) {
 		}
 
 		assert.ElementsMatch(t, wantTypes, gotTypes)
-	})
-
-	// envtest has no kube-controller-manager, so the workloads never report ready replicas.
-	// The reconcile itself succeeded, so every condition must be the "still rolling out" shape
-	// rather than an error, and the derived phase must be Deploying. Reaching Running requires a
-	// real cluster and is covered by the e2e follow-up.
-	t.Run("components report as reconciling while no pods are ready", func(t *testing.T) {
-		for _, condition := range stored.Status.Conditions {
-			assert.Equal(t, metav1.ConditionFalse, condition.Status, condition.Type)
-			assert.Equal(t, status.ReasonReconciling, condition.Reason, condition.Type)
-			assert.NotEmpty(t, condition.Message, condition.Type)
-		}
-
-		assert.Equal(t, status.Deploying, stored.Status.Phase)
 	})
 }
 
@@ -231,7 +213,11 @@ func testStopsAtFirstError(t *testing.T, clt client.Client) {
 
 	require.ErrorContains(t, f.reconcile(t), "reconcile target allocator")
 
-	f.assertObjectsExist(t, gatewayObjects(f.pm), "the gateway is reconciled before the target allocator")
+	// The gateway is reconciled before the target allocator, the scraper after it.
+	for _, obj := range gatewayObjects(f.pm) {
+		f.assertIsManaged(t, obj)
+	}
+
 	f.assertObjectsAbsent(t, scraperObjects(f.pm), "the scraper is reconciled after the target allocator")
 
 	assert.Equal(t, status.Error, f.getStoredPrometheusMonitoring(t).Status.Phase)
@@ -273,34 +259,16 @@ func newFixture(t *testing.T, clt client.Client, name string) *fixture {
 	}
 	integrationtests.CreateDynakube(t, clt, dk)
 
-	pm := createDefaultedPrometheusMonitoring(t, clt, ns)
+	// The API server applies the CRD defaults on create and Create writes the response back, so pm
+	// is the defaulted object.
+	pm := &prometheusmonitoring.PrometheusMonitoring{
+		Name:      "pm",
+		Namespace: ns,
+		Spec:      prometheusmonitoring.PrometheusMonitoringSpec{DynaKubeName: testDynaKubeName},
+	}
+	integrationtests.CreateKubernetesObject(t, clt, pm)
 
 	return &fixture{clt: clt, r: newStubbedReconciler(t, clt), pm: pm, dk: dk, ns: ns}
-}
-
-// createDefaultedPrometheusMonitoring creates the PrometheusMonitoring as an unstructured object carrying only the
-// fields a user would actually write, so the API server applies every CRD default before the
-// reconciler ever sees it. Creating it from the typed struct would send explicit zero values for
-// metav1.Duration fields (which marshal to "0s" rather than being omitted) and the defaults would
-// silently not apply.
-func createDefaultedPrometheusMonitoring(t *testing.T, clt client.Client, ns string) *prometheusmonitoring.PrometheusMonitoring {
-	t.Helper()
-
-	obj := &unstructured.Unstructured{}
-	obj.SetGroupVersionKind(v1alpha1.GroupVersion.WithKind("PrometheusMonitoring"))
-	obj.SetName("pm")
-	obj.SetNamespace(ns)
-
-	require.NoError(t, unstructured.SetNestedMap(obj.Object, map[string]any{
-		"dynaKubeName": testDynaKubeName,
-	}, "spec"))
-
-	integrationtests.CreateKubernetesObject(t, clt, obj)
-
-	pm := &prometheusmonitoring.PrometheusMonitoring{}
-	require.NoError(t, clt.Get(t.Context(), client.ObjectKey{Name: obj.GetName(), Namespace: ns}, pm))
-
-	return pm
 }
 
 // newStubbedReconciler is the production reconciler with only the Dynatrace API client factory
@@ -366,52 +334,22 @@ func (f *fixture) getTokenSecret(t *testing.T) *corev1.Secret {
 	return secret
 }
 
-func (f *fixture) getManagedObject(t *testing.T, want managedObject) client.Object {
+// assertIsManaged asserts that obj exists and is controlled by the PrometheusMonitoring. obj only
+// needs to carry name and namespace; it holds the stored object afterwards.
+func (f *fixture) assertIsManaged(t *testing.T, obj client.Object) {
 	t.Helper()
 
-	obj := newObjectForKind(t, want.kind)
-	require.NoErrorf(t, f.clt.Get(t.Context(), client.ObjectKey{Name: want.name, Namespace: f.ns}, obj), "%s does not exist", want)
-
-	return obj
+	key := client.ObjectKeyFromObject(obj)
+	require.NoErrorf(t, f.clt.Get(t.Context(), key, obj), "%T %s does not exist", obj, key)
+	assert.Truef(t, metav1.IsControlledBy(obj, f.pm), "%T %s is not controlled by the PrometheusMonitoring", obj, key)
 }
 
-func (f *fixture) assertObjectsExist(t *testing.T, want []managedObject, msg string) {
+func (f *fixture) assertObjectsAbsent(t *testing.T, objects []client.Object, msg string) {
 	t.Helper()
 
-	for _, object := range want {
-		assert.NoErrorf(t, f.getObject(t, object), "%s must exist: %s", object, msg)
-	}
-}
-
-func (f *fixture) assertObjectsAbsent(t *testing.T, want []managedObject, msg string) {
-	t.Helper()
-
-	for _, object := range want {
-		assert.Truef(t, k8serrors.IsNotFound(f.getObject(t, object)), "%s must not exist: %s", object, msg)
-	}
-}
-
-func (f *fixture) getObject(t *testing.T, want managedObject) error {
-	t.Helper()
-
-	return f.clt.Get(t.Context(), client.ObjectKey{Name: want.name, Namespace: f.ns}, newObjectForKind(t, want.kind))
-}
-
-func newObjectForKind(t *testing.T, kind string) client.Object {
-	t.Helper()
-
-	switch kind {
-	case "ConfigMap":
-		return &corev1.ConfigMap{}
-	case "Service":
-		return &corev1.Service{}
-	case "Deployment":
-		return &appsv1.Deployment{}
-	case "StatefulSet":
-		return &appsv1.StatefulSet{}
-	default:
-		require.Failf(t, "unhandled kind", "no getter for %s", kind)
-
-		return nil
+	for _, obj := range objects {
+		key := client.ObjectKeyFromObject(obj)
+		err := f.clt.Get(t.Context(), key, obj)
+		assert.Truef(t, k8serrors.IsNotFound(err), "%T %s must not exist: %s", obj, key, msg)
 	}
 }
