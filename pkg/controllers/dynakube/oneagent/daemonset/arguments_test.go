@@ -12,11 +12,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -146,9 +144,7 @@ func TestArguments(t *testing.T) {
 				},
 				Status: dynakube.DynaKubeStatus{
 					OneAgent: oneagent.Status{
-						VersionStatus: status.VersionStatus{
-							Version: "1.285.0.20240122-141707",
-						},
+						Version: "1.285.0.20240122-141707",
 					},
 				},
 			},
@@ -169,12 +165,10 @@ func TestArguments(t *testing.T) {
 				Spec: dynakube.DynaKubeSpec{
 					Proxy: &value.Source{Value: "something"},
 				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "dynakube",
-					Namespace: "dynatrace",
-					Annotations: map[string]string{
-						"feature.dynatrace.com/oneagent-ignore-proxy": "true",
-					},
+				Name:      "dynakube",
+				Namespace: "dynatrace",
+				Annotations: map[string]string{
+					"feature.dynatrace.com/oneagent-ignore-proxy": "true",
 				},
 			},
 		}
@@ -192,12 +186,10 @@ func TestArguments(t *testing.T) {
 	t.Run("proxy settings are not properly removed from OneAgent when we still have some left over", func(t *testing.T) {
 		builder := builder{
 			dk: &dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "dynakube",
-					Namespace: "dynatrace",
-					Annotations: map[string]string{
-						"feature.dynatrace.com/oneagent-ignore-proxy": "true",
-					},
+				Name:      "dynakube",
+				Namespace: "dynatrace",
+				Annotations: map[string]string{
+					"feature.dynatrace.com/oneagent-ignore-proxy": "true",
 				},
 				Spec: dynakube.DynaKubeSpec{Proxy: &value.Source{Value: testValue}},
 			},
@@ -248,10 +240,8 @@ func TestArguments(t *testing.T) {
 	t.Run("no-proxy is set", func(t *testing.T) {
 		builder := builder{
 			dk: &dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "dynakube",
-					Namespace: "dynatrace",
-				},
+				Name:      "dynakube",
+				Namespace: "dynatrace",
 				Spec: dynakube.DynaKubeSpec{
 					Proxy: &value.Source{Value: testValue},
 					OneAgent: oneagent.Spec{
@@ -274,10 +264,8 @@ func TestArguments(t *testing.T) {
 	t.Run("default no-proxy is set if AG is configured", func(t *testing.T) {
 		builder := builder{
 			dk: &dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "dynakube",
-					Namespace: "dynatrace",
-				},
+				Name:      "dynakube",
+				Namespace: "dynatrace",
 				Spec: dynakube.DynaKubeSpec{
 					Proxy: &value.Source{Value: testValue},
 					OneAgent: oneagent.Spec{
@@ -331,10 +319,8 @@ func TestArguments(t *testing.T) {
 		}
 		builder := builder{
 			dk: &dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{
-						exp.NoProxyKey: "4\x00qux",
-					},
+				Annotations: map[string]string{
+					exp.NoProxyKey: "4\x00qux",
 				},
 				Spec: dynakube.DynaKubeSpec{
 					Proxy: &value.Source{Value: "test"},
@@ -458,7 +444,7 @@ func TestPodSpec_Arguments(t *testing.T) {
 			Spec: dynakube.DynaKubeSpec{
 				OneAgent: oneagent.Spec{
 					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
-						HostInjectSpec: oneagent.HostInjectSpec{Args: []string{testKey, testValue, testUID}},
+						Args: []string{testKey, testValue, testUID},
 					},
 				},
 			},
@@ -503,7 +489,7 @@ func TestPodSpec_Arguments(t *testing.T) {
 				OneAgent: oneagent.Spec{
 					HostGroup: testNewHostGroupName,
 					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
-						HostInjectSpec: oneagent.HostInjectSpec{Args: []string{testOldHostGroupArgument}},
+						Args: []string{testOldHostGroupArgument},
 					},
 				},
 			},

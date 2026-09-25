@@ -53,11 +53,9 @@ const (
 
 func getTestDynakube() *dynakube.DynaKube {
 	return &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        testDynakubeName,
-			Namespace:   testNamespaceName,
-			Annotations: map[string]string{},
-		},
+		Name:        testDynakubeName,
+		Namespace:   testNamespaceName,
+		Annotations: map[string]string{},
 		Spec: dynakube.DynaKubeSpec{
 			Extensions: &extensions.Spec{Databases: []extensions.DatabaseSpec{{ID: "test"}}},
 			Templates: dynakube.TemplatesSpec{
@@ -111,10 +109,8 @@ func mockTLSSecret(t *testing.T, client client.Client, dk *dynakube.DynaKube) cl
 
 func getTLSSecret(name string, namespace string, crt string, key string) *corev1.Secret {
 	return &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
-		},
+		Name:      name,
+		Namespace: namespace,
 		Data: map[string][]byte{
 			consts.TLSCrtDataName: []byte(crt),
 			consts.TLSKeyDataName: []byte(key),
@@ -1104,39 +1100,29 @@ func TestLegacyVolumes(t *testing.T) {
 		expectedVolumes := []corev1.Volume{
 			{
 				Name: consts.ExtensionsTokensVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName:  dk.Extensions().GetTokenSecretName(),
-						DefaultMode: &mode,
-					},
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  dk.Extensions().GetTokenSecretName(),
+					DefaultMode: &mode,
 				},
 			},
 			{
-				Name: legacyLogVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
+				Name:     legacyLogVolumeName,
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
 			{
-				Name: legacyConfigurationVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
+				Name:     legacyConfigurationVolumeName,
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
 			{
 				Name: httpsCertVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName:  dk.Extensions().GetTLSSecretName(),
-						DefaultMode: &mode,
-					},
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  dk.Extensions().GetTLSSecretName(),
+					DefaultMode: &mode,
 				},
 			},
 			{
-				Name: runtimeVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
+				Name:     runtimeVolumeName,
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
 		}
 
@@ -1154,51 +1140,39 @@ func TestLegacyVolumes(t *testing.T) {
 		expectedVolumes := []corev1.Volume{
 			{
 				Name: consts.ExtensionsTokensVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName:  dk.Extensions().GetTokenSecretName(),
-						DefaultMode: &mode,
-					},
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  dk.Extensions().GetTokenSecretName(),
+					DefaultMode: &mode,
 				},
 			},
 			{
-				Name: legacyLogVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
+				Name:     legacyLogVolumeName,
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
 			{
-				Name: legacyConfigurationVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
+				Name:     legacyConfigurationVolumeName,
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
 			{
 				Name: httpsCertVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName:  dk.Extensions().GetTLSSecretName(),
-						DefaultMode: &mode,
-					},
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  dk.Extensions().GetTLSSecretName(),
+					DefaultMode: &mode,
 				},
 			},
 			{
-				Name: runtimeVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
+				Name:     runtimeVolumeName,
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
 			{
 				Name: activeGateTrustedCertVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						DefaultMode: &mode,
-						SecretName:  dk.ActiveGate().GetTLSSecretName(),
-						Items: []corev1.KeyToPath{
-							{
-								Key:  consts.TLSServerCrtDataName,
-								Path: consts.TLSServerCrtDataName,
-							},
+				Secret: &corev1.SecretVolumeSource{
+					DefaultMode: &mode,
+					SecretName:  dk.ActiveGate().GetTLSSecretName(),
+					Items: []corev1.KeyToPath{
+						{
+							Key:  consts.TLSServerCrtDataName,
+							Path: consts.TLSServerCrtDataName,
 						},
 					},
 				},
@@ -1226,32 +1200,24 @@ func TestLegacyVolumes(t *testing.T) {
 		expectedVolumes := []corev1.Volume{
 			{
 				Name: consts.ExtensionsTokensVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName:  dk.Extensions().GetTokenSecretName(),
-						DefaultMode: &mode,
-					},
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  dk.Extensions().GetTokenSecretName(),
+					DefaultMode: &mode,
 				},
 			},
 			{
-				Name: legacyLogVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
+				Name:     legacyLogVolumeName,
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
 			{
-				Name: legacyConfigurationVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
+				Name:     legacyConfigurationVolumeName,
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
 			{
 				Name: httpsCertVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName:  dk.Extensions().GetTLSSecretName(),
-						DefaultMode: &mode,
-					},
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  dk.Extensions().GetTLSSecretName(),
+					DefaultMode: &mode,
 				},
 			},
 		}
@@ -1276,45 +1242,35 @@ func TestLegacyVolumes(t *testing.T) {
 		expectedVolumes := []corev1.Volume{
 			{
 				Name: consts.ExtensionsTokensVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName:  dk.Extensions().GetTokenSecretName(),
-						DefaultMode: &mode,
-					},
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  dk.Extensions().GetTokenSecretName(),
+					DefaultMode: &mode,
 				},
 			},
 			{
-				Name: legacyLogVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
+				Name:     legacyLogVolumeName,
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
 			{
-				Name: legacyConfigurationVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
+				Name:     legacyConfigurationVolumeName,
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
 			{
 				Name: httpsCertVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName:  dk.Extensions().GetTLSSecretName(),
-						DefaultMode: &mode,
-					},
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  dk.Extensions().GetTLSSecretName(),
+					DefaultMode: &mode,
 				},
 			},
 			{
 				Name: activeGateTrustedCertVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						DefaultMode: &mode,
-						SecretName:  dk.ActiveGate().GetTLSSecretName(),
-						Items: []corev1.KeyToPath{
-							{
-								Key:  consts.TLSServerCrtDataName,
-								Path: consts.TLSServerCrtDataName,
-							},
+				Secret: &corev1.SecretVolumeSource{
+					DefaultMode: &mode,
+					SecretName:  dk.ActiveGate().GetTLSSecretName(),
+					Items: []corev1.KeyToPath{
+						{
+							Key:  consts.TLSServerCrtDataName,
+							Path: consts.TLSServerCrtDataName,
 						},
 					},
 				},
@@ -1337,48 +1293,34 @@ func TestLegacyVolumes(t *testing.T) {
 		expectedVolumes := []corev1.Volume{
 			{
 				Name: consts.ExtensionsTokensVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName:  dk.Extensions().GetTokenSecretName(),
-						DefaultMode: &mode,
-					},
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  dk.Extensions().GetTokenSecretName(),
+					DefaultMode: &mode,
 				},
 			},
 			{
-				Name: legacyLogVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
+				Name:     legacyLogVolumeName,
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
 			{
-				Name: legacyConfigurationVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
+				Name:     legacyConfigurationVolumeName,
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
 			{
 				Name: httpsCertVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName:  dk.Extensions().GetTLSSecretName(),
-						DefaultMode: &mode,
-					},
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  dk.Extensions().GetTLSSecretName(),
+					DefaultMode: &mode,
 				},
 			},
 			{
-				Name: runtimeVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
+				Name:     runtimeVolumeName,
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
 			{
 				Name: customConfigVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					ConfigMap: &corev1.ConfigMapVolumeSource{
-						LocalObjectReference: corev1.LocalObjectReference{
-							Name: testCustomConfigConfigMapName,
-						},
-					},
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					Name: testCustomConfigConfigMapName,
 				},
 			},
 		}
@@ -1398,61 +1340,45 @@ func TestLegacyVolumes(t *testing.T) {
 		expectedVolumes := []corev1.Volume{
 			{
 				Name: consts.ExtensionsTokensVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName:  dk.Extensions().GetTokenSecretName(),
-						DefaultMode: &mode,
-					},
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  dk.Extensions().GetTokenSecretName(),
+					DefaultMode: &mode,
 				},
 			},
 			{
-				Name: legacyLogVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
+				Name:     legacyLogVolumeName,
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
 			{
-				Name: legacyConfigurationVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
+				Name:     legacyConfigurationVolumeName,
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
 			{
 				Name: httpsCertVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName:  dk.Extensions().GetTLSSecretName(),
-						DefaultMode: &mode,
-					},
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  dk.Extensions().GetTLSSecretName(),
+					DefaultMode: &mode,
 				},
 			},
 			{
-				Name: runtimeVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
+				Name:     runtimeVolumeName,
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
 			{
 				Name: customConfigVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					ConfigMap: &corev1.ConfigMapVolumeSource{
-						LocalObjectReference: corev1.LocalObjectReference{
-							Name: testCustomConfigConfigMapName,
-						},
-					},
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					Name: testCustomConfigConfigMapName,
 				},
 			},
 			{
 				Name: activeGateTrustedCertVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						DefaultMode: &mode,
-						SecretName:  dk.ActiveGate().GetTLSSecretName(),
-						Items: []corev1.KeyToPath{
-							{
-								Key:  consts.TLSServerCrtDataName,
-								Path: consts.TLSServerCrtDataName,
-							},
+				Secret: &corev1.SecretVolumeSource{
+					DefaultMode: &mode,
+					SecretName:  dk.ActiveGate().GetTLSSecretName(),
+					Items: []corev1.KeyToPath{
+						{
+							Key:  consts.TLSServerCrtDataName,
+							Path: consts.TLSServerCrtDataName,
 						},
 					},
 				},
@@ -1475,27 +1401,21 @@ func TestVolumes(t *testing.T) {
 		expectedVolumes := []corev1.Volume{
 			{
 				Name: consts.ExtensionsTokensVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName:  dk.Extensions().GetTokenSecretName(),
-						DefaultMode: &mode,
-					},
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  dk.Extensions().GetTokenSecretName(),
+					DefaultMode: &mode,
 				},
 			},
 			{
 				Name: httpsCertVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName:  dk.Extensions().GetTLSSecretName(),
-						DefaultMode: &mode,
-					},
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  dk.Extensions().GetTLSSecretName(),
+					DefaultMode: &mode,
 				},
 			},
 			{
-				Name: runtimeVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
+				Name:     runtimeVolumeName,
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
 		}
 
@@ -1512,39 +1432,31 @@ func TestVolumes(t *testing.T) {
 		expectedVolumes := []corev1.Volume{
 			{
 				Name: consts.ExtensionsTokensVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName:  dk.Extensions().GetTokenSecretName(),
-						DefaultMode: &mode,
-					},
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  dk.Extensions().GetTokenSecretName(),
+					DefaultMode: &mode,
 				},
 			},
 			{
 				Name: httpsCertVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName:  dk.Extensions().GetTLSSecretName(),
-						DefaultMode: &mode,
-					},
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  dk.Extensions().GetTLSSecretName(),
+					DefaultMode: &mode,
 				},
 			},
 			{
-				Name: runtimeVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
+				Name:     runtimeVolumeName,
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
 			{
 				Name: activeGateTrustedCertVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						DefaultMode: &mode,
-						SecretName:  dk.ActiveGate().GetTLSSecretName(),
-						Items: []corev1.KeyToPath{
-							{
-								Key:  consts.TLSServerCrtDataName,
-								Path: consts.TLSServerCrtDataName,
-							},
+				Secret: &corev1.SecretVolumeSource{
+					DefaultMode: &mode,
+					SecretName:  dk.ActiveGate().GetTLSSecretName(),
+					Items: []corev1.KeyToPath{
+						{
+							Key:  consts.TLSServerCrtDataName,
+							Path: consts.TLSServerCrtDataName,
 						},
 					},
 				},
@@ -1571,20 +1483,16 @@ func TestVolumes(t *testing.T) {
 		expectedVolumes := []corev1.Volume{
 			{
 				Name: consts.ExtensionsTokensVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName:  dk.Extensions().GetTokenSecretName(),
-						DefaultMode: &mode,
-					},
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  dk.Extensions().GetTokenSecretName(),
+					DefaultMode: &mode,
 				},
 			},
 			{
 				Name: httpsCertVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName:  dk.Extensions().GetTLSSecretName(),
-						DefaultMode: &mode,
-					},
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  dk.Extensions().GetTLSSecretName(),
+					DefaultMode: &mode,
 				},
 			},
 		}
@@ -1608,33 +1516,27 @@ func TestVolumes(t *testing.T) {
 		expectedVolumes := []corev1.Volume{
 			{
 				Name: consts.ExtensionsTokensVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName:  dk.Extensions().GetTokenSecretName(),
-						DefaultMode: &mode,
-					},
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  dk.Extensions().GetTokenSecretName(),
+					DefaultMode: &mode,
 				},
 			},
 			{
 				Name: httpsCertVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName:  dk.Extensions().GetTLSSecretName(),
-						DefaultMode: &mode,
-					},
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  dk.Extensions().GetTLSSecretName(),
+					DefaultMode: &mode,
 				},
 			},
 			{
 				Name: activeGateTrustedCertVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						DefaultMode: &mode,
-						SecretName:  dk.ActiveGate().GetTLSSecretName(),
-						Items: []corev1.KeyToPath{
-							{
-								Key:  consts.TLSServerCrtDataName,
-								Path: consts.TLSServerCrtDataName,
-							},
+				Secret: &corev1.SecretVolumeSource{
+					DefaultMode: &mode,
+					SecretName:  dk.ActiveGate().GetTLSSecretName(),
+					Items: []corev1.KeyToPath{
+						{
+							Key:  consts.TLSServerCrtDataName,
+							Path: consts.TLSServerCrtDataName,
 						},
 					},
 				},
@@ -1656,36 +1558,26 @@ func TestVolumes(t *testing.T) {
 		expectedVolumes := []corev1.Volume{
 			{
 				Name: consts.ExtensionsTokensVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName:  dk.Extensions().GetTokenSecretName(),
-						DefaultMode: &mode,
-					},
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  dk.Extensions().GetTokenSecretName(),
+					DefaultMode: &mode,
 				},
 			},
 			{
 				Name: httpsCertVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName:  dk.Extensions().GetTLSSecretName(),
-						DefaultMode: &mode,
-					},
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  dk.Extensions().GetTLSSecretName(),
+					DefaultMode: &mode,
 				},
 			},
 			{
-				Name: runtimeVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
+				Name:     runtimeVolumeName,
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
 			{
 				Name: customConfigVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					ConfigMap: &corev1.ConfigMapVolumeSource{
-						LocalObjectReference: corev1.LocalObjectReference{
-							Name: testCustomConfigConfigMapName,
-						},
-					},
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					Name: testCustomConfigConfigMapName,
 				},
 			},
 		}
@@ -1704,49 +1596,37 @@ func TestVolumes(t *testing.T) {
 		expectedVolumes := []corev1.Volume{
 			{
 				Name: consts.ExtensionsTokensVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName:  dk.Extensions().GetTokenSecretName(),
-						DefaultMode: &mode,
-					},
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  dk.Extensions().GetTokenSecretName(),
+					DefaultMode: &mode,
 				},
 			},
 			{
 				Name: httpsCertVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName:  dk.Extensions().GetTLSSecretName(),
-						DefaultMode: &mode,
-					},
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  dk.Extensions().GetTLSSecretName(),
+					DefaultMode: &mode,
 				},
 			},
 			{
-				Name: runtimeVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
+				Name:     runtimeVolumeName,
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
 			{
 				Name: customConfigVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					ConfigMap: &corev1.ConfigMapVolumeSource{
-						LocalObjectReference: corev1.LocalObjectReference{
-							Name: testCustomConfigConfigMapName,
-						},
-					},
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					Name: testCustomConfigConfigMapName,
 				},
 			},
 			{
 				Name: activeGateTrustedCertVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						DefaultMode: &mode,
-						SecretName:  dk.ActiveGate().GetTLSSecretName(),
-						Items: []corev1.KeyToPath{
-							{
-								Key:  consts.TLSServerCrtDataName,
-								Path: consts.TLSServerCrtDataName,
-							},
+				Secret: &corev1.SecretVolumeSource{
+					DefaultMode: &mode,
+					SecretName:  dk.ActiveGate().GetTLSSecretName(),
+					Items: []corev1.KeyToPath{
+						{
+							Key:  consts.TLSServerCrtDataName,
+							Path: consts.TLSServerCrtDataName,
 						},
 					},
 				},
@@ -1762,11 +1642,9 @@ func TestVolumes(t *testing.T) {
 
 		expectedVolume := corev1.Volume{
 			Name: httpsCertVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName:  "custom-tls",
-					DefaultMode: new(int32(0o640)),
-				},
+			Secret: &corev1.SecretVolumeSource{
+				SecretName:  "custom-tls",
+				DefaultMode: new(int32(0o640)),
 			},
 		}
 
@@ -1785,11 +1663,9 @@ func TestVolumes(t *testing.T) {
 
 		expectedVolume := corev1.Volume{
 			Name: customCertificateVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName:  "custom-certs",
-					DefaultMode: new(int32(0o640)),
-				},
+			Secret: &corev1.SecretVolumeSource{
+				SecretName:  "custom-certs",
+				DefaultMode: new(int32(0o640)),
 			},
 		}
 
@@ -1813,30 +1689,26 @@ func TestActiveGateVolumes(t *testing.T) {
 	defaultMode := int32(0o640)
 	expectedVolume := corev1.Volume{
 		Name: activeGateTrustedCertVolumeName,
-		VolumeSource: corev1.VolumeSource{
-			Secret: &corev1.SecretVolumeSource{
-				DefaultMode: &defaultMode,
-				SecretName:  tlsSecretName,
-				Items: []corev1.KeyToPath{
-					{
-						Key:  consts.TLSServerCrtDataName,
-						Path: consts.TLSServerCrtDataName,
-					},
+		Secret: &corev1.SecretVolumeSource{
+			DefaultMode: &defaultMode,
+			SecretName:  tlsSecretName,
+			Items: []corev1.KeyToPath{
+				{
+					Key:  consts.TLSServerCrtDataName,
+					Path: consts.TLSServerCrtDataName,
 				},
 			},
 		},
 	}
 	expectedAutoAgCertVolume := corev1.Volume{
 		Name: activeGateTrustedCertVolumeName,
-		VolumeSource: corev1.VolumeSource{
-			Secret: &corev1.SecretVolumeSource{
-				DefaultMode: &defaultMode,
-				SecretName:  testDynakubeName + activegate.TLSSecretSuffix,
-				Items: []corev1.KeyToPath{
-					{
-						Key:  consts.TLSServerCrtDataName,
-						Path: consts.TLSServerCrtDataName,
-					},
+		Secret: &corev1.SecretVolumeSource{
+			DefaultMode: &defaultMode,
+			SecretName:  testDynakubeName + activegate.TLSSecretSuffix,
+			Items: []corev1.KeyToPath{
+				{
+					Key:  consts.TLSServerCrtDataName,
+					Path: consts.TLSServerCrtDataName,
 				},
 			},
 		},

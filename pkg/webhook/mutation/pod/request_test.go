@@ -12,9 +12,7 @@ import (
 	handlermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/webhook/mutation/pod/handler"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	admissionv1 "k8s.io/api/admission/v1"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
@@ -98,21 +96,17 @@ func createTestAdmissionRequest(pod *corev1.Pod) *admission.Request {
 	basePodBytes, _ := json.Marshal(pod)
 
 	return &admission.Request{
-		AdmissionRequest: admissionv1.AdmissionRequest{
-			Object: runtime.RawExtension{
-				Raw: basePodBytes,
-			},
-			Namespace: testNamespaceName,
+		Object: runtime.RawExtension{
+			Raw: basePodBytes,
 		},
+		Namespace: testNamespaceName,
 	}
 }
 
 func getTestPod() *corev1.Pod {
 	return &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      testPodName,
-			Namespace: testNamespaceName,
-		},
+		Name:      testPodName,
+		Namespace: testNamespaceName,
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{
 				{
@@ -129,10 +123,8 @@ func getTestPod() *corev1.Pod {
 			},
 			Volumes: []corev1.Volume{
 				{
-					Name: "volume",
-					VolumeSource: corev1.VolumeSource{
-						EmptyDir: &corev1.EmptyDirVolumeSource{},
-					},
+					Name:     "volume",
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
 				},
 			},
 		},
@@ -141,11 +133,9 @@ func getTestPod() *corev1.Pod {
 
 func getTestNamespace() *corev1.Namespace {
 	return &corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: testNamespaceName,
-			Labels: map[string]string{
-				dtwebhook.InjectionInstanceLabel: testDynakubeName,
-			},
+		Name: testNamespaceName,
+		Labels: map[string]string{
+			dtwebhook.InjectionInstanceLabel: testDynakubeName,
 		},
 	}
 }

@@ -14,17 +14,14 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
 
 var testPrometheusMonitoring = &prometheusmonitoring.PrometheusMonitoring{
-	ObjectMeta: metav1.ObjectMeta{
-		Name:      "test-name",
-		Namespace: "test-namespace",
-	},
+	Name:      "test-name",
+	Namespace: "test-namespace",
 	Spec: prometheusmonitoring.PrometheusMonitoringSpec{
 		DynaKubeName: "test-dynakube",
 	},
@@ -145,7 +142,7 @@ func TestValidateCreateAndUpdateWithWrongType(t *testing.T) {
 	// no GVK set, hits "unknown object %T"
 	noGVK := &corev1.Pod{}
 	// GVK set but wrong kind, hits "unknown object %s"
-	withGVK := &corev1.Pod{TypeMeta: metav1.TypeMeta{Kind: "Pod", APIVersion: "v1"}}
+	withGVK := &corev1.Pod{Kind: "Pod", APIVersion: "v1"}
 
 	_, err := validator.ValidateCreate(t.Context(), noGVK)
 	require.Error(t, err)

@@ -24,10 +24,8 @@ func TestSuppotrArchiveOutputCollector(t *testing.T) {
 
 	archive := newZipArchive(bufio.NewWriter(&buffer))
 	supportArchiveOutputCollector := supportArchiveOutputCollector{
-		collectorCommon: collectorCommon{
-			log:            newSupportArchiveLogger(&logBuffer),
-			supportArchive: archive,
-		},
+		log:            newSupportArchiveLogger(&logBuffer),
+		supportArchive: archive,
 
 		output: strings.NewReader(supportArchiveOutput),
 	}

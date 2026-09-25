@@ -32,9 +32,7 @@ func TestWebhook(t *testing.T) {
 			// TODO(avorima): Load this from a file using Paths
 			ValidatingWebhooks: []*admissionregistrationv1.ValidatingWebhookConfiguration{
 				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "dynatrace-webhook",
-					},
+					Name: "dynatrace-webhook",
 					Webhooks: []admissionregistrationv1.ValidatingWebhook{
 						{
 							Name: "v1beta5.dynakube.webhook.dynatrace.com",
@@ -49,11 +47,9 @@ func TestWebhook(t *testing.T) {
 										admissionregistrationv1.Create,
 										admissionregistrationv1.Update,
 									},
-									Rule: admissionregistrationv1.Rule{
-										APIGroups:   []string{"dynatrace.com"},
-										APIVersions: []string{"v1beta5"},
-										Resources:   []string{"dynakubes"},
-									},
+									APIGroups:   []string{"dynatrace.com"},
+									APIVersions: []string{"v1beta5"},
+									Resources:   []string{"dynakubes"},
 								},
 							},
 							MatchPolicy:             new(admissionregistrationv1.Exact),
@@ -74,11 +70,9 @@ func TestWebhook(t *testing.T) {
 										admissionregistrationv1.Create,
 										admissionregistrationv1.Update,
 									},
-									Rule: admissionregistrationv1.Rule{
-										APIGroups:   []string{"dynatrace.com"},
-										APIVersions: []string{"v1beta6"},
-										Resources:   []string{"dynakubes"},
-									},
+									APIGroups:   []string{"dynatrace.com"},
+									APIVersions: []string{"v1beta6"},
+									Resources:   []string{"dynakubes"},
 								},
 							},
 							MatchPolicy:             new(admissionregistrationv1.Exact),
@@ -137,11 +131,9 @@ func TestWebhook(t *testing.T) {
 	for _, tt := range invalidTests {
 		t.Run(tt.name, func(t *testing.T) {
 			dk := &dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test",
-					Namespace: metav1.NamespaceDefault,
-				},
-				Spec: tt.spec,
+				Name:      "test",
+				Namespace: metav1.NamespaceDefault,
+				Spec:      tt.spec,
 			}
 
 			err := clt.Create(t.Context(), dk)

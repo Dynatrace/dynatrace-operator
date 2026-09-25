@@ -19,7 +19,6 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -35,9 +34,7 @@ const (
 
 func createTestDynaKube() *dynakube.DynaKube {
 	return &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: testNamespace, Name: testName,
-		},
+		Namespace: testNamespace, Name: testName,
 		Spec: dynakube.DynaKubeSpec{
 			APIURL: testAPIURL,
 		},
@@ -138,7 +135,7 @@ func TestCreateOrUpdateService(t *testing.T) {
 		err := r.createOrUpdateService(t.Context(), dk)
 		require.NoError(t, err)
 
-		service := &corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: capability.BuildServiceName(dk.Name), Namespace: dk.Namespace}}
+		service := &corev1.Service{Name: capability.BuildServiceName(dk.Name), Namespace: dk.Namespace}
 		result, err := controllerutil.CreateOrUpdate(t.Context(), clt, service, func() error {
 			test.mutate(service)
 
@@ -161,10 +158,8 @@ func TestCreateOrUpdateService(t *testing.T) {
 func TestSetAGServiceIPs(t *testing.T) {
 	buildDynakube := func() *dynakube.DynaKube {
 		return &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: testNamespace,
-				Name:      testName,
-			},
+			Namespace: testNamespace,
+			Name:      testName,
 			Spec: dynakube.DynaKubeSpec{
 				EnableIstio: new(true),
 				ActiveGate: activegate.Spec{

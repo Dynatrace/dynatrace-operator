@@ -26,7 +26,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
@@ -173,12 +172,10 @@ func buildContainer(dk *dynakube.DynaKube, imageURI string) corev1.Container {
 		Image:           imageURI,
 		ImagePullPolicy: dk.Spec.Templates.ExtensionExecutionController.ImageRef.PullPolicy,
 		ReadinessProbe: &corev1.Probe{
-			ProbeHandler: corev1.ProbeHandler{
-				HTTPGet: &corev1.HTTPGetAction{
-					Path:   "/readyz",
-					Port:   intstr.IntOrString{IntVal: consts.ExtensionsDatasourceTargetPort},
-					Scheme: "HTTPS",
-				},
+			HTTPGet: &corev1.HTTPGetAction{
+				Path:   "/readyz",
+				Port:   intstr.IntOrString{IntVal: consts.ExtensionsDatasourceTargetPort},
+				Scheme: "HTTPS",
 			},
 			InitialDelaySeconds: 15,
 			PeriodSeconds:       15,
@@ -378,32 +375,24 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 			o.Spec.Template.Spec.Volumes = []corev1.Volume{
 				{
 					Name: consts.ExtensionsTokensVolumeName,
-					VolumeSource: corev1.VolumeSource{
-						Secret: &corev1.SecretVolumeSource{
-							SecretName:  dk.Extensions().GetTokenSecretName(),
-							DefaultMode: &mode,
-						},
+					Secret: &corev1.SecretVolumeSource{
+						SecretName:  dk.Extensions().GetTokenSecretName(),
+						DefaultMode: &mode,
 					},
 				},
 				{
-					Name: legacyLogVolumeName,
-					VolumeSource: corev1.VolumeSource{
-						EmptyDir: &corev1.EmptyDirVolumeSource{},
-					},
+					Name:     legacyLogVolumeName,
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
 				},
 				{
-					Name: legacyConfigurationVolumeName,
-					VolumeSource: corev1.VolumeSource{
-						EmptyDir: &corev1.EmptyDirVolumeSource{},
-					},
+					Name:     legacyConfigurationVolumeName,
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
 				},
 				{
 					Name: httpsCertVolumeName,
-					VolumeSource: corev1.VolumeSource{
-						Secret: &corev1.SecretVolumeSource{
-							SecretName:  dk.Extensions().GetTLSSecretName(),
-							DefaultMode: &mode,
-						},
+					Secret: &corev1.SecretVolumeSource{
+						SecretName:  dk.Extensions().GetTLSSecretName(),
+						DefaultMode: &mode,
 					},
 				},
 			}
@@ -411,20 +400,16 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 			o.Spec.Template.Spec.Volumes = []corev1.Volume{
 				{
 					Name: consts.ExtensionsTokensVolumeName,
-					VolumeSource: corev1.VolumeSource{
-						Secret: &corev1.SecretVolumeSource{
-							SecretName:  dk.Extensions().GetTokenSecretName(),
-							DefaultMode: &mode,
-						},
+					Secret: &corev1.SecretVolumeSource{
+						SecretName:  dk.Extensions().GetTokenSecretName(),
+						DefaultMode: &mode,
 					},
 				},
 				{
 					Name: httpsCertVolumeName,
-					VolumeSource: corev1.VolumeSource{
-						Secret: &corev1.SecretVolumeSource{
-							SecretName:  dk.Extensions().GetTLSSecretName(),
-							DefaultMode: &mode,
-						},
+					Secret: &corev1.SecretVolumeSource{
+						SecretName:  dk.Extensions().GetTLSSecretName(),
+						DefaultMode: &mode,
 					},
 				},
 			}
@@ -432,22 +417,16 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 
 		if ptr.Deref(dk.Spec.Templates.ExtensionExecutionController.UseEphemeralVolume, false) {
 			o.Spec.Template.Spec.Volumes = append(o.Spec.Template.Spec.Volumes, corev1.Volume{
-				Name: runtimeVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
+				Name:     runtimeVolumeName,
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			})
 		}
 
 		if dk.Spec.Templates.ExtensionExecutionController.CustomConfig != "" {
 			o.Spec.Template.Spec.Volumes = append(o.Spec.Template.Spec.Volumes, corev1.Volume{
 				Name: customConfigVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					ConfigMap: &corev1.ConfigMapVolumeSource{
-						LocalObjectReference: corev1.LocalObjectReference{
-							Name: dk.Spec.Templates.ExtensionExecutionController.CustomConfig,
-						},
-					},
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					Name: dk.Spec.Templates.ExtensionExecutionController.CustomConfig,
 				},
 			})
 		}
@@ -455,15 +434,13 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 		if dk.ActiveGate().HasCaCert() {
 			o.Spec.Template.Spec.Volumes = append(o.Spec.Template.Spec.Volumes, corev1.Volume{
 				Name: activeGateTrustedCertVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						DefaultMode: &mode,
-						SecretName:  dk.ActiveGate().GetTLSSecretName(),
-						Items: []corev1.KeyToPath{
-							{
-								Key:  consts.TLSServerCrtDataName,
-								Path: consts.TLSServerCrtDataName,
-							},
+				Secret: &corev1.SecretVolumeSource{
+					DefaultMode: &mode,
+					SecretName:  dk.ActiveGate().GetTLSSecretName(),
+					Items: []corev1.KeyToPath{
+						{
+							Key:  consts.TLSServerCrtDataName,
+							Path: consts.TLSServerCrtDataName,
 						},
 					},
 				},
@@ -473,11 +450,9 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 		if dk.Spec.Templates.ExtensionExecutionController.CustomExtensionCertificates != "" {
 			o.Spec.Template.Spec.Volumes = append(o.Spec.Template.Spec.Volumes, corev1.Volume{
 				Name: customCertificateVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName:  dk.Spec.Templates.ExtensionExecutionController.CustomExtensionCertificates,
-						DefaultMode: &mode,
-					},
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  dk.Spec.Templates.ExtensionExecutionController.CustomExtensionCertificates,
+					DefaultMode: &mode,
 				},
 			})
 		}
@@ -490,18 +465,14 @@ func setPersistentVolumeClaim(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet)
 			if dk.Spec.Templates.ExtensionExecutionController.PersistentVolumeClaim == nil {
 				o.Spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{
 					{
-						ObjectMeta: metav1.ObjectMeta{
-							Name: runtimeVolumeName,
-						},
+						Name: runtimeVolumeName,
 						Spec: defaultPVCSpec(dk),
 					},
 				}
 			} else {
 				o.Spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{
 					{
-						ObjectMeta: metav1.ObjectMeta{
-							Name: runtimeVolumeName,
-						},
+						Name: runtimeVolumeName,
 						Spec: *dk.Spec.Templates.ExtensionExecutionController.PersistentVolumeClaim,
 					},
 				}

@@ -102,11 +102,9 @@ func TestCreateOrUpdateStatefulSet(t *testing.T) {
 
 func createTestStatefulSetWithMatchLabels(name, namespace string, annotations, matchLabels map[string]string) *appsv1.StatefulSet {
 	return &appsv1.StatefulSet{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        name,
-			Namespace:   namespace,
-			Annotations: annotations,
-		},
+		Name:        name,
+		Namespace:   namespace,
+		Annotations: annotations,
 		Spec: appsv1.StatefulSetSpec{
 			Selector: &metav1.LabelSelector{
 				MatchLabels: matchLabels,

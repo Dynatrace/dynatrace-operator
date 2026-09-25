@@ -134,8 +134,8 @@ func TestSerialization(t *testing.T) {
 			// Create from the typed struct: the client marshals it via the JSON
 			// tags, so omitzero decides which struct fields are sent.
 			dk := &dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{Name: tt.name, Namespace: metav1.NamespaceDefault},
-				Spec:       tt.spec,
+				Name: tt.name, Namespace: metav1.NamespaceDefault,
+				Spec: tt.spec,
 			}
 			integrationtests.CreateKubernetesObject(t, clt, dk)
 
@@ -185,7 +185,7 @@ func serializationWebhookOptions() envtest.WebhookInstallOptions {
 	return envtest.WebhookInstallOptions{
 		ValidatingWebhooks: []*admissionregistrationv1.ValidatingWebhookConfiguration{
 			{
-				ObjectMeta: metav1.ObjectMeta{Name: "dynatrace-webhook"},
+				Name: "dynatrace-webhook",
 				Webhooks: []admissionregistrationv1.ValidatingWebhook{
 					{
 						Name: "v1beta6.dynakube.webhook.dynatrace.com",
@@ -200,11 +200,9 @@ func serializationWebhookOptions() envtest.WebhookInstallOptions {
 									admissionregistrationv1.Create,
 									admissionregistrationv1.Update,
 								},
-								Rule: admissionregistrationv1.Rule{
-									APIGroups:   []string{"dynatrace.com"},
-									APIVersions: []string{"v1beta6"},
-									Resources:   []string{"dynakubes"},
-								},
+								APIGroups:   []string{"dynatrace.com"},
+								APIVersions: []string{"v1beta6"},
+								Resources:   []string{"dynakubes"},
 							},
 						},
 						MatchPolicy:             new(admissionregistrationv1.Exact),

@@ -50,8 +50,8 @@ func TestReconcileLifecycle(t *testing.T) {
 	integrationtests.CreateNamespace(t, clt, integrationNamespace)
 
 	pm := &prometheusmonitoring.PrometheusMonitoring{
-		ObjectMeta: metav1.ObjectMeta{Name: integrationPMName, Namespace: integrationNamespace},
-		Spec:       prometheusmonitoring.PrometheusMonitoringSpec{DynaKubeName: integrationDynaKubeName},
+		Name: integrationPMName, Namespace: integrationNamespace,
+		Spec: prometheusmonitoring.PrometheusMonitoringSpec{DynaKubeName: integrationDynaKubeName},
 	}
 	integrationtests.CreateKubernetesObject(t, clt, pm)
 
@@ -68,8 +68,8 @@ func TestReconcileLifecycle(t *testing.T) {
 		// A custom pull secret is set so imagePullSecrets is a non-empty value, letting the
 		// stabilize phase prove it reconciles without spurious Update calls.
 		dk: &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{Name: integrationDynaKubeName, Namespace: integrationNamespace},
-			Spec:       dynakube.DynaKubeSpec{CustomPullSecret: "custom-pull-secret"},
+			Name: integrationDynaKubeName, Namespace: integrationNamespace,
+			Spec: dynakube.DynaKubeSpec{CustomPullSecret: "custom-pull-secret"},
 		},
 		imageClient: imageClient,
 	}

@@ -33,7 +33,6 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/mount-utils"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -341,7 +340,7 @@ func createDynaKubeWithImage(t *testing.T) *dynakube.DynaKube {
 	imageID := "test-image"
 	dk.Spec.OneAgent = oneagent.Spec{
 		CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
-			AppInjectionSpec: oneagent.AppInjectionSpec{CodeModulesImage: imageID},
+			CodeModulesImage: imageID,
 		},
 	}
 	dk.Status.CodeModules.ImageID = imageID
@@ -356,7 +355,7 @@ func createDynaKubeWithJobFF(t *testing.T) *dynakube.DynaKube {
 	imageID := "test-image"
 	dk.Spec.OneAgent = oneagent.Spec{
 		CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
-			AppInjectionSpec: oneagent.AppInjectionSpec{CodeModulesImage: imageID},
+			CodeModulesImage: imageID,
 		},
 	}
 	dk.Status.CodeModules.ImageID = imageID
@@ -409,12 +408,10 @@ func createDynaKubeBase(t *testing.T) *dynakube.DynaKube {
 	t.Helper()
 
 	return &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        "test-dk",
-			Namespace:   "test-ns",
-			Annotations: make(map[string]string),
-		},
-		Spec: dynakube.DynaKubeSpec{APIURL: "https://csi-provisioner-dummy-url:9090"},
+		Name:        "test-dk",
+		Namespace:   "test-ns",
+		Annotations: make(map[string]string),
+		Spec:        dynakube.DynaKubeSpec{APIURL: "https://csi-provisioner-dummy-url:9090"},
 	}
 }
 
@@ -477,10 +474,8 @@ func createToken(t *testing.T, dk *dynakube.DynaKube) *corev1.Secret {
 	t.Helper()
 
 	return &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      dk.Tokens(),
-			Namespace: dk.Namespace,
-		},
+		Name:      dk.Tokens(),
+		Namespace: dk.Namespace,
 		Data: map[string][]byte{
 			token.APIKey: []byte("this is a token"),
 		},

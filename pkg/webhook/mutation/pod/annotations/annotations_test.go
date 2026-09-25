@@ -11,15 +11,14 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func newTestMutationRequest(t *testing.T) *mutator.MutationRequest {
 	t.Helper()
 
-	pod := &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "pod", Namespace: "ns"}}
-	ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "ns"}}
-	dk := &dynakube.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: "dk", Namespace: "ns"}}
+	pod := &corev1.Pod{Name: "pod", Namespace: "ns"}
+	ns := &corev1.Namespace{Name: "ns"}
+	dk := &dynakube.DynaKube{Name: "dk", Namespace: "ns"}
 
 	return mutator.NewMutationRequest(t.Context(), ns, nil, pod, dk)
 }

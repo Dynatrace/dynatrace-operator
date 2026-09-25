@@ -8,7 +8,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestInvalidOneAgentHostGroup(t *testing.T) {
@@ -29,7 +28,7 @@ func TestInvalidOneAgentHostGroup(t *testing.T) {
 
 	t.Run("host group with invalid characters is denied", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{Name: testName, Namespace: testNamespace},
+			Name: testName, Namespace: testNamespace,
 			Spec: dynakube.DynaKubeSpec{
 				APIURL:   testAPIURL,
 				OneAgent: oneagent.Spec{},

@@ -28,7 +28,7 @@ import (
 )
 
 func newTestPM(name, namespace string) *prometheusmonitoring.PrometheusMonitoring {
-	return &prometheusmonitoring.PrometheusMonitoring{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace, UID: types.UID("pm-uid")}}
+	return &prometheusmonitoring.PrometheusMonitoring{Name: name, Namespace: namespace, UID: types.UID("pm-uid")}
 }
 
 func newTestScope(pm *prometheusmonitoring.PrometheusMonitoring) *reconcileScope {
@@ -164,11 +164,10 @@ func TestReconcileConfigMap(t *testing.T) {
 	t.Run("merge labels", func(t *testing.T) {
 		pm := newTestPM("pm", "dynatrace")
 		s := newTestScope(pm)
-		existing := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{
+		existing := &corev1.ConfigMap{
 			Name:      s.Spec.GetStatefulSetName(),
 			Namespace: pm.Namespace,
-			Labels:    map[string]string{"custom": "value", k8slabel.AppInstanceLabel: "override"},
-		}}
+			Labels:    map[string]string{"custom": "value", k8slabel.AppInstanceLabel: "override"}}
 		c := fake.NewClient(existing)
 		r := &Reconciler{Client: c}
 
@@ -205,11 +204,10 @@ func TestReconcileService(t *testing.T) {
 	t.Run("merge labels", func(t *testing.T) {
 		pm := newTestPM("pm", "dynatrace")
 		s := newTestScope(pm)
-		existing := &corev1.Service{ObjectMeta: metav1.ObjectMeta{
+		existing := &corev1.Service{
 			Name:      s.Spec.GetStatefulSetName(),
 			Namespace: pm.Namespace,
-			Labels:    map[string]string{"custom": "value", k8slabel.AppInstanceLabel: "override"},
-		}}
+			Labels:    map[string]string{"custom": "value", k8slabel.AppInstanceLabel: "override"}}
 		c := fake.NewClient(existing)
 		r := &Reconciler{Client: c}
 

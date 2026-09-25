@@ -94,12 +94,10 @@ func (statefulSetBuilder Builder) getBaseSpec() appsv1.StatefulSetSpec {
 			RollingUpdate: statefulSetBuilder.dynakube.Spec.ActiveGate.RollingUpdate,
 		},
 		Template: corev1.PodTemplateSpec{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{
-					consts.AnnotationActiveGateConfigurationHash: statefulSetBuilder.configHash,
-					consts.AnnotationActiveGateTenantTokenHash:   statefulSetBuilder.dynakube.Status.ActiveGate.ConnectionInfo.TenantTokenHash,
-					mutator.AnnotationInjectionSplitMounts:       "true",
-				},
+			Annotations: map[string]string{
+				consts.AnnotationActiveGateConfigurationHash: statefulSetBuilder.configHash,
+				consts.AnnotationActiveGateTenantTokenHash:   statefulSetBuilder.dynakube.Status.ActiveGate.ConnectionInfo.TenantTokenHash,
+				mutator.AnnotationInjectionSplitMounts:       "true",
 			},
 		},
 	}
@@ -161,10 +159,8 @@ func (statefulSetBuilder Builder) buildVolumes() []corev1.Volume {
 	if statefulSetBuilder.dynakube.Spec.ActiveGate.VolumeClaimTemplate == nil {
 		if !isDefaultPVCNeeded(statefulSetBuilder.dynakube) {
 			volumes = append(volumes, corev1.Volume{
-				Name: consts.GatewayTmpVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
+				Name:     consts.GatewayTmpVolumeName,
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			})
 		}
 	}
@@ -244,9 +240,7 @@ func (statefulSetBuilder Builder) buildCommonEnvs() []corev1.EnvVar {
 		{Name: consts.EnvDTIDSeedClusterID, Value: string(statefulSetBuilder.kubeUID)},
 		{Name: deploymentmetadata.EnvDTDeploymentMetadata, ValueFrom: &corev1.EnvVarSource{
 			ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
-				LocalObjectReference: corev1.LocalObjectReference{
-					Name: deploymentmetadata.GetDeploymentMetadataConfigMapName(statefulSetBuilder.dynakube.Name),
-				},
+				Name:     deploymentmetadata.GetDeploymentMetadataConfigMapName(statefulSetBuilder.dynakube.Name),
 				Key:      deploymentmetadata.ActiveGateMetadataKey,
 				Optional: new(false),
 			},
@@ -287,9 +281,7 @@ func (statefulSetBuilder Builder) addPersistentVolumeClaim(sts *appsv1.StatefulS
 		// validation webhook ensures that statefulSetBuilder.dynakube.Spec.ActiveGate.UseEphemeralVolume is false at this point
 		sts.Spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{
 			{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: consts.GatewayTmpVolumeName,
-				},
+				Name: consts.GatewayTmpVolumeName,
 				Spec: *statefulSetBuilder.dynakube.Spec.ActiveGate.VolumeClaimTemplate,
 			},
 		}
@@ -297,9 +289,7 @@ func (statefulSetBuilder Builder) addPersistentVolumeClaim(sts *appsv1.StatefulS
 	} else if isDefaultPVCNeeded(statefulSetBuilder.dynakube) {
 		sts.Spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{
 			{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: consts.GatewayTmpVolumeName,
-				},
+				Name: consts.GatewayTmpVolumeName,
 				Spec: defaultPVCSpec(),
 			},
 		}

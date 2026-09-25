@@ -27,9 +27,7 @@ func TestWebhook(t *testing.T) {
 			// TODO(avorima): Load this from a file using Paths
 			ValidatingWebhooks: []*admissionregistrationv1.ValidatingWebhookConfiguration{
 				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "dynatrace-webhook",
-					},
+					Name: "dynatrace-webhook",
 					Webhooks: []admissionregistrationv1.ValidatingWebhook{
 						{
 							Name: "v1alpha1.edgeconnect.webhook.dynatrace.com",
@@ -44,11 +42,9 @@ func TestWebhook(t *testing.T) {
 										admissionregistrationv1.Create,
 										admissionregistrationv1.Update,
 									},
-									Rule: admissionregistrationv1.Rule{
-										APIGroups:   []string{"dynatrace.com"},
-										APIVersions: []string{"v1alpha1"},
-										Resources:   []string{"edgeconnects"},
-									},
+									APIGroups:   []string{"dynatrace.com"},
+									APIVersions: []string{"v1alpha1"},
+									Resources:   []string{"edgeconnects"},
 								},
 							},
 							MatchPolicy:             new(admissionregistrationv1.Exact),
@@ -69,11 +65,9 @@ func TestWebhook(t *testing.T) {
 										admissionregistrationv1.Create,
 										admissionregistrationv1.Update,
 									},
-									Rule: admissionregistrationv1.Rule{
-										APIGroups:   []string{"dynatrace.com"},
-										APIVersions: []string{"v1alpha2"},
-										Resources:   []string{"edgeconnects"},
-									},
+									APIGroups:   []string{"dynatrace.com"},
+									APIVersions: []string{"v1alpha2"},
+									Resources:   []string{"edgeconnects"},
 								},
 							},
 							MatchPolicy:             new(admissionregistrationv1.Exact),

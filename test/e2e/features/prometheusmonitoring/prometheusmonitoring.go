@@ -6,6 +6,7 @@
 package prometheusmonitoring
 
 import (
+	"os"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
@@ -20,7 +21,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/registry"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
 	appsv1 "k8s.io/api/apps/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 	"sigs.k8s.io/e2e-framework/third_party/helm"
 )
@@ -33,6 +33,9 @@ const (
 
 func Feature(t *testing.T) features.Feature {
 	builder := features.New("lifecycle")
+	if os.Getenv("OLM") == "true" {
+		t.Skip("Skipping Prometheus tests with OLM installation")
+	}
 
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
@@ -41,26 +44,18 @@ func Feature(t *testing.T) features.Feature {
 	)
 
 	pm := &pmapi.PrometheusMonitoring{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "monitoring",
-			Namespace: operator.DefaultNamespace,
-		},
+		Name:      "monitoring",
+		Namespace: operator.DefaultNamespace,
 		Spec: pmapi.PrometheusMonitoringSpec{
 			DynaKubeName: dk.Name,
 			TargetAllocator: pmapi.TargetAllocatorSpec{
-				PodSpec: pmapi.PodSpec{
-					Image: registry.GetLatestImageTagURI(t, defaultTargetAllocatorRepo, targetAllocatorImageEnvVar),
-				},
+				Image: registry.GetLatestImageTagURI(t, defaultTargetAllocatorRepo, targetAllocatorImageEnvVar),
 			},
 			Scraper: pmapi.ScraperSpec{
-				PodSpec: pmapi.PodSpec{
-					Image: dynakube.GetLatestOTelCollectorImageTagURI(t),
-				},
+				Image: dynakube.GetLatestOTelCollectorImageTagURI(t),
 			},
 			Gateway: pmapi.GatewaySpec{
-				PodSpec: pmapi.PodSpec{
-					Image: dynakube.GetLatestOTelCollectorImageTagURI(t),
-				},
+				Image: dynakube.GetLatestOTelCollectorImageTagURI(t),
 			},
 		},
 	}
@@ -113,6 +108,9 @@ func Feature(t *testing.T) features.Feature {
 
 func PublicRegistry(t *testing.T) features.Feature {
 	builder := features.New("public-registry")
+	if os.Getenv("OLM") == "true" {
+		t.Skip("Skipping Prometheus tests with OLM installation")
+	}
 	builder.Assess("devregistry pull secret exists", k8sobject.Expect(consts.DevRegistryPullSecretName, operator.DefaultNamespace, k8sobject.SecretExists))
 
 	secretConfig := tenant.GetSingleTenantSecret(t)
@@ -123,10 +121,8 @@ func PublicRegistry(t *testing.T) features.Feature {
 	)
 
 	pm := &pmapi.PrometheusMonitoring{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "monitoring",
-			Namespace: operator.DefaultNamespace,
-		},
+		Name:      "monitoring",
+		Namespace: operator.DefaultNamespace,
 		Spec: pmapi.PrometheusMonitoringSpec{
 			DynaKubeName: dk.Name,
 		},
@@ -150,15 +146,15 @@ func PublicRegistry(t *testing.T) features.Feature {
 }
 
 func gatewayStatefulSet(pm *pmapi.PrometheusMonitoring) *appsv1.StatefulSet {
-	return &appsv1.StatefulSet{ObjectMeta: metav1.ObjectMeta{Name: pm.Gateway().GetStatefulSetName(), Namespace: pm.Namespace}}
+	return &appsv1.StatefulSet{Name: pm.Gateway().GetStatefulSetName(), Namespace: pm.Namespace}
 }
 
 func scraperDeployment(pm *pmapi.PrometheusMonitoring) *appsv1.Deployment {
-	return &appsv1.Deployment{ObjectMeta: metav1.ObjectMeta{Name: pm.Scraper().GetDeploymentName(), Namespace: pm.Namespace}}
+	return &appsv1.Deployment{Name: pm.Scraper().GetDeploymentName(), Namespace: pm.Namespace}
 }
 
 func targetAllocatorDeployment(pm *pmapi.PrometheusMonitoring) *appsv1.Deployment {
-	return &appsv1.Deployment{ObjectMeta: metav1.ObjectMeta{Name: pm.TargetAllocator().GetDeploymentName(), Namespace: pm.Namespace}}
+	return &appsv1.Deployment{Name: pm.TargetAllocator().GetDeploymentName(), Namespace: pm.Namespace}
 }
 
 func waitForPhase(pm *pmapi.PrometheusMonitoring, expectedPhase status.DeploymentPhase) features.Func {

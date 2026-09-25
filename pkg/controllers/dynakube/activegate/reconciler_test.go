@@ -52,20 +52,16 @@ var (
 	anyCustomPropertiesSource    = mock.MatchedBy(func(*value.Source) bool { return true })
 
 	testKubeSystemNamespace = &corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "kube-system",
-			UID:  "01234-5678-9012-3456",
-		},
+		Name: "kube-system",
+		UID:  "01234-5678-9012-3456",
 	}
 )
 
 func TestReconciler_Reconcile_Error(t *testing.T) {
 	buildDynakube := func() *dynakube.DynaKube {
 		return &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: testNamespace,
-				Name:      testName,
-			},
+			Namespace: testNamespace,
+			Name:      testName,
 			Spec: dynakube.DynaKubeSpec{
 				EnableIstio: new(true),
 				ActiveGate: activegate.Spec{
@@ -152,10 +148,8 @@ func TestReconciler_Reconcile_Error(t *testing.T) {
 func TestReconciler_Reconcile(t *testing.T) {
 	t.Run("No sub reconciler runs if AG was not enabled", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: testNamespace,
-				Name:      testName,
-			}}
+			Namespace: testNamespace,
+			Name:      testName}
 		// don't initialize the other fields to cause a panic if anything is accessed
 		r := Reconciler{}
 
@@ -164,10 +158,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 	})
 	t.Run("ALL sub reconciler runs if AG is enabled", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: testNamespace,
-				Name:      testName,
-			},
+			Namespace: testNamespace,
+			Name:      testName,
 			Spec: dynakube.DynaKubeSpec{
 				EnableIstio: new(true),
 				ActiveGate: activegate.Spec{
@@ -196,10 +188,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 	})
 	t.Run("ALL sub reconciler (except the capability ones) runs if AG is not enabled, but was enabled before, so to clean up", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: testNamespace,
-				Name:      testName,
-			},
+			Namespace: testNamespace,
+			Name:      testName,
 			Spec: dynakube.DynaKubeSpec{
 				EnableIstio: new(true),
 				ActiveGate:  activegate.Spec{},
@@ -232,10 +222,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 	})
 	t.Run("Create AG capability (creation and deletion)", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: testNamespace,
-				Name:      testName,
-			},
+			Namespace: testNamespace,
+			Name:      testName,
 			Spec: dynakube.DynaKubeSpec{
 				EnableIstio: new(true),
 				ActiveGate: activegate.Spec{
@@ -279,20 +267,16 @@ func TestReconciler_Reconcile(t *testing.T) {
 	})
 	t.Run("Reconcile DynaKube without Proxy after a DynaKube with proxy must not interfere with the second DKs Proxy Secret", func(t *testing.T) { // TODO: This is not a unit test, it tests the functionality of another package, it should use a mock for that
 		dkWithProxy := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: testNamespace,
-				Name:      "proxyDk",
-			},
+			Namespace: testNamespace,
+			Name:      "proxyDk",
 			Spec: dynakube.DynaKubeSpec{
 				Proxy:      &value.Source{Value: testProxyName},
 				ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}},
 			},
 		}
 		dkNoProxy := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: testNamespace,
-				Name:      "noProxyDk",
-			},
+			Namespace: testNamespace,
+			Name:      "noProxyDk",
 			Spec: dynakube.DynaKubeSpec{
 				ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}},
 			},
@@ -334,10 +318,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 	})
 	t.Run("Reconciles Kubernetes Monitoring", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-			},
+			Name:      testName,
+			Namespace: testNamespace,
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: "test-api-url",
 				ActiveGate: activegate.Spec{
@@ -372,10 +354,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 	t.Run("no activegate is created when extensions are disabled in dk, and no capability is configured", func(t *testing.T) {
 		instance := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: testNamespace,
-				Name:      testName,
-			},
+			Namespace: testNamespace,
+			Name:      testName,
 			Spec: dynakube.DynaKubeSpec{
 				ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{}},
 				Extensions: nil,
@@ -399,10 +379,8 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 	})
 	t.Run("activegate is created when extensions are enabled in dk, but no activegate is configured", func(t *testing.T) {
 		instance := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: testNamespace,
-				Name:      testName,
-			},
+			Namespace: testNamespace,
+			Name:      testName,
 			Spec: dynakube.DynaKubeSpec{
 				Extensions: &extensions.Spec{Databases: []extensions.DatabaseSpec{{ID: "test"}}},
 			},
@@ -430,10 +408,8 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 	})
 	t.Run("activegate is created when extensions are enabled in dk, but no activegate capability is configured", func(t *testing.T) {
 		instance := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: testNamespace,
-				Name:      testName,
-			},
+			Namespace: testNamespace,
+			Name:      testName,
 			Spec: dynakube.DynaKubeSpec{
 				ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{}},
 				Extensions: &extensions.Spec{Databases: []extensions.DatabaseSpec{{ID: "test"}}},
@@ -462,10 +438,8 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 	})
 	t.Run("activegate is created when extensions are enabled in dk, and activegate kubernetes is configured", func(t *testing.T) {
 		instance := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: testNamespace,
-				Name:      testName,
-			},
+			Namespace: testNamespace,
+			Name:      testName,
 			Spec: dynakube.DynaKubeSpec{
 				ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}},
 				Extensions: &extensions.Spec{Databases: []extensions.DatabaseSpec{{ID: "test"}}},
@@ -494,10 +468,8 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 	})
 	t.Run("activegate is created when extensions are enabled in dk, but activegate capabilities are removed", func(t *testing.T) {
 		instance := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: testNamespace,
-				Name:      testName,
-			},
+			Namespace: testNamespace,
+			Name:      testName,
 			Spec: dynakube.DynaKubeSpec{
 				ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}},
 				Extensions: &extensions.Spec{Databases: []extensions.DatabaseSpec{{ID: "test"}}},
@@ -585,10 +557,8 @@ func TestServiceCreation(t *testing.T) {
 	dtClient := createMockDTClient(t, true)
 
 	dk := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: testNamespace,
-			Name:      testName,
-		},
+		Namespace: testNamespace,
+		Name:      testName,
 		Spec: dynakube.DynaKubeSpec{
 			ActiveGate: activegate.Spec{},
 		},
@@ -653,10 +623,8 @@ func TestReconcile_ActivegateConfigMap(t *testing.T) {
 	)
 
 	dk := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: testNamespace,
-			Name:      testName,
-		},
+		Namespace: testNamespace,
+		Name:      testName,
 		Spec: dynakube.DynaKubeSpec{
 			ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}},
 		},
@@ -700,10 +668,8 @@ func TestReconcile_ActivegateConfigMap(t *testing.T) {
 func TestCreateDeploymentPropertiesConfigMap(t *testing.T) {
 	t.Run("skips if ActiveGate is not enabled", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: testNamespace,
-				Name:      testName,
-			},
+			Namespace: testNamespace,
+			Name:      testName,
 		}
 		fakeClient := fake.NewClient()
 		r := &Reconciler{configMaps: k8sconfigmap.Query(fakeClient, fakeClient)}
@@ -718,10 +684,8 @@ func TestCreateDeploymentPropertiesConfigMap(t *testing.T) {
 
 	t.Run("creates configmap when ActiveGate is enabled", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: testNamespace,
-				Name:      testName,
-			},
+			Namespace: testNamespace,
+			Name:      testName,
 			Spec: dynakube.DynaKubeSpec{
 				ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}},
 			},
@@ -741,10 +705,8 @@ func TestCreateDeploymentPropertiesConfigMap(t *testing.T) {
 
 	t.Run("configmap content reflects resource attributes", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: testNamespace,
-				Name:      testName,
-			},
+			Namespace: testNamespace,
+			Name:      testName,
 			Spec: dynakube.DynaKubeSpec{
 				ActiveGate:         activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}},
 				ResourceAttributes: map[string]string{"key": "value"},
@@ -765,12 +727,10 @@ func TestCreateDeploymentPropertiesConfigMap(t *testing.T) {
 
 	t.Run("configmap content reflects no-proxy ff", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: testNamespace,
-				Name:      testName,
-				Annotations: map[string]string{
-					exp.NoProxyKey: "test",
-				},
+			Namespace: testNamespace,
+			Name:      testName,
+			Annotations: map[string]string{
+				exp.NoProxyKey: "test",
 			},
 			Spec: dynakube.DynaKubeSpec{
 				ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}},

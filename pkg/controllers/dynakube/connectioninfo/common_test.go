@@ -12,7 +12,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
@@ -27,10 +26,8 @@ func TestIsTenantSecretPresent(t *testing.T) {
 		testName := "test-name"
 
 		fakeClient := fake.NewClient(&corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: testNamespace,
-				Name:      testName,
-			},
+			Namespace: testNamespace,
+			Name:      testName,
 		})
 
 		existingSecretNamespacedName := types.NamespacedName{Name: testName, Namespace: testNamespace}

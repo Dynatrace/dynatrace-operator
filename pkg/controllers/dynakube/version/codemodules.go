@@ -98,9 +98,7 @@ func (updater *codeModulesUpdater) UseTenantRegistry(ctx context.Context) error 
 	customVersion := updater.CustomVersion()
 	if customVersion != "" {
 		updater.dk.Status.CodeModules = oneagent.CodeModulesStatus{
-			VersionStatus: status.VersionStatus{
-				Version: customVersion,
-			},
+			Version: customVersion,
 		}
 		setVerificationSkippedReasonCondition(updater.dk.Conditions(), cmConditionType)
 
@@ -117,9 +115,7 @@ func (updater *codeModulesUpdater) UseTenantRegistry(ctx context.Context) error 
 	}
 
 	updater.dk.Status.CodeModules = oneagent.CodeModulesStatus{
-		VersionStatus: status.VersionStatus{
-			Version: latestAgentVersionUnixPaas,
-		},
+		Version: latestAgentVersionUnixPaas,
 	}
 	setVerifiedCondition(updater.dk.Conditions(), cmConditionType)
 

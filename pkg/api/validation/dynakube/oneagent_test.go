@@ -18,7 +18,6 @@ import (
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
@@ -90,18 +89,14 @@ func TestConflictingOneAgentConfiguration(t *testing.T) {
 func TestConflictingNodeSelector(t *testing.T) {
 	newCloudNativeDynakube := func(name, apiUrl, nodeSelectorValue string) *dynakube.DynaKube {
 		return &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      name,
-				Namespace: testNamespace,
-			},
+			Name:      name,
+			Namespace: testNamespace,
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: apiUrl,
 				OneAgent: oneagent.Spec{
 					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
-						HostInjectSpec: oneagent.HostInjectSpec{
-							NodeSelector: map[string]string{
-								"node": nodeSelectorValue,
-							},
+						NodeSelector: map[string]string{
+							"node": nodeSelectorValue,
 						},
 					},
 				},
@@ -125,10 +120,8 @@ func TestConflictingNodeSelector(t *testing.T) {
 				},
 			},
 			&dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "conflict1",
-					Namespace: testNamespace,
-				},
+				Name:      "conflict1",
+				Namespace: testNamespace,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
 					OneAgent: oneagent.Spec{
@@ -144,18 +137,14 @@ func TestConflictingNodeSelector(t *testing.T) {
 	t.Run("valid dynakube specs - 1 cloud-native + 1 host-monitoring DK, different nodes", func(t *testing.T) {
 		assertAllowedWithoutWarnings(t,
 			&dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "conflict2",
-					Namespace: testNamespace,
-				},
+				Name:      "conflict2",
+				Namespace: testNamespace,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
 					OneAgent: oneagent.Spec{
 						CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
-							HostInjectSpec: oneagent.HostInjectSpec{
-								NodeSelector: map[string]string{
-									"node": "1",
-								},
+							NodeSelector: map[string]string{
+								"node": "1",
 							},
 						},
 					},
@@ -208,20 +197,16 @@ func TestConflictingNodeSelector(t *testing.T) {
 					APIURL: api1,
 					OneAgent: oneagent.Spec{
 						CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
-							HostInjectSpec: oneagent.HostInjectSpec{
-								NodeSelector: map[string]string{
-									"node": "1",
-								},
+							NodeSelector: map[string]string{
+								"node": "1",
 							},
 						},
 					},
 				},
 			},
 			&dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "conflicting-dk",
-					Namespace: testNamespace,
-				},
+				Name:      "conflicting-dk",
+				Namespace: testNamespace,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: api2,
 					OneAgent: oneagent.Spec{
@@ -292,17 +277,13 @@ func createDynakube(oaEnvVar ...string) *dynakube.DynaKube {
 	}
 
 	return &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "dynakube",
-			Namespace: testNamespace,
-		},
+		Name:      "dynakube",
+		Namespace: testNamespace,
 		Spec: dynakube.DynaKubeSpec{
 			APIURL: testAPIURL,
 			OneAgent: oneagent.Spec{
 				CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
-					HostInjectSpec: oneagent.HostInjectSpec{
-						Env: envVars,
-					},
+					Env: envVars,
 				},
 			},
 		},
@@ -408,9 +389,7 @@ func createDynakubeWithHostGroup(args []string, hostGroup string) *dynakube.Dyna
 			APIURL: testAPIURL,
 			OneAgent: oneagent.Spec{
 				CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
-					HostInjectSpec: oneagent.HostInjectSpec{
-						Args: args,
-					},
+					Args: args,
 				},
 				HostGroup: hostGroup,
 			},
@@ -629,17 +608,13 @@ func TestOneAgentArguments(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.testName, func(t *testing.T) {
 			dk := &dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "dynakube",
-					Namespace: testNamespace,
-				},
+				Name:      "dynakube",
+				Namespace: testNamespace,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
 					OneAgent: oneagent.Spec{
 						CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
-							HostInjectSpec: oneagent.HostInjectSpec{
-								Args: tc.arguments,
-							},
+							Args: tc.arguments,
 						},
 					},
 				},
@@ -664,19 +639,15 @@ func TestNoHostIdSourceArgument(t *testing.T) {
 		{
 			testName: "host id source argument in cloud native full stack",
 			dk: &dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "dynakube",
-					Namespace: testNamespace,
-				},
+				Name:      "dynakube",
+				Namespace: testNamespace,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
 					OneAgent: oneagent.Spec{
 						CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
-							HostInjectSpec: oneagent.HostInjectSpec{
-								Args: []string{
-									"--set-server=foo",
-									"--set-host-id-source=foo",
-								},
+							Args: []string{
+								"--set-server=foo",
+								"--set-host-id-source=foo",
 							},
 						},
 					},
@@ -687,18 +658,14 @@ func TestNoHostIdSourceArgument(t *testing.T) {
 		{
 			testName: "no host id source argument in cloud native full stack",
 			dk: &dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "dynakube",
-					Namespace: testNamespace,
-				},
+				Name:      "dynakube",
+				Namespace: testNamespace,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
 					OneAgent: oneagent.Spec{
 						CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
-							HostInjectSpec: oneagent.HostInjectSpec{
-								Args: []string{
-									"--set-server=foo",
-								},
+							Args: []string{
+								"--set-server=foo",
 							},
 						},
 					},
@@ -709,10 +676,8 @@ func TestNoHostIdSourceArgument(t *testing.T) {
 		{
 			testName: "host id source argument in host monitoring stack",
 			dk: &dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "dynakube",
-					Namespace: testNamespace,
-				},
+				Name:      "dynakube",
+				Namespace: testNamespace,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
 					OneAgent: oneagent.Spec{
@@ -742,10 +707,8 @@ func TestNoHostIdSourceArgument(t *testing.T) {
 
 func TestDeprecatedOneAgentAutoUpdate(t *testing.T) {
 	baseDK := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "dynakube",
-			Namespace: testNamespace,
-		},
+		Name:      "dynakube",
+		Namespace: testNamespace,
 		Spec: dynakube.DynaKubeSpec{
 			APIURL:   testAPIURL,
 			OneAgent: oneagent.Spec{},
@@ -810,20 +773,16 @@ func TestDeprecatedOneAgentAutoUpdate(t *testing.T) {
 
 func TestDeprecatedOneAgentVersion(t *testing.T) {
 	apiToken := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "dynakube",
-			Namespace: testNamespace,
-		},
+		Name:      "dynakube",
+		Namespace: testNamespace,
 		Data: map[string][]byte{
 			token.APIKey: []byte("test-platform-token"),
 		},
 		Type: corev1.SecretTypeOpaque,
 	}
 	platformToken := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "dynakube",
-			Namespace: testNamespace,
-		},
+		Name:      "dynakube",
+		Namespace: testNamespace,
 		Data: map[string][]byte{
 			token.APIKey: []byte(dttoken.PlatformPrefix + "test-platform-token"),
 		},
@@ -838,10 +797,8 @@ func TestDeprecatedOneAgentVersion(t *testing.T) {
 		{
 			"classic fullstack",
 			&dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "dynakube",
-					Namespace: testNamespace,
-				},
+				Name:      "dynakube",
+				Namespace: testNamespace,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
 					OneAgent: oneagent.Spec{ClassicFullStack: &oneagent.HostInjectSpec{
@@ -855,10 +812,8 @@ func TestDeprecatedOneAgentVersion(t *testing.T) {
 		{
 			"host monitoring",
 			&dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "dynakube",
-					Namespace: testNamespace,
-				},
+				Name:      "dynakube",
+				Namespace: testNamespace,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
 					OneAgent: oneagent.Spec{HostMonitoring: &oneagent.HostInjectSpec{
@@ -872,12 +827,10 @@ func TestDeprecatedOneAgentVersion(t *testing.T) {
 		{
 			"host monitoring + public registry ff",
 			&dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "dynakube",
-					Namespace: testNamespace,
-					Annotations: map[string]string{
-						exp.UsePublicRegistryKey: "true",
-					},
+				Name:      "dynakube",
+				Namespace: testNamespace,
+				Annotations: map[string]string{
+					exp.UsePublicRegistryKey: "true",
 				},
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
@@ -892,12 +845,10 @@ func TestDeprecatedOneAgentVersion(t *testing.T) {
 		{
 			"host monitoring + public registry ff + image specified",
 			&dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "dynakube",
-					Namespace: testNamespace,
-					Annotations: map[string]string{
-						exp.UsePublicRegistryKey: "true",
-					},
+				Name:      "dynakube",
+				Namespace: testNamespace,
+				Annotations: map[string]string{
+					exp.UsePublicRegistryKey: "true",
 				},
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
@@ -913,16 +864,12 @@ func TestDeprecatedOneAgentVersion(t *testing.T) {
 		{
 			"cloudnative fullstack",
 			&dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "dynakube",
-					Namespace: testNamespace,
-				},
+				Name:      "dynakube",
+				Namespace: testNamespace,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
 					OneAgent: oneagent.Spec{CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
-						HostInjectSpec: oneagent.HostInjectSpec{
-							Version: "1.0.0.20240101-000000", //nolint:staticcheck
-						},
+						Version: "1.0.0.20240101-000000", //nolint:staticcheck
 					}},
 				},
 			},
@@ -932,19 +879,15 @@ func TestDeprecatedOneAgentVersion(t *testing.T) {
 		{
 			"cloudnative fullstack + public registry ff",
 			&dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "dynakube",
-					Namespace: testNamespace,
-					Annotations: map[string]string{
-						exp.UsePublicRegistryKey: "true",
-					},
+				Name:      "dynakube",
+				Namespace: testNamespace,
+				Annotations: map[string]string{
+					exp.UsePublicRegistryKey: "true",
 				},
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
 					OneAgent: oneagent.Spec{CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
-						HostInjectSpec: oneagent.HostInjectSpec{
-							Version: "1.0.0.20240101-000000", //nolint:staticcheck
-						},
+						Version: "1.0.0.20240101-000000", //nolint:staticcheck
 					}},
 				},
 			},
@@ -954,20 +897,16 @@ func TestDeprecatedOneAgentVersion(t *testing.T) {
 		{
 			"cloudnative fullstack + public registry ff + image specified",
 			&dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "dynakube",
-					Namespace: testNamespace,
-					Annotations: map[string]string{
-						exp.UsePublicRegistryKey: "true",
-					},
+				Name:      "dynakube",
+				Namespace: testNamespace,
+				Annotations: map[string]string{
+					exp.UsePublicRegistryKey: "true",
 				},
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
 					OneAgent: oneagent.Spec{CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
-						HostInjectSpec: oneagent.HostInjectSpec{
-							Version: "1.0.0.20240101-000000", //nolint:staticcheck
-							Image:   "test/image/test-image:some-tag",
-						},
+						Version: "1.0.0.20240101-000000", //nolint:staticcheck
+						Image:   "test/image/test-image:some-tag",
 					}},
 				},
 			},
@@ -977,10 +916,8 @@ func TestDeprecatedOneAgentVersion(t *testing.T) {
 		{
 			"app monitoring",
 			&dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "dynakube",
-					Namespace: testNamespace,
-				},
+				Name:      "dynakube",
+				Namespace: testNamespace,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
 					OneAgent: oneagent.Spec{ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
@@ -994,12 +931,10 @@ func TestDeprecatedOneAgentVersion(t *testing.T) {
 		{
 			"app monitoring + public registry ff",
 			&dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "dynakube",
-					Namespace: testNamespace,
-					Annotations: map[string]string{
-						exp.UsePublicRegistryKey: "true",
-					},
+				Name:      "dynakube",
+				Namespace: testNamespace,
+				Annotations: map[string]string{
+					exp.UsePublicRegistryKey: "true",
 				},
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
@@ -1014,10 +949,8 @@ func TestDeprecatedOneAgentVersion(t *testing.T) {
 		{
 			"app monitoring + platform token",
 			&dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "dynakube",
-					Namespace: testNamespace,
-				},
+				Name:      "dynakube",
+				Namespace: testNamespace,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
 					OneAgent: oneagent.Spec{ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
@@ -1031,18 +964,14 @@ func TestDeprecatedOneAgentVersion(t *testing.T) {
 		{
 			"app monitoring + platform token + image specified",
 			&dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "dynakube",
-					Namespace: testNamespace,
-				},
+				Name:      "dynakube",
+				Namespace: testNamespace,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
 					OneAgent: oneagent.Spec{
 						ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
-							Version: "1.0.0.20240101-000000", //nolint:staticcheck
-							AppInjectionSpec: oneagent.AppInjectionSpec{
-								CodeModulesImage: "test/image/test-image:some-tag",
-							},
+							Version:          "1.0.0.20240101-000000", //nolint:staticcheck
+							CodeModulesImage: "test/image/test-image:some-tag",
 						},
 					},
 				},
@@ -1135,7 +1064,7 @@ func TestConflictingMaxUnavailableAnnotationWithRollingUpdate(t *testing.T) {
 		{
 			name:             "both annotation and rollingUpdate in CloudNativeFullStack",
 			annotation:       deprecatedAnnotation,
-			oaspec:           oneagent.Spec{CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{HostInjectSpec: oneagent.HostInjectSpec{RollingUpdate: &rollingUpdate}}},
+			oaspec:           oneagent.Spec{CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{RollingUpdate: &rollingUpdate}},
 			expectedWarnings: 2, // deprecated flag + conflict with rolling update
 		},
 		{
@@ -1149,11 +1078,9 @@ func TestConflictingMaxUnavailableAnnotationWithRollingUpdate(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			assertAllowedWithWarnings(t, tc.expectedWarnings, &dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:        testName,
-					Namespace:   testNamespace,
-					Annotations: tc.annotation,
-				},
+				Name:        testName,
+				Namespace:   testNamespace,
+				Annotations: tc.annotation,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL:   testAPIURL,
 					OneAgent: tc.oaspec,
@@ -1181,17 +1108,13 @@ func TestInvalidOneAgentArguments(t *testing.T) {
 
 func TestConflictingImageMode(t *testing.T) {
 	baseDK := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "dynakube",
-			Namespace: testNamespace,
-		},
+		Name:      "dynakube",
+		Namespace: testNamespace,
 		Spec: dynakube.DynaKubeSpec{
 			APIURL: testAPIURL,
 			OneAgent: oneagent.Spec{
 				ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
-					AppInjectionSpec: oneagent.AppInjectionSpec{
-						CodeModulesImage: "test-image",
-					},
+					CodeModulesImage: "test-image",
 				},
 			},
 		},
@@ -1247,10 +1170,8 @@ func TestConflictingImageMode(t *testing.T) {
 
 func TestMissingCodeModulesImage(t *testing.T) {
 	baseDK := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "dynakube",
-			Namespace: testNamespace,
-		},
+		Name:      "dynakube",
+		Namespace: testNamespace,
 		Spec: dynakube.DynaKubeSpec{
 			APIURL: testAPIURL,
 		},
@@ -1273,9 +1194,7 @@ func TestMissingCodeModulesImage(t *testing.T) {
 		{
 			"node-image-pull + application monitoring + codemodules image",
 			oneagent.Spec{ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
-				AppInjectionSpec: oneagent.AppInjectionSpec{
-					CodeModulesImage: "test-image",
-				},
+				CodeModulesImage: "test-image",
 			}},
 			map[string]string{
 				exp.OANodeImagePullKey: "true",
@@ -1304,9 +1223,7 @@ func TestMissingCodeModulesImage(t *testing.T) {
 		{
 			"node-image-pull + cloud native full stack + codemodules image",
 			oneagent.Spec{CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
-				AppInjectionSpec: oneagent.AppInjectionSpec{
-					CodeModulesImage: "test-image",
-				},
+				CodeModulesImage: "test-image",
 			}},
 			map[string]string{
 				exp.OANodeImagePullKey: "true",
@@ -1335,9 +1252,7 @@ func TestMissingCodeModulesImage(t *testing.T) {
 		{
 			"image-volume + application monitoring + codemodules image",
 			oneagent.Spec{ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
-				AppInjectionSpec: oneagent.AppInjectionSpec{
-					CodeModulesImage: "test-image",
-				},
+				CodeModulesImage: "test-image",
 			}},
 			map[string]string{
 				exp.OAImageVolumeKey: "true",
@@ -1366,9 +1281,7 @@ func TestMissingCodeModulesImage(t *testing.T) {
 		{
 			"image-volume + cloud native full stack + codemodules image",
 			oneagent.Spec{CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
-				AppInjectionSpec: oneagent.AppInjectionSpec{
-					CodeModulesImage: "test-image",
-				},
+				CodeModulesImage: "test-image",
 			}},
 			map[string]string{
 				exp.OAImageVolumeKey: "true",

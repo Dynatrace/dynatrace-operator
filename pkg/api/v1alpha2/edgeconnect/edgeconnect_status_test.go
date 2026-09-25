@@ -28,10 +28,8 @@ const (
 func Test_EdgeConnect_UpdateStatus(t *testing.T) {
 	clt := integrationtests.SetupTestEnvironment(t)
 	clt.Create(t.Context(), &corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:   testNamespace,
-			Labels: map[string]string{},
-		},
+		Name:   testNamespace,
+		Labels: map[string]string{},
 	})
 
 	t.Run("can't add duplicated conditions", func(t *testing.T) {
@@ -59,13 +57,11 @@ func Test_EdgeConnect_UpdateStatus(t *testing.T) {
 
 func buildEdgeConnect() *edgeconnect.EdgeConnect {
 	return &edgeconnect.EdgeConnect{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        testEdgeConnectName,
-			Namespace:   testNamespace,
-			Annotations: map[string]string{},
-		},
-		Spec:   edgeconnect.EdgeConnectSpec{},
-		Status: edgeconnect.EdgeConnectStatus{},
+		Name:        testEdgeConnectName,
+		Namespace:   testNamespace,
+		Annotations: map[string]string{},
+		Spec:        edgeconnect.EdgeConnectSpec{},
+		Status:      edgeconnect.EdgeConnectStatus{},
 	}
 }
 

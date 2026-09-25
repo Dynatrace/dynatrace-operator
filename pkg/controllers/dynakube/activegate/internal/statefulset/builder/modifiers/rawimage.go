@@ -48,11 +48,9 @@ func (mod RawImageModifier) getVolumes() []corev1.Volume {
 	return []corev1.Volume{
 		{
 			Name: consts.TenantSecretVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName:  mod.dk.ActiveGate().GetTenantSecretName(),
-					DefaultMode: new(int32(0o640)),
-				},
+			Secret: &corev1.SecretVolumeSource{
+				SecretName:  mod.dk.ActiveGate().GetTenantSecretName(),
+				DefaultMode: new(int32(0o640)),
 			},
 		},
 	}
@@ -81,9 +79,7 @@ func (mod RawImageModifier) tenantUUIDEnvVar() corev1.EnvVar {
 	return corev1.EnvVar{
 		Name: connectioninfo.EnvDTTenant,
 		ValueFrom: &corev1.EnvVarSource{ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
-			LocalObjectReference: corev1.LocalObjectReference{
-				Name: mod.dk.ActiveGate().GetConnectionInfoConfigMapName(),
-			},
+			Name:     mod.dk.ActiveGate().GetConnectionInfoConfigMapName(),
 			Key:      connectioninfo.TenantUUIDKey,
 			Optional: new(false),
 		}}}
@@ -93,9 +89,7 @@ func (mod RawImageModifier) communicationEndpointEnvVar() corev1.EnvVar {
 	return corev1.EnvVar{
 		Name: connectioninfo.EnvDTServer,
 		ValueFrom: &corev1.EnvVarSource{ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
-			LocalObjectReference: corev1.LocalObjectReference{
-				Name: mod.dk.ActiveGate().GetConnectionInfoConfigMapName(),
-			},
+			Name:     mod.dk.ActiveGate().GetConnectionInfoConfigMapName(),
 			Key:      connectioninfo.CommunicationEndpointsKey,
 			Optional: new(false),
 		}},

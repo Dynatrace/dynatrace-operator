@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestCache(t *testing.T) {
@@ -53,7 +52,7 @@ func TestCache(t *testing.T) {
 	})
 
 	t.Run("check if cache is not outdated", func(t *testing.T) {
-		cm := corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{lastUpdatedAnnotation: ""}}}
+		cm := corev1.ConfigMap{Annotations: map[string]string{lastUpdatedAnnotation: ""}}
 		nodesCache := &Cache{obj: &cm}
 		assert.False(t, nodesCache.IsOutdated(time.Now()))
 	})

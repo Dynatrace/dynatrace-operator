@@ -23,16 +23,12 @@ type Info struct {
 
 func FindRootOwnerOfPod(ctx context.Context, clt client.Client, request dtwebhook.BaseRequest) (*Info, error) {
 	podPartialMetadata := &metav1.PartialObjectMetadata{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: request.Pod.APIVersion,
-			Kind:       request.Pod.Kind,
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name: k8spod.GetName(request.Pod),
-			// pod.Namespace is empty at this point in the webhook injection
-			Namespace:       request.Namespace.Name,
-			OwnerReferences: request.Pod.OwnerReferences,
-		},
+		APIVersion: request.Pod.APIVersion,
+		Kind:       request.Pod.Kind,
+		Name:       k8spod.GetName(request.Pod),
+		// pod.Namespace is empty at this point in the webhook injection
+		Namespace:       request.Namespace.Name,
+		OwnerReferences: request.Pod.OwnerReferences,
 	}
 
 	rootOwner, err := findRootOwner(ctx, clt, podPartialMetadata) // default owner of the pod is the pod itself
@@ -57,10 +53,8 @@ func findRootOwner(ctx context.Context, clt client.Client, childObjectMetadata *
 	for _, owner := range objectMetadata.OwnerReferences {
 		if owner.Controller != nil && *owner.Controller {
 			parentObjectMetadata = &metav1.PartialObjectMetadata{
-				TypeMeta: metav1.TypeMeta{
-					APIVersion: owner.APIVersion,
-					Kind:       owner.Kind,
-				},
+				APIVersion: owner.APIVersion,
+				Kind:       owner.Kind,
 			}
 
 			if !isWellKnownWorkload(parentObjectMetadata) {

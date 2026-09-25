@@ -11,12 +11,10 @@ import (
 
 func Readiness() *corev1.Probe {
 	return &corev1.Probe{
-		ProbeHandler: corev1.ProbeHandler{
-			HTTPGet: &corev1.HTTPGetAction{
-				Path:   "/rest/health",
-				Port:   intstr.IntOrString{IntVal: agconsts.HTTPSContainerPort},
-				Scheme: "HTTPS",
-			},
+		HTTPGet: &corev1.HTTPGetAction{
+			Path:   "/rest/health",
+			Port:   intstr.IntOrString{IntVal: agconsts.HTTPSContainerPort},
+			Scheme: "HTTPS",
 		},
 		InitialDelaySeconds: 90,
 		PeriodSeconds:       15,
@@ -28,12 +26,10 @@ func Readiness() *corev1.Probe {
 
 func Liveness() *corev1.Probe {
 	return &corev1.Probe{
-		ProbeHandler: corev1.ProbeHandler{
-			HTTPGet: &corev1.HTTPGetAction{
-				Path:   "/rest/state",
-				Port:   intstr.IntOrString{IntVal: agconsts.HTTPSContainerPort},
-				Scheme: "HTTPS",
-			},
+		HTTPGet: &corev1.HTTPGetAction{
+			Path:   "/rest/state",
+			Port:   intstr.IntOrString{IntVal: agconsts.HTTPSContainerPort},
+			Scheme: "HTTPS",
 		},
 		InitialDelaySeconds: 90,
 		PeriodSeconds:       30,

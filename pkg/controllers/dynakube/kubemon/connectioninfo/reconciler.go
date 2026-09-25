@@ -17,7 +17,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
 	pkgerrors "github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -67,12 +66,12 @@ func (r *Reconciler) Reconcile(ctx context.Context, agClient agclient.Client, dk
 
 func (r *Reconciler) cleanup(ctx context.Context, dk *dynakube.DynaKube) error {
 	cmName := dk.KubernetesMonitoring().GetConnectionInfoConfigMapName()
-	if err := r.configMaps.Delete(ctx, &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: cmName, Namespace: dk.Namespace}}); err != nil {
+	if err := r.configMaps.Delete(ctx, &corev1.ConfigMap{Name: cmName, Namespace: dk.Namespace}); err != nil {
 		return err
 	}
 
 	secretName := dk.KubernetesMonitoring().GetTenantSecretName()
-	if err := r.secrets.Delete(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: secretName, Namespace: dk.Namespace}}); err != nil {
+	if err := r.secrets.Delete(ctx, &corev1.Secret{Name: secretName, Namespace: dk.Namespace}); err != nil {
 		return err
 	}
 

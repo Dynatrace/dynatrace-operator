@@ -75,10 +75,8 @@ func TestNewSecretGenerator(t *testing.T) {
 func TestGenerateForDynakube(t *testing.T) {
 	t.Run("succcessfully generate config secret for dynakube", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testDynakube,
-				Namespace: testNamespaceDynatrace,
-			},
+			Name:      testDynakube,
+			Namespace: testNamespaceDynatrace,
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testAPIurl,
 				OneAgent: oneagent.Spec{
@@ -131,12 +129,10 @@ func TestGenerateForDynakube(t *testing.T) {
 	})
 	t.Run("successfully generate secret with fields for dynakube", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testDynakube,
-				Namespace: testNamespaceDynatrace,
-				Annotations: map[string]string{
-					exp.OAInitialConnectRetryKey: "6500",
-				},
+			Name:      testDynakube,
+			Namespace: testNamespaceDynatrace,
+			Annotations: map[string]string{
+				exp.OAInitialConnectRetryKey: "6500",
 			},
 			Spec: dynakube.DynaKubeSpec{
 				APIURL:     testAPIurl,
@@ -175,10 +171,8 @@ func TestGenerateForDynakube(t *testing.T) {
 				"tenant-token": []byte(testTenantToken),
 			}),
 			&corev1.ConfigMap{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-trusted-ca",
-					Namespace: testNamespaceDynatrace,
-				},
+				Name:      "test-trusted-ca",
+				Namespace: testNamespaceDynatrace,
 				Data: map[string]string{
 					dynakube.TrustedCAKey: "test-trusted-ca-value",
 				},
@@ -234,13 +228,11 @@ func TestGenerateForDynakube(t *testing.T) {
 	})
 	t.Run("update secret with preexisting secret + fields", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testDynakube,
-				Namespace: testNamespaceDynatrace,
-				Annotations: map[string]string{
-					exp.OAInitialConnectRetryKey:     "6500",
-					exp.AGAutomaticTLSCertificateKey: "false",
-				},
+			Name:      testDynakube,
+			Namespace: testNamespaceDynatrace,
+			Annotations: map[string]string{
+				exp.OAInitialConnectRetryKey:     "6500",
+				exp.AGAutomaticTLSCertificateKey: "false",
 			},
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testAPIurl,
@@ -331,10 +323,8 @@ func TestGenerateForDynakube(t *testing.T) {
 	})
 	t.Run("fail while generating secret for dynakube", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testDynakube,
-				Namespace: testNamespaceDynatrace,
-			},
+			Name:      testDynakube,
+			Namespace: testNamespaceDynatrace,
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testAPIurl,
 				OneAgent: oneagent.Spec{
@@ -368,12 +358,10 @@ func TestGenerateForDynakube(t *testing.T) {
 	})
 	t.Run("continue if error occurs while generating secret for dynakube", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testDynakube,
-				Namespace: testNamespaceDynatrace,
-				Annotations: map[string]string{
-					exp.OAInitialConnectRetryKey: "6500",
-				},
+			Name:      testDynakube,
+			Namespace: testNamespaceDynatrace,
+			Annotations: map[string]string{
+				exp.OAInitialConnectRetryKey: "6500",
 			},
 			Spec: dynakube.DynaKubeSpec{
 				APIURL:     testAPIurl,
@@ -411,10 +399,8 @@ func TestGenerateForDynakube(t *testing.T) {
 				"tenant-token": []byte(testTenantToken),
 			}),
 			&corev1.ConfigMap{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-trusted-ca",
-					Namespace: testNamespaceDynatrace,
-				},
+				Name:      "test-trusted-ca",
+				Namespace: testNamespaceDynatrace,
 				Data: map[string]string{
 					dynakube.TrustedCAKey: "test-trusted-ca-value",
 				},
@@ -435,12 +421,10 @@ func TestGenerateForDynakube(t *testing.T) {
 	})
 	t.Run("successfully generate bootstrapper certs secret even if config creation fails", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testDynakube,
-				Namespace: testNamespaceDynatrace,
-				Annotations: map[string]string{
-					exp.OAInitialConnectRetryKey: "6500",
-				},
+			Name:      testDynakube,
+			Namespace: testNamespaceDynatrace,
+			Annotations: map[string]string{
+				exp.OAInitialConnectRetryKey: "6500",
 			},
 			Spec: dynakube.DynaKubeSpec{
 				APIURL:     testAPIurl,
@@ -478,10 +462,8 @@ func TestGenerateForDynakube(t *testing.T) {
 				"tenant-token": []byte(testTenantToken),
 			}),
 			&corev1.ConfigMap{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-trusted-ca",
-					Namespace: testNamespaceDynatrace,
-				},
+				Name:      "test-trusted-ca",
+				Namespace: testNamespaceDynatrace,
 				Data: map[string]string{
 					dynakube.TrustedCAKey: "test-trusted-ca-value",
 				},
@@ -510,10 +492,8 @@ func TestGenerateForDynakube(t *testing.T) {
 func TestGenerateForDynakubeHostMonitoring(t *testing.T) {
 	t.Run("source secret created with declarative.cbor, no app-namespace secrets", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testDynakube,
-				Namespace: testNamespaceDynatrace,
-			},
+			Name:      testDynakube,
+			Namespace: testNamespaceDynatrace,
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testAPIurl,
 				OneAgent: oneagent.Spec{
@@ -570,10 +550,8 @@ func TestNeedsPGC(t *testing.T) {
 
 func TestCleanup(t *testing.T) {
 	dk := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      testDynakube,
-			Namespace: testNamespaceDynatrace,
-		},
+		Name:      testDynakube,
+		Namespace: testNamespaceDynatrace,
 		Spec: dynakube.DynaKubeSpec{
 			APIURL: testAPIurl,
 		},
@@ -600,8 +578,8 @@ func TestCleanup(t *testing.T) {
 		clientSecret(GetSourceConfigSecretName(dk.Name), dk.Namespace, nil),
 	)
 	namespaces := []corev1.Namespace{
-		{ObjectMeta: metav1.ObjectMeta{Name: testNamespace}},
-		{ObjectMeta: metav1.ObjectMeta{Name: testNamespace2}},
+		{Name: testNamespace},
+		{Name: testNamespace2},
 	}
 
 	var secretNS1 corev1.Secret
@@ -638,29 +616,21 @@ func TestCleanup(t *testing.T) {
 
 func clientSecret(secretName string, namespaceName string, data map[string][]byte) *corev1.Secret {
 	return &corev1.Secret{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "core/v1",
-			Kind:       "Secret",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      secretName,
-			Namespace: namespaceName,
-		},
-		Data: data,
+		APIVersion: "core/v1",
+		Kind:       "Secret",
+		Name:       secretName,
+		Namespace:  namespaceName,
+		Data:       data,
 	}
 }
 
 func clientInjectedNamespace(namespaceName string, dynakubeName string) *corev1.Namespace {
 	return &corev1.Namespace{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "corev1",
-			Kind:       "Namespace",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name: namespaceName,
-			Labels: map[string]string{
-				dtwebhook.InjectionInstanceLabel: dynakubeName,
-			},
+		APIVersion: "corev1",
+		Kind:       "Namespace",
+		Name:       namespaceName,
+		Labels: map[string]string{
+			dtwebhook.InjectionInstanceLabel: dynakubeName,
 		},
 	}
 }

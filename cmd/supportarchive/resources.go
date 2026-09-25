@@ -36,14 +36,12 @@ type k8sResourceCollector struct {
 
 func newK8sObjectCollector(context context.Context, log logd.Logger, supportArchive archiver, namespace string, appName string, apiReader client.Reader) collector { //nolint:revive // argument-limit doesn't apply to constructors
 	return k8sResourceCollector{
-		collectorCommon: collectorCommon{
-			log:            log,
-			supportArchive: supportArchive,
-		},
-		context:   context,
-		namespace: namespace,
-		appName:   appName,
-		apiReader: apiReader,
+		log:            log,
+		supportArchive: supportArchive,
+		context:        context,
+		namespace:      namespace,
+		appName:        appName,
+		apiReader:      apiReader,
 	}
 }
 

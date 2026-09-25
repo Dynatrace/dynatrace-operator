@@ -16,7 +16,6 @@ import (
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -26,28 +25,20 @@ const (
 
 func createBuilderForTesting() builder.Builder {
 	base := &appsv1.StatefulSet{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "testing",
-		},
+		Name: "testing",
 		Spec: appsv1.StatefulSetSpec{
 			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "testing",
-				},
+				Name: "testing",
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
 							Name:            consts.ActiveGateContainerName,
 							SecurityContext: &corev1.SecurityContext{},
 							ReadinessProbe: &corev1.Probe{
-								ProbeHandler: corev1.ProbeHandler{
-									HTTPGet: &corev1.HTTPGetAction{},
-								},
+								HTTPGet: &corev1.HTTPGetAction{},
 							},
 							LivenessProbe: &corev1.Probe{
-								ProbeHandler: corev1.ProbeHandler{
-									HTTPGet: &corev1.HTTPGetAction{},
-								},
+								HTTPGet: &corev1.HTTPGetAction{},
 							},
 						},
 					},
@@ -61,12 +52,10 @@ func createBuilderForTesting() builder.Builder {
 
 func getBaseDynakube() *dynakube.DynaKube {
 	return &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        testDynakubeName,
-			Namespace:   testNamespaceName,
-			Annotations: map[string]string{},
-		},
-		Spec: dynakube.DynaKubeSpec{},
+		Name:        testDynakubeName,
+		Namespace:   testNamespaceName,
+		Annotations: map[string]string{},
+		Spec:        dynakube.DynaKubeSpec{},
 	}
 }
 

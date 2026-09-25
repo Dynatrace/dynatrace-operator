@@ -50,9 +50,9 @@ func TestReconcile(t *testing.T) {
 		dk.Spec.OneAgent.CloudNativeFullStack = &oneagent.CloudNativeFullStackSpec{}
 		k8sconditions.SetDaemonSetCreated(dk.Conditions(), ConditionType, "testing")
 
-		previousDaemonSet := appsv1.DaemonSet{}
-		previousDaemonSet.Name = dk.LogMonitoring().GetDaemonSetName()
-		previousDaemonSet.Namespace = dk.Namespace
+		previousDaemonSet := appsv1.DaemonSet{
+			Name:      dk.LogMonitoring().GetDaemonSetName(),
+			Namespace: dk.Namespace}
 		mockK8sClient := fake.NewClient(&previousDaemonSet)
 
 		reconciler := NewReconciler(mockK8sClient,
@@ -135,9 +135,9 @@ func TestReconcile(t *testing.T) {
 	t.Run("Only runs when required, and cleans up condition + secret", func(t *testing.T) {
 		dk := createDynakube(false)
 
-		previousDaemonSet := appsv1.DaemonSet{}
-		previousDaemonSet.Name = dk.LogMonitoring().GetDaemonSetName()
-		previousDaemonSet.Namespace = dk.Namespace
+		previousDaemonSet := appsv1.DaemonSet{
+			Name:      dk.LogMonitoring().GetDaemonSetName(),
+			Namespace: dk.Namespace}
 		mockK8sClient := fake.NewClient(&previousDaemonSet)
 
 		k8sconditions.SetDaemonSetCreated(dk.Conditions(), ConditionType, "this is a test")
@@ -496,10 +496,8 @@ func createDynakube(isEnabled bool) *dynakube.DynaKube {
 	}
 
 	return &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: dkNamespace,
-			Name:      dkName,
-		},
+		Namespace: dkNamespace,
+		Name:      dkName,
 		Spec: dynakube.DynaKubeSpec{
 			APIURL:        "test-url",
 			LogMonitoring: logMonitoring,

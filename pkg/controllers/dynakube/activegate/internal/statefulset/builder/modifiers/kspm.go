@@ -51,11 +51,9 @@ func (mod KSPMModifier) getVolumes() []corev1.Volume {
 	return []corev1.Volume{
 		{
 			Name: consts.KSPMTokenVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName:  mod.dk.KSPM().GetTokenSecretName(),
-					DefaultMode: new(int32(0o640)),
-				},
+			Secret: &corev1.SecretVolumeSource{
+				SecretName:  mod.dk.KSPM().GetTokenSecretName(),
+				DefaultMode: new(int32(0o640)),
 			},
 		},
 	}

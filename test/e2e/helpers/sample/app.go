@@ -468,9 +468,9 @@ func copyDevRegistrySecret(targetNamespace string) features.Func {
 		target := corev1.Secret{
 			Type: source.Type,
 			Data: source.Data,
-		}
-		target.Name = e2econst.DevRegistryPullSecretName
-		target.Namespace = targetNamespace
+
+			Name:      e2econst.DevRegistryPullSecretName,
+			Namespace: targetNamespace}
 
 		err := resource.Create(ctx, &target)
 		if err != nil && !k8serrors.IsAlreadyExists(err) {

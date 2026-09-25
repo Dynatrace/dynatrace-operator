@@ -12,7 +12,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
@@ -34,18 +33,18 @@ func TestResolveReplicas(t *testing.T) {
 	}{
 		{
 			name:            "returns provided default replicas",
-			reader:          fake.NewClient(&appsv1.StatefulSet{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: ns}, Spec: appsv1.StatefulSetSpec{Replicas: new(int32(7))}}),
+			reader:          fake.NewClient(&appsv1.StatefulSet{Name: name, Namespace: ns, Spec: appsv1.StatefulSetSpec{Replicas: new(int32(7))}}),
 			defaultReplicas: new(int32(3)),
 			expected:        int32(3),
 		},
 		{
 			name:     "returns statefulset replicas when found",
-			reader:   fake.NewClient(&appsv1.StatefulSet{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: ns}, Spec: appsv1.StatefulSetSpec{Replicas: new(int32(5))}}),
+			reader:   fake.NewClient(&appsv1.StatefulSet{Name: name, Namespace: ns, Spec: appsv1.StatefulSetSpec{Replicas: new(int32(5))}}),
 			expected: int32(5),
 		},
 		{
 			name:     "returns one when statefulset has nil replicas",
-			reader:   fake.NewClient(&appsv1.StatefulSet{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: ns}}),
+			reader:   fake.NewClient(&appsv1.StatefulSet{Name: name, Namespace: ns}),
 			expected: int32(1),
 		},
 		{
@@ -96,8 +95,8 @@ func TestResolveAndSetReplicas(t *testing.T) {
 		{
 			name: "sets replicas from resolved statefulset",
 			reader: fake.NewClient(&appsv1.StatefulSet{
-				ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: ns},
-				Spec:       appsv1.StatefulSetSpec{Replicas: new(int32(6))},
+				Name: name, Namespace: ns,
+				Spec: appsv1.StatefulSetSpec{Replicas: new(int32(6))},
 			}),
 			expected: new(int32(6)),
 		},
@@ -120,7 +119,7 @@ func TestResolveAndSetReplicas(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			statefulSet := &appsv1.StatefulSet{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: ns}}
+			statefulSet := &appsv1.StatefulSet{Name: name, Namespace: ns}
 
 			err := ResolveAndSetReplicas(t.Context(), tc.reader, statefulSet, tc.defaultReplicas)
 			if tc.expectedErr != nil {
@@ -150,7 +149,7 @@ func TestIsRolloutComplete(t *testing.T) {
 		{
 			name: "returns false when generation is not observed yet",
 			statefulSet: &appsv1.StatefulSet{
-				ObjectMeta: metav1.ObjectMeta{Generation: 2},
+				Generation: 2,
 				Spec:       appsv1.StatefulSetSpec{Replicas: new(int32(1))},
 				Status:     appsv1.StatefulSetStatus{ObservedGeneration: 1, ReadyReplicas: 1},
 			},
@@ -159,7 +158,7 @@ func TestIsRolloutComplete(t *testing.T) {
 		{
 			name: "returns false when ready replicas are below desired",
 			statefulSet: &appsv1.StatefulSet{
-				ObjectMeta: metav1.ObjectMeta{Generation: 2},
+				Generation: 2,
 				Spec:       appsv1.StatefulSetSpec{Replicas: new(int32(2))},
 				Status:     appsv1.StatefulSetStatus{ObservedGeneration: 2, ReadyReplicas: 1},
 			},
@@ -168,7 +167,7 @@ func TestIsRolloutComplete(t *testing.T) {
 		{
 			name: "returns true when generation observed and all replicas ready",
 			statefulSet: &appsv1.StatefulSet{
-				ObjectMeta: metav1.ObjectMeta{Generation: 2},
+				Generation: 2,
 				Spec:       appsv1.StatefulSetSpec{Replicas: new(int32(2))},
 				Status:     appsv1.StatefulSetStatus{ObservedGeneration: 2, ReadyReplicas: 2},
 			},

@@ -21,7 +21,6 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -65,10 +64,8 @@ func TestConfigMapCreation(t *testing.T) {
 
 		objs := []client.Object{
 			&corev1.ConfigMap{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      consts.OTLPAPIEndpointConfigMapName,
-					Namespace: dk.Namespace,
-				},
+				Name:      consts.OTLPAPIEndpointConfigMapName,
+				Namespace: dk.Namespace,
 			},
 		}
 
@@ -132,10 +129,8 @@ func Test_generateData(t *testing.T) {
 
 			objs := []client.Object{
 				&corev1.ConfigMap{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      consts.OTLPAPIEndpointConfigMapName,
-						Namespace: dk.Namespace,
-					},
+					Name:      consts.OTLPAPIEndpointConfigMapName,
+					Namespace: dk.Namespace,
 				},
 			}
 
@@ -151,11 +146,9 @@ func Test_generateData(t *testing.T) {
 
 func createDynaKube(telemetryIngestEnabled bool) *dynakube.DynaKube {
 	dk := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-dk",
-			Namespace: "test-namespace",
-		},
-		Spec: dynakube.DynaKubeSpec{},
+		Name:      "test-dk",
+		Namespace: "test-namespace",
+		Spec:      dynakube.DynaKubeSpec{},
 		Status: dynakube.DynaKubeStatus{
 			ActiveGate: activegate.Status{
 				ConnectionInfo: communication.ConnectionInfo{

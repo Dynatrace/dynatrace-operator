@@ -179,9 +179,7 @@ func TestInitContainerArguments(t *testing.T) {
 			Spec: dynakube.DynaKubeSpec{
 				ResourceAttributes: map[string]string{"shared": "global"},
 				OneAgent: oneagent.Spec{CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
-					HostInjectSpec: oneagent.HostInjectSpec{
-						AdditionalResourceAttributes: map[string]string{"shared": "cnf", "extra": "val"},
-					},
+					AdditionalResourceAttributes: map[string]string{"shared": "cnf", "extra": "val"},
 				}},
 			},
 			Status: baseStatus,

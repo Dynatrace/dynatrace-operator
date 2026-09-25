@@ -17,7 +17,6 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/mount-utils"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -94,8 +93,8 @@ func TestGetRelevantOverlayMounts(t *testing.T) {
 func TestGetRelevantDynaKubes(t *testing.T) {
 	makeDK := func(name string, oaSpec oneagent.Spec) dynakube.DynaKube {
 		return dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: "dynatrace"},
-			Spec:       dynakube.DynaKubeSpec{OneAgent: oaSpec},
+			Name: name, Namespace: "dynatrace",
+			Spec: dynakube.DynaKubeSpec{OneAgent: oaSpec},
 		}
 	}
 
@@ -144,11 +143,11 @@ func TestMigrateAppMounts(t *testing.T) {
 func TestMigrateHostMounts(t *testing.T) {
 	apiReader := buildReader(t,
 		dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{Name: "skip", Namespace: "dynatrace"},
-			Spec:       dynakube.DynaKubeSpec{OneAgent: oneagent.Spec{ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{}}},
+			Name: "skip", Namespace: "dynatrace",
+			Spec: dynakube.DynaKubeSpec{OneAgent: oneagent.Spec{ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{}}},
 		},
 		dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "dynatrace"},
+			Name: "test", Namespace: "dynatrace",
 			Spec: dynakube.DynaKubeSpec{
 				APIURL:   "/e/tenant/api", // UUID: tenant
 				OneAgent: oneagent.Spec{HostMonitoring: &oneagent.HostInjectSpec{}},

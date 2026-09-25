@@ -28,11 +28,9 @@ func TestGetNamespaceAnnotationAttributes(t *testing.T) {
 	t.Run("stores keys with metadata prefix, stripping the prefix", func(t *testing.T) {
 		attrs := newPodAttrs()
 		ns := corev1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{
-					metadataenrichment.Prefix + "my.attr": "value1",
-					metadataenrichment.Prefix + "other":   "value2",
-				},
+			Annotations: map[string]string{
+				metadataenrichment.Prefix + "my.attr": "value1",
+				metadataenrichment.Prefix + "other":   "value2",
 			},
 		}
 
@@ -45,11 +43,9 @@ func TestGetNamespaceAnnotationAttributes(t *testing.T) {
 	t.Run("ignores keys without the metadata prefix", func(t *testing.T) {
 		attrs := newPodAttrs()
 		ns := corev1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{
-					"unrelated.annotation/key":         "ignored",
-					metadataenrichment.Prefix + "kept": "kept-value",
-				},
+			Annotations: map[string]string{
+				"unrelated.annotation/key":         "ignored",
+				metadataenrichment.Prefix + "kept": "kept-value",
 			},
 		}
 
@@ -108,10 +104,8 @@ func TestGetPodAnnotationAttributes(t *testing.T) {
 	t.Run("stores keys with metadata prefix, stripping the prefix", func(t *testing.T) {
 		attrs := newPodAttrs()
 		pod := corev1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{
-					metadataenrichment.Prefix + "my.attr": "pod-value",
-				},
+			Annotations: map[string]string{
+				metadataenrichment.Prefix + "my.attr": "pod-value",
 			},
 		}
 
@@ -123,11 +117,9 @@ func TestGetPodAnnotationAttributes(t *testing.T) {
 	t.Run("ignores keys without the metadata prefix", func(t *testing.T) {
 		attrs := newPodAttrs()
 		pod := corev1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{
-					"unrelated/key":                    "ignored",
-					metadataenrichment.Prefix + "kept": "kept-value",
-				},
+			Annotations: map[string]string{
+				"unrelated/key":                    "ignored",
+				metadataenrichment.Prefix + "kept": "kept-value",
 			},
 		}
 
@@ -152,9 +144,7 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 	t.Run("LabelRule without target stores under computed rules key", func(t *testing.T) {
 		attrs := newPodAttrs()
 		ns := &corev1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				Labels: map[string]string{"env": "production"},
-			},
+			Labels: map[string]string{"env": "production"},
 		}
 		dk := &dynakube.DynaKube{
 			Status: dynakube.DynaKubeStatus{
@@ -176,9 +166,7 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 	t.Run("LabelRule with target stores in rules under the target key", func(t *testing.T) {
 		attrs := newPodAttrs()
 		ns := &corev1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				Labels: map[string]string{"env": "staging"},
-			},
+			Labels: map[string]string{"env": "staging"},
 		}
 		dk := &dynakube.DynaKube{
 			Status: dynakube.DynaKubeStatus{
@@ -199,9 +187,7 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 	t.Run("AnnotationRule reads from namespace annotations", func(t *testing.T) {
 		attrs := newPodAttrs()
 		ns := &corev1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{"team": "backend"},
-			},
+			Annotations: map[string]string{"team": "backend"},
 		}
 		dk := &dynakube.DynaKube{
 			Status: dynakube.DynaKubeStatus{
@@ -238,11 +224,9 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 	t.Run("mix of target and no-target rules routes correctly", func(t *testing.T) {
 		attrs := newPodAttrs()
 		ns := &corev1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				Labels: map[string]string{
-					"env":  "prod",
-					"team": "platform",
-				},
+			Labels: map[string]string{
+				"env":  "prod",
+				"team": "platform",
 			},
 		}
 		dk := &dynakube.DynaKube{
@@ -266,9 +250,7 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 	t.Run("K8S_NAMESPACE_LABEL with target stores in rules", func(t *testing.T) {
 		attrs := newPodAttrs()
 		ns := &corev1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				Labels: map[string]string{"env": "production"},
-			},
+			Labels: map[string]string{"env": "production"},
 		}
 		dk := &dynakube.DynaKube{
 			Status: dynakube.DynaKubeStatus{
@@ -289,9 +271,7 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 	t.Run("K8S_NAMESPACE_LABEL without target stores under computed rules key", func(t *testing.T) {
 		attrs := newPodAttrs()
 		ns := &corev1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				Labels: map[string]string{"env": "production"},
-			},
+			Labels: map[string]string{"env": "production"},
 		}
 		dk := &dynakube.DynaKube{
 			Status: dynakube.DynaKubeStatus{
@@ -313,9 +293,7 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 	t.Run("K8S_NAMESPACE_ANNOTATION with target stores in rules", func(t *testing.T) {
 		attrs := newPodAttrs()
 		ns := &corev1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{"team": "backend"},
-			},
+			Annotations: map[string]string{"team": "backend"},
 		}
 		dk := &dynakube.DynaKube{
 			Status: dynakube.DynaKubeStatus{
@@ -391,7 +369,7 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 	t.Run("K8S_POD_LABEL reads from the pod's labels", func(t *testing.T) {
 		attrs := newPodAttrs()
 		rules := []metadataenrichment.Rule{{Type: metadataenrichment.K8sPodLabelRule, Source: "env", Target: "custom.env"}}
-		pod := corev1.Pod{ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{"env": "staging"}}}
+		pod := corev1.Pod{Labels: map[string]string{"env": "staging"}}
 
 		attrs.applyEnrichmentRules(rules, &corev1.Namespace{}, &workload.Info{}, &pod)
 
@@ -401,7 +379,7 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 	t.Run("K8S_POD_ANNOTATION reads from the pod's annotations, unfiltered by the metadata prefix", func(t *testing.T) {
 		attrs := newPodAttrs()
 		rules := []metadataenrichment.Rule{{Type: metadataenrichment.K8sPodAnnotationRule, Source: "team", Target: "team.name"}}
-		pod := corev1.Pod{ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{"team": "frontend"}}}
+		pod := corev1.Pod{Annotations: map[string]string{"team": "frontend"}}
 
 		attrs.applyEnrichmentRules(rules, &corev1.Namespace{}, &workload.Info{}, &pod)
 
@@ -429,7 +407,7 @@ func TestGetFromEnrichmentRules(t *testing.T) {
 			{Type: metadataenrichment.K8sPodLabelRule, Source: "env", Target: "pod.label"},
 		}
 		// a pod without a well-known controller owner is its own root owner, but a pod is not a workload
-		pod := corev1.Pod{ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{"env": "production"}}}
+		pod := corev1.Pod{Labels: map[string]string{"env": "production"}}
 
 		attrs.applyEnrichmentRules(rules, &corev1.Namespace{}, &workload.Info{Kind: "pod", Name: "my-pod"}, &pod)
 
@@ -560,8 +538,8 @@ func TestGetFromEnrichmentRulesPrecedence(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			attrs := newPodAttrs()
-			ns := corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Labels: tt.namespaceLabels, Annotations: tt.namespaceAnnotations}}
-			pod := corev1.Pod{ObjectMeta: metav1.ObjectMeta{Labels: tt.podLabels, Annotations: tt.podAnnotations}}
+			ns := corev1.Namespace{Labels: tt.namespaceLabels, Annotations: tt.namespaceAnnotations}
+			pod := corev1.Pod{Labels: tt.podLabels, Annotations: tt.podAnnotations}
 			workloadInfo := workload.Info{Labels: tt.workloadLabels, Annotations: tt.workloadAnnotations}
 
 			attrs.applyEnrichmentRules(tt.rules, &ns, &workloadInfo, &pod)
@@ -574,15 +552,11 @@ func TestGetMetadataAnnotations(t *testing.T) {
 	t.Run("collects namespace, workload and pod annotations, and enrichment rules", func(t *testing.T) {
 		attrs := newPodAttrs()
 		ns := &corev1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{metadataenrichment.Prefix + "ns-key": "ns-val"},
-				Labels:      map[string]string{"env": "prod"},
-			},
+			Annotations: map[string]string{metadataenrichment.Prefix + "ns-key": "ns-val"},
+			Labels:      map[string]string{"env": "prod"},
 		}
 		pod := &corev1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{metadataenrichment.Prefix + "pod-key": "pod-val"},
-			},
+			Annotations: map[string]string{metadataenrichment.Prefix + "pod-key": "pod-val"},
 		}
 		workloadInfo := &workload.Info{
 			Annotations: map[string]string{metadataenrichment.Prefix + "workload-key": "workload-val"},
@@ -824,25 +798,19 @@ func createTestMutationRequest(t *testing.T, dk *dynakube.DynaKube, annotations 
 
 func getTestNamespace(dk *dynakube.DynaKube) *corev1.Namespace {
 	return &corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "test-ns",
-			Labels: map[string]string{
-				dtwebhook.InjectionInstanceLabel: dk.Name,
-			},
+		Name: "test-ns",
+		Labels: map[string]string{
+			dtwebhook.InjectionInstanceLabel: dk.Name,
 		},
 	}
 }
 
 func getTestPod(annotations map[string]string) *corev1.Pod {
 	return &corev1.Pod{
-		TypeMeta: metav1.TypeMeta{
-			Kind: "Pod",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        "test-pod",
-			Namespace:   "test-ns",
-			Annotations: annotations,
-		},
+		Kind:        "Pod",
+		Name:        "test-pod",
+		Namespace:   "test-ns",
+		Annotations: annotations,
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{
 				{
@@ -874,10 +842,8 @@ func getTestPod(annotations map[string]string) *corev1.Pod {
 			},
 			Volumes: []corev1.Volume{
 				{
-					Name: "volume",
-					VolumeSource: corev1.VolumeSource{
-						EmptyDir: &corev1.EmptyDirVolumeSource{},
-					},
+					Name:     "volume",
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
 				},
 			},
 		},
@@ -889,12 +855,12 @@ func TestReadWorkloadInfoAttributes(t *testing.T) {
 		ctx := t.Context()
 		attrs := newPodAttrs()
 		pod := corev1.Pod{
-			TypeMeta:   metav1.TypeMeta{Kind: "Pod", APIVersion: "v1"},
-			ObjectMeta: metav1.ObjectMeta{Name: "my-pod", Namespace: "my-ns"},
+			Kind: "Pod", APIVersion: "v1",
+			Name: "my-pod", Namespace: "my-ns",
 		}
 		request := dtwebhook.BaseRequest{
 			Pod:       &pod,
-			Namespace: &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "my-ns"}},
+			Namespace: &corev1.Namespace{Name: "my-ns"},
 		}
 
 		workloadInfo, err := attrs.readWorkloadInfoAttributes(ctx, request, fake.NewClient())
@@ -911,27 +877,23 @@ func TestReadWorkloadInfoAttributes(t *testing.T) {
 		ctx := t.Context()
 		attrs := newPodAttrs()
 		daemonSet := appsv1.DaemonSet{
-			TypeMeta: metav1.TypeMeta{Kind: "DaemonSet", APIVersion: "apps/v1"},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:        "my-ds",
-				Namespace:   "my-ns",
-				Labels:      map[string]string{"env": "production"},
-				Annotations: map[string]string{metadataenrichment.Prefix + "my.attr": "workload-value"},
-			},
+			Kind: "DaemonSet", APIVersion: "apps/v1",
+			Name:        "my-ds",
+			Namespace:   "my-ns",
+			Labels:      map[string]string{"env": "production"},
+			Annotations: map[string]string{metadataenrichment.Prefix + "my.attr": "workload-value"},
 		}
 		pod := corev1.Pod{
-			TypeMeta: metav1.TypeMeta{Kind: "Pod", APIVersion: "v1"},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "my-pod",
-				Namespace: "my-ns",
-				OwnerReferences: []metav1.OwnerReference{
-					{APIVersion: "apps/v1", Kind: "DaemonSet", Name: "my-ds", Controller: new(true)},
-				},
+			Kind: "Pod", APIVersion: "v1",
+			Name:      "my-pod",
+			Namespace: "my-ns",
+			OwnerReferences: []metav1.OwnerReference{
+				{APIVersion: "apps/v1", Kind: "DaemonSet", Name: "my-ds", Controller: new(true)},
 			},
 		}
 		request := dtwebhook.BaseRequest{
 			Pod:       &pod,
-			Namespace: &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "my-ns"}},
+			Namespace: &corev1.Namespace{Name: "my-ns"},
 		}
 
 		workloadInfo, err := attrs.readWorkloadInfoAttributes(ctx, request, fake.NewClient(&daemonSet))
@@ -947,18 +909,16 @@ func TestReadWorkloadInfoAttributes(t *testing.T) {
 		ctx := t.Context()
 		attrs := newPodAttrs()
 		pod := corev1.Pod{
-			TypeMeta: metav1.TypeMeta{Kind: "Pod", APIVersion: "v1"},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "my-pod",
-				Namespace: "my-ns",
-				OwnerReferences: []metav1.OwnerReference{
-					{APIVersion: "apps/v1", Kind: "Deployment", Name: "my-deploy", Controller: new(true)},
-				},
+			Kind: "Pod", APIVersion: "v1",
+			Name:      "my-pod",
+			Namespace: "my-ns",
+			OwnerReferences: []metav1.OwnerReference{
+				{APIVersion: "apps/v1", Kind: "Deployment", Name: "my-deploy", Controller: new(true)},
 			},
 		}
 		request := dtwebhook.BaseRequest{
 			Pod:       &pod,
-			Namespace: &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "my-ns"}},
+			Namespace: &corev1.Namespace{Name: "my-ns"},
 		}
 		failClient := fake.NewClientWithInterceptors(interceptor.Funcs{
 			Get: func(ctx context.Context, c client.WithWatch, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
@@ -977,7 +937,7 @@ func TestReadPodAttributes(t *testing.T) {
 		attrs := newPodAttrs()
 		request := dtwebhook.BaseRequest{
 			Pod: &corev1.Pod{
-				ObjectMeta: metav1.ObjectMeta{Namespace: "my-ns"},
+				Namespace: "my-ns",
 			},
 			DynaKube: &dynakube.DynaKube{},
 		}
@@ -1006,7 +966,7 @@ func TestReadPodAttributes(t *testing.T) {
 		attrs := newPodAttrs()
 		request := dtwebhook.BaseRequest{
 			Pod: &corev1.Pod{
-				ObjectMeta: metav1.ObjectMeta{Namespace: "my-ns"},
+				Namespace: "my-ns",
 			},
 			DynaKube: &dynakube.DynaKube{},
 		}
@@ -1022,7 +982,7 @@ func TestReadPodAttributes(t *testing.T) {
 	t.Run("sets clusterInfo from DynaKube status", func(t *testing.T) {
 		attrs := newPodAttrs()
 		request := dtwebhook.BaseRequest{
-			Pod: &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Namespace: "ns"}},
+			Pod: &corev1.Pod{Namespace: "ns"},
 			DynaKube: &dynakube.DynaKube{
 				Status: dynakube.DynaKubeStatus{
 					KubeSystemUUID:        "uid-123",

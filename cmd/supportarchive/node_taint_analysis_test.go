@@ -279,9 +279,7 @@ func runNodeTaintAnalysis(t *testing.T, nodes []*corev1.Node, dks []*dynakube.Dy
 
 func createNode(name string, taints ...corev1.Taint) *corev1.Node {
 	return &corev1.Node{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
-		},
+		Name: name,
 		Spec: corev1.NodeSpec{
 			Taints: taints,
 		},
@@ -290,10 +288,8 @@ func createNode(name string, taints ...corev1.Taint) *corev1.Node {
 
 func createTestDynaKube(name string) *dynakube.DynaKube {
 	return &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: testOperatorNamespace,
-		},
+		Name:      name,
+		Namespace: testOperatorNamespace,
 		Spec: dynakube.DynaKubeSpec{
 			OneAgent: oneagent.Spec{
 				HostMonitoring: &oneagent.HostInjectSpec{},
@@ -304,18 +300,14 @@ func createTestDynaKube(name string) *dynakube.DynaKube {
 
 func createDaemonSet(name, namespace string, desired, ready int32, tolerations ...corev1.Toleration) *appsv1.DaemonSet {
 	return &appsv1.DaemonSet{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
-		},
+		Name:      name,
+		Namespace: namespace,
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{"app": name},
 			},
 			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{"app": name},
-				},
+				Labels: map[string]string{"app": name},
 				Spec: corev1.PodSpec{
 					Tolerations: tolerations,
 					Containers: []corev1.Container{

@@ -12,7 +12,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/stretchr/testify/require"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestImageFieldHasTenantImage(t *testing.T) {
@@ -25,9 +24,7 @@ func TestImageFieldHasTenantImage(t *testing.T) {
 		}, ";")
 
 		assertDenied(t, []string{expectedMessage}, &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "dynakube",
-			},
+			Name: "dynakube",
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testTenantURL + "/api",
 				OneAgent: oneagent.Spec{
@@ -36,9 +33,7 @@ func TestImageFieldHasTenantImage(t *testing.T) {
 					},
 				},
 				ActiveGate: activegate.Spec{
-					CapabilityProperties: activegate.CapabilityProperties{
-						Image: "BOOM",
-					},
+					Image: "BOOM",
 				},
 			},
 		})
@@ -47,9 +42,7 @@ func TestImageFieldHasTenantImage(t *testing.T) {
 	t.Run("valid image fields", func(t *testing.T) {
 		testRegistryURL := "my.images.com"
 		assertAllowed(t, &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "dynakube",
-			},
+			Name: "dynakube",
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testTenantURL + "/api",
 				OneAgent: oneagent.Spec{
@@ -58,9 +51,7 @@ func TestImageFieldHasTenantImage(t *testing.T) {
 					},
 				},
 				ActiveGate: activegate.Spec{
-					CapabilityProperties: activegate.CapabilityProperties{
-						Image: testRegistryURL + "/linux/activegate:latest",
-					},
+					Image: testRegistryURL + "/linux/activegate:latest",
 				},
 			},
 		})
@@ -69,9 +60,7 @@ func TestImageFieldHasTenantImage(t *testing.T) {
 	t.Run("valid image fields - only OA", func(t *testing.T) {
 		testRegistryURL := "my.images.com"
 		assertAllowed(t, &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "dynakube",
-			},
+			Name: "dynakube",
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testTenantURL + "/api",
 				OneAgent: oneagent.Spec{
@@ -85,9 +74,7 @@ func TestImageFieldHasTenantImage(t *testing.T) {
 
 	t.Run("ip:port", func(t *testing.T) {
 		assertAllowed(t, &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "dynakube",
-			},
+			Name: "dynakube",
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testTenantURL + "/api",
 				OneAgent: oneagent.Spec{

@@ -13,7 +13,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -33,7 +32,7 @@ func TestCerts(t *testing.T) {
 
 func trustedCAsTester(t *testing.T) {
 	kubeReader := fake.NewClient(&corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{Name: testConfigMapName},
+		Name: testConfigMapName,
 		Data: map[string]string{
 			dynakube.TrustedCAKey: testConfigMapValue,
 		},
@@ -85,8 +84,8 @@ func activeGateTLSNoCertificateTester(t *testing.T) {
 func activeGateTLSCertificate(t *testing.T) {
 	testFunc := func(t *testing.T, data map[string][]byte) {
 		kubeReader := fake.NewClient(&corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{Name: testSecretName},
-			Data:       data,
+			Name: testSecretName,
+			Data: data,
 		})
 
 		dk := dynakube.DynaKube{

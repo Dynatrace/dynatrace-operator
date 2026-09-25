@@ -154,10 +154,8 @@ func getTestActiveGateConnectionInfo() agclient.ConnectionInfo {
 
 func getTestDynakube() *dynakube.DynaKube {
 	return &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: testNamespace,
-			Name:      testName,
-		},
+		Namespace: testNamespace,
+		Name:      testName,
 		Spec: dynakube.DynaKubeSpec{
 			ActiveGate: activegate.Spec{
 				Capabilities: []activegate.CapabilityDisplayName{
@@ -170,10 +168,8 @@ func getTestDynakube() *dynakube.DynaKube {
 
 func buildActiveGateSecret(dk *dynakube.DynaKube, token string) *corev1.Secret {
 	return &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      dk.ActiveGate().GetTenantSecretName(),
-			Namespace: testNamespace,
-		},
+		Name:      dk.ActiveGate().GetTenantSecretName(),
+		Namespace: testNamespace,
 		Data: map[string][]byte{
 			connectioninfo.TenantTokenKey: []byte(token),
 		},

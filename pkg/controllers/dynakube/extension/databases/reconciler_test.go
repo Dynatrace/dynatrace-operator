@@ -199,7 +199,7 @@ func TestReconcileSpec(t *testing.T) {
 	t.Run("extra volumes", func(t *testing.T) {
 		dk := getTestDynakube()
 		dk.Spec.Extensions.Databases[0].Volumes = []corev1.Volume{
-			{Name: "test", VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}}},
+			{Name: "test", EmptyDir: &corev1.EmptyDirVolumeSource{}},
 		}
 		dk.Spec.Extensions.Databases[0].VolumeMounts = []corev1.VolumeMount{
 			{Name: "test", MountPath: "/tmp"},
@@ -479,11 +479,9 @@ func getReconciledDeployment(t *testing.T, clt client.Client, dk *dynakube.DynaK
 
 func getTestDynakube() *dynakube.DynaKube {
 	return &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        testDynakubeName + "-" + rand.String(6),
-			Namespace:   testNamespaceName,
-			Annotations: map[string]string{},
-		},
+		Name:        testDynakubeName + "-" + rand.String(6),
+		Namespace:   testNamespaceName,
+		Annotations: map[string]string{},
 		Spec: dynakube.DynaKubeSpec{
 			Extensions: &extensions.Spec{
 				Databases: []extensions.DatabaseSpec{
@@ -514,20 +512,16 @@ func getMatchingDeployment(dk *dynakube.DynaKube) *appsv1.Deployment {
 	labels, matchLabels, templateLabels := buildAllLabels(dk, db)
 
 	return &appsv1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      dk.Name + extensions.SQLExecutorInfix + db.ID,
-			Namespace: testNamespaceName,
-			Labels:    labels,
-		},
+		Name:      dk.Name + extensions.SQLExecutorInfix + db.ID,
+		Namespace: testNamespaceName,
+		Labels:    labels,
 		Spec: appsv1.DeploymentSpec{
 			Replicas: db.Replicas,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: matchLabels,
 			},
 			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: templateLabels,
-				},
+				Labels: templateLabels,
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						buildContainer(dk, db, dk.Spec.Templates.SQLExtensionExecutor.ImageRef.String()),

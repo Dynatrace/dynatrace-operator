@@ -16,7 +16,6 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -39,11 +38,9 @@ func createK8sClientWithProxySecret(t *testing.T) client.Client {
 	mockK8sClient := dtfake.NewClient()
 	err := mockK8sClient.Create(t.Context(),
 		&corev1.Secret{
-			Data: map[string][]byte{connectioninfo.TenantTokenKey: []byte("test-token")},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      BuildSecretName(testDynakubeName),
-				Namespace: testNamespace,
-			},
+			Data:      map[string][]byte{connectioninfo.TenantTokenKey: []byte("test-token")},
+			Name:      BuildSecretName(testDynakubeName),
+			Namespace: testNamespace,
 		},
 	)
 	require.NoError(t, err)
@@ -53,10 +50,8 @@ func createK8sClientWithProxySecret(t *testing.T) client.Client {
 
 func createDynaKube() *dynakube.DynaKube {
 	return &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: testNamespace,
-			Name:      testDynakubeName,
-		},
+		Namespace: testNamespace,
+		Name:      testDynakubeName,
 		Spec: dynakube.DynaKubeSpec{
 			APIURL:     "https://testing.dev.dynatracelabs.com/api",
 			ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}},
@@ -88,10 +83,8 @@ func TestReconcileWithoutProxy(t *testing.T) {
 	})
 	t.Run("ensure proxy secret deleted", func(t *testing.T) {
 		var testClient = fake.NewClientBuilder().WithObjects(&corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      BuildSecretName(testDynakubeName),
-				Namespace: testNamespace,
-			},
+			Name:      BuildSecretName(testDynakubeName),
+			Namespace: testNamespace,
 		}).Build()
 
 		r := NewReconciler(testClient, testClient)
@@ -108,10 +101,8 @@ func TestReconcileWithoutProxy(t *testing.T) {
 	})
 	t.Run("ensure no proxy is used when supplying a secret but disabling proxy via feature flag", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testDynakubeName,
-				Namespace: testNamespace,
-			},
+			Name:      testDynakubeName,
+			Namespace: testNamespace,
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: "https://testing.dev.dynatracelabs.com/api",
 				Proxy: &value.Source{
@@ -314,11 +305,9 @@ func TestReconcileProxyValueFrom(t *testing.T) {
 
 func createProxySecret(proxyURL string) *corev1.Secret {
 	return &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      customProxySecret,
-			Namespace: testNamespace,
-		},
-		Data: map[string][]byte{dynakube.ProxyKey: []byte(proxyURL)},
+		Name:      customProxySecret,
+		Namespace: testNamespace,
+		Data:      map[string][]byte{dynakube.ProxyKey: []byte(proxyURL)},
 	}
 }
 

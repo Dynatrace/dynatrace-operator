@@ -20,13 +20,11 @@ type MockCSIDriver struct {
 
 func NewMockCSIDriver(servers *MockCSIDriverServers) *MockCSIDriver {
 	return &MockCSIDriver{
-		CSIDriver: CSIDriver{
-			servers: &CSIDriverServers{
-				Identity: struct {
-					csi.UnsafeIdentityServer
-					*mocks.IdentityServer
-				}{IdentityServer: servers.Identity},
-			},
+		servers: &CSIDriverServers{
+			Identity: struct {
+				csi.UnsafeIdentityServer
+				*mocks.IdentityServer
+			}{IdentityServer: servers.Identity},
 		},
 	}
 }

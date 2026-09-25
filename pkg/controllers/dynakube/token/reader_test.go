@@ -13,7 +13,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -46,10 +45,8 @@ func testReadTokens(t *testing.T) {
 	})
 	t.Run("tokens are found if secret exists", func(t *testing.T) {
 		dk := dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "dynakube",
-				Namespace: "dynatrace",
-			},
+			Name:      "dynakube",
+			Namespace: "dynatrace",
 		}
 		testSecret, err := k8ssecret.Build(&dk, "dynakube", map[string][]byte{
 			APIKey:                 []byte(testAPIToken),
@@ -80,10 +77,9 @@ func testReadTokens(t *testing.T) {
 
 func testVerifyTokens(t *testing.T) {
 	t.Run("error if api token is missing", func(t *testing.T) {
-		reader := NewReader(nil, &dynakube.DynaKube{ObjectMeta: metav1.ObjectMeta{
+		reader := NewReader(nil, &dynakube.DynaKube{
 			Name:      dynakubeName,
-			Namespace: dynatraceNamespace,
-		}})
+			Namespace: dynatraceNamespace})
 
 		err := reader.verifyAPITokenExists(map[string]*Token{
 			testIrrelevantTokenKey: {
@@ -111,10 +107,8 @@ func testVerifyTokens(t *testing.T) {
 
 func TestHasPlatformToken(t *testing.T) {
 	dk := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      dynakubeName,
-			Namespace: dynatraceNamespace,
-		},
+		Name:      dynakubeName,
+		Namespace: dynatraceNamespace,
 	}
 
 	t.Run("no secret", func(t *testing.T) {

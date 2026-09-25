@@ -20,7 +20,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
@@ -75,10 +74,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 	})
 	t.Run("Error when tenant UUID is missing", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: testNamespace,
-				Name:      testName,
-			},
+			Namespace: testNamespace,
+			Name:      testName,
 			Spec: dynakube.DynaKubeSpec{
 				OneAgent: oneagent.Spec{CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{}},
 			},
@@ -109,10 +106,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 	})
 	t.Run("Create does not reconcile with custom pull secret", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: testNamespace,
-				Name:      testName,
-			},
+			Namespace: testNamespace,
+			Name:      testName,
 			Spec: dynakube.DynaKubeSpec{
 				CustomPullSecret: testValue,
 			},
@@ -244,11 +239,9 @@ func TestReconciler_Reconcile(t *testing.T) {
 	})
 	t.Run("Don't create if use-public-registry annotation", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace:   testNamespace,
-				Name:        testName,
-				Annotations: map[string]string{exp.UsePublicRegistryKey: "true"},
-			},
+			Namespace:   testNamespace,
+			Name:        testName,
+			Annotations: map[string]string{exp.UsePublicRegistryKey: "true"},
 			Spec: dynakube.DynaKubeSpec{
 				APIURL:   testAPIURL,
 				OneAgent: oneagent.Spec{CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{}},
@@ -347,10 +340,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 	})
 	t.Run("Don't create when kubemon is not configured", func(t *testing.T) {
 		dk := addFakeTenantUUID(&dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: testNamespace,
-				Name:      testName,
-			},
+			Namespace: testNamespace,
+			Name:      testName,
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testAPIURL,
 				// KubernetesMonitoring intentionally nil
@@ -404,10 +395,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 
 func createTestDynakube() *dynakube.DynaKube {
 	return addFakeTenantUUID(&dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: testNamespace,
-			Name:      testName,
-		},
+		Namespace: testNamespace,
+		Name:      testName,
 		Spec: dynakube.DynaKubeSpec{
 			APIURL:   testAPIURL,
 			OneAgent: oneagent.Spec{CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{}},
@@ -423,10 +412,8 @@ func addFakeTenantUUID(dk *dynakube.DynaKube) *dynakube.DynaKube {
 
 func createTestKubemonDynakube() *dynakube.DynaKube {
 	return addFakeTenantUUID(&dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: testNamespace,
-			Name:      testName,
-		},
+		Namespace: testNamespace,
+		Name:      testName,
 		Spec: dynakube.DynaKubeSpec{
 			APIURL:               testAPIURL,
 			KubernetesMonitoring: &kubemonapi.Spec{},

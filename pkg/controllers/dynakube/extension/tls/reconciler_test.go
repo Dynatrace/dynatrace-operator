@@ -162,11 +162,9 @@ func TestGetTLSSecretName(t *testing.T) {
 
 func getTestDynakube() *dynakube.DynaKube {
 	return &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        testDynakubeName,
-			Namespace:   testNamespaceName,
-			Annotations: map[string]string{},
-		},
+		Name:        testDynakubeName,
+		Namespace:   testNamespaceName,
+		Annotations: map[string]string{},
 		Spec: dynakube.DynaKubeSpec{
 			Extensions: &extensions.Spec{Databases: []extensions.DatabaseSpec{{ID: "test"}}},
 			Templates: dynakube.TemplatesSpec{
@@ -202,10 +200,8 @@ func mockSelfSignedTLSSecret(t *testing.T, client client.Client, dk *dynakube.Dy
 
 func getSelfSignedTLSSecret(dk *dynakube.DynaKube) *corev1.Secret {
 	return &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      dk.Extensions().GetTLSSecretName(),
-			Namespace: dk.Namespace,
-		},
+		Name:      dk.Extensions().GetTLSSecretName(),
+		Namespace: dk.Namespace,
 		Data: map[string][]byte{
 			consts.TLSCrtDataName: []byte("super-cert"),
 			consts.TLSKeyDataName: []byte("super-key"),

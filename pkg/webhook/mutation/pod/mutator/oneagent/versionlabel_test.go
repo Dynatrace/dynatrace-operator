@@ -8,7 +8,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestAddVersionDetectionEnvs(t *testing.T) {
@@ -117,10 +116,8 @@ func assertNotContainsMappings(t *testing.T, unexpectedMappingKeys []string, con
 
 func getTestNamespace(annotations map[string]string) *corev1.Namespace {
 	return &corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        "test-ns",
-			Labels:      map[string]string{},
-			Annotations: annotations,
-		},
+		Name:        "test-ns",
+		Labels:      map[string]string{},
+		Annotations: annotations,
 	}
 }

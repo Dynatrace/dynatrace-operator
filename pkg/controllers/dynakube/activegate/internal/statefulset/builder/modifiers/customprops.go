@@ -49,12 +49,11 @@ func (mod CustomPropertiesModifier) getVolumes() []corev1.Volume {
 	volumes := []corev1.Volume{
 		{
 			Name: consts.CustomPropertiesVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: valueFrom,
-					Items: []corev1.KeyToPath{
-						{Key: customproperties.DataKey, Path: customproperties.DataPath},
-					}}},
+			Secret: &corev1.SecretVolumeSource{
+				SecretName: valueFrom,
+				Items: []corev1.KeyToPath{
+					{Key: customproperties.DataKey, Path: customproperties.DataPath},
+				}},
 		},
 	}
 

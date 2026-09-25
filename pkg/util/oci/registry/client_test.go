@@ -14,7 +14,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestProxy(t *testing.T) {
@@ -22,12 +21,10 @@ func TestProxy(t *testing.T) {
 
 	t.Run("set NO_PROXY", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "Dynakube",
-				Namespace: "dynatrace",
-				Annotations: map[string]string{
-					exp.NoProxyKey: "working.url,url.working",
-				},
+			Name:      "Dynakube",
+			Namespace: "dynatrace",
+			Annotations: map[string]string{
+				exp.NoProxyKey: "working.url,url.working",
 			},
 			Spec: dynakube.DynaKubeSpec{
 				Proxy:  &value.Source{Value: proxyRawURL},
@@ -55,10 +52,8 @@ func TestProxy(t *testing.T) {
 
 func TestSkipCertCheck(t *testing.T) {
 	dk := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "Dynakube",
-			Namespace: "dynatrace",
-		},
+		Name:      "Dynakube",
+		Namespace: "dynatrace",
 		Spec: dynakube.DynaKubeSpec{
 			APIURL: "https://testApiUrl.dev.dynatracelabs.com/api",
 			OneAgent: oneagent.Spec{

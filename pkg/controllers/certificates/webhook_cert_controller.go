@@ -45,7 +45,7 @@ func InitReconcile(ctx context.Context, clt client.Client, namespace string) err
 		return err
 	}
 
-	request := ctrl.Request{NamespacedName: types.NamespacedName{Name: webhook.DeploymentName, Namespace: namespace}}
+	request := ctrl.Request{Name: webhook.DeploymentName, Namespace: namespace}
 
 	return wait.PollUntilContextCancel(ctx, initReconcileInterval, true, func(ctx context.Context) (bool, error) {
 		if _, err := controller.Reconcile(ctx, request); err != nil {

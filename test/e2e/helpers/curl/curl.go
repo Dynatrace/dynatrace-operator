@@ -14,7 +14,6 @@ import (
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
 )
@@ -41,12 +40,10 @@ type Option func(curlPod *corev1.Pod)
 
 func NewPod(podName, namespaceName, targetURL string, options ...Option) *corev1.Pod {
 	curlPod := &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      podName,
-			Namespace: namespaceName,
-			Annotations: map[string]string{
-				dtwebhook.AnnotationDynatraceInject: "false",
-			},
+		Name:      podName,
+		Namespace: namespaceName,
+		Annotations: map[string]string{
+			dtwebhook.AnnotationDynatraceInject: "false",
 		},
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{

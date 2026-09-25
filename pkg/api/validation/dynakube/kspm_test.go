@@ -74,9 +74,7 @@ func TestTooManyKubernetesMonitoringReplicas(t *testing.T) {
 						Capabilities: []activegate.CapabilityDisplayName{
 							activegate.RoutingCapability.DisplayName,
 						},
-						CapabilityProperties: activegate.CapabilityProperties{
-							Replicas: new(int32(3)),
-						},
+						Replicas: new(int32(3)),
 					},
 					Templates: dynakube.TemplatesSpec{
 						KSPMNodeConfigurationCollector: kspm.NodeConfigurationCollectorSpec{
@@ -95,9 +93,7 @@ func TestTooManyKubernetesMonitoringReplicas(t *testing.T) {
 			Capabilities: []activegate.CapabilityDisplayName{
 				activegate.KubeMonCapability.DisplayName,
 			},
-			CapabilityProperties: activegate.CapabilityProperties{
-				Replicas: new(int32(3)),
-			},
+			Replicas: new(int32(3)),
 		}
 		assertDenied(t,
 			[]string{errorTooManyKubernetesMonitoringReplicas},
@@ -128,9 +124,7 @@ func TestTooManyKubernetesMonitoringReplicas(t *testing.T) {
 					APIURL: testAPIURL,
 					KSPM:   &kspm.Spec{},
 					KubernetesMonitoring: &kubemon.Spec{
-						StatefulSetProperties: kubemon.StatefulSetProperties{
-							Replicas: new(int32(3)),
-						},
+						Replicas:     new(int32(3)),
 						Registration: &kubemon.Registration{},
 					},
 					Templates: dynakube.TemplatesSpec{
@@ -280,12 +274,10 @@ func TestKSPMWithoutAutomaticK8sAPIMonitoring(t *testing.T) {
 
 	t.Run("activegate kubernetes-monitoring without automatic k8s api monitoring and kspm enabled", func(t *testing.T) {
 		assertDenied(t, []string{errorKSPMMissingKubernetesMonitoring}, &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-				Annotations: map[string]string{
-					exp.AGAutomaticK8sAPIMonitoringKey: "false",
-				},
+			Name:      testName,
+			Namespace: testNamespace,
+			Annotations: map[string]string{
+				exp.AGAutomaticK8sAPIMonitoringKey: "false",
 			},
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testAPIURL,
@@ -304,12 +296,10 @@ func TestKSPMWithoutAutomaticK8sAPIMonitoring(t *testing.T) {
 
 	t.Run("kubemon spec without activegate kubernetes-monitoring is unaffected", func(t *testing.T) {
 		assertAllowed(t, &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-				Annotations: map[string]string{
-					exp.AGAutomaticK8sAPIMonitoringKey: "false",
-				},
+			Name:      testName,
+			Namespace: testNamespace,
+			Annotations: map[string]string{
+				exp.AGAutomaticK8sAPIMonitoringKey: "false",
 			},
 			Spec: dynakube.DynaKubeSpec{
 				APIURL:               testAPIURL,
@@ -326,12 +316,10 @@ func TestKSPMWithoutAutomaticK8sAPIMonitoring(t *testing.T) {
 
 	t.Run("activegate kubernetes-monitoring without automatic k8s api monitoring but kspm disabled", func(t *testing.T) {
 		assertAllowed(t, &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-				Annotations: map[string]string{
-					exp.AGAutomaticK8sAPIMonitoringKey: "false",
-				},
+			Name:      testName,
+			Namespace: testNamespace,
+			Annotations: map[string]string{
+				exp.AGAutomaticK8sAPIMonitoringKey: "false",
 			},
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testAPIURL,
@@ -501,10 +489,8 @@ func publicRegistryDynakubeObjectMeta() metav1.ObjectMeta {
 func TestMappedHostPath(t *testing.T) {
 	getDynakube := func() dynakube.DynaKube {
 		return dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-			},
+			Name:      testName,
+			Namespace: testNamespace,
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testAPIURL,
 				KSPM:   &kspm.Spec{},
@@ -512,10 +498,8 @@ func TestMappedHostPath(t *testing.T) {
 					Capabilities: []activegate.CapabilityDisplayName{
 						activegate.KubeMonCapability.DisplayName,
 					},
-					CapabilityProperties: activegate.CapabilityProperties{
-						Resources: corev1.ResourceRequirements{
-							Limits: corev1.ResourceList{},
-						},
+					Resources: corev1.ResourceRequirements{
+						Limits: corev1.ResourceList{},
 					},
 				},
 				Templates: dynakube.TemplatesSpec{

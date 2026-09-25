@@ -14,7 +14,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestBuildJobName(t *testing.T) {
@@ -72,9 +71,7 @@ func TestBuildArgs(t *testing.T) {
 
 func TestBuildJob(t *testing.T) {
 	owner := dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "test-dk",
-		},
+		Name: "test-dk",
 	}
 	name := "job-1"
 	imageURI := "test:5000/repo"

@@ -389,12 +389,10 @@ func TestImages(t *testing.T) {
 	t.Run("no imageRef, public registry enabled — allowed, image from fleet management (default registry)", func(t *testing.T) {
 		assertAllowed(t,
 			&dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      testName,
-					Namespace: testNamespace,
-					Annotations: map[string]string{
-						exp.UsePublicRegistryKey: "true",
-					},
+				Name:      testName,
+				Namespace: testNamespace,
+				Annotations: map[string]string{
+					exp.UsePublicRegistryKey: "true",
 				},
 				Spec: dynakube.DynaKubeSpec{
 					APIURL:          testAPIURL,
@@ -406,12 +404,10 @@ func TestImages(t *testing.T) {
 	t.Run("no imageRef, public registry enabled with override — allowed, image from fleet management (override registry)", func(t *testing.T) {
 		assertAllowed(t,
 			&dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      testName,
-					Namespace: testNamespace,
-					Annotations: map[string]string{
-						exp.UsePublicRegistryKey: "true",
-					},
+				Name:      testName,
+				Namespace: testNamespace,
+				Annotations: map[string]string{
+					exp.UsePublicRegistryKey: "true",
 				},
 				Spec: dynakube.DynaKubeSpec{
 					APIURL:                 testAPIURL,
@@ -424,12 +420,10 @@ func TestImages(t *testing.T) {
 	t.Run("imageRef set, public registry enabled — allowed, custom image used as-is", func(t *testing.T) {
 		assertAllowed(t,
 			&dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      testName,
-					Namespace: testNamespace,
-					Annotations: map[string]string{
-						exp.UsePublicRegistryKey: "true",
-					},
+				Name:      testName,
+				Namespace: testNamespace,
+				Annotations: map[string]string{
+					exp.UsePublicRegistryKey: "true",
 				},
 				Spec: dynakube.DynaKubeSpec{
 					APIURL:          testAPIURL,
