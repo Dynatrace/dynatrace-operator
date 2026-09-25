@@ -32,6 +32,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -110,10 +111,17 @@ func buildPodAnnotations(dk *dynakube.DynaKube, tokenHash, authTokenHash, custom
 	annotations := map[string]string{
 		AnnotationTenantTokenHash:              tokenHash,
 		AnnotationAuthTokenHash:                authTokenHash,
-		AnnotationCustomPropertiesHash:         customPropertiesHash,
-		AnnotationDeploymentPropertiesHash:     deploymentPropertiesHash,
 		mutator.AnnotationInjectionSplitMounts: "true",
 	}
+
+	insertNonEmptyValue := func(key, value string) {
+		if value != "" {
+			annotations[key] = value
+		}
+	}
+
+	insertNonEmptyValue(AnnotationCustomPropertiesHash, customPropertiesHash)
+	insertNonEmptyValue(AnnotationDeploymentPropertiesHash, deploymentPropertiesHash)
 
 	if dk.KSPM().IsEnabled() {
 		annotations[AnnotationKSPMTokenHash] = dk.KSPM().TokenSecretHash
@@ -678,9 +686,18 @@ func (r *Reconciler) getTLSSecretHash(ctx context.Context, dk *dynakube.DynaKube
 
 	var secret corev1.Secret
 
-	err := r.kubeClient.Get(ctx, client.ObjectKey{Name: dk.KubernetesMonitoring().GetTLSSecretName(), Namespace: dk.Namespace}, &secret)
+	// retry because the Secret may not be immediately visible in the API.
+	err := retry.OnError(retry.DefaultBackoff, k8serrors.IsNotFound, func() error {
+		err := r.kubeClient.Get(ctx, client.ObjectKey{Name: dk.KubernetesMonitoring().GetTLSSecretName(), Namespace: dk.Namespace}, &secret)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
 	if k8serrors.IsNotFound(err) {
-		return "", nil
+		return "not-found", nil
 	}
 
 	if err != nil {

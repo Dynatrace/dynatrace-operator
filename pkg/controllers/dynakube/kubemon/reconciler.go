@@ -27,6 +27,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
+	kspmtoken "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kspm/token"
 	kubemonauthtoken "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/authtoken"
 	kubemonconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/connectioninfo"
 	kubemoncustomproperties "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/customproperties"
@@ -86,6 +87,7 @@ type istioReconciler interface {
 // Reconciler orchestrates the kubemon operand. Sub-reconciler fields are interfaces so they
 // can be mocked in tests.
 type Reconciler struct {
+	kspmTokenReconciler            *kspmtoken.Reconciler
 	connectionInfoReconciler       connectionInfoReconciler
 	authTokenReconciler            authTokenReconciler
 	statefulsetReconciler          statefulsetReconciler
@@ -98,6 +100,7 @@ type Reconciler struct {
 
 func NewReconciler(kubeClient client.Client) *Reconciler {
 	return &Reconciler{
+		kspmTokenReconciler:            kspmtoken.NewReconciler(kubeClient, kubeClient),
 		connectionInfoReconciler:       kubemonconnectioninfo.NewReconciler(kubeClient),
 		authTokenReconciler:            kubemonauthtoken.NewReconciler(kubeClient, clock.RealClock{}),
 		statefulsetReconciler:          kubemonstatefulset.NewReconciler(kubeClient),
@@ -146,6 +149,10 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtcli
 	}
 
 	if err = r.gatewayReconciler.Reconcile(ctx, dk); err != nil {
+		return err
+	}
+
+	if err = r.kspmTokenReconciler.Reconcile(ctx, dk); err != nil {
 		return err
 	}
 

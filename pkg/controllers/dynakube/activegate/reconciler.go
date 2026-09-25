@@ -23,6 +23,7 @@ import (
 	agconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
+	kspmtoken "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kspm/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
@@ -76,6 +77,7 @@ type Reconciler struct {
 	statefulsetReconciler      statefulsetReconciler
 	customPropertiesReconciler customPropertiesReconciler
 	tlsSecretReconciler        tlsReconciler
+	kspmTokenReconciler        *kspmtoken.Reconciler
 	configMaps                 k8sconfigmap.QueryObject
 }
 
@@ -91,6 +93,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 		customPropertiesReconciler: customproperties.NewReconciler(clt, apiReader),
 		statefulsetReconciler:      statefulset.NewReconciler(clt, apiReader),
 		tlsSecretReconciler:        tls.NewReconciler(clt, apiReader),
+		kspmTokenReconciler:        kspmtoken.NewReconciler(clt, apiReader),
 		configMaps:                 k8sconfigmap.Query(clt, apiReader),
 	}
 }
@@ -144,6 +147,13 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, dtCli
 	err = r.authTokenReconciler.Reconcile(ctx, dtClient.ActiveGate, dk)
 	if err != nil {
 		return errors.WithMessage(err, "could not reconcile Dynatrace ActiveGateAuthToken secrets")
+	}
+
+	if dk.ActiveGate().IsKubernetesMonitoringEnabled() && dk.KSPM().IsEnabled() {
+		// cleanup is performed by kspmTokenReconciler called by KubeMon reconciler
+		if err = r.kspmTokenReconciler.Reconcile(ctx, dk); err != nil {
+			return err
+		}
 	}
 
 	agCapability := capability.NewMultiCapability(dk)
