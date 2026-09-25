@@ -123,13 +123,7 @@ func buildUpgradeFeature(t *testing.T, releaseTag string, opts upgradeOptions) f
 	)
 
 	// create OAuth client secret related to the specific EdgeConnect configuration on the tenant
-	builder.Assess("create client secret", func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		return tenant.CreateClientSecret(
-			edgeConnectTenantConfig.Secret,
-			edgeconnectComponents.BuildOAuthClientSecretName(testEdgeConnect.Name),
-			testEdgeConnect.Namespace,
-		)(ctx, t, envConfig)
-	})
+	builder.Assess("create client secret", tenant.CreateClientSecret(&edgeConnectTenantConfig.Secret, edgeconnectComponents.BuildOAuthClientSecretName(testEdgeConnect.Name), testEdgeConnect.Namespace))
 
 	// install EC
 	edgeconnectComponents.Install(builder, tenant.EdgeConnectSecret{}, testEdgeConnect)
