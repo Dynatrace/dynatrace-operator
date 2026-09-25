@@ -47,10 +47,9 @@ func mutateInitContainer(mutationRequest *dtwebhook.MutationRequest, installPath
 	case isImageVolume(mutationRequest.BaseRequest):
 		log.Info("configuring init-container with image bin volume", "name", mutationRequest.PodName())
 
-		err := addImageBinVolume(mutationRequest.Pod,
+		if err := addImageBinVolume(mutationRequest.Pod,
 			mutationRequest.DynaKube.OneAgent().GetCodeModulesImage(),
-			mutationRequest.DynaKube.OneAgent().GetCodeModulesImagePullPolicy())
-		if err != nil {
+			mutationRequest.DynaKube.OneAgent().GetCodeModulesImagePullPolicy()); err != nil {
 			return err
 		}
 
@@ -58,11 +57,10 @@ func mutateInitContainer(mutationRequest *dtwebhook.MutationRequest, installPath
 	case isCSIVolume(mutationRequest.BaseRequest):
 		log.Info("configuring init-container with CSI bin volume", "name", mutationRequest.PodName())
 
-		err := addCSIBinVolume(
+		if err := addCSIBinVolume(
 			mutationRequest.Pod,
 			mutationRequest.DynaKube.Name,
-			mutationRequest.DynaKube.FF().GetCSIMaxRetryTimeout().String())
-		if err != nil {
+			mutationRequest.DynaKube.FF().GetCSIMaxRetryTimeout().String()); err != nil {
 			return err
 		}
 		// in case of CSI, the CSI volume itself is already always readonly, so the mount should always be readonly, the init-container should just read from it
