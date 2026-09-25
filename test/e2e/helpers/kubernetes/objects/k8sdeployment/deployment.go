@@ -15,7 +15,6 @@ import (
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/e2e-framework/klient/k8s"
@@ -109,10 +108,8 @@ func WaitFor(name string, namespace string) env.Func {
 	return func(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
 		clientResources := envConfig.Client().Resources()
 		deployment := &appsv1.Deployment{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      name,
-				Namespace: namespace,
-			},
+			Name:      name,
+			Namespace: namespace,
 		}
 
 		return ctx, WaitUntilReady(clientResources, deployment)
@@ -123,10 +120,8 @@ func WaitForReplicas(name, namespace string, replicas int32) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resource := envConfig.Client().Resources()
 		deployment := &appsv1.Deployment{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      name,
-				Namespace: namespace,
-			},
+			Name:      name,
+			Namespace: namespace,
 		}
 		err := wait.For(conditions.New(resource).ResourceScaled(deployment, func(object k8s.Object) int32 {
 			currDeploy, isCurrDeploy := object.(*appsv1.Deployment)

@@ -10,7 +10,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -218,9 +217,8 @@ func TestMergeInto(t *testing.T) {
 		assert.Equal(t, labels.AsMap(), cm.Labels)
 	})
 	t.Run("keeps unrelated labels already on the object", func(t *testing.T) {
-		cm := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{
-			Labels: map[string]string{"keep": "me"},
-		}}
+		cm := &corev1.ConfigMap{
+			Labels: map[string]string{"keep": "me"}}
 
 		labels.MergeInto(cm)
 
@@ -228,9 +226,8 @@ func TestMergeInto(t *testing.T) {
 		assert.Equal(t, testAppName, cm.Labels[AppNameLabel])
 	})
 	t.Run("overwrites colliding keys", func(t *testing.T) {
-		cm := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{
-			Labels: map[string]string{AppNameLabel: "stale"},
-		}}
+		cm := &corev1.ConfigMap{
+			Labels: map[string]string{AppNameLabel: "stale"}}
 
 		labels.MergeInto(cm)
 

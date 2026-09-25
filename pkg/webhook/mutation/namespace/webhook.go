@@ -14,7 +14,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	webhooks "sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -58,7 +57,7 @@ func (wh *webhook) Handle(ctx context.Context, request admission.Request) admiss
 
 	log.Info("namespace request")
 
-	ns := corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: request.Namespace}}
+	ns := corev1.Namespace{Name: request.Namespace}
 	if err := decodeRequestToNamespace(request, &ns); err != nil {
 		return admission.Errored(http.StatusBadRequest, err)
 	}

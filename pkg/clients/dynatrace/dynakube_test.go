@@ -15,7 +15,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -31,8 +30,8 @@ const (
 func Test_optionsFromDynakube(t *testing.T) {
 	getDynakube := func() *dynakube.DynaKube {
 		return &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace},
-			Spec:       dynakube.DynaKubeSpec{APIURL: testAPIURL},
+			Namespace: testNamespace,
+			Spec:      dynakube.DynaKubeSpec{APIURL: testAPIURL},
 		}
 	}
 	t.Run("sets base URL, tokens and default user agent", func(t *testing.T) {
@@ -156,8 +155,8 @@ func Test_optionsFromDynakube(t *testing.T) {
 		dk.Spec.TrustedCAs = testCertsCMName
 
 		fakeClient := fake.NewClient(&corev1.ConfigMap{
-			ObjectMeta: metav1.ObjectMeta{Name: testCertsCMName, Namespace: testNamespace},
-			Data:       map[string]string{dynakube.TrustedCAKey: customCA},
+			Name: testCertsCMName, Namespace: testNamespace,
+			Data: map[string]string{dynakube.TrustedCAKey: customCA},
 		})
 		opts, err := optionsFromDynakube(t.Context(), fakeClient, dk, testAPIToken, testPaasToken, "", testConnectionTimeout)
 		require.NoError(t, err)
@@ -187,8 +186,8 @@ func Test_optionsFromDynakube(t *testing.T) {
 		dk.Spec.TrustedCAs = testCertsCMName
 
 		fakeClient := fake.NewClient(&corev1.ConfigMap{
-			ObjectMeta: metav1.ObjectMeta{Name: testCertsCMName, Namespace: testNamespace},
-			Data:       map[string]string{},
+			Name: testCertsCMName, Namespace: testNamespace,
+			Data: map[string]string{},
 		})
 		_, err := optionsFromDynakube(t.Context(), fakeClient, dk, testAPIToken, testPaasToken, "", testConnectionTimeout)
 		require.Error(t, err)
@@ -220,8 +219,8 @@ func Test_optionsFromDynakube(t *testing.T) {
 		})
 
 		fakeClient := fake.NewClient(&corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{Name: testProxySecret, Namespace: testNamespace},
-			Data:       map[string][]byte{dynakube.ProxyKey: []byte(testProxyURL)},
+			Name: testProxySecret, Namespace: testNamespace,
+			Data: map[string][]byte{dynakube.ProxyKey: []byte(testProxyURL)},
 		})
 		opts, err := optionsFromDynakube(t.Context(), fakeClient, dk, testAPIToken, testPaasToken, "", testConnectionTimeout)
 		require.NoError(t, err)
@@ -235,7 +234,7 @@ func Test_optionsFromDynakube(t *testing.T) {
 
 	t.Run("returns error when proxy secret is missing", func(t *testing.T) {
 		dk := dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace},
+			Namespace: testNamespace,
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testAPIURL,
 				Proxy:  &value.Source{ValueFrom: testProxySecret},
@@ -277,8 +276,8 @@ func Test_optionsFromDynakube(t *testing.T) {
 func TestNewClientFromDynakube(t *testing.T) {
 	t.Run("returns a fully initialized client", func(t *testing.T) {
 		dk := dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace},
-			Spec:       dynakube.DynaKubeSpec{APIURL: testAPIURL},
+			Namespace: testNamespace,
+			Spec:      dynakube.DynaKubeSpec{APIURL: testAPIURL},
 		}
 		dtClient, err := NewClientFromDynakube(t.Context(), fake.NewClient(), &dk, testAPIToken, testPaasToken, "", testConnectionTimeout)
 

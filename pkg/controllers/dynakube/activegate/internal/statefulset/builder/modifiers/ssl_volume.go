@@ -41,10 +41,8 @@ func (mod SSLVolumeModifier) Modify(sts *appsv1.StatefulSet) error {
 func (mod SSLVolumeModifier) getVolumes() []corev1.Volume {
 	return []corev1.Volume{
 		{
-			Name: consts.GatewaySslVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{},
-			},
+			Name:     consts.GatewaySslVolumeName,
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
 		},
 	}
 }

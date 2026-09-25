@@ -30,10 +30,8 @@ type logCollector struct {
 
 func newLogCollector(context context.Context, log logd.Logger, supportArchive archiver, pods clientgocorev1.PodInterface, appName string, collectManagedLogs bool) collector { //nolint:revive // argument-limit doesn't apply to constructors
 	return logCollector{
-		collectorCommon: collectorCommon{
-			log:            log,
-			supportArchive: supportArchive,
-		},
+		log:                log,
+		supportArchive:     supportArchive,
 		ctx:                context,
 		pods:               pods,
 		appName:            appName,
@@ -84,9 +82,7 @@ func (lc logCollector) Name() string {
 
 func (lc logCollector) getPodList(labelKey string) (*corev1.PodList, error) {
 	listOptions := metav1.ListOptions{
-		TypeMeta: metav1.TypeMeta{
-			Kind: "pod",
-		},
+		Kind:          "pod",
 		LabelSelector: fmt.Sprintf("%s=%s", labelKey, lc.appName),
 	}
 

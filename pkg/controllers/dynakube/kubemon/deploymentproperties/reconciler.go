@@ -13,7 +13,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	k8sobject "github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -42,10 +41,8 @@ func (r *Reconciler) createDeploymentPropertiesSecret(ctx context.Context, dk *d
 	desired := secretSpec(dk, secretData(dk))
 
 	secret := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      desired.Name,
-			Namespace: desired.Namespace,
-		},
+		Name:      desired.Name,
+		Namespace: desired.Namespace,
 	}
 
 	return k8sobject.RetryCreateOrUpdate(ctx, r.client, secret, func() error {
@@ -66,11 +63,9 @@ func secretSpec(dk *dynakube.DynaKube, data map[string][]byte) *corev1.Secret {
 	labels := k8slabel.New(k8slabel.KubeMonComponentLabel, dk.Name, "")
 
 	return &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      dk.KubernetesMonitoring().GetDeploymentPropertiesSecretName(),
-			Namespace: dk.Namespace,
-			Labels:    labels.AsMap(),
-		},
-		Data: data,
+		Name:      dk.KubernetesMonitoring().GetDeploymentPropertiesSecretName(),
+		Namespace: dk.Namespace,
+		Labels:    labels.AsMap(),
+		Data:      data,
 	}
 }

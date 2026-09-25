@@ -15,7 +15,6 @@ import (
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/clock"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -97,7 +96,7 @@ func (r *Reconciler) ensureSecret(ctx context.Context, agClient agclient.Client,
 }
 
 func (r *Reconciler) cleanup(ctx context.Context, dk *dynakube.DynaKube) error {
-	return r.secrets.Delete(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: dk.KubernetesMonitoring().GetAuthTokenSecretName(), Namespace: dk.Namespace}})
+	return r.secrets.Delete(ctx, &corev1.Secret{Name: dk.KubernetesMonitoring().GetAuthTokenSecretName(), Namespace: dk.Namespace})
 }
 
 func (r *Reconciler) isOutdated(secret *corev1.Secret) bool {

@@ -341,5 +341,5 @@ func TestUnmapFromDynaKube(t *testing.T) {
 
 func createSecret(t *testing.T, c client.Client, name, namespace string) {
 	t.Helper()
-	c.Create(t.Context(), &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace}})
+	c.Create(t.Context(), &corev1.Secret{Name: name, Namespace: namespace})
 }

@@ -200,10 +200,8 @@ func createDynakube(isLogMonitoringEnabled bool) *dynakube.DynaKube {
 	}
 
 	return &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: dkNamespace,
-			Name:      dkName,
-		},
+		Namespace: dkNamespace,
+		Name:      dkName,
 		Spec: dynakube.DynaKubeSpec{
 			APIURL:        "test-url",
 			LogMonitoring: logMonitoringSpec,
@@ -246,11 +244,9 @@ func createK8sClientWithOneAgentTenantSecret(t *testing.T, dk *dynakube.DynaKube
 	mockK8sClient := fake.NewClient()
 	_ = mockK8sClient.Create(t.Context(),
 		&corev1.Secret{
-			Data: map[string][]byte{connectioninfo.TenantTokenKey: []byte(token)},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      dk.OneAgent().GetTenantSecret(),
-				Namespace: dkNamespace,
-			},
+			Data:      map[string][]byte{connectioninfo.TenantTokenKey: []byte(token)},
+			Name:      dk.OneAgent().GetTenantSecret(),
+			Namespace: dkNamespace,
 		},
 	)
 
@@ -261,10 +257,8 @@ func createK8sClientWithConfigSecret(t *testing.T) client.Client {
 	mockK8sClient := fake.NewClient()
 	_ = mockK8sClient.Create(t.Context(),
 		&corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      GetSecretName(dkName),
-				Namespace: dkNamespace,
-			},
+			Name:      GetSecretName(dkName),
+			Namespace: dkNamespace,
 		},
 	)
 
@@ -359,10 +353,8 @@ func TestAddAnnotations(t *testing.T) {
 		{
 			title: "no-proxy respected",
 			dk: &dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{
-						exp.NoProxyKey: "no-proxy",
-					},
+				Annotations: map[string]string{
+					exp.NoProxyKey: "no-proxy",
 				},
 				Status: dynakube.DynaKubeStatus{
 					OneAgent: oneagent.Status{

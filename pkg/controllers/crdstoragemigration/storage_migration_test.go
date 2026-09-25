@@ -13,7 +13,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
@@ -35,9 +34,7 @@ func TestRun(t *testing.T) {
 
 	t.Run("returns no error when CRD has no storage versions", func(t *testing.T) {
 		crd := &apiextensionsv1.CustomResourceDefinition{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: k8scrd.DynaKubeName,
-			},
+			Name: k8scrd.DynaKubeName,
 			Spec: apiextensionsv1.CustomResourceDefinitionSpec{
 				Group: "dynatrace.com",
 				Names: apiextensionsv1.CustomResourceDefinitionNames{
@@ -68,9 +65,7 @@ func TestRun(t *testing.T) {
 
 	t.Run("returns no error when CRD has single up-to-date storage version", func(t *testing.T) {
 		crd := &apiextensionsv1.CustomResourceDefinition{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: k8scrd.DynaKubeName,
-			},
+			Name: k8scrd.DynaKubeName,
 			Spec: apiextensionsv1.CustomResourceDefinitionSpec{
 				Group: "dynatrace.com",
 				Names: apiextensionsv1.CustomResourceDefinitionNames{
@@ -100,9 +95,7 @@ func TestRun(t *testing.T) {
 
 	t.Run("returns error when no storage version is found", func(t *testing.T) {
 		crd := &apiextensionsv1.CustomResourceDefinition{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: k8scrd.DynaKubeName,
-			},
+			Name: k8scrd.DynaKubeName,
 			Spec: apiextensionsv1.CustomResourceDefinitionSpec{
 				Group: "dynatrace.com",
 				Names: apiextensionsv1.CustomResourceDefinitionNames{
@@ -133,9 +126,7 @@ func TestRun(t *testing.T) {
 
 	t.Run("migrates DynaKube instances when multiple storage versions exist", func(t *testing.T) {
 		crd := &apiextensionsv1.CustomResourceDefinition{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: k8scrd.DynaKubeName,
-			},
+			Name: k8scrd.DynaKubeName,
 			Spec: apiextensionsv1.CustomResourceDefinitionSpec{
 				Group: "dynatrace.com",
 				Names: apiextensionsv1.CustomResourceDefinitionNames{
@@ -197,9 +188,7 @@ func TestRun(t *testing.T) {
 
 	t.Run("handles empty DynaKube list", func(t *testing.T) {
 		crd := &apiextensionsv1.CustomResourceDefinition{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: k8scrd.DynaKubeName,
-			},
+			Name: k8scrd.DynaKubeName,
 			Spec: apiextensionsv1.CustomResourceDefinitionSpec{
 				Group: "dynatrace.com",
 				Names: apiextensionsv1.CustomResourceDefinitionNames{

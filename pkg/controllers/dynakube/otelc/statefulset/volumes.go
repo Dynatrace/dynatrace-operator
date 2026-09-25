@@ -30,16 +30,12 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 	if isTrustedCAsVolumeNeeded(dk) {
 		volumes = append(volumes, corev1.Volume{
 			Name: caCertsVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: dk.Spec.TrustedCAs,
-					},
-					Items: []corev1.KeyToPath{
-						{
-							Key:  "certs",
-							Path: otelcconsts.TrustedCAsFile,
-						},
+			ConfigMap: &corev1.ConfigMapVolumeSource{
+				Name: dk.Spec.TrustedCAs,
+				Items: []corev1.KeyToPath{
+					{
+						Key:  "certs",
+						Path: otelcconsts.TrustedCAsFile,
 					},
 				},
 			},
@@ -49,17 +45,15 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 	if dk.IsAGCertificateNeeded() {
 		volumes = append(volumes, corev1.Volume{
 			Name: agCertVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: dk.ActiveGate().GetTLSSecretName(),
-					Items: []corev1.KeyToPath{
-						{
-							Key:  consts.TLSServerCrtDataName,
-							Path: otelcconsts.ActiveGateCertFile,
-						},
+			Secret: &corev1.SecretVolumeSource{
+				SecretName: dk.ActiveGate().GetTLSSecretName(),
+				Items: []corev1.KeyToPath{
+					{
+						Key:  consts.TLSServerCrtDataName,
+						Path: otelcconsts.ActiveGateCertFile,
 					},
-					DefaultMode: mode,
 				},
+				DefaultMode: mode,
 			},
 		})
 	}
@@ -67,33 +61,27 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 	if dk.TelemetryIngest().TLSRefName != "" {
 		volumes = append(volumes, corev1.Volume{
 			Name: customTLSCertVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: dk.TelemetryIngest().TLSRefName,
-					Items: []corev1.KeyToPath{
-						{
-							Key:  consts.TLSCrtDataName,
-							Path: consts.TLSCrtDataName,
-						},
-						{
-							Key:  consts.TLSKeyDataName,
-							Path: consts.TLSKeyDataName,
-						},
+			Secret: &corev1.SecretVolumeSource{
+				SecretName: dk.TelemetryIngest().TLSRefName,
+				Items: []corev1.KeyToPath{
+					{
+						Key:  consts.TLSCrtDataName,
+						Path: consts.TLSCrtDataName,
 					},
-					DefaultMode: mode,
+					{
+						Key:  consts.TLSKeyDataName,
+						Path: consts.TLSKeyDataName,
+					},
 				},
+				DefaultMode: mode,
 			},
 		})
 	}
 
 	volumes = append(volumes, corev1.Volume{
 		Name: telemetryCollectorConfigVolumeName,
-		VolumeSource: corev1.VolumeSource{
-			ConfigMap: &corev1.ConfigMapVolumeSource{
-				LocalObjectReference: corev1.LocalObjectReference{
-					Name: configuration.GetConfigMapName(dk.Name),
-				},
-			},
+		ConfigMap: &corev1.ConfigMapVolumeSource{
+			Name: configuration.GetConfigMapName(dk.Name),
 		},
 	})
 

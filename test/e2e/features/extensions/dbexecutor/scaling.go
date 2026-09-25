@@ -15,7 +15,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv1 "k8s.io/api/autoscaling/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
@@ -43,10 +42,8 @@ func WithHPA(t *testing.T) features.Feature {
 	componentDynakube.Install(builder, secretConfig, testDynakube)
 
 	testHPA := &autoscalingv1.HorizontalPodAutoscaler{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-autoscaler",
-			Namespace: testDynakube.Namespace,
-		},
+		Name:      "test-autoscaler",
+		Namespace: testDynakube.Namespace,
 		Spec: autoscalingv1.HorizontalPodAutoscalerSpec{
 			ScaleTargetRef: autoscalingv1.CrossVersionObjectReference{
 				Kind:       "Deployment",

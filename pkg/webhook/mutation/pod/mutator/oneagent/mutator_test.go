@@ -10,7 +10,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	"github.com/stretchr/testify/assert"
@@ -470,10 +469,8 @@ func createTestMutationRequestWithoutInjectedContainers(t *testing.T) *dtwebhook
 		},
 		BaseRequest: &dtwebhook.BaseRequest{
 			Pod: &corev1.Pod{
-				TypeMeta: metav1.TypeMeta{},
-				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{},
-				},
+				TypeMeta:    metav1.TypeMeta{},
+				Annotations: map[string]string{},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
@@ -491,16 +488,12 @@ func createTestMutationRequestWithoutInjectedContainers(t *testing.T) *dtwebhook
 			DynaKube: &dynakube.DynaKube{
 				Spec: dynakube.DynaKubeSpec{OneAgent: oneagent.Spec{
 					ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
-						AppInjectionSpec: oneagent.AppInjectionSpec{
-							CodeModulesImage: "testimage",
-						},
+						CodeModulesImage: "testimage",
 					},
 				}},
 				Status: dynakube.DynaKubeStatus{
 					CodeModules: oneagent.CodeModulesStatus{
-						VersionStatus: status.VersionStatus{
-							ImageID: "testimage",
-						},
+						ImageID: "testimage",
 					},
 				},
 			},

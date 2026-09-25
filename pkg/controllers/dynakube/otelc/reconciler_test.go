@@ -26,7 +26,6 @@ import (
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -83,10 +82,8 @@ func createClient(t *testing.T, dk *dynakube.DynaKube) client.WithWatch {
 
 func createDynaKube(activeGateEnabled bool) dynakube.DynaKube {
 	dk := dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-dk",
-			Namespace: "test-namespace",
-		},
+		Name:      "test-dk",
+		Namespace: "test-namespace",
 		Spec: dynakube.DynaKubeSpec{
 			APIURL: testAPIURL,
 			Proxy: &value.Source{

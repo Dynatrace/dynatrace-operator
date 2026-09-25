@@ -72,10 +72,8 @@ func AddConfigVolume(ctx context.Context, pod *corev1.Pod) error {
 
 	pod.Spec.Volumes = append(pod.Spec.Volumes,
 		corev1.Volume{
-			Name: ConfigVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &emptyDirVS,
-			},
+			Name:     ConfigVolumeName,
+			EmptyDir: &emptyDirVS,
 		},
 	)
 
@@ -133,24 +131,18 @@ func AddInputVolume(pod *corev1.Pod) error {
 	pod.Spec.Volumes = append(pod.Spec.Volumes,
 		corev1.Volume{
 			Name: InputVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				Projected: &corev1.ProjectedVolumeSource{
-					Sources: []corev1.VolumeProjection{
-						{
-							Secret: &corev1.SecretProjection{
-								LocalObjectReference: corev1.LocalObjectReference{
-									Name: consts.BootstrapperInitSecretName,
-								},
-								Optional: new(false),
-							},
+			Projected: &corev1.ProjectedVolumeSource{
+				Sources: []corev1.VolumeProjection{
+					{
+						Secret: &corev1.SecretProjection{
+							Name:     consts.BootstrapperInitSecretName,
+							Optional: new(false),
 						},
-						{
-							Secret: &corev1.SecretProjection{
-								LocalObjectReference: corev1.LocalObjectReference{
-									Name: consts.BootstrapperInitCertsSecretName,
-								},
-								Optional: new(true),
-							},
+					},
+					{
+						Secret: &corev1.SecretProjection{
+							Name:     consts.BootstrapperInitCertsSecretName,
+							Optional: new(true),
 						},
 					},
 				},

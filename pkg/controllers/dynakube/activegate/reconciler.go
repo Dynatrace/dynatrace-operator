@@ -31,7 +31,6 @@ import (
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -275,10 +274,8 @@ func (r *Reconciler) deleteCapability(ctx context.Context, dk *dynakube.DynaKube
 
 func (r *Reconciler) deleteStatefulset(ctx context.Context, dk *dynakube.DynaKube) error {
 	sts := appsv1.StatefulSet{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      capability.CalculateStatefulSetName(dk.Name),
-			Namespace: dk.Namespace,
-		},
+		Name:      capability.CalculateStatefulSetName(dk.Name),
+		Namespace: dk.Namespace,
 	}
 
 	return client.IgnoreNotFound(r.client.Delete(ctx, &sts))

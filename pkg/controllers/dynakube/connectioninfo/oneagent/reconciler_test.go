@@ -64,7 +64,7 @@ func TestReconcile(t *testing.T) {
 
 		dk.Spec = dynakube.DynaKubeSpec{}
 
-		fakeClient := fake.NewClient(&corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: dk.OneAgent().GetTenantSecret(), Namespace: dk.Namespace}})
+		fakeClient := fake.NewClient(&corev1.Secret{Name: dk.OneAgent().GetTenantSecret(), Namespace: dk.Namespace})
 		dtClient := oneagentclientmock.NewClient(t)
 
 		r := NewReconciler(fakeClient, fakeClient)
@@ -274,10 +274,8 @@ func TestReconcile_StaleNetworkZoneEndpoints(t *testing.T) {
 func TestReconcile_NoOneAgentCommunicationHosts(t *testing.T) {
 	ctx := t.Context()
 	dk := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: testNamespace,
-			Name:      testName,
-		},
+		Namespace: testNamespace,
+		Name:      testName,
 		Spec: dynakube.DynaKubeSpec{
 			OneAgent: oneagent.Spec{
 				CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
@@ -309,10 +307,8 @@ func TestReconcile_NoOneAgentCommunicationHosts(t *testing.T) {
 
 func getTestDynakube() *dynakube.DynaKube {
 	return &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: testNamespace,
-			Name:      testName,
-		},
+		Namespace: testNamespace,
+		Name:      testName,
 		Spec: dynakube.DynaKubeSpec{
 			OneAgent: oneagent.Spec{
 				CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
@@ -323,10 +319,8 @@ func getTestDynakube() *dynakube.DynaKube {
 
 func buildOneAgentTenantSecret(dk *dynakube.DynaKube, token string) *corev1.Secret {
 	return &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      dk.OneAgent().GetTenantSecret(),
-			Namespace: testNamespace,
-		},
+		Name:      dk.OneAgent().GetTenantSecret(),
+		Namespace: testNamespace,
 		Data: map[string][]byte{
 			connectioninfo.TenantTokenKey: []byte(token),
 		},

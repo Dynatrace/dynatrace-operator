@@ -15,7 +15,6 @@ import (
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -67,7 +66,7 @@ func (r *Reconciler) ensureDeleted(ctx context.Context, dk *dynakube.DynaKube) e
 	log := logd.FromContext(ctx)
 	secretName := BuildSecretName(dk.Name)
 
-	secret := corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: secretName, Namespace: dk.Namespace}}
+	secret := corev1.Secret{Name: secretName, Namespace: dk.Namespace}
 	if err := r.client.Delete(ctx, &secret); err != nil && !k8serrors.IsNotFound(err) {
 		return err
 	} else if err == nil {

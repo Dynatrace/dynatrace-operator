@@ -63,10 +63,8 @@ func TestReconcileLifecycle(t *testing.T) {
 	integrationtests.CreateNamespace(t, clt, integrationNamespace)
 
 	dk := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      integrationDynaKubeName,
-			Namespace: integrationNamespace,
-		},
+		Name:      integrationDynaKubeName,
+		Namespace: integrationNamespace,
 		Spec: dynakube.DynaKubeSpec{
 			APIURL:               integrationAPIURL,
 			KubernetesMonitoring: &kubemonapi.Spec{},

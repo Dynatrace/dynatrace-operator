@@ -18,7 +18,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -55,8 +54,8 @@ func TestEnvironmentVariables(t *testing.T) {
 
 		assert.Equal(t, corev1.EnvVar{Name: envDTendpoint, ValueFrom: &corev1.EnvVarSource{
 			ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
-				LocalObjectReference: corev1.LocalObjectReference{Name: otelcConsts.OTLPAPIEndpointConfigMapName},
-				Key:                  envDTendpoint,
+				Name: otelcConsts.OTLPAPIEndpointConfigMapName,
+				Key:  envDTendpoint,
 			},
 		}}, statefulSet.Spec.Template.Spec.Containers[0].Env[9])
 		assert.Equal(t, corev1.EnvVar{Name: envMyPodIP, ValueFrom: &corev1.EnvVarSource{
@@ -67,8 +66,8 @@ func TestEnvironmentVariables(t *testing.T) {
 
 		assert.Equal(t, corev1.EnvVar{Name: otelcConsts.EnvDataIngestToken, ValueFrom: &corev1.EnvVarSource{
 			SecretKeyRef: &corev1.SecretKeySelector{
-				LocalObjectReference: corev1.LocalObjectReference{Name: dk.Tokens()},
-				Key:                  token.DataIngestKey,
+				Name: dk.Tokens(),
+				Key:  token.DataIngestKey,
 			},
 		}}, statefulSet.Spec.Template.Spec.Containers[0].Env[11])
 	})
@@ -161,8 +160,8 @@ func TestProxyEnvsProxySecret(t *testing.T) {
 				Name: envHTTPSProxy,
 				ValueFrom: &corev1.EnvVarSource{
 					SecretKeyRef: &corev1.SecretKeySelector{
-						LocalObjectReference: corev1.LocalObjectReference{Name: tt.proxy.ValueFrom},
-						Key:                  dynakube.ProxyKey,
+						Name: tt.proxy.ValueFrom,
+						Key:  dynakube.ProxyKey,
 					},
 				},
 			})
@@ -170,8 +169,8 @@ func TestProxyEnvsProxySecret(t *testing.T) {
 				Name: envHTTPProxy,
 				ValueFrom: &corev1.EnvVarSource{
 					SecretKeyRef: &corev1.SecretKeySelector{
-						LocalObjectReference: corev1.LocalObjectReference{Name: tt.proxy.ValueFrom},
-						Key:                  dynakube.ProxyKey,
+						Name: tt.proxy.ValueFrom,
+						Key:  dynakube.ProxyKey,
 					},
 				},
 			})
@@ -242,11 +241,9 @@ func TestProxyEnvsProxyValue(t *testing.T) {
 func TestCustomNoProxy(t *testing.T) {
 	t.Run("no-proxy ff not used", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:        testDynakubeName,
-				Namespace:   testNamespaceName,
-				Annotations: map[string]string{},
-			},
+			Name:        testDynakubeName,
+			Namespace:   testNamespaceName,
+			Annotations: map[string]string{},
 			Spec: dynakube.DynaKubeSpec{
 				ActiveGate: activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{
@@ -261,12 +258,10 @@ func TestCustomNoProxy(t *testing.T) {
 
 	t.Run("no-proxy ff used", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testDynakubeName,
-				Namespace: testNamespaceName,
-				Annotations: map[string]string{
-					exp.NoProxyKey: testNoProxyFFValue,
-				},
+			Name:      testDynakubeName,
+			Namespace: testNamespaceName,
+			Annotations: map[string]string{
+				exp.NoProxyKey: testNoProxyFFValue,
 			},
 			Spec: dynakube.DynaKubeSpec{
 				ActiveGate: activegate.Spec{

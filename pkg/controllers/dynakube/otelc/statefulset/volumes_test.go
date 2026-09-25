@@ -15,7 +15,6 @@ import (
 	otelcconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/consts"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestVolumes(t *testing.T) {
@@ -33,21 +32,19 @@ func TestVolumes(t *testing.T) {
 
 		expectedVolume := corev1.Volume{
 			Name: customTLSCertVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: dk.TelemetryIngest().TLSRefName,
-					Items: []corev1.KeyToPath{
-						{
-							Key:  consts.TLSCrtDataName,
-							Path: consts.TLSCrtDataName,
-						},
-						{
-							Key:  consts.TLSKeyDataName,
-							Path: consts.TLSKeyDataName,
-						},
+			Secret: &corev1.SecretVolumeSource{
+				SecretName: dk.TelemetryIngest().TLSRefName,
+				Items: []corev1.KeyToPath{
+					{
+						Key:  consts.TLSCrtDataName,
+						Path: consts.TLSCrtDataName,
 					},
-					DefaultMode: new(int32(0o640)),
+					{
+						Key:  consts.TLSKeyDataName,
+						Path: consts.TLSKeyDataName,
+					},
 				},
+				DefaultMode: new(int32(0o640)),
 			},
 		}
 
@@ -244,16 +241,12 @@ func TestVolumesWithTelemetryIngestAndExtensionsAndInClusterActiveGate(t *testin
 func trustedCAsVolume(dk *dynakube.DynaKube) corev1.Volume {
 	return corev1.Volume{
 		Name: caCertsVolumeName,
-		VolumeSource: corev1.VolumeSource{
-			ConfigMap: &corev1.ConfigMapVolumeSource{
-				LocalObjectReference: corev1.LocalObjectReference{
-					Name: dk.Spec.TrustedCAs,
-				},
-				Items: []corev1.KeyToPath{
-					{
-						Key:  "certs",
-						Path: otelcconsts.TrustedCAsFile,
-					},
+		ConfigMap: &corev1.ConfigMapVolumeSource{
+			Name: dk.Spec.TrustedCAs,
+			Items: []corev1.KeyToPath{
+				{
+					Key:  "certs",
+					Path: otelcconsts.TrustedCAsFile,
 				},
 			},
 		},
@@ -271,17 +264,15 @@ func trustedCAsVolumeMount() corev1.VolumeMount {
 func agCertVolume(dk *dynakube.DynaKube) corev1.Volume {
 	return corev1.Volume{
 		Name: agCertVolumeName,
-		VolumeSource: corev1.VolumeSource{
-			Secret: &corev1.SecretVolumeSource{
-				SecretName: dk.ActiveGate().GetTLSSecretName(),
-				Items: []corev1.KeyToPath{
-					{
-						Key:  consts.TLSServerCrtDataName,
-						Path: otelcconsts.ActiveGateCertFile,
-					},
+		Secret: &corev1.SecretVolumeSource{
+			SecretName: dk.ActiveGate().GetTLSSecretName(),
+			Items: []corev1.KeyToPath{
+				{
+					Key:  consts.TLSServerCrtDataName,
+					Path: otelcconsts.ActiveGateCertFile,
 				},
-				DefaultMode: new(int32(0o640)),
 			},
+			DefaultMode: new(int32(0o640)),
 		},
 	}
 }
@@ -296,11 +287,9 @@ func agCertVolumeMount() corev1.VolumeMount {
 
 func getTestDynakubeWithTelemetryIngest() *dynakube.DynaKube {
 	return &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        testDynakubeName,
-			Namespace:   testNamespaceName,
-			Annotations: map[string]string{},
-		},
+		Name:        testDynakubeName,
+		Namespace:   testNamespaceName,
+		Annotations: map[string]string{},
 		Spec: dynakube.DynaKubeSpec{
 			TelemetryIngest: &telemetryingest.Spec{},
 			Templates: dynakube.TemplatesSpec{
@@ -317,11 +306,9 @@ func getTestDynakubeWithTelemetryIngest() *dynakube.DynaKube {
 
 func getTestDynakubeWithExtensionsAndTelemetryIngest() *dynakube.DynaKube {
 	return &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        testDynakubeName,
-			Namespace:   testNamespaceName,
-			Annotations: map[string]string{},
-		},
+		Name:        testDynakubeName,
+		Namespace:   testNamespaceName,
+		Annotations: map[string]string{},
 		Spec: dynakube.DynaKubeSpec{
 			Extensions:      &extensions.Spec{Databases: []extensions.DatabaseSpec{{ID: "test"}}},
 			TelemetryIngest: &telemetryingest.Spec{},

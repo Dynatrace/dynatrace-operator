@@ -5,7 +5,6 @@ package otelcgen
 
 import (
 	"go.opentelemetry.io/collector/component"
-	"go.opentelemetry.io/collector/config/configtls"
 )
 
 var (
@@ -19,9 +18,7 @@ func (c *Config) buildExporters() map[component.ID]component.Config {
 
 	if c.caFile != "" {
 		serverConfig.TLSSetting = &TLSSetting{
-			Config: configtls.Config{
-				CAFile: c.caFile,
-			},
+			CAFile: c.caFile,
 		}
 		if c.includeSystemCACertsPool {
 			serverConfig.TLSSetting.IncludeSystemCACertsPool = c.includeSystemCACertsPool

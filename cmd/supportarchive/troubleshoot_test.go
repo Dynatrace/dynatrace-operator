@@ -17,7 +17,6 @@ import (
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
 )
 
@@ -31,13 +30,9 @@ func TestTroubleshootCollector(t *testing.T) {
 			ObjectMeta: objectMeta("deployment1"),
 		},
 		&corev1.Namespace{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "core/v1",
-				Kind:       "Namespace",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "random",
-			},
+			APIVersion: "core/v1",
+			Kind:       "Namespace",
+			Name:       "random",
 		},
 		&dynakube.DynaKube{
 			TypeMeta:   typeMeta("DynaKube"),

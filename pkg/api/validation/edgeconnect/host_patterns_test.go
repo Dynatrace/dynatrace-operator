@@ -7,16 +7,13 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func Test_checkHostPatternsValue(t *testing.T) {
 	t.Run("hostPatters optional - no error when provisioner false", func(t *testing.T) {
 		ec := &edgeconnect.EdgeConnect{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-			},
+			Name:      testName,
+			Namespace: testNamespace,
 			Spec: edgeconnect.EdgeConnectSpec{
 				APIServer: "tenantid-test.dev.apps.dynatracelabs.com",
 				OAuth: edgeconnect.OAuthSpec{

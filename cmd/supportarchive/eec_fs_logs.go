@@ -45,10 +45,8 @@ var (
 
 func newFsLogCollector(context context.Context, config *rest.Config, command Executor, log logd.Logger, supportArchive archiver, pods clientgocorev1.PodInterface, appName string, collectManagedLogs bool) collector { //nolint:revive
 	return fsLogCollector{
-		collectorCommon: collectorCommon{
-			log:            log,
-			supportArchive: supportArchive,
-		},
+		log:                   log,
+		supportArchive:        supportArchive,
 		ctx:                   context,
 		config:                config,
 		pods:                  pods,
@@ -71,9 +69,7 @@ func (flc fsLogCollector) getControllerPodList() (*corev1.PodList, error) {
 	}
 
 	listOptions := metav1.ListOptions{
-		TypeMeta: metav1.TypeMeta{
-			Kind: "pod",
-		},
+		Kind:          "pod",
 		LabelSelector: apilabels.Set(ls.MatchLabels).String(),
 	}
 

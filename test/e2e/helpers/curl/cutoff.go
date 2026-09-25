@@ -48,10 +48,8 @@ func DeleteCutOffCurlPod(podName, namespaceName, curlTarget string) features.Fun
 
 func buildCutOffCurlPod(podName, namespaceName, curlTarget string) *corev1.Pod {
 	probe := corev1.Probe{
-		ProbeHandler: corev1.ProbeHandler{
-			Exec: &corev1.ExecAction{
-				Command: []string{"curl", curlTarget, "--insecure", "--verbose", "--head", "--fail"},
-			},
+		Exec: &corev1.ExecAction{
+			Command: []string{"curl", curlTarget, "--insecure", "--verbose", "--head", "--fail"},
 		},
 		InitialDelaySeconds: 30,
 		PeriodSeconds:       30,

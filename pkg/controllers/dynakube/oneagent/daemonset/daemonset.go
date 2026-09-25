@@ -189,22 +189,18 @@ func (b *builder) BuildDaemonSet(ctx context.Context) (*appsv1.DaemonSet, error)
 	templateAnnotations = k8ssecuritycontext.RemoveAppArmorAnnotation(maputils.MergeMap(templateAnnotations, b.hostInjectSpec.Annotations), containerName, initContainerName)
 
 	result := &appsv1.DaemonSet{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        dk.Name,
-			Namespace:   dk.Namespace,
-			Labels:      labels,
-			Annotations: map[string]string{},
-		},
+		Name:        dk.Name,
+		Namespace:   dk.Namespace,
+		Labels:      labels,
+		Annotations: map[string]string{},
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
 				MatchLabels: appLabels.BuildMatchLabels(),
 			},
 			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels:      labels,
-					Annotations: templateAnnotations,
-				},
-				Spec: podSpec,
+				Labels:      labels,
+				Annotations: templateAnnotations,
+				Spec:        podSpec,
 			},
 			UpdateStrategy: b.updateStrategy(),
 		},
@@ -434,10 +430,8 @@ func defaultSecurityContextCapabilities() *corev1.Capabilities {
 // getDefaultProbeFromStatus uses the docker HEALTHCHECK from status
 func (b *builder) getDefaultProbeFromStatus() *corev1.Probe {
 	return &corev1.Probe{
-		ProbeHandler: corev1.ProbeHandler{
-			Exec: &corev1.ExecAction{
-				Command: b.dk.Status.OneAgent.Healthcheck.Test,
-			},
+		Exec: &corev1.ExecAction{
+			Command: b.dk.Status.OneAgent.Healthcheck.Test,
 		},
 		InitialDelaySeconds: int32(b.dk.Status.OneAgent.Healthcheck.StartPeriod.Seconds()),
 		PeriodSeconds:       int32(b.dk.Status.OneAgent.Healthcheck.Interval.Seconds()),

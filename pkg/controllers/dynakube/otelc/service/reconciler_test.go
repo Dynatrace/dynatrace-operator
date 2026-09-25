@@ -28,10 +28,8 @@ const (
 
 func getTestDynakube(telemetryIngestSpec *telemetryingest.Spec) *dynakube.DynaKube {
 	return &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      testDynakubeName,
-			Namespace: testNamespaceName,
-		},
+		Name:      testDynakubeName,
+		Namespace: testNamespaceName,
 		Spec: dynakube.DynaKubeSpec{
 			TelemetryIngest: telemetryIngestSpec,
 		},
@@ -133,13 +131,11 @@ func TestService(t *testing.T) {
 
 		mockK8sClient := fake.NewFakeClient()
 		err := mockK8sClient.Create(t.Context(), &corev1.Service{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      dk.TelemetryIngest().GetDefaultServiceName(),
-				Namespace: dk.Namespace,
-				Labels: map[string]string{
-					k8slabel.AppComponentLabel: k8slabel.OTelColComponentLabel,
-					k8slabel.AppCreatedByLabel: dk.Name,
-				},
+			Name:      dk.TelemetryIngest().GetDefaultServiceName(),
+			Namespace: dk.Namespace,
+			Labels: map[string]string{
+				k8slabel.AppComponentLabel: k8slabel.OTelColComponentLabel,
+				k8slabel.AppCreatedByLabel: dk.Name,
 			},
 		})
 		require.NoError(t, err)
@@ -164,13 +160,11 @@ func TestService(t *testing.T) {
 
 		mockK8sClient := fake.NewFakeClient()
 		err := mockK8sClient.Create(t.Context(), &corev1.Service{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testServiceName,
-				Namespace: dk.Namespace,
-				Labels: map[string]string{
-					k8slabel.AppComponentLabel: k8slabel.OTelColComponentLabel,
-					k8slabel.AppCreatedByLabel: dk.Name,
-				},
+			Name:      testServiceName,
+			Namespace: dk.Namespace,
+			Labels: map[string]string{
+				k8slabel.AppComponentLabel: k8slabel.OTelColComponentLabel,
+				k8slabel.AppCreatedByLabel: dk.Name,
 			},
 		})
 		require.NoError(t, err)

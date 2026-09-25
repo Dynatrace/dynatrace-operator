@@ -36,9 +36,7 @@ type Option func(namespace *corev1.Namespace)
 
 func New(name string, opts ...Option) *corev1.Namespace {
 	namespace := &corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
-		},
+		Name: name,
 	}
 	for _, opt := range opts {
 		opt(namespace)
@@ -71,9 +69,7 @@ func WithAnnotation(annotations map[string]string) Option {
 func Delete(namespaceName string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		namespace := corev1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: namespaceName,
-			},
+			Name: namespaceName,
 		}
 
 		err := envConfig.Client().Resources().Delete(ctx, &namespace, func(options *metav1.DeleteOptions) {

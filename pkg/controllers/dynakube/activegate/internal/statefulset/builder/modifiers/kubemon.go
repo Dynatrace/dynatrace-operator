@@ -77,10 +77,8 @@ func (mod KubernetesMonitoringModifier) getInitContainers() []corev1.Container {
 func (mod KubernetesMonitoringModifier) getVolumes() []corev1.Volume {
 	return slices.Concat([]corev1.Volume{
 		{
-			Name: consts.TrustStoreVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{},
-			},
+			Name:     consts.TrustStoreVolumeName,
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
 		},
 	}, mod.getReadOnlyInitVolumes())
 }
@@ -88,8 +86,8 @@ func (mod KubernetesMonitoringModifier) getVolumes() []corev1.Volume {
 func (mod KubernetesMonitoringModifier) getReadOnlyInitVolumes() []corev1.Volume {
 	return []corev1.Volume{
 		{
-			Name:         consts.InitCertLoaderWorkDirVolumeName,
-			VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}},
+			Name:     consts.InitCertLoaderWorkDirVolumeName,
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
 		},
 	}
 }

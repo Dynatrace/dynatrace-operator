@@ -14,7 +14,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -47,9 +46,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, custo
 
 		err := r.secrets.Delete(ctx,
 			&corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      r.buildCustomPropertiesName(dk.Name, customPropertiesOwnerName),
-					Namespace: dk.Namespace}})
+				Name:      r.buildCustomPropertiesName(dk.Name, customPropertiesOwnerName),
+				Namespace: dk.Namespace})
 		if err != nil {
 			log.Error(err, "failed to clean-up custom properties secret")
 		}

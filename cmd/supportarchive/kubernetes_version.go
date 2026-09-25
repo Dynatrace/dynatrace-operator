@@ -20,10 +20,8 @@ type kubernetesVersionCollector struct {
 
 func newKubernetesVersionCollector(log logd.Logger, supportArchive archiver, discoveryClient discovery.DiscoveryInterface) collector {
 	return kubernetesVersionCollector{
-		collectorCommon: collectorCommon{
-			log:            log,
-			supportArchive: supportArchive,
-		},
+		log:             log,
+		supportArchive:  supportArchive,
 		discoveryClient: discoveryClient,
 	}
 }

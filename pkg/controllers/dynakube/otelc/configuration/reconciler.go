@@ -17,7 +17,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sconfigmap"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -45,7 +44,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error
 
 		query := k8sconfigmap.Query(r.client, r.apiReader)
 
-		err := query.Delete(ctx, &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: GetConfigMapName(dk.Name), Namespace: dk.Namespace}})
+		err := query.Delete(ctx, &corev1.ConfigMap{Name: GetConfigMapName(dk.Name), Namespace: dk.Namespace})
 		if err != nil {
 			log.Error(err, "failed to clean-up OTELC configuration configmap")
 		}

@@ -17,7 +17,6 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
@@ -181,12 +180,10 @@ func CreateTenantSecret(tokens Tokens, name, namespace string) features.Func {
 		}
 
 		defaultSecret := corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      name,
-				Namespace: namespace,
-				Labels: map[string]string{
-					"type": "tenant",
-				},
+			Name:      name,
+			Namespace: namespace,
+			Labels: map[string]string{
+				"type": "tenant",
 			},
 			Data: map[string][]byte{
 				"apiToken": []byte(tokens.APIToken),
@@ -214,10 +211,8 @@ func CreateTenantSecret(tokens Tokens, name, namespace string) features.Func {
 func DeleteTenantSecret(secretName, secretNamespace string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		secret := corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      secretName,
-				Namespace: secretNamespace,
-			},
+			Name:      secretName,
+			Namespace: secretNamespace,
 		}
 		err := envConfig.Client().Resources().Delete(ctx, &secret)
 		if err != nil {
@@ -231,13 +226,11 @@ func DeleteTenantSecret(secretName, secretNamespace string) features.Func {
 	}
 }
 
-func CreateClientSecret(secretConfig EdgeConnectSecret, name, namespace string) features.Func {
+func CreateClientSecret(secretConfig *EdgeConnectSecret, name, namespace string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		defaultSecret := corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      name,
-				Namespace: namespace,
-			},
+			Name:      name,
+			Namespace: namespace,
 			Data: map[string][]byte{
 				"oauth-client-id":     []byte(secretConfig.OauthClientID),
 				"oauth-client-secret": []byte(secretConfig.OauthClientSecret),

@@ -20,7 +20,7 @@ import (
 
 func createBaseDynakube(name string, appInjection bool, metadataEnrichment bool) *dynakube.DynaKube {
 	dk := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: "dynatrace"},
+		Name: name, Namespace: "dynatrace",
 		Spec: dynakube.DynaKubeSpec{
 			MetadataEnrichment: metadataenrichment.Spec{
 				Enabled: &metadataEnrichment,
@@ -70,7 +70,7 @@ func createDynakubeWithMetadataAndAppInjection(name string, selector metav1.Labe
 
 func createDynakubeWithOTLP(name string, selector metav1.LabelSelector) *dynakube.DynaKube {
 	dk := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: "dynatrace"},
+		Name: name, Namespace: "dynatrace",
 		Spec: dynakube.DynaKubeSpec{
 			OTLPExporterConfiguration: &otlp.ExporterConfigurationSpec{
 				Signals: otlp.SignalConfiguration{
@@ -86,10 +86,8 @@ func createDynakubeWithOTLP(name string, selector metav1.LabelSelector) *dynakub
 
 func createNamespace(name string, labels map[string]string) *corev1.Namespace {
 	return &corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:   name,
-			Labels: labels,
-		},
+		Name:   name,
+		Labels: labels,
 	}
 }
 

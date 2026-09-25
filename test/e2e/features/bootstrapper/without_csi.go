@@ -30,7 +30,7 @@ func NoCSI(t *testing.T) features.Feature {
 	secretConfig := tenant.GetSingleTenantSecret(t)
 	dk := dynakubeComponents.New(
 		dynakubeComponents.WithAPIURL(secretConfig.APIURL),
-		dynakubeComponents.WithApplicationMonitoringSpec(&oneagent.ApplicationMonitoringSpec{AppInjectionSpec: oneagent.AppInjectionSpec{CodeModulesImage: registry.GetLatestCodeModulesImageTagURI(t)}}),
+		dynakubeComponents.WithApplicationMonitoringSpec(&oneagent.ApplicationMonitoringSpec{CodeModulesImage: registry.GetLatestCodeModulesImageTagURI(t)}),
 		dynakubeComponents.WithAnnotations(map[string]string{
 			exp.OANodeImagePullTechnologiesKey: "php",
 		}),
@@ -130,24 +130,18 @@ func checkInjection(deployment *sample.App) features.Func {
 
 			expectedVolume := corev1.Volume{
 				Name: volumes.InputVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					Projected: &corev1.ProjectedVolumeSource{
-						Sources: []corev1.VolumeProjection{
-							{
-								Secret: &corev1.SecretProjection{
-									LocalObjectReference: corev1.LocalObjectReference{
-										Name: consts.BootstrapperInitSecretName,
-									},
-									Optional: new(false),
-								},
+				Projected: &corev1.ProjectedVolumeSource{
+					Sources: []corev1.VolumeProjection{
+						{
+							Secret: &corev1.SecretProjection{
+								Name:     consts.BootstrapperInitSecretName,
+								Optional: new(false),
 							},
-							{
-								Secret: &corev1.SecretProjection{
-									LocalObjectReference: corev1.LocalObjectReference{
-										Name: consts.BootstrapperInitCertsSecretName,
-									},
-									Optional: new(true),
-								},
+						},
+						{
+							Secret: &corev1.SecretProjection{
+								Name:     consts.BootstrapperInitCertsSecretName,
+								Optional: new(true),
 							},
 						},
 					},

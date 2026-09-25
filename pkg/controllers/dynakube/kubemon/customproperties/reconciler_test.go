@@ -17,7 +17,6 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
@@ -227,10 +226,8 @@ func TestReconcileCleanupFailures(t *testing.T) {
 
 func newTestDynaKube(mutators ...func(*dynakube.DynaKube)) *dynakube.DynaKube {
 	dk := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      testDynakubeName,
-			Namespace: testNamespace,
-		},
+		Name:      testDynakubeName,
+		Namespace: testNamespace,
 		Spec: dynakube.DynaKubeSpec{
 			APIURL:               "https://tenant.live.dynatrace.com/api",
 			KubernetesMonitoring: &kubemonapi.Spec{},
@@ -258,21 +255,17 @@ func withValueFrom(name string) func(*dynakube.DynaKube) {
 
 func newReferencedSecret(v string) *corev1.Secret {
 	return &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      testReferencedSecret,
-			Namespace: testNamespace,
-		},
-		Data: map[string][]byte{customproperties.DataKey: []byte(v)},
+		Name:      testReferencedSecret,
+		Namespace: testNamespace,
+		Data:      map[string][]byte{customproperties.DataKey: []byte(v)},
 	}
 }
 
 func newExistingCustomPropertiesSecret(dk *dynakube.DynaKube, v string) *corev1.Secret {
 	return &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      dk.KubernetesMonitoring().GetCustomPropertiesSecretName(),
-			Namespace: dk.Namespace,
-		},
-		Data: map[string][]byte{customproperties.DataKey: []byte(v)},
+		Name:      dk.KubernetesMonitoring().GetCustomPropertiesSecretName(),
+		Namespace: dk.Namespace,
+		Data:      map[string][]byte{customproperties.DataKey: []byte(v)},
 	}
 }
 

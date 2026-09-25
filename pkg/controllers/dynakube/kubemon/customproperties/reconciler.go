@@ -12,7 +12,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -107,8 +106,7 @@ func (r *Reconciler) ensureSecret(ctx context.Context, dk *dynakube.DynaKube, da
 }
 
 func (r *Reconciler) cleanup(ctx context.Context, dk *dynakube.DynaKube) error {
-	return r.secrets.Delete(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{
+	return r.secrets.Delete(ctx, &corev1.Secret{
 		Name:      dk.KubernetesMonitoring().GetCustomPropertiesSecretName(),
-		Namespace: dk.Namespace,
-	}})
+		Namespace: dk.Namespace})
 }

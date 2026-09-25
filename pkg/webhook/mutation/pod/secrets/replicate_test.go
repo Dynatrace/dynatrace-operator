@@ -16,7 +16,6 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
@@ -32,7 +31,7 @@ func TestEnsureReplicated(t *testing.T) {
 
 	t.Run("target already exists -> no replication", func(t *testing.T) {
 		clt := fake.NewClient(
-			&corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: targetSecret, Namespace: testNamespace}, Data: map[string][]byte{"foo": []byte("bar")}},
+			&corev1.Secret{Name: targetSecret, Namespace: testNamespace, Data: map[string][]byte{"foo": []byte("bar")}},
 		)
 
 		req := newRequest(t)
@@ -47,7 +46,7 @@ func TestEnsureReplicated(t *testing.T) {
 
 	t.Run("target missing + source present -> replication creates target", func(t *testing.T) {
 		clt := fake.NewClient(
-			&corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: sourceSecret, Namespace: testNamespace}, Data: map[string][]byte{"foo": []byte("bar")}},
+			&corev1.Secret{Name: sourceSecret, Namespace: testNamespace, Data: map[string][]byte{"foo": []byte("bar")}},
 		)
 
 		req := newRequest(t)
@@ -88,9 +87,9 @@ func TestEnsureReplicated(t *testing.T) {
 func newRequest(t *testing.T) *mutator.MutationRequest {
 	t.Helper()
 
-	pod := &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "pod", Namespace: testNamespace}}
-	ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: testNamespace}}
-	dk := &dynakube.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: "dk", Namespace: testNamespace}}
+	pod := &corev1.Pod{Name: "pod", Namespace: testNamespace}
+	ns := &corev1.Namespace{Name: testNamespace}
+	dk := &dynakube.DynaKube{Name: "dk", Namespace: testNamespace}
 
 	return mutator.NewMutationRequest(t.Context(), ns, nil, pod, dk)
 }

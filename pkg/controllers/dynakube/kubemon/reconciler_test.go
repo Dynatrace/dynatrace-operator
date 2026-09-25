@@ -313,16 +313,12 @@ func TestServiceStatefulSetMatchSelectors(t *testing.T) {
 
 func newTestDynaKube() *dynakube.DynaKube {
 	dk := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-dk",
-			Namespace: "dynatrace",
-		},
+		Name:      "test-dk",
+		Namespace: "dynatrace",
 		Spec: dynakube.DynaKubeSpec{
 			APIURL: "https://tenant.live.dynatrace.com/api",
 			KubernetesMonitoring: &kubemonapi.Spec{
-				StatefulSetProperties: kubemonapi.StatefulSetProperties{
-					Image: "registry.example.com/linux/activegate:1.2.3",
-				},
+				Image: "registry.example.com/linux/activegate:1.2.3",
 			},
 		},
 		Status: dynakube.DynaKubeStatus{
@@ -345,10 +341,8 @@ func newTestDTClient(t *testing.T) *dynatrace.Client {
 
 func newTestTenantSecret(dk *dynakube.DynaKube) *corev1.Secret {
 	return &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      dk.KubernetesMonitoring().GetTenantSecretName(),
-			Namespace: dk.Namespace,
-		},
+		Name:      dk.KubernetesMonitoring().GetTenantSecretName(),
+		Namespace: dk.Namespace,
 		Data: map[string][]byte{
 			connectioninfo.TenantTokenKey: []byte("test-tenant-token"),
 		},
@@ -357,10 +351,8 @@ func newTestTenantSecret(dk *dynakube.DynaKube) *corev1.Secret {
 
 func newTestAuthTokenSecret(dk *dynakube.DynaKube) *corev1.Secret {
 	return &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      dk.KubernetesMonitoring().GetAuthTokenSecretName(),
-			Namespace: dk.Namespace,
-		},
+		Name:      dk.KubernetesMonitoring().GetAuthTokenSecretName(),
+		Namespace: dk.Namespace,
 		Data: map[string][]byte{
 			kubemonauthtoken.SecretKey: []byte("test-auth-token"),
 		},

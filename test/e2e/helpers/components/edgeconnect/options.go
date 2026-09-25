@@ -13,7 +13,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/consts"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/registry"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -29,12 +28,10 @@ type Option func(ec *edgeconnect.EdgeConnect)
 
 func New(opts ...Option) *edgeconnect.EdgeConnect {
 	ec := &edgeconnect.EdgeConnect{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      defaultName,
-			Namespace: defaultNamespace,
-		},
-		Spec:   edgeconnect.EdgeConnectSpec{},
-		Status: edgeconnect.EdgeConnectStatus{},
+		Name:      defaultName,
+		Namespace: defaultNamespace,
+		Spec:      edgeconnect.EdgeConnectSpec{},
+		Status:    edgeconnect.EdgeConnectStatus{},
 	}
 	for _, opt := range opts {
 		opt(ec)
