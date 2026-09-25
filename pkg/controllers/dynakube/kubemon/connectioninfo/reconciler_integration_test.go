@@ -6,10 +6,9 @@ package connectioninfo_test
 import (
 	"context"
 	"fmt"
-	"io"
 	"net/http"
+	"net/http/httptest"
 	"net/url"
-	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -251,7 +250,7 @@ func TestConnectionInfoCache(t *testing.T) {
 	integrationtests.CreateDynakube(t, clt, dk)
 
 	t.Run("uses cached connection info within TTL", func(t *testing.T) {
-		transport := newFakeCITransport(
+		transport := newFakeCITransport(t,
 			kubemonConnectionInfoBody(integrationTenantUUID, integrationTenantToken, integrationEndpoints),
 		)
 		agClient := newKubemonConnectionInfoClient(t, transport, time.Minute)
@@ -264,7 +263,7 @@ func TestConnectionInfoCache(t *testing.T) {
 
 	t.Run("fetches fresh connection info after cache TTL expires", func(t *testing.T) {
 		const shortTTL = 10 * time.Millisecond
-		transport := newFakeCITransport(
+		transport := newFakeCITransport(t,
 			kubemonConnectionInfoBody(integrationTenantUUID, integrationTenantToken, integrationEndpoints),
 			kubemonConnectionInfoBody(integrationTenantUUID, integrationTenantToken, integrationRotatedEndpoints),
 		)
@@ -283,13 +282,24 @@ func TestConnectionInfoCache(t *testing.T) {
 
 // --- Fake transport ----------------------------------------------------------
 
+// fakeCITransport serves preset JSON bodies in sequence from an in-memory httptest server,
+// repeating the last one once the list is exhausted, and counts how many requests got past
+// the response cache.
 type fakeCITransport struct {
+	http.RoundTripper
+
 	calls  atomic.Int64
 	bodies []string
 }
 
-func newFakeCITransport(bodies ...string) *fakeCITransport {
-	return &fakeCITransport{bodies: bodies}
+func newFakeCITransport(t *testing.T, bodies ...string) *fakeCITransport {
+	t.Helper()
+
+	ft := &fakeCITransport{bodies: bodies}
+	srv := httptest.NewTestServer(t, http.HandlerFunc(ft.serve))
+	ft.RoundTripper = srv.Client().Transport
+
+	return ft
 }
 
 func (ft *fakeCITransport) assertCalls(t *testing.T, expected int64, msgAndArgs ...any) {
@@ -297,16 +307,12 @@ func (ft *fakeCITransport) assertCalls(t *testing.T, expected int64, msgAndArgs 
 	assert.Equal(t, expected, ft.calls.Load(), msgAndArgs...)
 }
 
-func (ft *fakeCITransport) RoundTrip(r *http.Request) (*http.Response, error) {
+func (ft *fakeCITransport) serve(w http.ResponseWriter, _ *http.Request) {
 	idx := int(ft.calls.Add(1)) - 1
 	body := ft.bodies[min(idx, len(ft.bodies)-1)]
 
-	return &http.Response{
-		StatusCode: http.StatusOK,
-		Header:     http.Header{"Content-Type": {"application/json"}},
-		Body:       io.NopCloser(strings.NewReader(body)),
-		Request:    r,
-	}, nil
+	w.Header().Set("Content-Type", "application/json")
+	_, _ = w.Write([]byte(body))
 }
 
 // --- Client constructor ------------------------------------------------------

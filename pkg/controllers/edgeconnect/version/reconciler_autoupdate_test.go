@@ -5,10 +5,9 @@ package version
 
 import (
 	"fmt"
-	"io"
 	"net/http"
+	"net/http/httptest"
 	"net/url"
-	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -50,7 +49,7 @@ const (
 func TestAutoUpdateVersionReconciler(t *testing.T) {
 	t.Run("auto update enabled", func(t *testing.T) {
 		t.Run("sets initial status from the fleet management response", func(t *testing.T) {
-			transport := newFakeTransport(containerImagesBody(firstImageURI))
+			transport := newFakeTransport(t, containerImagesBody(firstImageURI))
 			ec := newAutoUpdateEdgeConnect(t, true)
 			now := timeprovider.New().Freeze()
 
@@ -63,7 +62,7 @@ func TestAutoUpdateVersionReconciler(t *testing.T) {
 		})
 
 		t.Run("does not probe again within the threshold", func(t *testing.T) {
-			transport := newFakeTransport(containerImagesBody(firstImageURI), containerImagesBody(updatedImageURI))
+			transport := newFakeTransport(t, containerImagesBody(firstImageURI), containerImagesBody(updatedImageURI))
 			ec := newAutoUpdateEdgeConnect(t, true)
 			now := timeprovider.New().Freeze()
 
@@ -75,7 +74,7 @@ func TestAutoUpdateVersionReconciler(t *testing.T) {
 		})
 
 		t.Run("probes again once the threshold expired", func(t *testing.T) {
-			transport := newFakeTransport(containerImagesBody(firstImageURI), containerImagesBody(updatedImageURI))
+			transport := newFakeTransport(t, containerImagesBody(firstImageURI), containerImagesBody(updatedImageURI))
 			ec := newAutoUpdateEdgeConnect(t, true)
 			now := timeprovider.New().Freeze()
 
@@ -93,7 +92,7 @@ func TestAutoUpdateVersionReconciler(t *testing.T) {
 
 	t.Run("auto update disabled", func(t *testing.T) {
 		t.Run("still resolves the initial image", func(t *testing.T) {
-			transport := newFakeTransport(containerImagesBody(firstImageURI))
+			transport := newFakeTransport(t, containerImagesBody(firstImageURI))
 			ec := newAutoUpdateEdgeConnect(t, false)
 			now := timeprovider.New().Freeze()
 
@@ -104,7 +103,7 @@ func TestAutoUpdateVersionReconciler(t *testing.T) {
 		})
 
 		t.Run("does not probe again once the threshold expired", func(t *testing.T) {
-			transport := newFakeTransport(containerImagesBody(firstImageURI), containerImagesBody(updatedImageURI))
+			transport := newFakeTransport(t, containerImagesBody(firstImageURI), containerImagesBody(updatedImageURI))
 			ec := newAutoUpdateEdgeConnect(t, false)
 			now := timeprovider.New().Freeze()
 
@@ -122,7 +121,7 @@ func TestAutoUpdateVersionReconciler(t *testing.T) {
 	// could never move an EdgeConnect to or away from their own registry.
 	t.Run("publicRegistryOverride without auto update", func(t *testing.T) {
 		t.Run("is passed to fleet management as a query parameter", func(t *testing.T) {
-			transport := newFakeTransport(containerImagesBody(overrideImageURI))
+			transport := newFakeTransport(t, containerImagesBody(overrideImageURI))
 			ec := newAutoUpdateEdgeConnect(t, false)
 			ec.Spec.PublicRegistryOverride = overrideRegistry
 			now := timeprovider.New().Freeze()
@@ -135,7 +134,7 @@ func TestAutoUpdateVersionReconciler(t *testing.T) {
 		})
 
 		t.Run("adding it probes again", func(t *testing.T) {
-			transport := newFakeTransport(containerImagesBody(firstImageURI), containerImagesBody(overrideImageURI))
+			transport := newFakeTransport(t, containerImagesBody(firstImageURI), containerImagesBody(overrideImageURI))
 			ec := newAutoUpdateEdgeConnect(t, false)
 			now := timeprovider.New().Freeze()
 
@@ -151,7 +150,7 @@ func TestAutoUpdateVersionReconciler(t *testing.T) {
 		})
 
 		t.Run("removing it probes again", func(t *testing.T) {
-			transport := newFakeTransport(containerImagesBody(overrideImageURI), containerImagesBody(firstImageURI))
+			transport := newFakeTransport(t, containerImagesBody(overrideImageURI), containerImagesBody(firstImageURI))
 			ec := newAutoUpdateEdgeConnect(t, false)
 			ec.Spec.PublicRegistryOverride = overrideRegistry
 			now := timeprovider.New().Freeze()
@@ -169,7 +168,7 @@ func TestAutoUpdateVersionReconciler(t *testing.T) {
 		})
 
 		t.Run("switching it to another registry probes again", func(t *testing.T) {
-			transport := newFakeTransport(containerImagesBody(overrideImageURI), containerImagesBody(otherImageURI))
+			transport := newFakeTransport(t, containerImagesBody(overrideImageURI), containerImagesBody(otherImageURI))
 			ec := newAutoUpdateEdgeConnect(t, false)
 			ec.Spec.PublicRegistryOverride = overrideRegistry
 			now := timeprovider.New().Freeze()
@@ -186,7 +185,7 @@ func TestAutoUpdateVersionReconciler(t *testing.T) {
 		})
 
 		t.Run("leaving it unchanged does not probe again", func(t *testing.T) {
-			transport := newFakeTransport(containerImagesBody(overrideImageURI))
+			transport := newFakeTransport(t, containerImagesBody(overrideImageURI))
 			ec := newAutoUpdateEdgeConnect(t, false)
 			ec.Spec.PublicRegistryOverride = overrideRegistry
 			now := timeprovider.New().Freeze()
@@ -201,7 +200,7 @@ func TestAutoUpdateVersionReconciler(t *testing.T) {
 
 	t.Run("fleet management unavailable", func(t *testing.T) {
 		t.Run("falls back to the OCI registry", func(t *testing.T) {
-			transport := newFakeTransport(serverErrorBody())
+			transport := newFakeTransport(t, serverErrorBody())
 			ec := newAutoUpdateEdgeConnect(t, true)
 			now := timeprovider.New().Freeze()
 
@@ -217,7 +216,7 @@ func TestAutoUpdateVersionReconciler(t *testing.T) {
 		})
 
 		t.Run("fails the reconcile when the OCI registry is unavailable too", func(t *testing.T) {
-			transport := newFakeTransport(serverErrorBody())
+			transport := newFakeTransport(t, serverErrorBody())
 			ec := newAutoUpdateEdgeConnect(t, true)
 			now := timeprovider.New().Freeze()
 
@@ -231,7 +230,7 @@ func TestAutoUpdateVersionReconciler(t *testing.T) {
 	})
 
 	t.Run("custom image never contacts fleet management", func(t *testing.T) {
-		transport := newFakeTransport(containerImagesBody(firstImageURI))
+		transport := newFakeTransport(t, containerImagesBody(firstImageURI))
 		ec := newAutoUpdateEdgeConnect(t, true)
 		ec.Spec.ImageRef.Repository = "my.registry.io/custom/edgeconnect"
 		ec.Spec.ImageRef.Tag = "4.5.6"
@@ -290,10 +289,12 @@ func newImageClient(t *testing.T, transport http.RoundTripper) dtimage.Client {
 
 // --- fake transport --------------------------------------------------------
 
-// fakeTransport is an in-process http.RoundTripper that serves preset responses in sequence,
+// fakeTransport serves preset responses in sequence from an in-memory httptest server,
 // repeating the last one once the list is exhausted. It records every request URL so tests can
 // assert on the query parameters the reconciler sent.
 type fakeTransport struct {
+	http.RoundTripper
+
 	mutex     sync.Mutex
 	responses []fakeResponse
 	requests  []*url.URL
@@ -304,26 +305,27 @@ type fakeResponse struct {
 	status int
 }
 
-func newFakeTransport(responses ...fakeResponse) *fakeTransport {
-	return &fakeTransport{responses: responses}
+func newFakeTransport(t *testing.T, responses ...fakeResponse) *fakeTransport {
+	t.Helper()
+
+	ft := &fakeTransport{responses: responses}
+	srv := httptest.NewTestServer(t, http.HandlerFunc(ft.serve))
+	ft.RoundTripper = srv.Client().Transport
+
+	return ft
 }
 
-func (ft *fakeTransport) RoundTrip(r *http.Request) (*http.Response, error) {
+func (ft *fakeTransport) serve(w http.ResponseWriter, r *http.Request) {
 	ft.mutex.Lock()
-	defer ft.mutex.Unlock()
-
 	idx := len(ft.requests)
 	ft.requests = append(ft.requests, r.URL)
-
 	// stay on the last response once the list is exhausted
 	response := ft.responses[min(idx, len(ft.responses)-1)]
+	ft.mutex.Unlock()
 
-	return &http.Response{
-		StatusCode: response.status,
-		Header:     http.Header{"Content-Type": {"application/json"}},
-		Body:       io.NopCloser(strings.NewReader(response.body)),
-		Request:    r,
-	}, nil
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(response.status)
+	_, _ = w.Write([]byte(response.body))
 }
 
 func (ft *fakeTransport) assertCalls(t *testing.T, expected int, msgAndArgs ...any) {
