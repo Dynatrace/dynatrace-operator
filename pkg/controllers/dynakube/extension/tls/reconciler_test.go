@@ -193,16 +193,15 @@ func getTestDynakube() *dynakube.DynaKube {
 
 func mockSelfSignedTLSSecret(t *testing.T, client client.Client, dk *dynakube.DynaKube) client.Client {
 	t.Helper()
-	tlsSecret := getSelfSignedTLSSecret(dk)
 
-	err := client.Create(t.Context(), &tlsSecret)
+	err := client.Create(t.Context(), getSelfSignedTLSSecret(dk))
 	require.NoError(t, err)
 
 	return client
 }
 
-func getSelfSignedTLSSecret(dk *dynakube.DynaKube) corev1.Secret {
-	return corev1.Secret{
+func getSelfSignedTLSSecret(dk *dynakube.DynaKube) *corev1.Secret {
+	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      dk.Extensions().GetTLSSecretName(),
 			Namespace: dk.Namespace,

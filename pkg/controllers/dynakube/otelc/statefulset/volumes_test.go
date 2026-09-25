@@ -29,7 +29,7 @@ func TestVolumes(t *testing.T) {
 		dataIngestToken := getTokens(dk.Name, dk.Namespace)
 		configMap := getConfigConfigMap(dk.Name, dk.Namespace)
 
-		statefulSet := getStatefulset(t, dk, &tlsSecret, &dataIngestToken, &configMap)
+		statefulSet := getStatefulset(t, dk, tlsSecret, dataIngestToken, configMap)
 
 		expectedVolume := corev1.Volume{
 			Name: customTLSCertVolumeName,
@@ -68,7 +68,7 @@ func TestVolumesWithTelemetryIngestAndRemoteActiveGate(t *testing.T) {
 		dk := getTestDynakubeWithTelemetryIngest()
 		tokensSecret := getTokens(dk.Name, dk.Namespace)
 		configMap := getConfigConfigMap(dk.Name, dk.Namespace)
-		statefulSet := getStatefulset(t, dk, &tokensSecret, &configMap)
+		statefulSet := getStatefulset(t, dk, tokensSecret, configMap)
 
 		assert.NotContains(t, statefulSet.Spec.Template.Spec.Volumes, trustedCAsVolume(dk))
 	})
@@ -76,7 +76,7 @@ func TestVolumesWithTelemetryIngestAndRemoteActiveGate(t *testing.T) {
 		dk := getTestDynakubeWithTelemetryIngest()
 		tokensSecret := getTokens(dk.Name, dk.Namespace)
 		configMap := getConfigConfigMap(dk.Name, dk.Namespace)
-		statefulSet := getStatefulset(t, dk, &tokensSecret, &configMap)
+		statefulSet := getStatefulset(t, dk, tokensSecret, configMap)
 
 		assert.NotContains(t, statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts, trustedCAsVolumeMount())
 	})
@@ -86,7 +86,7 @@ func TestVolumesWithTelemetryIngestAndRemoteActiveGate(t *testing.T) {
 		dk.Spec.TrustedCAs = "test-trusted-cas"
 		tokensSecret := getTokens(dk.Name, dk.Namespace)
 		configMap := getConfigConfigMap(dk.Name, dk.Namespace)
-		statefulSet := getStatefulset(t, dk, &tokensSecret, &configMap)
+		statefulSet := getStatefulset(t, dk, tokensSecret, configMap)
 
 		assert.Contains(t, statefulSet.Spec.Template.Spec.Volumes, trustedCAsVolume(dk))
 	})
@@ -95,7 +95,7 @@ func TestVolumesWithTelemetryIngestAndRemoteActiveGate(t *testing.T) {
 		dk.Spec.TrustedCAs = "test-trusted-cas"
 		tokensSecret := getTokens(dk.Name, dk.Namespace)
 		configMap := getConfigConfigMap(dk.Name, dk.Namespace)
-		statefulSet := getStatefulset(t, dk, &tokensSecret, &configMap)
+		statefulSet := getStatefulset(t, dk, tokensSecret, configMap)
 
 		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts, trustedCAsVolumeMount())
 	})
@@ -112,7 +112,7 @@ func TestVolumesWithTelemetryIngestAndInClusterActiveGate(t *testing.T) {
 		}
 		tokensSecret := getTokens(dk.Name, dk.Namespace)
 		configMap := getConfigConfigMap(dk.Name, dk.Namespace)
-		statefulSet := getStatefulset(t, dk, &tokensSecret, &configMap)
+		statefulSet := getStatefulset(t, dk, tokensSecret, configMap)
 
 		assert.NotContains(t, statefulSet.Spec.Template.Spec.Volumes, trustedCAsVolume(dk))
 
@@ -128,7 +128,7 @@ func TestVolumesWithTelemetryIngestAndInClusterActiveGate(t *testing.T) {
 		}
 		tokensSecret := getTokens(dk.Name, dk.Namespace)
 		configMap := getConfigConfigMap(dk.Name, dk.Namespace)
-		statefulSet := getStatefulset(t, dk, &tokensSecret, &configMap)
+		statefulSet := getStatefulset(t, dk, tokensSecret, configMap)
 
 		assert.NotContains(t, statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts, trustedCAsVolumeMount())
 
@@ -146,7 +146,7 @@ func TestVolumesWithTelemetryIngestAndInClusterActiveGate(t *testing.T) {
 		dk.Spec.TrustedCAs = "test-trusted-cas"
 		tokensSecret := getTokens(dk.Name, dk.Namespace)
 		configMap := getConfigConfigMap(dk.Name, dk.Namespace)
-		statefulSet := getStatefulset(t, dk, &tokensSecret, &configMap)
+		statefulSet := getStatefulset(t, dk, tokensSecret, configMap)
 
 		assert.NotContains(t, statefulSet.Spec.Template.Spec.Volumes, trustedCAsVolume(dk))
 
@@ -163,7 +163,7 @@ func TestVolumesWithTelemetryIngestAndInClusterActiveGate(t *testing.T) {
 		dk.Spec.TrustedCAs = "test-trusted-cas"
 		tokensSecret := getTokens(dk.Name, dk.Namespace)
 		configMap := getConfigConfigMap(dk.Name, dk.Namespace)
-		statefulSet := getStatefulset(t, dk, &tokensSecret, &configMap)
+		statefulSet := getStatefulset(t, dk, tokensSecret, configMap)
 
 		assert.NotContains(t, statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts, trustedCAsVolumeMount())
 
@@ -182,7 +182,7 @@ func TestVolumesWithTelemetryIngestAndExtensionsAndInClusterActiveGate(t *testin
 		}
 		tokensSecret := getTokens(dk.Name, dk.Namespace)
 		configMap := getConfigConfigMap(dk.Name, dk.Namespace)
-		statefulSet := getStatefulset(t, dk, &tokensSecret, &configMap)
+		statefulSet := getStatefulset(t, dk, tokensSecret, configMap)
 
 		assert.NotContains(t, statefulSet.Spec.Template.Spec.Volumes, trustedCAsVolume(dk))
 
@@ -198,7 +198,7 @@ func TestVolumesWithTelemetryIngestAndExtensionsAndInClusterActiveGate(t *testin
 		}
 		tokensSecret := getTokens(dk.Name, dk.Namespace)
 		configMap := getConfigConfigMap(dk.Name, dk.Namespace)
-		statefulSet := getStatefulset(t, dk, &tokensSecret, &configMap)
+		statefulSet := getStatefulset(t, dk, tokensSecret, configMap)
 
 		assert.NotContains(t, statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts, trustedCAsVolumeMount())
 
@@ -216,7 +216,7 @@ func TestVolumesWithTelemetryIngestAndExtensionsAndInClusterActiveGate(t *testin
 		dk.Spec.TrustedCAs = "test-trusted-cas"
 		tokensSecret := getTokens(dk.Name, dk.Namespace)
 		configMap := getConfigConfigMap(dk.Name, dk.Namespace)
-		statefulSet := getStatefulset(t, dk, &tokensSecret, &configMap)
+		statefulSet := getStatefulset(t, dk, tokensSecret, configMap)
 
 		assert.NotContains(t, statefulSet.Spec.Template.Spec.Volumes, trustedCAsVolume(dk))
 
@@ -233,7 +233,7 @@ func TestVolumesWithTelemetryIngestAndExtensionsAndInClusterActiveGate(t *testin
 		dk.Spec.TrustedCAs = "test-trusted-cas"
 		tokensSecret := getTokens(dk.Name, dk.Namespace)
 		configMap := getConfigConfigMap(dk.Name, dk.Namespace)
-		statefulSet := getStatefulset(t, dk, &tokensSecret, &configMap)
+		statefulSet := getStatefulset(t, dk, tokensSecret, configMap)
 
 		assert.NotContains(t, statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts, trustedCAsVolumeMount())
 

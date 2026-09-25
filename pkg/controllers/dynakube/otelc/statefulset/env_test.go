@@ -286,7 +286,7 @@ func getWorkload(t *testing.T, dk *dynakube.DynaKube) *appsv1.StatefulSet {
 	dataIngestToken := getTokens(dk.Name, dk.Namespace)
 	configMap := getConfigConfigMap(dk.Name, dk.Namespace)
 
-	return getStatefulset(t, dk, &dataIngestToken, &configMap)
+	return getStatefulset(t, dk, dataIngestToken, configMap)
 }
 
 func getProxyTestActiveGate() *activegate.Spec {

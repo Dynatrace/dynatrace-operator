@@ -103,14 +103,14 @@ func mockTLSSecret(t *testing.T, client client.Client, dk *dynakube.DynaKube) cl
 	t.Helper()
 	tlsSecret := getTLSSecret(dk.Extensions().GetTLSSecretName(), dk.Namespace, "super-cert", "super-key")
 
-	err := client.Create(t.Context(), &tlsSecret)
+	err := client.Create(t.Context(), tlsSecret)
 	require.NoError(t, err)
 
 	return client
 }
 
-func getTLSSecret(name string, namespace string, crt string, key string) corev1.Secret {
-	return corev1.Secret{
+func getTLSSecret(name string, namespace string, crt string, key string) *corev1.Secret {
+	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
@@ -237,7 +237,7 @@ func TestSecretHashAnnotation(t *testing.T) {
 
 		// then update the TLS Secret and call reconcile again
 		updatedTLSSecret := getTLSSecret(dk.Extensions().GetTLSSecretName(), dk.Namespace, "updated-cert", "updated-key")
-		err = mockK8sClient.Update(t.Context(), &updatedTLSSecret)
+		err = mockK8sClient.Update(t.Context(), updatedTLSSecret)
 		require.NoError(t, err)
 
 		err = reconciler.Reconcile(t.Context(), nil, dk)
@@ -1919,7 +1919,7 @@ func TestAppArmorAnnotationHandling(t *testing.T) {
 		clt := fake.NewClient(dk)
 
 		tlsSecret := getTLSSecret(dk.Extensions().GetTLSSecretName(), dk.Namespace, "super-cert", "super-key")
-		require.NoError(t, clt.Create(t.Context(), &tlsSecret))
+		require.NoError(t, clt.Create(t.Context(), tlsSecret))
 
 		require.NoError(t, NewReconciler(clt, clt).Reconcile(t.Context(), nil, dk))
 		sts := &appsv1.StatefulSet{}
