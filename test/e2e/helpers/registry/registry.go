@@ -31,8 +31,6 @@ const (
 	agPublicECR = "public.ecr.aws/dynatrace/dynatrace-activegate"
 	oaPublicECR = "public.ecr.aws/dynatrace/dynatrace-oneagent"
 	cmPublicECR = "public.ecr.aws/dynatrace/dynatrace-codemodules"
-
-	cmPreviousImageDefault = "public.ecr.aws/dynatrace/dynatrace-codemodules:1.337.60.20260603-063549"
 )
 
 const (
@@ -60,16 +58,16 @@ var (
 func GetLatestImageTagURI(t *testing.T, repoURI, envVar string) string {
 	t.Helper()
 
-	return getLatestImageURI(t, repoURI, envVar, false, false)
+	return getLatestTagImageURI(t, repoURI, 0, envVar, false)
 }
 
 func GetLatestImageDigestURI(t *testing.T, repoURI, envVar string) string {
 	t.Helper()
 
-	return getLatestImageURI(t, repoURI, envVar, false, true)
+	return getLatestDigestImageURI(t, repoURI, envVar, false)
 }
 
-func getLatestImageURI(t *testing.T, repoURI, envVar string, fips, digest bool) string {
+func getLatestTagImageURI(t *testing.T, repoURI string, offset int, envVar string, fips bool) string {
 	t.Helper()
 
 	if val := os.Getenv(envVar); val != "" {
@@ -78,26 +76,36 @@ func getLatestImageURI(t *testing.T, repoURI, envVar string, fips, digest bool) 
 		return val
 	}
 
-	tagURI := resolveLatestTagURI(t, repoURI, fips)
-	if !digest {
-		return tagURI
+	return resolveLatestTagURI(t, repoURI, offset, fips)
+}
+
+func getLatestDigestImageURI(t *testing.T, repoURI, envVar string, fips bool) string {
+	t.Helper()
+
+	if val := os.Getenv(envVar); val != "" {
+		t.Logf("using image from env %s: %s", envVar, val)
+
+		return val
 	}
+
+	tagURI := resolveLatestTagURI(t, repoURI, 0, fips)
 
 	return resolveLatestDigestURI(t, repoURI, tagURI)
 }
 
-func resolveLatestTagURI(t *testing.T, repoURI string, fips bool) string {
+func resolveLatestTagURI(t *testing.T, repoURI string, offset int, fips bool) string {
 	t.Helper()
 
-	if uri, ok := latestImageURIs[repoURI]; ok {
-		t.Logf("using cached resolved newest image: %s", uri)
+	cacheKey := fmt.Sprintf("%s@%d", repoURI, offset)
+	if uri, ok := latestImageURIs[cacheKey]; ok {
+		t.Logf("using cached resolved image: %s", uri)
 
 		return uri
 	}
 
-	uri := fetchLatestURIFromRegistry(t, repoURI, fips)
-	latestImageURIs[repoURI] = uri
-	t.Logf("resolved newest image: %s", uri)
+	uri := fetchLatestURIFromRegistry(t, repoURI, offset, fips)
+	latestImageURIs[cacheKey] = uri
+	t.Logf("resolved image: %s", uri)
 
 	return uri
 }
@@ -140,51 +148,43 @@ func resolveLatestDigestURI(t *testing.T, repoURI, tagURI string) string {
 func GetLatestActiveGateImageTagURI(t *testing.T) string {
 	t.Helper()
 
-	return getLatestImageURI(t, agPublicECR, agImageEnv, platform.IsFIPS(), false)
+	return getLatestTagImageURI(t, agPublicECR, 0, agImageEnv, platform.IsFIPS())
 }
 
 func GetLatestOneAgentImageTagURI(t *testing.T) string {
 	t.Helper()
 
-	return getLatestImageURI(t, oaPublicECR, oaImageEnv, platform.IsFIPS(), false)
+	return getLatestTagImageURI(t, oaPublicECR, 0, oaImageEnv, platform.IsFIPS())
 }
 
 func GetLatestCodeModulesImageTagURI(t *testing.T) string {
 	t.Helper()
 
-	return getLatestImageURI(t, cmPublicECR, cmImageEnv, platform.IsFIPS(), false)
+	return getLatestTagImageURI(t, cmPublicECR, 0, cmImageEnv, platform.IsFIPS())
 }
 
 func GetPreviousCodeModulesImageTagURI(t *testing.T) string {
 	t.Helper()
 
-	if val := os.Getenv(cmPreviousImageEnv); val != "" {
-		t.Logf("using image from env %s: %s", cmPreviousImageEnv, val)
-
-		return val
-	}
-
-	t.Logf("using default previous codemodules image: %s", cmPreviousImageDefault)
-
-	return cmPreviousImageDefault
+	return getLatestTagImageURI(t, cmPublicECR, 1, cmPreviousImageEnv, platform.IsFIPS())
 }
 
 func GetLatestActiveGateImageDigestURI(t *testing.T) string {
 	t.Helper()
 
-	return getLatestImageURI(t, agPublicECR, agDigestImageEnv, platform.IsFIPS(), true)
+	return getLatestDigestImageURI(t, agPublicECR, agDigestImageEnv, platform.IsFIPS())
 }
 
 func GetLatestOneAgentImageDigestURI(t *testing.T) string {
 	t.Helper()
 
-	return getLatestImageURI(t, oaPublicECR, oaDigestImageEnv, platform.IsFIPS(), true)
+	return getLatestDigestImageURI(t, oaPublicECR, oaDigestImageEnv, platform.IsFIPS())
 }
 
 func GetLatestCodeModulesImageDigestURI(t *testing.T) string {
 	t.Helper()
 
-	return getLatestImageURI(t, cmPublicECR, cmDigestImageEnv, platform.IsFIPS(), true)
+	return getLatestDigestImageURI(t, cmPublicECR, cmDigestImageEnv, platform.IsFIPS())
 }
 
 func ParseImageURI(imageURI string) (repository, tag, digest string) {
@@ -203,7 +203,7 @@ func isRateLimited(err error) bool {
 	return errors.As(err, &transportErr) && transportErr.StatusCode == http.StatusTooManyRequests
 }
 
-func fetchLatestURIFromRegistry(t *testing.T, repoURI string, fips bool) string {
+func fetchLatestURIFromRegistry(t *testing.T, repoURI string, offset int, fips bool) string {
 	t.Helper()
 
 	repo, err := name.NewRepository(repoURI)
@@ -222,7 +222,7 @@ func fetchLatestURIFromRegistry(t *testing.T, repoURI string, fips bool) string 
 	})
 	require.NoError(t, err)
 
-	tag := selectTag(tags, fips)
+	tag := selectTag(tags, offset, fips)
 	require.NotEmpty(t, tag, "no valid semver tags found for %s", repoURI)
 
 	return fmt.Sprintf("%s:%s", repoURI, tag)
@@ -233,7 +233,7 @@ var (
 	endsWithFIPS = regexp.MustCompile("-[0-9]+-fips$")
 )
 
-func selectTag(tags []string, fips bool) string {
+func selectTag(tags []string, offset int, fips bool) string {
 	result := make([]string, 0, len(tags))
 
 	// We should skip tags that are technology-specific or sha digests,
@@ -254,9 +254,9 @@ func selectTag(tags []string, fips bool) string {
 		return semver.Compare(semverA, semverB)
 	})
 
-	if len(result) == 0 {
+	if len(result) <= offset {
 		return ""
 	}
 
-	return result[len(result)-1]
+	return result[len(result)-1-offset]
 }
