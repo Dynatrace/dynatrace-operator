@@ -85,11 +85,9 @@ func TestQuery(t *testing.T) {
 
 func createTestDaemonSetWithMatchLabels(name, namespace string, annotations, matchLabels map[string]string) appsv1.DaemonSet {
 	return appsv1.DaemonSet{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        name,
-			Namespace:   namespace,
-			Annotations: annotations,
-		},
+		Name:        name,
+		Namespace:   namespace,
+		Annotations: annotations,
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
 				MatchLabels: matchLabels,

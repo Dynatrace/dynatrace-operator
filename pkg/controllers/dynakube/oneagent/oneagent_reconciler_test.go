@@ -50,7 +50,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("create DaemonSet in case OneAgent is needed", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{Name: dkName, Namespace: namespace},
+			Name: dkName, Namespace: namespace,
 			Spec: dynakube.DynaKubeSpec{
 				OneAgent: oneagent.Spec{
 					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
@@ -82,9 +82,9 @@ func TestReconcile(t *testing.T) {
 	})
 
 	t.Run("remove DaemonSet in case OneAgent is not needed + remove condition", func(t *testing.T) {
-		dk := &dynakube.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: dkName, Namespace: namespace}}
+		dk := &dynakube.DynaKube{Name: dkName, Namespace: namespace}
 		setDaemonSetCreatedCondition(dk.Conditions())
-		fakeClient := fake.NewClient(dk, &appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dk.OneAgent().GetDaemonsetName(), Namespace: dk.Namespace}})
+		fakeClient := fake.NewClient(dk, &appsv1.DaemonSet{Name: dk.OneAgent().GetDaemonsetName(), Namespace: dk.Namespace})
 
 		reconciler := &Reconciler{
 			client:                   fakeClient,
@@ -107,7 +107,7 @@ func TestReconcile(t *testing.T) {
 	})
 
 	t.Run("removing DaemonSet is safe even if its missing", func(t *testing.T) {
-		dk := &dynakube.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: dkName, Namespace: namespace}}
+		dk := &dynakube.DynaKube{Name: dkName, Namespace: namespace}
 		fakeClient := fake.NewClient(dk)
 
 		reconciler := &Reconciler{
@@ -125,7 +125,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("NoOneAgentCommunicationHostsError => bubble up error", func(t *testing.T) {
 		dk := dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{Name: dkName, Namespace: namespace},
+			Name: dkName, Namespace: namespace,
 			Spec: dynakube.DynaKubeSpec{
 				APIURL:      "https://ENVIRONMENTID.live.dynatrace.com/api",
 				NetworkZone: "test",
@@ -154,7 +154,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("version reconcile fail => return immediately and bubble up error", func(t *testing.T) {
 		dk := dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{Name: dkName, Namespace: namespace},
+			Name: dkName, Namespace: namespace,
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: "https://ENVIRONMENTID.live.dynatrace.com/api",
 				OneAgent: oneagent.Spec{
@@ -201,8 +201,8 @@ func TestReconcileOneAgent_ReconcileOnEmptyEnvironmentAndDNSPolicy(t *testing.T)
 	}
 
 	dk := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{Name: dkName, Namespace: namespace},
-		Spec:       dkSpec,
+		Name: dkName, Namespace: namespace,
+		Spec: dkSpec,
 	}
 
 	dk.Status.OneAgent.ConnectionInfo.TenantUUID = "test-tenant"
@@ -244,7 +244,7 @@ func TestReconcile_InstancesSet(t *testing.T) {
 	ctx := t.Context()
 
 	base := dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace},
+		Name: name, Namespace: namespace,
 		Spec: dynakube.DynaKubeSpec{
 			APIURL: "https://ENVIRONMENTID.live.dynatrace.com/api",
 			Tokens: name,
@@ -586,15 +586,11 @@ func parseQuantity(s string) resource.Quantity {
 
 func newDynaKube() *dynakube.DynaKube {
 	return &dynakube.DynaKube{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "DynaKube",
-			APIVersion: "dynatrace.com/v1beta1",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "my-oneagent",
-			Namespace: "my-namespace",
-			UID:       "69e98f18-805a-42de-84b5-3eae66534f75",
-		},
+		Kind:       "DynaKube",
+		APIVersion: "dynatrace.com/v1beta1",
+		Name:       "my-oneagent",
+		Namespace:  "my-namespace",
+		UID:        "69e98f18-805a-42de-84b5-3eae66534f75",
 		Spec: dynakube.DynaKubeSpec{
 			OneAgent: oneagent.Spec{
 				HostMonitoring: &oneagent.HostInjectSpec{},
@@ -608,7 +604,7 @@ func TestInstanceStatus(t *testing.T) {
 	dkName := "dynakube"
 
 	dk := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{Name: dkName, Namespace: namespace},
+		Name: dkName, Namespace: namespace,
 		Spec: dynakube.DynaKubeSpec{
 			APIURL: "https://ENVIRONMENTID.live.dynatrace.com/api",
 			Tokens: dkName,
@@ -619,16 +615,14 @@ func TestInstanceStatus(t *testing.T) {
 	}
 
 	pod := &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-pod-1",
-			Namespace: namespace,
-			Labels: map[string]string{
-				"app.kubernetes.io/name":          "dynatrace-operator",
-				"app.kubernetes.io/component":     "oneagent",
-				"app.kubernetes.io/created-by":    dkName,
-				"app.kubernetes.io/version":       "snapshot",
-				"component.dynatrace.com/feature": deploymentmetadata.HostMonitoringDeploymentType,
-			},
+		Name:      "test-pod-1",
+		Namespace: namespace,
+		Labels: map[string]string{
+			"app.kubernetes.io/name":          "dynatrace-operator",
+			"app.kubernetes.io/component":     "oneagent",
+			"app.kubernetes.io/created-by":    dkName,
+			"app.kubernetes.io/version":       "snapshot",
+			"component.dynatrace.com/feature": deploymentmetadata.HostMonitoringDeploymentType,
 		},
 		Spec: corev1.PodSpec{
 			NodeName: "node-1",
@@ -664,7 +658,7 @@ func TestEmptyInstancesWithWrongLabels(t *testing.T) {
 	dkName := "dynakube"
 
 	dk := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{Name: dkName, Namespace: namespace},
+		Name: dkName, Namespace: namespace,
 		Spec: dynakube.DynaKubeSpec{
 			APIURL: "https://ENVIRONMENTID.live.dynatrace.com/api",
 			Tokens: dkName,
@@ -675,12 +669,10 @@ func TestEmptyInstancesWithWrongLabels(t *testing.T) {
 	}
 
 	pod := &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-pod-1",
-			Namespace: namespace,
-			Labels: map[string]string{
-				"wrongLabel": "dynatrace-operator",
-			},
+		Name:      "test-pod-1",
+		Namespace: namespace,
+		Labels: map[string]string{
+			"wrongLabel": "dynatrace-operator",
 		},
 		Spec: corev1.PodSpec{
 			NodeName: "node-1",
@@ -752,7 +744,7 @@ func TestPGCConfigHash(t *testing.T) {
 	const testDynakubeName = "test-dynakube"
 
 	dk := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{Name: testDynakubeName, Namespace: testNamespace},
+		Name: testDynakubeName, Namespace: testNamespace,
 	}
 
 	t.Run("secret not found returns empty hash", func(t *testing.T) {
@@ -767,10 +759,8 @@ func TestPGCConfigHash(t *testing.T) {
 	t.Run("secret found returns hash of pgc data", func(t *testing.T) {
 		pgcData := []byte("some-pgc-content")
 		secret := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      bootstrapperconfig.GetSourceConfigSecretName(testDynakubeName),
-				Namespace: testNamespace,
-			},
+			Name:      bootstrapperconfig.GetSourceConfigSecretName(testDynakubeName),
+			Namespace: testNamespace,
 			Data: map[string][]byte{
 				bootstrapperconfig.DeclarativeInputFileName: pgcData,
 			},
@@ -788,10 +778,8 @@ func TestPGCConfigHash(t *testing.T) {
 
 	t.Run("secret found but no pgc data returns empty hash", func(t *testing.T) {
 		secret := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      bootstrapperconfig.GetSourceConfigSecretName(testDynakubeName),
-				Namespace: testNamespace,
-			},
+			Name:      bootstrapperconfig.GetSourceConfigSecretName(testDynakubeName),
+			Namespace: testNamespace,
 		}
 		fakeClient := fake.NewClient(secret)
 		r := &Reconciler{apiReader: fakeClient}

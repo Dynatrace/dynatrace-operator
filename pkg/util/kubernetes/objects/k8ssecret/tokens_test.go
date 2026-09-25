@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -21,10 +20,8 @@ func TestGetDataFromSecretName(t *testing.T) {
 
 	getTestSecret := func() *corev1.Secret {
 		return &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testSecretName,
-				Namespace: testNamespace,
-			},
+			Name:      testSecretName,
+			Namespace: testNamespace,
 			Data: map[string][]byte{
 				testSecretDataKey: dataValue,
 			},

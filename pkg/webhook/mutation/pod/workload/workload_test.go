@@ -28,50 +28,40 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 
 	t.Run("should find the root owner of the pod", func(t *testing.T) {
 		pod := corev1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
-				OwnerReferences: []metav1.OwnerReference{
-					{
-						APIVersion: "apps/v1",
-						Kind:       "Deployment",
-						Name:       "test",
-						Controller: new(true),
-					},
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion: "apps/v1",
+					Kind:       "Deployment",
+					Name:       "test",
+					Controller: new(true),
 				},
-				Name:      resourceName,
-				Namespace: namespaceName,
 			},
+			Name:      resourceName,
+			Namespace: namespaceName,
 		}
 
 		deployment := appsv1.Deployment{
-			ObjectMeta: metav1.ObjectMeta{
-				OwnerReferences: []metav1.OwnerReference{
-					{
-						APIVersion: "apps/v1",
-						Kind:       "DaemonSet",
-						Name:       "test",
-						Controller: new(true),
-					},
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion: "apps/v1",
+					Kind:       "DaemonSet",
+					Name:       "test",
+					Controller: new(true),
 				},
-				Name:      resourceName,
-				Namespace: namespaceName,
 			},
+			Name:      resourceName,
+			Namespace: namespaceName,
 		}
 
 		daemonSet := appsv1.DaemonSet{
-			TypeMeta: metav1.TypeMeta{
-				Kind:       "DaemonSet",
-				APIVersion: "apps/v1",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      resourceName,
-				Namespace: namespaceName,
-			},
+			Kind:       "DaemonSet",
+			APIVersion: "apps/v1",
+			Name:       resourceName,
+			Namespace:  namespaceName,
 		}
 
 		namespace := &corev1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: namespaceName,
-			},
+			Name: namespaceName,
 		}
 
 		request := mutator.BaseRequest{Pod: &pod, Namespace: namespace}
@@ -86,19 +76,13 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 
 	t.Run("should return Pod if owner references are empty", func(t *testing.T) {
 		pod := corev1.Pod{
-			TypeMeta: metav1.TypeMeta{
-				Kind: "Pod",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				OwnerReferences: []metav1.OwnerReference{},
-				Name:            resourceName,
-			},
+			Kind:            "Pod",
+			OwnerReferences: []metav1.OwnerReference{},
+			Name:            resourceName,
 		}
 
 		namespace := &corev1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: namespaceName,
-			},
+			Name: namespaceName,
 		}
 
 		request := mutator.BaseRequest{Pod: &pod, Namespace: namespace}
@@ -112,32 +96,24 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 
 	t.Run("should be pod if owner is not well known", func(t *testing.T) {
 		pod := corev1.Pod{
-			TypeMeta: metav1.TypeMeta{
-				Kind: "Pod",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				OwnerReferences: []metav1.OwnerReference{
-					{
-						APIVersion: "v1",
-						Kind:       "Secret",
-						Name:       "test",
-						Controller: new(true),
-					},
+			Kind: "Pod",
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion: "v1",
+					Kind:       "Secret",
+					Name:       "test",
+					Controller: new(true),
 				},
-				Name: resourceName,
 			},
+			Name: resourceName,
 		}
 		secret := corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      resourceName,
-				Namespace: namespaceName,
-			},
+			Name:      resourceName,
+			Namespace: namespaceName,
 		}
 
 		namespace := &corev1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: namespaceName,
-			},
+			Name: namespaceName,
 		}
 
 		request := mutator.BaseRequest{Pod: &pod, Namespace: namespace}
@@ -151,27 +127,21 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 
 	t.Run("should be pod if no controller is the owner", func(t *testing.T) {
 		pod := corev1.Pod{
-			TypeMeta: metav1.TypeMeta{
-				Kind: "Pod",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				OwnerReferences: []metav1.OwnerReference{
-					{
-						APIVersion:         "some.unknown.kind.com/v1alpha1",
-						Kind:               "SomeUnknownKind",
-						Name:               "some-owner",
-						Controller:         new(false),
-						BlockOwnerDeletion: new(false),
-					},
+			Kind: "Pod",
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion:         "some.unknown.kind.com/v1alpha1",
+					Kind:               "SomeUnknownKind",
+					Name:               "some-owner",
+					Controller:         new(false),
+					BlockOwnerDeletion: new(false),
 				},
-				Name: resourceName,
 			},
+			Name: resourceName,
 		}
 
 		namespace := &corev1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: namespaceName,
-			},
+			Name: namespaceName,
 		}
 
 		request := mutator.BaseRequest{Pod: &pod, Namespace: namespace}
@@ -184,53 +154,41 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 	})
 	t.Run("should find the root owner of the pod if the root owner is unknown", func(t *testing.T) {
 		pod := corev1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
-				OwnerReferences: []metav1.OwnerReference{
-					{
-						APIVersion: "apps/v1",
-						Kind:       "Deployment",
-						Name:       "test",
-						Controller: new(true),
-					},
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion: "apps/v1",
+					Kind:       "Deployment",
+					Name:       "test",
+					Controller: new(true),
 				},
-				Name:      resourceName,
-				Namespace: namespaceName,
 			},
+			Name:      resourceName,
+			Namespace: namespaceName,
 		}
 
 		deployment := appsv1.Deployment{
-			TypeMeta: metav1.TypeMeta{
-				Kind:       "Deployment",
-				APIVersion: "apps/v1",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				OwnerReferences: []metav1.OwnerReference{
-					{
-						APIVersion: "v1",
-						Kind:       "Secret",
-						Name:       "test",
-						Controller: new(true),
-					},
+			Kind:       "Deployment",
+			APIVersion: "apps/v1",
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion: "v1",
+					Kind:       "Secret",
+					Name:       "test",
+					Controller: new(true),
 				},
-				Name:      resourceName,
-				Namespace: namespaceName,
 			},
+			Name:      resourceName,
+			Namespace: namespaceName,
 		}
 
 		secret := corev1.Secret{
-			TypeMeta: metav1.TypeMeta{
-				Kind: "Secret",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      resourceName,
-				Namespace: namespaceName,
-			},
+			Kind:      "Secret",
+			Name:      resourceName,
+			Namespace: namespaceName,
 		}
 
 		namespace := &corev1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: namespaceName,
-			},
+			Name: namespaceName,
 		}
 
 		request := mutator.BaseRequest{Pod: &pod, Namespace: namespace}
@@ -244,24 +202,20 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 	})
 	t.Run("should not make an api-call if workload is not well known", func(t *testing.T) {
 		pod := corev1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
-				OwnerReferences: []metav1.OwnerReference{
-					{
-						APIVersion: "some.unknown.kind.com/v1alpha1",
-						Kind:       "SomeUnknownKind",
-						Name:       "some-owner",
-						Controller: new(true),
-					},
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion: "some.unknown.kind.com/v1alpha1",
+					Kind:       "SomeUnknownKind",
+					Name:       "some-owner",
+					Controller: new(true),
 				},
-				Name:      resourceName,
-				Namespace: namespaceName,
 			},
+			Name:      resourceName,
+			Namespace: namespaceName,
 		}
 
 		namespace := &corev1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: namespaceName,
-			},
+			Name: namespaceName,
 		}
 
 		request := mutator.BaseRequest{Pod: &pod, Namespace: namespace}
@@ -275,38 +229,32 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 
 	t.Run("should return the labels and annotations of the root owner", func(t *testing.T) {
 		deployment := &appsv1.Deployment{
-			TypeMeta: metav1.TypeMeta{Kind: "Deployment", APIVersion: "apps/v1"},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:        resourceName,
-				Namespace:   namespaceName,
-				UID:         "deployment-uid",
-				Labels:      map[string]string{"env": "production"},
-				Annotations: map[string]string{"metadata.dynatrace.com/my.attr": "workload-value"},
-			},
+			Kind: "Deployment", APIVersion: "apps/v1",
+			Name:        resourceName,
+			Namespace:   namespaceName,
+			UID:         "deployment-uid",
+			Labels:      map[string]string{"env": "production"},
+			Annotations: map[string]string{"metadata.dynatrace.com/my.attr": "workload-value"},
 		}
 
 		replicaSet := &appsv1.ReplicaSet{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:        resourceName,
-				Namespace:   namespaceName,
-				UID:         "replicaset-uid",
-				Labels:      map[string]string{"replicaset-label": "replicaset-value"},
-				Annotations: map[string]string{"replicaset-annotation": "replicaset-value"},
-			},
+			Name:        resourceName,
+			Namespace:   namespaceName,
+			UID:         "replicaset-uid",
+			Labels:      map[string]string{"replicaset-label": "replicaset-value"},
+			Annotations: map[string]string{"replicaset-annotation": "replicaset-value"},
 		}
 		require.NoError(t, controllerutil.SetControllerReference(deployment, replicaSet, scheme.Scheme))
 
 		pod := &corev1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:        resourceName,
-				Namespace:   namespaceName,
-				Labels:      map[string]string{"pod-label": "pod-value"},
-				Annotations: map[string]string{"pod-annotation": "pod-value"},
-			},
+			Name:        resourceName,
+			Namespace:   namespaceName,
+			Labels:      map[string]string{"pod-label": "pod-value"},
+			Annotations: map[string]string{"pod-annotation": "pod-value"},
 		}
 		require.NoError(t, controllerutil.SetControllerReference(replicaSet, pod, scheme.Scheme))
 
-		request := mutator.BaseRequest{Pod: pod, Namespace: &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: namespaceName}}}
+		request := mutator.BaseRequest{Pod: pod, Namespace: &corev1.Namespace{Name: namespaceName}}
 
 		client := fake.NewClient(deployment, replicaSet, pod)
 
@@ -319,24 +267,20 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 
 	t.Run("should add annotation if owner lookup failed", func(t *testing.T) {
 		pod := corev1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
-				OwnerReferences: []metav1.OwnerReference{
-					{
-						APIVersion: "apps/v1",
-						Kind:       "Deployment",
-						Name:       "test",
-						Controller: new(true),
-					},
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion: "apps/v1",
+					Kind:       "Deployment",
+					Name:       "test",
+					Controller: new(true),
 				},
-				Name:      resourceName,
-				Namespace: namespaceName,
 			},
+			Name:      resourceName,
+			Namespace: namespaceName,
 		}
 
 		namespace := &corev1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: namespaceName,
-			},
+			Name: namespaceName,
 		}
 
 		request := mutator.BaseRequest{Pod: &pod, Namespace: namespace}

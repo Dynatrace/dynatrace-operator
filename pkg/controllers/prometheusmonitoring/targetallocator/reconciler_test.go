@@ -37,17 +37,15 @@ import (
 
 func newTestPM(name, namespace string) *prometheusmonitoring.PrometheusMonitoring {
 	return &prometheusmonitoring.PrometheusMonitoring{
-		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace, UID: types.UID("pm-uid")},
+		Name: name, Namespace: namespace, UID: types.UID("pm-uid"),
 		Spec: prometheusmonitoring.PrometheusMonitoringSpec{
 			TargetAllocator: prometheusmonitoring.TargetAllocatorSpec{
-				PodSpec: prometheusmonitoring.PodSpec{
-					Resources: corev1.ResourceRequirements{
-						Limits: corev1.ResourceList{
-							corev1.ResourceMemory: resource.MustParse("250Mi"),
-						},
-						Requests: corev1.ResourceList{
-							corev1.ResourceMemory: resource.MustParse("125Mi"),
-						},
+				Resources: corev1.ResourceRequirements{
+					Limits: corev1.ResourceList{
+						corev1.ResourceMemory: resource.MustParse("250Mi"),
+					},
+					Requests: corev1.ResourceList{
+						corev1.ResourceMemory: resource.MustParse("125Mi"),
 					},
 				},
 			},
@@ -58,7 +56,7 @@ func newTestPM(name, namespace string) *prometheusmonitoring.PrometheusMonitorin
 func newTestScope(pm *prometheusmonitoring.PrometheusMonitoring) *reconcileScope {
 	return &reconcileScope{
 		Owner:     pm,
-		DynaKube:  &dynakube.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: "dk", Namespace: "dynatrace"}},
+		DynaKube:  &dynakube.DynaKube{Name: "dk", Namespace: "dynatrace"},
 		Spec:      pm.TargetAllocator(),
 		AppLabels: k8slabel.OTelTargetAllocator(),
 	}
@@ -129,11 +127,10 @@ func TestReconcileConfigMap(t *testing.T) {
 	t.Run("merge labels", func(t *testing.T) {
 		pm := newTestPM("pm", "dynatrace")
 		s := newTestScope(pm)
-		existing := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{
+		existing := &corev1.ConfigMap{
 			Name:      s.Spec.GetDeploymentName(),
 			Namespace: pm.Namespace,
-			Labels:    map[string]string{"custom": "value", k8slabel.AppInstanceLabel: "override"},
-		}}
+			Labels:    map[string]string{"custom": "value", k8slabel.AppInstanceLabel: "override"}}
 		c := fake.NewClient(existing)
 		r := &Reconciler{Client: c}
 
@@ -242,8 +239,8 @@ func TestReconcileDeployment(t *testing.T) {
 		pm.Spec.TargetAllocator.Image = "img:1"
 		s := newTestScope(pm)
 		existing := &appsv1.Deployment{
-			ObjectMeta: metav1.ObjectMeta{Name: s.Spec.GetDeploymentName(), Namespace: pm.Namespace},
-			Spec:       appsv1.DeploymentSpec{Replicas: new(int32(5))},
+			Name: s.Spec.GetDeploymentName(), Namespace: pm.Namespace,
+			Spec: appsv1.DeploymentSpec{Replicas: new(int32(5))},
 		}
 		c := fake.NewClient(existing)
 		r := &Reconciler{Client: c}
@@ -285,11 +282,10 @@ func TestReconcileService(t *testing.T) {
 	t.Run("merge labels", func(t *testing.T) {
 		pm := newTestPM("pm", "dynatrace")
 		s := newTestScope(pm)
-		existing := &corev1.Service{ObjectMeta: metav1.ObjectMeta{
+		existing := &corev1.Service{
 			Name:      s.Spec.GetDeploymentName(),
 			Namespace: pm.Namespace,
-			Labels:    map[string]string{"custom": "value", k8slabel.AppInstanceLabel: "override"},
-		}}
+			Labels:    map[string]string{"custom": "value", k8slabel.AppInstanceLabel: "override"}}
 		c := fake.NewClient(existing)
 		r := &Reconciler{Client: c}
 

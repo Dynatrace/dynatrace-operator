@@ -88,8 +88,8 @@ func TestSetupWithManager(t *testing.T) {
 		t.Helper()
 
 		pm := &prometheusmonitoring.PrometheusMonitoring{
-			ObjectMeta: metav1.ObjectMeta{GenerateName: "prometheusmonitoring", Namespace: metav1.NamespaceDefault},
-			Spec:       prometheusmonitoring.PrometheusMonitoringSpec{DynaKubeName: "dynakube"},
+			GenerateName: "prometheusmonitoring", Namespace: metav1.NamespaceDefault,
+			Spec: prometheusmonitoring.PrometheusMonitoringSpec{DynaKubeName: "dynakube"},
 		}
 		integrationtests.CreateKubernetesObject(t, clt, pm)
 
@@ -125,7 +125,7 @@ func TestSetupWithManager(t *testing.T) {
 	t.Run("update to an owned ConfigMap triggers reconcile", func(t *testing.T) {
 		pm, key := createPrometheusMonitoring(t)
 
-		cm := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "owned-configmap", Namespace: pm.Namespace}}
+		cm := &corev1.ConfigMap{Name: "owned-configmap", Namespace: pm.Namespace}
 		require.NoError(t, controllerutil.SetControllerReference(pm, cm, scheme.Scheme))
 
 		assertReconcileTriggered(t, key, func() {
@@ -137,11 +137,11 @@ func TestSetupWithManager(t *testing.T) {
 		pm, key := createPrometheusMonitoring(t)
 
 		dep := &appsv1.Deployment{
-			ObjectMeta: metav1.ObjectMeta{Name: "owned-deployment", Namespace: pm.Namespace},
+			Name: "owned-deployment", Namespace: pm.Namespace,
 			Spec: appsv1.DeploymentSpec{
 				Selector: &metav1.LabelSelector{MatchLabels: map[string]string{"app": "owned-deployment"}},
 				Template: corev1.PodTemplateSpec{
-					ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{"app": "owned-deployment"}},
+					Labels: map[string]string{"app": "owned-deployment"},
 					Spec: corev1.PodSpec{
 						Containers: []corev1.Container{{Name: "test", Image: "dummy-app-img:1.0.0"}},
 					},
@@ -159,8 +159,8 @@ func TestSetupWithManager(t *testing.T) {
 		pm, key := createPrometheusMonitoring(t)
 
 		svc := &corev1.Service{
-			ObjectMeta: metav1.ObjectMeta{Name: "owned-service", Namespace: pm.Namespace},
-			Spec:       corev1.ServiceSpec{Ports: []corev1.ServicePort{{Port: 80}}},
+			Name: "owned-service", Namespace: pm.Namespace,
+			Spec: corev1.ServiceSpec{Ports: []corev1.ServicePort{{Port: 80}}},
 		}
 		require.NoError(t, controllerutil.SetControllerReference(pm, svc, scheme.Scheme))
 
@@ -173,9 +173,9 @@ func TestSetupWithManager(t *testing.T) {
 		pm, key := createPrometheusMonitoring(t)
 
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{Name: pm.Spec.DynaKubeName, Namespace: pm.Namespace},
-			Spec:       dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
-			Status:     dynakube.DynaKubeStatus{Phase: status.Running},
+			Name: pm.Spec.DynaKubeName, Namespace: pm.Namespace,
+			Spec:   dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
+			Status: dynakube.DynaKubeStatus{Phase: status.Running},
 		}
 
 		assertReconcileTriggered(t, key, func() {
@@ -189,8 +189,8 @@ func TestSetupWithManager(t *testing.T) {
 		pm, key := createPrometheusMonitoring(t)
 
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{Name: pm.Spec.DynaKubeName, Namespace: pm.Namespace},
-			Spec:       dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api", Tokens: "old-token-secret"},
+			Name: pm.Spec.DynaKubeName, Namespace: pm.Namespace,
+			Spec: dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api", Tokens: "old-token-secret"},
 		}
 		integrationtests.CreateDynakube(t, clt, dk)
 
@@ -204,8 +204,8 @@ func TestSetupWithManager(t *testing.T) {
 		pm, key := createPrometheusMonitoring(t)
 
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{Name: pm.Spec.DynaKubeName, Namespace: pm.Namespace},
-			Spec:       dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
+			Name: pm.Spec.DynaKubeName, Namespace: pm.Namespace,
+			Spec: dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
 		}
 		integrationtests.CreateDynakube(t, clt, dk)
 
@@ -219,8 +219,8 @@ func TestSetupWithManager(t *testing.T) {
 		pm, key := createPrometheusMonitoring(t)
 
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{Name: pm.Spec.DynaKubeName, Namespace: pm.Namespace},
-			Spec:       dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
+			Name: pm.Spec.DynaKubeName, Namespace: pm.Namespace,
+			Spec: dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
 		}
 		integrationtests.CreateDynakube(t, clt, dk)
 
@@ -234,8 +234,8 @@ func TestSetupWithManager(t *testing.T) {
 		pm, key := createPrometheusMonitoring(t)
 
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{Name: pm.Spec.DynaKubeName, Namespace: pm.Namespace},
-			Spec:       dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
+			Name: pm.Spec.DynaKubeName, Namespace: pm.Namespace,
+			Spec: dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
 		}
 		integrationtests.CreateDynakube(t, clt, dk)
 
@@ -249,8 +249,8 @@ func TestSetupWithManager(t *testing.T) {
 		pm, key := createPrometheusMonitoring(t)
 
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{Name: pm.Spec.DynaKubeName, Namespace: pm.Namespace},
-			Spec:       dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
+			Name: pm.Spec.DynaKubeName, Namespace: pm.Namespace,
+			Spec: dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
 		}
 		integrationtests.CreateDynakube(t, clt, dk)
 
@@ -264,9 +264,9 @@ func TestSetupWithManager(t *testing.T) {
 		pm, key := createPrometheusMonitoring(t)
 
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{Name: pm.Spec.DynaKubeName, Namespace: pm.Namespace},
-			Spec:       dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
-			Status:     dynakube.DynaKubeStatus{Phase: status.Running},
+			Name: pm.Spec.DynaKubeName, Namespace: pm.Namespace,
+			Spec:   dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
+			Status: dynakube.DynaKubeStatus{Phase: status.Running},
 		}
 		assertReconcileTriggered(t, key, func() {
 			integrationtests.CreateDynakube(t, clt, dk)
@@ -282,9 +282,9 @@ func TestSetupWithManager(t *testing.T) {
 		pm, key := createPrometheusMonitoring(t)
 
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{Name: pm.Spec.DynaKubeName, Namespace: pm.Namespace},
-			Spec:       dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
-			Status:     dynakube.DynaKubeStatus{Phase: status.Running},
+			Name: pm.Spec.DynaKubeName, Namespace: pm.Namespace,
+			Spec:   dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
+			Status: dynakube.DynaKubeStatus{Phase: status.Running},
 		}
 		assertReconcileTriggered(t, key, func() {
 			integrationtests.CreateDynakube(t, clt, dk)
@@ -300,9 +300,9 @@ func TestSetupWithManager(t *testing.T) {
 		_, key := createPrometheusMonitoring(t)
 
 		unreferencedDK := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{Name: "dk-unreferenced", Namespace: metav1.NamespaceDefault},
-			Spec:       dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
-			Status:     dynakube.DynaKubeStatus{Phase: status.Running},
+			Name: "dk-unreferenced", Namespace: metav1.NamespaceDefault,
+			Spec:   dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
+			Status: dynakube.DynaKubeStatus{Phase: status.Running},
 		}
 
 		assertReconcileNotTriggered(t, key, func() {
@@ -314,9 +314,9 @@ func TestSetupWithManager(t *testing.T) {
 		pm, key := createPrometheusMonitoring(t)
 
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{Name: pm.Spec.DynaKubeName, Namespace: pm.Namespace},
-			Spec:       dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
-			Status:     dynakube.DynaKubeStatus{Phase: status.Running},
+			Name: pm.Spec.DynaKubeName, Namespace: pm.Namespace,
+			Spec:   dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
+			Status: dynakube.DynaKubeStatus{Phase: status.Running},
 		}
 
 		integrationtests.CreateDynakube(t, clt, dk)

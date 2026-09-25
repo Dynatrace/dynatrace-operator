@@ -30,10 +30,8 @@ func Test_SecretGenerator_preparePGC(t *testing.T) {
 
 	newDK := func() *dynakube.DynaKube {
 		return &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testDynakube,
-				Namespace: testNamespace,
-			},
+			Name:      testDynakube,
+			Namespace: testNamespace,
 			Status: dynakube.DynaKubeStatus{
 				KubeSystemUUID:        testKubeSystemUUID,
 				KubernetesClusterMEID: testClusterMEID,
@@ -150,12 +148,10 @@ func Test_SecretGenerator_preparePGC(t *testing.T) {
 		cachedETag := "etag-abc"
 
 		sourceSecret := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      GetSourceConfigSecretName(testDynakube),
-				Namespace: testNamespace,
-				Annotations: map[string]string{
-					annotationPGCETag: cachedETag,
-				},
+			Name:      GetSourceConfigSecretName(testDynakube),
+			Namespace: testNamespace,
+			Annotations: map[string]string{
+				annotationPGCETag: cachedETag,
 			},
 			Data: map[string][]byte{
 				DeclarativeInputFileName: cachedData,

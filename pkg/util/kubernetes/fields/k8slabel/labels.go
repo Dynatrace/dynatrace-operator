@@ -104,11 +104,9 @@ func NewAppLabels(appName, name, component, ver string) *AppLabels {
 	}
 
 	return &AppLabels{
-		AppMatchLabels: AppMatchLabels{
-			Name:      appName,
-			CreatedBy: name,
-			ManagedBy: version.AppName,
-		},
+		Name:      appName,
+		CreatedBy: name,
+		ManagedBy: version.AppName,
 		Component: strings.ReplaceAll(component, "_", ""),
 		Version:   ver,
 	}
@@ -126,12 +124,10 @@ func NewCoreLabels(dynakubeName, component string) *CoreLabels {
 	}
 
 	return &CoreLabels{
-		coreMatchLabels: coreMatchLabels{
-			Name:      version.AppName,
-			CreatedBy: dynakubeName,
-			Component: component,
-		},
-		Version: ver,
+		Name:      version.AppName,
+		CreatedBy: dynakubeName,
+		Component: component,
+		Version:   ver,
 	}
 }
 

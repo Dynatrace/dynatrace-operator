@@ -15,7 +15,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestPrepareVolumes(t *testing.T) {
@@ -80,9 +79,7 @@ func TestPrepareVolumes(t *testing.T) {
 	})
 	t.Run("has automatically created AG tls volume", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "dynakube",
-			},
+			Name: "dynakube",
 			Spec: dynakube.DynaKubeSpec{
 				ActiveGate: activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{
@@ -236,9 +233,7 @@ func TestPrepareVolumeMounts(t *testing.T) {
 	})
 	t.Run("has automatically created ActiveGate CA volume mount", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "dynakube",
-			},
+			Name: "dynakube",
 			Spec: dynakube.DynaKubeSpec{
 				OneAgent: oneagent.Spec{
 					HostMonitoring: &oneagent.HostInjectSpec{},
@@ -326,12 +321,10 @@ func TestPrepareVolumeMounts(t *testing.T) {
 	})
 	t.Run("has no volume if proxy is set and proxy ignore feature-flags is used", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "Dynakube",
-				Namespace: "dynatrace",
-				Annotations: map[string]string{
-					exp.OAProxyIgnoredKey: "true", //nolint:staticcheck
-				},
+			Name:      "Dynakube",
+			Namespace: "dynatrace",
+			Annotations: map[string]string{
+				exp.OAProxyIgnoredKey: "true", //nolint:staticcheck
 			},
 			Spec: dynakube.DynaKubeSpec{
 				Proxy: &value.Source{ValueFrom: proxy.BuildSecretName("Dynakube")},

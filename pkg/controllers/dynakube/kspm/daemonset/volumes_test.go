@@ -158,20 +158,16 @@ func TestGetVolumes(t *testing.T) {
 
 		assert.Contains(t, volumes, corev1.Volume{
 			Name: getVolumeName(1),
-			VolumeSource: corev1.VolumeSource{
-				HostPath: &corev1.HostPathVolumeSource{
-					Path: hostPathA,
-					Type: new(corev1.HostPathDirectory),
-				},
+			HostPath: &corev1.HostPathVolumeSource{
+				Path: hostPathA,
+				Type: new(corev1.HostPathDirectory),
 			},
 		})
 		assert.Contains(t, volumes, corev1.Volume{
 			Name: getVolumeName(2),
-			VolumeSource: corev1.VolumeSource{
-				HostPath: &corev1.HostPathVolumeSource{
-					Path: hostPathB,
-					Type: new(corev1.HostPathDirectory),
-				},
+			HostPath: &corev1.HostPathVolumeSource{
+				Path: hostPathB,
+				Type: new(corev1.HostPathDirectory),
 			},
 		})
 	}

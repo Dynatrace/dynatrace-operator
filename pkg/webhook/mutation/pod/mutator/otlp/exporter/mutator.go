@@ -118,10 +118,8 @@ func (m Mutator) mutate(request *dtwebhook.BaseRequest, log logd.Logger) (bool, 
 		Name: DynatraceAPITokenEnv,
 		ValueFrom: &corev1.EnvVarSource{
 			SecretKeyRef: &corev1.SecretKeySelector{
-				LocalObjectReference: corev1.LocalObjectReference{
-					Name: consts.OTLPExporterSecretName,
-				},
-				Key: token.DataIngestKey,
+				Name: consts.OTLPExporterSecretName,
+				Key:  token.DataIngestKey,
 			},
 		},
 	}
@@ -256,11 +254,9 @@ func addActiveGateCertVolume(dk *dynakube.DynaKube, pod *corev1.Pod) error {
 
 	agCertVolume := corev1.Volume{
 		Name: ActiveGateTrustedCertVolumeName,
-		VolumeSource: corev1.VolumeSource{
-			Secret: &corev1.SecretVolumeSource{
-				DefaultMode: new(int32(420)),
-				SecretName:  consts.OTLPExporterCertsSecretName,
-			},
+		Secret: &corev1.SecretVolumeSource{
+			DefaultMode: new(int32(420)),
+			SecretName:  consts.OTLPExporterCertsSecretName,
 		},
 	}
 

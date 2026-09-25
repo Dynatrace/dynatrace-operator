@@ -101,8 +101,8 @@ func TestSerialization(t *testing.T) {
 			// Create from the typed struct: the client marshals it via the JSON
 			// tags, so omitzero decides which struct fields are sent.
 			ec := &edgeconnect.EdgeConnect{
-				ObjectMeta: metav1.ObjectMeta{Name: tt.name, Namespace: metav1.NamespaceDefault},
-				Spec:       tt.spec,
+				Name: tt.name, Namespace: metav1.NamespaceDefault,
+				Spec: tt.spec,
 			}
 			integrationtests.CreateKubernetesObject(t, clt, ec)
 
@@ -153,7 +153,7 @@ func serializationWebhookOptions() envtest.WebhookInstallOptions {
 	return envtest.WebhookInstallOptions{
 		ValidatingWebhooks: []*admissionregistrationv1.ValidatingWebhookConfiguration{
 			{
-				ObjectMeta: metav1.ObjectMeta{Name: "dynatrace-webhook"},
+				Name: "dynatrace-webhook",
 				Webhooks: []admissionregistrationv1.ValidatingWebhook{
 					{
 						Name: "v1alpha2.edgeconnect.webhook.dynatrace.com",
@@ -168,11 +168,9 @@ func serializationWebhookOptions() envtest.WebhookInstallOptions {
 									admissionregistrationv1.Create,
 									admissionregistrationv1.Update,
 								},
-								Rule: admissionregistrationv1.Rule{
-									APIGroups:   []string{"dynatrace.com"},
-									APIVersions: []string{"v1alpha2"},
-									Resources:   []string{"edgeconnects"},
-								},
+								APIGroups:   []string{"dynatrace.com"},
+								APIVersions: []string{"v1alpha2"},
+								Resources:   []string{"edgeconnects"},
 							},
 						},
 						MatchPolicy:             new(admissionregistrationv1.Exact),

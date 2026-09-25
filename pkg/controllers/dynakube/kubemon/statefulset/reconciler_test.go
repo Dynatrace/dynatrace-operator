@@ -43,7 +43,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
@@ -128,18 +127,14 @@ func TestReconcileMissingTokenValue(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			dk := newTestDynaKube()
 			tenantSecret := &corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      dk.KubernetesMonitoring().GetTenantSecretName(),
-					Namespace: dk.Namespace,
-				},
-				Data: test.tenantData,
+				Name:      dk.KubernetesMonitoring().GetTenantSecretName(),
+				Namespace: dk.Namespace,
+				Data:      test.tenantData,
 			}
 			authSecret := &corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      dk.KubernetesMonitoring().GetAuthTokenSecretName(),
-					Namespace: dk.Namespace,
-				},
-				Data: test.authData,
+				Name:      dk.KubernetesMonitoring().GetAuthTokenSecretName(),
+				Namespace: dk.Namespace,
+				Data:      test.authData,
 			}
 
 			err := statefulset.NewReconciler(fake.NewClient(dk, tenantSecret, authSecret)).Reconcile(t.Context(), dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t))
@@ -686,67 +681,51 @@ func TestReconcileBuildsStatefulSetVolumes(t *testing.T) {
 		volumes := []corev1.Volume{
 			{
 				Name: connectioninfo.TenantSecretVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName:  km.GetTenantSecretName(),
-						DefaultMode: new(int32(0o640)),
-						Optional:    new(false),
-					},
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  km.GetTenantSecretName(),
+					DefaultMode: new(int32(0o640)),
+					Optional:    new(false),
 				},
 			},
 			{
 				Name: statefulset.AuthTokenVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName:  km.GetAuthTokenSecretName(),
-						DefaultMode: new(int32(0o640)),
-						Optional:    new(false),
-					},
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  km.GetAuthTokenSecretName(),
+					DefaultMode: new(int32(0o640)),
+					Optional:    new(false),
 				},
 			},
 			{
-				Name:         statefulset.StorageVolumeName,
-				VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}},
+				Name:     statefulset.StorageVolumeName,
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
 			{
-				Name: agconsts.GatewayLibTempVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
+				Name:     agconsts.GatewayLibTempVolumeName,
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
 			{
-				Name: agconsts.GatewayDataVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
+				Name:     agconsts.GatewayDataVolumeName,
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
 			{
-				Name: agconsts.GatewayLogVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
+				Name:     agconsts.GatewayLogVolumeName,
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
 			{
-				Name: agconsts.GatewayConfigVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
+				Name:     agconsts.GatewayConfigVolumeName,
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
 			{
-				Name: agconsts.TrustStoreVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
+				Name:     agconsts.TrustStoreVolumeName,
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
 			{
-				Name: agconsts.GatewaySslVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
+				Name:     agconsts.GatewaySslVolumeName,
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
 			{
-				Name:         agconsts.InitCertLoaderWorkDirVolumeName,
-				VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}},
+				Name:     agconsts.InitCertLoaderWorkDirVolumeName,
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
 		}
 
@@ -959,10 +938,9 @@ func TestReconcileWriteFailures(t *testing.T) {
 func TestReconcileCleanupDeleteFailure(t *testing.T) {
 	dk := newTestDynaKube()
 	dk.Spec.KubernetesMonitoring = nil
-	existing := &appsv1.StatefulSet{ObjectMeta: metav1.ObjectMeta{
+	existing := &appsv1.StatefulSet{
 		Name:      dk.KubernetesMonitoring().GetStatefulSetName(),
-		Namespace: dk.Namespace,
-	}}
+		Namespace: dk.Namespace}
 	fakeClient := fake.NewClientWithInterceptors(interceptor.Funcs{
 		Delete: func(ctx context.Context, c client.WithWatch, obj client.Object, opts ...client.DeleteOption) error {
 			if isStatefulSet(obj) {
@@ -988,16 +966,12 @@ func reconcileAndGetSTS(t *testing.T, dk *dynakube.DynaKube, imgClient image.Cli
 
 func newTestDynaKube() *dynakube.DynaKube {
 	dk := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-dk",
-			Namespace: testNamespace,
-		},
+		Name:      "test-dk",
+		Namespace: testNamespace,
 		Spec: dynakube.DynaKubeSpec{
 			APIURL: "https://tenant.live.dynatrace.com/api",
 			KubernetesMonitoring: &kubemonapi.Spec{
-				StatefulSetProperties: kubemonapi.StatefulSetProperties{
-					Image: "registry.example.com/linux/activegate:1.2.3",
-				},
+				Image: "registry.example.com/linux/activegate:1.2.3",
 			},
 		},
 		Status: dynakube.DynaKubeStatus{
@@ -1010,10 +984,8 @@ func newTestDynaKube() *dynakube.DynaKube {
 
 func newTestTenantSecret(dk *dynakube.DynaKube) *corev1.Secret {
 	return &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      dk.KubernetesMonitoring().GetTenantSecretName(),
-			Namespace: dk.Namespace,
-		},
+		Name:      dk.KubernetesMonitoring().GetTenantSecretName(),
+		Namespace: dk.Namespace,
 		Data: map[string][]byte{
 			connectioninfo.TenantTokenKey: []byte("test-tenant-token"),
 		},
@@ -1037,10 +1009,8 @@ func isStatefulSet(obj client.Object) bool {
 
 func newTestAuthTokenSecret(dk *dynakube.DynaKube) *corev1.Secret {
 	return &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      dk.KubernetesMonitoring().GetAuthTokenSecretName(),
-			Namespace: dk.Namespace,
-		},
+		Name:      dk.KubernetesMonitoring().GetAuthTokenSecretName(),
+		Namespace: dk.Namespace,
 		Data: map[string][]byte{
 			kubemonauthtoken.SecretKey: []byte("test-auth-token"),
 		},
@@ -1049,10 +1019,8 @@ func newTestAuthTokenSecret(dk *dynakube.DynaKube) *corev1.Secret {
 
 func newTestCustomPropertiesSecret(dk *dynakube.DynaKube) *corev1.Secret {
 	return &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      dk.KubernetesMonitoring().GetCustomPropertiesSecretName(),
-			Namespace: dk.Namespace,
-		},
+		Name:      dk.KubernetesMonitoring().GetCustomPropertiesSecretName(),
+		Namespace: dk.Namespace,
 		Data: map[string][]byte{
 			kubemoncustomproperties.DataKey: []byte("[section]\nkey=value"),
 		},

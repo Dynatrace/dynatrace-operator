@@ -27,8 +27,6 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -46,12 +44,12 @@ var (
 func TestReconcile(t *testing.T) {
 	t.Run("Create node and then delete it", func(t *testing.T) {
 		ctx := t.Context()
-		node := &corev1.Node{ObjectMeta: metav1.ObjectMeta{Name: "node1"}}
+		node := &corev1.Node{Name: "node1"}
 
 		fakeClient := fake.NewClient(
 			node,
 			&dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{Name: "oneagent1", Namespace: testNamespace},
+				Name: "oneagent1", Namespace: testNamespace,
 				Status: dynakube.DynaKubeStatus{
 					OneAgent: oneagent.Status{
 						Instances: map[string]oneagent.Instance{node.Name: {IPAddress: "1.2.3.4"}},
@@ -59,10 +57,8 @@ func TestReconcile(t *testing.T) {
 				},
 			},
 			&corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "oneagent1",
-					Namespace: testNamespace,
-				},
+				Name:      "oneagent1",
+				Namespace: testNamespace,
 				Data: map[string][]byte{
 					token.APIKey: []byte(testAPIToken),
 				},
@@ -93,12 +89,12 @@ func TestReconcile(t *testing.T) {
 	})
 	t.Run("No error if v1 host entity api is not present on tenant ", func(t *testing.T) {
 		ctx := t.Context()
-		node := &corev1.Node{ObjectMeta: metav1.ObjectMeta{Name: "node1"}}
+		node := &corev1.Node{Name: "node1"}
 
 		fakeClient := fake.NewClient(
 			node,
 			&dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{Name: "oneagent1", Namespace: testNamespace},
+				Name: "oneagent1", Namespace: testNamespace,
 				Status: dynakube.DynaKubeStatus{
 					OneAgent: oneagent.Status{
 						Instances: map[string]oneagent.Instance{node.Name: {IPAddress: "1.2.3.4"}},
@@ -106,10 +102,8 @@ func TestReconcile(t *testing.T) {
 				},
 			},
 			&corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "oneagent1",
-					Namespace: testNamespace,
-				},
+				Name:      "oneagent1",
+				Namespace: testNamespace,
 				Data: map[string][]byte{
 					token.APIKey: []byte(testAPIToken),
 				},
@@ -136,12 +130,12 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("No error if v1 events api is not present on tenant ", func(t *testing.T) {
 		ctx := t.Context()
-		node := &corev1.Node{ObjectMeta: metav1.ObjectMeta{Name: "node1"}}
+		node := &corev1.Node{Name: "node1"}
 
 		fakeClient := fake.NewClient(
 			node,
 			&dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{Name: "oneagent1", Namespace: testNamespace},
+				Name: "oneagent1", Namespace: testNamespace,
 				Status: dynakube.DynaKubeStatus{
 					OneAgent: oneagent.Status{
 						Instances: map[string]oneagent.Instance{node.Name: {IPAddress: "1.2.3.4"}},
@@ -149,10 +143,8 @@ func TestReconcile(t *testing.T) {
 				},
 			},
 			&corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "oneagent1",
-					Namespace: testNamespace,
-				},
+				Name:      "oneagent1",
+				Namespace: testNamespace,
 				Data: map[string][]byte{
 					token.APIKey: []byte(testAPIToken),
 				},
@@ -182,7 +174,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("Create two nodes and then delete one", func(t *testing.T) {
 		ctx := t.Context()
-		node1 := &corev1.Node{ObjectMeta: metav1.ObjectMeta{Name: "node1"}}
+		node1 := &corev1.Node{Name: "node1"}
 		fakeClient := createDefaultFakeClient()
 
 		dtClient := createDTMockClient(t, "1.2.3.4", "HOST-42")
@@ -306,7 +298,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		// delete node from kube api
-		node1 := &corev1.Node{ObjectMeta: metav1.ObjectMeta{Name: "node1"}}
+		node1 := &corev1.Node{Name: "node1"}
 		err = fakeClient.Delete(ctx, node1)
 		require.NoError(t, err)
 
@@ -359,11 +351,11 @@ func TestReconcile(t *testing.T) {
 	t.Run("Skip mark for termination when no IP is known for the node", func(t *testing.T) {
 		fakeClient := fake.NewClient(
 			&corev1.Node{
-				ObjectMeta: metav1.ObjectMeta{Name: "node1"},
-				Spec:       corev1.NodeSpec{Unschedulable: true},
+				Name: "node1",
+				Spec: corev1.NodeSpec{Unschedulable: true},
 			},
 			&dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{Name: "oneagent1", Namespace: testNamespace},
+				Name: "oneagent1", Namespace: testNamespace,
 				Status: dynakube.DynaKubeStatus{
 					OneAgent: oneagent.Status{
 						// instance is known, but the OneAgent pod never reported an IP
@@ -372,10 +364,8 @@ func TestReconcile(t *testing.T) {
 				},
 			},
 			&corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "oneagent1",
-					Namespace: testNamespace,
-				},
+				Name:      "oneagent1",
+				Namespace: testNamespace,
 				Data: map[string][]byte{
 					token.APIKey: []byte(testAPIToken),
 				},
@@ -404,7 +394,7 @@ func TestReconcile(t *testing.T) {
 		fakeClient := fake.NewClient(
 			// node1 is gone from the cluster, but still in the cache without an IP
 			&dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{Name: "oneagent1", Namespace: testNamespace},
+				Name: "oneagent1", Namespace: testNamespace,
 				Status: dynakube.DynaKubeStatus{
 					OneAgent: oneagent.Status{
 						Instances: map[string]oneagent.Instance{"node1": {}},
@@ -412,20 +402,16 @@ func TestReconcile(t *testing.T) {
 				},
 			},
 			&corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "oneagent1",
-					Namespace: testNamespace,
-				},
+				Name:      "oneagent1",
+				Namespace: testNamespace,
 				Data: map[string][]byte{
 					token.APIKey: []byte(testAPIToken),
 				},
 			},
 			&corev1.ConfigMap{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      cache.ConfigMapName,
-					Namespace: testNamespace,
-				},
-				Data: map[string]string{"node1": string(staleEntry)},
+				Name:      cache.ConfigMapName,
+				Namespace: testNamespace,
+				Data:      map[string]string{"node1": string(staleEntry)},
 			},
 		)
 
@@ -446,9 +432,9 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("Skip reconcile when platform token is detected", func(t *testing.T) {
 		fakeClient := fake.NewClient(
-			&corev1.Node{ObjectMeta: metav1.ObjectMeta{Name: "node1"}},
+			&corev1.Node{Name: "node1"},
 			&dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{Name: "skip-platform", Namespace: testNamespace},
+				Name: "skip-platform", Namespace: testNamespace,
 				Status: dynakube.DynaKubeStatus{
 					OneAgent: oneagent.Status{
 						Instances: map[string]oneagent.Instance{
@@ -458,7 +444,7 @@ func TestReconcile(t *testing.T) {
 				},
 			},
 			&corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{Name: "skip-platform", Namespace: testNamespace},
+				Name: "skip-platform", Namespace: testNamespace,
 				Data: map[string][]byte{
 					token.APIKey: []byte(dttoken.PlatformPrefix + ".sometoken"),
 				},
@@ -474,21 +460,17 @@ func TestReconcile(t *testing.T) {
 
 func TestSendMarkedForTerminationForDTConnectionTimeout(t *testing.T) {
 	fakeClient := fake.NewClient(&corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      testName,
-			Namespace: testNamespace,
-		},
+		Name:      testName,
+		Namespace: testNamespace,
 		Data: map[string][]byte{
 			token.APIKey: []byte(testAPIToken),
 		},
 	})
 
 	dk := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      testName,
-			Namespace: testNamespace,
-		},
-		Spec: dynakube.DynaKubeSpec{APIURL: "localhost"},
+		Name:      testName,
+		Namespace: testNamespace,
+		Spec:      dynakube.DynaKubeSpec{APIURL: "localhost"},
 	}
 
 	t.Run("connection timeout from env var is applied to the underlying http.Client", func(t *testing.T) {
@@ -558,7 +540,7 @@ func testDTClientBuilder(t *testing.T, timeout time.Duration) dynatrace.ClientFa
 
 func createReconcileRequest(nodeName string) reconcile.Request {
 	return reconcile.Request{
-		NamespacedName: types.NamespacedName{Name: nodeName},
+		Name: nodeName,
 	}
 }
 
@@ -600,10 +582,10 @@ func reconcileAllNodes(t *testing.T, ctrl *Controller, fakeClient client.Client)
 
 func createDefaultFakeClient() client.Client {
 	return fake.NewClient(
-		&corev1.Node{ObjectMeta: metav1.ObjectMeta{Name: "node1"}},
-		&corev1.Node{ObjectMeta: metav1.ObjectMeta{Name: "node2"}},
+		&corev1.Node{Name: "node1"},
+		&corev1.Node{Name: "node2"},
 		&dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{Name: "oneagent1", Namespace: testNamespace},
+			Name: "oneagent1", Namespace: testNamespace,
 			Status: dynakube.DynaKubeStatus{
 				OneAgent: oneagent.Status{
 					Instances: map[string]oneagent.Instance{"node1": {IPAddress: "1.2.3.4"}},
@@ -611,7 +593,7 @@ func createDefaultFakeClient() client.Client {
 			},
 		},
 		&dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{Name: "oneagent2", Namespace: testNamespace},
+			Name: "oneagent2", Namespace: testNamespace,
 			Status: dynakube.DynaKubeStatus{
 				OneAgent: oneagent.Status{
 					Instances: map[string]oneagent.Instance{"node2": {IPAddress: "5.6.7.8"}},
@@ -619,19 +601,15 @@ func createDefaultFakeClient() client.Client {
 			},
 		},
 		&corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "oneagent1",
-				Namespace: testNamespace,
-			},
+			Name:      "oneagent1",
+			Namespace: testNamespace,
 			Data: map[string][]byte{
 				token.APIKey: []byte(testAPIToken),
 			},
 		},
 		&corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "oneagent2",
-				Namespace: testNamespace,
-			},
+			Name:      "oneagent2",
+			Namespace: testNamespace,
 			Data: map[string][]byte{
 				token.APIKey: []byte(testAPIToken),
 			},

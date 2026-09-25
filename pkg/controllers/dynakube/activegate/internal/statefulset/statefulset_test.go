@@ -44,19 +44,15 @@ var testReplicas int32 = 69
 
 func getTestDynakube() dynakube.DynaKube {
 	return dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        testDynakubeName,
-			Namespace:   testNamespaceName,
-			Annotations: map[string]string{},
-		},
+		Name:        testDynakubeName,
+		Namespace:   testNamespaceName,
+		Annotations: map[string]string{},
 		Spec: dynakube.DynaKubeSpec{
 			ActiveGate: activegate.Spec{
 				Capabilities: []activegate.CapabilityDisplayName{
 					activegate.RoutingCapability.DisplayName,
 				},
-				CapabilityProperties: activegate.CapabilityProperties{
-					Replicas: new(testReplicas),
-				},
+				Replicas: new(testReplicas),
 			},
 		},
 		Status: dynakube.DynaKubeStatus{
@@ -640,10 +636,8 @@ func TestTempVolume(t *testing.T) {
 			require.NotEmpty(t, sts)
 
 			expectedEmptyDirVolume := corev1.Volume{
-				Name: consts.GatewayTmpVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
+				Name:     consts.GatewayTmpVolumeName,
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			}
 
 			if test.emptyDirExpected {
@@ -716,16 +710,12 @@ func TestVolumeMounts(t *testing.T) {
 func TestBuildVolumes(t *testing.T) {
 	t.Run("user-provided volumes are included alongside managed volumes", func(t *testing.T) {
 		userVolume := corev1.Volume{
-			Name: "my-custom-volume",
-			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{},
-			},
+			Name:     "my-custom-volume",
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
 		}
 		managedVolume := corev1.Volume{
-			Name: consts.GatewayTmpVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{},
-			},
+			Name:     consts.GatewayTmpVolumeName,
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
 		}
 
 		dk := getTestDynakube()
@@ -745,10 +735,8 @@ func TestBuildVolumes(t *testing.T) {
 		sts := statefulsetBuilder.getBase()
 
 		managedVolume := corev1.Volume{
-			Name: consts.GatewayTmpVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{},
-			},
+			Name:     consts.GatewayTmpVolumeName,
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
 		}
 		assert.Contains(t, sts.Spec.Template.Spec.Volumes, managedVolume)
 		assert.Len(t, sts.Spec.Template.Spec.Volumes, 1)

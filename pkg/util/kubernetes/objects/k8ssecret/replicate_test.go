@@ -11,7 +11,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -19,15 +18,11 @@ const testSourceSecretName = "source-secret"
 
 func TestReplicate(t *testing.T) {
 	sourceNs := &corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "dk-ns",
-		},
+		Name: "dk-ns",
 	}
 
 	targetNs := &corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "user-ns",
-		},
+		Name: "user-ns",
 	}
 
 	data := map[string][]byte{
@@ -82,14 +77,10 @@ func TestReplicate(t *testing.T) {
 
 func clientSecret(secretName string, namespaceName string, data map[string][]byte) *corev1.Secret {
 	return &corev1.Secret{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "core/v1",
-			Kind:       "Secret",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      secretName,
-			Namespace: namespaceName,
-		},
-		Data: data,
+		APIVersion: "core/v1",
+		Kind:       "Secret",
+		Name:       secretName,
+		Namespace:  namespaceName,
+		Data:       data,
 	}
 }

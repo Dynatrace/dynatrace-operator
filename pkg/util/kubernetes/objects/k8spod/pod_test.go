@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestGet(t *testing.T) {
@@ -18,10 +17,8 @@ func TestGet(t *testing.T) {
 	testNamespace := "testNamespace"
 	fakeClient := fake.NewClient(
 		&corev1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testPodName,
-				Namespace: testNamespace,
-			},
+			Name:      testPodName,
+			Namespace: testNamespace,
 		},
 	)
 
@@ -41,9 +38,7 @@ func TestGetName(t *testing.T) {
 	t.Run("get pod name", func(t *testing.T) {
 		podName := "superpod"
 		testPod := &corev1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: podName,
-			},
+			Name: podName,
 		}
 		got := GetName(testPod)
 		assert.Equal(t, podName, got)
@@ -52,10 +47,8 @@ func TestGetName(t *testing.T) {
 		podName := ""
 		podGenerateName := "gen-name-"
 		testPod := &corev1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:         podName,
-				GenerateName: podGenerateName,
-			},
+			Name:         podName,
+			GenerateName: podGenerateName,
 		}
 		// testPod.Gene
 		got := GetName(testPod)
@@ -65,13 +58,13 @@ func TestGetName(t *testing.T) {
 
 func TestSetPodAnnotationIfNotExists(t *testing.T) {
 	t.Run("sets key when absent", func(t *testing.T) {
-		pod := &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{}}}
+		pod := &corev1.Pod{Annotations: map[string]string{}}
 		SetAnnotationIfNotExists(pod, "my-key", "my-value")
 		assert.Equal(t, "my-value", pod.Annotations["my-key"])
 	})
 
 	t.Run("does not overwrite existing key", func(t *testing.T) {
-		pod := &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{"my-key": "existing"}}}
+		pod := &corev1.Pod{Annotations: map[string]string{"my-key": "existing"}}
 		SetAnnotationIfNotExists(pod, "my-key", "new-value")
 		assert.Equal(t, "existing", pod.Annotations["my-key"])
 	})

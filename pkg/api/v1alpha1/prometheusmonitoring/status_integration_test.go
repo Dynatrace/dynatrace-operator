@@ -28,10 +28,8 @@ const (
 func TestPrometheusMonitoringUpdateStatus(t *testing.T) {
 	clt := integrationtests.SetupTestEnvironment(t)
 	clt.Create(t.Context(), &corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:   testNamespacePM,
-			Labels: map[string]string{},
-		},
+		Name:   testNamespacePM,
+		Labels: map[string]string{},
 	})
 
 	t.Run("can't add duplicated conditions", func(t *testing.T) {
@@ -59,13 +57,11 @@ func TestPrometheusMonitoringUpdateStatus(t *testing.T) {
 
 func buildPrometheusMonitoring() *prometheusmonitoring.PrometheusMonitoring {
 	return &prometheusmonitoring.PrometheusMonitoring{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        testPrometheusMonitoringName,
-			Namespace:   testNamespacePM,
-			Annotations: map[string]string{},
-		},
-		Spec:   prometheusmonitoring.PrometheusMonitoringSpec{DynaKubeName: "dynakube"},
-		Status: prometheusmonitoring.PrometheusMonitoringStatus{},
+		Name:        testPrometheusMonitoringName,
+		Namespace:   testNamespacePM,
+		Annotations: map[string]string{},
+		Spec:        prometheusmonitoring.PrometheusMonitoringSpec{DynaKubeName: "dynakube"},
+		Status:      prometheusmonitoring.PrometheusMonitoringStatus{},
 	}
 }
 

@@ -188,9 +188,7 @@ func TestReconcile(t *testing.T) {
 
 func createDynaKube() dynakube.DynaKube {
 	return dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "rules-dk",
-		},
+		Name: "rules-dk",
 		Spec: dynakube.DynaKubeSpec{
 			MetadataEnrichment: metadataenrichment.Spec{
 				Enabled: new(true),

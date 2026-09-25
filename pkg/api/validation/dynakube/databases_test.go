@@ -17,15 +17,12 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/databases"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestMissingDatabaseExecutorImage(t *testing.T) {
 	dk := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      testName,
-			Namespace: testNamespace,
-		},
+		Name:      testName,
+		Namespace: testNamespace,
 		Spec: dynakube.DynaKubeSpec{
 			APIURL: testAPIURL,
 			Templates: dynakube.TemplatesSpec{
@@ -47,22 +44,18 @@ func TestMissingDatabaseExecutorImage(t *testing.T) {
 	t.Run("image not required when public registry is enabled", func(t *testing.T) {
 		assertAllowedWithoutWarnings(t,
 			&dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:        testName,
-					Namespace:   testNamespace,
-					Annotations: map[string]string{exp.UsePublicRegistryKey: "true"},
-				},
+				Name:        testName,
+				Namespace:   testNamespace,
+				Annotations: map[string]string{exp.UsePublicRegistryKey: "true"},
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
 					ActiveGate: activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
 							activegate.KubeMonCapability.DisplayName,
 						},
-						CapabilityProperties: activegate.CapabilityProperties{
-							Resources: corev1.ResourceRequirements{
-								Limits: corev1.ResourceList{
-									corev1.ResourceMemory: resource.MustParse("256Mi"),
-								},
+						Resources: corev1.ResourceRequirements{
+							Limits: corev1.ResourceList{
+								corev1.ResourceMemory: resource.MustParse("256Mi"),
 							},
 						},
 					},
@@ -76,21 +69,17 @@ func TestMissingDatabaseExecutorImage(t *testing.T) {
 	t.Run("image not required when platform token is present", func(t *testing.T) {
 		assertAllowedWithoutWarnings(t,
 			&dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      testName,
-					Namespace: testNamespace,
-				},
+				Name:      testName,
+				Namespace: testNamespace,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
 					ActiveGate: activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
 							activegate.KubeMonCapability.DisplayName,
 						},
-						CapabilityProperties: activegate.CapabilityProperties{
-							Resources: corev1.ResourceRequirements{
-								Limits: corev1.ResourceList{
-									corev1.ResourceMemory: resource.MustParse("256Mi"),
-								},
+						Resources: corev1.ResourceRequirements{
+							Limits: corev1.ResourceList{
+								corev1.ResourceMemory: resource.MustParse("256Mi"),
 							},
 						},
 					},
@@ -105,10 +94,8 @@ func TestMissingDatabaseExecutorImage(t *testing.T) {
 
 func TestConflictingOrInvalidVolumeMounts(t *testing.T) {
 	baseDK := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      testName,
-			Namespace: testNamespace,
-		},
+		Name:      testName,
+		Namespace: testNamespace,
 		Spec: dynakube.DynaKubeSpec{
 			APIURL: testAPIURL,
 			Templates: dynakube.TemplatesSpec{
@@ -209,10 +196,8 @@ func TestConflictingOrInvalidVolumeMounts(t *testing.T) {
 
 func TestUnusedVolumes(t *testing.T) {
 	baseDK := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      testName,
-			Namespace: testNamespace,
-		},
+		Name:      testName,
+		Namespace: testNamespace,
 		Spec: dynakube.DynaKubeSpec{
 			APIURL: testAPIURL,
 			Templates: dynakube.TemplatesSpec{
@@ -274,10 +259,8 @@ func TestHostPathDatabaseVolume(t *testing.T) {
 		volumeName := "illegal-host-path-volume"
 
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-			},
+			Name:      testName,
+			Namespace: testNamespace,
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testAPIURL,
 				Templates: dynakube.TemplatesSpec{
@@ -301,10 +284,8 @@ func TestHostPathDatabaseVolume(t *testing.T) {
 							Volumes: []corev1.Volume{
 								{
 									Name: volumeName,
-									VolumeSource: corev1.VolumeSource{
-										HostPath: &corev1.HostPathVolumeSource{
-											Path: "/some/host/path",
-										},
+									HostPath: &corev1.HostPathVolumeSource{
+										Path: "/some/host/path",
 									},
 								},
 							},

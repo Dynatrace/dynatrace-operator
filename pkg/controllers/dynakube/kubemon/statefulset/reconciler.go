@@ -32,7 +32,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -145,9 +144,7 @@ func buildEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 			Name: deploymentmetadata.EnvDTDeploymentMetadata,
 			ValueFrom: &corev1.EnvVarSource{
 				ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: deploymentmetadata.GetDeploymentMetadataConfigMapName(dk.Name),
-					},
+					Name:     deploymentmetadata.GetDeploymentMetadataConfigMapName(dk.Name),
 					Key:      deploymentmetadata.KubemonMetadataKey,
 					Optional: new(false),
 				},
@@ -157,9 +154,9 @@ func buildEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 			Name: connectioninfo.EnvDTTenant,
 			ValueFrom: &corev1.EnvVarSource{
 				ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
-					LocalObjectReference: corev1.LocalObjectReference{Name: connInfoCM},
-					Key:                  connectioninfo.TenantUUIDKey,
-					Optional:             new(false),
+					Name:     connInfoCM,
+					Key:      connectioninfo.TenantUUIDKey,
+					Optional: new(false),
 				},
 			},
 		},
@@ -167,9 +164,9 @@ func buildEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 			Name: connectioninfo.EnvDTServer,
 			ValueFrom: &corev1.EnvVarSource{
 				ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
-					LocalObjectReference: corev1.LocalObjectReference{Name: connInfoCM},
-					Key:                  connectioninfo.CommunicationEndpointsKey,
-					Optional:             new(false),
+					Name:     connInfoCM,
+					Key:      connectioninfo.CommunicationEndpointsKey,
+					Optional: new(false),
 				},
 			},
 		},
@@ -192,79 +189,61 @@ func buildVolumes(dk *dynakube.DynaKube) []corev1.Volume {
 	volumes := []corev1.Volume{
 		{
 			Name: connectioninfo.TenantSecretVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName:  km.GetTenantSecretName(),
-					DefaultMode: new(int32(0o640)),
-					Optional:    new(false),
-				},
+			Secret: &corev1.SecretVolumeSource{
+				SecretName:  km.GetTenantSecretName(),
+				DefaultMode: new(int32(0o640)),
+				Optional:    new(false),
 			},
 		},
 		{
 			Name: AuthTokenVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName:  km.GetAuthTokenSecretName(),
-					DefaultMode: new(int32(0o640)),
-					Optional:    new(false),
-				},
+			Secret: &corev1.SecretVolumeSource{
+				SecretName:  km.GetAuthTokenSecretName(),
+				DefaultMode: new(int32(0o640)),
+				Optional:    new(false),
 			},
 		},
 		{
-			Name:         StorageVolumeName,
-			VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}},
+			Name:     StorageVolumeName,
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
 		},
 		{
-			Name: agconsts.GatewayLibTempVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{},
-			},
+			Name:     agconsts.GatewayLibTempVolumeName,
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
 		},
 		{
-			Name: agconsts.GatewayDataVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{},
-			},
+			Name:     agconsts.GatewayDataVolumeName,
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
 		},
 		{
-			Name: agconsts.GatewayLogVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{},
-			},
+			Name:     agconsts.GatewayLogVolumeName,
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
 		},
 		{
-			Name: agconsts.GatewayConfigVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{},
-			},
+			Name:     agconsts.GatewayConfigVolumeName,
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
 		},
 		{
-			Name: agconsts.TrustStoreVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{},
-			},
+			Name:     agconsts.TrustStoreVolumeName,
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
 		},
 		{
-			Name: agconsts.GatewaySslVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{},
-			},
+			Name:     agconsts.GatewaySslVolumeName,
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
 		},
 		{
-			Name:         agconsts.InitCertLoaderWorkDirVolumeName,
-			VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}},
+			Name:     agconsts.InitCertLoaderWorkDirVolumeName,
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
 		},
 	}
 
 	if km.CustomProperties != nil {
 		volumes = append(volumes, corev1.Volume{
 			Name: kubemoncustomproperties.VolumeName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName:  km.GetCustomPropertiesSecretName(),
-					DefaultMode: new(int32(0o640)),
-					Optional:    new(false),
-				},
+			Secret: &corev1.SecretVolumeSource{
+				SecretName:  km.GetCustomPropertiesSecretName(),
+				DefaultMode: new(int32(0o640)),
+				Optional:    new(false),
 			},
 		})
 	}
@@ -273,20 +252,16 @@ func buildVolumes(dk *dynakube.DynaKube) []corev1.Volume {
 		volumes = append(volumes,
 			corev1.Volume{
 				Name: kspmTokenVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName:  dk.KSPM().GetTokenSecretName(),
-						DefaultMode: new(int32(0o640)),
-					},
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  dk.KSPM().GetTokenSecretName(),
+					DefaultMode: new(int32(0o640)),
 				},
 			},
 			corev1.Volume{
 				Name: agconsts.CertsVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName:  dk.KubernetesMonitoring().GetTLSSecretName(),
-						DefaultMode: new(int32(0o640)),
-					},
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  dk.KubernetesMonitoring().GetTLSSecretName(),
+					DefaultMode: new(int32(0o640)),
 				},
 			})
 	}
@@ -294,15 +269,13 @@ func buildVolumes(dk *dynakube.DynaKube) []corev1.Volume {
 	if dk.KubernetesMonitoring().NeedsDeploymentProperties() {
 		volumes = append(volumes, corev1.Volume{
 			Name: agconsts.DeploymentPropertiesVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName:  dk.KubernetesMonitoring().GetDeploymentPropertiesSecretName(),
-					DefaultMode: new(int32(0o640)),
-					Items: []corev1.KeyToPath{
-						{
-							Key:  agconsts.DeploymentPropertiesFileName,
-							Path: agconsts.DeploymentPropertiesFileName,
-						},
+			Secret: &corev1.SecretVolumeSource{
+				SecretName:  dk.KubernetesMonitoring().GetDeploymentPropertiesSecretName(),
+				DefaultMode: new(int32(0o640)),
+				Items: []corev1.KeyToPath{
+					{
+						Key:  agconsts.DeploymentPropertiesFileName,
+						Path: agconsts.DeploymentPropertiesFileName,
 					},
 				},
 			},
@@ -312,11 +285,9 @@ func buildVolumes(dk *dynakube.DynaKube) []corev1.Volume {
 	if dk.HasProxy() {
 		volumes = append(volumes, corev1.Volume{
 			Name: agconsts.ProxySecretVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName:  proxy.BuildSecretName(dk.Name),
-					DefaultMode: new(int32(0o640)),
-				},
+			Secret: &corev1.SecretVolumeSource{
+				SecretName:  proxy.BuildSecretName(dk.Name),
+				DefaultMode: new(int32(0o640)),
 			},
 		})
 	}
@@ -436,7 +407,7 @@ func buildInitVolumeMounts() []corev1.VolumeMount {
 }
 
 func (r *Reconciler) delete(ctx context.Context, dk *dynakube.DynaKube) error {
-	statefulSet := &appsv1.StatefulSet{ObjectMeta: metav1.ObjectMeta{Name: dk.KubernetesMonitoring().GetStatefulSetName(), Namespace: dk.Namespace}}
+	statefulSet := &appsv1.StatefulSet{Name: dk.KubernetesMonitoring().GetStatefulSetName(), Namespace: dk.Namespace}
 
 	return r.sts.Delete(ctx, statefulSet)
 }

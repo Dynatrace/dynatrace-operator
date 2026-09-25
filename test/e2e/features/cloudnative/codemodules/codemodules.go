@@ -43,7 +43,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
@@ -306,10 +305,8 @@ func WithProxyAndAutomaticAGCert(t *testing.T, proxySpec *value.Source) features
 	builder.Assess("check proxy settings in ruxitagentproc.conf", proxy.CheckRuxitAgentProcFileHasProxySetting(*sampleApp, proxySpec))
 
 	agTLSSecret := corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      cloudNativeDynakube.ActiveGate().GetTLSSecretName(),
-			Namespace: cloudNativeDynakube.Namespace,
-		},
+		Name:      cloudNativeDynakube.ActiveGate().GetTLSSecretName(),
+		Namespace: cloudNativeDynakube.Namespace,
 	}
 	builder.Assess("read AG TLS secret", getAgTLSSecret(&agTLSSecret))
 
@@ -448,10 +445,8 @@ func WithProxyCAAndAutomaticAGCert(t *testing.T, proxySpec *value.Source) featur
 	builder.Assess("codemodules have been downloaded", ImageHasBeenDownloaded(cloudNativeDynakube))
 
 	agTLSSecret := corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      cloudNativeDynakube.ActiveGate().GetTLSSecretName(),
-			Namespace: cloudNativeDynakube.Namespace,
-		},
+		Name:      cloudNativeDynakube.ActiveGate().GetTLSSecretName(),
+		Namespace: cloudNativeDynakube.Namespace,
 	}
 	builder.Assess("read AG TLS secret", getAgTLSSecret(&agTLSSecret))
 

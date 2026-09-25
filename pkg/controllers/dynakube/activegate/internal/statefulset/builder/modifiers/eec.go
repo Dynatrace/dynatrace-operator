@@ -47,16 +47,14 @@ func (mod EECModifier) getVolumes() []corev1.Volume {
 	return []corev1.Volume{
 		{
 			Name: consts.EECVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName:  mod.dk.Extensions().GetTokenSecretName(),
-					DefaultMode: mode,
-					Items: []corev1.KeyToPath{
-						{
-							Key:  eecconsts.TokenSecretKey,
-							Path: eecFile,
-							Mode: mode,
-						},
+			Secret: &corev1.SecretVolumeSource{
+				SecretName:  mod.dk.Extensions().GetTokenSecretName(),
+				DefaultMode: mode,
+				Items: []corev1.KeyToPath{
+					{
+						Key:  eecconsts.TokenSecretKey,
+						Path: eecFile,
+						Mode: mode,
 					},
 				},
 			},

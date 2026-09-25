@@ -13,17 +13,14 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func genNode(index int) *corev1.Node {
 	return &corev1.Node{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: fmt.Sprintf("node-%d", index),
-			Labels: map[string]string{
-				"kubernetes.io/hostname": fmt.Sprintf("node-%d", index),
-			},
+		Name: fmt.Sprintf("node-%d", index),
+		Labels: map[string]string{
+			"kubernetes.io/hostname": fmt.Sprintf("node-%d", index),
 		},
 		Spec: corev1.NodeSpec{
 			Unschedulable: false,
@@ -61,10 +58,8 @@ func createDynakube(tb testing.TB, clt client.Client, url string, index int, ins
 	tb.Helper()
 
 	dk := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("dynakube-%d", index),
-			Namespace: testNamespace,
-		},
+		Name:      fmt.Sprintf("dynakube-%d", index),
+		Namespace: testNamespace,
 		Spec: dynakube.DynaKubeSpec{
 			APIURL: url,
 			OneAgent: oneagent.Spec{
@@ -91,10 +86,8 @@ func createSecret(tb testing.TB, clt client.Client, index int) *corev1.Secret {
 	tb.Helper()
 
 	secret := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("dynakube-%d", index),
-			Namespace: testNamespace,
-		},
+		Name:      fmt.Sprintf("dynakube-%d", index),
+		Namespace: testNamespace,
 		Data: map[string][]byte{
 			token.APIKey: []byte(testAPIToken),
 		},

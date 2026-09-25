@@ -15,7 +15,6 @@ import (
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -79,12 +78,10 @@ func New(ctx context.Context, apiReader client.Reader, ns string, owner client.O
 		coreLabels := k8slabel.NewCoreLabels(version.AppName, k8slabel.NodeControllerLabel)
 
 		cm := &corev1.ConfigMap{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      ConfigMapName,
-				Namespace: ns,
-				Labels:    coreLabels.BuildLabels(),
-			},
-			Data: map[string]string{},
+			Name:      ConfigMapName,
+			Namespace: ns,
+			Labels:    coreLabels.BuildLabels(),
+			Data:      map[string]string{},
 		}
 		// If running locally, don't set the controller.
 		if owner != nil {

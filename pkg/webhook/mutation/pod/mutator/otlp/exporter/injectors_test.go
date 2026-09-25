@@ -14,7 +14,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestTraceInjectorIsEnabledAndInject(t *testing.T) {
@@ -212,10 +211,8 @@ func TestNoProxyInjector_Inject(t *testing.T) {
 
 	makeDynakube := func(activeGateEnabled, featureFlagDisabled, hasProxy bool) *dynakube.DynaKube {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "dynakube",
-				Namespace: "dynatrace",
-			},
+			Name:      "dynakube",
+			Namespace: "dynatrace",
 		}
 
 		if activeGateEnabled {

@@ -22,7 +22,6 @@ import (
 	oneagentclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/oneagent"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
@@ -40,10 +39,8 @@ func TestPreparePMC(t *testing.T) {
 
 	t.Run("successfully prepares PMC from API", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testDynakube,
-				Namespace: testNamespace,
-			},
+			Name:      testDynakube,
+			Namespace: testNamespace,
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testAPIurl,
 				OneAgent: oneagent.Spec{
@@ -89,10 +86,8 @@ func TestPreparePMC(t *testing.T) {
 
 	t.Run("successfully prepares PMC with proxy", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testDynakube,
-				Namespace: testNamespace,
-			},
+			Name:      testDynakube,
+			Namespace: testNamespace,
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testAPIurl,
 				OneAgent: oneagent.Spec{
@@ -142,10 +137,8 @@ func TestPreparePMC(t *testing.T) {
 
 	t.Run("error getting PMC from API", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testDynakube,
-				Namespace: testNamespace,
-			},
+			Name:      testDynakube,
+			Namespace: testNamespace,
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testAPIurl,
 				OneAgent: oneagent.Spec{
@@ -174,10 +167,8 @@ func TestPreparePMC(t *testing.T) {
 
 	t.Run("error getting tenant token", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testDynakube,
-				Namespace: testNamespace,
-			},
+			Name:      testDynakube,
+			Namespace: testNamespace,
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testAPIurl,
 				OneAgent: oneagent.Spec{
@@ -204,10 +195,8 @@ func TestPreparePMC(t *testing.T) {
 
 	t.Run("error getting proxy config", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testDynakube,
-				Namespace: testNamespace,
-			},
+			Name:      testDynakube,
+			Namespace: testNamespace,
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testAPIurl,
 				OneAgent: oneagent.Spec{
@@ -250,10 +239,8 @@ func TestPreparePMC(t *testing.T) {
 
 	t.Run("uses cached PMC when not outdated", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testDynakube,
-				Namespace: testNamespace,
-			},
+			Name:      testDynakube,
+			Namespace: testNamespace,
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testAPIurl,
 				OneAgent: oneagent.Spec{
@@ -317,10 +304,8 @@ func TestGetCachedPMC(t *testing.T) {
 
 	t.Run("returns nil when secret is outdated", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testDynakube,
-				Namespace: testNamespace,
-			},
+			Name:      testDynakube,
+			Namespace: testNamespace,
 		}
 
 		k8sconditions.SetSecretOutdated(dk.Conditions(), ConfigConditionType, "secret is outdated")
@@ -338,10 +323,8 @@ func TestGetCachedPMC(t *testing.T) {
 
 	t.Run("returns cached PMC when available", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testDynakube,
-				Namespace: testNamespace,
-			},
+			Name:      testDynakube,
+			Namespace: testNamespace,
 		}
 
 		k8sconditions.SetSecretCreated(dk.Conditions(), ConfigConditionType, "secret created")
@@ -370,10 +353,8 @@ func TestGetCachedPMC(t *testing.T) {
 
 	t.Run("returns nil when source secret not found", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testDynakube,
-				Namespace: testNamespace,
-			},
+			Name:      testDynakube,
+			Namespace: testNamespace,
 		}
 
 		k8sconditions.SetSecretCreated(dk.Conditions(), ConfigConditionType, "secret created")
@@ -391,10 +372,8 @@ func TestGetCachedPMC(t *testing.T) {
 
 	t.Run("returns nil when PMC data missing from source secret", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testDynakube,
-				Namespace: testNamespace,
-			},
+			Name:      testDynakube,
+			Namespace: testNamespace,
 		}
 
 		k8sconditions.SetSecretCreated(dk.Conditions(), ConfigConditionType, "secret created")
@@ -420,10 +399,8 @@ func TestGetCachedPMC(t *testing.T) {
 
 	t.Run("returns nil when source secret PMC data is invalid", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testDynakube,
-				Namespace: testNamespace,
-			},
+			Name:      testDynakube,
+			Namespace: testNamespace,
 		}
 
 		k8sconditions.SetSecretCreated(dk.Conditions(), ConfigConditionType, "secret created")
@@ -445,10 +422,8 @@ func TestGetCachedPMC(t *testing.T) {
 
 	t.Run("returns err when k8s api fails", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testDynakube,
-				Namespace: testNamespace,
-			},
+			Name:      testDynakube,
+			Namespace: testNamespace,
 		}
 
 		k8sconditions.SetSecretCreated(dk.Conditions(), ConfigConditionType, "secret created")

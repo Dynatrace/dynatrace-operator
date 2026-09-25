@@ -30,10 +30,8 @@ func TestNew(t *testing.T) {
 
 	t.Run("Create new edgeconnect deployment", func(t *testing.T) {
 		ec := &edgeconnect.EdgeConnect{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-			},
+			Name:      testName,
+			Namespace: testNamespace,
 			Spec: edgeconnect.EdgeConnectSpec{
 				APIServer: "abc12345.dynatrace.com",
 			},
@@ -50,10 +48,8 @@ func TestNew(t *testing.T) {
 
 func Test_buildAppLabels(t *testing.T) {
 	ec := &edgeconnect.EdgeConnect{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      testName,
-			Namespace: testNamespace,
-		},
+		Name:      testName,
+		Namespace: testNamespace,
 		Spec: edgeconnect.EdgeConnectSpec{
 			APIServer: "abc12345.dynatrace.com",
 			OAuth: edgeconnect.OAuthSpec{
@@ -87,12 +83,10 @@ func TestLabels(t *testing.T) {
 
 	t.Run("Check empty custom labels", func(t *testing.T) {
 		ec := &edgeconnect.EdgeConnect{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-				Labels: map[string]string{
-					testObjectMetaLabelKey: testObjectMetaValue,
-				},
+			Name:      testName,
+			Namespace: testNamespace,
+			Labels: map[string]string{
+				testObjectMetaLabelKey: testObjectMetaValue,
 			},
 			Spec: edgeconnect.EdgeConnectSpec{},
 		}
@@ -116,12 +110,10 @@ func TestLabels(t *testing.T) {
 
 	t.Run("Check custom label set correctly", func(t *testing.T) {
 		ec := &edgeconnect.EdgeConnect{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-				Labels: map[string]string{
-					testObjectMetaLabelKey: testObjectMetaValue,
-				},
+			Name:      testName,
+			Namespace: testNamespace,
+			Labels: map[string]string{
+				testObjectMetaLabelKey: testObjectMetaValue,
 			},
 			Spec: edgeconnect.EdgeConnectSpec{
 				Labels: map[string]string{
@@ -162,12 +154,10 @@ func TestAnnotations(t *testing.T) {
 
 	t.Run("Check empty annotations", func(t *testing.T) {
 		ec := &edgeconnect.EdgeConnect{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-				Annotations: map[string]string{
-					testObjectMetaAnnotationKey: testObjectMetaAnnotationValue,
-				},
+			Name:      testName,
+			Namespace: testNamespace,
+			Annotations: map[string]string{
+				testObjectMetaAnnotationKey: testObjectMetaAnnotationValue,
 			},
 			Spec: edgeconnect.EdgeConnectSpec{},
 		}
@@ -183,12 +173,10 @@ func TestAnnotations(t *testing.T) {
 
 	t.Run("Check custom annotations set correctly", func(t *testing.T) {
 		ec := &edgeconnect.EdgeConnect{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-				Annotations: map[string]string{
-					testObjectMetaAnnotationKey: testObjectMetaAnnotationValue,
-				},
+			Name:      testName,
+			Namespace: testNamespace,
+			Annotations: map[string]string{
+				testObjectMetaAnnotationKey: testObjectMetaAnnotationValue,
 			},
 			Spec: edgeconnect.EdgeConnectSpec{
 				Annotations: map[string]string{
@@ -217,10 +205,8 @@ func TestAppArmor(t *testing.T) {
 		version.DisableCacheForTest(30)
 
 		ec := &edgeconnect.EdgeConnect{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-			},
+			Name:      testName,
+			Namespace: testNamespace,
 			Spec: edgeconnect.EdgeConnectSpec{
 				Annotations: map[string]string{
 					corev1.DeprecatedAppArmorBetaContainerAnnotationKeyPrefix + consts.EdgeConnectContainerName: corev1.DeprecatedAppArmorBetaProfileRuntimeDefault,
@@ -239,10 +225,8 @@ func TestAppArmor(t *testing.T) {
 		version.DisableCacheForTest(31)
 
 		ec := &edgeconnect.EdgeConnect{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-			},
+			Name:      testName,
+			Namespace: testNamespace,
 			Spec: edgeconnect.EdgeConnectSpec{
 				Annotations: map[string]string{
 					corev1.DeprecatedAppArmorBetaContainerAnnotationKeyPrefix + consts.EdgeConnectContainerName: corev1.DeprecatedAppArmorBetaProfileRuntimeDefault,
@@ -260,10 +244,8 @@ func TestAppArmor(t *testing.T) {
 
 func Test_prepareResourceRequirements(t *testing.T) {
 	ec := &edgeconnect.EdgeConnect{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      testName,
-			Namespace: testNamespace,
-		},
+		Name:      testName,
+		Namespace: testNamespace,
 		Spec: edgeconnect.EdgeConnectSpec{
 			APIServer: "abc12345.dynatrace.com",
 			OAuth: edgeconnect.OAuthSpec{

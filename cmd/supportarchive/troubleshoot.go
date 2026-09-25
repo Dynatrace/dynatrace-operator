@@ -27,14 +27,12 @@ type troubleshootCollector struct {
 
 func newTroubleshootCollector(context context.Context, log logd.Logger, supportArchive archiver, namespace string, apiReader client.Reader, kubeConfig rest.Config) collector { //nolint:revive // argument-limit doesn't apply to constructors
 	return troubleshootCollector{
-		collectorCommon: collectorCommon{
-			log:            log,
-			supportArchive: supportArchive,
-		},
-		context:    context,
-		apiReader:  apiReader,
-		kubeConfig: kubeConfig,
-		namespace:  namespace,
+		log:            log,
+		supportArchive: supportArchive,
+		context:        context,
+		apiReader:      apiReader,
+		kubeConfig:     kubeConfig,
+		namespace:      namespace,
 	}
 }
 

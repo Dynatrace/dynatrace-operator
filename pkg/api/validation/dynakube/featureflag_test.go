@@ -14,7 +14,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestDeprecatedFeatureFlag(t *testing.T) {
@@ -28,11 +27,9 @@ func deprecatedFeatureFlagWithDeprecatedFlags(t *testing.T) {
 	for _, featureFlag := range deprecatedFeatureFlags {
 		t.Run(featureFlag, func(t *testing.T) {
 			dk := &dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "test",
-					Annotations: map[string]string{
-						featureFlag: "true",
-					},
+				Name: "test",
+				Annotations: map[string]string{
+					featureFlag: "true",
 				},
 			}
 			expected := warningFeatureFlagDeprecated + featureFlag
@@ -45,11 +42,9 @@ func deprecatedFeatureFlagWithDeprecatedFlags(t *testing.T) {
 
 func deprecatedFeatureFlagWithoutDeprecatedFlags(t *testing.T) {
 	dk := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "test",
-			Annotations: map[string]string{
-				"other-flag": "true",
-			},
+		Name: "test",
+		Annotations: map[string]string{
+			"other-flag": "true",
 		},
 	}
 	result := deprecatedFeatureFlag(t.Context(), nil, dk)
@@ -72,10 +67,8 @@ func deprecatedFeatureFlagWithMultipleDeprecatedFlags(t *testing.T) {
 	}
 
 	dk := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        "test",
-			Annotations: annotations,
-		},
+		Name:        "test",
+		Annotations: annotations,
 	}
 
 	result := deprecatedFeatureFlag(t.Context(), nil, dk)
@@ -86,8 +79,8 @@ func deprecatedFeatureFlagWithMultipleDeprecatedFlags(t *testing.T) {
 func TestUnknownFeatureFlag(t *testing.T) {
 	getDK := func() *dynakube.DynaKube {
 		return &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{Name: "test"},
-			Spec:       dynakube.DynaKubeSpec{APIURL: testAPIURL},
+			Name: "test",
+			Spec: dynakube.DynaKubeSpec{APIURL: testAPIURL},
 		}
 	}
 
@@ -207,9 +200,7 @@ func TestIsNodeImagePullWithoutCSI(t *testing.T) {
 			})
 
 			dk := &dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{
-					Annotations: test.annotations,
-				},
+				Annotations: test.annotations,
 			}
 
 			errMsg := isNodeImagePullWithoutCSI(t.Context(), &Validator{}, dk)
@@ -220,8 +211,8 @@ func TestIsNodeImagePullWithoutCSI(t *testing.T) {
 
 func TestInvalidNoProxy(t *testing.T) {
 	dk := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{Name: "dynakube", Annotations: map[string]string{}},
-		Spec:       dynakube.DynaKubeSpec{APIURL: testAPIURL},
+		Name: "dynakube", Annotations: map[string]string{},
+		Spec: dynakube.DynaKubeSpec{APIURL: testAPIURL},
 	}
 
 	assertSanitizeArg(t, dk, func(dk *dynakube.DynaKube, value string) {

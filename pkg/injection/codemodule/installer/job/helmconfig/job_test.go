@@ -46,27 +46,25 @@ func TestGet(t *testing.T) {
 			}
 		}`
 		expected := Config{
-			CSIDaemonSetConfig: CSIDaemonSetConfig{
-				Tolerations: []corev1.Toleration{
-					{
-						Effect:   corev1.TaintEffectNoSchedule,
-						Key:      "test-key1",
-						Operator: corev1.TolerationOpExists,
-					},
-					{
-						Effect:   corev1.TaintEffectNoSchedule,
-						Key:      "test-key2",
-						Operator: corev1.TolerationOpExists,
-					},
+			Tolerations: []corev1.Toleration{
+				{
+					Effect:   corev1.TaintEffectNoSchedule,
+					Key:      "test-key1",
+					Operator: corev1.TolerationOpExists,
 				},
-				Annotations: map[string]string{
-					"test-annotation1": "test-value1",
-					"test-annotation2": "test-value2",
+				{
+					Effect:   corev1.TaintEffectNoSchedule,
+					Key:      "test-key2",
+					Operator: corev1.TolerationOpExists,
 				},
-				Labels: map[string]string{
-					"test-label1": "test-value1",
-					"test-label2": "test-value2",
-				},
+			},
+			Annotations: map[string]string{
+				"test-annotation1": "test-value1",
+				"test-annotation2": "test-value2",
+			},
+			Labels: map[string]string{
+				"test-label1": "test-value1",
+				"test-label2": "test-value2",
 			},
 			Job: JobConfig{
 				SecurityContext: corev1.SecurityContext{

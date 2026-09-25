@@ -84,11 +84,9 @@ func CheckImageVolumeInjection(deployment *sample.App, imageURI string) features
 			require.Equal(t, webhook.InstallContainerName, pod.Spec.InitContainers[0].Name)
 			require.Contains(t, pod.Spec.Volumes, corev1.Volume{
 				Name: oaMutator.BinVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					Image: &corev1.ImageVolumeSource{
-						Reference:  imageURI,
-						PullPolicy: corev1.PullIfNotPresent, // default since we don't override
-					},
+				Image: &corev1.ImageVolumeSource{
+					Reference:  imageURI,
+					PullPolicy: corev1.PullIfNotPresent, // default since we don't override
 				},
 			})
 

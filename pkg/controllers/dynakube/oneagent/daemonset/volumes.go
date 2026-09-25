@@ -158,26 +158,20 @@ func prepareVolumes(dk *dynakube.DynaKube, processGroupConfigHash string) []core
 
 func getNodeMetadataVolume() corev1.Volume {
 	return corev1.Volume{
-		Name: nodeMetadataVolumeName,
-		VolumeSource: corev1.VolumeSource{
-			EmptyDir: &corev1.EmptyDirVolumeSource{},
-		},
+		Name:     nodeMetadataVolumeName,
+		EmptyDir: &corev1.EmptyDirVolumeSource{},
 	}
 }
 
 func getCertificateVolume(dk *dynakube.DynaKube) corev1.Volume {
 	return corev1.Volume{
 		Name: clusterCaCertVolumeName,
-		VolumeSource: corev1.VolumeSource{
-			ConfigMap: &corev1.ConfigMapVolumeSource{
-				LocalObjectReference: corev1.LocalObjectReference{
-					Name: dk.Spec.TrustedCAs,
-				},
-				Items: []corev1.KeyToPath{
-					{
-						Key:  "certs",
-						Path: "certs.pem",
-					},
+		ConfigMap: &corev1.ConfigMapVolumeSource{
+			Name: dk.Spec.TrustedCAs,
+			Items: []corev1.KeyToPath{
+				{
+					Key:  "certs",
+					Path: "certs.pem",
 				},
 			},
 		},
@@ -187,13 +181,11 @@ func getCertificateVolume(dk *dynakube.DynaKube) corev1.Volume {
 func getCSIStorageVolume(dk *dynakube.DynaKube) corev1.Volume {
 	return corev1.Volume{
 		Name: csiStorageVolumeName,
-		VolumeSource: corev1.VolumeSource{
-			CSI: &corev1.CSIVolumeSource{
-				Driver: dtcsi.DriverName,
-				VolumeAttributes: map[string]string{
-					csivolumes.CSIVolumeAttributeModeField:     hostvolumes.Mode,
-					csivolumes.CSIVolumeAttributeDynakubeField: dk.Name,
-				},
+		CSI: &corev1.CSIVolumeSource{
+			Driver: dtcsi.DriverName,
+			VolumeAttributes: map[string]string{
+				csivolumes.CSIVolumeAttributeModeField:     hostvolumes.Mode,
+				csivolumes.CSIVolumeAttributeDynakubeField: dk.Name,
 			},
 		},
 	}
@@ -202,11 +194,9 @@ func getCSIStorageVolume(dk *dynakube.DynaKube) corev1.Volume {
 func getStorageVolume(dk *dynakube.DynaKube) corev1.Volume {
 	return corev1.Volume{
 		Name: storageVolumeName,
-		VolumeSource: corev1.VolumeSource{
-			HostPath: &corev1.HostPathVolumeSource{
-				Path: dk.OneAgent().GetHostPath(),
-				Type: new(corev1.HostPathDirectoryOrCreate),
-			},
+		HostPath: &corev1.HostPathVolumeSource{
+			Path: dk.OneAgent().GetHostPath(),
+			Type: new(corev1.HostPathDirectoryOrCreate),
 		},
 	}
 }
@@ -214,17 +204,15 @@ func getStorageVolume(dk *dynakube.DynaKube) corev1.Volume {
 func getActiveGateCaCertVolume(dk *dynakube.DynaKube) corev1.Volume {
 	return corev1.Volume{
 		Name: activeGateCaCertVolumeName,
-		VolumeSource: corev1.VolumeSource{
-			Secret: &corev1.SecretVolumeSource{
-				SecretName: dk.Spec.ActiveGate.GetTLSSecretName(),
-				Items: []corev1.KeyToPath{
-					{
-						Key:  "server.crt",
-						Path: "custom.pem",
-					},
+		Secret: &corev1.SecretVolumeSource{
+			SecretName: dk.Spec.ActiveGate.GetTLSSecretName(),
+			Items: []corev1.KeyToPath{
+				{
+					Key:  "server.crt",
+					Path: "custom.pem",
 				},
-				DefaultMode: new(int32(globalReadFilePerm)), // secrets are always mounted readonly, so OA doesn't need write access
 			},
+			DefaultMode: new(int32(globalReadFilePerm)), // secrets are always mounted readonly, so OA doesn't need write access
 		},
 	}
 }
@@ -232,11 +220,9 @@ func getActiveGateCaCertVolume(dk *dynakube.DynaKube) corev1.Volume {
 func buildHTTPProxyVolume(dk *dynakube.DynaKube) corev1.Volume {
 	return corev1.Volume{
 		Name: proxy.SecretVolumeName,
-		VolumeSource: corev1.VolumeSource{
-			Secret: &corev1.SecretVolumeSource{
-				SecretName:  proxy.BuildSecretName(dk.Name),
-				DefaultMode: new(int32(globalReadFilePerm)), // secrets are always mounted readonly, so OA doesn't need write access
-			},
+		Secret: &corev1.SecretVolumeSource{
+			SecretName:  proxy.BuildSecretName(dk.Name),
+			DefaultMode: new(int32(globalReadFilePerm)), // secrets are always mounted readonly, so OA doesn't need write access
 		},
 	}
 }
@@ -244,11 +230,9 @@ func buildHTTPProxyVolume(dk *dynakube.DynaKube) corev1.Volume {
 func getOneAgentSecretVolume(dk *dynakube.DynaKube) corev1.Volume {
 	return corev1.Volume{
 		Name: connectioninfo.TenantSecretVolumeName,
-		VolumeSource: corev1.VolumeSource{
-			Secret: &corev1.SecretVolumeSource{
-				SecretName:  dk.OneAgent().GetTenantSecret(),
-				DefaultMode: new(int32(globalReadFilePerm)), // secrets are always mounted readonly, so OA doesn't need write access
-			},
+		Secret: &corev1.SecretVolumeSource{
+			SecretName:  dk.OneAgent().GetTenantSecret(),
+			DefaultMode: new(int32(globalReadFilePerm)), // secrets are always mounted readonly, so OA doesn't need write access
 		},
 	}
 }
@@ -256,10 +240,8 @@ func getOneAgentSecretVolume(dk *dynakube.DynaKube) corev1.Volume {
 func getRootVolume() corev1.Volume {
 	return corev1.Volume{
 		Name: hostRootVolumeName,
-		VolumeSource: corev1.VolumeSource{
-			HostPath: &corev1.HostPathVolumeSource{
-				Path: "/",
-			},
+		HostPath: &corev1.HostPathVolumeSource{
+			Path: "/",
 		},
 	}
 }
@@ -267,14 +249,12 @@ func getRootVolume() corev1.Volume {
 func getPGCSecretVolume(dk *dynakube.DynaKube) corev1.Volume {
 	return corev1.Volume{
 		Name: pgcSecretVolumeName,
-		VolumeSource: corev1.VolumeSource{
-			Secret: &corev1.SecretVolumeSource{
-				SecretName: bootstrapperconfig.GetSourceConfigSecretName(dk.Name),
-				Items: []corev1.KeyToPath{{
-					Key:  bootstrapperconfig.DeclarativeInputFileName,
-					Path: bootstrapperconfig.DeclarativeInputFileName,
-				}},
-			},
+		Secret: &corev1.SecretVolumeSource{
+			SecretName: bootstrapperconfig.GetSourceConfigSecretName(dk.Name),
+			Items: []corev1.KeyToPath{{
+				Key:  bootstrapperconfig.DeclarativeInputFileName,
+				Path: bootstrapperconfig.DeclarativeInputFileName,
+			}},
 		},
 	}
 }

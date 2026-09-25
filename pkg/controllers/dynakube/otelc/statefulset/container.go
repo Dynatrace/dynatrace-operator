@@ -33,11 +33,9 @@ func getContainer(dk *dynakube.DynaKube, replicas int32) corev1.Container {
 
 func buildLivenessProbe() *corev1.Probe {
 	return &corev1.Probe{
-		ProbeHandler: corev1.ProbeHandler{
-			HTTPGet: &corev1.HTTPGetAction{
-				Path: "/",
-				Port: intstr.FromInt32(otelcgen.ExtensionsHealthCheckPort),
-			},
+		HTTPGet: &corev1.HTTPGetAction{
+			Path: "/",
+			Port: intstr.FromInt32(otelcgen.ExtensionsHealthCheckPort),
 		},
 		InitialDelaySeconds: 10,
 		PeriodSeconds:       30,
@@ -49,11 +47,9 @@ func buildLivenessProbe() *corev1.Probe {
 
 func buildReadinessProbe() *corev1.Probe {
 	return &corev1.Probe{
-		ProbeHandler: corev1.ProbeHandler{
-			HTTPGet: &corev1.HTTPGetAction{
-				Path: "/",
-				Port: intstr.FromInt32(otelcgen.ExtensionsHealthCheckPort),
-			},
+		HTTPGet: &corev1.HTTPGetAction{
+			Path: "/",
+			Port: intstr.FromInt32(otelcgen.ExtensionsHealthCheckPort),
 		},
 		InitialDelaySeconds: 5,
 		PeriodSeconds:       10,

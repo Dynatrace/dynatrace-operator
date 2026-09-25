@@ -20,11 +20,9 @@ type supportArchiveOutputCollector struct {
 
 func newSupportArchiveOutputCollector(log logd.Logger, supportArchive archiver, logBuffer io.Reader) collector {
 	return supportArchiveOutputCollector{
-		collectorCommon: collectorCommon{
-			log:            log,
-			supportArchive: supportArchive,
-		},
-		output: logBuffer,
+		log:            log,
+		supportArchive: supportArchive,
+		output:         logBuffer,
 	}
 }
 

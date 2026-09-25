@@ -24,15 +24,13 @@ import (
 
 func TestInjection(t *testing.T) {
 	dk := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{Name: "codeModules-1", Namespace: "dynatrace"},
+		Name: "codeModules-1", Namespace: "dynatrace",
 		Spec: dynakube.DynaKubeSpec{
 			OneAgent: oneagent.Spec{
 				ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
-					AppInjectionSpec: oneagent.AppInjectionSpec{
-						NamespaceSelector: metav1.LabelSelector{
-							MatchLabels: map[string]string{
-								"inject": "true",
-							},
+					NamespaceSelector: metav1.LabelSelector{
+						MatchLabels: map[string]string{
+							"inject": "true",
 						},
 					},
 				},
@@ -40,11 +38,9 @@ func TestInjection(t *testing.T) {
 		},
 	}
 	baseNs := &corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "test-namespace",
-			Labels: map[string]string{
-				"inject": "true",
-			},
+		Name: "test-namespace",
+		Labels: map[string]string{
+			"inject": "true",
 		},
 	}
 	clt := fake.NewClient(dk)
@@ -52,23 +48,19 @@ func TestInjection(t *testing.T) {
 
 	t.Run("Don't inject into operator ns", func(t *testing.T) {
 		baseNs := &corev1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: inj.namespace,
-				Labels: map[string]string{
-					"inject": "true",
-				},
+			Name: inj.namespace,
+			Labels: map[string]string{
+				"inject": "true",
 			},
 		}
 		baseNsBytes, err := json.Marshal(&baseNs)
 		require.NoError(t, err)
 
 		req := admission.Request{
-			AdmissionRequest: admissionv1.AdmissionRequest{
-				Object:    runtime.RawExtension{Raw: baseNsBytes},
-				Name:      baseNs.Name,
-				Namespace: baseNs.Name,
-				Operation: admissionv1.Create,
-			},
+			Object:    runtime.RawExtension{Raw: baseNsBytes},
+			Name:      baseNs.Name,
+			Namespace: baseNs.Name,
+			Operation: admissionv1.Create,
 		}
 		resp := inj.Handle(t.Context(), req)
 		require.NoError(t, resp.Complete(req))
@@ -80,20 +72,16 @@ func TestInjection(t *testing.T) {
 
 	t.Run("Don't inject into namespace not matching dynakube", func(t *testing.T) {
 		baseNs := &corev1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: inj.namespace,
-			},
+			Name: inj.namespace,
 		}
 		baseNsBytes, err := json.Marshal(&baseNs)
 		require.NoError(t, err)
 
 		req := admission.Request{
-			AdmissionRequest: admissionv1.AdmissionRequest{
-				Object:    runtime.RawExtension{Raw: baseNsBytes},
-				Name:      baseNs.Name,
-				Namespace: baseNs.Name,
-				Operation: admissionv1.Create,
-			},
+			Object:    runtime.RawExtension{Raw: baseNsBytes},
+			Name:      baseNs.Name,
+			Namespace: baseNs.Name,
+			Operation: admissionv1.Create,
 		}
 		resp := inj.Handle(t.Context(), req)
 		require.NoError(t, resp.Complete(req))
@@ -108,12 +96,10 @@ func TestInjection(t *testing.T) {
 		require.NoError(t, err)
 
 		req := admission.Request{
-			AdmissionRequest: admissionv1.AdmissionRequest{
-				Object:    runtime.RawExtension{Raw: baseNsBytes},
-				Name:      baseNs.Name,
-				Namespace: baseNs.Name,
-				Operation: admissionv1.Create,
-			},
+			Object:    runtime.RawExtension{Raw: baseNsBytes},
+			Name:      baseNs.Name,
+			Namespace: baseNs.Name,
+			Operation: admissionv1.Create,
 		}
 		resp := inj.Handle(t.Context(), req)
 		require.NoError(t, resp.Complete(req))
@@ -136,23 +122,19 @@ func TestInjection(t *testing.T) {
 
 	t.Run("Update", func(t *testing.T) {
 		baseNs := &corev1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "test-namespace",
-				Labels: map[string]string{
-					"inject": "true",
-				},
+			Name: "test-namespace",
+			Labels: map[string]string{
+				"inject": "true",
 			},
 		}
 		baseNsBytes, err := json.Marshal(&baseNs)
 		require.NoError(t, err)
 
 		req := admission.Request{
-			AdmissionRequest: admissionv1.AdmissionRequest{
-				Object:    runtime.RawExtension{Raw: baseNsBytes},
-				Name:      baseNs.Name,
-				Namespace: baseNs.Name,
-				Operation: admissionv1.Update,
-			},
+			Object:    runtime.RawExtension{Raw: baseNsBytes},
+			Name:      baseNs.Name,
+			Namespace: baseNs.Name,
+			Operation: admissionv1.Update,
 		}
 		resp := inj.Handle(t.Context(), req)
 		require.NoError(t, resp.Complete(req))
@@ -168,24 +150,20 @@ func TestInjection(t *testing.T) {
 
 	t.Run("Remove stale", func(t *testing.T) {
 		baseNs := &corev1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "test-namespace",
-				Labels: map[string]string{
-					"inject":                         "true",
-					dtwebhook.InjectionInstanceLabel: "stale",
-				},
+			Name: "test-namespace",
+			Labels: map[string]string{
+				"inject":                         "true",
+				dtwebhook.InjectionInstanceLabel: "stale",
 			},
 		}
 		baseNsBytes, err := json.Marshal(&baseNs)
 		require.NoError(t, err)
 
 		req := admission.Request{
-			AdmissionRequest: admissionv1.AdmissionRequest{
-				Object:    runtime.RawExtension{Raw: baseNsBytes},
-				Name:      baseNs.Name,
-				Namespace: baseNs.Name,
-				Operation: admissionv1.Update,
-			},
+			Object:    runtime.RawExtension{Raw: baseNsBytes},
+			Name:      baseNs.Name,
+			Namespace: baseNs.Name,
+			Operation: admissionv1.Update,
 		}
 		resp := inj.Handle(t.Context(), req)
 		require.NoError(t, resp.Complete(req))
@@ -204,14 +182,12 @@ func TestInjection(t *testing.T) {
 		require.NoError(t, err)
 
 		req := admission.Request{
-			AdmissionRequest: admissionv1.AdmissionRequest{
-				Object:    runtime.RawExtension{Raw: baseNsBytes},
-				Name:      baseNs.Name,
-				Namespace: baseNs.Name,
-				Operation: admissionv1.Create,
-				UserInfo: authenticationv1.UserInfo{
-					Username: inj.serviceAccount,
-				},
+			Object:    runtime.RawExtension{Raw: baseNsBytes},
+			Name:      baseNs.Name,
+			Namespace: baseNs.Name,
+			Operation: admissionv1.Create,
+			UserInfo: authenticationv1.UserInfo{
+				Username: inj.serviceAccount,
 			},
 		}
 
@@ -224,15 +200,13 @@ func TestInjection(t *testing.T) {
 
 func TestInvalidSelectorOnOtherDynakubeDoesNotBlockAdmission(t *testing.T) {
 	brokenDK := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{Name: "broken-dk", Namespace: "dynatrace"},
+		Name: "broken-dk", Namespace: "dynatrace",
 		Spec: dynakube.DynaKubeSpec{
 			OneAgent: oneagent.Spec{
 				ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
-					AppInjectionSpec: oneagent.AppInjectionSpec{
-						NamespaceSelector: metav1.LabelSelector{
-							MatchExpressions: []metav1.LabelSelectorRequirement{
-								{Key: "team", Operator: "NotARealOperator", Values: []string{"a"}},
-							},
+					NamespaceSelector: metav1.LabelSelector{
+						MatchExpressions: []metav1.LabelSelectorRequirement{
+							{Key: "team", Operator: "NotARealOperator", Values: []string{"a"}},
 						},
 					},
 				},
@@ -240,14 +214,12 @@ func TestInvalidSelectorOnOtherDynakubeDoesNotBlockAdmission(t *testing.T) {
 		},
 	}
 	healthyDK := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{Name: "healthy-dk", Namespace: "dynatrace"},
+		Name: "healthy-dk", Namespace: "dynatrace",
 		Spec: dynakube.DynaKubeSpec{
 			OneAgent: oneagent.Spec{
 				ApplicationMonitoring: &oneagent.ApplicationMonitoringSpec{
-					AppInjectionSpec: oneagent.AppInjectionSpec{
-						NamespaceSelector: metav1.LabelSelector{
-							MatchLabels: map[string]string{"inject": "true"},
-						},
+					NamespaceSelector: metav1.LabelSelector{
+						MatchLabels: map[string]string{"inject": "true"},
 					},
 				},
 			},
@@ -255,10 +227,8 @@ func TestInvalidSelectorOnOtherDynakubeDoesNotBlockAdmission(t *testing.T) {
 	}
 
 	baseNs := &corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:   "test-namespace",
-			Labels: map[string]string{"inject": "true"},
-		},
+		Name:   "test-namespace",
+		Labels: map[string]string{"inject": "true"},
 	}
 
 	clt := fake.NewClient(brokenDK, healthyDK)
@@ -268,12 +238,10 @@ func TestInvalidSelectorOnOtherDynakubeDoesNotBlockAdmission(t *testing.T) {
 	require.NoError(t, err)
 
 	req := admission.Request{
-		AdmissionRequest: admissionv1.AdmissionRequest{
-			Object:    runtime.RawExtension{Raw: origBytes},
-			Name:      baseNs.Name,
-			Namespace: baseNs.Name,
-			Operation: admissionv1.Create,
-		},
+		Object:    runtime.RawExtension{Raw: origBytes},
+		Name:      baseNs.Name,
+		Namespace: baseNs.Name,
+		Operation: admissionv1.Create,
 	}
 
 	resp := inj.Handle(t.Context(), req)

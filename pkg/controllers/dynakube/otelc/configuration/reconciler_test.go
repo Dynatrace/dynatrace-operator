@@ -25,10 +25,8 @@ const (
 
 func getTestDynakube(telemetryIngestSpec *telemetryingest.Spec) *dynakube.DynaKube {
 	return &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      testDynakubeName,
-			Namespace: testNamespaceName,
-		},
+		Name:      testDynakubeName,
+		Namespace: testNamespaceName,
 		Spec: dynakube.DynaKubeSpec{
 			TelemetryIngest: telemetryIngestSpec,
 		},

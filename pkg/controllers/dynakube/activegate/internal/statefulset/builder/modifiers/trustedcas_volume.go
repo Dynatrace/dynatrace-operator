@@ -44,16 +44,12 @@ func (mod TrustedCAsModifier) getVolumes() []corev1.Volume {
 	return []corev1.Volume{
 		{
 			Name: consts.TrustedCAsVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: mod.dk.Spec.TrustedCAs,
-					},
-					Items: []corev1.KeyToPath{
-						{
-							Key:  "certs",
-							Path: trustedCAsFile,
-						},
+			ConfigMap: &corev1.ConfigMapVolumeSource{
+				Name: mod.dk.Spec.TrustedCAs,
+				Items: []corev1.KeyToPath{
+					{
+						Key:  "certs",
+						Path: trustedCAsFile,
 					},
 				},
 			},
