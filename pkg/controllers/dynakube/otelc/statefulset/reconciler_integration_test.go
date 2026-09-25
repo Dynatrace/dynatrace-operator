@@ -26,10 +26,10 @@ func TestStatefulSet(t *testing.T) {
 	mockTLSSecret(t, clt, dk)
 
 	tokenSecret := getTokens(dk.Tokens(), dk.Namespace)
-	require.NoError(t, clt.Create(ctx, &tokenSecret))
+	require.NoError(t, clt.Create(ctx, tokenSecret))
 
 	configMap := getConfigConfigMap(dk.Name, dk.Namespace)
-	require.NoError(t, clt.Create(ctx, &configMap))
+	require.NoError(t, clt.Create(ctx, configMap))
 
 	reconciler := NewReconciler(clt, clt)
 	err := reconciler.Reconcile(ctx, imageclientmock.NewClient(t), dk)

@@ -73,7 +73,7 @@ func TestReconcile(t *testing.T) {
 		dk := dynakubeTemplate.DeepCopy()
 		fakeClient := fake.NewClient()
 
-		setupPullSecret(t, fakeClient, *dk)
+		setupPullSecret(t, fakeClient, dk)
 
 		ctx := t.Context()
 		dkStatus := &dk.Status
@@ -139,7 +139,7 @@ func TestUpdateVersionStatuses(t *testing.T) {
 
 func TestNeedsUpdate(t *testing.T) {
 	t.Run("needs", func(t *testing.T) {
-		dk := dynakube.DynaKube{
+		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				OneAgent: oneagent.Spec{
 					ClassicFullStack: &oneagent.HostInjectSpec{},
@@ -147,7 +147,7 @@ func TestNeedsUpdate(t *testing.T) {
 			},
 		}
 		reconciler := Reconciler{}
-		assert.True(t, reconciler.needsUpdate(t.Context(), newOneAgentUpdater(&dk, fake.NewClient(), nil, nil)))
+		assert.True(t, reconciler.needsUpdate(t.Context(), newOneAgentUpdater(dk, fake.NewClient(), nil, nil)))
 	})
 	t.Run("does not need", func(t *testing.T) {
 		r := Reconciler{}
@@ -155,13 +155,13 @@ func TestNeedsUpdate(t *testing.T) {
 	})
 }
 
-func setupPullSecret(t *testing.T, fakeClient client.Client, dk dynakube.DynaKube) {
+func setupPullSecret(t *testing.T, fakeClient client.Client, dk *dynakube.DynaKube) {
 	t.Helper()
 	err := createTestPullSecret(t, fakeClient, dk)
 	require.NoError(t, err)
 }
 
-func createTestPullSecret(t *testing.T, fakeClient client.Client, dk dynakube.DynaKube) error {
+func createTestPullSecret(t *testing.T, fakeClient client.Client, dk *dynakube.DynaKube) error {
 	return fakeClient.Create(t.Context(), &corev1.Secret{
 		Namespace: dk.Namespace,
 		Name:      dk.TenantRegistryPullSecretName(),

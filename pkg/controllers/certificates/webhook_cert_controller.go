@@ -290,8 +290,8 @@ func (controller *WebhookCertificateController) updateClientConfigurations(ctx c
 func (controller *WebhookCertificateController) updateCRDConfiguration(ctx context.Context, crdName string, bundle []byte) error {
 	log := logd.FromContext(ctx)
 
-	var crd apiextensionsv1.CustomResourceDefinition
-	if err := controller.apiReader.Get(ctx, types.NamespacedName{Name: crdName}, &crd); err != nil {
+	crd := &apiextensionsv1.CustomResourceDefinition{}
+	if err := controller.apiReader.Get(ctx, types.NamespacedName{Name: crdName}, crd); err != nil {
 		return fmt.Errorf("get CRD %s: %w", crdName, err)
 	}
 
@@ -302,13 +302,13 @@ func (controller *WebhookCertificateController) updateCRDConfiguration(ctx conte
 	}
 
 	crd.Spec.Conversion.Webhook.ClientConfig.CABundle = bundle
-	if err := controller.client.Update(ctx, &crd); err != nil {
+	if err := controller.client.Update(ctx, crd); err != nil {
 		return fmt.Errorf("update CRD %s: %w", crdName, err)
 	}
 
 	return nil
 }
 
-func hasConversionWebhook(crd apiextensionsv1.CustomResourceDefinition) bool {
+func hasConversionWebhook(crd *apiextensionsv1.CustomResourceDefinition) bool {
 	return crd.Spec.Conversion != nil && crd.Spec.Conversion.Webhook != nil && crd.Spec.Conversion.Webhook.ClientConfig != nil
 }

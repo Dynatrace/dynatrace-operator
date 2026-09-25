@@ -60,10 +60,10 @@ func TestReconcile(t *testing.T) {
 		mockK8sClient = mockTLSSecret(t, mockK8sClient, dk)
 
 		tokenSecret := getTokens(dk.Tokens(), dk.Namespace)
-		require.NoError(t, mockK8sClient.Create(ctx, &tokenSecret))
+		require.NoError(t, mockK8sClient.Create(ctx, tokenSecret))
 
 		configMap := getConfigConfigMap(dk.Name, dk.Namespace)
-		require.NoError(t, mockK8sClient.Create(ctx, &configMap))
+		require.NoError(t, mockK8sClient.Create(ctx, configMap))
 
 		reconciler := NewReconciler(mockK8sClient, mockK8sClient)
 		err := reconciler.Reconcile(ctx, imageclientmock.NewClient(t), dk)
@@ -91,10 +91,10 @@ func TestReconcile(t *testing.T) {
 	t.Run("Only runs when required, and cleans up condition + statefulset", func(t *testing.T) {
 		dk := getTestDynakube()
 
-		previousSts := appsv1.StatefulSet{
+		previousSts := &appsv1.StatefulSet{
 			Name:      dk.OTelCollectorStatefulsetName(),
 			Namespace: dk.Namespace}
-		mockK8sClient := fake.NewClient(&previousSts)
+		mockK8sClient := fake.NewClient(previousSts)
 		mockK8sClient = mockTLSSecret(t, mockK8sClient, dk)
 
 		k8sconditions.SetStatefulSetCreated(dk.Conditions(), conditionType, "this is a test")
@@ -170,8 +170,8 @@ func TestImageResolution(t *testing.T) {
 			mockK8sClient := fake.NewClient()
 			mockK8sClient = mockTLSSecret(t, mockK8sClient, dk)
 
-			require.NoError(t, mockK8sClient.Create(ctx, new(getTokens(dk.Tokens(), dk.Namespace))))
-			require.NoError(t, mockK8sClient.Create(ctx, new(getConfigConfigMap(dk.Name, dk.Namespace))))
+			require.NoError(t, mockK8sClient.Create(ctx, getTokens(dk.Tokens(), dk.Namespace)))
+			require.NoError(t, mockK8sClient.Create(ctx, getConfigConfigMap(dk.Name, dk.Namespace)))
 
 			imageClient := imageclientmock.NewClient(t)
 			tc.setupImageClient(imageClient)
@@ -196,10 +196,10 @@ func TestDataIngestTokenHashAnnotation(t *testing.T) {
 		clt := fake.NewClient(dk)
 
 		tokenSecret := getTokens(dk.Tokens(), dk.Namespace)
-		require.NoError(t, clt.Create(t.Context(), &tokenSecret))
+		require.NoError(t, clt.Create(t.Context(), tokenSecret))
 
 		configMap := getConfigConfigMap(dk.Name, dk.Namespace)
-		require.NoError(t, clt.Create(t.Context(), &configMap))
+		require.NoError(t, clt.Create(t.Context(), configMap))
 
 		require.NoError(t, NewReconciler(clt, clt).Reconcile(t.Context(), imageclientmock.NewClient(t), dk))
 
@@ -216,10 +216,10 @@ func TestDataIngestTokenHashAnnotation(t *testing.T) {
 		clt := fake.NewClient(dk)
 
 		tokenSecret := getTokens(dk.Tokens(), dk.Namespace)
-		require.NoError(t, clt.Create(t.Context(), &tokenSecret))
+		require.NoError(t, clt.Create(t.Context(), tokenSecret))
 
 		configMap := getConfigConfigMap(dk.Name, dk.Namespace)
-		require.NoError(t, clt.Create(t.Context(), &configMap))
+		require.NoError(t, clt.Create(t.Context(), configMap))
 
 		reconciler := NewReconciler(clt, clt)
 		require.NoError(t, reconciler.Reconcile(t.Context(), imageclientmock.NewClient(t), dk))
@@ -230,7 +230,7 @@ func TestDataIngestTokenHashAnnotation(t *testing.T) {
 		require.NotEmpty(t, originalHash)
 
 		tokenSecret.Data[token.DataIngestKey] = []byte("rotated-token-value")
-		require.NoError(t, clt.Update(t.Context(), &tokenSecret))
+		require.NoError(t, clt.Update(t.Context(), tokenSecret))
 
 		require.NoError(t, reconciler.Reconcile(t.Context(), imageclientmock.NewClient(t), dk))
 
@@ -249,10 +249,10 @@ func TestConfigConfigMapHashAnnotation(t *testing.T) {
 		clt := fake.NewClient(dk)
 
 		tokenSecret := getTokens(dk.Tokens(), dk.Namespace)
-		require.NoError(t, clt.Create(t.Context(), &tokenSecret))
+		require.NoError(t, clt.Create(t.Context(), tokenSecret))
 
 		configMap := getConfigConfigMap(dk.Name, dk.Namespace)
-		require.NoError(t, clt.Create(t.Context(), &configMap))
+		require.NoError(t, clt.Create(t.Context(), configMap))
 
 		imageClient := imageclientmock.NewClient(t)
 		require.NoError(t, NewReconciler(clt, clt).Reconcile(t.Context(), imageClient, dk))
@@ -270,10 +270,10 @@ func TestConfigConfigMapHashAnnotation(t *testing.T) {
 		clt := fake.NewClient(dk)
 
 		tokenSecret := getTokens(dk.Tokens(), dk.Namespace)
-		require.NoError(t, clt.Create(t.Context(), &tokenSecret))
+		require.NoError(t, clt.Create(t.Context(), tokenSecret))
 
 		configMap := getConfigConfigMap(dk.Name, dk.Namespace)
-		require.NoError(t, clt.Create(t.Context(), &configMap))
+		require.NoError(t, clt.Create(t.Context(), configMap))
 
 		reconciler := NewReconciler(clt, clt)
 		imageClient := imageclientmock.NewClient(t)
@@ -285,7 +285,7 @@ func TestConfigConfigMapHashAnnotation(t *testing.T) {
 		require.NotEmpty(t, originalHash)
 
 		configMap.Data[otelcconsts.ConfigFieldName] = "test-with-resource-attributes"
-		require.NoError(t, clt.Update(t.Context(), &configMap))
+		require.NoError(t, clt.Update(t.Context(), configMap))
 
 		require.NoError(t, reconciler.Reconcile(t.Context(), imageClient, dk))
 
@@ -573,7 +573,7 @@ func TestReconcileReplicas(t *testing.T) {
 			tokenSecret := getTokens(dk.Tokens(), dk.Namespace)
 			configMap := getConfigConfigMap(dk.Name, dk.Namespace)
 
-			objs := []client.Object{&tokenSecret, &configMap}
+			objs := []client.Object{tokenSecret, configMap}
 			if tc.existingReplicas != nil {
 				objs = append(objs, &appsv1.StatefulSet{
 					Name:      dk.OTelCollectorStatefulsetName(),
@@ -603,10 +603,10 @@ func TestAppArmorAnnotationHandling(t *testing.T) {
 		clt := fake.NewClient(dk)
 
 		tokenSecret := getTokens(dk.Tokens(), dk.Namespace)
-		require.NoError(t, clt.Create(t.Context(), &tokenSecret))
+		require.NoError(t, clt.Create(t.Context(), tokenSecret))
 
 		configMap := getConfigConfigMap(dk.Name, dk.Namespace)
-		require.NoError(t, clt.Create(t.Context(), &configMap))
+		require.NoError(t, clt.Create(t.Context(), configMap))
 
 		require.NoError(t, NewReconciler(clt, clt).Reconcile(t.Context(), imageclientmock.NewClient(t), dk))
 		sts := &appsv1.StatefulSet{}
@@ -685,14 +685,14 @@ func mockTLSSecret(t *testing.T, client client.Client, dk *dynakube.DynaKube) cl
 	t.Helper()
 	tlsSecret := getTLSSecret(dk.Extensions().GetTLSSecretName(), dk.Namespace, "super-cert", "super-key")
 
-	err := client.Create(t.Context(), &tlsSecret)
+	err := client.Create(t.Context(), tlsSecret)
 	require.NoError(t, err)
 
 	return client
 }
 
-func getTokens(name string, namespace string) corev1.Secret {
-	return corev1.Secret{
+func getTokens(name string, namespace string) *corev1.Secret {
+	return &corev1.Secret{
 		Name:      name,
 		Namespace: namespace,
 		Data: map[string][]byte{
@@ -702,8 +702,8 @@ func getTokens(name string, namespace string) corev1.Secret {
 	}
 }
 
-func getTLSSecret(name string, namespace string, crt string, key string) corev1.Secret {
-	return corev1.Secret{
+func getTLSSecret(name string, namespace string, crt string, key string) *corev1.Secret {
+	return &corev1.Secret{
 		Name:      name,
 		Namespace: namespace,
 		Data: map[string][]byte{
@@ -713,8 +713,8 @@ func getTLSSecret(name string, namespace string, crt string, key string) corev1.
 	}
 }
 
-func getConfigConfigMap(name string, namespace string) corev1.ConfigMap {
-	return corev1.ConfigMap{
+func getConfigConfigMap(name string, namespace string) *corev1.ConfigMap {
+	return &corev1.ConfigMap{
 		Name:      name + otelcconsts.TelemetryCollectorConfigmapSuffix,
 		Namespace: namespace,
 		Data: map[string]string{

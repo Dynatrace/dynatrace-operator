@@ -17,14 +17,14 @@ var _ volumeModifier = AuthTokenModifier{}
 var _ volumeMountModifier = AuthTokenModifier{}
 var _ builder.Modifier = AuthTokenModifier{}
 
-func NewAuthTokenModifier(dk dynakube.DynaKube) AuthTokenModifier {
+func NewAuthTokenModifier(dk *dynakube.DynaKube) AuthTokenModifier {
 	return AuthTokenModifier{
 		dk: dk,
 	}
 }
 
 type AuthTokenModifier struct {
-	dk dynakube.DynaKube
+	dk *dynakube.DynaKube
 }
 
 func (mod AuthTokenModifier) Enabled() bool {

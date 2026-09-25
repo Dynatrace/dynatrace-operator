@@ -398,7 +398,7 @@ func createDynakubeWithHostGroup(args []string, hostGroup string) *dynakube.Dyna
 }
 
 func TestIsOneAgentVersionValid(t *testing.T) {
-	dk := dynakube.DynaKube{
+	dk := &dynakube.DynaKube{
 		ObjectMeta: defaultDynakubeObjectMeta,
 		Spec: dynakube.DynaKubeSpec{
 			APIURL: testAPIURL,
@@ -433,14 +433,14 @@ func TestIsOneAgentVersionValid(t *testing.T) {
 	for _, validVersion := range validVersions {
 		dk.OneAgent().ClassicFullStack.Version = validVersion //nolint:staticcheck
 		t.Run(fmt.Sprintf("OneAgent custom version %s is allowed", validVersion), func(t *testing.T) {
-			assertAllowed(t, &dk)
+			assertAllowed(t, dk)
 		})
 	}
 
 	for _, invalidVersion := range invalidVersions {
 		dk.OneAgent().ClassicFullStack.Version = invalidVersion //nolint:staticcheck
 		t.Run(fmt.Sprintf("OneAgent custom version %s is not allowed", invalidVersion), func(t *testing.T) {
-			assertDenied(t, []string{versionInvalidMessage}, &dk)
+			assertDenied(t, []string{versionInvalidMessage}, dk)
 		})
 	}
 }
@@ -631,14 +631,14 @@ func TestOneAgentArguments(t *testing.T) {
 func TestNoHostIdSourceArgument(t *testing.T) {
 	type oneAgentArgumentTest struct {
 		testName      string
-		dk            dynakube.DynaKube
+		dk            *dynakube.DynaKube
 		expectedError string
 	}
 
 	testcases := []oneAgentArgumentTest{
 		{
 			testName: "host id source argument in cloud native full stack",
-			dk: dynakube.DynaKube{
+			dk: &dynakube.DynaKube{
 				Name:      "dynakube",
 				Namespace: testNamespace,
 				Spec: dynakube.DynaKubeSpec{
@@ -657,7 +657,7 @@ func TestNoHostIdSourceArgument(t *testing.T) {
 		},
 		{
 			testName: "no host id source argument in cloud native full stack",
-			dk: dynakube.DynaKube{
+			dk: &dynakube.DynaKube{
 				Name:      "dynakube",
 				Namespace: testNamespace,
 				Spec: dynakube.DynaKubeSpec{
@@ -675,7 +675,7 @@ func TestNoHostIdSourceArgument(t *testing.T) {
 		},
 		{
 			testName: "host id source argument in host monitoring stack",
-			dk: dynakube.DynaKube{
+			dk: &dynakube.DynaKube{
 				Name:      "dynakube",
 				Namespace: testNamespace,
 				Spec: dynakube.DynaKubeSpec{
@@ -697,9 +697,9 @@ func TestNoHostIdSourceArgument(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.testName, func(t *testing.T) {
 			if tc.expectedError == "" {
-				assertAllowedWithoutWarnings(t, &tc.dk)
+				assertAllowedWithoutWarnings(t, tc.dk)
 			} else {
-				assertDenied(t, []string{tc.expectedError}, &tc.dk)
+				assertDenied(t, []string{tc.expectedError}, tc.dk)
 			}
 		})
 	}
@@ -790,13 +790,13 @@ func TestDeprecatedOneAgentVersion(t *testing.T) {
 	}
 	testcases := []struct {
 		name            string
-		dk              dynakube.DynaKube
+		dk              *dynakube.DynaKube
 		apiToken        *corev1.Secret
 		expectedWarning string
 	}{
 		{
 			"classic fullstack",
-			dynakube.DynaKube{
+			&dynakube.DynaKube{
 				Name:      "dynakube",
 				Namespace: testNamespace,
 				Spec: dynakube.DynaKubeSpec{
@@ -811,7 +811,7 @@ func TestDeprecatedOneAgentVersion(t *testing.T) {
 		},
 		{
 			"host monitoring",
-			dynakube.DynaKube{
+			&dynakube.DynaKube{
 				Name:      "dynakube",
 				Namespace: testNamespace,
 				Spec: dynakube.DynaKubeSpec{
@@ -826,7 +826,7 @@ func TestDeprecatedOneAgentVersion(t *testing.T) {
 		},
 		{
 			"host monitoring + public registry ff",
-			dynakube.DynaKube{
+			&dynakube.DynaKube{
 				Name:      "dynakube",
 				Namespace: testNamespace,
 				Annotations: map[string]string{
@@ -844,7 +844,7 @@ func TestDeprecatedOneAgentVersion(t *testing.T) {
 		},
 		{
 			"host monitoring + public registry ff + image specified",
-			dynakube.DynaKube{
+			&dynakube.DynaKube{
 				Name:      "dynakube",
 				Namespace: testNamespace,
 				Annotations: map[string]string{
@@ -863,7 +863,7 @@ func TestDeprecatedOneAgentVersion(t *testing.T) {
 		},
 		{
 			"cloudnative fullstack",
-			dynakube.DynaKube{
+			&dynakube.DynaKube{
 				Name:      "dynakube",
 				Namespace: testNamespace,
 				Spec: dynakube.DynaKubeSpec{
@@ -878,7 +878,7 @@ func TestDeprecatedOneAgentVersion(t *testing.T) {
 		},
 		{
 			"cloudnative fullstack + public registry ff",
-			dynakube.DynaKube{
+			&dynakube.DynaKube{
 				Name:      "dynakube",
 				Namespace: testNamespace,
 				Annotations: map[string]string{
@@ -896,7 +896,7 @@ func TestDeprecatedOneAgentVersion(t *testing.T) {
 		},
 		{
 			"cloudnative fullstack + public registry ff + image specified",
-			dynakube.DynaKube{
+			&dynakube.DynaKube{
 				Name:      "dynakube",
 				Namespace: testNamespace,
 				Annotations: map[string]string{
@@ -915,7 +915,7 @@ func TestDeprecatedOneAgentVersion(t *testing.T) {
 		},
 		{
 			"app monitoring",
-			dynakube.DynaKube{
+			&dynakube.DynaKube{
 				Name:      "dynakube",
 				Namespace: testNamespace,
 				Spec: dynakube.DynaKubeSpec{
@@ -930,7 +930,7 @@ func TestDeprecatedOneAgentVersion(t *testing.T) {
 		},
 		{
 			"app monitoring + public registry ff",
-			dynakube.DynaKube{
+			&dynakube.DynaKube{
 				Name:      "dynakube",
 				Namespace: testNamespace,
 				Annotations: map[string]string{
@@ -948,7 +948,7 @@ func TestDeprecatedOneAgentVersion(t *testing.T) {
 		},
 		{
 			"app monitoring + platform token",
-			dynakube.DynaKube{
+			&dynakube.DynaKube{
 				Name:      "dynakube",
 				Namespace: testNamespace,
 				Spec: dynakube.DynaKubeSpec{
@@ -963,7 +963,7 @@ func TestDeprecatedOneAgentVersion(t *testing.T) {
 		},
 		{
 			"app monitoring + platform token + image specified",
-			dynakube.DynaKube{
+			&dynakube.DynaKube{
 				Name:      "dynakube",
 				Namespace: testNamespace,
 				Spec: dynakube.DynaKubeSpec{
@@ -983,7 +983,7 @@ func TestDeprecatedOneAgentVersion(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			deprecatedDK := &tc.dk
+			deprecatedDK := tc.dk
 			warnings, err := assertAllowed(t, deprecatedDK, tc.apiToken)
 			require.NoError(t, err, "creation")
 			require.Len(t, warnings, 1)
@@ -1027,7 +1027,7 @@ func Test_findDuplicates(t *testing.T) {
 
 func TestConflictingMaxUnavailableAnnotationWithRollingUpdate(t *testing.T) {
 	deprecatedAnnotation := map[string]string{exp.OAMaxUnavailableKey: "2"} //nolint:staticcheck
-	rollingUpdate := appsv1.RollingUpdateDaemonSet{MaxUnavailable: &intstr.IntOrString{Type: intstr.Int, IntVal: 2}}
+	rollingUpdate := &appsv1.RollingUpdateDaemonSet{MaxUnavailable: &intstr.IntOrString{Type: intstr.Int, IntVal: 2}}
 
 	type testCase struct {
 		name             string
@@ -1058,19 +1058,19 @@ func TestConflictingMaxUnavailableAnnotationWithRollingUpdate(t *testing.T) {
 		{
 			name:             "both annotation and rollingUpdate in ClassicFullStack",
 			annotation:       deprecatedAnnotation,
-			oaspec:           oneagent.Spec{ClassicFullStack: &oneagent.HostInjectSpec{RollingUpdate: &rollingUpdate}},
+			oaspec:           oneagent.Spec{ClassicFullStack: &oneagent.HostInjectSpec{RollingUpdate: rollingUpdate}},
 			expectedWarnings: 2, // deprecated flag + conflict with rolling update
 		},
 		{
 			name:             "both annotation and rollingUpdate in CloudNativeFullStack",
 			annotation:       deprecatedAnnotation,
-			oaspec:           oneagent.Spec{CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{RollingUpdate: &rollingUpdate}},
+			oaspec:           oneagent.Spec{CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{RollingUpdate: rollingUpdate}},
 			expectedWarnings: 2, // deprecated flag + conflict with rolling update
 		},
 		{
 			name:             "both annotation and rollingUpdate in HostMonitoring",
 			annotation:       deprecatedAnnotation,
-			oaspec:           oneagent.Spec{HostMonitoring: &oneagent.HostInjectSpec{RollingUpdate: &rollingUpdate}},
+			oaspec:           oneagent.Spec{HostMonitoring: &oneagent.HostInjectSpec{RollingUpdate: rollingUpdate}},
 			expectedWarnings: 2, // deprecated flag + conflict with rolling update
 		},
 	}

@@ -39,10 +39,10 @@ type Builder struct {
 	envMap     *prioritymap.Map
 	kubeUID    types.UID
 	configHash string
-	dynakube   dynakube.DynaKube
+	dynakube   *dynakube.DynaKube
 }
 
-func NewStatefulSetBuilder(kubeUID types.UID, configHash string, dk dynakube.DynaKube, capability capability.Capability) Builder {
+func NewStatefulSetBuilder(kubeUID types.UID, configHash string, dk *dynakube.DynaKube, capability capability.Capability) Builder {
 	return Builder{
 		kubeUID:    kubeUID,
 		configHash: configHash,
@@ -272,7 +272,7 @@ func (statefulSetBuilder Builder) nodeAffinity() *corev1.Affinity {
 	return &affinity
 }
 
-func isDefaultPVCNeeded(dk dynakube.DynaKube) bool {
+func isDefaultPVCNeeded(dk *dynakube.DynaKube) bool {
 	return dk.TelemetryIngest().IsEnabled() && !ptr.Deref(dk.Spec.ActiveGate.UseEphemeralVolume, false)
 }
 

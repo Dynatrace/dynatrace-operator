@@ -23,8 +23,8 @@ func setKSPMUsage(dk *dynakube.DynaKube, isUsed bool) {
 func TestKspmEnabled(t *testing.T) {
 	t.Run("true", func(t *testing.T) {
 		dk := getBaseDynakube()
-		enableKubeMonCapability(&dk)
-		setKSPMUsage(&dk, true)
+		enableKubeMonCapability(dk)
+		setKSPMUsage(dk, true)
 
 		mod := NewKSPMModifier(dk)
 
@@ -33,8 +33,8 @@ func TestKspmEnabled(t *testing.T) {
 
 	t.Run("false - directly disabled", func(t *testing.T) {
 		dk := getBaseDynakube()
-		enableKubeMonCapability(&dk)
-		setKSPMUsage(&dk, false)
+		enableKubeMonCapability(dk)
+		setKSPMUsage(dk, false)
 
 		mod := NewKSPMModifier(dk)
 
@@ -43,7 +43,7 @@ func TestKspmEnabled(t *testing.T) {
 
 	t.Run("false - dependency(kubemon) not enabled", func(t *testing.T) {
 		dk := getBaseDynakube()
-		setKSPMUsage(&dk, true)
+		setKSPMUsage(dk, true)
 
 		mod := NewKSPMModifier(dk)
 
@@ -55,8 +55,8 @@ func TestKspmModify(t *testing.T) {
 	t.Run("successfully modified", func(t *testing.T) {
 		dk := getBaseDynakube()
 		dk.KSPM().TokenSecretHash = "some-hash"
-		enableKubeMonCapability(&dk)
-		setKSPMUsage(&dk, true)
+		enableKubeMonCapability(dk)
+		setKSPMUsage(dk, true)
 		mod := NewKSPMModifier(dk)
 		builder := createBuilderForTesting()
 

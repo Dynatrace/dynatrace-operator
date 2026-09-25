@@ -13,8 +13,8 @@ import (
 func TestSSLVolumeEnabled(t *testing.T) {
 	t.Run("true - TLSSecretName", func(t *testing.T) {
 		dk := getBaseDynakube()
-		disableAutomaticAGCertificate(&dk)
-		enableKubeMonCapability(&dk)
+		disableAutomaticAGCertificate(dk)
+		enableKubeMonCapability(dk)
 		dk.Spec.ActiveGate.TLSSecretName = testTLSSecretName
 
 		mod := NewSSLVolumeModifier(dk)
@@ -24,8 +24,8 @@ func TestSSLVolumeEnabled(t *testing.T) {
 
 	t.Run("true - TrustedCAs", func(t *testing.T) {
 		dk := getBaseDynakube()
-		disableAutomaticAGCertificate(&dk)
-		enableKubeMonCapability(&dk)
+		disableAutomaticAGCertificate(dk)
+		enableKubeMonCapability(dk)
 		dk.Spec.TrustedCAs = testTLSSecretName
 
 		mod := NewSSLVolumeModifier(dk)
@@ -35,8 +35,8 @@ func TestSSLVolumeEnabled(t *testing.T) {
 
 	t.Run("false", func(t *testing.T) {
 		dk := getBaseDynakube()
-		disableAutomaticAGCertificate(&dk)
-		enableKubeMonCapability(&dk)
+		disableAutomaticAGCertificate(dk)
+		enableKubeMonCapability(dk)
 
 		mod := NewSSLVolumeModifier(dk)
 
@@ -45,7 +45,7 @@ func TestSSLVolumeEnabled(t *testing.T) {
 
 	t.Run("true - TLSSecretName, AG cert enabled", func(t *testing.T) {
 		dk := getBaseDynakube()
-		enableKubeMonCapability(&dk)
+		enableKubeMonCapability(dk)
 		dk.Spec.ActiveGate.TLSSecretName = testTLSSecretName
 
 		mod := NewSSLVolumeModifier(dk)
@@ -55,7 +55,7 @@ func TestSSLVolumeEnabled(t *testing.T) {
 
 	t.Run("true - TrustedCAs, AG cert enabled", func(t *testing.T) {
 		dk := getBaseDynakube()
-		enableKubeMonCapability(&dk)
+		enableKubeMonCapability(dk)
 		dk.Spec.TrustedCAs = testTLSSecretName
 
 		mod := NewSSLVolumeModifier(dk)
@@ -65,7 +65,7 @@ func TestSSLVolumeEnabled(t *testing.T) {
 
 	t.Run("false, AG cert enabled", func(t *testing.T) {
 		dk := getBaseDynakube()
-		enableKubeMonCapability(&dk)
+		enableKubeMonCapability(dk)
 
 		mod := NewSSLVolumeModifier(dk)
 
@@ -76,7 +76,7 @@ func TestSSLVolumeEnabled(t *testing.T) {
 func TestSSLVolumeModify(t *testing.T) {
 	t.Run("successfully modified", func(t *testing.T) {
 		dl := getBaseDynakube()
-		enableKubeMonCapability(&dl)
+		enableKubeMonCapability(dl)
 		dl.Spec.ActiveGate.TLSSecretName = testTLSSecretName
 
 		mod := NewSSLVolumeModifier(dl)

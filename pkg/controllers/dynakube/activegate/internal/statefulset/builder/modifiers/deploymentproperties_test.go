@@ -45,7 +45,7 @@ func TestDeploymentPropertiesModifierEnabled(t *testing.T) {
 func TestDeploymentPropertiesModifierModify(t *testing.T) {
 	t.Run("adds volume and volumeMount with correct paths", func(t *testing.T) {
 		dk := getBaseDynakube()
-		enableKubeMonCapability(&dk)
+		enableKubeMonCapability(dk)
 		dk.Spec.ResourceAttributes = map[string]string{"key": "value"}
 
 		mod := NewDeploymentPropertiesModifier(dk)

@@ -64,10 +64,10 @@ func (collector k8sResourceCollector) Do() error {
 			continue
 		}
 
-		for _, resource := range resourceList.Items {
+		for i := range resourceList.Items {
 			numberOfStorages++
 
-			collector.storeObject(&resource)
+			collector.storeObject(&resourceList.Items[i])
 		}
 	}
 
@@ -79,8 +79,8 @@ func (collector k8sResourceCollector) Do() error {
 			return err
 		}
 
-		for _, resource := range webhookConfigurations.Items {
-			collector.storeObject(&resource)
+		for _, resource := range webhookConfigurations {
+			collector.storeObject(resource)
 		}
 
 		customResourceDefinitions, err := collector.readCustomResourceDefinitions()
@@ -90,8 +90,8 @@ func (collector k8sResourceCollector) Do() error {
 			return err
 		}
 
-		for _, resource := range customResourceDefinitions.Items {
-			collector.storeObject(&resource)
+		for _, resource := range customResourceDefinitions {
+			collector.storeObject(resource)
 		}
 	}
 
@@ -114,19 +114,13 @@ func (collector k8sResourceCollector) readObjectsList(groupVersionKind schema.Gr
 	return resourceList, nil
 }
 
-func (collector k8sResourceCollector) readWebhookConfigurations() (*unstructured.UnstructuredList, error) {
-	resourceList := &unstructured.UnstructuredList{}
-	resourceList.SetGroupVersionKind(toGroupVersionKind(admissionregistrationv1.SchemeGroupVersion, admissionregistrationv1.MutatingWebhookConfiguration{}))
-	resourceList.SetGroupVersionKind(toGroupVersionKind(admissionregistrationv1.SchemeGroupVersion, admissionregistrationv1.ValidatingWebhookConfiguration{}))
-
+func (collector k8sResourceCollector) readWebhookConfigurations() ([]*unstructured.Unstructured, error) {
 	var mutatingWebhookConfiguration admissionregistrationv1.MutatingWebhookConfiguration
 
 	err := collector.apiReader.Get(collector.context, client.ObjectKey{Name: webhookValidatorName}, &mutatingWebhookConfiguration)
 	if err != nil {
 		return nil, err
 	}
-
-	resourceList.Items = append(resourceList.Items, collector.getMutatingWebhookConfiguration(mutatingWebhookConfiguration))
 
 	var validatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration
 
@@ -135,15 +129,13 @@ func (collector k8sResourceCollector) readWebhookConfigurations() (*unstructured
 		return nil, err
 	}
 
-	resourceList.Items = append(resourceList.Items, collector.getValidatingWebhookConfiguration(validatingWebhookConfiguration))
-
-	return resourceList, nil
+	return []*unstructured.Unstructured{
+		collector.getMutatingWebhookConfiguration(&mutatingWebhookConfiguration),
+		collector.getValidatingWebhookConfiguration(&validatingWebhookConfiguration),
+	}, nil
 }
 
-func (collector k8sResourceCollector) readCustomResourceDefinitions() (*unstructured.UnstructuredList, error) {
-	resourceList := &unstructured.UnstructuredList{}
-	resourceList.SetGroupVersionKind(toGroupVersionKind(apiextensionsv1.SchemeGroupVersion, apiextensionsv1.CustomResourceDefinition{}))
-
+func (collector k8sResourceCollector) readCustomResourceDefinitions() ([]*unstructured.Unstructured, error) {
 	var dynaKube apiextensionsv1.CustomResourceDefinition
 	if err := collector.apiReader.Get(collector.context, client.ObjectKey{Name: "dynakubes.dynatrace.com"}, &dynaKube); err != nil {
 		return nil, err
@@ -154,7 +146,10 @@ func (collector k8sResourceCollector) readCustomResourceDefinitions() (*unstruct
 		return nil, err
 	}
 
-	resourceList.Items = append(resourceList.Items, collector.getCRD(dynaKube), collector.getCRD(edgeConnect))
+	result := []*unstructured.Unstructured{
+		collector.getCRD(&dynaKube),
+		collector.getCRD(&edgeConnect),
+	}
 
 	var pm apiextensionsv1.CustomResourceDefinition
 	if err := collector.apiReader.Get(collector.context, client.ObjectKey{Name: "prometheusmonitorings.dynatrace.com"}, &pm); err != nil {
@@ -164,14 +159,14 @@ func (collector k8sResourceCollector) readCustomResourceDefinitions() (*unstruct
 
 		logInfof(collector.log, "skipping prometheusmonitorings.dynatrace.com CRD")
 	} else {
-		resourceList.Items = append(resourceList.Items, collector.getCRD(pm))
+		result = append(result, collector.getCRD(&pm))
 	}
 
-	return resourceList, nil
+	return result, nil
 }
 
-func (collector k8sResourceCollector) getCRD(customResourceDefinition apiextensionsv1.CustomResourceDefinition) unstructured.Unstructured {
-	return unstructured.Unstructured{
+func (collector k8sResourceCollector) getCRD(customResourceDefinition *apiextensionsv1.CustomResourceDefinition) *unstructured.Unstructured {
+	return &unstructured.Unstructured{
 		Object: map[string]any{
 			"apiVersion": apiextensionsv1.GroupName,
 			"kind":       CRDKindName,
@@ -182,8 +177,8 @@ func (collector k8sResourceCollector) getCRD(customResourceDefinition apiextensi
 	}
 }
 
-func (collector k8sResourceCollector) getValidatingWebhookConfiguration(validatingWebhookConfig admissionregistrationv1.ValidatingWebhookConfiguration) unstructured.Unstructured {
-	return unstructured.Unstructured{
+func (collector k8sResourceCollector) getValidatingWebhookConfiguration(validatingWebhookConfig *admissionregistrationv1.ValidatingWebhookConfiguration) *unstructured.Unstructured {
+	return &unstructured.Unstructured{
 		Object: map[string]any{
 			"apiVersion": admissionregistrationv1.GroupName,
 			"kind":       ValidatingWebhookConfigurationKind,
@@ -193,8 +188,8 @@ func (collector k8sResourceCollector) getValidatingWebhookConfiguration(validati
 	}
 }
 
-func (collector k8sResourceCollector) getMutatingWebhookConfiguration(mutatingWebhookConfig admissionregistrationv1.MutatingWebhookConfiguration) unstructured.Unstructured {
-	return unstructured.Unstructured{
+func (collector k8sResourceCollector) getMutatingWebhookConfiguration(mutatingWebhookConfig *admissionregistrationv1.MutatingWebhookConfiguration) *unstructured.Unstructured {
+	return &unstructured.Unstructured{
 		Object: map[string]any{
 			"apiVersion": admissionregistrationv1.GroupName,
 			"kind":       MutatingWebhookConfigurationKind,
@@ -212,7 +207,7 @@ func (collector k8sResourceCollector) storeObject(resource *unstructured.Unstruc
 		return
 	}
 
-	fileName := collector.createFileName(resource.GetKind(), *resource)
+	fileName := collector.createFileName(resource.GetKind(), resource)
 
 	err = collector.supportArchive.addFile(fileName, bytes.NewBuffer(yamlManifest))
 	if err != nil {
@@ -224,11 +219,11 @@ func (collector k8sResourceCollector) storeObject(resource *unstructured.Unstruc
 	logInfof(collector.log, "Collected manifest for %s", fileName)
 }
 
-func isWebhookConfiguration(resourceMeta unstructured.Unstructured) bool {
+func isWebhookConfiguration(resourceMeta *unstructured.Unstructured) bool {
 	return resourceMeta.GetKind() == ValidatingWebhookConfigurationKind || resourceMeta.GetKind() == MutatingWebhookConfigurationKind
 }
 
-func (collector k8sResourceCollector) getCRDName(resourceMeta unstructured.Unstructured) string {
+func (collector k8sResourceCollector) getCRDName(resourceMeta *unstructured.Unstructured) string {
 	field, found, err := unstructured.NestedFieldNoCopy(resourceMeta.Object, "metadata")
 	if !found || err != nil {
 		logErrorf(collector.log, err, "Could not determine CRD name, setting it to default")
@@ -246,7 +241,7 @@ func (collector k8sResourceCollector) getCRDName(resourceMeta unstructured.Unstr
 	return strings.Split(objectMeta.Name, ".")[0]
 }
 
-func (collector k8sResourceCollector) createFileName(kind string, resourceMeta unstructured.Unstructured) string {
+func (collector k8sResourceCollector) createFileName(kind string, resourceMeta *unstructured.Unstructured) string {
 	kind = strings.ToLower(kind)
 
 	switch {

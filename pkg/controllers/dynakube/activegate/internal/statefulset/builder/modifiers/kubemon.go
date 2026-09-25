@@ -21,7 +21,7 @@ var _ volumeMountModifier = KubernetesMonitoringModifier{}
 var _ initContainerModifier = KubernetesMonitoringModifier{}
 var _ builder.Modifier = KubernetesMonitoringModifier{}
 
-func NewKubernetesMonitoringModifier(dk dynakube.DynaKube, capability capability.Capability) KubernetesMonitoringModifier {
+func NewKubernetesMonitoringModifier(dk *dynakube.DynaKube, capability capability.Capability) KubernetesMonitoringModifier {
 	return KubernetesMonitoringModifier{
 		dk:         dk,
 		capability: capability,
@@ -30,7 +30,7 @@ func NewKubernetesMonitoringModifier(dk dynakube.DynaKube, capability capability
 
 type KubernetesMonitoringModifier struct {
 	capability capability.Capability
-	dk         dynakube.DynaKube
+	dk         *dynakube.DynaKube
 }
 
 func (mod KubernetesMonitoringModifier) Enabled() bool {

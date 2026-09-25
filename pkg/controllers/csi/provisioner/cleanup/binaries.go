@@ -15,7 +15,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 )
 
-func (c *Cleaner) removeUnusedBinaries(ctx context.Context, dks []dynakube.DynaKube, fsState fsState) {
+func (c *Cleaner) removeUnusedBinaries(ctx context.Context, dks []*dynakube.DynaKube, fsState fsState) {
 	c.removeOldBinarySymlinks(ctx, dks, fsState)
 
 	keptBins, err := c.collectStillMountedBins(ctx)
@@ -57,7 +57,7 @@ func (c *Cleaner) removeOldSharedBinaries(ctx context.Context, keptBins map[stri
 	}
 }
 
-func (c *Cleaner) removeOldBinarySymlinks(ctx context.Context, dks []dynakube.DynaKube, fsState fsState) {
+func (c *Cleaner) removeOldBinarySymlinks(ctx context.Context, dks []*dynakube.DynaKube, fsState fsState) {
 	log := logd.FromContext(ctx)
 
 	shouldBePresent := map[string]bool{}
@@ -113,7 +113,7 @@ func (c *Cleaner) collectStillMountedBins(ctx context.Context) (map[string]bool,
 	return mountedBins, nil
 }
 
-func (c *Cleaner) collectRelevantLatestBins(ctx context.Context, dks []dynakube.DynaKube) map[string]bool {
+func (c *Cleaner) collectRelevantLatestBins(ctx context.Context, dks []*dynakube.DynaKube) map[string]bool {
 	log := logd.FromContext(ctx)
 
 	latestBins := map[string]bool{}

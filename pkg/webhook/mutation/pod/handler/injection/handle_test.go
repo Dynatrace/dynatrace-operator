@@ -28,12 +28,12 @@ import (
 var anyCtx = mock.MatchedBy(func(context.Context) bool { return true })
 
 func TestHandleImpl(t *testing.T) {
-	initSecret := corev1.Secret{
+	initSecret := &corev1.Secret{
 		Name:      consts.BootstrapperInitSecretName,
 		Namespace: testNamespaceName,
 	}
 
-	certsSecret := corev1.Secret{
+	certsSecret := &corev1.Secret{
 		Name:      consts.BootstrapperInitCertsSecretName,
 		Namespace: testNamespaceName,
 	}
@@ -76,12 +76,12 @@ func TestHandleImpl(t *testing.T) {
 	t.Run("no init secret and no certs + source (both) => replicate (both) + inject", func(t *testing.T) {
 		request := createTestMutationRequest(t, getTestDynakubeWithAGCerts())
 
-		source := corev1.Secret{
+		source := &corev1.Secret{
 			Name:      bootstrapperconfig.GetSourceConfigSecretName(request.DynaKube.Name),
 			Namespace: request.DynaKube.Namespace,
 			Data:      map[string][]byte{"data": []byte("beep")},
 		}
-		sourceCerts := corev1.Secret{
+		sourceCerts := &corev1.Secret{
 			Name:      bootstrapperconfig.GetSourceCertsSecretName(request.DynaKube.Name),
 			Namespace: request.DynaKube.Namespace,
 			Data:      map[string][]byte{"certs": []byte("very secure")},
@@ -95,7 +95,7 @@ func TestHandleImpl(t *testing.T) {
 		metaMutator.EXPECT().IsEnabled(anyCtx, mock.Anything).Return(true).Once()
 		metaMutator.EXPECT().Mutate(mock.Anything).Return(nil).Once()
 
-		wh := createTestHandler(oaMutator, metaMutator, &source, &sourceCerts)
+		wh := createTestHandler(oaMutator, metaMutator, source, sourceCerts)
 
 		err := wh.Handle(request)
 		require.NoError(t, err)
@@ -117,13 +117,13 @@ func TestHandleImpl(t *testing.T) {
 	t.Run("no init and no certs, but don't replicate certs because we don't need it (AG is not enabled)", func(t *testing.T) {
 		request := createTestMutationRequest(t, getTestDynakube())
 
-		source := corev1.Secret{
+		source := &corev1.Secret{
 			Name:      bootstrapperconfig.GetSourceConfigSecretName(request.DynaKube.Name),
 			Namespace: request.DynaKube.Namespace,
 			Data:      map[string][]byte{"data": []byte("beep")},
 		}
 
-		sourceCerts := corev1.Secret{
+		sourceCerts := &corev1.Secret{
 			Name:      bootstrapperconfig.GetSourceCertsSecretName(request.DynaKube.Name),
 			Namespace: request.DynaKube.Namespace,
 			Data:      map[string][]byte{"certs": []byte("very secure")},
@@ -137,7 +137,7 @@ func TestHandleImpl(t *testing.T) {
 		metaMutator.EXPECT().IsEnabled(anyCtx, mock.Anything).Return(true).Once()
 		metaMutator.EXPECT().Mutate(mock.Anything).Return(nil).Once()
 
-		wh := createTestHandler(oaMutator, metaMutator, &source, &sourceCerts)
+		wh := createTestHandler(oaMutator, metaMutator, source, sourceCerts)
 
 		err := wh.Handle(request)
 		require.NoError(t, err)
@@ -170,7 +170,7 @@ func TestHandleImpl(t *testing.T) {
 		metaMutator.EXPECT().IsEnabled(anyCtx, mock.Anything).Return(true).Once()
 		metaMutator.EXPECT().Mutate(mock.Anything).Return(nil).Once()
 
-		h := createTestHandler(oaMutator, metaMutator, &initSecret, &certsSecret)
+		h := createTestHandler(oaMutator, metaMutator, initSecret, certsSecret)
 
 		request := createTestMutationRequest(t, getTestDynakube())
 
@@ -192,7 +192,7 @@ func TestHandleImpl(t *testing.T) {
 		metaMutator := webhookmock.NewMutator(t)
 		metaMutator.EXPECT().IsEnabled(anyCtx, mock.Anything).Return(false).Once()
 
-		h := createTestHandler(oaMutator, metaMutator, &initSecret, &certsSecret)
+		h := createTestHandler(oaMutator, metaMutator, initSecret, certsSecret)
 
 		request := createTestMutationRequest(t, getTestDynakube())
 
@@ -214,7 +214,7 @@ func TestHandleImpl(t *testing.T) {
 		metaMutator.EXPECT().IsEnabled(anyCtx, mock.Anything).Return(true)
 		metaMutator.EXPECT().Mutate(mock.Anything).Return(nil)
 
-		h := createTestHandler(oaMutator, metaMutator, &initSecret, &certsSecret)
+		h := createTestHandler(oaMutator, metaMutator, initSecret, certsSecret)
 
 		request := createTestMutationRequest(t, getTestDynakube())
 
@@ -240,7 +240,7 @@ func TestHandleImpl(t *testing.T) {
 		metaMutator := webhookmock.NewMutator(t)
 		metaMutator.EXPECT().IsEnabled(anyCtx, mock.Anything).Return(false).Once()
 
-		h := createTestHandler(oaMutator, metaMutator, &initSecret, &certsSecret)
+		h := createTestHandler(oaMutator, metaMutator, initSecret, certsSecret)
 
 		request := createTestMutationRequestWithInjectedPod(t, getTestDynakube())
 
@@ -307,20 +307,20 @@ func getInjectedPod(t *testing.T) *corev1.Pod {
 
 func TestSetDynatraceInjectedAnnotation(t *testing.T) {
 	t.Run("add annotation", func(t *testing.T) {
-		request := dtwebhook.MutationRequest{
+		request := &dtwebhook.MutationRequest{
 			BaseRequest: &dtwebhook.BaseRequest{
 				Pod: &corev1.Pod{},
 			},
 		}
 
-		annotations.SetInjected(&request, dtwebhook.AnnotationDynatraceInjected, dtwebhook.AnnotationDynatraceReason)
+		annotations.SetInjected(request, dtwebhook.AnnotationDynatraceInjected, dtwebhook.AnnotationDynatraceReason)
 
 		require.Len(t, request.Pod.Annotations, 1)
 		assert.Equal(t, "true", request.Pod.Annotations[dtwebhook.AnnotationDynatraceInjected])
 	})
 
 	t.Run("remove reason annotation", func(t *testing.T) {
-		request := dtwebhook.MutationRequest{
+		request := &dtwebhook.MutationRequest{
 			BaseRequest: &dtwebhook.BaseRequest{
 				Pod: &corev1.Pod{
 					Annotations: map[string]string{
@@ -330,7 +330,7 @@ func TestSetDynatraceInjectedAnnotation(t *testing.T) {
 			},
 		}
 
-		annotations.SetInjected(&request, dtwebhook.AnnotationDynatraceInjected, dtwebhook.AnnotationDynatraceReason)
+		annotations.SetInjected(request, dtwebhook.AnnotationDynatraceInjected, dtwebhook.AnnotationDynatraceReason)
 
 		require.Len(t, request.Pod.Annotations, 1)
 		assert.Equal(t, "true", request.Pod.Annotations[dtwebhook.AnnotationDynatraceInjected])

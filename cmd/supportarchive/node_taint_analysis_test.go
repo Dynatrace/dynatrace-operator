@@ -30,7 +30,7 @@ func TestNodeTaintAnalysisCollector_Name(t *testing.T) {
 
 func TestNodeTaintAnalysisCollector(t *testing.T) {
 	t.Run("all taints tolerated", func(t *testing.T) {
-		nodes := []corev1.Node{
+		nodes := []*corev1.Node{
 			createNode("node-1", corev1.Taint{Key: "key1", Value: "val1", Effect: corev1.TaintEffectNoSchedule}),
 			createNode("node-2"),
 		}
@@ -43,7 +43,7 @@ func TestNodeTaintAnalysisCollector(t *testing.T) {
 			corev1.Toleration{Key: "", Operator: corev1.TolerationOpExists},
 		)
 
-		content := runNodeTaintAnalysis(t, nodes, []dynakube.DynaKube{dk}, []appsv1.DaemonSet{oaDS, csiDS})
+		content := runNodeTaintAnalysis(t, nodes, []*dynakube.DynaKube{dk}, []*appsv1.DaemonSet{oaDS, csiDS})
 
 		assert.Contains(t, content, "Node count: 2")
 		assert.Contains(t, content, "OneAgent DaemonSet: my-dynakube-oneagent")
@@ -53,7 +53,7 @@ func TestNodeTaintAnalysisCollector(t *testing.T) {
 	})
 
 	t.Run("untolerated taints", func(t *testing.T) {
-		nodes := []corev1.Node{
+		nodes := []*corev1.Node{
 			createNode("node-ok"),
 			createNode("node-tainted",
 				corev1.Taint{Key: "dedicated", Value: "gpu", Effect: corev1.TaintEffectNoSchedule},
@@ -65,7 +65,7 @@ func TestNodeTaintAnalysisCollector(t *testing.T) {
 		oaDS := createDaemonSet("prod-dynakube-oneagent", testOperatorNamespace, 1, 1)
 		csiDS := createDaemonSet(dtcsi.DaemonSetName, testOperatorNamespace, 1, 1)
 
-		content := runNodeTaintAnalysis(t, nodes, []dynakube.DynaKube{dk}, []appsv1.DaemonSet{oaDS, csiDS})
+		content := runNodeTaintAnalysis(t, nodes, []*dynakube.DynaKube{dk}, []*appsv1.DaemonSet{oaDS, csiDS})
 
 		assert.Contains(t, content, "Node count: 2")
 		assert.Contains(t, content, "WARNING: 1 node(s) have untolerated taints")
@@ -75,30 +75,30 @@ func TestNodeTaintAnalysisCollector(t *testing.T) {
 	})
 
 	t.Run("no DynaKubes", func(t *testing.T) {
-		nodes := []corev1.Node{
+		nodes := []*corev1.Node{
 			createNode("node-1"),
 		}
 		csiDS := createDaemonSet(dtcsi.DaemonSetName, testOperatorNamespace, 1, 1)
 
-		content := runNodeTaintAnalysis(t, nodes, nil, []appsv1.DaemonSet{csiDS})
+		content := runNodeTaintAnalysis(t, nodes, nil, []*appsv1.DaemonSet{csiDS})
 
 		assert.Contains(t, content, "No DynaKube resources found")
 		assert.Contains(t, content, "CSI Driver DaemonSet")
 	})
 
 	t.Run("missing DaemonSets", func(t *testing.T) {
-		nodes := []corev1.Node{
+		nodes := []*corev1.Node{
 			createNode("node-1"),
 		}
 		dk := createTestDynaKube("my-dk")
 
-		content := runNodeTaintAnalysis(t, nodes, []dynakube.DynaKube{dk}, nil)
+		content := runNodeTaintAnalysis(t, nodes, []*dynakube.DynaKube{dk}, nil)
 
 		assert.Contains(t, content, "DaemonSet not found")
 	})
 
 	t.Run("wildcard toleration", func(t *testing.T) {
-		nodes := []corev1.Node{
+		nodes := []*corev1.Node{
 			createNode("node-1",
 				corev1.Taint{Key: "anything", Value: "whatever", Effect: corev1.TaintEffectNoExecute},
 				corev1.Taint{Key: "other", Effect: corev1.TaintEffectNoSchedule},
@@ -113,14 +113,14 @@ func TestNodeTaintAnalysisCollector(t *testing.T) {
 			corev1.Toleration{Operator: corev1.TolerationOpExists},
 		)
 
-		content := runNodeTaintAnalysis(t, nodes, []dynakube.DynaKube{dk}, []appsv1.DaemonSet{oaDS, csiDS})
+		content := runNodeTaintAnalysis(t, nodes, []*dynakube.DynaKube{dk}, []*appsv1.DaemonSet{oaDS, csiDS})
 
 		assert.Contains(t, content, "All node taints are tolerated")
 		assert.NotContains(t, content, "WARNING")
 	})
 
 	t.Run("PreferNoSchedule ignored", func(t *testing.T) {
-		nodes := []corev1.Node{
+		nodes := []*corev1.Node{
 			createNode("node-1",
 				corev1.Taint{Key: "soft", Value: "hint", Effect: corev1.TaintEffectPreferNoSchedule},
 			),
@@ -130,14 +130,14 @@ func TestNodeTaintAnalysisCollector(t *testing.T) {
 		oaDS := createDaemonSet("dk-oneagent", testOperatorNamespace, 1, 1)
 		csiDS := createDaemonSet(dtcsi.DaemonSetName, testOperatorNamespace, 1, 1)
 
-		content := runNodeTaintAnalysis(t, nodes, []dynakube.DynaKube{dk}, []appsv1.DaemonSet{oaDS, csiDS})
+		content := runNodeTaintAnalysis(t, nodes, []*dynakube.DynaKube{dk}, []*appsv1.DaemonSet{oaDS, csiDS})
 
 		assert.Contains(t, content, "All node taints are tolerated")
 		assert.NotContains(t, content, "WARNING")
 	})
 
 	t.Run("partial toleration", func(t *testing.T) {
-		nodes := []corev1.Node{
+		nodes := []*corev1.Node{
 			createNode("node-1",
 				corev1.Taint{Key: "key1", Value: "val1", Effect: corev1.TaintEffectNoSchedule},
 				corev1.Taint{Key: "key2", Value: "val2", Effect: corev1.TaintEffectNoExecute},
@@ -150,7 +150,7 @@ func TestNodeTaintAnalysisCollector(t *testing.T) {
 			corev1.Toleration{Key: "key1", Operator: corev1.TolerationOpEqual, Value: "val1", Effect: corev1.TaintEffectNoSchedule},
 		)
 
-		content := runNodeTaintAnalysis(t, nodes, []dynakube.DynaKube{dk}, []appsv1.DaemonSet{oaDS})
+		content := runNodeTaintAnalysis(t, nodes, []*dynakube.DynaKube{dk}, []*appsv1.DaemonSet{oaDS})
 
 		assert.Contains(t, content, "WARNING: 1 node(s) have untolerated taints")
 		assert.Contains(t, content, "Node: node-1")
@@ -235,21 +235,21 @@ func TestFormatToleration_LtGt(t *testing.T) {
 	}))
 }
 
-func runNodeTaintAnalysis(t *testing.T, nodes []corev1.Node, dks []dynakube.DynaKube, daemonSets []appsv1.DaemonSet) string {
+func runNodeTaintAnalysis(t *testing.T, nodes []*corev1.Node, dks []*dynakube.DynaKube, daemonSets []*appsv1.DaemonSet) string {
 	t.Helper()
 
 	var objects []client.Object
 
 	for i := range nodes {
-		objects = append(objects, &nodes[i])
+		objects = append(objects, nodes[i])
 	}
 
 	for i := range dks {
-		objects = append(objects, &dks[i])
+		objects = append(objects, dks[i])
 	}
 
 	for i := range daemonSets {
-		objects = append(objects, &daemonSets[i])
+		objects = append(objects, daemonSets[i])
 	}
 
 	clt := fake.NewClientWithIndex(objects...)
@@ -277,8 +277,8 @@ func runNodeTaintAnalysis(t *testing.T, nodes []corev1.Node, dks []dynakube.Dyna
 	return string(content)
 }
 
-func createNode(name string, taints ...corev1.Taint) corev1.Node {
-	return corev1.Node{
+func createNode(name string, taints ...corev1.Taint) *corev1.Node {
+	return &corev1.Node{
 		Name: name,
 		Spec: corev1.NodeSpec{
 			Taints: taints,
@@ -286,8 +286,8 @@ func createNode(name string, taints ...corev1.Taint) corev1.Node {
 	}
 }
 
-func createTestDynaKube(name string) dynakube.DynaKube {
-	return dynakube.DynaKube{
+func createTestDynaKube(name string) *dynakube.DynaKube {
+	return &dynakube.DynaKube{
 		Name:      name,
 		Namespace: testOperatorNamespace,
 		Spec: dynakube.DynaKubeSpec{
@@ -298,8 +298,8 @@ func createTestDynaKube(name string) dynakube.DynaKube {
 	}
 }
 
-func createDaemonSet(name, namespace string, desired, ready int32, tolerations ...corev1.Toleration) appsv1.DaemonSet {
-	return appsv1.DaemonSet{
+func createDaemonSet(name, namespace string, desired, ready int32, tolerations ...corev1.Toleration) *appsv1.DaemonSet {
+	return &appsv1.DaemonSet{
 		Name:      name,
 		Namespace: namespace,
 		Spec: appsv1.DaemonSetSpec{

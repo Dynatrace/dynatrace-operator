@@ -25,11 +25,11 @@ func TestQuery(t *testing.T) {
 		annotations := map[string]string{hasher.AnnotationHash: "hash"}
 		daemonSet := createTestDaemonSetWithMatchLabels(daemonsetName, namespaceName, annotations, nil)
 
-		created, err := Query(fakeClient, fakeClient).CreateOrUpdate(t.Context(), &daemonSet)
+		created, err := Query(fakeClient, fakeClient).CreateOrUpdate(t.Context(), daemonSet)
 		require.NoError(t, err)
 		require.True(t, created)
 
-		ds, err := Query(fakeClient, fakeClient).Get(t.Context(), client.ObjectKeyFromObject(&daemonSet))
+		ds, err := Query(fakeClient, fakeClient).Get(t.Context(), client.ObjectKeyFromObject(daemonSet))
 		require.NoError(t, err)
 		assert.NotEmpty(t, ds)
 	})
@@ -38,13 +38,13 @@ func TestQuery(t *testing.T) {
 		oldDaemonSet := createTestDaemonSetWithMatchLabels(daemonsetName, namespaceName, oldAnnotations, nil)
 		newAnnotations := map[string]string{hasher.AnnotationHash: "new"}
 		newDaemonSet := createTestDaemonSetWithMatchLabels(daemonsetName, namespaceName, newAnnotations, nil)
-		fakeClient := fake.NewClient(&oldDaemonSet)
+		fakeClient := fake.NewClient(oldDaemonSet)
 
-		updated, err := Query(fakeClient, fakeClient).CreateOrUpdate(t.Context(), &newDaemonSet)
+		updated, err := Query(fakeClient, fakeClient).CreateOrUpdate(t.Context(), newDaemonSet)
 		require.NoError(t, err)
 		require.True(t, updated)
 
-		ds, err := Query(fakeClient, fakeClient).Get(t.Context(), client.ObjectKeyFromObject(&newDaemonSet))
+		ds, err := Query(fakeClient, fakeClient).Get(t.Context(), client.ObjectKeyFromObject(newDaemonSet))
 		require.NoError(t, err)
 		assert.Equal(t, newAnnotations, ds.Annotations)
 	})
@@ -52,15 +52,15 @@ func TestQuery(t *testing.T) {
 		oldAnnotations := map[string]string{hasher.AnnotationHash: "old"}
 		oldDaemonSet := createTestDaemonSetWithMatchLabels(daemonsetName, namespaceName, oldAnnotations, nil)
 
-		fakeClient := fake.NewClient(&oldDaemonSet)
+		fakeClient := fake.NewClient(oldDaemonSet)
 
-		updated, err := Query(fakeClient, fakeClient).CreateOrUpdate(t.Context(), &oldDaemonSet)
+		updated, err := Query(fakeClient, fakeClient).CreateOrUpdate(t.Context(), oldDaemonSet)
 		require.NoError(t, err)
 		require.False(t, updated)
 
-		ds, err := Query(fakeClient, fakeClient).Get(t.Context(), client.ObjectKeyFromObject(&oldDaemonSet))
+		ds, err := Query(fakeClient, fakeClient).Get(t.Context(), client.ObjectKeyFromObject(oldDaemonSet))
 		require.NoError(t, err)
-		assert.Equal(t, oldDaemonSet, *ds)
+		assert.Equal(t, oldDaemonSet, ds)
 	})
 	t.Run("recreate when exists and changed for immutable field", func(t *testing.T) {
 		oldAnnotations := map[string]string{hasher.AnnotationHash: "old"}
@@ -70,21 +70,21 @@ func TestQuery(t *testing.T) {
 		newAnnotations := map[string]string{hasher.AnnotationHash: "new"}
 		newMatchLabels := map[string]string{"match": "new"}
 		newDaemonSet := createTestDaemonSetWithMatchLabels(daemonsetName, namespaceName, newAnnotations, newMatchLabels)
-		fakeClient := fake.NewClient(&oldDaemonSet)
+		fakeClient := fake.NewClient(oldDaemonSet)
 
-		recreate, err := Query(fakeClient, fakeClient).CreateOrUpdate(t.Context(), &newDaemonSet)
+		recreate, err := Query(fakeClient, fakeClient).CreateOrUpdate(t.Context(), newDaemonSet)
 		require.NoError(t, err)
 		require.True(t, recreate)
 
-		ds, err := Query(fakeClient, fakeClient).Get(t.Context(), client.ObjectKeyFromObject(&newDaemonSet))
+		ds, err := Query(fakeClient, fakeClient).Get(t.Context(), client.ObjectKeyFromObject(newDaemonSet))
 		require.NoError(t, err)
-		assert.Equal(t, newDaemonSet, *ds)
+		assert.Equal(t, newDaemonSet, ds)
 		assert.Equal(t, newMatchLabels, ds.Spec.Selector.MatchLabels)
 	})
 }
 
-func createTestDaemonSetWithMatchLabels(name, namespace string, annotations, matchLabels map[string]string) appsv1.DaemonSet {
-	return appsv1.DaemonSet{
+func createTestDaemonSetWithMatchLabels(name, namespace string, annotations, matchLabels map[string]string) *appsv1.DaemonSet {
+	return &appsv1.DaemonSet{
 		Name:        name,
 		Namespace:   namespace,
 		Annotations: annotations,

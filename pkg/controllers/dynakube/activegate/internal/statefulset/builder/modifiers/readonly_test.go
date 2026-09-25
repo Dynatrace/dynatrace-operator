@@ -13,7 +13,7 @@ import (
 func TestReadOnlyEnabled(t *testing.T) {
 	t.Run("true", func(t *testing.T) {
 		dk := getBaseDynakube()
-		enableKubeMonCapability(&dk)
+		enableKubeMonCapability(dk)
 
 		mod := NewReadOnlyModifier(dk)
 
@@ -24,7 +24,7 @@ func TestReadOnlyEnabled(t *testing.T) {
 func TestReadOnlyModify(t *testing.T) {
 	t.Run("successfully modified", func(t *testing.T) {
 		dk := getBaseDynakube()
-		enableKubeMonCapability(&dk)
+		enableKubeMonCapability(dk)
 		mod := NewReadOnlyModifier(dk)
 		builder := createBuilderForTesting()
 		expectedVolumes := mod.getVolumes()
