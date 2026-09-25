@@ -168,10 +168,20 @@ func (dk dynakube.DynaKube) Method() { ... }
 
 ### Small data-carrier structs
 
-Always pass by value.
+Prefer passing by value for flat, read-only config bags with no mutation after construction. Use the zero value (e.g. `MyConfig{}`) instead of `nil` to express "no value provided".
 
-- These are flat, read-only config bags with no mutation after construction.
-- Use the zero value (e.g. `MyConfig{}`) instead of `nil` to express "no value provided".
+Exception: if the struct is not yet populated when the call is set up, pass a pointer or use a closure — Go evaluates arguments at the call site, so a by-value argument captures whatever is there at that moment.
+
+```go
+// ✗ - evaluated immediately; captures an empty Secret if config isn't populated yet
+steps.Add(tenant.CreateClientSecret(config.Secret))
+
+// ✓ - closure reads config.Secret at execution time
+steps.Add(func() { tenant.CreateClientSecret(config.Secret) })
+
+// ✓ - pointer reads the current value when the function actually runs
+steps.Add(tenant.CreateClientSecret(&config.Secret))
+```
 
 ## Cuddling of statements
 
