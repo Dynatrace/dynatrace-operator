@@ -12,7 +12,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
@@ -32,10 +31,8 @@ var (
 func TestGetSecret(t *testing.T) {
 	fakeClient := fake.NewClient(
 		&corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testSecretName,
-				Namespace: testNamespace,
-			},
+			Name:      testSecretName,
+			Namespace: testNamespace,
 		},
 	)
 	secretQuery := Query(fakeClient, fakeClient)
@@ -56,40 +53,28 @@ func TestGetSecret(t *testing.T) {
 func newClientWithSecrets() client.Client {
 	return fake.NewClientWithIndex(
 		&corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testSecretName,
-				Namespace: "ns1",
-			},
+			Name:      testSecretName,
+			Namespace: "ns1",
 		},
 		&corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "other",
-				Namespace: "ns1",
-			},
+			Name:      "other",
+			Namespace: "ns1",
 		},
 		&corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testSecretName,
-				Namespace: "ns2",
-			},
+			Name:      testSecretName,
+			Namespace: "ns2",
 		},
 		&corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "other",
-				Namespace: "ns2",
-			},
+			Name:      "other",
+			Namespace: "ns2",
 		},
 		&corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testSecretName,
-				Namespace: "ns3",
-			},
+			Name:      testSecretName,
+			Namespace: "ns3",
 		},
 		&corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "other",
-				Namespace: "ns3",
-			},
+			Name:      "other",
+			Namespace: "ns3",
 		},
 	)
 }
@@ -116,9 +101,7 @@ func TestMultipleNamespaces(t *testing.T) {
 
 		// secret does not exist in this namespace => other secrets should still get deleted
 		ns := corev1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "empty",
-			},
+			Name: "empty",
 		}
 		_ = fakeClient.Create(t.Context(), &ns)
 
@@ -150,24 +133,16 @@ func TestMultipleSecrets(t *testing.T) {
 
 		namespaces := []corev1.Namespace{
 			{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "ns1",
-				},
+				Name: "ns1",
 			},
 			{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "ns2",
-				},
+				Name: "ns2",
 			},
 			{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "nsNotYetExisting",
-				},
+				Name: "nsNotYetExisting",
 			},
 			{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "nsTerminating",
-				},
+				Name: "nsTerminating",
 				Status: corev1.NamespaceStatus{
 					Phase: corev1.NamespaceTerminating,
 				},
@@ -175,10 +150,8 @@ func TestMultipleSecrets(t *testing.T) {
 		}
 
 		secret := corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testSecretName,
-				Namespace: "ns1",
-			},
+			Name:      testSecretName,
+			Namespace: "ns1",
 			Data: map[string][]byte{
 				"samplekey": []byte("samplevalue"),
 			},
@@ -223,28 +196,20 @@ func TestMultipleSecrets(t *testing.T) {
 			},
 		})
 		secret := corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: testSecretName,
-			},
+			Name: testSecretName,
 			Data: map[string][]byte{
 				"samplekey": []byte("samplevalue"),
 			},
 		}
 		namespaces := []corev1.Namespace{
 			{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "ns1",
-				},
+				Name: "ns1",
 			},
 			{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "ns2",
-				},
+				Name: "ns2",
 			},
 			{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "nsNotYetExisting",
-				},
+				Name: "nsNotYetExisting",
 			},
 		}
 		secretQuery := Query(boomClient, fakeReader)
@@ -270,14 +235,10 @@ func TestInitialMultipleSecrets(t *testing.T) {
 func TestCreateOrUpdate(t *testing.T) {
 	getTestSecret := func() *corev1.Secret {
 		return &corev1.Secret{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "v1",
-				Kind:       "Secret",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testSecretName,
-				Namespace: testNamespace,
-			},
+			APIVersion: "v1",
+			Kind:       "Secret",
+			Name:       testSecretName,
+			Namespace:  testNamespace,
 			Data: map[string][]byte{
 				testSecretDataKey: dataValue,
 			},
@@ -314,10 +275,8 @@ func TestCreateOrUpdate(t *testing.T) {
 		secretQuery := Query(fakeClient, fakeClient)
 		newValue := []byte("dGVzdCB2YWx1ZSBudW1iZXIgMg==")
 		updatedSecret := corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testSecretName,
-				Namespace: testNamespace,
-			},
+			Name:      testSecretName,
+			Namespace: testNamespace,
 			Data: map[string][]byte{
 				testSecretDataKey: newValue,
 			},

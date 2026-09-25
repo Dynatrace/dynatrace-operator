@@ -14,7 +14,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -34,10 +33,8 @@ const (
 func TestPrepareConfigFile(t *testing.T) {
 	t.Run("Create basic config", func(t *testing.T) {
 		ec := &edgeconnect.EdgeConnect{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-			},
+			Name:      testName,
+			Namespace: testNamespace,
 			Spec: edgeconnect.EdgeConnectSpec{
 				APIServer: "abc12345.dynatrace.com",
 				OAuth: edgeconnect.OAuthSpec{
@@ -69,10 +66,8 @@ root_certificate_paths:
 
 	t.Run("Create full config", func(t *testing.T) {
 		ec := &edgeconnect.EdgeConnect{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-			},
+			Name:      testName,
+			Namespace: testNamespace,
 			Spec: edgeconnect.EdgeConnectSpec{
 				APIServer: "abc12345.dynatrace.com",
 				OAuth: edgeconnect.OAuthSpec{
@@ -121,10 +116,8 @@ proxy:
 	})
 	t.Run("Create config k8s automation enabled", func(t *testing.T) {
 		ec := &edgeconnect.EdgeConnect{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-			},
+			Name:      testName,
+			Namespace: testNamespace,
 			Spec: edgeconnect.EdgeConnectSpec{
 				APIServer: "abc12345.dynatrace.com",
 				OAuth: edgeconnect.OAuthSpec{
@@ -233,5 +226,5 @@ func newSecret(name, namespace string, kv map[string]string) *corev1.Secret {
 		data[k] = []byte(v)
 	}
 
-	return &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace}, Data: data}
+	return &corev1.Secret{Name: name, Namespace: namespace, Data: data}
 }

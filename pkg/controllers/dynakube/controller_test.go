@@ -64,16 +64,14 @@ var (
 func TestGetDynakubeOrCleanup(t *testing.T) {
 	ctx := t.Context()
 	request := reconcile.Request{
-		NamespacedName: types.NamespacedName{Name: "dynakube-test", Namespace: "dynatrace"},
+		Name: "dynakube-test", Namespace: "dynatrace",
 	}
 
 	t.Run("dynakube doesn't exist => unmap namespace", func(t *testing.T) {
 		markedNamespace := &corev1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "app-namespace",
-				Labels: map[string]string{
-					dtwebhook.InjectionInstanceLabel: request.Name,
-				},
+			Name: "app-namespace",
+			Labels: map[string]string{
+				dtwebhook.InjectionInstanceLabel: request.Name,
 			},
 		}
 		fakeClient := fake.NewClientWithIndex(markedNamespace, createCRD(t))
@@ -94,11 +92,9 @@ func TestGetDynakubeOrCleanup(t *testing.T) {
 
 	t.Run("dynakube exists => return dynakube", func(t *testing.T) {
 		expectedDynakube := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      request.Name,
-				Namespace: request.Namespace,
-			},
-			Spec: dynakube.DynaKubeSpec{APIURL: "this-is-an-api-url"},
+			Name:      request.Name,
+			Namespace: request.Namespace,
+			Spec:      dynakube.DynaKubeSpec{APIURL: "this-is-an-api-url"},
 		}
 		fakeClient := fake.NewClientWithIndex(expectedDynakube, createCRD(t))
 		controller := &Controller{
@@ -142,11 +138,9 @@ func TestMinimalRequest(t *testing.T) {
 func TestHandleError(t *testing.T) {
 	ctx := t.Context()
 	dynakubeBase := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "this-is-a-name",
-			Namespace: "dynatrace",
-		},
-		Spec: dynakube.DynaKubeSpec{APIURL: "this-is-an-api-url"},
+		Name:      "this-is-a-name",
+		Namespace: "dynatrace",
+		Spec:      dynakube.DynaKubeSpec{APIURL: "this-is-an-api-url"},
 	}
 
 	t.Run("no error => update status", func(t *testing.T) {
@@ -225,17 +219,13 @@ func TestSetupTokensAndClient(t *testing.T) {
 	)
 
 	dkBase := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "this-is-a-name",
-			Namespace: "dynatrace",
-		},
-		Spec: dynakube.DynaKubeSpec{APIURL: "https://test123.dev.dynatracelabs.com/api"},
+		Name:      "this-is-a-name",
+		Namespace: "dynatrace",
+		Spec:      dynakube.DynaKubeSpec{APIURL: "https://test123.dev.dynatracelabs.com/api"},
 	}
 	tokenSecretBase := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      dkBase.Tokens(),
-			Namespace: dkBase.Namespace,
-		},
+		Name:      dkBase.Tokens(),
+		Namespace: dkBase.Namespace,
 		Data: map[string][]byte{
 			token.APIKey: []byte(tokenValue),
 		},
@@ -277,10 +267,8 @@ func TestSetupTokensAndClient(t *testing.T) {
 		dk := dkBase.DeepCopy()
 		dk.Spec.CustomPullSecret = "custom"
 		tokens := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      dk.Tokens(),
-				Namespace: dk.Namespace,
-			},
+			Name:      dk.Tokens(),
+			Namespace: dk.Namespace,
 			Data: map[string][]byte{
 				token.APIKey: []byte("this is a token"),
 			},
@@ -325,10 +313,8 @@ func assertTokenCondition(t *testing.T, dk *dynakube.DynaKube, hasError bool) {
 func TestReconcileComponents(t *testing.T) {
 	ctx := t.Context()
 	dkBaser := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "this-is-a-name",
-			Namespace: "dynatrace",
-		},
+		Name:      "this-is-a-name",
+		Namespace: "dynatrace",
 		Spec: dynakube.DynaKubeSpec{
 			APIURL:     "this-is-an-api-url",
 			OneAgent:   oneagent.Spec{CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{}},
@@ -538,10 +524,8 @@ func TestReconcileComponents(t *testing.T) {
 func TestReconcileDynaKube(t *testing.T) {
 	ctx := t.Context()
 	baseDK := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      testName,
-			Namespace: testNamespace,
-		},
+		Name:      testName,
+		Namespace: testNamespace,
 	}
 
 	fakeClient := fake.NewClient(baseDK, createCRD(t), createAPISecret())
@@ -616,7 +600,7 @@ func TestReconcileDynaKube(t *testing.T) {
 	}
 
 	request := reconcile.Request{
-		NamespacedName: types.NamespacedName{Name: testName, Namespace: testNamespace},
+		Name: testName, Namespace: testNamespace,
 	}
 
 	t.Run("reconcile the controller and its sub controllers", func(t *testing.T) {
@@ -674,10 +658,8 @@ func (clt errorClient) List(context.Context, client.ObjectList, ...client.ListOp
 func TestGetDynakube(t *testing.T) {
 	t.Run("get dynakube", func(t *testing.T) {
 		fakeClient := fake.NewClient(&dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-			},
+			Name:      testName,
+			Namespace: testNamespace,
 			Spec: dynakube.DynaKubeSpec{
 				OneAgent: oneagent.Spec{
 					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
@@ -700,10 +682,8 @@ func TestGetDynakube(t *testing.T) {
 	})
 	t.Run("unmap if not not found", func(t *testing.T) {
 		namespace := &corev1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:   testNamespace,
-				Labels: map[string]string{dtwebhook.InjectionInstanceLabel: testName},
-			},
+			Name:   testNamespace,
+			Labels: map[string]string{dtwebhook.InjectionInstanceLabel: testName},
 		}
 		fakeClient := fake.NewClient(namespace)
 		controller := &Controller{
@@ -752,16 +732,12 @@ func TestTokenConditions(t *testing.T) {
 	})
 	t.Run("token condition error is set if token verification fails", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-			},
+			Name:      testName,
+			Namespace: testNamespace,
 		}
 		fakeClient := fake.NewClient(&corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-			},
+			Name:      testName,
+			Namespace: testNamespace,
 			Data: map[string][]byte{
 				token.APIKey: []byte(testAPIToken),
 			},
@@ -786,16 +762,12 @@ func TestTokenConditions(t *testing.T) {
 	})
 	t.Run("token condition is set if required scopes are missing", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-			},
+			Name:      testName,
+			Namespace: testNamespace,
 		}
 		fakeClient := fake.NewClient(&corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-			},
+			Name:      testName,
+			Namespace: testNamespace,
 			Data: map[string][]byte{
 				token.APIKey: []byte(testAPIToken),
 			},
@@ -820,10 +792,8 @@ func TestTokenConditions(t *testing.T) {
 	t.Run("token status condition remains unchanged unless new condition doesn't match", func(t *testing.T) {
 		transitionTime := metav1.NewTime(time.Now())
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-			},
+			Name:      testName,
+			Namespace: testNamespace,
 			Status: dynakube.DynaKubeStatus{
 				Conditions: []metav1.Condition{
 					{
@@ -852,10 +822,8 @@ func TestTokenConditions(t *testing.T) {
 	})
 	t.Run("deprecated conditions types are removed", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-			},
+			Name:      testName,
+			Namespace: testNamespace,
 			Status: dynakube.DynaKubeStatus{
 				Conditions: []metav1.Condition{
 					{
@@ -1076,10 +1044,8 @@ func TestTokenConditionsOptionalScopes(t *testing.T) {
 
 func TestSetupTokensAndClientForPlatformToken(t *testing.T) {
 	fakeClient := fake.NewClient(&corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      testName,
-			Namespace: testNamespace,
-		},
+		Name:      testName,
+		Namespace: testNamespace,
 		Data: map[string][]byte{
 			token.APIKey: []byte(dttoken.PlatformPrefix + testAPIToken),
 		},
@@ -1132,21 +1098,17 @@ func TestSetupTokensAndClientForPlatformToken(t *testing.T) {
 
 func TestSetupTokensAndClientForConnectionTimeout(t *testing.T) {
 	fakeClient := fake.NewClient(&corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      testName,
-			Namespace: testNamespace,
-		},
+		Name:      testName,
+		Namespace: testNamespace,
 		Data: map[string][]byte{
 			token.APIKey: []byte(testAPIToken),
 		},
 	})
 
 	dk := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      testName,
-			Namespace: testNamespace,
-		},
-		Spec: dynakube.DynaKubeSpec{APIURL: "localhost"},
+		Name:      testName,
+		Namespace: testNamespace,
+		Spec:      dynakube.DynaKubeSpec{APIURL: "localhost"},
 	}
 
 	t.Run("connection timeout from env var is applied to the underlying http.Client", func(t *testing.T) {
@@ -1246,12 +1208,10 @@ func createFakeControllerAndClients(t *testing.T, tokenScopes []string) *Control
 
 func createDynakubeWithK8SMonitoring() *dynakube.DynaKube {
 	return &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      testName,
-			Namespace: testNamespace,
-			Annotations: map[string]string{
-				"feature.dynatrace.com/automatic-kubernetes-api-monitoring": "true",
-			},
+		Name:      testName,
+		Namespace: testNamespace,
+		Annotations: map[string]string{
+			"feature.dynatrace.com/automatic-kubernetes-api-monitoring": "true",
 		},
 		Spec: dynakube.DynaKubeSpec{
 			ActiveGate: activegate.Spec{
@@ -1265,10 +1225,8 @@ func createDynakubeWithK8SMonitoring() *dynakube.DynaKube {
 
 func createAPISecret() *corev1.Secret {
 	return &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      testName,
-			Namespace: testNamespace,
-		},
+		Name:      testName,
+		Namespace: testNamespace,
 		Data: map[string][]byte{
 			token.APIKey: []byte(testAPIToken),
 		},
@@ -1279,11 +1237,9 @@ func createCRD(t *testing.T) *apiextensionsv1.CustomResourceDefinition {
 	t.Setenv(k8senv.AppVersion, "1.0.0")
 
 	return &apiextensionsv1.CustomResourceDefinition{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: k8scrd.DynaKubeName,
-			Labels: map[string]string{
-				k8slabel.AppVersionLabel: "1.0.0",
-			},
+		Name: k8scrd.DynaKubeName,
+		Labels: map[string]string{
+			k8slabel.AppVersionLabel: "1.0.0",
 		},
 	}
 }

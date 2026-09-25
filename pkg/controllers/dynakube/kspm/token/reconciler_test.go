@@ -16,7 +16,6 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -64,10 +63,8 @@ func TestTokenCreation(t *testing.T) {
 
 		objs := []client.Object{
 			&corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      dk.KSPM().GetTokenSecretName(),
-					Namespace: dk.Namespace,
-				},
+				Name:      dk.KSPM().GetTokenSecretName(),
+				Namespace: dk.Namespace,
 			},
 		}
 		clt := dtfake.NewClient(objs...)
@@ -109,9 +106,7 @@ func createFailK8sClient(t *testing.T) client.Client {
 
 func createDynaKube(kspmEnabled bool) *dynakube.DynaKube {
 	dk := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "test-dk",
-		},
+		Name: "test-dk",
 		Spec: dynakube.DynaKubeSpec{},
 	}
 

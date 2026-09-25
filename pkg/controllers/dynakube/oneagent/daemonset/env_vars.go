@@ -70,9 +70,7 @@ func (b *builder) addClusterIDEnv(envVarMap *prioritymap.Map) {
 
 func (b *builder) addDeploymentMetadataEnv(envVarMap *prioritymap.Map) {
 	addDefaultValueSource(envVarMap, deploymentmetadata.EnvDTDeploymentMetadata, &corev1.EnvVarSource{ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
-		LocalObjectReference: corev1.LocalObjectReference{
-			Name: deploymentmetadata.GetDeploymentMetadataConfigMapName(b.dk.Name),
-		},
+		Name:     deploymentmetadata.GetDeploymentMetadataConfigMapName(b.dk.Name),
 		Key:      deploymentmetadata.OneAgentMetadataKey,
 		Optional: new(false),
 	}})
@@ -80,9 +78,7 @@ func (b *builder) addDeploymentMetadataEnv(envVarMap *prioritymap.Map) {
 
 func (b *builder) addOperatorVersionInfoEnv(envVarMap *prioritymap.Map) {
 	addDefaultValueSource(envVarMap, deploymentmetadata.EnvDTOperatorVersion, &corev1.EnvVarSource{ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
-		LocalObjectReference: corev1.LocalObjectReference{
-			Name: deploymentmetadata.GetDeploymentMetadataConfigMapName(b.dk.Name),
-		},
+		Name:     deploymentmetadata.GetDeploymentMetadataConfigMapName(b.dk.Name),
 		Key:      deploymentmetadata.OperatorVersionKey,
 		Optional: new(false),
 	}})
@@ -90,16 +86,12 @@ func (b *builder) addOperatorVersionInfoEnv(envVarMap *prioritymap.Map) {
 
 func (b *builder) addConnectionInfoEnvs(envVarMap *prioritymap.Map) {
 	addDefaultValueSource(envVarMap, connectioninfo.EnvDTTenant, &corev1.EnvVarSource{ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
-		LocalObjectReference: corev1.LocalObjectReference{
-			Name: b.dk.OneAgent().GetConnectionInfoConfigMapName(),
-		},
+		Name:     b.dk.OneAgent().GetConnectionInfoConfigMapName(),
 		Key:      connectioninfo.TenantUUIDKey,
 		Optional: new(false),
 	}})
 	addDefaultValueSource(envVarMap, connectioninfo.EnvDTServer, &corev1.EnvVarSource{ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
-		LocalObjectReference: corev1.LocalObjectReference{
-			Name: b.dk.OneAgent().GetConnectionInfoConfigMapName(),
-		},
+		Name:     b.dk.OneAgent().GetConnectionInfoConfigMapName(),
 		Key:      connectioninfo.CommunicationEndpointsKey,
 		Optional: new(false),
 	}})
@@ -114,8 +106,8 @@ func (b *builder) addProxyEnv(envVarMap *prioritymap.Map) {
 	if b.dk.Spec.Proxy.ValueFrom != "" {
 		addDefaultValueSource(envVarMap, proxyEnv, &corev1.EnvVarSource{
 			SecretKeyRef: &corev1.SecretKeySelector{
-				LocalObjectReference: corev1.LocalObjectReference{Name: b.dk.Spec.Proxy.ValueFrom},
-				Key:                  dynakube.ProxyKey,
+				Name: b.dk.Spec.Proxy.ValueFrom,
+				Key:  dynakube.ProxyKey,
 			},
 		})
 	} else {

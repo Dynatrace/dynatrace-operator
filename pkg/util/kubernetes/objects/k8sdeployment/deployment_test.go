@@ -22,11 +22,9 @@ const ns = "dynatrace"
 
 func createTestDeploymentWithMatchLabels(name, namespace string, annotations, matchLabels map[string]string) appsv1.Deployment {
 	return appsv1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        name,
-			Namespace:   namespace,
-			Annotations: annotations,
-		},
+		Name:        name,
+		Namespace:   namespace,
+		Annotations: annotations,
 		Spec: appsv1.DeploymentSpec{
 			Selector: &metav1.LabelSelector{
 				MatchLabels: matchLabels,
@@ -49,7 +47,7 @@ func TestIsRolloutComplete(t *testing.T) {
 		{
 			name: "stale observed generation",
 			deploy: &appsv1.Deployment{
-				ObjectMeta: metav1.ObjectMeta{Generation: 2},
+				Generation: 2,
 				Spec:       appsv1.DeploymentSpec{Replicas: new(int32(2))},
 				Status:     appsv1.DeploymentStatus{ObservedGeneration: 1, ReadyReplicas: 2},
 			},
@@ -101,28 +99,22 @@ func TestGetDeployment(t *testing.T) {
 
 	fakeClient := fake.NewClient(
 		&corev1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "mypod",
-				Namespace: ns,
-				OwnerReferences: []metav1.OwnerReference{
-					{Kind: "ReplicaSet", Name: "myreplicaset", Controller: &trueVar},
-				},
+			Name:      "mypod",
+			Namespace: ns,
+			OwnerReferences: []metav1.OwnerReference{
+				{Kind: "ReplicaSet", Name: "myreplicaset", Controller: &trueVar},
 			},
 		},
 		&appsv1.ReplicaSet{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "myreplicaset",
-				Namespace: ns,
-				OwnerReferences: []metav1.OwnerReference{
-					{Kind: "Deployment", Name: "mydeployment", Controller: &trueVar},
-				},
+			Name:      "myreplicaset",
+			Namespace: ns,
+			OwnerReferences: []metav1.OwnerReference{
+				{Kind: "Deployment", Name: "mydeployment", Controller: &trueVar},
 			},
 		},
 		&appsv1.Deployment{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "mydeployment",
-				Namespace: ns,
-			},
+			Name:      "mydeployment",
+			Namespace: ns,
 		})
 
 	deploy, err := GetDeployment(fakeClient, "mypod", "dynatrace")
@@ -146,18 +138,18 @@ func TestResolveReplicas(t *testing.T) {
 	}{
 		{
 			name:            "returns provided default replicas",
-			reader:          fake.NewClient(&appsv1.Deployment{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: ns}, Spec: appsv1.DeploymentSpec{Replicas: new(int32(7))}}),
+			reader:          fake.NewClient(&appsv1.Deployment{Name: name, Namespace: ns, Spec: appsv1.DeploymentSpec{Replicas: new(int32(7))}}),
 			defaultReplicas: new(int32(3)),
 			expected:        int32(3),
 		},
 		{
 			name:     "returns deployment replicas when found",
-			reader:   fake.NewClient(&appsv1.Deployment{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: ns}, Spec: appsv1.DeploymentSpec{Replicas: new(int32(5))}}),
+			reader:   fake.NewClient(&appsv1.Deployment{Name: name, Namespace: ns, Spec: appsv1.DeploymentSpec{Replicas: new(int32(5))}}),
 			expected: int32(5),
 		},
 		{
 			name:     "returns one when deployment has nil replicas",
-			reader:   fake.NewClient(&appsv1.Deployment{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: ns}}),
+			reader:   fake.NewClient(&appsv1.Deployment{Name: name, Namespace: ns}),
 			expected: int32(1),
 		},
 		{
@@ -208,8 +200,8 @@ func TestResolveAndSetReplicas(t *testing.T) {
 		{
 			name: "sets replicas from resolved deployment",
 			reader: fake.NewClient(&appsv1.Deployment{
-				ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: ns},
-				Spec:       appsv1.DeploymentSpec{Replicas: new(int32(6))},
+				Name: name, Namespace: ns,
+				Spec: appsv1.DeploymentSpec{Replicas: new(int32(6))},
 			}),
 			expected: new(int32(6)),
 		},
@@ -232,7 +224,7 @@ func TestResolveAndSetReplicas(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			deployment := &appsv1.Deployment{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: ns}}
+			deployment := &appsv1.Deployment{Name: name, Namespace: ns}
 
 			err := ResolveAndSetReplicas(t.Context(), tc.reader, deployment, tc.defaultReplicas)
 			if tc.expectedErr != nil {

@@ -50,8 +50,8 @@ func TestReconcileLifecycle(t *testing.T) {
 	integrationtests.CreateNamespace(t, clt, integrationNamespace)
 
 	pm := &prometheusmonitoring.PrometheusMonitoring{
-		ObjectMeta: metav1.ObjectMeta{Name: integrationPMName, Namespace: integrationNamespace},
-		Spec:       prometheusmonitoring.PrometheusMonitoringSpec{DynaKubeName: integrationDynaKubeName},
+		Name: integrationPMName, Namespace: integrationNamespace,
+		Spec: prometheusmonitoring.PrometheusMonitoringSpec{DynaKubeName: integrationDynaKubeName},
 	}
 	integrationtests.CreateKubernetesObject(t, clt, pm)
 

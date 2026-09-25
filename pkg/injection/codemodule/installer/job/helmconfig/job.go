@@ -27,18 +27,16 @@ var (
 	conf Config
 
 	fallback = Config{
-		CSIDaemonSetConfig: CSIDaemonSetConfig{
-			Tolerations: []corev1.Toleration{
-				{
-					Effect:   corev1.TaintEffectNoSchedule,
-					Key:      "node-role.kubernetes.io/master",
-					Operator: corev1.TolerationOpExists,
-				},
-				{
-					Effect:   corev1.TaintEffectNoSchedule,
-					Key:      "node-role.kubernetes.io/control-plane",
-					Operator: corev1.TolerationOpExists,
-				},
+		Tolerations: []corev1.Toleration{
+			{
+				Effect:   corev1.TaintEffectNoSchedule,
+				Key:      "node-role.kubernetes.io/master",
+				Operator: corev1.TolerationOpExists,
+			},
+			{
+				Effect:   corev1.TaintEffectNoSchedule,
+				Key:      "node-role.kubernetes.io/control-plane",
+				Operator: corev1.TolerationOpExists,
 			},
 		},
 		Job: JobConfig{

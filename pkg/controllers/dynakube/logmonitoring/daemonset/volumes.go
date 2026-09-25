@@ -47,11 +47,9 @@ func getConfigVolumeMount() corev1.VolumeMount {
 func getConfigVolume(dkName string) corev1.Volume {
 	return corev1.Volume{
 		Name: configVolumeName,
-		VolumeSource: corev1.VolumeSource{
-			Secret: &corev1.SecretVolumeSource{
-				SecretName:  configsecret.GetSecretName(dkName),
-				DefaultMode: new(int32(0o640)),
-			},
+		Secret: &corev1.SecretVolumeSource{
+			SecretName:  configsecret.GetSecretName(dkName),
+			DefaultMode: new(int32(0o640)),
 		},
 	}
 }
@@ -81,16 +79,14 @@ func getDTVolumes() []corev1.Volume {
 	return []corev1.Volume{
 		{
 			Name: dtLibVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				HostPath: &corev1.HostPathVolumeSource{
-					Path: dtLibVolumeHostPath,
-					Type: new(corev1.HostPathDirectoryOrCreate),
-				},
+			HostPath: &corev1.HostPathVolumeSource{
+				Path: dtLibVolumeHostPath,
+				Type: new(corev1.HostPathDirectoryOrCreate),
 			},
 		},
 		{
-			Name:         dtLogVolumeName,
-			VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}},
+			Name:     dtLogVolumeName,
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
 		},
 	}
 }
@@ -116,20 +112,16 @@ func getIngestVolumes() []corev1.Volume {
 	return []corev1.Volume{
 		{
 			Name: dockerLogsVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				HostPath: &corev1.HostPathVolumeSource{
-					Path: dockerLogsVolumePath,
-					Type: new(corev1.HostPathDirectoryOrCreate),
-				},
+			HostPath: &corev1.HostPathVolumeSource{
+				Path: dockerLogsVolumePath,
+				Type: new(corev1.HostPathDirectoryOrCreate),
 			},
 		},
 		{
 			Name: logsVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				HostPath: &corev1.HostPathVolumeSource{
-					Path: logsVolumeHostPath,
-					Type: new(corev1.HostPathDirectory),
-				},
+			HostPath: &corev1.HostPathVolumeSource{
+				Path: logsVolumeHostPath,
+				Type: new(corev1.HostPathDirectory),
 			},
 		},
 	}

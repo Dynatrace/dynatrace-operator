@@ -21,12 +21,11 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func newTestDynaKube() *dynakube.DynaKube {
-	return &dynakube.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: "dk", Namespace: "dynatrace"}}
+	return &dynakube.DynaKube{Name: "dk", Namespace: "dynatrace"}
 }
 
 func TestReconcileStatefulSet(t *testing.T) {
@@ -121,8 +120,8 @@ func TestReconcileStatefulSet(t *testing.T) {
 		pm.Spec.Gateway.Image = "img:1"
 		s := newTestScopeWithDynaKube(pm, newTestDynaKube())
 		existing := &appsv1.StatefulSet{
-			ObjectMeta: metav1.ObjectMeta{Name: s.Spec.GetStatefulSetName(), Namespace: pm.Namespace},
-			Spec:       appsv1.StatefulSetSpec{Replicas: new(int32(5))},
+			Name: s.Spec.GetStatefulSetName(), Namespace: pm.Namespace,
+			Spec: appsv1.StatefulSetSpec{Replicas: new(int32(5))},
 		}
 		c := fake.NewClient(existing)
 		r := &Reconciler{Client: c}

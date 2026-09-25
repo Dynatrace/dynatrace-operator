@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func Test_nameTooLong(t *testing.T) {
@@ -45,10 +44,8 @@ func Test_nameTooLong(t *testing.T) {
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
 			ec := &edgeconnect.EdgeConnect{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      strings.Repeat("a", test.crNameLength),
-					Namespace: testNamespace,
-				},
+				Name:      strings.Repeat("a", test.crNameLength),
+				Namespace: testNamespace,
 				Spec: edgeconnect.EdgeConnectSpec{
 					APIServer: "id." + allowedSuffix[0],
 					OAuth: edgeconnect.OAuthSpec{

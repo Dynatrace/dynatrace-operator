@@ -17,7 +17,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -91,7 +90,7 @@ func (r *Reconciler) removeKSPMSecret(ctx context.Context, dk *dynakube.DynaKube
 		return nil // no condition == nothing is there to clean up
 	}
 
-	err := r.secrets.Delete(ctx, &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: dk.KSPM().GetTokenSecretName(), Namespace: dk.Namespace}})
+	err := r.secrets.Delete(ctx, &corev1.Secret{Name: dk.KSPM().GetTokenSecretName(), Namespace: dk.Namespace})
 	if err != nil {
 		log.Info("could not delete kspm token", "secretName", dk.KSPM().GetTokenSecretName())
 

@@ -80,9 +80,9 @@ func TestReconcile(t *testing.T) {
 	t.Run("Only runs when required, and cleans up condition + daemonset", func(t *testing.T) {
 		dk := createDynakube(false)
 
-		previousDaemonSet := appsv1.DaemonSet{}
-		previousDaemonSet.Name = dk.KSPM().GetDaemonSetName()
-		previousDaemonSet.Namespace = dk.Namespace
+		previousDaemonSet := appsv1.DaemonSet{
+			Name:      dk.KSPM().GetDaemonSetName(),
+			Namespace: dk.Namespace}
 		mockK8sClient := fake.NewClient(&previousDaemonSet)
 
 		k8sconditions.SetDaemonSetCreated(dk.Conditions(), conditionType, "this is a test")
@@ -423,10 +423,8 @@ func TestTlsSecretHashAnnotationHandling(t *testing.T) {
 				return c.Get(ctx, key, obj, opts...)
 			},
 		}, &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      dk.ActiveGate().GetTLSSecretName(),
-				Namespace: dk.Namespace,
-			},
+			Name:      dk.ActiveGate().GetTLSSecretName(),
+			Namespace: dk.Namespace,
 			Data: map[string][]byte{
 				"tls.key": []byte("foo"),
 			},
@@ -452,10 +450,8 @@ func TestTlsSecretHashAnnotationHandling(t *testing.T) {
 				return c.Get(ctx, key, obj, opts...)
 			},
 		}, &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      dk.KubernetesMonitoring().GetTLSSecretName(),
-				Namespace: dk.Namespace,
-			},
+			Name:      dk.KubernetesMonitoring().GetTLSSecretName(),
+			Namespace: dk.Namespace,
 			Data: map[string][]byte{
 				"tls.key": []byte("foo"),
 			},
@@ -474,10 +470,8 @@ func createDynakube(isEnabled bool) *dynakube.DynaKube {
 	}
 
 	return &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: dkNamespace,
-			Name:      dkName,
-		},
+		Namespace: dkNamespace,
+		Name:      dkName,
 		Spec: dynakube.DynaKubeSpec{
 			APIURL: "test-url",
 			KSPM:   kspmSpec,

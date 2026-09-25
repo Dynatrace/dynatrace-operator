@@ -47,21 +47,17 @@ func create(ctx context.Context, ec *edgeconnect.EdgeConnect) *appsv1.Deployment
 	annotations = k8ssecuritycontext.RemoveAppArmorAnnotation(annotations, consts.EdgeConnectContainerName)
 
 	return &appsv1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      ec.Name,
-			Namespace: ec.Namespace,
-			Labels:    labels,
-		},
+		Name:      ec.Name,
+		Namespace: ec.Namespace,
+		Labels:    labels,
 		Spec: appsv1.DeploymentSpec{
 			Replicas: ec.Spec.Replicas,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: appLabels.BuildMatchLabels(),
 			},
 			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Annotations: annotations,
-					Labels:      customPodLabels,
-				},
+				Annotations: annotations,
+				Labels:      customPodLabels,
 				Spec: corev1.PodSpec{
 					Containers:                    []corev1.Container{edgeConnectContainer(ec)},
 					ImagePullSecrets:              prepareImagePullSecrets(ec),
@@ -143,16 +139,12 @@ func prepareVolumes(ec *edgeconnect.EdgeConnect) []corev1.Volume {
 	if ec.Spec.CaCertsRef != "" {
 		volumes = append(volumes, corev1.Volume{
 			Name: consts.EdgeConnectCustomCAVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: ec.Spec.CaCertsRef,
-					},
-					Items: []corev1.KeyToPath{
-						{
-							Key:  consts.EdgeConnectCAConfigMapKey,
-							Path: consts.EdgeConnectCustomCertificateName,
-						},
+			ConfigMap: &corev1.ConfigMapVolumeSource{
+				Name: ec.Spec.CaCertsRef,
+				Items: []corev1.KeyToPath{
+					{
+						Key:  consts.EdgeConnectCAConfigMapKey,
+						Path: consts.EdgeConnectCustomCertificateName,
 					},
 				},
 			},
@@ -177,14 +169,12 @@ func prepareVolumeMounts(ec *edgeconnect.EdgeConnect) []corev1.VolumeMount {
 func prepareConfigVolume(ec *edgeconnect.EdgeConnect) corev1.Volume {
 	return corev1.Volume{
 		Name: ec.Name + "-" + consts.EdgeConnectConfigVolumeMountName,
-		VolumeSource: corev1.VolumeSource{
-			Secret: &corev1.SecretVolumeSource{
-				SecretName: ec.Name + "-" + consts.EdgeConnectSecretSuffix,
-				Items: []corev1.KeyToPath{
-					{Key: consts.EdgeConnectConfigFileName, Path: consts.EdgeConnectConfigFileName},
-				},
-				DefaultMode: new(int32(0o640)),
+		Secret: &corev1.SecretVolumeSource{
+			SecretName: ec.Name + "-" + consts.EdgeConnectSecretSuffix,
+			Items: []corev1.KeyToPath{
+				{Key: consts.EdgeConnectConfigFileName, Path: consts.EdgeConnectConfigFileName},
 			},
+			DefaultMode: new(int32(0o640)),
 		},
 	}
 }

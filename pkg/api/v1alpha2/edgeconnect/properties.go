@@ -50,10 +50,8 @@ func (ec *EdgeConnect) IsK8SAutomationEnabled() bool {
 
 func (ec *EdgeConnect) EmptyPullSecret() *corev1.Secret {
 	return &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      ec.Spec.CustomPullSecret,
-			Namespace: ec.Namespace,
-		},
+		Name:      ec.Spec.CustomPullSecret,
+		Namespace: ec.Namespace,
 	}
 }
 

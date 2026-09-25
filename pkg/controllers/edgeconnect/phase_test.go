@@ -10,17 +10,14 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
 	"github.com/stretchr/testify/assert"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func Test_Controller_determineEdgeConnectPhase(t *testing.T) {
 	ec := &edgeconnect.EdgeConnect{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      testName,
-			Namespace: testNamespace,
-		},
-		Spec: edgeconnect.EdgeConnectSpec{},
+		Name:      testName,
+		Namespace: testNamespace,
+		Spec:      edgeconnect.EdgeConnectSpec{},
 	}
 
 	t.Run("no edgeConnect deployment in cluster -> deploying", func(t *testing.T) {

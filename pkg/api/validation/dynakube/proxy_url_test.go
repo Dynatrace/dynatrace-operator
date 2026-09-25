@@ -10,7 +10,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -83,10 +82,8 @@ func TestInvalidActiveGateProxy(t *testing.T) {
 				},
 			},
 			&corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      testProxySecret,
-					Namespace: testNamespace,
-				},
+				Name:      testProxySecret,
+				Namespace: testNamespace,
 				Data: map[string][]byte{
 					"proxy": []byte(validEncodedProxyURL),
 				},
@@ -122,10 +119,8 @@ func TestInvalidActiveGateProxy(t *testing.T) {
 				},
 			},
 			&corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      testProxySecret,
-					Namespace: testNamespace,
-				},
+				Name:      testProxySecret,
+				Namespace: testNamespace,
 				Data: map[string][]byte{
 					"invalid-name": []byte(validEncodedProxyURL),
 				},
@@ -146,10 +141,8 @@ func TestInvalidActiveGateProxy(t *testing.T) {
 				},
 			},
 			&corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      testProxySecret,
-					Namespace: testNamespace,
-				},
+				Name:      testProxySecret,
+				Namespace: testNamespace,
 				Data: map[string][]byte{
 					"proxy": []byte(invalidPlainTextProxyURL),
 				},

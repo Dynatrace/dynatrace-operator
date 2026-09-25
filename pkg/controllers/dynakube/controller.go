@@ -46,7 +46,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/events"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -251,10 +250,8 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 
 func (controller *Controller) getDynakubeOrCleanup(ctx context.Context, dkName, dkNamespace string) (*dynakube.DynaKube, error) {
 	dk := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      dkName,
-			Namespace: dkNamespace,
-		},
+		Name:      dkName,
+		Namespace: dkNamespace,
 	}
 
 	err := controller.apiReader.Get(ctx, client.ObjectKey{Name: dk.Name, Namespace: dk.Namespace}, dk)

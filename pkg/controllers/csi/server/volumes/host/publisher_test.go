@@ -100,10 +100,8 @@ func getTestVolumeConfig(t *testing.T) csivolumes.VolumeConfig {
 	t.Helper()
 
 	return csivolumes.VolumeConfig{
-		VolumeInfo: csivolumes.VolumeInfo{
-			VolumeID:   "test-id",
-			TargetPath: "test/path",
-		},
+		VolumeID:     "test-id",
+		TargetPath:   "test/path",
 		PodName:      "test-pod",
 		Mode:         Mode,
 		DynakubeName: "test-dk",

@@ -49,10 +49,8 @@ func TestNewSecretGenerator(t *testing.T) {
 func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 	t.Run("no OTLP exporter config enabled - do not create secrets", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testDynakube,
-				Namespace: testNamespaceDynatrace,
-			},
+			Name:      testDynakube,
+			Namespace: testNamespaceDynatrace,
 		}
 
 		clt := fake.NewClientWithIndex(
@@ -75,10 +73,8 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 	})
 	t.Run("no namespaces provided - should not error", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testDynakube,
-				Namespace: testNamespaceDynatrace,
-			},
+			Name:      testDynakube,
+			Namespace: testNamespaceDynatrace,
 			Spec: dynakube.DynaKubeSpec{
 				OTLPExporterConfiguration: &otlp.ExporterConfigurationSpec{
 					Signals: otlp.SignalConfiguration{},
@@ -102,10 +98,8 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 	})
 	t.Run("successfully generate config secret for dynakube", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testDynakube,
-				Namespace: testNamespaceDynatrace,
-			},
+			Name:      testDynakube,
+			Namespace: testNamespaceDynatrace,
 			Spec: dynakube.DynaKubeSpec{
 				OTLPExporterConfiguration: &otlp.ExporterConfigurationSpec{
 					Signals: otlp.SignalConfiguration{},
@@ -168,10 +162,8 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 	})
 	t.Run("update existing secret", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testDynakube,
-				Namespace: testNamespaceDynatrace,
-			},
+			Name:      testDynakube,
+			Namespace: testNamespaceDynatrace,
 			Spec: dynakube.DynaKubeSpec{
 				OTLPExporterConfiguration: &otlp.ExporterConfigurationSpec{
 					Signals: otlp.SignalConfiguration{},
@@ -246,10 +238,8 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 	})
 	t.Run("fail while generating secret for dynakube - secret in dynatrace namespace not found", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testDynakube,
-				Namespace: testNamespaceDynatrace,
-			},
+			Name:      testDynakube,
+			Namespace: testNamespaceDynatrace,
 			Spec: dynakube.DynaKubeSpec{
 				OTLPExporterConfiguration: &otlp.ExporterConfigurationSpec{
 					Signals: otlp.SignalConfiguration{},
@@ -273,7 +263,7 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 
 	t.Run("generate secrets for multiple namespaces (skip terminating)", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{Name: testDynakube, Namespace: testNamespaceDynatrace},
+			Name: testDynakube, Namespace: testNamespaceDynatrace,
 			Spec: dynakube.DynaKubeSpec{
 				OTLPExporterConfiguration: &otlp.ExporterConfigurationSpec{},
 				ActiveGate: activegate.Spec{
@@ -314,8 +304,8 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 
 	t.Run("token secret missing ingest token key -> return error", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{Name: testDynakube, Namespace: testNamespaceDynatrace},
-			Spec:       dynakube.DynaKubeSpec{OTLPExporterConfiguration: &otlp.ExporterConfigurationSpec{}},
+			Name: testDynakube, Namespace: testNamespaceDynatrace,
+			Spec: dynakube.DynaKubeSpec{OTLPExporterConfiguration: &otlp.ExporterConfigurationSpec{}},
 		}
 
 		// tokens secret present but without ingest token key
@@ -338,7 +328,7 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 
 	t.Run("no matching namespaces -> only source secret created", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{Name: testDynakube, Namespace: testNamespaceDynatrace},
+			Name: testDynakube, Namespace: testNamespaceDynatrace,
 			Spec: dynakube.DynaKubeSpec{
 				OTLPExporterConfiguration: &otlp.ExporterConfigurationSpec{},
 				ActiveGate: activegate.Spec{
@@ -349,7 +339,7 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 		}
 
 		// namespace without injection label
-		nonInjected := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "plain-ns"}}
+		nonInjected := &corev1.Namespace{Name: "plain-ns"}
 
 		clt := fake.NewClientWithIndex(
 			dk,
@@ -373,10 +363,8 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 		tlsSecretName := "missing-tls"
 
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testDynakube,
-				Namespace: testNamespaceDynatrace,
-			},
+			Name:      testDynakube,
+			Namespace: testNamespaceDynatrace,
 			Spec: dynakube.DynaKubeSpec{
 				ActiveGate: activegate.Spec{
 					TLSSecretName: tlsSecretName,
@@ -405,10 +393,8 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 		tlsSecretName := "missing-tls"
 
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testDynakube,
-				Namespace: testNamespaceDynatrace,
-			},
+			Name:      testDynakube,
+			Namespace: testNamespaceDynatrace,
 			Spec: dynakube.DynaKubeSpec{
 				ActiveGate: activegate.Spec{
 					TLSSecretName: tlsSecretName,
@@ -437,7 +423,7 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 	t.Run("generate certs from TrustedCAs when activegate disabled", func(t *testing.T) {
 		trustedCAName := "trusted-ca-config"
 		dk := &dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{Name: testDynakube, Namespace: testNamespaceDynatrace},
+			Name: testDynakube, Namespace: testNamespaceDynatrace,
 			Spec: dynakube.DynaKubeSpec{
 				TrustedCAs:                trustedCAName, // ActiveGate disabled (no capabilities) -> use TrustedCAs
 				OTLPExporterConfiguration: &otlp.ExporterConfigurationSpec{Signals: otlp.SignalConfiguration{}},
@@ -447,8 +433,8 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 		namespace := clientInjectedNamespace(testNamespace, testDynakube)
 
 		trustedCAConfigMap := &corev1.ConfigMap{
-			ObjectMeta: metav1.ObjectMeta{Name: trustedCAName, Namespace: testNamespaceDynatrace},
-			Data:       map[string]string{dynakube.TrustedCAKey: testCrt},
+			Name: trustedCAName, Namespace: testNamespaceDynatrace,
+			Data: map[string]string{dynakube.TrustedCAKey: testCrt},
 		}
 
 		clt := fake.NewClientWithIndex(
@@ -485,11 +471,9 @@ func TestSecretGenerator_GenerateForDynakube(t *testing.T) {
 
 func TestCleanup(t *testing.T) {
 	dk := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      testDynakube,
-			Namespace: testNamespaceDynatrace,
-		},
-		Spec: dynakube.DynaKubeSpec{},
+		Name:      testDynakube,
+		Namespace: testNamespaceDynatrace,
+		Spec:      dynakube.DynaKubeSpec{},
 		Status: dynakube.DynaKubeStatus{
 			Conditions: []metav1.Condition{
 				{Type: ConfigConditionType},
@@ -513,8 +497,8 @@ func TestCleanup(t *testing.T) {
 		clientSecret(GetSourceCertsSecretName(dk.Name), dk.Namespace, nil),
 	)
 	namespaces := []corev1.Namespace{
-		{ObjectMeta: metav1.ObjectMeta{Name: testNamespace}},
-		{ObjectMeta: metav1.ObjectMeta{Name: testNamespace2}},
+		{Name: testNamespace},
+		{Name: testNamespace2},
 	}
 
 	err := Cleanup(t.Context(), clt, clt, namespaces, dk)
@@ -534,29 +518,21 @@ func TestCleanup(t *testing.T) {
 
 func clientSecret(secretName string, namespaceName string, data map[string][]byte) *corev1.Secret {
 	return &corev1.Secret{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "core/v1",
-			Kind:       "Secret",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      secretName,
-			Namespace: namespaceName,
-		},
-		Data: data,
+		APIVersion: "core/v1",
+		Kind:       "Secret",
+		Name:       secretName,
+		Namespace:  namespaceName,
+		Data:       data,
 	}
 }
 
 func clientInjectedNamespace(namespaceName string, dynakubeName string) *corev1.Namespace {
 	return &corev1.Namespace{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "corev1",
-			Kind:       "Namespace",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name: namespaceName,
-			Labels: map[string]string{
-				dtwebhook.InjectionInstanceLabel: dynakubeName,
-			},
+		APIVersion: "corev1",
+		Kind:       "Namespace",
+		Name:       namespaceName,
+		Labels: map[string]string{
+			dtwebhook.InjectionInstanceLabel: dynakubeName,
 		},
 	}
 }

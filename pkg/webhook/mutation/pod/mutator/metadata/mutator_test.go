@@ -232,15 +232,13 @@ func Test_setNotInjectedAnnotationFunc(t *testing.T) {
 
 func TestMutate(t *testing.T) {
 	pod := corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "test",
-			OwnerReferences: []metav1.OwnerReference{
-				{
-					Name:       "owner",
-					APIVersion: "v1",
-					Kind:       "ReplicationController",
-					Controller: new(true),
-				},
+		Namespace: "test",
+		OwnerReferences: []metav1.OwnerReference{
+			{
+				Name:       "owner",
+				APIVersion: "v1",
+				Kind:       "ReplicationController",
+				Controller: new(true),
 			},
 		},
 	}
@@ -306,14 +304,10 @@ func TestMutate(t *testing.T) {
 				pod := pod.DeepCopy()
 
 				owner := &corev1.ReplicationController{
-					TypeMeta: metav1.TypeMeta{
-						APIVersion: "v1",
-						Kind:       "ReplicationController",
-					},
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "owner",
-						Namespace: pod.Namespace,
-					},
+					APIVersion: "v1",
+					Kind:       "ReplicationController",
+					Name:       "owner",
+					Namespace:  pod.Namespace,
 				}
 
 				expectedPod := pod.DeepCopy()
@@ -323,9 +317,7 @@ func TestMutate(t *testing.T) {
 					BaseRequest: &dtwebhook.BaseRequest{
 						Pod: pod,
 						DynaKube: &dynakube.DynaKube{
-							ObjectMeta: metav1.ObjectMeta{
-								Annotations: tc.annotations,
-							},
+							Annotations: tc.annotations,
 							Spec: dynakube.DynaKubeSpec{
 								MetadataEnrichment: metadataenrichment.Spec{
 									Enabled: new(true),
@@ -360,17 +352,15 @@ func TestMutate(t *testing.T) {
 							},
 						},
 						Namespace: &corev1.Namespace{
-							ObjectMeta: metav1.ObjectMeta{
-								Name: pod.Namespace,
-								Annotations: map[string]string{
-									metadataenrichment.Prefix + nsMetaAnnotationKey: nsMetaAnnotationValue,
-									testCostCenterAnnotation:                        "cost-center",
-									testCustomMetadataAnnotation:                    "custom-meta-annotation",
-								},
-								Labels: map[string]string{
-									testSecContextLabel:     "high",
-									testCustomMetadataLabel: "custom-meta-label",
-								},
+							Name: pod.Namespace,
+							Annotations: map[string]string{
+								metadataenrichment.Prefix + nsMetaAnnotationKey: nsMetaAnnotationValue,
+								testCostCenterAnnotation:                        "cost-center",
+								testCustomMetadataAnnotation:                    "custom-meta-annotation",
+							},
+							Labels: map[string]string{
+								testSecContextLabel:     "high",
+								testCustomMetadataLabel: "custom-meta-label",
 							},
 						},
 					},
@@ -482,9 +472,7 @@ func TestMutate_ResourceAttributes(t *testing.T) {
 			dkSpec: dynakube.DynaKubeSpec{
 				OneAgent: oneagent.Spec{
 					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
-						HostInjectSpec: oneagent.HostInjectSpec{
-							AdditionalResourceAttributes: map[string]string{additionalKey: additionalValue},
-						},
+						AdditionalResourceAttributes: map[string]string{additionalKey: additionalValue},
 					},
 				},
 				MetadataEnrichment: metadataenrichment.Spec{Enabled: new(true)},
@@ -558,14 +546,10 @@ func TestMutate_ResourceAttributes(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			pod := &corev1.Pod{
-				TypeMeta: metav1.TypeMeta{
-					Kind:       "Pod",
-					APIVersion: "v1",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-pod",
-					Namespace: podNamespace,
-				},
+				Kind:       "Pod",
+				APIVersion: "v1",
+				Name:       "test-pod",
+				Namespace:  podNamespace,
 			}
 
 			request := dtwebhook.MutationRequest{
@@ -574,7 +558,7 @@ func TestMutate_ResourceAttributes(t *testing.T) {
 					Pod:      pod,
 					DynaKube: &dynakube.DynaKube{Spec: tc.dkSpec},
 					Namespace: &corev1.Namespace{
-						ObjectMeta: metav1.ObjectMeta{Name: podNamespace},
+						Name: podNamespace,
 					},
 				},
 				InstallContainer: &corev1.Container{Args: []string{}},
@@ -614,22 +598,18 @@ func createTestMutationRequest(t *testing.T, dk *dynakube.DynaKube, annotations 
 
 func getTestNamespace(dk *dynakube.DynaKube) *corev1.Namespace {
 	return &corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "test-ns",
-			Labels: map[string]string{
-				dtwebhook.InjectionInstanceLabel: dk.Name,
-			},
+		Name: "test-ns",
+		Labels: map[string]string{
+			dtwebhook.InjectionInstanceLabel: dk.Name,
 		},
 	}
 }
 
 func getTestPod(annotations map[string]string) *corev1.Pod {
 	return &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        "test-pod",
-			Namespace:   "test-ns",
-			Annotations: annotations,
-		},
+		Name:        "test-pod",
+		Namespace:   "test-ns",
+		Annotations: annotations,
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{
 				{
@@ -661,10 +641,8 @@ func getTestPod(annotations map[string]string) *corev1.Pod {
 			},
 			Volumes: []corev1.Volume{
 				{
-					Name: "volume",
-					VolumeSource: corev1.VolumeSource{
-						EmptyDir: &corev1.EmptyDirVolumeSource{},
-					},
+					Name:     "volume",
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
 				},
 			},
 		},
@@ -675,10 +653,8 @@ func TestAddContainerAttributes(t *testing.T) {
 	// request to pre-mount required volumes: OneAgent or Enrichment or both
 	vmBaseRequest := &dtwebhook.BaseRequest{
 		Pod: &corev1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{
-					dtwebhook.AnnotationInjectionSplitMounts: "false",
-				},
+			Annotations: map[string]string{
+				dtwebhook.AnnotationInjectionSplitMounts: "false",
 			},
 		},
 		DynaKube: &dynakube.DynaKube{
@@ -843,10 +819,8 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 	vmBaseRequest := func(metadataEnrichment bool, oneAgent bool) *dtwebhook.BaseRequest {
 		br := &dtwebhook.BaseRequest{
 			Pod: &corev1.Pod{
-				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{
-						dtwebhook.AnnotationInjectionSplitMounts: "true",
-					},
+				Annotations: map[string]string{
+					dtwebhook.AnnotationInjectionSplitMounts: "true",
 				},
 			},
 			DynaKube: &dynakube.DynaKube{
@@ -964,10 +938,8 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 			Args: []string{},
 		}
 		pod := corev1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{
-					dtwebhook.AnnotationInjectionSplitMounts: "true",
-				},
+			Annotations: map[string]string{
+				dtwebhook.AnnotationInjectionSplitMounts: "true",
 			},
 			Spec: corev1.PodSpec{
 				Containers: []corev1.Container{
@@ -1019,10 +991,8 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 			Args: []string{},
 		}
 		pod := corev1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{
-					dtwebhook.AnnotationInjectionSplitMounts: "true",
-				},
+			Annotations: map[string]string{
+				dtwebhook.AnnotationInjectionSplitMounts: "true",
 			},
 			Spec: corev1.PodSpec{
 				Containers: []corev1.Container{
@@ -1073,10 +1043,8 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 			Args: []string{},
 		}
 		pod := corev1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{
-					dtwebhook.AnnotationInjectionSplitMounts: "true",
-				},
+			Annotations: map[string]string{
+				dtwebhook.AnnotationInjectionSplitMounts: "true",
 			},
 			Spec: corev1.PodSpec{
 				Containers: []corev1.Container{
@@ -1135,10 +1103,8 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 			Args: []string{},
 		}
 		pod := corev1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{
-					dtwebhook.AnnotationInjectionSplitMounts: "true",
-				},
+			Annotations: map[string]string{
+				dtwebhook.AnnotationInjectionSplitMounts: "true",
 			},
 			Spec: corev1.PodSpec{
 				Containers: []corev1.Container{
@@ -1189,10 +1155,8 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 			Args: []string{},
 		}
 		pod := corev1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{
-					dtwebhook.AnnotationInjectionSplitMounts: "true",
-				},
+			Annotations: map[string]string{
+				dtwebhook.AnnotationInjectionSplitMounts: "true",
 			},
 			Spec: corev1.PodSpec{
 				Containers: []corev1.Container{
@@ -1243,10 +1207,8 @@ func TestAddContainerAttributesWithSplitVolumes(t *testing.T) {
 			Args: []string{},
 		}
 		pod := corev1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{
-					dtwebhook.AnnotationInjectionSplitMounts: "true",
-				},
+			Annotations: map[string]string{
+				dtwebhook.AnnotationInjectionSplitMounts: "true",
 			},
 			Spec: corev1.PodSpec{
 				Containers: []corev1.Container{

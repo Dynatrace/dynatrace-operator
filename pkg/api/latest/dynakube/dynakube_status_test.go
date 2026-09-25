@@ -29,10 +29,8 @@ const (
 func TestStatus(t *testing.T) {
 	clt := integrationtests.SetupTestEnvironment(t)
 	clt.Create(t.Context(), &corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:   testNamespace,
-			Labels: map[string]string{},
-		},
+		Name:   testNamespace,
+		Labels: map[string]string{},
 	})
 
 	t.Run("can't add duplicated conditions", func(t *testing.T) {
@@ -60,11 +58,9 @@ func TestStatus(t *testing.T) {
 
 func buildDynaKube() *dynakube.DynaKube {
 	return &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        testDynakubeName,
-			Namespace:   testNamespace,
-			Annotations: map[string]string{},
-		},
+		Name:        testDynakubeName,
+		Namespace:   testNamespace,
+		Annotations: map[string]string{},
 		Spec: dynakube.DynaKubeSpec{
 			OneAgent: oneagent.Spec{
 				CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},

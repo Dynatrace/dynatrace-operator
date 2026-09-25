@@ -17,8 +17,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -117,9 +115,7 @@ func TestReconcileCertificate(t *testing.T) {
 
 func TestReconcile(t *testing.T) {
 	dkCrd := &apiextensionsv1.CustomResourceDefinition{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: k8scrd.DynaKubeName,
-		},
+		Name: k8scrd.DynaKubeName,
 		Spec: apiextensionsv1.CustomResourceDefinitionSpec{
 			Conversion: &apiextensionsv1.CustomResourceConversion{
 				Strategy: strategyWebhook,
@@ -131,9 +127,7 @@ func TestReconcile(t *testing.T) {
 	}
 
 	ecCrd := &apiextensionsv1.CustomResourceDefinition{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: k8scrd.EdgeConnectName,
-		},
+		Name: k8scrd.EdgeConnectName,
 		Spec: apiextensionsv1.CustomResourceDefinitionSpec{
 			Conversion: &apiextensionsv1.CustomResourceConversion{
 				Strategy: strategyWebhook,
@@ -147,9 +141,7 @@ func TestReconcile(t *testing.T) {
 	t.Run("reconcile successfully without mutatingwebhookconfiguration", func(t *testing.T) {
 		fakeClient := fake.NewClient(dkCrd, ecCrd,
 			&admissionregistrationv1.ValidatingWebhookConfiguration{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: webhook.DeploymentName,
-				},
+				Name: webhook.DeploymentName,
 				Webhooks: []admissionregistrationv1.ValidatingWebhook{
 					{
 						ClientConfig: admissionregistrationv1.WebhookClientConfig{},
@@ -157,10 +149,8 @@ func TestReconcile(t *testing.T) {
 				},
 			},
 			&appsv1.Deployment{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      webhook.DeploymentName,
-					Namespace: testNamespace,
-				},
+				Name:      webhook.DeploymentName,
+				Namespace: testNamespace,
 			})
 		controller, request := prepareController(t, fakeClient)
 		result, err := controller.Reconcile(t.Context(), request)
@@ -172,9 +162,7 @@ func TestReconcile(t *testing.T) {
 	t.Run("reconcile successfully without validatingwebhookconfiguration", func(t *testing.T) {
 		fakeClient := fake.NewClient(dkCrd, ecCrd,
 			&admissionregistrationv1.MutatingWebhookConfiguration{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: webhook.DeploymentName,
-				},
+				Name: webhook.DeploymentName,
 				Webhooks: []admissionregistrationv1.MutatingWebhook{
 					{
 						ClientConfig: admissionregistrationv1.WebhookClientConfig{},
@@ -185,10 +173,8 @@ func TestReconcile(t *testing.T) {
 				},
 			},
 			&appsv1.Deployment{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      webhook.DeploymentName,
-					Namespace: testNamespace,
-				},
+				Name:      webhook.DeploymentName,
+				Namespace: testNamespace,
 			})
 		controller, request := prepareController(t, fakeClient)
 		result, err := controller.Reconcile(t.Context(), request)
@@ -199,10 +185,8 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("update crd successfully with up-to-date secret", func(t *testing.T) {
 		deployment := &appsv1.Deployment{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      webhook.DeploymentName,
-				Namespace: testNamespace,
-			},
+			Name:      webhook.DeploymentName,
+			Namespace: testNamespace,
 		}
 		fakeClient := fake.NewClient(dkCrd, ecCrd, deployment)
 		cs := newCertificateSecret(deployment)
@@ -228,10 +212,8 @@ func TestReconcile(t *testing.T) {
 	// See cmd/operator/manager.go and cmd/operator/watcher.go
 	t.Run("do not skip certificates generation if no configuration exists", func(t *testing.T) {
 		fakeClient := fake.NewClient(dkCrd, ecCrd, &appsv1.Deployment{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      webhook.DeploymentName,
-				Namespace: testNamespace,
-			},
+			Name:      webhook.DeploymentName,
+			Namespace: testNamespace,
 		})
 		controller, request := prepareController(t, fakeClient)
 		result, err := controller.Reconcile(t.Context(), request)
@@ -270,11 +252,9 @@ func createValidTestCertData(t *testing.T) map[string][]byte {
 
 func createTestSecret(certData map[string][]byte) *corev1.Secret {
 	return &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: testNamespace,
-			Name:      expectedSecretName,
-		},
-		Data: certData,
+		Namespace: testNamespace,
+		Name:      expectedSecretName,
+		Data:      certData,
 	}
 }
 
@@ -285,10 +265,8 @@ func prepareController(t testing.TB, clt client.Client) (*WebhookCertificateCont
 	require.NoError(t, err)
 
 	request := reconcile.Request{
-		NamespacedName: types.NamespacedName{
-			Name:      webhook.DeploymentName,
-			Namespace: testNamespace,
-		},
+		Name:      webhook.DeploymentName,
+		Namespace: testNamespace,
 	}
 
 	return rec, request
@@ -343,9 +321,7 @@ type fakeClientBuilder struct {
 func newFakeClientBuilder() *fakeClientBuilder {
 	objs := []client.Object{
 		&admissionregistrationv1.MutatingWebhookConfiguration{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: webhook.DeploymentName,
-			},
+			Name: webhook.DeploymentName,
 			Webhooks: []admissionregistrationv1.MutatingWebhook{
 				{
 					ClientConfig: admissionregistrationv1.WebhookClientConfig{},
@@ -356,9 +332,7 @@ func newFakeClientBuilder() *fakeClientBuilder {
 			},
 		},
 		&admissionregistrationv1.ValidatingWebhookConfiguration{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: webhook.DeploymentName,
-			},
+			Name: webhook.DeploymentName,
 			Webhooks: []admissionregistrationv1.ValidatingWebhook{
 				{
 					ClientConfig: admissionregistrationv1.WebhookClientConfig{},
@@ -366,10 +340,8 @@ func newFakeClientBuilder() *fakeClientBuilder {
 			},
 		},
 		&appsv1.Deployment{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      webhook.DeploymentName,
-				Namespace: testNamespace,
-			},
+			Name:      webhook.DeploymentName,
+			Namespace: testNamespace,
 		},
 	}
 
@@ -391,9 +363,7 @@ func (builder *fakeClientBuilder) WithInvalidCertificateSecret() *fakeClientBuil
 func (builder *fakeClientBuilder) WithCRD() *fakeClientBuilder {
 	builder.objs = append(builder.objs,
 		&apiextensionsv1.CustomResourceDefinition{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: k8scrd.DynaKubeName,
-			},
+			Name: k8scrd.DynaKubeName,
 			Spec: apiextensionsv1.CustomResourceDefinitionSpec{
 				Conversion: &apiextensionsv1.CustomResourceConversion{
 					Strategy: strategyWebhook,
@@ -404,9 +374,7 @@ func (builder *fakeClientBuilder) WithCRD() *fakeClientBuilder {
 			},
 		},
 		&apiextensionsv1.CustomResourceDefinition{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: k8scrd.EdgeConnectName,
-			},
+			Name: k8scrd.EdgeConnectName,
 			Spec: apiextensionsv1.CustomResourceDefinitionSpec{
 				Conversion: &apiextensionsv1.CustomResourceConversion{
 					Strategy: strategyWebhook,

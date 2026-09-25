@@ -30,9 +30,7 @@ func TestWebhook(t *testing.T) {
 		envtest.WebhookInstallOptions{
 			ValidatingWebhooks: []*admissionregistrationv1.ValidatingWebhookConfiguration{
 				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "dynatrace-webhook",
-					},
+					Name: "dynatrace-webhook",
 					Webhooks: []admissionregistrationv1.ValidatingWebhook{
 						{
 							Name: "v1alpha1.prometheusmonitoring.webhook.dynatrace.com",
@@ -47,11 +45,9 @@ func TestWebhook(t *testing.T) {
 										admissionregistrationv1.Create,
 										admissionregistrationv1.Update,
 									},
-									Rule: admissionregistrationv1.Rule{
-										APIGroups:   []string{"dynatrace.com"},
-										APIVersions: []string{"v1alpha1"},
-										Resources:   []string{"prometheusmonitorings"},
-									},
+									APIGroups:   []string{"dynatrace.com"},
+									APIVersions: []string{"v1alpha1"},
+									Resources:   []string{"prometheusmonitorings"},
 								},
 							},
 							MatchPolicy:             new(admissionregistrationv1.Exact),
@@ -100,10 +96,8 @@ func TestWebhook(t *testing.T) {
 
 func newTestPrometheusMonitoring(name string) *prometheusmonitoring.PrometheusMonitoring {
 	return &prometheusmonitoring.PrometheusMonitoring{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: metav1.NamespaceDefault,
-		},
+		Name:      name,
+		Namespace: metav1.NamespaceDefault,
 		Spec: prometheusmonitoring.PrometheusMonitoringSpec{
 			DynaKubeName: "test-dynakube",
 		},
@@ -142,9 +136,7 @@ func installMonitoringCRDs(t *testing.T, clt client.Client) {
 
 func newMonitoringCRD(kind, plural, version string) *apiextensionsv1.CustomResourceDefinition {
 	return &apiextensionsv1.CustomResourceDefinition{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: plural + ".monitoring.coreos.com",
-		},
+		Name: plural + ".monitoring.coreos.com",
 		Spec: apiextensionsv1.CustomResourceDefinitionSpec{
 			Group: "monitoring.coreos.com",
 			Names: apiextensionsv1.CustomResourceDefinitionNames{

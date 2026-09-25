@@ -15,7 +15,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -49,9 +48,7 @@ func buildDynakube(capabilities []activegate.CapabilityDisplayName, enableExtens
 	}
 
 	return &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: testNamespace, Name: testName,
-		},
+		Namespace: testNamespace, Name: testName,
 		Spec: dynakube.DynaKubeSpec{
 			APIURL: testAPIURL,
 			ActiveGate: activegate.Spec{
@@ -172,14 +169,14 @@ func TestNewMultiCapabilityWithDebugging(t *testing.T) {
 }
 
 func TestBuildServiceHostnameWithPort(t *testing.T) {
-	dk := &dynakube.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: "test-name", Namespace: "test-namespace"}}
+	dk := &dynakube.DynaKube{Name: "test-name", Namespace: "test-namespace"}
 	actual := buildServiceHostnameWithPort(dk)
 	assert.NotEmpty(t, actual)
 
 	expected := "test-name-activegate.test-namespace:443"
 	assert.Equal(t, expected, actual)
 
-	dk = &dynakube.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: "this---dynakube_string", Namespace: "this_is---namespace_string"}}
+	dk = &dynakube.DynaKube{Name: "this---dynakube_string", Namespace: "this_is---namespace_string"}
 	expected = "this---dynakube_string-activegate.this_is---namespace_string:443"
 	actual = buildServiceHostnameWithPort(dk)
 	assert.Equal(t, expected, actual)
@@ -199,10 +196,8 @@ func TestBuildDNSEntryPoint(t *testing.T) {
 		{
 			title: "DNSEntryPoint for ActiveGate routing capability",
 			dk: &dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "dynakube",
-					Namespace: "dynatrace",
-				},
+				Name:      "dynakube",
+				Namespace: "dynatrace",
 				Spec: dynakube.DynaKubeSpec{
 					ActiveGate: activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
@@ -222,10 +217,8 @@ func TestBuildDNSEntryPoint(t *testing.T) {
 		{
 			title: "DNSEntryPoint with multiple service IPs",
 			dk: &dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "dynakube",
-					Namespace: "dynatrace",
-				},
+				Name:      "dynakube",
+				Namespace: "dynatrace",
 				Spec: dynakube.DynaKubeSpec{
 					ActiveGate: activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
@@ -245,10 +238,8 @@ func TestBuildDNSEntryPoint(t *testing.T) {
 		{
 			title: "DNSEntryPoint with multiple service IPs, dual-stack",
 			dk: &dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "dynakube",
-					Namespace: "dynatrace",
-				},
+				Name:      "dynakube",
+				Namespace: "dynatrace",
 				Spec: dynakube.DynaKubeSpec{
 					ActiveGate: activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
@@ -268,10 +259,8 @@ func TestBuildDNSEntryPoint(t *testing.T) {
 		{
 			title: "DNSEntryPoint for ActiveGate k8s monitoring capability",
 			dk: &dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "dynakube",
-					Namespace: "dynatrace",
-				},
+				Name:      "dynakube",
+				Namespace: "dynatrace",
 				Spec: dynakube.DynaKubeSpec{
 					ActiveGate: activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
@@ -291,10 +280,8 @@ func TestBuildDNSEntryPoint(t *testing.T) {
 		{
 			title: "DNSEntryPoint for ActiveGate routing+kubemon capabilities",
 			dk: &dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "dynakube",
-					Namespace: "dynatrace",
-				},
+				Name:      "dynakube",
+				Namespace: "dynatrace",
 				Spec: dynakube.DynaKubeSpec{
 					ActiveGate: activegate.Spec{
 						Capabilities: []activegate.CapabilityDisplayName{
@@ -315,10 +302,8 @@ func TestBuildDNSEntryPoint(t *testing.T) {
 		{
 			title: "DNSEntryPoint for deprecated routing ActiveGate",
 			dk: &dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "dynakube",
-					Namespace: "dynatrace",
-				},
+				Name:      "dynakube",
+				Namespace: "dynatrace",
 				Spec: dynakube.DynaKubeSpec{
 					ActiveGate: activegate.Spec{
 						Capabilities: capabilities,
@@ -336,11 +321,9 @@ func TestBuildDNSEntryPoint(t *testing.T) {
 		{
 			title: "DNSEntryPoint for deprecated kubernetes monitoring ActiveGate",
 			dk: &dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "dynakube",
-					Namespace: "dynatrace",
-				},
-				Spec: dynakube.DynaKubeSpec{},
+				Name:      "dynakube",
+				Namespace: "dynatrace",
+				Spec:      dynakube.DynaKubeSpec{},
 				Status: dynakube.DynaKubeStatus{
 					ActiveGate: activegate.Status{
 						ServiceIPs: []string{"1.2.3.4"},

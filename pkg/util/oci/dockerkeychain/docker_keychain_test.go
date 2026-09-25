@@ -13,7 +13,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -41,10 +40,8 @@ const (
 func TestNewDockerKeychain(t *testing.T) {
 	t.Run("secret not found, try without secret", func(t *testing.T) {
 		pullSecret := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-secret",
-				Namespace: "dynatrace",
-			},
+			Name:      "test-secret",
+			Namespace: "dynatrace",
 		}
 		client := fake.NewClient()
 
@@ -54,10 +51,8 @@ func TestNewDockerKeychain(t *testing.T) {
 
 	t.Run("invalid format of docker secret dockerconfigjson", func(t *testing.T) {
 		pullSecret := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-secret",
-				Namespace: "dynatrace",
-			},
+			Name:      "test-secret",
+			Namespace: "dynatrace",
 			Data: map[string][]byte{
 				".dockerconfigjson": []byte("invalid format"),
 			},
@@ -75,10 +70,8 @@ func TestNewDockerKeychain(t *testing.T) {
 
 	t.Run("valid config provided", func(t *testing.T) {
 		pullSecret := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-secret",
-				Namespace: "dynatrace",
-			},
+			Name:      "test-secret",
+			Namespace: "dynatrace",
 			Data: map[string][]byte{
 				corev1.DockerConfigJsonKey: []byte(registryDockerConfig),
 			},
@@ -112,20 +105,16 @@ func TestNewDockerKeychains(t *testing.T) {
 
 	t.Run("the same registry", func(t *testing.T) {
 		tenantPullSecret := corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      tenantPullSecretName,
-				Namespace: "dynatrace",
-			},
+			Name:      tenantPullSecretName,
+			Namespace: "dynatrace",
 			Data: map[string][]byte{
 				corev1.DockerConfigJsonKey: []byte(registryDockerConfig),
 			},
 			Type: corev1.SecretTypeDockerConfigJson,
 		}
 		customPullSecret := corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      customPullSecretName,
-				Namespace: "dynatrace",
-			},
+			Name:      customPullSecretName,
+			Namespace: "dynatrace",
 			Data: map[string][]byte{
 				corev1.DockerConfigJsonKey: []byte(registryCustomDockerConfig),
 			},
@@ -150,20 +139,16 @@ func TestNewDockerKeychains(t *testing.T) {
 
 	t.Run("different registries", func(t *testing.T) {
 		tenantPullSecret := corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      tenantPullSecretName,
-				Namespace: "dynatrace",
-			},
+			Name:      tenantPullSecretName,
+			Namespace: "dynatrace",
 			Data: map[string][]byte{
 				corev1.DockerConfigJsonKey: []byte(registryDockerConfig),
 			},
 			Type: corev1.SecretTypeDockerConfigJson,
 		}
 		customPullSecret := corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      customPullSecretName,
-				Namespace: "dynatrace",
-			},
+			Name:      customPullSecretName,
+			Namespace: "dynatrace",
 			Data: map[string][]byte{
 				corev1.DockerConfigJsonKey: []byte(e2eRegistryDockerConfig),
 			},

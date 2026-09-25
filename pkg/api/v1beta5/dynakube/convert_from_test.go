@@ -535,21 +535,19 @@ func compareNodeConfigurationCollectorTemplateSpec(t *testing.T, oldSpec kspm.No
 
 func getNewDynakubeBase() dynakubelatest.DynaKube {
 	return dynakubelatest.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:         "name",
-			GenerateName: "generateName",
-			Namespace:    "namespace",
-			Generation:   0xDEADBEEF,
-			Annotations: map[string]string{
-				exp.AGIgnoreProxyKey:               "true", //nolint:staticcheck
-				exp.AGAutomaticK8sAPIMonitoringKey: "true",
-				conversion.AutoUpdateKey:           "false",
-			},
-			Labels: map[string]string{
-				"label": "label-value",
-			},
-			Finalizers: []string{"finalizer1", "finalizer2"},
+		Name:         "name",
+		GenerateName: "generateName",
+		Namespace:    "namespace",
+		Generation:   0xDEADBEEF,
+		Annotations: map[string]string{
+			exp.AGIgnoreProxyKey:               "true", //nolint:staticcheck
+			exp.AGAutomaticK8sAPIMonitoringKey: "true",
+			conversion.AutoUpdateKey:           "false",
 		},
+		Labels: map[string]string{
+			"label": "label-value",
+		},
+		Finalizers: []string{"finalizer1", "finalizer2"},
 		Spec: dynakubelatest.DynaKubeSpec{
 			Proxy: &value.Source{
 				Value:     "proxy-value",
@@ -652,49 +650,47 @@ func getNewActiveGateSpec() activegatelatest.Spec {
 			activegatelatest.KubeMonCapability.DisplayName,
 			activegatelatest.MetricsIngestCapability.DisplayName,
 		},
-		CapabilityProperties: activegatelatest.CapabilityProperties{
-			Labels: map[string]string{
-				"activegate-label-key": "activegate-label-value",
-			},
-			Env: []corev1.EnvVar{
-				{Name: "host-inject-env-1", Value: "activegate-env-value-1", ValueFrom: &corev1.EnvVarSource{
-					ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
-						Key: "activegate-env-from-1",
-					},
-				}},
-				{Name: "activegate-env-2", Value: "activegate-env-value-2", ValueFrom: &corev1.EnvVarSource{
-					ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
-						Key: "activegate-env-from-2",
-					},
-				}},
-			},
-			NodeSelector: map[string]string{
-				"activegate-node-selector-key": "activegate-node-selector-value",
-			},
-			Image:    "activegate-image",
-			Replicas: new(int32(42)),
-			Group:    "activegate-group",
-			CustomProperties: &value.Source{
-				Value:     "activegate-cp-value",
-				ValueFrom: "activegate-cp-value-from",
-			},
-			Resources: corev1.ResourceRequirements{
-				Limits: corev1.ResourceList{
-					corev1.ResourceCPU: *resource.NewScaledQuantity(3, 1)},
-				Requests: corev1.ResourceList{
-					corev1.ResourceCPU: *resource.NewScaledQuantity(3, 1),
+		Labels: map[string]string{
+			"activegate-label-key": "activegate-label-value",
+		},
+		Env: []corev1.EnvVar{
+			{Name: "host-inject-env-1", Value: "activegate-env-value-1", ValueFrom: &corev1.EnvVarSource{
+				ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+					Key: "activegate-env-from-1",
 				},
-				Claims: []corev1.ResourceClaim{{
-					Name:    "claim-name",
-					Request: "claim-request",
-				}},
+			}},
+			{Name: "activegate-env-2", Value: "activegate-env-value-2", ValueFrom: &corev1.EnvVarSource{
+				ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+					Key: "activegate-env-from-2",
+				},
+			}},
+		},
+		NodeSelector: map[string]string{
+			"activegate-node-selector-key": "activegate-node-selector-value",
+		},
+		Image:    "activegate-image",
+		Replicas: new(int32(42)),
+		Group:    "activegate-group",
+		CustomProperties: &value.Source{
+			Value:     "activegate-cp-value",
+			ValueFrom: "activegate-cp-value-from",
+		},
+		Resources: corev1.ResourceRequirements{
+			Limits: corev1.ResourceList{
+				corev1.ResourceCPU: *resource.NewScaledQuantity(3, 1)},
+			Requests: corev1.ResourceList{
+				corev1.ResourceCPU: *resource.NewScaledQuantity(3, 1),
 			},
-			Tolerations: []corev1.Toleration{
-				{Key: "activegate-toleration-key", Operator: "In", Value: "activegate-toleration-value"},
-			},
-			TopologySpreadConstraints: []corev1.TopologySpreadConstraint{
-				{MaxSkew: 1},
-			},
+			Claims: []corev1.ResourceClaim{{
+				Name:    "claim-name",
+				Request: "claim-request",
+			}},
+		},
+		Tolerations: []corev1.Toleration{
+			{Key: "activegate-toleration-key", Operator: "In", Value: "activegate-toleration-value"},
+		},
+		TopologySpreadConstraints: []corev1.TopologySpreadConstraint{
+			{MaxSkew: 1},
 		},
 	}
 }
@@ -959,13 +955,11 @@ func getNewNodeConfigurationCollectorTemplateSpec() kspmlatest.NodeConfiguration
 func getNewStatus() dynakubelatest.DynaKubeStatus {
 	return dynakubelatest.DynaKubeStatus{
 		OneAgent: oneagentlatest.Status{
-			VersionStatus: status.VersionStatus{
-				ImageID:            "oa-image-id",
-				Version:            "oa-version",
-				Type:               "oa-image-type",
-				Source:             status.CustomImageVersionSource,
-				LastProbeTimestamp: &testTime,
-			},
+			ImageID:            "oa-image-id",
+			Version:            "oa-version",
+			Type:               "oa-image-type",
+			Source:             status.CustomImageVersionSource,
+			LastProbeTimestamp: &testTime,
 			Instances: map[string]oneagentlatest.Instance{
 				"oa-instance-key-1": {
 					PodName:   "oa-instance-pod-1",
@@ -987,22 +981,18 @@ func getNewStatus() dynakubelatest.DynaKubeStatus {
 			},
 		},
 		ActiveGate: activegatelatest.Status{
-			VersionStatus: status.VersionStatus{
-				ImageID:            "ag-image-id",
-				Version:            "ag-version",
-				Type:               "ag-image-type",
-				Source:             status.CustomVersionVersionSource,
-				LastProbeTimestamp: &testTime,
-			},
+			ImageID:            "ag-image-id",
+			Version:            "ag-version",
+			Type:               "ag-image-type",
+			Source:             status.CustomVersionVersionSource,
+			LastProbeTimestamp: &testTime,
 		},
 		CodeModules: oneagentlatest.CodeModulesStatus{
-			VersionStatus: status.VersionStatus{
-				ImageID:            "cm-image-id",
-				Version:            "cm-version",
-				Type:               "cm-image-type",
-				Source:             status.TenantRegistryVersionSource,
-				LastProbeTimestamp: &testTime,
-			},
+			ImageID:            "cm-image-id",
+			Version:            "cm-version",
+			Type:               "cm-image-type",
+			Source:             status.TenantRegistryVersionSource,
+			LastProbeTimestamp: &testTime,
 		},
 		Conditions: []metav1.Condition{
 			{

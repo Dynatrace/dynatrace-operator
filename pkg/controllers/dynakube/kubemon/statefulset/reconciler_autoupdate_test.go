@@ -27,7 +27,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // Tests for the kubemon statefulset reconciler's image-resolution auto-update flow.
@@ -235,10 +234,8 @@ func TestReconcileAutoUpdate(t *testing.T) {
 // image, so the reconciler always calls the version client to resolve the container image.
 func newAutoUpdateKubemonDynaKube(apiURL string) *dynakube.DynaKube {
 	return &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "autoupdate-dk",
-			Namespace: testNamespace,
-		},
+		Name:      "autoupdate-dk",
+		Namespace: testNamespace,
 		Spec: dynakube.DynaKubeSpec{
 			APIURL:               apiURL,
 			KubernetesMonitoring: &kubemonapi.Spec{},

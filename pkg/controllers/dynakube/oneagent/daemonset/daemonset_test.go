@@ -11,7 +11,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	k8sversion "github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/version"
@@ -46,9 +45,7 @@ func TestBuildDaemonSet(t *testing.T) {
 			},
 			Status: dynakube.DynaKubeStatus{
 				OneAgent: oneagent.Status{
-					VersionStatus: status.VersionStatus{
-						ImageID: imageID,
-					},
+					ImageID: imageID,
 				},
 			},
 		}
@@ -77,9 +74,7 @@ func TestLabels(t *testing.T) {
 			},
 			Status: dynakube.DynaKubeStatus{
 				OneAgent: oneagent.Status{
-					VersionStatus: status.VersionStatus{
-						Version: testImageTag,
-					},
+					Version: testImageTag,
 				},
 			},
 		}
@@ -144,9 +139,7 @@ func TestCustomPullSecret(t *testing.T) {
 	t.Cleanup(k8sversion.DisableCacheForTest(123))
 
 	dk := dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: testDynakubeName,
-		},
+		Name: testDynakubeName,
 		Spec: dynakube.DynaKubeSpec{
 			APIURL: testURL,
 			OneAgent: oneagent.Spec{
@@ -310,9 +303,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 			},
 			Status: dynakube.DynaKubeStatus{
 				OneAgent: oneagent.Status{
-					VersionStatus: status.VersionStatus{
-						Version: "1.290.18.20240520-124108",
-					},
+					Version: "1.290.18.20240520-124108",
 				},
 			},
 		}
@@ -339,9 +330,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 			},
 			Status: dynakube.DynaKubeStatus{
 				OneAgent: oneagent.Status{
-					VersionStatus: status.VersionStatus{
-						Version: "1.291.18.20240520-124108",
-					},
+					Version: "1.291.18.20240520-124108",
 				},
 			},
 		}
@@ -360,10 +349,8 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 
 	t.Run("privileged security context when feature flag is enabled", func(t *testing.T) {
 		dk := dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{
-					exp.OAPrivilegedKey: "true",
-				},
+			Annotations: map[string]string{
+				exp.OAPrivilegedKey: "true",
 			},
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testURL,
@@ -391,10 +378,8 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 
 	t.Run("nonroot security context when classic nonroot feature flag is enabled", func(t *testing.T) {
 		dk := dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{
-					exp.OAClassicNonRootKey: "true",
-				},
+			Annotations: map[string]string{
+				exp.OAClassicNonRootKey: "true",
 			},
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testURL,
@@ -420,10 +405,8 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 
 	t.Run("privileged security context when feature flag is enabled for classic fullstack", func(t *testing.T) {
 		dk := dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{
-					exp.OAPrivilegedKey: "true",
-				},
+			Annotations: map[string]string{
+				exp.OAPrivilegedKey: "true",
 			},
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testURL,
@@ -483,10 +466,8 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 	t.Run("localhost seccomp profile disabled if privileged security context enabled", func(t *testing.T) {
 		customSecCompProfile := "seccomp.json"
 		dk := dynakube.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{
-					exp.OAPrivilegedKey: "true",
-				},
+			Annotations: map[string]string{
+				exp.OAPrivilegedKey: "true",
 			},
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testURL,
@@ -651,10 +632,8 @@ func TestPodSpecProbes(t *testing.T) {
 	t.Run("no livenessProbe when skip featureFlag is set", func(t *testing.T) {
 		builder := builder{
 			dk: &dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{
-						exp.OASkipLivenessProbeKey: "true",
-					},
+				Annotations: map[string]string{
+					exp.OASkipLivenessProbeKey: "true",
 				},
 				Status: dynakube.DynaKubeStatus{
 					OneAgent: oneagent.Status{
@@ -828,9 +807,7 @@ func TestImagePullSecrets(t *testing.T) {
 	t.Run("returns default instance pull secret", func(t *testing.T) {
 		dsBuilder := builder{
 			dk: &dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: testName,
-				},
+				Name: testName,
 			},
 		}
 		pullSecrets := dsBuilder.imagePullSecrets()
@@ -842,9 +819,7 @@ func TestImagePullSecrets(t *testing.T) {
 	t.Run("returns custom pull secret", func(t *testing.T) {
 		dsBuilder := builder{
 			dk: &dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: testName,
-				},
+				Name: testName,
 				Spec: dynakube.DynaKubeSpec{
 					CustomPullSecret: testValue,
 				},
@@ -932,10 +907,8 @@ func TestAnnotations(t *testing.T) {
 			Spec: dynakube.DynaKubeSpec{
 				OneAgent: oneagent.Spec{
 					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
-						HostInjectSpec: oneagent.HostInjectSpec{
-							Annotations: map[string]string{
-								testKey: testName,
-							},
+						Annotations: map[string]string{
+							testKey: testName,
 						},
 					},
 				},
@@ -1023,10 +996,8 @@ func TestOneAgentHostGroup(t *testing.T) {
 			Spec: dynakube.DynaKubeSpec{
 				OneAgent: oneagent.Spec{
 					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{
-						HostInjectSpec: oneagent.HostInjectSpec{
-							Args: []string{
-								"--set-host-group=oldgroup",
-							},
+						Args: []string{
+							"--set-host-group=oldgroup",
 						},
 					},
 					HostGroup: "newgroup",
@@ -1052,7 +1023,7 @@ func TestDefaultArguments(t *testing.T) {
 	)
 
 	base := dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace},
+		Name: name, Namespace: namespace,
 		Spec: dynakube.DynaKubeSpec{
 			APIURL: "https://ENVIRONMENTID.live.dynatrace.com/api",
 			Tokens: name,

@@ -36,7 +36,6 @@ import (
 	"gopkg.in/yaml.v3"
 	appsv1 "k8s.io/api/apps/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/events"
@@ -306,10 +305,8 @@ func (controller *Controller) getEdgeConnect(ctx context.Context, name, namespac
 	log := logd.FromContext(ctx)
 
 	ec := &edgeconnect.EdgeConnect{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
-		},
+		Name:      name,
+		Namespace: namespace,
 	}
 
 	err := controller.apiReader.Get(ctx, client.ObjectKey{Name: ec.Name, Namespace: ec.Namespace}, ec)

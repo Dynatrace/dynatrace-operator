@@ -22,18 +22,15 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/api/meta"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var anyCtx = mock.MatchedBy(func(context.Context) bool { return true })
 
 func newDynaKube() *dynakube.DynaKube {
 	dk := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        "my-oneagent",
-			Namespace:   "my-namespace",
-			Annotations: map[string]string{},
-		},
+		Name:        "my-oneagent",
+		Namespace:   "my-namespace",
+		Annotations: map[string]string{},
 	}
 
 	optionalscope.SetAvailable(dk, token.ScopeSettingsRead)

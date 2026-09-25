@@ -10,7 +10,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/authtoken"
 	"github.com/Dynatrace/dynatrace-operator/test/integrationtests"
@@ -18,7 +17,6 @@ import (
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -41,9 +39,7 @@ func TestStatefulSet(t *testing.T) {
 				ConnectionInfo: communication.ConnectionInfo{
 					TenantUUID: testTenantUUID,
 				},
-				VersionStatus: status.VersionStatus{
-					ImageID: "thisismytenant.com/linux/activegate@sha256:312a5fafebb134371dc05e3e0ad00641bd44fde2a31b70dca5edbc708f2e76cb",
-				},
+				ImageID: "thisismytenant.com/linux/activegate@sha256:312a5fafebb134371dc05e3e0ad00641bd44fde2a31b70dca5edbc708f2e76cb",
 			},
 			KubeSystemUUID: testKubeSystemUUID,
 		}
@@ -52,11 +48,9 @@ func TestStatefulSet(t *testing.T) {
 		integrationtests.CreateNamespace(t, clt, ns)
 		integrationtests.CreateDynakube(t, clt, &dk)
 		integrationtests.CreateKubernetesObject(t, clt, &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testDynakubeName + activegate.AuthTokenSecretSuffix,
-				Namespace: ns,
-			},
-			Data: map[string][]byte{authtoken.ActiveGateAuthTokenName: []byte(testToken)},
+			Name:      testDynakubeName + activegate.AuthTokenSecretSuffix,
+			Namespace: ns,
+			Data:      map[string][]byte{authtoken.ActiveGateAuthTokenName: []byte(testToken)},
 		})
 
 		mcap := capability.NewMultiCapability(&dk)
@@ -81,18 +75,14 @@ func TestStatefulSet(t *testing.T) {
 				ConnectionInfo: communication.ConnectionInfo{
 					TenantUUID: testTenantUUID,
 				},
-				VersionStatus: status.VersionStatus{
-					ImageID: "thisismytenant.com/linux/activegate@sha256:312a5fafebb134371dc05e3e0ad00641bd44fde2a31b70dca5edbc708f2e76cb",
-				},
+				ImageID: "thisismytenant.com/linux/activegate@sha256:312a5fafebb134371dc05e3e0ad00641bd44fde2a31b70dca5edbc708f2e76cb",
 			},
 			KubeSystemUUID: testKubeSystemUUID,
 		}
 
 		userVolume := corev1.Volume{
-			Name: "my-user-volume",
-			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{},
-			},
+			Name:     "my-user-volume",
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
 		}
 		userVolumeMount := corev1.VolumeMount{
 			Name:      "my-user-volume",
@@ -104,11 +94,9 @@ func TestStatefulSet(t *testing.T) {
 		integrationtests.CreateNamespace(t, clt, ns)
 		integrationtests.CreateDynakube(t, clt, &dk)
 		integrationtests.CreateKubernetesObject(t, clt, &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testDynakubeName + activegate.AuthTokenSecretSuffix,
-				Namespace: ns,
-			},
-			Data: map[string][]byte{authtoken.ActiveGateAuthTokenName: []byte(testToken)},
+			Name:      testDynakubeName + activegate.AuthTokenSecretSuffix,
+			Namespace: ns,
+			Data:      map[string][]byte{authtoken.ActiveGateAuthTokenName: []byte(testToken)},
 		})
 
 		mcap := capability.NewMultiCapability(&dk)
@@ -133,18 +121,14 @@ func TestStatefulSet(t *testing.T) {
 				ConnectionInfo: communication.ConnectionInfo{
 					TenantUUID: testTenantUUID,
 				},
-				VersionStatus: status.VersionStatus{
-					ImageID: "thisismytenant.com/linux/activegate@sha256:312a5fafebb134371dc05e3e0ad00641bd44fde2a31b70dca5edbc708f2e76cb",
-				},
+				ImageID: "thisismytenant.com/linux/activegate@sha256:312a5fafebb134371dc05e3e0ad00641bd44fde2a31b70dca5edbc708f2e76cb",
 			},
 			KubeSystemUUID: testKubeSystemUUID,
 		}
 
 		userVolume := corev1.Volume{
-			Name: "my-user-volume-typo",
-			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{},
-			},
+			Name:     "my-user-volume-typo",
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
 		}
 		userVolumeMount := corev1.VolumeMount{
 			Name:      "my-user-volume",
@@ -156,11 +140,9 @@ func TestStatefulSet(t *testing.T) {
 		integrationtests.CreateNamespace(t, clt, ns)
 		integrationtests.CreateDynakube(t, clt, &dk)
 		integrationtests.CreateKubernetesObject(t, clt, &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testDynakubeName + activegate.AuthTokenSecretSuffix,
-				Namespace: ns,
-			},
-			Data: map[string][]byte{authtoken.ActiveGateAuthTokenName: []byte(testToken)},
+			Name:      testDynakubeName + activegate.AuthTokenSecretSuffix,
+			Namespace: ns,
+			Data:      map[string][]byte{authtoken.ActiveGateAuthTokenName: []byte(testToken)},
 		})
 
 		mcap := capability.NewMultiCapability(&dk)

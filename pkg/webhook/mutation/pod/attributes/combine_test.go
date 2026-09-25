@@ -123,9 +123,7 @@ func TestApplyJSONAnnotationToPod(t *testing.T) {
 	t.Run("does not overwrite existing JSON annotation", func(t *testing.T) {
 		existingJSON := `{"existing":"value"}`
 		pod := &corev1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{metadataenrichment.Annotation: existingJSON},
-			},
+			Annotations: map[string]string{metadataenrichment.Annotation: existingJSON},
 		}
 		attrs := newPodAttrs()
 		attrs.rules["custom-annotation1"] = "foobar"
@@ -459,12 +457,10 @@ func TestCombine_ViaConstructors_AnnotationsOverrideAutoCollected(t *testing.T) 
 
 	makePod := func(podAnnotations map[string]string) *corev1.Pod {
 		return &corev1.Pod{
-			TypeMeta: metav1.TypeMeta{Kind: "Pod", APIVersion: "v1"},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:        podName,
-				Namespace:   namespaceName,
-				Annotations: podAnnotations,
-			},
+			Kind: "Pod", APIVersion: "v1",
+			Name:        podName,
+			Namespace:   namespaceName,
+			Annotations: podAnnotations,
 		}
 	}
 
@@ -480,12 +476,10 @@ func TestCombine_ViaConstructors_AnnotationsOverrideAutoCollected(t *testing.T) 
 
 	t.Run("namespace annotation overrides auto-collected cluster attributes", func(t *testing.T) {
 		ns := &corev1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: namespaceName,
-				Annotations: map[string]string{
-					metadataenrichment.Prefix + K8sClusterUIDAttr:  "uid-from-ns",
-					metadataenrichment.Prefix + K8sClusterNameAttr: "name-from-ns",
-				},
+			Name: namespaceName,
+			Annotations: map[string]string{
+				metadataenrichment.Prefix + K8sClusterUIDAttr:  "uid-from-ns",
+				metadataenrichment.Prefix + K8sClusterNameAttr: "name-from-ns",
 			},
 		}
 		request := dtwebhook.BaseRequest{
@@ -512,7 +506,7 @@ func TestCombine_ViaConstructors_AnnotationsOverrideAutoCollected(t *testing.T) 
 			Pod: makePod(map[string]string{
 				metadataenrichment.Prefix + K8sPodNameAttr: "overridden-pod-name",
 			}),
-			Namespace: &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: namespaceName}},
+			Namespace: &corev1.Namespace{Name: namespaceName},
 			DynaKube:  makeDynaKube(),
 		}
 
@@ -528,11 +522,9 @@ func TestCombine_ViaConstructors_AnnotationsOverrideAutoCollected(t *testing.T) 
 
 	t.Run("pod annotation beats namespace annotation for the same key", func(t *testing.T) {
 		ns := &corev1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: namespaceName,
-				Annotations: map[string]string{
-					metadataenrichment.Prefix + K8sClusterUIDAttr: "uid-from-ns",
-				},
+			Name: namespaceName,
+			Annotations: map[string]string{
+				metadataenrichment.Prefix + K8sClusterUIDAttr: "uid-from-ns",
 			},
 		}
 		request := dtwebhook.BaseRequest{
@@ -553,7 +545,7 @@ func TestCombine_ViaConstructors_AnnotationsOverrideAutoCollected(t *testing.T) 
 	})
 
 	t.Run("custom attribute beats pod annotation for the same key", func(t *testing.T) {
-		ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: namespaceName}}
+		ns := &corev1.Namespace{Name: namespaceName}
 		request := dtwebhook.BaseRequest{
 			Pod: makePod(map[string]string{
 				metadataenrichment.Prefix + K8sClusterUIDAttr: "uid-from-pod",
@@ -573,7 +565,7 @@ func TestCombine_ViaConstructors_AnnotationsOverrideAutoCollected(t *testing.T) 
 	})
 
 	t.Run("auto-collected attributes not touched by annotations survive unchanged", func(t *testing.T) {
-		ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: namespaceName}}
+		ns := &corev1.Namespace{Name: namespaceName}
 		request := dtwebhook.BaseRequest{
 			Pod:       makePod(nil),
 			Namespace: ns,
@@ -609,12 +601,10 @@ func TestCombine_ViaConstructors_WorkloadAnnotations(t *testing.T) {
 
 	newDeployment := func(annotations map[string]string) *appsv1.Deployment {
 		return &appsv1.Deployment{
-			TypeMeta: metav1.TypeMeta{Kind: "Deployment", APIVersion: "apps/v1"},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:        deploymentName,
-				Namespace:   namespaceName,
-				Annotations: annotations,
-			},
+			Kind: "Deployment", APIVersion: "apps/v1",
+			Name:        deploymentName,
+			Namespace:   namespaceName,
+			Annotations: annotations,
 		}
 	}
 
@@ -622,18 +612,16 @@ func TestCombine_ViaConstructors_WorkloadAnnotations(t *testing.T) {
 		return dtwebhook.BaseRequest{
 			DynaKube: &dynakube.DynaKube{},
 			Pod: &corev1.Pod{
-				TypeMeta: metav1.TypeMeta{Kind: "Pod", APIVersion: "v1"},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:        "my-pod",
-					Namespace:   namespaceName,
-					Annotations: podAnnotations,
-					OwnerReferences: []metav1.OwnerReference{
-						{APIVersion: "apps/v1", Kind: "Deployment", Name: deploymentName, Controller: new(true)},
-					},
+				Kind: "Pod", APIVersion: "v1",
+				Name:        "my-pod",
+				Namespace:   namespaceName,
+				Annotations: podAnnotations,
+				OwnerReferences: []metav1.OwnerReference{
+					{APIVersion: "apps/v1", Kind: "Deployment", Name: deploymentName, Controller: new(true)},
 				},
 			},
 			Namespace: &corev1.Namespace{
-				ObjectMeta: metav1.ObjectMeta{Name: namespaceName, Annotations: namespaceAnnotations},
+				Name: namespaceName, Annotations: namespaceAnnotations,
 			},
 		}
 	}

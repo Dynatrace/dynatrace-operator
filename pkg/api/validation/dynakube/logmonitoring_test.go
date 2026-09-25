@@ -58,10 +58,8 @@ func TestIgnoredLogMonitoringTemplate(t *testing.T) {
 
 func createStandaloneLogMonitoringDynakube(name, apiURL, nodeSelector string) *dynakube.DynaKube {
 	dk := &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: testNamespace,
-		},
+		Name:      name,
+		Namespace: testNamespace,
 		Spec: dynakube.DynaKubeSpec{
 			APIURL:        apiURL,
 			LogMonitoring: &logmonitoring.Spec{},
@@ -170,11 +168,9 @@ func TestMissingLogMonitoringImage(t *testing.T) {
 	t.Run("image not required when public registry is enabled", func(t *testing.T) {
 		assertAllowedWithoutWarnings(t,
 			&dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:        testName,
-					Namespace:   testNamespace,
-					Annotations: map[string]string{exp.UsePublicRegistryKey: "true"},
-				},
+				Name:        testName,
+				Namespace:   testNamespace,
+				Annotations: map[string]string{exp.UsePublicRegistryKey: "true"},
 				Spec: dynakube.DynaKubeSpec{
 					APIURL:        testAPIURL,
 					LogMonitoring: &logmonitoring.Spec{},
@@ -185,10 +181,8 @@ func TestMissingLogMonitoringImage(t *testing.T) {
 	t.Run("image not required when platform token is present", func(t *testing.T) {
 		assertAllowedWithoutWarnings(t,
 			&dynakube.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      testName,
-					Namespace: testNamespace,
-				},
+				Name:      testName,
+				Namespace: testNamespace,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL:        testAPIURL,
 					LogMonitoring: &logmonitoring.Spec{},

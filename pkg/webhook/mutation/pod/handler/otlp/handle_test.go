@@ -262,19 +262,15 @@ func TestHandler_Handle(t *testing.T) {
 
 		// provide only the SOURCE secret in the dynakube namespace; target secret absent
 		sourceSecret := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      exporterconfig.GetSourceConfigSecretName(dk.Name),
-				Namespace: dk.Namespace,
-			},
-			Data: map[string][]byte{"token": []byte("abc")},
+			Name:      exporterconfig.GetSourceConfigSecretName(dk.Name),
+			Namespace: dk.Namespace,
+			Data:      map[string][]byte{"token": []byte("abc")},
 		}
 
 		sourceCertSecret := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      exporterconfig.GetSourceCertsSecretName(dk.Name),
-				Namespace: dk.Namespace,
-			},
-			Data: map[string][]byte{"activegate-tls.cert": []byte("abc")},
+			Name:      exporterconfig.GetSourceCertsSecretName(dk.Name),
+			Namespace: dk.Namespace,
+			Data:      map[string][]byte{"activegate-tls.cert": []byte("abc")},
 		}
 
 		h := createTestHandler(
@@ -304,21 +300,17 @@ func TestHandler_Handle(t *testing.T) {
 
 func getTestTokenSecret() *corev1.Secret {
 	return &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      consts.OTLPExporterSecretName,
-			Namespace: testNamespaceName,
-		},
-		Data: map[string][]byte{},
+		Name:      consts.OTLPExporterSecretName,
+		Namespace: testNamespaceName,
+		Data:      map[string][]byte{},
 	}
 }
 
 func getTestCertSecret() *corev1.Secret {
 	return &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      consts.OTLPExporterCertsSecretName,
-			Namespace: testNamespaceName,
-		},
-		Data: map[string][]byte{},
+		Name:      consts.OTLPExporterCertsSecretName,
+		Namespace: testNamespaceName,
+		Data:      map[string][]byte{},
 	}
 }
 
@@ -336,11 +328,9 @@ func createTestMutationRequest(t *testing.T, dk *dynakube.DynaKube) *mutator.Mut
 
 func getTestNamespace() *corev1.Namespace {
 	return &corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: testNamespaceName,
-			Labels: map[string]string{
-				mutator.InjectionInstanceLabel: testDynakubeName,
-			},
+		Name: testNamespaceName,
+		Labels: map[string]string{
+			mutator.InjectionInstanceLabel: testDynakubeName,
 		},
 	}
 }
@@ -373,11 +363,9 @@ func getTestDynakubeMeta() metav1.ObjectMeta {
 
 func getTestPod() *corev1.Pod {
 	return &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        testPodName,
-			Namespace:   testNamespaceName,
-			Annotations: map[string]string{},
-		},
+		Name:        testPodName,
+		Namespace:   testNamespaceName,
+		Annotations: map[string]string{},
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{
 				{
@@ -393,10 +381,8 @@ func getTestPod() *corev1.Pod {
 			},
 			Volumes: []corev1.Volume{
 				{
-					Name: "volume",
-					VolumeSource: corev1.VolumeSource{
-						EmptyDir: &corev1.EmptyDirVolumeSource{},
-					},
+					Name:     "volume",
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
 				},
 			},
 		},

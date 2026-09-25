@@ -52,46 +52,30 @@ func TestManifestCollector_Success(t *testing.T) {
 			ObjectMeta: objectMeta("crd-storage-migration"),
 		},
 		&corev1.Namespace{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "corev1",
-				Kind:       "Namespace",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "uninjectednamespace",
-				Labels: map[string]string{
-					"random": "label",
-				},
+			APIVersion: "corev1",
+			Kind:       "Namespace",
+			Name:       "uninjectednamespace",
+			Labels: map[string]string{
+				"random": "label",
 			},
 		},
 		&corev1.Namespace{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "core/v1",
-				Kind:       "Namespace",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "some-app-namespace",
-				Labels: map[string]string{
-					webhook.InjectionInstanceLabel: "abc12345",
-				},
+			APIVersion: "core/v1",
+			Kind:       "Namespace",
+			Name:       "some-app-namespace",
+			Labels: map[string]string{
+				webhook.InjectionInstanceLabel: "abc12345",
 			},
 		},
 		&corev1.Namespace{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "core/v1",
-				Kind:       "Namespace",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "random",
-			},
+			APIVersion: "core/v1",
+			Kind:       "Namespace",
+			Name:       "random",
 		},
 		&corev1.Namespace{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "core/v1",
-				Kind:       "Namespace",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name: testOperatorNamespace,
-			},
+			APIVersion: "core/v1",
+			Kind:       "Namespace",
+			Name:       testOperatorNamespace,
 		},
 		&dynakube.DynaKube{
 			TypeMeta:   typeMeta("DynaKube"),
@@ -106,40 +90,26 @@ func TestManifestCollector_Success(t *testing.T) {
 			ObjectMeta: objectMeta("prometheusmonitoring1"),
 		},
 		&admissionregistrationv1.MutatingWebhookConfiguration{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "admissionregistration.k8s.io/v1",
-				Kind:       "MutatingWebhookConfiguration",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "dynatrace-webhook",
-			},
+			APIVersion: "admissionregistration.k8s.io/v1",
+			Kind:       "MutatingWebhookConfiguration",
+			Name:       "dynatrace-webhook",
 		},
 		&admissionregistrationv1.ValidatingWebhookConfiguration{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "admissionregistration.k8s.io/v1",
-				Kind:       "ValidatingWebhookConfiguration",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "dynatrace-webhook",
-			},
+			APIVersion: "admissionregistration.k8s.io/v1",
+			Kind:       "ValidatingWebhookConfiguration",
+			Name:       "dynatrace-webhook",
 		},
 		&apiextensionsv1.CustomResourceDefinition{
 			TypeMeta: typeMeta("CustomResourceDefinition"),
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "dynakubes.dynatrace.com",
-			},
+			Name:     "dynakubes.dynatrace.com",
 		},
 		&apiextensionsv1.CustomResourceDefinition{
 			TypeMeta: typeMeta("CustomResourceDefinition"),
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "edgeconnects.dynatrace.com",
-			},
+			Name:     "edgeconnects.dynatrace.com",
 		},
 		&apiextensionsv1.CustomResourceDefinition{
 			TypeMeta: typeMeta("CustomResourceDefinition"),
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "prometheusmonitorings.dynatrace.com",
-			},
+			Name:     "prometheusmonitorings.dynatrace.com",
 		},
 	)
 
@@ -223,11 +193,9 @@ func TestManifestCollector_PartialCollectionOnMissingResources(t *testing.T) {
 		},
 		&corev1.Namespace{
 			TypeMeta: typeMeta("Namespace"),
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "some-app-namespace",
-				Labels: map[string]string{
-					webhook.InjectionInstanceLabel: "abc12345",
-				},
+			Name:     "some-app-namespace",
+			Labels: map[string]string{
+				webhook.InjectionInstanceLabel: "abc12345",
 			},
 		},
 		&dynakube.DynaKube{
@@ -239,34 +207,22 @@ func TestManifestCollector_PartialCollectionOnMissingResources(t *testing.T) {
 			ObjectMeta: objectMeta("edgeconnect1"),
 		},
 		&admissionregistrationv1.MutatingWebhookConfiguration{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "admissionregistration.k8s.io/v1",
-				Kind:       "MutatingWebhookConfiguration",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "dynatrace-webhook",
-			},
+			APIVersion: "admissionregistration.k8s.io/v1",
+			Kind:       "MutatingWebhookConfiguration",
+			Name:       "dynatrace-webhook",
 		},
 		&admissionregistrationv1.ValidatingWebhookConfiguration{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "admissionregistration.k8s.io/v1",
-				Kind:       "ValidatingWebhookConfiguration",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "dynatrace-webhook",
-			},
+			APIVersion: "admissionregistration.k8s.io/v1",
+			Kind:       "ValidatingWebhookConfiguration",
+			Name:       "dynatrace-webhook",
 		},
 		&apiextensionsv1.CustomResourceDefinition{
 			TypeMeta: typeMeta("CustomResourceDefinition"),
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "dynakubes.dynatrace.com",
-			},
+			Name:     "dynakubes.dynatrace.com",
 		},
 		&apiextensionsv1.CustomResourceDefinition{
 			TypeMeta: typeMeta("CustomResourceDefinition"),
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "edgeconnects.dynatrace.com",
-			},
+			Name:     "edgeconnects.dynatrace.com",
 		},
 	)
 

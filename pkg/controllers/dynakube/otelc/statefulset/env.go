@@ -70,8 +70,8 @@ func getEnvs(dk *dynakube.DynaKube, replicas int32) []corev1.EnvVar {
 	envs = append(envs,
 		corev1.EnvVar{Name: envDTendpoint, ValueFrom: &corev1.EnvVarSource{
 			ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
-				LocalObjectReference: corev1.LocalObjectReference{Name: otelcConsts.OTLPAPIEndpointConfigMapName},
-				Key:                  envDTendpoint,
+				Name: otelcConsts.OTLPAPIEndpointConfigMapName,
+				Key:  envDTendpoint,
 			},
 		}},
 		corev1.EnvVar{Name: envMyPodIP, ValueFrom: &corev1.EnvVarSource{
@@ -81,8 +81,8 @@ func getEnvs(dk *dynakube.DynaKube, replicas int32) []corev1.EnvVar {
 		}},
 		corev1.EnvVar{Name: otelcConsts.EnvDataIngestToken, ValueFrom: &corev1.EnvVarSource{
 			SecretKeyRef: &corev1.SecretKeySelector{
-				LocalObjectReference: corev1.LocalObjectReference{Name: dk.Tokens()},
-				Key:                  token.DataIngestKey,
+				Name: dk.Tokens(),
+				Key:  token.DataIngestKey,
 			},
 		}},
 	)
@@ -96,8 +96,8 @@ func getDynakubeProxyEnvValue(envVar string, src *value.Source) corev1.EnvVar {
 			Name: envVar,
 			ValueFrom: &corev1.EnvVarSource{
 				SecretKeyRef: &corev1.SecretKeySelector{
-					LocalObjectReference: corev1.LocalObjectReference{Name: src.ValueFrom},
-					Key:                  dynakube.ProxyKey,
+					Name: src.ValueFrom,
+					Key:  dynakube.ProxyKey,
 				},
 			},
 		}

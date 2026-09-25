@@ -47,9 +47,7 @@ func TestMissingActiveGateMemoryLimit(t *testing.T) {
 						Capabilities: []activegate.CapabilityDisplayName{
 							activegate.RoutingCapability.DisplayName,
 						},
-						CapabilityProperties: activegate.CapabilityProperties{
-							Resources: corev1.ResourceRequirements{},
-						},
+						Resources: corev1.ResourceRequirements{},
 					},
 				},
 			})
@@ -64,11 +62,9 @@ func TestMissingActiveGateMemoryLimit(t *testing.T) {
 						Capabilities: []activegate.CapabilityDisplayName{
 							activegate.RoutingCapability.DisplayName,
 						},
-						CapabilityProperties: activegate.CapabilityProperties{
-							Resources: corev1.ResourceRequirements{
-								Limits: corev1.ResourceList{
-									corev1.ResourceLimitsMemory: *resource.NewMilliQuantity(1, ""),
-								},
+						Resources: corev1.ResourceRequirements{
+							Limits: corev1.ResourceList{
+								corev1.ResourceLimitsMemory: *resource.NewMilliQuantity(1, ""),
 							},
 						},
 					},
@@ -127,13 +123,11 @@ func TestActiveGateConflictingVolumes(t *testing.T) {
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testAPIURL,
 				ActiveGate: activegate.Spec{
-					CapabilityProperties: activegate.CapabilityProperties{
-						Volumes: []corev1.Volume{
-							{Name: "my-custom-volume", VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}}},
-						},
-						VolumeMounts: []corev1.VolumeMount{
-							{Name: "my-custom-volume", MountPath: "/my/custom/path"},
-						},
+					Volumes: []corev1.Volume{
+						{Name: "my-custom-volume", EmptyDir: &corev1.EmptyDirVolumeSource{}},
+					},
+					VolumeMounts: []corev1.VolumeMount{
+						{Name: "my-custom-volume", MountPath: "/my/custom/path"},
 					},
 				},
 			},
@@ -148,10 +142,8 @@ func TestActiveGateConflictingVolumes(t *testing.T) {
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
 					ActiveGate: activegate.Spec{
-						CapabilityProperties: activegate.CapabilityProperties{
-							Volumes: []corev1.Volume{
-								{Name: agconsts.AuthTokenSecretVolumeName},
-							},
+						Volumes: []corev1.Volume{
+							{Name: agconsts.AuthTokenSecretVolumeName},
 						},
 					},
 				},
@@ -166,10 +158,8 @@ func TestActiveGateConflictingVolumes(t *testing.T) {
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
 					ActiveGate: activegate.Spec{
-						CapabilityProperties: activegate.CapabilityProperties{
-							VolumeMounts: []corev1.VolumeMount{
-								{MountPath: agconsts.GatewayConfigMountPath},
-							},
+						VolumeMounts: []corev1.VolumeMount{
+							{MountPath: agconsts.GatewayConfigMountPath},
 						},
 					},
 				},
@@ -187,9 +177,7 @@ func TestActiveGateRollingUpdateWithGivenK8sVersion(t *testing.T) {
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testAPIURL,
 				ActiveGate: activegate.Spec{
-					CapabilityProperties: activegate.CapabilityProperties{
-						RollingUpdate: rollingUpdate,
-					},
+					RollingUpdate: rollingUpdate,
 				},
 			},
 		}

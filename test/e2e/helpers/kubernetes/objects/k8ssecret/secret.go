@@ -13,7 +13,6 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/e2e-framework/klient/wait"
 	"sigs.k8s.io/e2e-framework/klient/wait/conditions"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
@@ -22,11 +21,9 @@ import (
 
 func New(name, namespace string, data map[string][]byte) *corev1.Secret {
 	return &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
-		},
-		Data: data,
+		Name:      name,
+		Namespace: namespace,
+		Data:      data,
 	}
 }
 
@@ -62,10 +59,8 @@ func WaitForAbsence(name, namespace string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resources := envConfig.Client().Resources()
 		err := wait.For(conditions.New(resources).ResourceDeleted(&corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      name,
-				Namespace: namespace,
-			},
+			Name:      name,
+			Namespace: namespace,
 		}), wait.WithTimeout(2*time.Minute))
 		require.NoError(t, err)
 

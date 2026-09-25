@@ -230,16 +230,12 @@ func newAuthTokenResponse(token string) *agclient.AuthTokenInfo {
 
 func newTestDynaKube() *dynakube.DynaKube {
 	return &dynakube.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      testDynakubeName,
-			Namespace: testNamespace,
-		},
+		Name:      testDynakubeName,
+		Namespace: testNamespace,
 		Spec: dynakube.DynaKubeSpec{
 			APIURL: "https://tenant.live.dynatrace.com/api",
 			KubernetesMonitoring: &kubemonapi.Spec{
-				StatefulSetProperties: kubemonapi.StatefulSetProperties{
-					Image: "registry.example.com/linux/activegate:1.2.3",
-				},
+				Image: "registry.example.com/linux/activegate:1.2.3",
 			},
 		},
 	}
@@ -247,16 +243,14 @@ func newTestDynaKube() *dynakube.DynaKube {
 
 func newFreshSecret(dk *dynakube.DynaKube, token string) *corev1.Secret {
 	return &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      dk.KubernetesMonitoring().GetAuthTokenSecretName(),
-			Namespace: dk.Namespace,
-			// CreationTimestamp must be set explicitly: the fake client stores whatever is
-			// in the object (it has no server-side clock), so a zero timestamp would always
-			// appear outdated. Real k8s API server sets this on Create and ignores it on
-			// updates, so this value is meaningless in production.
-			CreationTimestamp: metav1.Now(),
-		},
-		Data: map[string][]byte{authtoken.SecretKey: []byte(token)},
+		Name:      dk.KubernetesMonitoring().GetAuthTokenSecretName(),
+		Namespace: dk.Namespace,
+		// CreationTimestamp must be set explicitly: the fake client stores whatever is
+		// in the object (it has no server-side clock), so a zero timestamp would always
+		// appear outdated. Real k8s API server sets this on Create and ignores it on
+		// updates, so this value is meaningless in production.
+		CreationTimestamp: metav1.Now(),
+		Data:              map[string][]byte{authtoken.SecretKey: []byte(token)},
 	}
 }
 
