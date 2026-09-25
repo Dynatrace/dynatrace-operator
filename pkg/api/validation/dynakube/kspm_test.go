@@ -487,8 +487,8 @@ func publicRegistryDynakubeObjectMeta() metav1.ObjectMeta {
 }
 
 func TestMappedHostPath(t *testing.T) {
-	getDynakube := func() dynakube.DynaKube {
-		return dynakube.DynaKube{
+	getDynakube := func() *dynakube.DynaKube {
+		return &dynakube.DynaKube{
 			Name:      testName,
 			Namespace: testNamespace,
 			Spec: dynakube.DynaKubeSpec{
@@ -516,30 +516,30 @@ func TestMappedHostPath(t *testing.T) {
 
 	t.Run("empty list", func(t *testing.T) {
 		dk := getDynakube()
-		assertAllowedWithWarnings(t, 1, &dk)
+		assertAllowedWithWarnings(t, 1, dk)
 	})
 
 	t.Run("single root path", func(t *testing.T) {
 		dk := getDynakube()
 		dk.Spec.KSPM.MappedHostPaths = []string{"/"}
-		assertAllowedWithoutWarnings(t, &dk)
+		assertAllowedWithoutWarnings(t, dk)
 	})
 
 	t.Run("many paths", func(t *testing.T) {
 		dk := getDynakube()
 		dk.Spec.KSPM.MappedHostPaths = []string{"/a", "/b"}
-		assertAllowedWithoutWarnings(t, &dk)
+		assertAllowedWithoutWarnings(t, dk)
 	})
 
 	t.Run("many paths with root directory", func(t *testing.T) {
 		dk := getDynakube()
 		dk.Spec.KSPM.MappedHostPaths = []string{"/a", "/b", "/"}
-		assertDenied(t, []string{errorKSPMRootHostPath}, &dk)
+		assertDenied(t, []string{errorKSPMRootHostPath}, dk)
 	})
 
 	t.Run("relative path", func(t *testing.T) {
 		dk := getDynakube()
 		dk.Spec.KSPM.MappedHostPaths = []string{"/a", "b"}
-		assertDenied(t, []string{fmt.Sprintf(errorKSPMRelativeHostPath, "b")}, &dk)
+		assertDenied(t, []string{fmt.Sprintf(errorKSPMRelativeHostPath, "b")}, dk)
 	})
 }
