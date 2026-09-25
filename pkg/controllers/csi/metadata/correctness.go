@@ -213,7 +213,7 @@ func collectOverlayMounts(ctx context.Context, mounter mount.Interface, isReleva
 			continue
 		}
 
-		overlayMount := parseOverlayMount(mountPoint)
+		overlayMount := convertToOverlayMount(mountPoint)
 		isRelevantMount := isRelevant(overlayMount)
 
 		log.Debug("checked overlay mount",
@@ -230,7 +230,7 @@ func collectOverlayMounts(ctx context.Context, mounter mount.Interface, isReleva
 	return relevantMounts, nil
 }
 
-func parseOverlayMount(mountPoint mount.MountPoint) OverlayMount {
+func convertToOverlayMount(mountPoint mount.MountPoint) OverlayMount {
 	overlayMount := OverlayMount{
 		Path: mountPoint.Path,
 	}
