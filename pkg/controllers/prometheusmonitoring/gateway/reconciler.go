@@ -211,7 +211,7 @@ func mutateStatefulSet(sts *appsv1.StatefulSet, s *reconcileScope) {
 		sts.Spec.Template.Labels = make(map[string]string)
 	}
 
-	maps.Copy(sts.Spec.Template.Labels, s.AppLabels.AsMap())
+	maps.Copy(sts.Spec.Template.Labels, s.AppLabels.AsSelector())
 
 	sts.Spec.Template.Annotations = maps.Clone(s.Spec.Annotations)
 	if sts.Spec.Template.Annotations == nil {

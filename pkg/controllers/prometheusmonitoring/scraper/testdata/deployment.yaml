@@ -34,7 +34,6 @@ spec:
         app.kubernetes.io/managed-by: dynatrace-operator
         app.kubernetes.io/name: opentelemetry-collector
         custom: label
-        internal.dynatrace.com/operator-version: snapshot
     spec:
       automountServiceAccountToken: true
       containers:
