@@ -6,6 +6,10 @@
 package platform
 
 import (
+	"os"
+	"strconv"
+	"sync"
+
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/discovery"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
@@ -71,4 +75,12 @@ func getDiscoveryClient() (discovery.DiscoveryInterface, error) {
 	}
 
 	return client, nil
+}
+
+func IsFIPS() bool {
+	return sync.OnceValue(func() bool {
+		v, _ := strconv.ParseBool(os.Getenv("FIPS"))
+
+		return v
+	})()
 }
