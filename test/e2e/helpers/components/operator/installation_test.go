@@ -47,6 +47,30 @@ func TestGetHelmOptions(t *testing.T) {
 		}, opts)
 	})
 
+	t.Run("use FIPS release tag", func(t *testing.T) {
+		t.Setenv("FIPS", "true")
+		opts, err := getHelmOptions("1.2.3", "test", true)
+		require.NoError(t, err)
+		assertOptions(t, &helm.Opts{
+			Namespace:   "dynatrace",
+			ReleaseName: "dynatrace-operator",
+			Version:     "1.2.3",
+			Args: []string{
+				"--create-namespace",
+				"--install",
+				"--rollback-on-failure",
+				"--set", "platform=test",
+				"--set", "installCRD=true",
+				"--set", "csidriver.enabled=true",
+				"--set", "manifests=true",
+				"--set", "debugLogs=true",
+				"--set", "imageRef.repository=public.ecr.aws/dynatrace/dynatrace-operator",
+				"--set", "imageRef.tag=v1.2.3-fips",
+				helmRegistryURL,
+			},
+		}, opts)
+	})
+
 	t.Run("use nightly", func(t *testing.T) {
 		t.Setenv("HELM_CHART", "oci://registry:0.0.0-nightly-chart")
 		opts, err := getHelmOptions("", "test", true)

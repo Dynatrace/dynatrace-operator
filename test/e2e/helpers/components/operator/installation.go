@@ -287,16 +287,26 @@ func getHelmOptions(releaseTag, platform string, withCSI bool) ([]helm.Option, e
 		helm.WithArgs("--set", "debugLogs=true"),
 	}
 
+	isFIPS := os.Getenv("FIPS") == "true"
+
 	// Install from registry
 	if releaseTag != "" {
-		return append(opts,
+		if isFIPS {
+			opts = append(
+				opts,
+				helm.WithArgs("--set", "imageRef.repository="+strings.TrimPrefix(helmRegistryURL, "oci://")),
+				helm.WithArgs("--set", "imageRef.tag=v"+releaseTag+"-fips"),
+			)
+		}
+
+		return append(
+			opts,
 			helm.WithArgs(helmRegistryURL),
 			helm.WithVersion(releaseTag),
 		), nil
 	}
 
 	rootDir := project.RootDir()
-	isFIPS := os.Getenv("FIPS") == "true"
 	imageRef, err := getImageRef(rootDir, isFIPS)
 	if err != nil {
 		return nil, err
@@ -309,7 +319,8 @@ func getHelmOptions(releaseTag, platform string, withCSI bool) ([]helm.Option, e
 	// if target branch is set and not main, it means that we are running tests on a feature branch, so we want to
 	// install the operator using local helm chart and target branch
 	if targetBranch, ok := os.LookupEnv("TARGET_BRANCH"); ok && targetBranch != "main" {
-		return append(opts,
+		return append(
+			opts,
 			helm.WithArgs("--set", "image="+strings.TrimSpace(imageRef)),
 			helm.WithArgs("--set", "imageRef.pullPolicy=Always"),
 			helm.WithArgs(filepath.Join(rootDir, "config", "helm", "chart", "default")),
@@ -321,7 +332,8 @@ func getHelmOptions(releaseTag, platform string, withCSI bool) ([]helm.Option, e
 		opts = append(opts, helm.WithArgs(chartURI))
 		if isFIPS {
 			repository := strings.TrimPrefix(strings.TrimSuffix(chartURI, ":0.0.0-nightly-chart"), "oci://")
-			opts = append(opts,
+			opts = append(
+				opts,
 				helm.WithArgs("--set", "imageRef.repository="+repository),
 				helm.WithArgs("--set", "imageRef.tag=nightly-fips"),
 				helm.WithArgs("--set", "imageRef.pullPolicy=Always"),
@@ -331,7 +343,8 @@ func getHelmOptions(releaseTag, platform string, withCSI bool) ([]helm.Option, e
 		return opts, nil
 	}
 
-	return append(opts,
+	return append(
+		opts,
 		helm.WithArgs("--set", "image="+strings.TrimSpace(imageRef)),
 		helm.WithArgs("--set", "imageRef.pullPolicy=Always"),
 		helm.WithArgs(filepath.Join(rootDir, "config", "helm", "chart", "default")),
@@ -341,11 +354,11 @@ func getHelmOptions(releaseTag, platform string, withCSI bool) ([]helm.Option, e
 // Cache image ref on first invocation to allow switching branches.
 var imageRef string
 
-func getImageRef(rootDir string, fips140 bool) (string, error) {
+func getImageRef(rootDir string, fips bool) (string, error) {
 	if imageRef == "" {
 		cmdShowImage := "deploy/show-image-ref"
 
-		if fips140 {
+		if fips {
 			cmdShowImage = "deploy/show-image-ref/fips"
 		}
 
