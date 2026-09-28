@@ -254,7 +254,7 @@ func mutateDeployment(deploy *appsv1.Deployment, s *reconcileScope) {
 		deploy.Spec.Template.Labels = make(map[string]string)
 	}
 
-	maps.Copy(deploy.Spec.Template.Labels, s.AppLabels.AsMap())
+	maps.Copy(deploy.Spec.Template.Labels, s.AppLabels.AsSelector())
 
 	deploy.Spec.Template.Annotations = maps.Clone(s.Spec.Annotations)
 	if deploy.Spec.Template.Annotations == nil {

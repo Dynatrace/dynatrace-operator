@@ -34,7 +34,6 @@ spec:
         app.kubernetes.io/instance: otel-allocator
         app.kubernetes.io/managed-by: dynatrace-operator
         app.kubernetes.io/name: opentelemetry-target-allocator
-        internal.dynatrace.com/operator-version: snapshot
         custom: label
     spec:
       automountServiceAccountToken: true
