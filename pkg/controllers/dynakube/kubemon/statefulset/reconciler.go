@@ -697,7 +697,7 @@ func (r *Reconciler) getTLSSecretHash(ctx context.Context, dk *dynakube.DynaKube
 	})
 
 	if k8serrors.IsNotFound(err) {
-		return "not-found", nil
+		return "", errors.Wrap(err, "failed to get TLS secret")
 	}
 
 	if err != nil {

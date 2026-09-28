@@ -958,7 +958,7 @@ func TestReconcileCleanupDeleteFailure(t *testing.T) {
 
 func reconcileAndGetSTS(t *testing.T, dk *dynakube.DynaKube, imgClient image.Client, verClient version.Client) *appsv1.StatefulSet {
 	t.Helper()
-	fakeClient := fake.NewClient(dk, newTestTenantSecret(dk), newTestAuthTokenSecret(dk))
+	fakeClient := fake.NewClient(dk, newTestTenantSecret(dk), newTestAuthTokenSecret(dk), newTestTLSSecret(dk))
 	require.ErrorIs(t, statefulset.NewReconciler(fakeClient).Reconcile(t.Context(), dk, imgClient, verClient), k8sstatefulset.ErrRolloutInProgress)
 
 	return requireTestStatefulSet(t, t.Context(), fakeClient, dk)
@@ -1023,6 +1023,16 @@ func newTestCustomPropertiesSecret(dk *dynakube.DynaKube) *corev1.Secret {
 		Namespace: dk.Namespace,
 		Data: map[string][]byte{
 			kubemoncustomproperties.DataKey: []byte("[section]\nkey=value"),
+		},
+	}
+}
+
+func newTestTLSSecret(dk *dynakube.DynaKube) *corev1.Secret {
+	return &corev1.Secret{
+		Name:      dk.KubernetesMonitoring().GetTLSSecretName(),
+		Namespace: dk.Namespace,
+		Data: map[string][]byte{
+			"test-key": []byte("test-data"),
 		},
 	}
 }
