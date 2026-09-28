@@ -524,7 +524,7 @@ func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.D
 
 	opts := []k8sstatefulset.Option{
 		k8sstatefulset.SetReplicas(replicas),
-		k8sstatefulset.SetAllLabels(labels.AsMap(), labels.AsSelector(), labels.AsMap(), km.Labels),
+		k8sstatefulset.SetAllLabels(labels.AsMap(), labels.AsSelector(), labels.AsSelector(), km.Labels),
 		k8sstatefulset.SetAllAnnotations(nil, maputil.MergeMap(km.Annotations, buildPodAnnotations(dk, tokenHash, authTokenHash, customPropertiesHash, deploymentPropertiesHash, tlsSecretHash))),
 		k8sstatefulset.SetServiceAccount(km.GetServiceAccountName()),
 		k8sstatefulset.SetNodeSelector(km.NodeSelector),

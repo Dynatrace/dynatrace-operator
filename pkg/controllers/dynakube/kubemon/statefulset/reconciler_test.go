@@ -786,7 +786,7 @@ func TestReconcileMetadata(t *testing.T) {
 	}
 
 	assert.Equal(t, expectedLabels, sts.Labels)
-	assert.Equal(t, expectedLabels, sts.Spec.Template.Labels)
+	assert.Equal(t, expectedSelector, sts.Spec.Template.Labels)
 	assert.Equal(t, expectedSelector, sts.Spec.Selector.MatchLabels)
 }
 
