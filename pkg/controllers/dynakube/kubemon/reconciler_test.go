@@ -48,6 +48,8 @@ func TestReconcileDisabled(t *testing.T) {
 		deploymentPropertiesReconciler := newMockDeploymentPropertiesReconciler(t)
 		gatewayReconciler := newMockGatewayReconciler(t)
 		istioRec := newMockIstioReconciler(t)
+		kspmTokenReconciler := newMockKspmTokenReconciler(t)
+
 		reconciler := &Reconciler{
 			connectionInfoReconciler:       connInfoReconciler,
 			authTokenReconciler:            authTokenReconciler,
@@ -57,6 +59,7 @@ func TestReconcileDisabled(t *testing.T) {
 			deploymentPropertiesReconciler: deploymentPropertiesReconciler,
 			gatewayReconciler:              gatewayReconciler,
 			istioReconciler:                istioRec,
+			kspmTokenReconciler:            kspmTokenReconciler,
 		}
 		dk := newTestDynaKube()
 		dk.Spec.KubernetesMonitoring = nil
@@ -70,6 +73,7 @@ func TestReconcileDisabled(t *testing.T) {
 		deploymentPropertiesReconciler.EXPECT().Reconcile(mock.Anything, dk).Return(nil).Once()
 		gatewayReconciler.EXPECT().Reconcile(mock.Anything, dk).Return(nil).Once()
 		statefulSetReconciler.EXPECT().Reconcile(mock.Anything, dk, mock.Anything, mock.Anything).Return(nil).Once()
+		kspmTokenReconciler.EXPECT().Reconcile(mock.Anything, dk).Return(nil).Once()
 
 		err := reconciler.Reconcile(t.Context(), dk, newTestDTClient(t), token.Tokens(nil))
 		require.NoError(t, err)
@@ -92,6 +96,7 @@ func TestReconcileConditionMapping(t *testing.T) {
 		gateway              *mockGatewayReconciler
 		statefulSet          *mockStatefulsetReconciler
 		istio                *mockIstioReconciler
+		kspmToken            *mockKspmTokenReconciler
 	}
 
 	newMocks := func(t *testing.T) reconcilerMocks {
@@ -105,6 +110,7 @@ func TestReconcileConditionMapping(t *testing.T) {
 			gateway:              newMockGatewayReconciler(t),
 			statefulSet:          newMockStatefulsetReconciler(t),
 			istio:                newMockIstioReconciler(t),
+			kspmToken:            newMockKspmTokenReconciler(t),
 		}
 		m.reconciler = &Reconciler{
 			connectionInfoReconciler:       m.connInfo,
@@ -115,6 +121,7 @@ func TestReconcileConditionMapping(t *testing.T) {
 			gatewayReconciler:              m.gateway,
 			statefulsetReconciler:          m.statefulSet,
 			istioReconciler:                m.istio,
+			kspmTokenReconciler:            m.kspmToken,
 		}
 
 		return m
@@ -141,6 +148,7 @@ func TestReconcileConditionMapping(t *testing.T) {
 		mocks.deploymentProperties.EXPECT().Reconcile(mock.Anything, dk).Return(nil).Once()
 		mocks.gateway.EXPECT().Reconcile(mock.Anything, dk).Return(nil).Once()
 		mocks.statefulSet.EXPECT().Reconcile(mock.Anything, dk, mock.Anything, mock.Anything).Return(nil).Once()
+		mocks.kspmToken.EXPECT().Reconcile(mock.Anything, dk).Return(nil).Once()
 
 		err := mocks.reconciler.Reconcile(t.Context(), dk, newTestDTClient(t), token.Tokens(nil))
 
@@ -159,6 +167,7 @@ func TestReconcileConditionMapping(t *testing.T) {
 		mocks.deploymentProperties.EXPECT().Reconcile(mock.Anything, dk).Return(nil).Once()
 		mocks.gateway.EXPECT().Reconcile(mock.Anything, dk).Return(nil).Once()
 		mocks.statefulSet.EXPECT().Reconcile(mock.Anything, dk, mock.Anything, mock.Anything).Return(nil).Once()
+		mocks.kspmToken.EXPECT().Reconcile(mock.Anything, dk).Return(nil).Once()
 
 		err := mocks.reconciler.Reconcile(t.Context(), dk, newTestDTClient(t), token.Tokens(nil))
 
@@ -236,6 +245,7 @@ func TestReconcileConditionMapping(t *testing.T) {
 		mocks.deploymentProperties.EXPECT().Reconcile(mock.Anything, dk).Return(nil).Once()
 		mocks.gateway.EXPECT().Reconcile(mock.Anything, dk).Return(nil).Once()
 		mocks.statefulSet.EXPECT().Reconcile(mock.Anything, dk, mock.Anything, mock.Anything).Return(k8sstatefulset.ErrRolloutInProgress).Once()
+		mocks.kspmToken.EXPECT().Reconcile(mock.Anything, dk).Return(nil).Once()
 
 		err := mocks.reconciler.Reconcile(t.Context(), dk, newTestDTClient(t), token.Tokens(nil))
 
@@ -256,6 +266,7 @@ func TestReconcileConditionMapping(t *testing.T) {
 		mocks.deploymentProperties.EXPECT().Reconcile(mock.Anything, dk).Return(nil).Once()
 		mocks.gateway.EXPECT().Reconcile(mock.Anything, dk).Return(nil).Once()
 		mocks.statefulSet.EXPECT().Reconcile(mock.Anything, dk, mock.Anything, mock.Anything).Return(boomErr).Once()
+		mocks.kspmToken.EXPECT().Reconcile(mock.Anything, dk).Return(nil).Once()
 
 		err := mocks.reconciler.Reconcile(t.Context(), dk, newTestDTClient(t), token.Tokens(nil))
 

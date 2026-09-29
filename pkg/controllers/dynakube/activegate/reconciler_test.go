@@ -11,6 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
@@ -180,6 +181,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			statefulsetReconciler:      mockStatefulsetReconcileOnce(t),
 			customPropertiesReconciler: mockCustomPropertiesReconcileOnce(t),
 			tlsSecretReconciler:        mockTLSReconcileOnce(t),
+			kspmTokenReconciler:        mockKSPMTokenReconcilerNever(t),
 			configMaps:                 k8sconfigmap.Query(clt, clt),
 		}
 
@@ -214,6 +216,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			// statefulsetReconciler: panic if called
 			// customPropertiesReconciler: panic if called
 			tlsSecretReconciler: mockTLSReconcileOnce(t),
+			kspmTokenReconciler: mockKSPMTokenReconcilerNever(t),
 			configMaps:          k8sconfigmap.Query(clt, clt),
 		}
 
@@ -336,6 +339,42 @@ func TestReconciler_Reconcile(t *testing.T) {
 		r.versionReconciler = mockVersionReconcileOnce(t)
 		r.pullSecretReconciler = mockPullSecretReconcileOnce(t)
 		r.istioReconciler = createIstioReconcilerMock(t)
+		r.kspmTokenReconciler = mockKSPMTokenReconcilerNever(t)
+
+		err := r.Reconcile(t.Context(), dk, createMockDTClient(t, true), nil)
+		require.NoError(t, err)
+
+		var statefulSet appsv1.StatefulSet
+
+		name := capability.CalculateStatefulSetName(dk.Name)
+		err = fakeClient.Get(t.Context(), client.ObjectKey{Name: name, Namespace: testNamespace}, &statefulSet)
+
+		require.NoError(t, err)
+		assert.NotNil(t, statefulSet)
+		assert.Equal(t, "test-name-activegate", statefulSet.GetName())
+	})
+	t.Run("KSPMToken reconciler runs if KSPM is enabled", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			Name:      testName,
+			Namespace: testNamespace,
+			Spec: dynakube.DynaKubeSpec{
+				APIURL: "test-api-url",
+				ActiveGate: activegate.Spec{
+					Capabilities: []activegate.CapabilityDisplayName{
+						activegate.KubeMonCapability.DisplayName,
+					},
+				},
+				KSPM: &kspm.Spec{},
+			},
+		}
+		fakeClient := fake.NewClient(testKubeSystemNamespace)
+
+		r := NewReconciler(fakeClient, fakeClient)
+		r.connectionReconciler = mockConnectionReconcileOnce(t)
+		r.versionReconciler = mockVersionReconcileOnce(t)
+		r.pullSecretReconciler = mockPullSecretReconcileOnce(t)
+		r.istioReconciler = createIstioReconcilerMock(t)
+		r.kspmTokenReconciler = mockKSPMTokenReconcilerOnce(t)
 
 		err := r.Reconcile(t.Context(), dk, createMockDTClient(t, true), nil)
 		require.NoError(t, err)
@@ -834,4 +873,23 @@ func createMockDTClient(t *testing.T, authTokenRouteRequired bool) *dynatrace.Cl
 	}
 
 	return &dynatrace.Client{ActiveGate: agClient}
+}
+
+func mockKSPMTokenReconcilerNever(t *testing.T) kspmTokenReconciler {
+	t.Helper()
+
+	reconciler := newMockKspmTokenReconciler(t)
+
+	reconciler.AssertNumberOfCalls(t, "Reconcile", 0)
+
+	return reconciler
+}
+
+func mockKSPMTokenReconcilerOnce(t *testing.T) kspmTokenReconciler {
+	t.Helper()
+
+	reconciler := newMockKspmTokenReconciler(t)
+	reconciler.EXPECT().Reconcile(anyCtx, anyDynakube).Return(nil).Once()
+
+	return reconciler
 }
