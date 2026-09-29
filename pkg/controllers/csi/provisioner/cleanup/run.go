@@ -10,6 +10,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const FinishedLogMsg = "finished CSI filesystem cleanup"
+
 type Cleaner struct {
 	apiReader client.Reader
 	mounter   mount.Interface
@@ -69,6 +71,8 @@ func (c *Cleaner) run(ctx context.Context) error {
 
 	c.removeHostMounts(dks, fsState)
 	c.removeUnusedBinaries(dks, fsState)
+
+	log.Info(FinishedLogMsg)
 
 	return nil
 }
