@@ -487,6 +487,7 @@ func logEntryContains(raw string, containsMsg string, containsImg string) bool {
 	if err := json.Unmarshal([]byte(raw), &entry); err != nil {
 		return false
 	}
+
 	return strings.Contains(entry.Msg, containsMsg) &&
 		strings.Contains(entry.Image, containsImg)
 }
