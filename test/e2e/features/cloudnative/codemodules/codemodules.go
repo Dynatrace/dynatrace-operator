@@ -6,6 +6,7 @@
 package codemodules
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/base64"
@@ -477,19 +478,33 @@ func codeModulesAppInjectSpec(t *testing.T) *oneagent.AppInjectionSpec {
 	}
 }
 
-type LogEntry struct {
+type logEntry struct {
 	Msg   string `json:"msg"`
 	Image string `json:"image"`
 }
 
-func logEntryContains(raw string, containsMsg string, containsImg string) bool {
-	var entry LogEntry
-	if err := json.Unmarshal([]byte(raw), &entry); err != nil {
-		return false
+func findLogEntry(logs string, match func(logEntry) bool) (logEntry, bool) {
+	scanner := bufio.NewScanner(strings.NewReader(logs))
+	for scanner.Scan() {
+		var entry logEntry
+		if err := json.Unmarshal(scanner.Bytes(), &entry); err != nil {
+			continue
+		}
+		if match(entry) {
+			return entry, true
+		}
 	}
 
-	return strings.Contains(entry.Msg, containsMsg) &&
-		strings.Contains(entry.Image, containsImg)
+	return logEntry{}, false
+}
+
+func logEntryContains(raw string, containsMsg string, containsImg string) bool {
+	_, found := findLogEntry(raw, func(e logEntry) bool {
+		return strings.Contains(e.Msg, containsMsg) &&
+			strings.Contains(e.Image, containsImg)
+	})
+
+	return found
 }
 
 func ImageHasBeenDownloaded(dk *dynakube.DynaKube) features.Func {
