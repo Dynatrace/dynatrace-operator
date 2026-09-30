@@ -483,7 +483,7 @@ type logEntry struct {
 	Image string `json:"image"`
 }
 
-func findLogEntry(logs string, match func(logEntry) bool) (logEntry, bool) {
+func findLogEntry(logs string, match func(logEntry) bool) bool {
 	scanner := bufio.NewScanner(strings.NewReader(logs))
 	for scanner.Scan() {
 		var entry logEntry
@@ -491,20 +491,11 @@ func findLogEntry(logs string, match func(logEntry) bool) (logEntry, bool) {
 			continue
 		}
 		if match(entry) {
-			return entry, true
+			return true
 		}
 	}
 
-	return logEntry{}, false
-}
-
-func logEntryContains(raw string, containsMsg string, containsImg string) bool {
-	_, found := findLogEntry(raw, func(e logEntry) bool {
-		return strings.Contains(e.Msg, containsMsg) &&
-			strings.Contains(e.Image, containsImg)
-	})
-
-	return found
+	return false
 }
 
 func ImageHasBeenDownloaded(dk *dynakube.DynaKube) features.Func {
@@ -527,7 +518,10 @@ func ImageHasBeenDownloaded(dk *dynakube.DynaKube) features.Func {
 				require.NoError(t, err)
 				buffer := new(bytes.Buffer)
 				_, err = io.Copy(buffer, logStream)
-				isNew := logEntryContains(buffer.String(), "install agent via", customImage)
+				isNew := findLogEntry(buffer.String(), func(e logEntry) bool {
+					return strings.Contains(e.Msg, "install agent via") &&
+						strings.Contains(e.Image, customImage)
+				})
 				isOld := strings.Contains(buffer.String(), "agent already installed")
 				t.Logf("waiting for image installation completion in %s", pod.Name)
 
