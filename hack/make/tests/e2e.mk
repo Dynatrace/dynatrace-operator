@@ -49,7 +49,7 @@ test/e2e-publish:
 test/e2e/kind:
 	RC=0; \
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi \
-		-run '^TestNoCSI_(activegate|metadata_enrichment|enrichment_rules|resource_attributes_logmon_only|resource_attributes_metadata_only|resource_attributes_otlp|edgeconnect_install|edgeconnect_install_provisioner|logmonitoring|telemetryingest_w_public_ag|telemetryingest_w_otel_collector_endpoint_tls|telemetryingest_configuration_update|kspm)$$' $(SKIPCLEANUP) || RC=1; \
+		-run '^TestNoCSI_(activegate|metadata_enrichment|enrichment_rules|resource_attributes_logmon_only|resource_attributes_metadata_only|resource_attributes_otlp|logmonitoring|telemetryingest_w_public_ag|telemetryingest_w_otel_collector_endpoint_tls|telemetryingest_configuration_update|kspm)$$' $(SKIPCLEANUP) || RC=1; \
 	exit $$RC
 
 ## Run standard e2e test only

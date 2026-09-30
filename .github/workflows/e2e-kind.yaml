@@ -59,7 +59,7 @@ jobs:
               repo: context.repo.repo,
               issue_number: context.issue.number,
               body: [
-                '🚀 E2E tests dispatched: `deploy`, `kind`',
+                '🚀 E2E tests dispatched: `deploy`, `edgeconnect`, `kind`',
                 '',
                 `[View workflow run](${runUrl})`
               ].join('\n')
@@ -76,7 +76,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        suite: [deploy, kind]
+        suite: [deploy, edgeconnect, kind]
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
