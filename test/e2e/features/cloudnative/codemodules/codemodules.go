@@ -8,6 +8,7 @@ package codemodules
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"io"
 	"os"
 	"path/filepath"
@@ -22,6 +23,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	opconsts "github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
+	imageinstaller "github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	oacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/cloudnative"
@@ -492,9 +494,9 @@ func ImageHasBeenDownloaded(dk *dynakube.DynaKube) features.Func {
 				require.NoError(t, err)
 				buffer := new(bytes.Buffer)
 				_, err = io.Copy(buffer, logStream)
-				isNew := strings.Contains(buffer.String(), "Installed agent version: "+dk.OneAgent().GetCustomCodeModulesImage())
+				isNew := strings.Contains(buffer.String(), imageinstaller.InstalledAgentFromImageMsg)
 				isOld := strings.Contains(buffer.String(), "agent already installed")
-				t.Logf("wait for Installed agent version in %s", pod.Name)
+				t.Logf("waiting for image installation completion in %s", pod.Name)
 
 				return isNew || isOld, err
 			}, wait.WithTimeout(time.Minute*5))
@@ -505,6 +507,14 @@ func ImageHasBeenDownloaded(dk *dynakube.DynaKube) features.Func {
 
 			require.NoError(t, err)
 			assert.Contains(t, result.StdOut.String(), dtcsi.SharedAgentBinDir)
+
+			if customImage := dk.OneAgent().GetCustomCodeModulesImage(); customImage != "" {
+				expectedDirName := base64.StdEncoding.EncodeToString([]byte(customImage))
+				symlinkPath := filepath.Join(dtcsi.DataPath, dtcsi.SharedDynaKubesDir, dk.Name, "latest-codemodule")
+				symlinkResult, err := k8spod.Exec(ctx, resource, pod, provisionerContainerName, shell.ReadLink(symlinkPath)...)
+				require.NoError(t, err)
+				assert.Contains(t, symlinkResult.StdOut.String(), expectedDirName)
+			}
 		})
 
 		require.NoError(t, err)
