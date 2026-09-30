@@ -24,8 +24,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const InstalledAgentFromImageMsg = "installed agent from image"
-
 var CacheDir = filepath.Join(dtcsi.DataPath, "cache")
 
 type Properties struct {
@@ -98,7 +96,7 @@ func (installer *Installer) InstallAgent(ctx context.Context, targetDir string) 
 		return false, errors.WithStack(err)
 	}
 
-	log.Info(InstalledAgentFromImageMsg, "image", installer.props.ImageURI, "target dir", targetDir)
+	log.Info("install agent via Image", "image", installer.props.ImageURI, "target dir", targetDir)
 
 	return true, nil
 }
