@@ -522,7 +522,10 @@ func ImageHasBeenDownloaded(dk *dynakube.DynaKube) features.Func {
 					return strings.Contains(e.Msg, "install agent via") &&
 						strings.Contains(e.Image, customImage)
 				})
-				isOld := strings.Contains(buffer.String(), "agent already installed")
+				isOld := findLogEntry(buffer.String(), func(e logEntry) bool {
+					return strings.Contains(e.Msg, "agent already installed") &&
+						strings.Contains(e.Image, customImage)
+				})
 				t.Logf("waiting for image installation completion in %s", pod.Name)
 
 				return isNew || isOld, err
