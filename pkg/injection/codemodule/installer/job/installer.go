@@ -48,7 +48,7 @@ type Installer struct {
 
 func (inst *Installer) InstallAgent(ctx context.Context, targetDir string) (bool, error) {
 	ctx, log := logd.NewFromContext(ctx, "job")
-	log.Info("installing agent via Job", "image", inst.props.ImageURI, "target dir", targetDir)
+	log.Info("install agent via Job", "image", inst.props.ImageURI, "target dir", targetDir)
 
 	err := os.MkdirAll(inst.props.PathResolver.AgentSharedBinaryDirBase(), common.MkDirFileMode)
 	if err != nil {
