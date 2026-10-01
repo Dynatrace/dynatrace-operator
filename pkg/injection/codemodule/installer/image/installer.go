@@ -96,7 +96,7 @@ func (installer *Installer) InstallAgent(ctx context.Context, targetDir string) 
 		return false, errors.WithStack(err)
 	}
 
-	log.Info("install agent via Image", "image", installer.props.ImageURI, "target dir", targetDir)
+	log.Info("installed agent via Image", "image", installer.props.ImageURI, "target dir", targetDir)
 
 	return true, nil
 }

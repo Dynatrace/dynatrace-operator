@@ -128,6 +128,10 @@ test/e2e/cloudnative/codemodules-migrate-to-image:
 test/e2e/cloudnative/codemodules-migrate-to-node-image-pull:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/standard -run "codemodules_migrate_to_node_image_pull" $(SKIPCLEANUP)
 
+## Run CloudNative codemodules e2e migrate to image only and node-image-pull
+test/e2e/cloudnative/codemodules-migrate-to:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/standard -run "codemodules_migrate_to" $(SKIPCLEANUP)
+
 ## Runs CloudNative codemodules-with-proxy e2e test only
 test/e2e/cloudnative/codemodules-with-proxy:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/istio -run "codemodules_with_proxy_no_certs" $(SKIPCLEANUP)

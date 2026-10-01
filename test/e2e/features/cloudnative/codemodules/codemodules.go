@@ -6,12 +6,8 @@
 package codemodules
 
 import (
-	"bufio"
-	"bytes"
 	"context"
 	"encoding/base64"
-	"encoding/json"
-	"io"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -46,7 +42,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
 	"sigs.k8s.io/e2e-framework/klient/wait"
@@ -478,57 +473,28 @@ func codeModulesAppInjectSpec(t *testing.T) *oneagent.AppInjectionSpec {
 	}
 }
 
-type logEntry struct {
-	Msg   string `json:"msg"`
-	Image string `json:"image"`
-}
-
-func findLogEntry(logs string, match func(logEntry) bool) bool {
-	scanner := bufio.NewScanner(strings.NewReader(logs))
-	for scanner.Scan() {
-		var entry logEntry
-		if err := json.Unmarshal(scanner.Bytes(), &entry); err != nil {
-			continue
-		}
-		if match(entry) {
-			return true
-		}
-	}
-
-	return false
-}
-
 func ImageHasBeenDownloaded(dk *dynakube.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resource := envConfig.Client().Resources()
-		clientset, err := kubernetes.NewForConfig(resource.GetConfig())
-		require.NoError(t, err)
 
 		customImage := dk.OneAgent().GetCustomCodeModulesImage()
 		require.NotEmpty(t, customImage)
 
-		err = k8sdaemonset.NewQuery(ctx, resource, client.ObjectKey{
+		err := k8sdaemonset.NewQuery(ctx, resource, client.ObjectKey{
 			Name:      csi.DaemonSetName,
 			Namespace: dk.Namespace,
 		}).ForEachPod(func(pod *corev1.Pod) {
-			err = wait.For(func(ctx context.Context) (done bool, err error) {
-				logStream, err := clientset.CoreV1().Pods(pod.Namespace).GetLogs(pod.Name, &corev1.PodLogOptions{
-					Container: provisionerContainerName,
-				}).Stream(ctx)
-				require.NoError(t, err)
-				buffer := new(bytes.Buffer)
-				_, err = io.Copy(buffer, logStream)
-				isNew := findLogEntry(buffer.String(), func(e logEntry) bool {
-					return strings.Contains(e.Msg, "install agent via") &&
-						strings.Contains(e.Image, customImage)
-				})
-				isOld := findLogEntry(buffer.String(), func(e logEntry) bool {
-					return strings.Contains(e.Msg, "agent already installed") &&
-						strings.Contains(e.Image, customImage)
-				})
-				t.Logf("waiting for image installation completion in %s", pod.Name)
+			err := wait.For(func(ctx context.Context) (done bool, err error) {
+				latest, readErr := readLatestCodeModule(ctx, resource, pod, dk.Name)
+				if readErr != nil {
+					t.Logf("failed to read the latest codemodule link on %s, retrying: %v", pod.Name, readErr)
 
-				return isNew || isOld, err
+					return false, nil
+				}
+				expectedDirName := base64.StdEncoding.EncodeToString([]byte(customImage))
+				assert.Contains(t, latest, expectedDirName)
+
+				return true, nil
 			}, wait.WithTimeout(time.Minute*5))
 			require.NoError(t, err)
 
@@ -537,12 +503,6 @@ func ImageHasBeenDownloaded(dk *dynakube.DynaKube) features.Func {
 
 			require.NoError(t, err)
 			assert.Contains(t, result.StdOut.String(), dtcsi.SharedAgentBinDir)
-
-			expectedDirName := base64.StdEncoding.EncodeToString([]byte(customImage))
-			symlinkPath := filepath.Join(dtcsi.DataPath, dtcsi.SharedDynaKubesDir, dk.Name, "latest-codemodule")
-			symlinkResult, err := k8spod.Exec(ctx, resource, pod, provisionerContainerName, shell.ReadLink(symlinkPath)...)
-			require.NoError(t, err)
-			assert.Contains(t, symlinkResult.StdOut.String(), expectedDirName)
 		})
 
 		require.NoError(t, err)
