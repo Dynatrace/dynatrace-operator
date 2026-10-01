@@ -519,7 +519,7 @@ func ImageHasBeenDownloaded(dk *dynakube.DynaKube) features.Func {
 				buffer := new(bytes.Buffer)
 				_, err = io.Copy(buffer, logStream)
 				isNew := findLogEntry(buffer.String(), func(e logEntry) bool {
-					return strings.Contains(e.Msg, "install agent via") &&
+					return strings.Contains(e.Msg, "installed agent via") &&
 						strings.Contains(e.Image, customImage)
 				})
 				isOld := findLogEntry(buffer.String(), func(e logEntry) bool {

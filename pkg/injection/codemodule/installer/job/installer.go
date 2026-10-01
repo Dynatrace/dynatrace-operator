@@ -76,7 +76,7 @@ func (inst *Installer) InstallAgent(ctx context.Context, targetDir string) (bool
 		return false, errors.WithStack(err)
 	}
 
-	log.Info("install agent via Job", "image", inst.props.ImageURI, "target dir", targetDir)
+	log.Info("installed agent via Job", "image", inst.props.ImageURI, "target dir", targetDir)
 
 	return true, nil
 }
