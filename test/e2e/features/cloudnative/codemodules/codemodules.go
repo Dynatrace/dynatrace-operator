@@ -483,14 +483,14 @@ type logEntry struct {
 	Image string `json:"image"`
 }
 
-func findLogEntry(logs string, match func(logEntry) bool) bool {
+func (query logEntry) findIn(logs string) bool {
 	scanner := bufio.NewScanner(strings.NewReader(logs))
 	for scanner.Scan() {
 		var entry logEntry
 		if err := json.Unmarshal(scanner.Bytes(), &entry); err != nil {
 			continue
 		}
-		if match(entry) {
+		if strings.Contains(entry.Msg, query.Msg) && strings.Contains(entry.Image, query.Image) {
 			return true
 		}
 	}
@@ -518,14 +518,8 @@ func ImageHasBeenDownloaded(dk *dynakube.DynaKube) features.Func {
 				require.NoError(t, err)
 				buffer := new(bytes.Buffer)
 				_, err = io.Copy(buffer, logStream)
-				isNew := findLogEntry(buffer.String(), func(e logEntry) bool {
-					return strings.Contains(e.Msg, "installed agent via") &&
-						strings.Contains(e.Image, customImage)
-				})
-				isOld := findLogEntry(buffer.String(), func(e logEntry) bool {
-					return strings.Contains(e.Msg, "agent already installed") &&
-						strings.Contains(e.Image, customImage)
-				})
+				isNew := logEntry{Msg: "installed agent via", Image: customImage}.findIn(buffer.String())
+				isOld := logEntry{Msg: "agent already installed", Image: customImage}.findIn(buffer.String())
 				t.Logf("waiting for image installation completion in %s", pod.Name)
 
 				return isNew || isOld, err
