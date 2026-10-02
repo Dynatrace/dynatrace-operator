@@ -6,9 +6,8 @@
 package codemodules
 
 import (
-	"bytes"
 	"context"
-	"io"
+	"encoding/base64"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -43,7 +42,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
 	"sigs.k8s.io/e2e-framework/klient/wait"
@@ -478,25 +476,25 @@ func codeModulesAppInjectSpec(t *testing.T) *oneagent.AppInjectionSpec {
 func ImageHasBeenDownloaded(dk *dynakube.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resource := envConfig.Client().Resources()
-		clientset, err := kubernetes.NewForConfig(resource.GetConfig())
-		require.NoError(t, err)
 
-		err = k8sdaemonset.NewQuery(ctx, resource, client.ObjectKey{
+		customImage := dk.OneAgent().GetCustomCodeModulesImage()
+		require.NotEmpty(t, customImage)
+
+		err := k8sdaemonset.NewQuery(ctx, resource, client.ObjectKey{
 			Name:      csi.DaemonSetName,
 			Namespace: dk.Namespace,
 		}).ForEachPod(func(pod *corev1.Pod) {
-			err = wait.For(func(ctx context.Context) (done bool, err error) {
-				logStream, err := clientset.CoreV1().Pods(pod.Namespace).GetLogs(pod.Name, &corev1.PodLogOptions{
-					Container: provisionerContainerName,
-				}).Stream(ctx)
-				require.NoError(t, err)
-				buffer := new(bytes.Buffer)
-				_, err = io.Copy(buffer, logStream)
-				isNew := strings.Contains(buffer.String(), "Installed agent version: "+dk.OneAgent().GetCustomCodeModulesImage())
-				isOld := strings.Contains(buffer.String(), "agent already installed")
-				t.Logf("wait for Installed agent version in %s", pod.Name)
+			err := wait.For(func(ctx context.Context) (done bool, err error) {
+				latest, readErr := readLatestCodeModule(ctx, resource, pod, dk.Name)
+				if readErr != nil {
+					t.Logf("failed to read the latest codemodule link on %s, retrying: %v", pod.Name, readErr)
 
-				return isNew || isOld, err
+					return false, nil
+				}
+				expectedDirName := base64.StdEncoding.EncodeToString([]byte(customImage))
+				assert.Contains(t, latest, expectedDirName)
+
+				return true, nil
 			}, wait.WithTimeout(time.Minute*5))
 			require.NoError(t, err)
 

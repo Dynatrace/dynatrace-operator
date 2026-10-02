@@ -48,8 +48,8 @@ test/e2e-publish:
 ## Start tests that support kind
 test/e2e/kind:
 	RC=0; \
-	make test/e2e/deploy || RC=1; \
-	make test/e2e/edgeconnect/normal || RC=1; \
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi \
+		-run '^TestNoCSI_(activegate|metadata_enrichment|enrichment_rules|resource_attributes_logmon_only|resource_attributes_metadata_only|resource_attributes_otlp|logmonitoring|telemetryingest_w_public_ag|telemetryingest_w_otel_collector_endpoint_tls|telemetryingest_configuration_update|kspm)$$' $(SKIPCLEANUP) || RC=1; \
 	exit $$RC
 
 ## Run standard e2e test only
@@ -127,6 +127,10 @@ test/e2e/cloudnative/codemodules-migrate-to-image:
 ## Runs CloudNative codemodules e2e migrate to node-image-pull only
 test/e2e/cloudnative/codemodules-migrate-to-node-image-pull:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/standard -run "codemodules_migrate_to_node_image_pull" $(SKIPCLEANUP)
+
+## Run CloudNative codemodules e2e migrate to image only and node-image-pull
+test/e2e/cloudnative/codemodules-migrate-to:
+	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/standard -run "codemodules_migrate_to" $(SKIPCLEANUP)
 
 ## Runs CloudNative codemodules-with-proxy e2e test only
 test/e2e/cloudnative/codemodules-with-proxy:
