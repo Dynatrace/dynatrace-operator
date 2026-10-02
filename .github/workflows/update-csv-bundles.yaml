@@ -15,6 +15,10 @@ on:
         type: boolean
         default: false
 
+concurrency:
+  group: ${{ github.event.release.tag_name || inputs.tag }}
+  cancel-in-progress: true
+
 jobs:
   update-csv-bundles:
     name: Update Operatorhub Bundles
