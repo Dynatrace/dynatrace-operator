@@ -277,6 +277,22 @@ The following environment variables can be used to control which tests are execu
 - `E2E_SKIP_SCALING` — set to `true` to skip all scaling-related tests (those covering HPA and enforce-replicas behaviour).
 - `E2E_PUBLIC_REGISTRY_OVERRIDE` — sets the registry value used for spec.publicRegistryOverride in use-public-registry e2e tests. This allows tests to validate scenarios where image references are overridden to use other, specific public registry.
 
+### Selecting the Operator Install Mode
+
+By default, e2e tests deploy the operator from the local Helm chart. The install mode used by `InstallLocal` and `Uninstall` can be changed with environment variables:
+
+| Env var          | Install mode                                                                       | Notes                                                                                                                   |
+|------------------|------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------|
+| _(none)_         | Helm                                                                               | Default. Uninstalled via `make undeploy`.                                                                               |
+| `OLM=true`       | OLM bundle                                                                         | CSI tests are skipped. Also available as `make test/e2e/<scope>/olm`.                                                   |
+| `MANIFESTS=true` | Generated manifests for the detected platform (`manifests/apply/<platform>[/csi]`) | Remaining DynaKubes and their tenant secrets are deleted first, then manifests are removed via `manifests/delete/<platform>[/csi]`. Helm options passed by the test are ignored (a warning is logged). |
+
+If both `OLM=true` and `MANIFESTS=true` are set, OLM takes precedence.
+
+```sh
+MANIFESTS=true make test/e2e/standard
+```
+
 ### Triggering E2E Tests on Kind in CI
 
 You can trigger the E2E tests on a kind cluster in GitHub Actions by commenting on a pull request with:

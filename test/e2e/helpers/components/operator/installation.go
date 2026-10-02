@@ -48,23 +48,36 @@ func Install(releaseTag string, withCSI bool) env.Func {
 	}
 }
 
-// InstallLocal deploys the operator helm chart from filesystem.
+// InstallLocal deploys the operator from filesystem — Helm, OLM, or manifests depending on env.
 func InstallLocal(withCSI bool, extraOpts ...helm.Option) env.Func {
 	return func(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
-		if os.Getenv("OLM") == "true" {
+		switch {
+		case os.Getenv("OLM") == "true":
 			if withCSI {
 				fmt.Println("skipping CSI tests with OLM installation") //nolint:forbidigo
 				envConfig.WithSkipFeatureRegex(".*")
 
 				return ctx, nil
 			}
-			err := installViaOLMLocalBundle()
+
+			if err := installViaOLMLocalBundle(); err != nil {
+				return ctx, err
+			}
+		case os.Getenv("MANIFESTS") == "true":
+			if len(extraOpts) > 0 {
+				fmt.Println("MANIFESTS=true: extraOpts are ignored")
+			}
+
+			p, err := platform.NewResolver().GetPlatform()
 			if err != nil {
 				return ctx, err
 			}
-		} else {
-			err := InstallViaHelm("", withCSI, extraOpts...)
-			if err != nil {
+
+			if err := InstallViaManifests(p, withCSI); err != nil {
+				return ctx, err
+			}
+		default:
+			if err := InstallViaHelm("", withCSI, extraOpts...); err != nil {
 				return ctx, err
 			}
 		}
@@ -86,9 +99,17 @@ func Uninstall(withCSI bool) env.Func {
 	return func(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
 		rootDir := project.RootDir()
 
-		if os.Getenv("OLM") == "true" {
+		switch {
+		case os.Getenv("OLM") == "true":
 			return ctx, execMakeCommand(rootDir, "bundle/cleanup")
-		} else {
+		case os.Getenv("MANIFESTS") == "true":
+			p, err := platform.NewResolver().GetPlatform()
+			if err != nil {
+				return ctx, err
+			}
+
+			return ctx, UninstallViaManifests(p, withCSI)
+		default:
 			if withCSI {
 				ctx, err := csi.CleanUpEachPod(DefaultNamespace)(ctx, envConfig)
 				if err != nil {
@@ -241,35 +262,6 @@ func InstallReleasedManifest(releaseTag string, withCSI bool) env.Func {
 		}
 
 		return VerifyInstall(ctx, envConfig, withCSI)
-	}
-}
-
-// InstallLocalViaManifests applies the current build's generated manifests.
-func InstallLocalViaManifests(withCSI bool) env.Func {
-	return func(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
-		p, err := platform.NewResolver().GetPlatform()
-		if err != nil {
-			return ctx, err
-		}
-
-		err = InstallViaManifests(p, withCSI)
-		if err != nil {
-			return ctx, err
-		}
-
-		return VerifyInstall(ctx, envConfig, withCSI)
-	}
-}
-
-// UninstallCurrentManifests deletes the operator using the current build's generated manifests.
-func UninstallCurrentManifests(withCSI bool) env.Func {
-	return func(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
-		p, err := platform.NewResolver().GetPlatform()
-		if err != nil {
-			return ctx, err
-		}
-
-		return ctx, UninstallViaManifests(p, withCSI)
 	}
 }
 

@@ -36,6 +36,10 @@ func Feature(t *testing.T) features.Feature {
 	if os.Getenv("OLM") == "true" {
 		t.Skip("Skipping Prometheus tests with OLM installation")
 	}
+	// skipping if deployed via manifests due to --set experimental.enablePrometheus=true and --set prometheus.installCRDs=true
+	if os.Getenv("MANIFESTS") == "true" {
+		t.Skip("Skipping Prometheus tests with manifests installation, helm options are not supported")
+	}
 
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
@@ -110,6 +114,10 @@ func PublicRegistry(t *testing.T) features.Feature {
 	builder := features.New("public-registry")
 	if os.Getenv("OLM") == "true" {
 		t.Skip("Skipping Prometheus tests with OLM installation")
+	}
+	// skipping if deployed via manifests due to --set experimental.enablePrometheus=true and --set prometheus.installCRDs=true
+	if os.Getenv("MANIFESTS") == "true" {
+		t.Skip("Skipping Prometheus tests with manifests installation, helm options are not supported")
 	}
 	builder.Assess("devregistry pull secret exists", k8sobject.Expect(consts.DevRegistryPullSecretName, operator.DefaultNamespace, k8sobject.SecretExists))
 
