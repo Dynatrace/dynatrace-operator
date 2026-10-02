@@ -78,7 +78,11 @@ func (c *Cleaner) removeOldBinarySymlinks(dks []dynakube.DynaKube, fsState fsSta
 func (c *Cleaner) collectStillMountedBins() (map[string]bool, error) {
 	mountedBins := map[string]bool{}
 
-	overlays, err := metadata.GetRelevantOverlayMounts(c.mounter, c.path.RootDir)
+	// App mounts live at the kubelet target path, not under the CSI root, so they can only be
+	// found via their lower directory, which points at the code module they are using.
+	log.Debug("looking for code modules that are still mounted", "dir", c.path.AgentSharedBinaryDirBase())
+
+	overlays, err := metadata.GetOverlayMountsWithLowerDirIn(c.mounter, c.path.AgentSharedBinaryDirBase())
 	if err != nil {
 		log.Info("failed to list active overlay mounts, skipping unused binaries cleanup")
 
@@ -86,7 +90,9 @@ func (c *Cleaner) collectStillMountedBins() (map[string]bool, error) {
 	}
 
 	for _, overlay := range overlays {
-		mountedBins[overlay.LowerDir] = true
+		for _, lowerDir := range overlay.LowerDirs {
+			mountedBins[lowerDir] = true
+		}
 	}
 
 	if len(mountedBins) > 0 {
