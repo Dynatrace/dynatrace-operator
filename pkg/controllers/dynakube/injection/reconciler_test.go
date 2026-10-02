@@ -106,7 +106,7 @@ func TestReconciler(t *testing.T) {
 				},
 			},
 			Status: dynakube.DynaKubeStatus{
-				KubernetesClusterMEID: testKubernetesMEID,
+				Registration: dynakube.Registration{EntityScope: testKubernetesMEID},
 			},
 		}
 		optionalscope.SetAvailable(dk, tokenclient.ScopeSettingsRead)
@@ -127,7 +127,7 @@ func TestReconciler(t *testing.T) {
 		oneAgentClient.EXPECT().GetProcessModuleConfig(anyCtx).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
 		oneAgentClient.EXPECT().GetProcessGroupingConfig(anyCtx, testKubernetesMEID, "").Return(&oneagentclient.ProcessGroupConfig{}, nil).Once()
 		settingsClient := settingsmock.NewClient(t)
-		settingsClient.EXPECT().GetRules(anyCtx, mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil, nil)
+		settingsClient.EXPECT().GetRules(anyCtx, mock.AnythingOfType("settings.K8sClusterRegistration")).Return(nil, nil)
 		dtClient := &dynatrace.Client{
 			OneAgent: oneAgentClient,
 			Settings: settingsClient,
@@ -515,7 +515,7 @@ func TestGenerateCorrectInitSecret(t *testing.T) {
 			},
 		},
 		Status: dynakube.DynaKubeStatus{
-			KubernetesClusterMEID: testKubernetesMEID,
+			Registration: dynakube.Registration{EntityScope: testKubernetesMEID},
 		},
 	}
 
@@ -580,7 +580,7 @@ func TestGenerateCorrectCertInitSecret(t *testing.T) {
 			},
 		},
 		Status: dynakube.DynaKubeStatus{
-			KubernetesClusterMEID: testKubernetesMEID,
+			Registration: dynakube.Registration{EntityScope: testKubernetesMEID},
 		},
 	}
 
@@ -946,8 +946,8 @@ func testDynaKubeWithSelectors(oneAgent, metadataEnrichment, otlpExporter metav1
 			},
 		},
 		Status: dynakube.DynaKubeStatus{
-			KubernetesClusterMEID: testKubernetesMEID,
-			APIToken:              dynakube.APITokenStatus{Platform: new(true)},
+			Registration: dynakube.Registration{EntityScope: testKubernetesMEID},
+			APIToken:     dynakube.APITokenStatus{Platform: new(true)},
 		},
 	}
 }

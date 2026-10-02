@@ -29,20 +29,18 @@ type KSPMSettingsValue struct {
 }
 
 // GetKSPMSettings returns the settings response with the number of settings objects and their values.
-func (c *ClientImpl) GetKSPMSettings(ctx context.Context, monitoredEntity string) (KSPMSettingsResponse, error) {
-	if monitoredEntity == "" {
+func (c *ClientImpl) GetKSPMSettings(ctx context.Context, registration K8sClusterRegistration) (KSPMSettingsResponse, error) {
+	if registration.EntityScope == "" {
 		return KSPMSettingsResponse{}, nil
 	}
 
 	var resp KSPMSettingsResponse
 
-	err := c.apiClient.GET(ctx, ObjectsPath).
-		WithQueryParams(map[string]string{
-			validateOnlyQueryParam: "true",
-			schemaIDsQueryParam:    kspmSettingsSchemaID,
-			scopesQueryParam:       monitoredEntity,
-		}).
-		Execute(&resp)
+	err := c.api.listObjects(ctx, objectsCollection, listParams{
+		SchemaID:     kspmSettingsSchemaID,
+		Scope:        c.api.scope(registration),
+		ValidateOnly: true,
+	}, &resp)
 	if err != nil {
 		return KSPMSettingsResponse{}, fmt.Errorf("get kspm settings: %w", err)
 	}
@@ -51,31 +49,16 @@ func (c *ClientImpl) GetKSPMSettings(ctx context.Context, monitoredEntity string
 }
 
 // CreateKSPMSetting returns the object ID of the created kspm settings.
-func (c *ClientImpl) CreateKSPMSetting(ctx context.Context, monitoredEntity string, datasetPipelineEnabled bool) (string, error) {
-	if monitoredEntity == "" {
+func (c *ClientImpl) CreateKSPMSetting(ctx context.Context, registration K8sClusterRegistration, datasetPipelineEnabled bool) (string, error) {
+	if registration.EntityScope == "" {
 		return "", errors.New("no scope (MEID) was provided for creating the KSPM setting object")
 	}
 
-	body := newPostObjectsBody(
-		kspmSettingsSchemaID,
-		kspmSettingsSchemaVersion,
-		monitoredEntity,
-		KSPMSettingsValue{
-			DatasetPipelineEnabled: datasetPipelineEnabled,
-		},
-	)
-
-	var response []postObjectsResponse
-
-	err := c.apiClient.POST(ctx, ObjectsPath).
-		WithQueryParams(map[string]string{
-			validateOnlyQueryParam: "false",
-		}).
-		WithJSONBody(body).
-		Execute(&response)
+	ids, err := c.api.createObject(ctx, kspmSettingsSchemaID, kspmSettingsSchemaVersion, c.api.scope(registration),
+		KSPMSettingsValue{DatasetPipelineEnabled: datasetPipelineEnabled})
 	if err != nil {
 		return "", fmt.Errorf("create kspm setting: %w", err)
 	}
 
-	return getObjectID(response)
+	return singleID(ids)
 }

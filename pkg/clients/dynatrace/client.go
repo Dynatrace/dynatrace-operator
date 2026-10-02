@@ -21,6 +21,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/version"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtapiurl"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	operatorversion "github.com/Dynatrace/dynatrace-operator/pkg/version"
@@ -90,8 +91,25 @@ func NewClient(options ...Option) (*Client, error) {
 		PaasToken:  config.PaasToken,
 	})
 
+	// Settings talks to gen3 when the user provided a platform token, gen2 otherwise. Gen3 is served
+	// on the tenant's "*.apps.*" host under "/platform/settings/v1", not on the classic "*.live.*" host
+	// (or equivalent) under "/api" that every other client here, and gen2 settings, use.
+	settingsGeneration := settings.Gen2
+	settingsCoreClient := apiClient
+
+	if dttoken.IsPlatform(config.APIToken) {
+		settingsGeneration = settings.Gen3
+		settingsCoreClient = core.NewClient(core.Config{
+			BaseURL:    platformBaseURL(config.BaseURL),
+			HTTPClient: httpClient,
+			UserAgent:  config.UserAgent,
+			APIToken:   config.APIToken,
+			PaasToken:  config.PaasToken,
+		})
+	}
+
 	return &Client{
-		Settings:   settings.NewClient(apiClient),
+		Settings:   settings.NewClient(settingsCoreClient, settingsGeneration),
 		ActiveGate: activegate.NewClient(apiClient),
 		HostEvent:  hostevent.NewClient(apiClient, config.NetworkZone),
 		Images:     image.NewClient(apiClient),
@@ -160,6 +178,23 @@ func WithHostGroup(hostGroup string) Option {
 
 		return nil
 	}
+}
+
+// platformBaseURL derives the gen3 Platform API base URL for the settings endpoints from the
+// classic "/api" base URL used for gen2 endpoints: the host is remapped from its 2nd gen form
+// (e.g. "tenant.live.dynatrace.com") to its 3rd gen "*.apps.*" form (e.g. "tenant.apps.dynatrace.com"),
+// and the path is set to the settings API's gateway prefix.
+func platformBaseURL(apiBaseURL *url.URL) *url.URL {
+	if apiBaseURL == nil {
+		return nil
+	}
+
+	platformURL, err := url.Parse(dtapiurl.ToThirdGen(apiBaseURL.String()))
+	if err != nil {
+		return apiBaseURL
+	}
+
+	return platformURL.JoinPath("platform", "settings", "v1")
 }
 
 // WithBaseURL parses the URL and sets it

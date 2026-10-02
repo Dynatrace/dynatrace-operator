@@ -67,14 +67,9 @@ type DynaKubeStatus struct { //nolint:revive
 	// Defines the current state (Running, Updating, Error, ...)
 	Phase status.DeploymentPhase `json:"phase,omitempty"`
 
-	// KubeSystemUUID contains the UUID of the current Kubernetes cluster
-	KubeSystemUUID string `json:"kubeSystemUUID,omitempty"`
-
-	// KubernetesClusterMEID contains the ID of the monitored entity that points to the Kubernetes cluster
-	KubernetesClusterMEID string `json:"kubernetesClusterMEID,omitempty"`
-
-	// KubernetesClusterName contains the display name (also know as label) of the monitored entity that points to the Kubernetes cluster
-	KubernetesClusterName string `json:"kubernetesClusterName,omitempty"`
+	// Registration contains the identifiers used to address settings calls scoped to this Kubernetes cluster
+	// +kubebuilder:validation:Optional
+	Registration Registration `json:"registration,omitzero"`
 
 	// Conditions includes status about the current state of the instance
 	// +listType=map
@@ -96,6 +91,20 @@ type APITokenStatus struct {
 type AvailableOptionalScopes struct {
 	SettingsRead  *bool `json:"settingsRead,omitempty"`
 	SettingsWrite *bool `json:"settingsWrite,omitempty"`
+}
+
+// Registration groups the identifiers that address settings calls scoped to this Kubernetes cluster.
+// EntityID is known as soon as the operator can reach the cluster; EntityScope and EntityLabel are only
+// known once Dynatrace has resolved the cluster's Monitored Entity.
+type Registration struct {
+	// EntityID contains the UUID of the current Kubernetes cluster
+	EntityID string `json:"entityID,omitempty"`
+
+	// EntityScope contains the ID of the monitored entity that points to the Kubernetes cluster
+	EntityScope string `json:"entityScope,omitempty"`
+
+	// EntityLabel contains the display name (also know as label) of the monitored entity that points to the Kubernetes cluster
+	EntityLabel string `json:"entityLabel,omitempty"`
 }
 
 // SetPhase sets the status phase on the DynaKube object.

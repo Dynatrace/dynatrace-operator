@@ -327,7 +327,7 @@ func buildEnv(s *reconcileScope) []corev1.EnvVar {
 				FieldRef: &corev1.ObjectFieldSelector{APIVersion: "v1", FieldPath: "status.podIP"},
 			},
 		},
-		{Name: "K8S_CLUSTER_NAME", Value: dk.Status.KubernetesClusterName},
+		{Name: "K8S_CLUSTER_NAME", Value: dk.Status.Registration.EntityLabel},
 	}, s.Spec.Resources)
 
 	if dk.HasProxy() {

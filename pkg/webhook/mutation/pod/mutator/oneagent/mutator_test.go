@@ -411,7 +411,7 @@ func TestAddOneAgentToContainer(t *testing.T) {
 					NetworkZone: networkZone,
 				},
 				Status: dynakube.DynaKubeStatus{
-					KubeSystemUUID: kubeSystemUUID,
+					Registration: dynakube.Registration{EntityID: kubeSystemUUID},
 				},
 			},
 		}

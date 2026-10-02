@@ -1,7 +1,8 @@
 // Copyright Dynatrace LLC
 // SPDX-License-Identifier: Apache-2.0
 
-// Package settings implements a client for the v2 settings API.
+// Package settings implements a client for the settings API, in either its gen2 (`/v2/settings/...`)
+// or gen3 (`/platform/settings/v1/...`) form. See objectapi.go for how the two coexist.
 package settings
 
 import (
@@ -9,7 +10,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"path"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
@@ -18,20 +18,8 @@ import (
 	"github.com/go-logr/logr"
 )
 
-const (
-	validateOnlyQueryParam = "validateOnly"
-	pageSizeQueryParam     = "pageSize"
-	entitiesPageSize       = "500"
-
-	scopesQueryParam               = "scopes"
-	filterQueryParam               = "filter"
-	fieldsQueryParam               = "fields"
-	kubernetesSettingsNeededFields = "value,scope"
-
-	schemaIDsQueryParam = "schemaIds"
-
-	ObjectsPath = "/v2/settings/objects"
-)
+// entitiesPageSize is only ever used by GetK8sClusterME's gen2 fallback scan.
+const entitiesPageSize = "500"
 
 var (
 	errMissingKubeSystemUUID = errors.New("no kube-system namespace UUID given")
@@ -40,48 +28,58 @@ var (
 )
 
 type Client interface {
-	// GetK8sClusterME returns the Kubernetes Cluster Monitored Entity for the give kubernetes cluster.
-	// Uses the `settings.read` scope to list the `builtin:cloud.kubernetes` settings.
+	// GetK8sClusterME resolves the Kubernetes Cluster Monitored Entity for the cluster identified by
+	// registration.EntityID, returning registration with EntityScope/EntityLabel
+	// filled in once Dynatrace has resolved them.
 	//   - Only 1 such setting exists per tenant per kubernetes cluster
-	//   - The `scope` for the setting is the ID (example: KUBERNETES_CLUSTER-A1234567BCD8EFGH) of the Kubernetes Cluster Monitored Entity
-	//   - The `label` of the setting is the Name (example: my-dynakube) of the Kubernetes Cluster Monitored Entity
+	//   - EntityScope is the ID (example: KUBERNETES_CLUSTER-A1234567BCD8EFGH) of the Kubernetes Cluster Monitored Entity
+	//   - EntityLabel is the display name (example: my-dynakube) of the Kubernetes Cluster Monitored Entity
 	//
-	// In case 0 settings are found, so no Kubernetes Cluster Monitored Entity exists, we return an empty object, without an error.
-	GetK8sClusterME(ctx context.Context, kubeSystemUUID string) (K8sClusterME, error)
+	// In case the setting does not exist (yet), so no Kubernetes Cluster Monitored Entity exists, registration is
+	// returned unchanged, without an error.
+	GetK8sClusterME(ctx context.Context, registration K8sClusterRegistration) (K8sClusterRegistration, error)
 	// GetSettingsForMonitoredEntity returns the settings response with the number of settings objects and their values.
-	GetSettingsForMonitoredEntity(ctx context.Context, monitoredEntity K8sClusterME, schemaID string) (TotalCountSettingsResponse, error)
+	GetSettingsForMonitoredEntity(ctx context.Context, registration K8sClusterRegistration, schemaID string) (TotalCountSettingsResponse, error)
 	// GetSettingsForLogModule returns the settings response with the number of settings objects and their values.
-	GetSettingsForLogModule(ctx context.Context, monitoredEntity string) (TotalCountSettingsResponse, error)
+	GetSettingsForLogModule(ctx context.Context, registration K8sClusterRegistration) (TotalCountSettingsResponse, error)
 	// GetRules returns metadata enrichment rules.
-	GetRules(ctx context.Context, kubeSystemUUID string, entityID string) ([]metadataenrichment.Rule, error)
+	GetRules(ctx context.Context, registration K8sClusterRegistration) ([]metadataenrichment.Rule, error)
 	// CreateOrUpdateKubernetesSetting returns the object ID of the created k8s settings.
-	CreateOrUpdateKubernetesSetting(ctx context.Context, clusterLabel, kubeSystemUUID, scope string) (string, error)
+	CreateOrUpdateKubernetesSetting(ctx context.Context, clusterLabel string, registration K8sClusterRegistration) (string, error)
 	// CreateOrUpdateKubernetesAppSetting returns the object ID of the created k8s app settings.
-	CreateOrUpdateKubernetesAppSetting(ctx context.Context, scope string) (string, error)
+	CreateOrUpdateKubernetesAppSetting(ctx context.Context, registration K8sClusterRegistration) (string, error)
 	// CreateLogMonitoringSetting returns the object ID of the created logmonitoring settings.
-	CreateLogMonitoringSetting(ctx context.Context, scope, clusterName string, matchers []logmonitoring.IngestRuleMatchers) (string, error)
+	CreateLogMonitoringSetting(ctx context.Context, registration K8sClusterRegistration, clusterName string, matchers []logmonitoring.IngestRuleMatchers) (string, error)
 	// GetKSPMSettings returns the settings response with the number of settings objects and their values.
-	GetKSPMSettings(ctx context.Context, monitoredEntity string) (KSPMSettingsResponse, error)
+	GetKSPMSettings(ctx context.Context, registration K8sClusterRegistration) (KSPMSettingsResponse, error)
 	// CreateKSPMSetting returns the object ID of the created kspm settings.
-	CreateKSPMSetting(ctx context.Context, monitoredEntity string, datasetPipelineEnabled bool) (string, error)
-	// GetEnrichmentRuleObjects returns the list of enrichment rule settings objects (with objectIds) for the given scope.
+	CreateKSPMSetting(ctx context.Context, registration K8sClusterRegistration, datasetPipelineEnabled bool) (string, error)
+	// GetEnrichmentRuleObjects returns the list of enrichment rule settings objects (with objectIds) for the given cluster.
 	// Only intended for e2e tests, where the number of rules is small. Does not handle pagination.
-	GetEnrichmentRuleObjects(ctx context.Context, scope string) ([]EnrichmentRuleObject, error)
+	GetEnrichmentRuleObjects(ctx context.Context, registration K8sClusterRegistration) ([]EnrichmentRuleObject, error)
 	// GetLegacyEnrichmentRuleObjects returns enrichment rule settings objects for the legacy schema (builtin:kubernetes.generic.metadata.enrichment).
 	// Only intended for e2e tests, where the number of rules is small. Does not handle pagination.
-	GetLegacyEnrichmentRuleObjects(ctx context.Context, scope string) ([]EnrichmentRuleObject, error)
+	GetLegacyEnrichmentRuleObjects(ctx context.Context, registration K8sClusterRegistration) ([]EnrichmentRuleObject, error)
 	// CreateEnrichmentRuleObject creates a settings object for the builtin:ingest.enrichment.config schema.
-	CreateEnrichmentRuleObject(ctx context.Context, scope string, rules ...metadataenrichment.Rule) ([]string, error)
+	CreateEnrichmentRuleObject(ctx context.Context, registration K8sClusterRegistration, rules ...metadataenrichment.Rule) ([]string, error)
 	// CreateLegacyEnrichmentRuleObject creates a settings object for the builtin:kubernetes.generic.metadata.enrichment schema.
-	CreateLegacyEnrichmentRuleObject(ctx context.Context, scope string, rules ...metadataenrichment.Rule) ([]string, error)
+	CreateLegacyEnrichmentRuleObject(ctx context.Context, registration K8sClusterRegistration, rules ...metadataenrichment.Rule) ([]string, error)
 	// DeleteSettings deletes the settings for a monitored entity.
 	DeleteSettings(ctx context.Context, settingsID string) error
 }
 
-// K8sClusterME is representing the relevant info for a Kubernetes Cluster Monitored Entity
-type K8sClusterME struct {
-	ID   string
-	Name string
+// K8sClusterRegistration groups the identifiers a settings call needs to address a cluster.
+// EntityID is known as soon as the operator can reach the cluster; EntityScope and EntityLabel are only
+// known once Dynatrace has resolved the cluster's Monitored Entity.
+//
+// Once EntityScope is known, it is reused directly as the scope of settings calls (this is also how gen2
+// always worked). Before that (i.e. before the Kubernetes Cluster Monitored Entity has been resolved at
+// least once), gen3 has no unscoped writes, so it falls back to the Smartscape cluster-UID lookup scope
+// derived from EntityID instead. See objectAPI.scope.
+type K8sClusterRegistration struct {
+	EntityID    string
+	EntityScope string
+	EntityLabel string
 }
 
 type TotalCountSettingsResponse struct {
@@ -110,113 +108,87 @@ type kubernetesObject struct {
 	Value kubernetesObjectValue `json:"value"`
 }
 
-type postObjectsResponse struct {
-	ObjectID string `json:"objectId"`
-}
+// Generation selects which generation of the settings API a Client talks to.
+type Generation int
 
-type postObjectsBody[T any] struct {
-	SchemaID      string `json:"schemaId"`
-	SchemaVersion string `json:"schemaVersion,omitempty"`
-	Scope         string `json:"scope,omitempty"`
-	Value         T      `json:"value"`
-}
-
-func newPostObjectsBody[T any](schemaID, schemaVersion, scope string, values ...T) []postObjectsBody[T] {
-	body := make([]postObjectsBody[T], len(values))
-
-	for i, value := range values {
-		body[i].SchemaID = schemaID
-		body[i].SchemaVersion = schemaVersion
-		body[i].Scope = scope
-		body[i].Value = value
-	}
-
-	return body
-}
-
-// getObjectID gives back the ID of the first element of the post response.
-// If there are 0 or multiple entries, it will error.
-// We only create (post) Settings if they do not exist yet, so receiving back not exactly one object is a cause for alarm.
-func getObjectID(response []postObjectsResponse) (string, error) {
-	if len(response) != 1 {
-		return "", notSingleEntryError(len(response))
-	}
-
-	return response[0].ObjectID, nil
-}
-
-type notSingleEntryError int
-
-func (num notSingleEntryError) Error() string {
-	return fmt.Sprintf("response is not containing exactly one entry, got %d entries", int(num))
-}
+const (
+	Gen2 Generation = iota
+	Gen3
+)
 
 type ClientImpl struct {
-	apiClient core.Client
+	api objectAPI
 }
 
-func NewClient(apiClient core.Client) Client {
-	return &ClientImpl{
-		apiClient: apiClient,
+// NewClient creates a settings client for the given generation of the settings API. apiClient must
+// already be scoped to that generation's base URL: gen2 is served under the classic "/api" host, gen3
+// under the tenant's "*.apps.*" host.
+func NewClient(apiClient core.Client, generation Generation) Client {
+	var api objectAPI
+	if generation == Gen3 {
+		api = newGen3ObjectAPI(apiClient)
+	} else {
+		api = newGen2ObjectAPI(apiClient)
 	}
+
+	return &ClientImpl{api: api}
 }
 
-// GetK8sClusterME returns the Kubernetes Cluster Monitored Entity for the give kubernetes cluster.
-// Uses the `settings.read` scope to list the `builtin:cloud.kubernetes` settings.
+// GetK8sClusterME resolves the Kubernetes Cluster Monitored Entity for the cluster identified by
+// registration.EntityID, returning registration with EntityScope/EntityLabel
+// filled in once Dynatrace has resolved them.
 //   - Only 1 such setting exists per tenant per kubernetes cluster
-//   - The `scope` for the setting is the ID (example: KUBERNETES_CLUSTER-A1234567BCD8EFGH) of the Kubernetes Cluster Monitored Entity
-//   - The `label` of the setting is the Name (example: my-dynakube) of the Kubernetes Cluster Monitored Entity
+//   - EntityScope is the ID (example: KUBERNETES_CLUSTER-A1234567BCD8EFGH) of the Kubernetes Cluster Monitored Entity
+//   - EntityLabel is the display name (example: my-dynakube) of the Kubernetes Cluster Monitored Entity
 //
-// In case 0 settings are found, so no Kubernetes Cluster Monitored Entity exists, we return an empty object, without an error.
-func (c *ClientImpl) GetK8sClusterME(ctx context.Context, kubeSystemUUID string) (K8sClusterME, error) {
+// In case the setting does not exist (yet), so no Kubernetes Cluster Monitored Entity exists, registration is
+// returned unchanged, without an error.
+func (c *ClientImpl) GetK8sClusterME(ctx context.Context, registration K8sClusterRegistration) (K8sClusterRegistration, error) {
 	ctx, log := logd.NewFromContext(ctx, "dtclient-settings")
 
-	if kubeSystemUUID == "" {
-		return K8sClusterME{}, errMissingKubeSystemUUID
+	if registration.EntityID == "" {
+		return registration, errMissingKubeSystemUUID
 	}
 
 	var response getKubernetesObjectsResponse
 
-	err := c.apiClient.GET(ctx, ObjectsPath).
-		WithQueryParams(map[string]string{
-			validateOnlyQueryParam: "true",
-			pageSizeQueryParam:     entitiesPageSize,
-			schemaIDsQueryParam:    KubernetesSettingsSchemaID,
-			fieldsQueryParam:       kubernetesSettingsNeededFields,
-			filterQueryParam:       fmt.Sprintf("value.clusterId='%s'", kubeSystemUUID),
-		}).
-		Execute(&response)
+	err := c.api.listObjects(ctx, objectsCollection, listParams{
+		SchemaID:     KubernetesSettingsSchemaID,
+		Scope:        c.api.scope(registration),
+		Filter:       fmt.Sprintf("value.clusterId='%s'", registration.EntityID),
+		AddFields:    kubernetesSettingsNeededFields,
+		PageSize:     entitiesPageSize,
+		ValidateOnly: true,
+	}, &response)
 	if err != nil {
-		return K8sClusterME{}, fmt.Errorf("get k8s monitored entity: %w", err)
+		return registration, fmt.Errorf("get k8s monitored entity: %w", err)
 	}
 
 	if len(response.Items) == 0 {
 		log.Info("no kubernetes settings object according to API", "resp", response)
 
-		return K8sClusterME{}, nil
+		return registration, nil
 	}
 
-	return K8sClusterME{
-		ID:   response.Items[0].Scope,
-		Name: response.Items[0].Value.Label,
-	}, nil
+	registration.EntityScope = response.Items[0].Scope
+	registration.EntityLabel = response.Items[0].Value.Label
+
+	return registration, nil
 }
 
 // GetSettingsForMonitoredEntity returns the settings response with the number of settings objects.
-func (c *ClientImpl) GetSettingsForMonitoredEntity(ctx context.Context, monitoredEntity K8sClusterME, schemaID string) (TotalCountSettingsResponse, error) {
-	if monitoredEntity.ID == "" {
+func (c *ClientImpl) GetSettingsForMonitoredEntity(ctx context.Context, registration K8sClusterRegistration, schemaID string) (TotalCountSettingsResponse, error) {
+	if registration.EntityScope == "" {
 		return TotalCountSettingsResponse{}, nil
 	}
 
 	var response TotalCountSettingsResponse
 
-	err := c.apiClient.GET(ctx, ObjectsPath).
-		WithQueryParams(map[string]string{
-			validateOnlyQueryParam: "true",
-			schemaIDsQueryParam:    schemaID,
-			scopesQueryParam:       monitoredEntity.ID,
-		}).
-		Execute(&response)
+	err := c.api.listObjects(ctx, objectsCollection, listParams{
+		SchemaID:     schemaID,
+		Scope:        c.api.scope(registration),
+		ValidateOnly: true,
+	}, &response)
 	if err != nil {
 		return TotalCountSettingsResponse{}, fmt.Errorf("get monitored entity settings: %w", err)
 	}
@@ -230,9 +202,7 @@ func (c *ClientImpl) DeleteSettings(ctx context.Context, objectID string) error 
 		return errNoSettingsIDProvided
 	}
 
-	err := c.apiClient.DELETE(ctx, path.Join(ObjectsPath, objectID)).
-		Execute(nil)
-	if err != nil {
+	if err := c.api.deleteObject(ctx, objectID); err != nil {
 		return fmt.Errorf("%w: %w", errDeleteSettings, err)
 	}
 

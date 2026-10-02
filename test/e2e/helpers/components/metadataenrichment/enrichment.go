@@ -14,6 +14,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/system"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
 	"github.com/stretchr/testify/assert"
@@ -42,27 +43,29 @@ func EnsureKubernetesClusterMEID(secretConfig tenant.Secret) features.Func {
 		kubeSystemUUID := getKubeSystemUUID(ctx, t, envConfig)
 		t.Logf("kube-system UUID: %s", kubeSystemUUID)
 
-		existingME, err := settingsClient.GetK8sClusterME(ctx, kubeSystemUUID)
+		registration := settings.K8sClusterRegistration{EntityID: kubeSystemUUID}
+
+		existing, err := settingsClient.GetK8sClusterME(ctx, registration)
 		require.NoError(t, err)
 
-		if existingME.ID == "" {
-			_, err = settingsClient.CreateOrUpdateKubernetesSetting(ctx, "e2e-enrichment-test", kubeSystemUUID, "")
+		if existing.EntityScope == "" {
+			_, err = settingsClient.CreateOrUpdateKubernetesSetting(ctx, "e2e-enrichment-test", registration)
 			require.NoError(t, err, "Could not create Kubernetes connection setting")
 		}
 
 		var meid string
 
 		err = retry.OnError(retry.DefaultRetry, func(err error) bool { return err != nil }, func() error {
-			me, retryErr := settingsClient.GetK8sClusterME(ctx, kubeSystemUUID)
+			me, retryErr := settingsClient.GetK8sClusterME(ctx, registration)
 			if retryErr != nil {
 				return retryErr
 			}
 
-			if me.ID == "" {
+			if me.EntityScope == "" {
 				return errors.New("kubernetes cluster MEID not yet available")
 			}
 
-			meid = me.ID
+			meid = me.EntityScope
 
 			return nil
 		})
@@ -82,20 +85,20 @@ func CreateEnrichmentRuleOnTenant(secretConfig tenant.Secret, rules ...metadatae
 
 		kubeSystemUUID := getKubeSystemUUID(ctx, t, envConfig)
 
-		k8sClusterME, err := settingsClient.GetK8sClusterME(ctx, kubeSystemUUID)
+		k8sClusterME, err := settingsClient.GetK8sClusterME(ctx, settings.K8sClusterRegistration{EntityID: kubeSystemUUID})
 		require.NoError(t, err, "Could not get K8s cluster MEID")
-		require.NotEmpty(t, k8sClusterME.ID, "Kubernetes Cluster MEID must exist before creating enrichment rules")
+		require.NotEmpty(t, k8sClusterME.EntityScope, "Kubernetes Cluster MEID must exist before creating enrichment rules")
 
-		objectIDs, err := settingsClient.CreateLegacyEnrichmentRuleObject(ctx, k8sClusterME.ID, rules...)
+		objectIDs, err := settingsClient.CreateLegacyEnrichmentRuleObject(ctx, k8sClusterME, rules...)
 		if core.IsNotFound(err) {
 			t.Log("Legacy schema not available, falling back to new schema")
 
-			objectIDs, err = settingsClient.CreateEnrichmentRuleObject(ctx, k8sClusterME.ID, rules...)
+			objectIDs, err = settingsClient.CreateEnrichmentRuleObject(ctx, k8sClusterME, rules...)
 			require.NoError(t, err, "Could not create enrichment rule on tenant with new schema either. Please follow comment on ICP-1164 how to enable on tenant.")
 		}
 
 		require.NoError(t, err, "Could not create enrichment rule on tenant")
-		t.Logf("Created enrichment rule with objectId: %v (scope: %s)", objectIDs, k8sClusterME.ID)
+		t.Logf("Created enrichment rule with objectId: %v (scope: %s)", objectIDs, k8sClusterME.EntityScope)
 
 		return ctx
 	}
@@ -110,22 +113,22 @@ func DeleteEnrichmentRulesFromTenant(secretConfig tenant.Secret) features.Func {
 
 		kubeSystemUUID := getKubeSystemUUID(ctx, t, envConfig)
 
-		k8sClusterME, err := settingsClient.GetK8sClusterME(ctx, kubeSystemUUID)
+		k8sClusterME, err := settingsClient.GetK8sClusterME(ctx, settings.K8sClusterRegistration{EntityID: kubeSystemUUID})
 		require.NoError(t, err, "Could not get K8s cluster MEID")
 
-		if k8sClusterME.ID == "" {
+		if k8sClusterME.EntityScope == "" {
 			t.Log("No Kubernetes Cluster MEID found, skipping enrichment rules cleanup")
 
 			return ctx
 		}
 
-		t.Logf("Deleting enrichment rules for MEID: %s", k8sClusterME.ID)
+		t.Logf("Deleting enrichment rules for MEID: %s", k8sClusterME.EntityScope)
 
-		objects, err := settingsClient.GetLegacyEnrichmentRuleObjects(ctx, k8sClusterME.ID)
+		objects, err := settingsClient.GetLegacyEnrichmentRuleObjects(ctx, k8sClusterME)
 		if core.IsNotFound(err) {
 			t.Log("Legacy schema not available, falling back to new schema")
 
-			objects, err = settingsClient.GetEnrichmentRuleObjects(ctx, k8sClusterME.ID)
+			objects, err = settingsClient.GetEnrichmentRuleObjects(ctx, k8sClusterME)
 		}
 
 		require.NoError(t, err, "Could not list enrichment rule objects")

@@ -184,6 +184,18 @@ func TestGetProcessGroupingConfig(t *testing.T) {
 		assert.Nil(t, pgc)
 	})
 
+	t.Run("3rd_gen_scope_skipped_without_calling_api", func(t *testing.T) {
+		// No request/EXPECT setup: a call would fail the test via the mock's strict expectations.
+		coreClient := coremock.NewClient(t)
+		client := NewClient(coreClient, "", "")
+
+		pgc, err := client.GetProcessGroupingConfig(t.Context(), "K8S_CLUSTER-9A1A348D3724EF06", "")
+		require.NoError(t, err)
+		assert.NotNil(t, pgc)
+		assert.Empty(t, pgc.Data)
+		assert.Empty(t, pgc.ETag)
+	})
+
 	t.Run("not_found_404_endpoint_unavailable", func(t *testing.T) {
 		httpErr := &core.HTTPError{StatusCode: http.StatusNotFound, Message: "endpoint not available"}
 

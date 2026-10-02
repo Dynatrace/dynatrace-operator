@@ -33,8 +33,10 @@ func Test_SecretGenerator_preparePGC(t *testing.T) {
 			Name:      testDynakube,
 			Namespace: testNamespace,
 			Status: dynakube.DynaKubeStatus{
-				KubeSystemUUID:        testKubeSystemUUID,
-				KubernetesClusterMEID: testClusterMEID,
+				Registration: dynakube.Registration{
+					EntityID:    testKubeSystemUUID,
+					EntityScope: testClusterMEID,
+				},
 			},
 		}
 	}
@@ -176,7 +178,7 @@ func Test_SecretGenerator_preparePGC(t *testing.T) {
 
 	t.Run("empty MEID skips without error", func(t *testing.T) {
 		dk := newDK()
-		dk.Status.KubernetesClusterMEID = ""
+		dk.Status.Registration.EntityScope = ""
 
 		clt := fake.NewClient(dk)
 		mockDTClient := oneagentclientmock.NewClient(t)

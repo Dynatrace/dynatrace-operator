@@ -241,7 +241,7 @@ func createDynakube() *dynakube.DynaKube {
 					TenantUUID: "abc",
 				},
 			},
-			KubeSystemUUID: "abc",
+			Registration: dynakube.Registration{EntityID: "abc"},
 		},
 	}
 }

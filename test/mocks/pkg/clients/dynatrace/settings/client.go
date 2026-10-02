@@ -53,12 +53,12 @@ func (_m *Client) EXPECT() *Client_Expecter {
 }
 
 // CreateEnrichmentRuleObject provides a mock function for the type Client
-func (_mock *Client) CreateEnrichmentRuleObject(ctx context.Context, scope string, rules ...metadataenrichment.Rule) ([]string, error) {
+func (_mock *Client) CreateEnrichmentRuleObject(ctx context.Context, registration settings.K8sClusterRegistration, rules ...metadataenrichment.Rule) ([]string, error) {
 	var tmpRet mock.Arguments
 	if len(rules) > 0 {
-		tmpRet = _mock.Called(ctx, scope, rules)
+		tmpRet = _mock.Called(ctx, registration, rules)
 	} else {
-		tmpRet = _mock.Called(ctx, scope)
+		tmpRet = _mock.Called(ctx, registration)
 	}
 	ret := tmpRet
 
@@ -68,18 +68,18 @@ func (_mock *Client) CreateEnrichmentRuleObject(ctx context.Context, scope strin
 
 	var r0 []string
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string, ...metadataenrichment.Rule) ([]string, error)); ok {
-		return returnFunc(ctx, scope, rules...)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, settings.K8sClusterRegistration, ...metadataenrichment.Rule) ([]string, error)); ok {
+		return returnFunc(ctx, registration, rules...)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string, ...metadataenrichment.Rule) []string); ok {
-		r0 = returnFunc(ctx, scope, rules...)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, settings.K8sClusterRegistration, ...metadataenrichment.Rule) []string); ok {
+		r0 = returnFunc(ctx, registration, rules...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]string)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, string, ...metadataenrichment.Rule) error); ok {
-		r1 = returnFunc(ctx, scope, rules...)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, settings.K8sClusterRegistration, ...metadataenrichment.Rule) error); ok {
+		r1 = returnFunc(ctx, registration, rules...)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -93,22 +93,22 @@ type Client_CreateEnrichmentRuleObject_Call struct {
 
 // CreateEnrichmentRuleObject is a helper method to define mock.On call
 //   - ctx context.Context
-//   - scope string
+//   - registration settings.K8sClusterRegistration
 //   - rules ...metadataenrichment.Rule
-func (_e *Client_Expecter) CreateEnrichmentRuleObject(ctx any, scope any, rules ...any) *Client_CreateEnrichmentRuleObject_Call {
+func (_e *Client_Expecter) CreateEnrichmentRuleObject(ctx any, registration any, rules ...any) *Client_CreateEnrichmentRuleObject_Call {
 	return &Client_CreateEnrichmentRuleObject_Call{Call: _e.mock.On("CreateEnrichmentRuleObject",
-		append([]any{ctx, scope}, rules...)...)}
+		append([]any{ctx, registration}, rules...)...)}
 }
 
-func (_c *Client_CreateEnrichmentRuleObject_Call) Run(run func(ctx context.Context, scope string, rules ...metadataenrichment.Rule)) *Client_CreateEnrichmentRuleObject_Call {
+func (_c *Client_CreateEnrichmentRuleObject_Call) Run(run func(ctx context.Context, registration settings.K8sClusterRegistration, rules ...metadataenrichment.Rule)) *Client_CreateEnrichmentRuleObject_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 string
+		var arg1 settings.K8sClusterRegistration
 		if args[1] != nil {
-			arg1 = args[1].(string)
+			arg1 = args[1].(settings.K8sClusterRegistration)
 		}
 		var arg2 []metadataenrichment.Rule
 		var variadicArgs []metadataenrichment.Rule
@@ -130,14 +130,14 @@ func (_c *Client_CreateEnrichmentRuleObject_Call) Return(strings []string, err e
 	return _c
 }
 
-func (_c *Client_CreateEnrichmentRuleObject_Call) RunAndReturn(run func(ctx context.Context, scope string, rules ...metadataenrichment.Rule) ([]string, error)) *Client_CreateEnrichmentRuleObject_Call {
+func (_c *Client_CreateEnrichmentRuleObject_Call) RunAndReturn(run func(ctx context.Context, registration settings.K8sClusterRegistration, rules ...metadataenrichment.Rule) ([]string, error)) *Client_CreateEnrichmentRuleObject_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // CreateKSPMSetting provides a mock function for the type Client
-func (_mock *Client) CreateKSPMSetting(ctx context.Context, monitoredEntity string, datasetPipelineEnabled bool) (string, error) {
-	ret := _mock.Called(ctx, monitoredEntity, datasetPipelineEnabled)
+func (_mock *Client) CreateKSPMSetting(ctx context.Context, registration settings.K8sClusterRegistration, datasetPipelineEnabled bool) (string, error) {
+	ret := _mock.Called(ctx, registration, datasetPipelineEnabled)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CreateKSPMSetting")
@@ -145,16 +145,16 @@ func (_mock *Client) CreateKSPMSetting(ctx context.Context, monitoredEntity stri
 
 	var r0 string
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string, bool) (string, error)); ok {
-		return returnFunc(ctx, monitoredEntity, datasetPipelineEnabled)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, settings.K8sClusterRegistration, bool) (string, error)); ok {
+		return returnFunc(ctx, registration, datasetPipelineEnabled)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string, bool) string); ok {
-		r0 = returnFunc(ctx, monitoredEntity, datasetPipelineEnabled)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, settings.K8sClusterRegistration, bool) string); ok {
+		r0 = returnFunc(ctx, registration, datasetPipelineEnabled)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, string, bool) error); ok {
-		r1 = returnFunc(ctx, monitoredEntity, datasetPipelineEnabled)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, settings.K8sClusterRegistration, bool) error); ok {
+		r1 = returnFunc(ctx, registration, datasetPipelineEnabled)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -168,21 +168,21 @@ type Client_CreateKSPMSetting_Call struct {
 
 // CreateKSPMSetting is a helper method to define mock.On call
 //   - ctx context.Context
-//   - monitoredEntity string
+//   - registration settings.K8sClusterRegistration
 //   - datasetPipelineEnabled bool
-func (_e *Client_Expecter) CreateKSPMSetting(ctx any, monitoredEntity any, datasetPipelineEnabled any) *Client_CreateKSPMSetting_Call {
-	return &Client_CreateKSPMSetting_Call{Call: _e.mock.On("CreateKSPMSetting", ctx, monitoredEntity, datasetPipelineEnabled)}
+func (_e *Client_Expecter) CreateKSPMSetting(ctx any, registration any, datasetPipelineEnabled any) *Client_CreateKSPMSetting_Call {
+	return &Client_CreateKSPMSetting_Call{Call: _e.mock.On("CreateKSPMSetting", ctx, registration, datasetPipelineEnabled)}
 }
 
-func (_c *Client_CreateKSPMSetting_Call) Run(run func(ctx context.Context, monitoredEntity string, datasetPipelineEnabled bool)) *Client_CreateKSPMSetting_Call {
+func (_c *Client_CreateKSPMSetting_Call) Run(run func(ctx context.Context, registration settings.K8sClusterRegistration, datasetPipelineEnabled bool)) *Client_CreateKSPMSetting_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 string
+		var arg1 settings.K8sClusterRegistration
 		if args[1] != nil {
-			arg1 = args[1].(string)
+			arg1 = args[1].(settings.K8sClusterRegistration)
 		}
 		var arg2 bool
 		if args[2] != nil {
@@ -202,18 +202,18 @@ func (_c *Client_CreateKSPMSetting_Call) Return(s string, err error) *Client_Cre
 	return _c
 }
 
-func (_c *Client_CreateKSPMSetting_Call) RunAndReturn(run func(ctx context.Context, monitoredEntity string, datasetPipelineEnabled bool) (string, error)) *Client_CreateKSPMSetting_Call {
+func (_c *Client_CreateKSPMSetting_Call) RunAndReturn(run func(ctx context.Context, registration settings.K8sClusterRegistration, datasetPipelineEnabled bool) (string, error)) *Client_CreateKSPMSetting_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // CreateLegacyEnrichmentRuleObject provides a mock function for the type Client
-func (_mock *Client) CreateLegacyEnrichmentRuleObject(ctx context.Context, scope string, rules ...metadataenrichment.Rule) ([]string, error) {
+func (_mock *Client) CreateLegacyEnrichmentRuleObject(ctx context.Context, registration settings.K8sClusterRegistration, rules ...metadataenrichment.Rule) ([]string, error) {
 	var tmpRet mock.Arguments
 	if len(rules) > 0 {
-		tmpRet = _mock.Called(ctx, scope, rules)
+		tmpRet = _mock.Called(ctx, registration, rules)
 	} else {
-		tmpRet = _mock.Called(ctx, scope)
+		tmpRet = _mock.Called(ctx, registration)
 	}
 	ret := tmpRet
 
@@ -223,18 +223,18 @@ func (_mock *Client) CreateLegacyEnrichmentRuleObject(ctx context.Context, scope
 
 	var r0 []string
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string, ...metadataenrichment.Rule) ([]string, error)); ok {
-		return returnFunc(ctx, scope, rules...)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, settings.K8sClusterRegistration, ...metadataenrichment.Rule) ([]string, error)); ok {
+		return returnFunc(ctx, registration, rules...)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string, ...metadataenrichment.Rule) []string); ok {
-		r0 = returnFunc(ctx, scope, rules...)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, settings.K8sClusterRegistration, ...metadataenrichment.Rule) []string); ok {
+		r0 = returnFunc(ctx, registration, rules...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]string)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, string, ...metadataenrichment.Rule) error); ok {
-		r1 = returnFunc(ctx, scope, rules...)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, settings.K8sClusterRegistration, ...metadataenrichment.Rule) error); ok {
+		r1 = returnFunc(ctx, registration, rules...)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -248,22 +248,22 @@ type Client_CreateLegacyEnrichmentRuleObject_Call struct {
 
 // CreateLegacyEnrichmentRuleObject is a helper method to define mock.On call
 //   - ctx context.Context
-//   - scope string
+//   - registration settings.K8sClusterRegistration
 //   - rules ...metadataenrichment.Rule
-func (_e *Client_Expecter) CreateLegacyEnrichmentRuleObject(ctx any, scope any, rules ...any) *Client_CreateLegacyEnrichmentRuleObject_Call {
+func (_e *Client_Expecter) CreateLegacyEnrichmentRuleObject(ctx any, registration any, rules ...any) *Client_CreateLegacyEnrichmentRuleObject_Call {
 	return &Client_CreateLegacyEnrichmentRuleObject_Call{Call: _e.mock.On("CreateLegacyEnrichmentRuleObject",
-		append([]any{ctx, scope}, rules...)...)}
+		append([]any{ctx, registration}, rules...)...)}
 }
 
-func (_c *Client_CreateLegacyEnrichmentRuleObject_Call) Run(run func(ctx context.Context, scope string, rules ...metadataenrichment.Rule)) *Client_CreateLegacyEnrichmentRuleObject_Call {
+func (_c *Client_CreateLegacyEnrichmentRuleObject_Call) Run(run func(ctx context.Context, registration settings.K8sClusterRegistration, rules ...metadataenrichment.Rule)) *Client_CreateLegacyEnrichmentRuleObject_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 string
+		var arg1 settings.K8sClusterRegistration
 		if args[1] != nil {
-			arg1 = args[1].(string)
+			arg1 = args[1].(settings.K8sClusterRegistration)
 		}
 		var arg2 []metadataenrichment.Rule
 		var variadicArgs []metadataenrichment.Rule
@@ -285,14 +285,14 @@ func (_c *Client_CreateLegacyEnrichmentRuleObject_Call) Return(strings []string,
 	return _c
 }
 
-func (_c *Client_CreateLegacyEnrichmentRuleObject_Call) RunAndReturn(run func(ctx context.Context, scope string, rules ...metadataenrichment.Rule) ([]string, error)) *Client_CreateLegacyEnrichmentRuleObject_Call {
+func (_c *Client_CreateLegacyEnrichmentRuleObject_Call) RunAndReturn(run func(ctx context.Context, registration settings.K8sClusterRegistration, rules ...metadataenrichment.Rule) ([]string, error)) *Client_CreateLegacyEnrichmentRuleObject_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // CreateLogMonitoringSetting provides a mock function for the type Client
-func (_mock *Client) CreateLogMonitoringSetting(ctx context.Context, scope string, clusterName string, matchers []logmonitoring.IngestRuleMatchers) (string, error) {
-	ret := _mock.Called(ctx, scope, clusterName, matchers)
+func (_mock *Client) CreateLogMonitoringSetting(ctx context.Context, registration settings.K8sClusterRegistration, clusterName string, matchers []logmonitoring.IngestRuleMatchers) (string, error) {
+	ret := _mock.Called(ctx, registration, clusterName, matchers)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CreateLogMonitoringSetting")
@@ -300,16 +300,16 @@ func (_mock *Client) CreateLogMonitoringSetting(ctx context.Context, scope strin
 
 	var r0 string
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string, []logmonitoring.IngestRuleMatchers) (string, error)); ok {
-		return returnFunc(ctx, scope, clusterName, matchers)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, settings.K8sClusterRegistration, string, []logmonitoring.IngestRuleMatchers) (string, error)); ok {
+		return returnFunc(ctx, registration, clusterName, matchers)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string, []logmonitoring.IngestRuleMatchers) string); ok {
-		r0 = returnFunc(ctx, scope, clusterName, matchers)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, settings.K8sClusterRegistration, string, []logmonitoring.IngestRuleMatchers) string); ok {
+		r0 = returnFunc(ctx, registration, clusterName, matchers)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, string, string, []logmonitoring.IngestRuleMatchers) error); ok {
-		r1 = returnFunc(ctx, scope, clusterName, matchers)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, settings.K8sClusterRegistration, string, []logmonitoring.IngestRuleMatchers) error); ok {
+		r1 = returnFunc(ctx, registration, clusterName, matchers)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -323,22 +323,22 @@ type Client_CreateLogMonitoringSetting_Call struct {
 
 // CreateLogMonitoringSetting is a helper method to define mock.On call
 //   - ctx context.Context
-//   - scope string
+//   - registration settings.K8sClusterRegistration
 //   - clusterName string
 //   - matchers []logmonitoring.IngestRuleMatchers
-func (_e *Client_Expecter) CreateLogMonitoringSetting(ctx any, scope any, clusterName any, matchers any) *Client_CreateLogMonitoringSetting_Call {
-	return &Client_CreateLogMonitoringSetting_Call{Call: _e.mock.On("CreateLogMonitoringSetting", ctx, scope, clusterName, matchers)}
+func (_e *Client_Expecter) CreateLogMonitoringSetting(ctx any, registration any, clusterName any, matchers any) *Client_CreateLogMonitoringSetting_Call {
+	return &Client_CreateLogMonitoringSetting_Call{Call: _e.mock.On("CreateLogMonitoringSetting", ctx, registration, clusterName, matchers)}
 }
 
-func (_c *Client_CreateLogMonitoringSetting_Call) Run(run func(ctx context.Context, scope string, clusterName string, matchers []logmonitoring.IngestRuleMatchers)) *Client_CreateLogMonitoringSetting_Call {
+func (_c *Client_CreateLogMonitoringSetting_Call) Run(run func(ctx context.Context, registration settings.K8sClusterRegistration, clusterName string, matchers []logmonitoring.IngestRuleMatchers)) *Client_CreateLogMonitoringSetting_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 string
+		var arg1 settings.K8sClusterRegistration
 		if args[1] != nil {
-			arg1 = args[1].(string)
+			arg1 = args[1].(settings.K8sClusterRegistration)
 		}
 		var arg2 string
 		if args[2] != nil {
@@ -363,14 +363,14 @@ func (_c *Client_CreateLogMonitoringSetting_Call) Return(s string, err error) *C
 	return _c
 }
 
-func (_c *Client_CreateLogMonitoringSetting_Call) RunAndReturn(run func(ctx context.Context, scope string, clusterName string, matchers []logmonitoring.IngestRuleMatchers) (string, error)) *Client_CreateLogMonitoringSetting_Call {
+func (_c *Client_CreateLogMonitoringSetting_Call) RunAndReturn(run func(ctx context.Context, registration settings.K8sClusterRegistration, clusterName string, matchers []logmonitoring.IngestRuleMatchers) (string, error)) *Client_CreateLogMonitoringSetting_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // CreateOrUpdateKubernetesAppSetting provides a mock function for the type Client
-func (_mock *Client) CreateOrUpdateKubernetesAppSetting(ctx context.Context, scope string) (string, error) {
-	ret := _mock.Called(ctx, scope)
+func (_mock *Client) CreateOrUpdateKubernetesAppSetting(ctx context.Context, registration settings.K8sClusterRegistration) (string, error) {
+	ret := _mock.Called(ctx, registration)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CreateOrUpdateKubernetesAppSetting")
@@ -378,16 +378,16 @@ func (_mock *Client) CreateOrUpdateKubernetesAppSetting(ctx context.Context, sco
 
 	var r0 string
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) (string, error)); ok {
-		return returnFunc(ctx, scope)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, settings.K8sClusterRegistration) (string, error)); ok {
+		return returnFunc(ctx, registration)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) string); ok {
-		r0 = returnFunc(ctx, scope)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, settings.K8sClusterRegistration) string); ok {
+		r0 = returnFunc(ctx, registration)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = returnFunc(ctx, scope)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, settings.K8sClusterRegistration) error); ok {
+		r1 = returnFunc(ctx, registration)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -401,20 +401,20 @@ type Client_CreateOrUpdateKubernetesAppSetting_Call struct {
 
 // CreateOrUpdateKubernetesAppSetting is a helper method to define mock.On call
 //   - ctx context.Context
-//   - scope string
-func (_e *Client_Expecter) CreateOrUpdateKubernetesAppSetting(ctx any, scope any) *Client_CreateOrUpdateKubernetesAppSetting_Call {
-	return &Client_CreateOrUpdateKubernetesAppSetting_Call{Call: _e.mock.On("CreateOrUpdateKubernetesAppSetting", ctx, scope)}
+//   - registration settings.K8sClusterRegistration
+func (_e *Client_Expecter) CreateOrUpdateKubernetesAppSetting(ctx any, registration any) *Client_CreateOrUpdateKubernetesAppSetting_Call {
+	return &Client_CreateOrUpdateKubernetesAppSetting_Call{Call: _e.mock.On("CreateOrUpdateKubernetesAppSetting", ctx, registration)}
 }
 
-func (_c *Client_CreateOrUpdateKubernetesAppSetting_Call) Run(run func(ctx context.Context, scope string)) *Client_CreateOrUpdateKubernetesAppSetting_Call {
+func (_c *Client_CreateOrUpdateKubernetesAppSetting_Call) Run(run func(ctx context.Context, registration settings.K8sClusterRegistration)) *Client_CreateOrUpdateKubernetesAppSetting_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 string
+		var arg1 settings.K8sClusterRegistration
 		if args[1] != nil {
-			arg1 = args[1].(string)
+			arg1 = args[1].(settings.K8sClusterRegistration)
 		}
 		run(
 			arg0,
@@ -429,14 +429,14 @@ func (_c *Client_CreateOrUpdateKubernetesAppSetting_Call) Return(s string, err e
 	return _c
 }
 
-func (_c *Client_CreateOrUpdateKubernetesAppSetting_Call) RunAndReturn(run func(ctx context.Context, scope string) (string, error)) *Client_CreateOrUpdateKubernetesAppSetting_Call {
+func (_c *Client_CreateOrUpdateKubernetesAppSetting_Call) RunAndReturn(run func(ctx context.Context, registration settings.K8sClusterRegistration) (string, error)) *Client_CreateOrUpdateKubernetesAppSetting_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // CreateOrUpdateKubernetesSetting provides a mock function for the type Client
-func (_mock *Client) CreateOrUpdateKubernetesSetting(ctx context.Context, clusterLabel string, kubeSystemUUID string, scope string) (string, error) {
-	ret := _mock.Called(ctx, clusterLabel, kubeSystemUUID, scope)
+func (_mock *Client) CreateOrUpdateKubernetesSetting(ctx context.Context, clusterLabel string, registration settings.K8sClusterRegistration) (string, error) {
+	ret := _mock.Called(ctx, clusterLabel, registration)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CreateOrUpdateKubernetesSetting")
@@ -444,16 +444,16 @@ func (_mock *Client) CreateOrUpdateKubernetesSetting(ctx context.Context, cluste
 
 	var r0 string
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string, string) (string, error)); ok {
-		return returnFunc(ctx, clusterLabel, kubeSystemUUID, scope)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, settings.K8sClusterRegistration) (string, error)); ok {
+		return returnFunc(ctx, clusterLabel, registration)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string, string) string); ok {
-		r0 = returnFunc(ctx, clusterLabel, kubeSystemUUID, scope)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, settings.K8sClusterRegistration) string); ok {
+		r0 = returnFunc(ctx, clusterLabel, registration)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
-		r1 = returnFunc(ctx, clusterLabel, kubeSystemUUID, scope)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, string, settings.K8sClusterRegistration) error); ok {
+		r1 = returnFunc(ctx, clusterLabel, registration)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -468,13 +468,12 @@ type Client_CreateOrUpdateKubernetesSetting_Call struct {
 // CreateOrUpdateKubernetesSetting is a helper method to define mock.On call
 //   - ctx context.Context
 //   - clusterLabel string
-//   - kubeSystemUUID string
-//   - scope string
-func (_e *Client_Expecter) CreateOrUpdateKubernetesSetting(ctx any, clusterLabel any, kubeSystemUUID any, scope any) *Client_CreateOrUpdateKubernetesSetting_Call {
-	return &Client_CreateOrUpdateKubernetesSetting_Call{Call: _e.mock.On("CreateOrUpdateKubernetesSetting", ctx, clusterLabel, kubeSystemUUID, scope)}
+//   - registration settings.K8sClusterRegistration
+func (_e *Client_Expecter) CreateOrUpdateKubernetesSetting(ctx any, clusterLabel any, registration any) *Client_CreateOrUpdateKubernetesSetting_Call {
+	return &Client_CreateOrUpdateKubernetesSetting_Call{Call: _e.mock.On("CreateOrUpdateKubernetesSetting", ctx, clusterLabel, registration)}
 }
 
-func (_c *Client_CreateOrUpdateKubernetesSetting_Call) Run(run func(ctx context.Context, clusterLabel string, kubeSystemUUID string, scope string)) *Client_CreateOrUpdateKubernetesSetting_Call {
+func (_c *Client_CreateOrUpdateKubernetesSetting_Call) Run(run func(ctx context.Context, clusterLabel string, registration settings.K8sClusterRegistration)) *Client_CreateOrUpdateKubernetesSetting_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -484,19 +483,14 @@ func (_c *Client_CreateOrUpdateKubernetesSetting_Call) Run(run func(ctx context.
 		if args[1] != nil {
 			arg1 = args[1].(string)
 		}
-		var arg2 string
+		var arg2 settings.K8sClusterRegistration
 		if args[2] != nil {
-			arg2 = args[2].(string)
-		}
-		var arg3 string
-		if args[3] != nil {
-			arg3 = args[3].(string)
+			arg2 = args[2].(settings.K8sClusterRegistration)
 		}
 		run(
 			arg0,
 			arg1,
 			arg2,
-			arg3,
 		)
 	})
 	return _c
@@ -507,7 +501,7 @@ func (_c *Client_CreateOrUpdateKubernetesSetting_Call) Return(s string, err erro
 	return _c
 }
 
-func (_c *Client_CreateOrUpdateKubernetesSetting_Call) RunAndReturn(run func(ctx context.Context, clusterLabel string, kubeSystemUUID string, scope string) (string, error)) *Client_CreateOrUpdateKubernetesSetting_Call {
+func (_c *Client_CreateOrUpdateKubernetesSetting_Call) RunAndReturn(run func(ctx context.Context, clusterLabel string, registration settings.K8sClusterRegistration) (string, error)) *Client_CreateOrUpdateKubernetesSetting_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -570,8 +564,8 @@ func (_c *Client_DeleteSettings_Call) RunAndReturn(run func(ctx context.Context,
 }
 
 // GetEnrichmentRuleObjects provides a mock function for the type Client
-func (_mock *Client) GetEnrichmentRuleObjects(ctx context.Context, scope string) ([]settings.EnrichmentRuleObject, error) {
-	ret := _mock.Called(ctx, scope)
+func (_mock *Client) GetEnrichmentRuleObjects(ctx context.Context, registration settings.K8sClusterRegistration) ([]settings.EnrichmentRuleObject, error) {
+	ret := _mock.Called(ctx, registration)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetEnrichmentRuleObjects")
@@ -579,18 +573,18 @@ func (_mock *Client) GetEnrichmentRuleObjects(ctx context.Context, scope string)
 
 	var r0 []settings.EnrichmentRuleObject
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) ([]settings.EnrichmentRuleObject, error)); ok {
-		return returnFunc(ctx, scope)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, settings.K8sClusterRegistration) ([]settings.EnrichmentRuleObject, error)); ok {
+		return returnFunc(ctx, registration)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) []settings.EnrichmentRuleObject); ok {
-		r0 = returnFunc(ctx, scope)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, settings.K8sClusterRegistration) []settings.EnrichmentRuleObject); ok {
+		r0 = returnFunc(ctx, registration)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]settings.EnrichmentRuleObject)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = returnFunc(ctx, scope)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, settings.K8sClusterRegistration) error); ok {
+		r1 = returnFunc(ctx, registration)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -604,20 +598,20 @@ type Client_GetEnrichmentRuleObjects_Call struct {
 
 // GetEnrichmentRuleObjects is a helper method to define mock.On call
 //   - ctx context.Context
-//   - scope string
-func (_e *Client_Expecter) GetEnrichmentRuleObjects(ctx any, scope any) *Client_GetEnrichmentRuleObjects_Call {
-	return &Client_GetEnrichmentRuleObjects_Call{Call: _e.mock.On("GetEnrichmentRuleObjects", ctx, scope)}
+//   - registration settings.K8sClusterRegistration
+func (_e *Client_Expecter) GetEnrichmentRuleObjects(ctx any, registration any) *Client_GetEnrichmentRuleObjects_Call {
+	return &Client_GetEnrichmentRuleObjects_Call{Call: _e.mock.On("GetEnrichmentRuleObjects", ctx, registration)}
 }
 
-func (_c *Client_GetEnrichmentRuleObjects_Call) Run(run func(ctx context.Context, scope string)) *Client_GetEnrichmentRuleObjects_Call {
+func (_c *Client_GetEnrichmentRuleObjects_Call) Run(run func(ctx context.Context, registration settings.K8sClusterRegistration)) *Client_GetEnrichmentRuleObjects_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 string
+		var arg1 settings.K8sClusterRegistration
 		if args[1] != nil {
-			arg1 = args[1].(string)
+			arg1 = args[1].(settings.K8sClusterRegistration)
 		}
 		run(
 			arg0,
@@ -632,31 +626,31 @@ func (_c *Client_GetEnrichmentRuleObjects_Call) Return(enrichmentRuleObjects []s
 	return _c
 }
 
-func (_c *Client_GetEnrichmentRuleObjects_Call) RunAndReturn(run func(ctx context.Context, scope string) ([]settings.EnrichmentRuleObject, error)) *Client_GetEnrichmentRuleObjects_Call {
+func (_c *Client_GetEnrichmentRuleObjects_Call) RunAndReturn(run func(ctx context.Context, registration settings.K8sClusterRegistration) ([]settings.EnrichmentRuleObject, error)) *Client_GetEnrichmentRuleObjects_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // GetK8sClusterME provides a mock function for the type Client
-func (_mock *Client) GetK8sClusterME(ctx context.Context, kubeSystemUUID string) (settings.K8sClusterME, error) {
-	ret := _mock.Called(ctx, kubeSystemUUID)
+func (_mock *Client) GetK8sClusterME(ctx context.Context, registration settings.K8sClusterRegistration) (settings.K8sClusterRegistration, error) {
+	ret := _mock.Called(ctx, registration)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetK8sClusterME")
 	}
 
-	var r0 settings.K8sClusterME
+	var r0 settings.K8sClusterRegistration
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) (settings.K8sClusterME, error)); ok {
-		return returnFunc(ctx, kubeSystemUUID)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, settings.K8sClusterRegistration) (settings.K8sClusterRegistration, error)); ok {
+		return returnFunc(ctx, registration)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) settings.K8sClusterME); ok {
-		r0 = returnFunc(ctx, kubeSystemUUID)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, settings.K8sClusterRegistration) settings.K8sClusterRegistration); ok {
+		r0 = returnFunc(ctx, registration)
 	} else {
-		r0 = ret.Get(0).(settings.K8sClusterME)
+		r0 = ret.Get(0).(settings.K8sClusterRegistration)
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = returnFunc(ctx, kubeSystemUUID)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, settings.K8sClusterRegistration) error); ok {
+		r1 = returnFunc(ctx, registration)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -670,20 +664,20 @@ type Client_GetK8sClusterME_Call struct {
 
 // GetK8sClusterME is a helper method to define mock.On call
 //   - ctx context.Context
-//   - kubeSystemUUID string
-func (_e *Client_Expecter) GetK8sClusterME(ctx any, kubeSystemUUID any) *Client_GetK8sClusterME_Call {
-	return &Client_GetK8sClusterME_Call{Call: _e.mock.On("GetK8sClusterME", ctx, kubeSystemUUID)}
+//   - registration settings.K8sClusterRegistration
+func (_e *Client_Expecter) GetK8sClusterME(ctx any, registration any) *Client_GetK8sClusterME_Call {
+	return &Client_GetK8sClusterME_Call{Call: _e.mock.On("GetK8sClusterME", ctx, registration)}
 }
 
-func (_c *Client_GetK8sClusterME_Call) Run(run func(ctx context.Context, kubeSystemUUID string)) *Client_GetK8sClusterME_Call {
+func (_c *Client_GetK8sClusterME_Call) Run(run func(ctx context.Context, registration settings.K8sClusterRegistration)) *Client_GetK8sClusterME_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 string
+		var arg1 settings.K8sClusterRegistration
 		if args[1] != nil {
-			arg1 = args[1].(string)
+			arg1 = args[1].(settings.K8sClusterRegistration)
 		}
 		run(
 			arg0,
@@ -693,19 +687,19 @@ func (_c *Client_GetK8sClusterME_Call) Run(run func(ctx context.Context, kubeSys
 	return _c
 }
 
-func (_c *Client_GetK8sClusterME_Call) Return(k8sClusterME settings.K8sClusterME, err error) *Client_GetK8sClusterME_Call {
-	_c.Call.Return(k8sClusterME, err)
+func (_c *Client_GetK8sClusterME_Call) Return(k8sClusterRegistration settings.K8sClusterRegistration, err error) *Client_GetK8sClusterME_Call {
+	_c.Call.Return(k8sClusterRegistration, err)
 	return _c
 }
 
-func (_c *Client_GetK8sClusterME_Call) RunAndReturn(run func(ctx context.Context, kubeSystemUUID string) (settings.K8sClusterME, error)) *Client_GetK8sClusterME_Call {
+func (_c *Client_GetK8sClusterME_Call) RunAndReturn(run func(ctx context.Context, registration settings.K8sClusterRegistration) (settings.K8sClusterRegistration, error)) *Client_GetK8sClusterME_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // GetKSPMSettings provides a mock function for the type Client
-func (_mock *Client) GetKSPMSettings(ctx context.Context, monitoredEntity string) (settings.KSPMSettingsResponse, error) {
-	ret := _mock.Called(ctx, monitoredEntity)
+func (_mock *Client) GetKSPMSettings(ctx context.Context, registration settings.K8sClusterRegistration) (settings.KSPMSettingsResponse, error) {
+	ret := _mock.Called(ctx, registration)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetKSPMSettings")
@@ -713,16 +707,16 @@ func (_mock *Client) GetKSPMSettings(ctx context.Context, monitoredEntity string
 
 	var r0 settings.KSPMSettingsResponse
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) (settings.KSPMSettingsResponse, error)); ok {
-		return returnFunc(ctx, monitoredEntity)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, settings.K8sClusterRegistration) (settings.KSPMSettingsResponse, error)); ok {
+		return returnFunc(ctx, registration)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) settings.KSPMSettingsResponse); ok {
-		r0 = returnFunc(ctx, monitoredEntity)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, settings.K8sClusterRegistration) settings.KSPMSettingsResponse); ok {
+		r0 = returnFunc(ctx, registration)
 	} else {
 		r0 = ret.Get(0).(settings.KSPMSettingsResponse)
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = returnFunc(ctx, monitoredEntity)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, settings.K8sClusterRegistration) error); ok {
+		r1 = returnFunc(ctx, registration)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -736,20 +730,20 @@ type Client_GetKSPMSettings_Call struct {
 
 // GetKSPMSettings is a helper method to define mock.On call
 //   - ctx context.Context
-//   - monitoredEntity string
-func (_e *Client_Expecter) GetKSPMSettings(ctx any, monitoredEntity any) *Client_GetKSPMSettings_Call {
-	return &Client_GetKSPMSettings_Call{Call: _e.mock.On("GetKSPMSettings", ctx, monitoredEntity)}
+//   - registration settings.K8sClusterRegistration
+func (_e *Client_Expecter) GetKSPMSettings(ctx any, registration any) *Client_GetKSPMSettings_Call {
+	return &Client_GetKSPMSettings_Call{Call: _e.mock.On("GetKSPMSettings", ctx, registration)}
 }
 
-func (_c *Client_GetKSPMSettings_Call) Run(run func(ctx context.Context, monitoredEntity string)) *Client_GetKSPMSettings_Call {
+func (_c *Client_GetKSPMSettings_Call) Run(run func(ctx context.Context, registration settings.K8sClusterRegistration)) *Client_GetKSPMSettings_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 string
+		var arg1 settings.K8sClusterRegistration
 		if args[1] != nil {
-			arg1 = args[1].(string)
+			arg1 = args[1].(settings.K8sClusterRegistration)
 		}
 		run(
 			arg0,
@@ -764,14 +758,14 @@ func (_c *Client_GetKSPMSettings_Call) Return(kSPMSettingsResponse settings.KSPM
 	return _c
 }
 
-func (_c *Client_GetKSPMSettings_Call) RunAndReturn(run func(ctx context.Context, monitoredEntity string) (settings.KSPMSettingsResponse, error)) *Client_GetKSPMSettings_Call {
+func (_c *Client_GetKSPMSettings_Call) RunAndReturn(run func(ctx context.Context, registration settings.K8sClusterRegistration) (settings.KSPMSettingsResponse, error)) *Client_GetKSPMSettings_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // GetLegacyEnrichmentRuleObjects provides a mock function for the type Client
-func (_mock *Client) GetLegacyEnrichmentRuleObjects(ctx context.Context, scope string) ([]settings.EnrichmentRuleObject, error) {
-	ret := _mock.Called(ctx, scope)
+func (_mock *Client) GetLegacyEnrichmentRuleObjects(ctx context.Context, registration settings.K8sClusterRegistration) ([]settings.EnrichmentRuleObject, error) {
+	ret := _mock.Called(ctx, registration)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetLegacyEnrichmentRuleObjects")
@@ -779,18 +773,18 @@ func (_mock *Client) GetLegacyEnrichmentRuleObjects(ctx context.Context, scope s
 
 	var r0 []settings.EnrichmentRuleObject
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) ([]settings.EnrichmentRuleObject, error)); ok {
-		return returnFunc(ctx, scope)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, settings.K8sClusterRegistration) ([]settings.EnrichmentRuleObject, error)); ok {
+		return returnFunc(ctx, registration)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) []settings.EnrichmentRuleObject); ok {
-		r0 = returnFunc(ctx, scope)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, settings.K8sClusterRegistration) []settings.EnrichmentRuleObject); ok {
+		r0 = returnFunc(ctx, registration)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]settings.EnrichmentRuleObject)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = returnFunc(ctx, scope)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, settings.K8sClusterRegistration) error); ok {
+		r1 = returnFunc(ctx, registration)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -804,20 +798,20 @@ type Client_GetLegacyEnrichmentRuleObjects_Call struct {
 
 // GetLegacyEnrichmentRuleObjects is a helper method to define mock.On call
 //   - ctx context.Context
-//   - scope string
-func (_e *Client_Expecter) GetLegacyEnrichmentRuleObjects(ctx any, scope any) *Client_GetLegacyEnrichmentRuleObjects_Call {
-	return &Client_GetLegacyEnrichmentRuleObjects_Call{Call: _e.mock.On("GetLegacyEnrichmentRuleObjects", ctx, scope)}
+//   - registration settings.K8sClusterRegistration
+func (_e *Client_Expecter) GetLegacyEnrichmentRuleObjects(ctx any, registration any) *Client_GetLegacyEnrichmentRuleObjects_Call {
+	return &Client_GetLegacyEnrichmentRuleObjects_Call{Call: _e.mock.On("GetLegacyEnrichmentRuleObjects", ctx, registration)}
 }
 
-func (_c *Client_GetLegacyEnrichmentRuleObjects_Call) Run(run func(ctx context.Context, scope string)) *Client_GetLegacyEnrichmentRuleObjects_Call {
+func (_c *Client_GetLegacyEnrichmentRuleObjects_Call) Run(run func(ctx context.Context, registration settings.K8sClusterRegistration)) *Client_GetLegacyEnrichmentRuleObjects_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 string
+		var arg1 settings.K8sClusterRegistration
 		if args[1] != nil {
-			arg1 = args[1].(string)
+			arg1 = args[1].(settings.K8sClusterRegistration)
 		}
 		run(
 			arg0,
@@ -832,14 +826,14 @@ func (_c *Client_GetLegacyEnrichmentRuleObjects_Call) Return(enrichmentRuleObjec
 	return _c
 }
 
-func (_c *Client_GetLegacyEnrichmentRuleObjects_Call) RunAndReturn(run func(ctx context.Context, scope string) ([]settings.EnrichmentRuleObject, error)) *Client_GetLegacyEnrichmentRuleObjects_Call {
+func (_c *Client_GetLegacyEnrichmentRuleObjects_Call) RunAndReturn(run func(ctx context.Context, registration settings.K8sClusterRegistration) ([]settings.EnrichmentRuleObject, error)) *Client_GetLegacyEnrichmentRuleObjects_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // GetRules provides a mock function for the type Client
-func (_mock *Client) GetRules(ctx context.Context, kubeSystemUUID string, entityID string) ([]metadataenrichment.Rule, error) {
-	ret := _mock.Called(ctx, kubeSystemUUID, entityID)
+func (_mock *Client) GetRules(ctx context.Context, registration settings.K8sClusterRegistration) ([]metadataenrichment.Rule, error) {
+	ret := _mock.Called(ctx, registration)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetRules")
@@ -847,18 +841,18 @@ func (_mock *Client) GetRules(ctx context.Context, kubeSystemUUID string, entity
 
 	var r0 []metadataenrichment.Rule
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string) ([]metadataenrichment.Rule, error)); ok {
-		return returnFunc(ctx, kubeSystemUUID, entityID)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, settings.K8sClusterRegistration) ([]metadataenrichment.Rule, error)); ok {
+		return returnFunc(ctx, registration)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string) []metadataenrichment.Rule); ok {
-		r0 = returnFunc(ctx, kubeSystemUUID, entityID)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, settings.K8sClusterRegistration) []metadataenrichment.Rule); ok {
+		r0 = returnFunc(ctx, registration)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]metadataenrichment.Rule)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = returnFunc(ctx, kubeSystemUUID, entityID)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, settings.K8sClusterRegistration) error); ok {
+		r1 = returnFunc(ctx, registration)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -872,30 +866,24 @@ type Client_GetRules_Call struct {
 
 // GetRules is a helper method to define mock.On call
 //   - ctx context.Context
-//   - kubeSystemUUID string
-//   - entityID string
-func (_e *Client_Expecter) GetRules(ctx any, kubeSystemUUID any, entityID any) *Client_GetRules_Call {
-	return &Client_GetRules_Call{Call: _e.mock.On("GetRules", ctx, kubeSystemUUID, entityID)}
+//   - registration settings.K8sClusterRegistration
+func (_e *Client_Expecter) GetRules(ctx any, registration any) *Client_GetRules_Call {
+	return &Client_GetRules_Call{Call: _e.mock.On("GetRules", ctx, registration)}
 }
 
-func (_c *Client_GetRules_Call) Run(run func(ctx context.Context, kubeSystemUUID string, entityID string)) *Client_GetRules_Call {
+func (_c *Client_GetRules_Call) Run(run func(ctx context.Context, registration settings.K8sClusterRegistration)) *Client_GetRules_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 string
+		var arg1 settings.K8sClusterRegistration
 		if args[1] != nil {
-			arg1 = args[1].(string)
-		}
-		var arg2 string
-		if args[2] != nil {
-			arg2 = args[2].(string)
+			arg1 = args[1].(settings.K8sClusterRegistration)
 		}
 		run(
 			arg0,
 			arg1,
-			arg2,
 		)
 	})
 	return _c
@@ -906,14 +894,14 @@ func (_c *Client_GetRules_Call) Return(rules []metadataenrichment.Rule, err erro
 	return _c
 }
 
-func (_c *Client_GetRules_Call) RunAndReturn(run func(ctx context.Context, kubeSystemUUID string, entityID string) ([]metadataenrichment.Rule, error)) *Client_GetRules_Call {
+func (_c *Client_GetRules_Call) RunAndReturn(run func(ctx context.Context, registration settings.K8sClusterRegistration) ([]metadataenrichment.Rule, error)) *Client_GetRules_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // GetSettingsForLogModule provides a mock function for the type Client
-func (_mock *Client) GetSettingsForLogModule(ctx context.Context, monitoredEntity string) (settings.TotalCountSettingsResponse, error) {
-	ret := _mock.Called(ctx, monitoredEntity)
+func (_mock *Client) GetSettingsForLogModule(ctx context.Context, registration settings.K8sClusterRegistration) (settings.TotalCountSettingsResponse, error) {
+	ret := _mock.Called(ctx, registration)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetSettingsForLogModule")
@@ -921,16 +909,16 @@ func (_mock *Client) GetSettingsForLogModule(ctx context.Context, monitoredEntit
 
 	var r0 settings.TotalCountSettingsResponse
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) (settings.TotalCountSettingsResponse, error)); ok {
-		return returnFunc(ctx, monitoredEntity)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, settings.K8sClusterRegistration) (settings.TotalCountSettingsResponse, error)); ok {
+		return returnFunc(ctx, registration)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) settings.TotalCountSettingsResponse); ok {
-		r0 = returnFunc(ctx, monitoredEntity)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, settings.K8sClusterRegistration) settings.TotalCountSettingsResponse); ok {
+		r0 = returnFunc(ctx, registration)
 	} else {
 		r0 = ret.Get(0).(settings.TotalCountSettingsResponse)
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = returnFunc(ctx, monitoredEntity)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, settings.K8sClusterRegistration) error); ok {
+		r1 = returnFunc(ctx, registration)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -944,20 +932,20 @@ type Client_GetSettingsForLogModule_Call struct {
 
 // GetSettingsForLogModule is a helper method to define mock.On call
 //   - ctx context.Context
-//   - monitoredEntity string
-func (_e *Client_Expecter) GetSettingsForLogModule(ctx any, monitoredEntity any) *Client_GetSettingsForLogModule_Call {
-	return &Client_GetSettingsForLogModule_Call{Call: _e.mock.On("GetSettingsForLogModule", ctx, monitoredEntity)}
+//   - registration settings.K8sClusterRegistration
+func (_e *Client_Expecter) GetSettingsForLogModule(ctx any, registration any) *Client_GetSettingsForLogModule_Call {
+	return &Client_GetSettingsForLogModule_Call{Call: _e.mock.On("GetSettingsForLogModule", ctx, registration)}
 }
 
-func (_c *Client_GetSettingsForLogModule_Call) Run(run func(ctx context.Context, monitoredEntity string)) *Client_GetSettingsForLogModule_Call {
+func (_c *Client_GetSettingsForLogModule_Call) Run(run func(ctx context.Context, registration settings.K8sClusterRegistration)) *Client_GetSettingsForLogModule_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 string
+		var arg1 settings.K8sClusterRegistration
 		if args[1] != nil {
-			arg1 = args[1].(string)
+			arg1 = args[1].(settings.K8sClusterRegistration)
 		}
 		run(
 			arg0,
@@ -972,14 +960,14 @@ func (_c *Client_GetSettingsForLogModule_Call) Return(totalCountSettingsResponse
 	return _c
 }
 
-func (_c *Client_GetSettingsForLogModule_Call) RunAndReturn(run func(ctx context.Context, monitoredEntity string) (settings.TotalCountSettingsResponse, error)) *Client_GetSettingsForLogModule_Call {
+func (_c *Client_GetSettingsForLogModule_Call) RunAndReturn(run func(ctx context.Context, registration settings.K8sClusterRegistration) (settings.TotalCountSettingsResponse, error)) *Client_GetSettingsForLogModule_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // GetSettingsForMonitoredEntity provides a mock function for the type Client
-func (_mock *Client) GetSettingsForMonitoredEntity(ctx context.Context, monitoredEntity settings.K8sClusterME, schemaID string) (settings.TotalCountSettingsResponse, error) {
-	ret := _mock.Called(ctx, monitoredEntity, schemaID)
+func (_mock *Client) GetSettingsForMonitoredEntity(ctx context.Context, registration settings.K8sClusterRegistration, schemaID string) (settings.TotalCountSettingsResponse, error) {
+	ret := _mock.Called(ctx, registration, schemaID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetSettingsForMonitoredEntity")
@@ -987,16 +975,16 @@ func (_mock *Client) GetSettingsForMonitoredEntity(ctx context.Context, monitore
 
 	var r0 settings.TotalCountSettingsResponse
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, settings.K8sClusterME, string) (settings.TotalCountSettingsResponse, error)); ok {
-		return returnFunc(ctx, monitoredEntity, schemaID)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, settings.K8sClusterRegistration, string) (settings.TotalCountSettingsResponse, error)); ok {
+		return returnFunc(ctx, registration, schemaID)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, settings.K8sClusterME, string) settings.TotalCountSettingsResponse); ok {
-		r0 = returnFunc(ctx, monitoredEntity, schemaID)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, settings.K8sClusterRegistration, string) settings.TotalCountSettingsResponse); ok {
+		r0 = returnFunc(ctx, registration, schemaID)
 	} else {
 		r0 = ret.Get(0).(settings.TotalCountSettingsResponse)
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, settings.K8sClusterME, string) error); ok {
-		r1 = returnFunc(ctx, monitoredEntity, schemaID)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, settings.K8sClusterRegistration, string) error); ok {
+		r1 = returnFunc(ctx, registration, schemaID)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -1010,21 +998,21 @@ type Client_GetSettingsForMonitoredEntity_Call struct {
 
 // GetSettingsForMonitoredEntity is a helper method to define mock.On call
 //   - ctx context.Context
-//   - monitoredEntity settings.K8sClusterME
+//   - registration settings.K8sClusterRegistration
 //   - schemaID string
-func (_e *Client_Expecter) GetSettingsForMonitoredEntity(ctx any, monitoredEntity any, schemaID any) *Client_GetSettingsForMonitoredEntity_Call {
-	return &Client_GetSettingsForMonitoredEntity_Call{Call: _e.mock.On("GetSettingsForMonitoredEntity", ctx, monitoredEntity, schemaID)}
+func (_e *Client_Expecter) GetSettingsForMonitoredEntity(ctx any, registration any, schemaID any) *Client_GetSettingsForMonitoredEntity_Call {
+	return &Client_GetSettingsForMonitoredEntity_Call{Call: _e.mock.On("GetSettingsForMonitoredEntity", ctx, registration, schemaID)}
 }
 
-func (_c *Client_GetSettingsForMonitoredEntity_Call) Run(run func(ctx context.Context, monitoredEntity settings.K8sClusterME, schemaID string)) *Client_GetSettingsForMonitoredEntity_Call {
+func (_c *Client_GetSettingsForMonitoredEntity_Call) Run(run func(ctx context.Context, registration settings.K8sClusterRegistration, schemaID string)) *Client_GetSettingsForMonitoredEntity_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 settings.K8sClusterME
+		var arg1 settings.K8sClusterRegistration
 		if args[1] != nil {
-			arg1 = args[1].(settings.K8sClusterME)
+			arg1 = args[1].(settings.K8sClusterRegistration)
 		}
 		var arg2 string
 		if args[2] != nil {
@@ -1044,7 +1032,7 @@ func (_c *Client_GetSettingsForMonitoredEntity_Call) Return(totalCountSettingsRe
 	return _c
 }
 
-func (_c *Client_GetSettingsForMonitoredEntity_Call) RunAndReturn(run func(ctx context.Context, monitoredEntity settings.K8sClusterME, schemaID string) (settings.TotalCountSettingsResponse, error)) *Client_GetSettingsForMonitoredEntity_Call {
+func (_c *Client_GetSettingsForMonitoredEntity_Call) RunAndReturn(run func(ctx context.Context, registration settings.K8sClusterRegistration, schemaID string) (settings.TotalCountSettingsResponse, error)) *Client_GetSettingsForMonitoredEntity_Call {
 	_c.Call.Return(run)
 	return _c
 }

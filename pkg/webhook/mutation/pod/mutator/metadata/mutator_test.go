@@ -324,9 +324,11 @@ func TestMutate(t *testing.T) {
 								},
 							},
 							Status: dynakube.DynaKubeStatus{
-								KubeSystemUUID:        testKubeSystemID,
-								KubernetesClusterMEID: testClusterMEID,
-								KubernetesClusterName: testClusterName,
+								Registration: dynakube.Registration{
+									EntityID:    testKubeSystemID,
+									EntityScope: testClusterMEID,
+									EntityLabel: testClusterName,
+								},
 								MetadataEnrichment: metadataenrichment.Status{
 									Rules: []metadataenrichment.Rule{
 										{

@@ -46,13 +46,13 @@ func (b *builder) initContainerEnvVars() []corev1.EnvVar {
 
 func (b *builder) initContainerArguments() []string {
 	attributes := []string{
-		"k8s.cluster.name=" + b.dk.Status.KubernetesClusterName,
-		"k8s.cluster.uid=" + b.dk.Status.KubeSystemUUID,
+		"k8s.cluster.name=" + b.dk.Status.Registration.EntityLabel,
+		"k8s.cluster.uid=" + b.dk.Status.Registration.EntityID,
 		"k8s.node.name=$(DT_K8S_NODE_NAME)",
 	}
 
-	if b.dk.Status.KubernetesClusterMEID != "" {
-		attributes = append(attributes, "dt.entity.kubernetes_cluster="+b.dk.Status.KubernetesClusterMEID)
+	if b.dk.Status.Registration.EntityScope != "" {
+		attributes = append(attributes, "dt.entity.kubernetes_cluster="+b.dk.Status.Registration.EntityScope)
 	}
 
 	resourceAttrs := b.dk.OneAgent().GetResourceAttributes()

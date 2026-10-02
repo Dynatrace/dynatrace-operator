@@ -65,7 +65,7 @@ func TestReconcile(t *testing.T) {
 			},
 		}
 
-		dtClient := &dynatrace.Client{Images: image.NewClient(nil), Settings: settings.NewClient(nil)}
+		dtClient := &dynatrace.Client{Images: image.NewClient(nil), Settings: settings.NewClient(nil, settings.Gen2)}
 		oaClientMock := oneagentclientmock.NewClient(t)
 		dtClient.OneAgent = oaClientMock
 

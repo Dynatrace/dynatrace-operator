@@ -241,7 +241,7 @@ func newAutoUpdateKubemonDynaKube(apiURL string) *dynakube.DynaKube {
 			KubernetesMonitoring: &kubemonapi.Spec{},
 		},
 		Status: dynakube.DynaKubeStatus{
-			KubeSystemUUID: integrationKubeSystemUUID,
+			Registration: dynakube.Registration{EntityID: integrationKubeSystemUUID},
 		},
 	}
 }

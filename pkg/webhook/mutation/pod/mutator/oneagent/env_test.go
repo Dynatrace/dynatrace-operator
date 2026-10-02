@@ -105,7 +105,7 @@ func TestAddDeploymentMetadataEnv(t *testing.T) {
 				},
 			},
 			Status: dynakube.DynaKubeStatus{
-				KubeSystemUUID: clusterID,
+				Registration: dynakube.Registration{EntityID: clusterID},
 			},
 		}
 		addDeploymentMetadataEnv(container, dk)
@@ -123,7 +123,7 @@ func TestAddDeploymentMetadataEnv(t *testing.T) {
 				},
 			},
 			Status: dynakube.DynaKubeStatus{
-				KubeSystemUUID: clusterID,
+				Registration: dynakube.Registration{EntityID: clusterID},
 			},
 		}
 		addDeploymentMetadataEnv(container, dk)

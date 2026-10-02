@@ -104,7 +104,7 @@ func TestReconcile(t *testing.T) {
 	t.Run("Create and update works with ME not set", func(t *testing.T) {
 		dk := createDynakube(true)
 
-		dk.Status.KubernetesClusterMEID = ""
+		dk.Status.Registration.EntityScope = ""
 
 		mockK8sClient := fake.NewClient()
 
@@ -437,7 +437,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 
 	t.Run("generate a daemonset with no kubernetes cluster name set in env and arg section if no MEID and all scopes set", func(t *testing.T) {
 		dk := createDynakube(true)
-		dk.Status.KubernetesClusterMEID = ""
+		dk.Status.Registration.EntityScope = ""
 
 		reconciler := NewReconciler(nil, fake.NewClient())
 		daemonset, err := reconciler.generateDaemonSet(dk, "")
@@ -514,8 +514,10 @@ func createDynakube(isEnabled bool) *dynakube.DynaKube {
 					TenantTokenHash: "somehash",
 				},
 			},
-			KubernetesClusterMEID: "test-cluster-me-id",
-			KubernetesClusterName: "test-cluster-name",
+			Registration: dynakube.Registration{
+				EntityScope: "test-cluster-me-id",
+				EntityLabel: "test-cluster-name",
+			},
 		},
 	}
 }

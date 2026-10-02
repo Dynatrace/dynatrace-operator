@@ -78,7 +78,7 @@ func (r *Reconciler) manageStatefulSet(ctx context.Context, dk *dynakube.DynaKub
 }
 
 func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.DynaKube, agCapability capability.Capability) (*appsv1.StatefulSet, error) {
-	kubeUID := types.UID(dk.Status.KubeSystemUUID)
+	kubeUID := types.UID(dk.Status.Registration.EntityID)
 
 	activeGateConfigurationHash, err := r.calculateActiveGateConfigurationHash(ctx, dk, agCapability)
 	if err != nil {

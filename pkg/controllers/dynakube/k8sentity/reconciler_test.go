@@ -54,7 +54,7 @@ func enableKubemonRegistration(dk *dynakube.DynaKube) {
 }
 
 func setSystemUUID(dk *dynakube.DynaKube, uuid string) {
-	dk.Status.KubeSystemUUID = uuid
+	dk.Status.Registration.EntityID = uuid
 }
 
 func setClusterNameFF(dk *dynakube.DynaKube, name string) {
@@ -69,9 +69,9 @@ func enableAppFF(dk *dynakube.DynaKube) {
 	dk.Annotations[exp.AGK8sAppEnabledKey] = "true" //nolint:staticcheck
 }
 
-func setMEInfo(dk *dynakube.DynaKube, me settings.K8sClusterME) {
-	dk.Status.KubernetesClusterMEID = me.ID
-	dk.Status.KubernetesClusterName = me.Name
+func setMEInfo(dk *dynakube.DynaKube, me settings.K8sClusterRegistration) {
+	dk.Status.Registration.EntityScope = me.EntityScope
+	dk.Status.Registration.EntityLabel = me.EntityLabel
 }
 
 func setCondition(dk *dynakube.DynaKube) {
@@ -83,6 +83,11 @@ func TestReconcile(t *testing.T) {
 		meID       = "KUBERNETES_CLUSTER-119C75CCDA94799F"
 		systemUUID = "2132143215"
 	)
+
+	// registrationWithUUID is what dk.Status.Registration holds once the kube-system UUID is known
+	// but the Monitored Entity has not been resolved yet.
+	registrationWithUUID := settings.K8sClusterRegistration{EntityID: systemUUID}
+
 	t.Run("optional scope settings.read not available", func(t *testing.T) {
 		dk := newDynaKube()
 		optionalscope.SetMissing(dk, token.ScopeSettingsRead)
@@ -103,7 +108,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("refreshes MEID immediately after creating settings on first run", func(t *testing.T) {
 		dk := newDynaKube()
-		me := settings.K8sClusterME{ID: meID, Name: dk.Name}
+		me := settings.K8sClusterRegistration{EntityID: systemUUID, EntityScope: meID, EntityLabel: dk.Name}
 		enableAGKubeMonCapability(dk)
 		enableAppFF(dk)
 		setSystemUUID(dk, systemUUID)
@@ -111,55 +116,55 @@ func TestReconcile(t *testing.T) {
 		dtClient := settingsmock.NewClient(t)
 		// 1. reconcileClusterMEID: no ME found yet (settings object not yet created)
 		dtClient.EXPECT().
-			GetK8sClusterME(anyCtx, systemUUID).
-			Return(settings.K8sClusterME{}, nil).Once()
+			GetK8sClusterME(anyCtx, registrationWithUUID).
+			Return(registrationWithUUID, nil).Once()
 		// 2. createObjectIDIfNotExists: no settings exist yet, create them
 		dtClient.EXPECT().
-			CreateOrUpdateKubernetesSetting(anyCtx, me.Name, systemUUID, "").
-			Return(me.ID, nil).Once()
+			CreateOrUpdateKubernetesSetting(anyCtx, me.EntityLabel, registrationWithUUID).
+			Return(me.EntityScope, nil).Once()
 		// 3. refreshClusterMEID: ME is now available after settings were created
 		dtClient.EXPECT().
-			GetK8sClusterME(anyCtx, systemUUID).
+			GetK8sClusterME(anyCtx, registrationWithUUID).
 			Return(me, nil).Once()
 		// 4. reconcile app transition schema
 		dtClient.EXPECT().
 			GetSettingsForMonitoredEntity(anyCtx, me, settings.AppTransitionSchemaID).
 			Return(settings.TotalCountSettingsResponse{}, nil).Once()
 		dtClient.EXPECT().
-			CreateOrUpdateKubernetesAppSetting(anyCtx, me.ID).
+			CreateOrUpdateKubernetesAppSetting(anyCtx, me).
 			Return("some-id", nil).Once()
 
 		r := NewReconciler()
 		err := r.Reconcile(t.Context(), dtClient, dk)
 		require.NoError(t, err)
-		assert.Equal(t, me.ID, dk.Status.KubernetesClusterMEID)
-		assert.Equal(t, me.Name, dk.Status.KubernetesClusterName)
+		assert.Equal(t, me.EntityScope, dk.Status.Registration.EntityScope)
+		assert.Equal(t, me.EntityLabel, dk.Status.Registration.EntityLabel)
 		assert.NotNil(t, meta.FindStatusCondition(*dk.Conditions(), meIDConditionType))
 	})
 
 	t.Run("kubemon registration path: creates settings", func(t *testing.T) {
 		// Gen3 SaaS: FF not set, no app-transition calls expected.
 		dk := newDynaKube()
-		me := settings.K8sClusterME{ID: meID, Name: dk.Name}
+		me := settings.K8sClusterRegistration{EntityID: systemUUID, EntityScope: meID, EntityLabel: dk.Name}
 		enableKubemonRegistration(dk)
 		setSystemUUID(dk, systemUUID)
 
 		dtClient := settingsmock.NewClient(t)
 		dtClient.EXPECT().
-			GetK8sClusterME(anyCtx, systemUUID).
-			Return(settings.K8sClusterME{}, nil).Once()
+			GetK8sClusterME(anyCtx, registrationWithUUID).
+			Return(registrationWithUUID, nil).Once()
 		dtClient.EXPECT().
-			CreateOrUpdateKubernetesSetting(anyCtx, me.Name, systemUUID, "").
-			Return(me.ID, nil).Once()
+			CreateOrUpdateKubernetesSetting(anyCtx, me.EntityLabel, registrationWithUUID).
+			Return(me.EntityScope, nil).Once()
 		dtClient.EXPECT().
-			GetK8sClusterME(anyCtx, systemUUID).
+			GetK8sClusterME(anyCtx, registrationWithUUID).
 			Return(me, nil).Once()
 
 		r := NewReconciler()
 		err := r.Reconcile(t.Context(), dtClient, dk)
 		require.NoError(t, err)
-		assert.Equal(t, me.ID, dk.Status.KubernetesClusterMEID)
-		assert.Equal(t, me.Name, dk.Status.KubernetesClusterName)
+		assert.Equal(t, me.EntityScope, dk.Status.Registration.EntityScope)
+		assert.Equal(t, me.EntityLabel, dk.Status.Registration.EntityLabel)
 	})
 
 	t.Run("kubemon registration path with app FF: creates settings and app setting", func(t *testing.T) {
@@ -168,54 +173,54 @@ func TestReconcile(t *testing.T) {
 		// and is handled gracefully — this test covers the Gen2/Managed case where the
 		// schema exists and the app setting is created.
 		dk := newDynaKube()
-		me := settings.K8sClusterME{ID: meID, Name: dk.Name}
+		me := settings.K8sClusterRegistration{EntityID: systemUUID, EntityScope: meID, EntityLabel: dk.Name}
 		enableKubemonRegistration(dk)
 		enableAppFF(dk)
 		setSystemUUID(dk, systemUUID)
 
 		dtClient := settingsmock.NewClient(t)
 		dtClient.EXPECT().
-			GetK8sClusterME(anyCtx, systemUUID).
-			Return(settings.K8sClusterME{}, nil).Once()
+			GetK8sClusterME(anyCtx, registrationWithUUID).
+			Return(registrationWithUUID, nil).Once()
 		dtClient.EXPECT().
-			CreateOrUpdateKubernetesSetting(anyCtx, me.Name, systemUUID, "").
-			Return(me.ID, nil).Once()
+			CreateOrUpdateKubernetesSetting(anyCtx, me.EntityLabel, registrationWithUUID).
+			Return(me.EntityScope, nil).Once()
 		dtClient.EXPECT().
-			GetK8sClusterME(anyCtx, systemUUID).
+			GetK8sClusterME(anyCtx, registrationWithUUID).
 			Return(me, nil).Once()
 		// Gen2/Managed: schema exists, app setting not yet created
 		dtClient.EXPECT().
 			GetSettingsForMonitoredEntity(anyCtx, me, settings.AppTransitionSchemaID).
 			Return(settings.TotalCountSettingsResponse{}, nil).Once()
 		dtClient.EXPECT().
-			CreateOrUpdateKubernetesAppSetting(anyCtx, me.ID).
+			CreateOrUpdateKubernetesAppSetting(anyCtx, me).
 			Return("some-id", nil).Once()
 
 		r := NewReconciler()
 		err := r.Reconcile(t.Context(), dtClient, dk)
 		require.NoError(t, err)
-		assert.Equal(t, me.ID, dk.Status.KubernetesClusterMEID)
-		assert.Equal(t, me.Name, dk.Status.KubernetesClusterName)
+		assert.Equal(t, me.EntityScope, dk.Status.Registration.EntityScope)
+		assert.Equal(t, me.EntityLabel, dk.Status.Registration.EntityLabel)
 	})
 
 	t.Run("kubemon registration path with app FF on gen3: schema absent, no app setting created", func(t *testing.T) {
 		// Gen3 SaaS: FF is set but builtin:app-transition.kubernetes schema does not exist.
 		// GetSettingsForMonitoredEntity returns 404 — operator skips gracefully.
 		dk := newDynaKube()
-		me := settings.K8sClusterME{ID: meID, Name: dk.Name}
+		me := settings.K8sClusterRegistration{EntityID: systemUUID, EntityScope: meID, EntityLabel: dk.Name}
 		enableKubemonRegistration(dk)
 		enableAppFF(dk)
 		setSystemUUID(dk, systemUUID)
 
 		dtClient := settingsmock.NewClient(t)
 		dtClient.EXPECT().
-			GetK8sClusterME(anyCtx, systemUUID).
-			Return(settings.K8sClusterME{}, nil).Once()
+			GetK8sClusterME(anyCtx, registrationWithUUID).
+			Return(registrationWithUUID, nil).Once()
 		dtClient.EXPECT().
-			CreateOrUpdateKubernetesSetting(anyCtx, me.Name, systemUUID, "").
-			Return(me.ID, nil).Once()
+			CreateOrUpdateKubernetesSetting(anyCtx, me.EntityLabel, registrationWithUUID).
+			Return(me.EntityScope, nil).Once()
 		dtClient.EXPECT().
-			GetK8sClusterME(anyCtx, systemUUID).
+			GetK8sClusterME(anyCtx, registrationWithUUID).
 			Return(me, nil).Once()
 		// Gen3: schema absent — 404 returned, app setting skipped
 		dtClient.EXPECT().
@@ -225,51 +230,51 @@ func TestReconcile(t *testing.T) {
 		r := NewReconciler()
 		err := r.Reconcile(t.Context(), dtClient, dk)
 		require.NoError(t, err)
-		assert.Equal(t, me.ID, dk.Status.KubernetesClusterMEID)
+		assert.Equal(t, me.EntityScope, dk.Status.Registration.EntityScope)
 	})
 
 	t.Run("only MEID reconcile without AG", func(t *testing.T) {
 		dk := newDynaKube()
-		me := settings.K8sClusterME{ID: meID, Name: dk.Name}
+		me := settings.K8sClusterRegistration{EntityID: systemUUID, EntityScope: meID, EntityLabel: dk.Name}
 		setSystemUUID(dk, systemUUID)
 
 		dtClient := settingsmock.NewClient(t)
 		// 1. reconcileClusterMEID: no ME found yet (settings object not yet created)
 		dtClient.EXPECT().
-			GetK8sClusterME(anyCtx, systemUUID).
+			GetK8sClusterME(anyCtx, registrationWithUUID).
 			Return(me, nil).Once()
 		r := NewReconciler()
 		err := r.Reconcile(t.Context(), dtClient, dk)
 		require.NoError(t, err)
-		assert.Equal(t, me.ID, dk.Status.KubernetesClusterMEID)
-		assert.Equal(t, me.Name, dk.Status.KubernetesClusterName)
+		assert.Equal(t, me.EntityScope, dk.Status.Registration.EntityScope)
+		assert.Equal(t, me.EntityLabel, dk.Status.Registration.EntityLabel)
 		assert.NotNil(t, meta.FindStatusCondition(*dk.Conditions(), meIDConditionType))
 	})
 
 	t.Run("no app setting reconcile without FF", func(t *testing.T) {
 		dk := newDynaKube()
-		me := settings.K8sClusterME{ID: meID, Name: dk.Name}
+		me := settings.K8sClusterRegistration{EntityID: systemUUID, EntityScope: meID, EntityLabel: dk.Name}
 		enableAGKubeMonCapability(dk)
 		setSystemUUID(dk, systemUUID)
 
 		dtClient := settingsmock.NewClient(t)
 		// 1. reconcileClusterMEID: no ME found yet (settings object not yet created)
 		dtClient.EXPECT().
-			GetK8sClusterME(anyCtx, systemUUID).
-			Return(settings.K8sClusterME{}, nil).Once()
+			GetK8sClusterME(anyCtx, registrationWithUUID).
+			Return(registrationWithUUID, nil).Once()
 		dtClient.EXPECT().
-			CreateOrUpdateKubernetesSetting(anyCtx, me.Name, systemUUID, "").
-			Return(me.ID, nil).Once()
+			CreateOrUpdateKubernetesSetting(anyCtx, me.EntityLabel, registrationWithUUID).
+			Return(me.EntityScope, nil).Once()
 		// 3. refreshClusterMEID: ME is now available after settings were created
 		dtClient.EXPECT().
-			GetK8sClusterME(anyCtx, systemUUID).
+			GetK8sClusterME(anyCtx, registrationWithUUID).
 			Return(me, nil).Once()
 
 		r := NewReconciler()
 		err := r.Reconcile(t.Context(), dtClient, dk)
 		require.NoError(t, err)
-		assert.Equal(t, me.ID, dk.Status.KubernetesClusterMEID)
-		assert.Equal(t, me.Name, dk.Status.KubernetesClusterName)
+		assert.Equal(t, me.EntityScope, dk.Status.Registration.EntityScope)
+		assert.Equal(t, me.EntityLabel, dk.Status.Registration.EntityLabel)
 		assert.NotNil(t, meta.FindStatusCondition(*dk.Conditions(), meIDConditionType))
 	})
 }
@@ -280,6 +285,8 @@ func TestReconcileMEID(t *testing.T) {
 		meName     = "my-cluster"
 		systemUUID = "2132143215"
 	)
+
+	registrationWithUUID := settings.K8sClusterRegistration{EntityID: systemUUID}
 
 	t.Run("skipped when MEID condition is up to date", func(t *testing.T) {
 		dk := newDynaKube()
@@ -293,26 +300,26 @@ func TestReconcileMEID(t *testing.T) {
 
 	t.Run("sets MEID when ME is found", func(t *testing.T) {
 		dk := newDynaKube()
-		me := settings.K8sClusterME{ID: meID, Name: meName}
+		me := settings.K8sClusterRegistration{EntityID: systemUUID, EntityScope: meID, EntityLabel: meName}
 		setSystemUUID(dk, systemUUID)
 
 		dtClient := settingsmock.NewClient(t)
 		dtClient.EXPECT().
-			GetK8sClusterME(anyCtx, systemUUID).
+			GetK8sClusterME(anyCtx, registrationWithUUID).
 			Return(me, nil).Once()
 
 		r := NewReconciler()
 		err := r.reconcileMEID(t.Context(), dtClient, dk)
 		require.NoError(t, err)
-		assert.Equal(t, me.ID, dk.Status.KubernetesClusterMEID)
-		assert.Equal(t, me.Name, dk.Status.KubernetesClusterName)
+		assert.Equal(t, me.EntityScope, dk.Status.Registration.EntityScope)
+		assert.Equal(t, me.EntityLabel, dk.Status.Registration.EntityLabel)
 	})
 
 	t.Run("no error if no MEs are found", func(t *testing.T) {
 		dk := newDynaKube()
 		setSystemUUID(dk, systemUUID)
 		dtClient := settingsmock.NewClient(t)
-		dtClient.EXPECT().GetK8sClusterME(anyCtx, systemUUID).Return(settings.K8sClusterME{}, nil).Once()
+		dtClient.EXPECT().GetK8sClusterME(anyCtx, registrationWithUUID).Return(registrationWithUUID, nil).Once()
 
 		r := NewReconciler()
 		err := r.reconcileMEID(t.Context(), dtClient, dk)
@@ -327,9 +334,11 @@ func TestCreateK8sConnectionSettingIfAbsent(t *testing.T) {
 		objectID   = "2141rfa3sjvnsk"
 	)
 
+	registrationWithUUID := settings.K8sClusterRegistration{EntityID: systemUUID}
+
 	t.Run("don't create setting when settings when MEID is already in dk", func(t *testing.T) {
 		dk := newDynaKube()
-		me := settings.K8sClusterME{ID: meID, Name: dk.Name}
+		me := settings.K8sClusterRegistration{EntityScope: meID, EntityLabel: dk.Name}
 		setSystemUUID(dk, systemUUID)
 		setMEInfo(dk, me)
 
@@ -346,7 +355,7 @@ func TestCreateK8sConnectionSettingIfAbsent(t *testing.T) {
 
 		dtClient := settingsmock.NewClient(t)
 		dtClient.EXPECT().
-			CreateOrUpdateKubernetesSetting(anyCtx, dk.Name, systemUUID, "").
+			CreateOrUpdateKubernetesSetting(anyCtx, dk.Name, registrationWithUUID).
 			Return(objectID, nil).Once()
 
 		r := NewReconciler()
@@ -362,7 +371,7 @@ func TestCreateK8sConnectionSettingIfAbsent(t *testing.T) {
 
 		dtClient := settingsmock.NewClient(t)
 		dtClient.EXPECT().
-			CreateOrUpdateKubernetesSetting(anyCtx, specialName, systemUUID, "").
+			CreateOrUpdateKubernetesSetting(anyCtx, specialName, registrationWithUUID).
 			Return(objectID, nil).Once()
 
 		r := NewReconciler()
@@ -377,7 +386,7 @@ func TestCreateK8sConnectionSettingIfAbsent(t *testing.T) {
 
 		dtClient := settingsmock.NewClient(t)
 		dtClient.EXPECT().
-			CreateOrUpdateKubernetesSetting(anyCtx, dk.Name, systemUUID, "").
+			CreateOrUpdateKubernetesSetting(anyCtx, dk.Name, registrationWithUUID).
 			Return("", errors.New("boom")).Once()
 
 		r := NewReconciler()
@@ -395,40 +404,42 @@ func TestRefreshMEIDWithRetry(t *testing.T) {
 		objectID   = "2141rfa3sjvnsk"
 	)
 
+	registrationWithUUID := settings.K8sClusterRegistration{EntityID: systemUUID}
+
 	t.Run("no retry on success", func(t *testing.T) {
 		dk := newDynaKube()
-		me := settings.K8sClusterME{ID: meID, Name: dk.Name}
+		me := settings.K8sClusterRegistration{EntityID: systemUUID, EntityScope: meID, EntityLabel: dk.Name}
 		setSystemUUID(dk, systemUUID)
 		dtClient := settingsmock.NewClient(t)
-		dtClient.EXPECT().GetK8sClusterME(anyCtx, systemUUID).Return(me, nil).Once()
+		dtClient.EXPECT().GetK8sClusterME(anyCtx, registrationWithUUID).Return(me, nil).Once()
 
 		r := NewReconciler()
 		err := r.refreshMEIDWithRetry(t.Context(), dtClient, dk)
 		require.NoError(t, err)
-		assert.Equal(t, me.ID, dk.Status.KubernetesClusterMEID)
-		assert.Equal(t, me.Name, dk.Status.KubernetesClusterName)
+		assert.Equal(t, me.EntityScope, dk.Status.Registration.EntityScope)
+		assert.Equal(t, me.EntityLabel, dk.Status.Registration.EntityLabel)
 	})
 
 	t.Run("retry on missing", func(t *testing.T) {
 		dk := newDynaKube()
-		me := settings.K8sClusterME{ID: meID, Name: dk.Name}
+		me := settings.K8sClusterRegistration{EntityID: systemUUID, EntityScope: meID, EntityLabel: dk.Name}
 		setSystemUUID(dk, systemUUID)
 		dtClient := settingsmock.NewClient(t)
-		dtClient.EXPECT().GetK8sClusterME(anyCtx, systemUUID).Return(settings.K8sClusterME{}, nil).Once()
-		dtClient.EXPECT().GetK8sClusterME(anyCtx, systemUUID).Return(me, nil).Once()
+		dtClient.EXPECT().GetK8sClusterME(anyCtx, registrationWithUUID).Return(registrationWithUUID, nil).Once()
+		dtClient.EXPECT().GetK8sClusterME(anyCtx, registrationWithUUID).Return(me, nil).Once()
 
 		r := NewReconciler()
 		err := r.refreshMEIDWithRetry(t.Context(), dtClient, dk)
 		require.NoError(t, err)
-		assert.Equal(t, me.ID, dk.Status.KubernetesClusterMEID)
-		assert.Equal(t, me.Name, dk.Status.KubernetesClusterName)
+		assert.Equal(t, me.EntityScope, dk.Status.Registration.EntityScope)
+		assert.Equal(t, me.EntityLabel, dk.Status.Registration.EntityLabel)
 	})
 
 	t.Run("error after no success for 5 tries", func(t *testing.T) {
 		dk := newDynaKube()
 		setSystemUUID(dk, systemUUID)
 		dtClient := settingsmock.NewClient(t)
-		dtClient.EXPECT().GetK8sClusterME(anyCtx, systemUUID).Return(settings.K8sClusterME{}, nil).Times(5)
+		dtClient.EXPECT().GetK8sClusterME(anyCtx, registrationWithUUID).Return(registrationWithUUID, nil).Times(5)
 
 		r := NewReconciler()
 		err := r.refreshMEIDWithRetry(t.Context(), dtClient, dk)
@@ -439,7 +450,7 @@ func TestRefreshMEIDWithRetry(t *testing.T) {
 		dk := newDynaKube()
 		setSystemUUID(dk, systemUUID)
 		dtClient := settingsmock.NewClient(t)
-		dtClient.EXPECT().GetK8sClusterME(anyCtx, systemUUID).Return(settings.K8sClusterME{}, errors.New("BOOM")).Once()
+		dtClient.EXPECT().GetK8sClusterME(anyCtx, registrationWithUUID).Return(settings.K8sClusterRegistration{}, errors.New("BOOM")).Once()
 
 		r := NewReconciler()
 		err := r.refreshMEIDWithRetry(t.Context(), dtClient, dk)
@@ -455,7 +466,7 @@ func TestCreateK8sAppSettingIfAbsent(t *testing.T) {
 
 	t.Run("don't create app without FF", func(t *testing.T) {
 		dk := newDynaKube()
-		me := settings.K8sClusterME{ID: meID, Name: meName}
+		me := settings.K8sClusterRegistration{EntityScope: meID, EntityLabel: meName}
 		setMEInfo(dk, me)
 
 		dtClient := settingsmock.NewClient(t)
@@ -467,7 +478,7 @@ func TestCreateK8sAppSettingIfAbsent(t *testing.T) {
 
 	t.Run("don't create app setting as settings already exist", func(t *testing.T) {
 		dk := newDynaKube()
-		me := settings.K8sClusterME{ID: meID, Name: meName}
+		me := settings.K8sClusterRegistration{EntityScope: meID, EntityLabel: meName}
 		setMEInfo(dk, me)
 		enableAppFF(dk)
 
@@ -483,7 +494,7 @@ func TestCreateK8sAppSettingIfAbsent(t *testing.T) {
 
 	t.Run("don't create app setting when get entities api response is error", func(t *testing.T) {
 		dk := newDynaKube()
-		me := settings.K8sClusterME{ID: meID, Name: meName}
+		me := settings.K8sClusterRegistration{EntityScope: meID, EntityLabel: meName}
 		setMEInfo(dk, me)
 		enableAppFF(dk)
 
@@ -501,7 +512,7 @@ func TestCreateK8sAppSettingIfAbsent(t *testing.T) {
 
 	t.Run("don't create app setting when get CreateOrUpdateKubernetesAppSetting response is error", func(t *testing.T) {
 		dk := newDynaKube()
-		me := settings.K8sClusterME{ID: meID, Name: meName}
+		me := settings.K8sClusterRegistration{EntityScope: meID, EntityLabel: meName}
 		setMEInfo(dk, me)
 		enableAppFF(dk)
 
@@ -512,7 +523,7 @@ func TestCreateK8sAppSettingIfAbsent(t *testing.T) {
 			GetSettingsForMonitoredEntity(anyCtx, me, settings.AppTransitionSchemaID).
 			Return(settings.TotalCountSettingsResponse{}, nil).Once()
 		dtClient.EXPECT().
-			CreateOrUpdateKubernetesAppSetting(anyCtx, me.ID).
+			CreateOrUpdateKubernetesAppSetting(anyCtx, me).
 			Return("", expectErr).Once()
 
 		r := NewReconciler()
@@ -522,7 +533,7 @@ func TestCreateK8sAppSettingIfAbsent(t *testing.T) {
 
 	t.Run("create app setting as settings don't already exist", func(t *testing.T) {
 		dk := newDynaKube()
-		me := settings.K8sClusterME{ID: meID, Name: meName}
+		me := settings.K8sClusterRegistration{EntityScope: meID, EntityLabel: meName}
 		setMEInfo(dk, me)
 		enableAppFF(dk)
 
@@ -533,7 +544,7 @@ func TestCreateK8sAppSettingIfAbsent(t *testing.T) {
 			GetSettingsForMonitoredEntity(anyCtx, me, settings.AppTransitionSchemaID).
 			Return(settings.TotalCountSettingsResponse{}, nil).Once()
 		dtClient.EXPECT().
-			CreateOrUpdateKubernetesAppSetting(anyCtx, me.ID).
+			CreateOrUpdateKubernetesAppSetting(anyCtx, me).
 			Return("test", nil).Once()
 
 		err := r.createK8sAppSettingIfAbsent(t.Context(), dtClient, dk)

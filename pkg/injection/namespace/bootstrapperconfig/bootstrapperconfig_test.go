@@ -84,7 +84,7 @@ func TestGenerateForDynakube(t *testing.T) {
 				},
 			},
 			Status: dynakube.DynaKubeStatus{
-				KubernetesClusterMEID: "KUBERNETES_CLUSTER-test",
+				Registration: dynakube.Registration{EntityScope: "KUBERNETES_CLUSTER-test"},
 			},
 		}
 
@@ -151,7 +151,7 @@ func TestGenerateForDynakube(t *testing.T) {
 				},
 			},
 			Status: dynakube.DynaKubeStatus{
-				KubernetesClusterMEID: "KUBERNETES_CLUSTER-test",
+				Registration: dynakube.Registration{EntityScope: "KUBERNETES_CLUSTER-test"},
 			},
 		}
 
@@ -249,7 +249,7 @@ func TestGenerateForDynakube(t *testing.T) {
 				},
 			},
 			Status: dynakube.DynaKubeStatus{
-				KubernetesClusterMEID: "KUBERNETES_CLUSTER-test",
+				Registration: dynakube.Registration{EntityScope: "KUBERNETES_CLUSTER-test"},
 			},
 		}
 
@@ -332,7 +332,7 @@ func TestGenerateForDynakube(t *testing.T) {
 				},
 			},
 			Status: dynakube.DynaKubeStatus{
-				KubernetesClusterMEID: "KUBERNETES_CLUSTER-test",
+				Registration: dynakube.Registration{EntityScope: "KUBERNETES_CLUSTER-test"},
 			},
 		}
 
@@ -380,7 +380,7 @@ func TestGenerateForDynakube(t *testing.T) {
 				},
 			},
 			Status: dynakube.DynaKubeStatus{
-				KubernetesClusterMEID: "KUBERNETES_CLUSTER-test",
+				Registration: dynakube.Registration{EntityScope: "KUBERNETES_CLUSTER-test"},
 			},
 		}
 
@@ -443,7 +443,7 @@ func TestGenerateForDynakube(t *testing.T) {
 				},
 			},
 			Status: dynakube.DynaKubeStatus{
-				KubernetesClusterMEID: "KUBERNETES_CLUSTER-test",
+				Registration: dynakube.Registration{EntityScope: "KUBERNETES_CLUSTER-test"},
 			},
 		}
 
@@ -501,7 +501,7 @@ func TestGenerateForDynakubeHostMonitoring(t *testing.T) {
 				},
 			},
 			Status: dynakube.DynaKubeStatus{
-				KubernetesClusterMEID: "KUBERNETES_CLUSTER-test",
+				Registration: dynakube.Registration{EntityScope: "KUBERNETES_CLUSTER-test"},
 			},
 		}
 

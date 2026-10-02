@@ -87,7 +87,7 @@ func (r *Reconciler) checkLogMonitoringSettings(ctx context.Context, dtClient se
 	log := logd.FromContext(ctx)
 	log.Info("start reconciling log monitoring settings")
 
-	if dk.Status.KubernetesClusterMEID == "" {
+	if dk.Status.Registration.EntityScope == "" {
 		msg := "kubernetesClusterMEID is not available, which is needed for logmonitoring settings creation, will skip it for now"
 		log.Info(msg)
 
@@ -96,7 +96,9 @@ func (r *Reconciler) checkLogMonitoringSettings(ctx context.Context, dtClient se
 		return nil
 	}
 
-	logMonitoringSettings, err := dtClient.GetSettingsForLogModule(ctx, dk.Status.KubernetesClusterMEID)
+	registration := settings.K8sClusterRegistration(dk.Status.Registration)
+
+	logMonitoringSettings, err := dtClient.GetSettingsForLogModule(ctx, registration)
 	if err != nil {
 		setErrorCondition(dk.Conditions())
 
@@ -116,7 +118,7 @@ func (r *Reconciler) checkLogMonitoringSettings(ctx context.Context, dtClient se
 		matchers = dk.LogMonitoring().IngestRuleMatchers
 	}
 
-	objectID, err := dtClient.CreateLogMonitoringSetting(ctx, dk.Status.KubernetesClusterMEID, dk.Status.KubernetesClusterName, matchers)
+	objectID, err := dtClient.CreateLogMonitoringSetting(ctx, registration, dk.Status.Registration.EntityLabel, matchers)
 	if err != nil {
 		setErrorCondition(dk.Conditions())
 

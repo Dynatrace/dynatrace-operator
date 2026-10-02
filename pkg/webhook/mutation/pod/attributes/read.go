@@ -108,7 +108,7 @@ func (attrs *Pod) readPodAttributes(request mutator.BaseRequest) {
 	attrs.podInfo[K8sNodeNameAttr] = k8senv.NewRef(K8sNodeNameEnv)
 	attrs.podInfo[K8sNamespaceNameAttr] = request.Pod.Namespace
 
-	attrs.clusterInfo[K8sClusterUIDAttr] = request.DynaKube.Status.KubeSystemUUID
-	attrs.clusterInfo[K8sClusterNameAttr] = request.DynaKube.Status.KubernetesClusterName
-	attrs.clusterInfo[K8sDTClusterEntityAttr] = request.DynaKube.Status.KubernetesClusterMEID
+	attrs.clusterInfo[K8sClusterUIDAttr] = request.DynaKube.Status.Registration.EntityID
+	attrs.clusterInfo[K8sClusterNameAttr] = request.DynaKube.Status.Registration.EntityLabel
+	attrs.clusterInfo[K8sDTClusterEntityAttr] = request.DynaKube.Status.Registration.EntityScope
 }

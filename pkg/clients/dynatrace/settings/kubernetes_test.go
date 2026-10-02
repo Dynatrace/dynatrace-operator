@@ -16,114 +16,168 @@ import (
 func TestCreateOrUpdateKubernetesSetting(t *testing.T) {
 	ctx := t.Context()
 
-	matchBody := func(schemaVersion string) any {
-		return matchJSONBody[kubernetesObjectValue](KubernetesSettingsSchemaID, schemaVersion)
-	}
-
-	t.Run("success", func(t *testing.T) {
-		apiClient := coremock.NewClient(t)
-		request := coremock.NewRequest(t)
-		request.EXPECT().WithQueryParams(map[string]string{"validateOnly": "false"}).Return(request).Once()
-		request.EXPECT().WithJSONBody(matchBody(hierarchicalMonitoringSettingsSchemaVersion)).Return(request).Once()
-		request.EXPECT().Execute(new([]postObjectsResponse)).Run(injectResponse([]postObjectsResponse{{"obj-123"}})).Return(nil).Once()
-		apiClient.EXPECT().POST(ctx, ObjectsPath).Return(request).Once()
-
-		client := NewClient(apiClient)
-		objectID, err := client.CreateOrUpdateKubernetesSetting(ctx, "label-1", "uuid-1", "scope-1")
-		require.NoError(t, err)
-		assert.Equal(t, "obj-123", objectID)
-	})
-
-	t.Run("error from API", func(t *testing.T) {
-		apiClient := coremock.NewClient(t)
-		request := coremock.NewRequest(t)
-		request.EXPECT().WithQueryParams(map[string]string{"validateOnly": "false"}).Return(request).Once()
-		request.EXPECT().WithJSONBody(matchBody(hierarchicalMonitoringSettingsSchemaVersion)).Return(request).Once()
-		request.EXPECT().Execute(new([]postObjectsResponse)).Return(errors.New("api error")).Once()
-		apiClient.EXPECT().POST(ctx, ObjectsPath).Return(request).Once()
-
-		client := NewClient(apiClient)
-		objectID, err := client.CreateOrUpdateKubernetesSetting(ctx, "label-1", "uuid-1", "scope-1")
-		require.Error(t, err)
-		assert.Empty(t, objectID)
-	})
-
-	t.Run("fallback to v1 on 404", func(t *testing.T) {
-		apiClient := coremock.NewClient(t)
-		request := coremock.NewRequest(t)
-		request2 := coremock.NewRequest(t)
-
-		request.EXPECT().WithQueryParams(map[string]string{"validateOnly": "false"}).Return(request).Once()
-		request.EXPECT().WithJSONBody(matchBody(hierarchicalMonitoringSettingsSchemaVersion)).Return(request).Once()
-		request.EXPECT().Execute(new([]postObjectsResponse)).Return(&core.HTTPError{StatusCode: 404}).Once()
-
-		request2.EXPECT().WithQueryParams(map[string]string{"validateOnly": "false"}).Return(request2).Once()
-		request2.EXPECT().WithJSONBody(matchBody(schemaVersionV1)).Return(request2).Once()
-		request2.EXPECT().Execute(new([]postObjectsResponse)).Run(injectResponse([]postObjectsResponse{{"obj-456"}})).Return(nil).Once()
-
-		apiClient.EXPECT().POST(ctx, ObjectsPath).Return(request).Once()
-		apiClient.EXPECT().POST(ctx, ObjectsPath).Return(request2).Once()
-
-		client := NewClient(apiClient)
-		objectID, err := client.CreateOrUpdateKubernetesSetting(ctx, "label-1", "uuid-1", "scope-1")
-		require.NoError(t, err)
-		assert.Equal(t, "obj-456", objectID)
-	})
-
 	t.Run("empty kubeSystemUUID", func(t *testing.T) {
 		apiClient := coremock.NewClient(t)
-		client := NewClient(apiClient)
-		objectID, err := client.CreateOrUpdateKubernetesSetting(ctx, "label-1", "", "scope-1")
+		client := NewClient(apiClient, Gen2)
+		objectID, err := client.CreateOrUpdateKubernetesSetting(ctx, "label-1", K8sClusterRegistration{})
 		require.ErrorIs(t, err, errMissingKubeSystemUUID)
 		assert.Empty(t, objectID)
 	})
 
-	t.Run("invalid response", func(t *testing.T) {
-		apiClient := coremock.NewClient(t)
-		request := coremock.NewRequest(t)
-		request.EXPECT().WithQueryParams(map[string]string{"validateOnly": "false"}).Return(request).Once()
-		request.EXPECT().WithJSONBody(matchBody(hierarchicalMonitoringSettingsSchemaVersion)).Return(request).Once()
-		request.EXPECT().Execute(new([]postObjectsResponse)).Return(nil).Once()
-		apiClient.EXPECT().POST(ctx, ObjectsPath).Return(request).Once()
+	t.Run("gen2 uses an empty scope", func(t *testing.T) {
+		value := newKubernetesObjectValue("label-1", "uuid-1")
 
-		client := NewClient(apiClient)
-		_, err := client.CreateOrUpdateKubernetesSetting(ctx, "label-1", "uuid-1", "scope-1")
-		require.ErrorAs(t, err, new(notSingleEntryError))
+		t.Run("success", func(t *testing.T) {
+			apiClient := coremock.NewClient(t)
+			request := coremock.NewRequest(t)
+			request.EXPECT().WithQueryParams(map[string]string{gen2ValidateOnlyParam: "false"}).Return(request).Once()
+			request.EXPECT().WithJSONBody(matchGen2Body(KubernetesSettingsSchemaID, hierarchicalMonitoringSettingsSchemaVersion, "", value)).Return(request).Once()
+			request.EXPECT().Execute(new([]postObjectsResponse)).Run(injectResponse([]postObjectsResponse{{ObjectID: "obj-123"}})).Return(nil).Once()
+			apiClient.EXPECT().POST(ctx, gen2ObjectsPath).Return(request).Once()
+
+			client := NewClient(apiClient, Gen2)
+			objectID, err := client.CreateOrUpdateKubernetesSetting(ctx, "label-1", K8sClusterRegistration{EntityID: "uuid-1"})
+			require.NoError(t, err)
+			assert.Equal(t, "obj-123", objectID)
+		})
+
+		t.Run("fallback to v1 on 404", func(t *testing.T) {
+			apiClient := coremock.NewClient(t)
+			request := coremock.NewRequest(t)
+			request2 := coremock.NewRequest(t)
+
+			v1Value := value
+			v1Value.monitoringSettings = &monitoringSettings{CloudApplicationPipelineEnabled: true}
+
+			request.EXPECT().WithQueryParams(map[string]string{gen2ValidateOnlyParam: "false"}).Return(request).Once()
+			request.EXPECT().WithJSONBody(matchGen2Body(KubernetesSettingsSchemaID, hierarchicalMonitoringSettingsSchemaVersion, "", value)).Return(request).Once()
+			request.EXPECT().Execute(new([]postObjectsResponse)).Return(&core.HTTPError{StatusCode: 404}).Once()
+
+			request2.EXPECT().WithQueryParams(map[string]string{gen2ValidateOnlyParam: "false"}).Return(request2).Once()
+			request2.EXPECT().WithJSONBody(matchGen2Body(KubernetesSettingsSchemaID, schemaVersionV1, "", v1Value)).Return(request2).Once()
+			request2.EXPECT().Execute(new([]postObjectsResponse)).Run(injectResponse([]postObjectsResponse{{ObjectID: "obj-456"}})).Return(nil).Once()
+
+			apiClient.EXPECT().POST(ctx, gen2ObjectsPath).Return(request).Once()
+			apiClient.EXPECT().POST(ctx, gen2ObjectsPath).Return(request2).Once()
+
+			client := NewClient(apiClient, Gen2)
+			objectID, err := client.CreateOrUpdateKubernetesSetting(ctx, "label-1", K8sClusterRegistration{EntityID: "uuid-1"})
+			require.NoError(t, err)
+			assert.Equal(t, "obj-456", objectID)
+		})
+	})
+
+	t.Run("gen3 uses the cluster-UID lookup scope", func(t *testing.T) {
+		value := newKubernetesObjectValue("label-1", "uuid-1")
+		const scope = "k8s.cluster.uid:uuid-1"
+
+		t.Run("success", func(t *testing.T) {
+			apiClient := coremock.NewClient(t)
+			request := coremock.NewRequest(t)
+			request.EXPECT().WithQueryParams(map[string]string{gen3ValidateOnlyParam: "false"}).Return(request).Once()
+			request.EXPECT().WithJSONBody(matchGen3Body(KubernetesSettingsSchemaID, hierarchicalMonitoringSettingsSchemaVersion, scope, value)).Return(request).Once()
+			request.EXPECT().Execute(new(postObjectsResponse)).Run(injectResponse(postObjectsResponse{ObjectID: "obj-123"})).Return(nil).Once()
+			apiClient.EXPECT().POST(ctx, gen3ObjectsPath).Return(request).Once()
+
+			client := NewClient(apiClient, Gen3)
+			objectID, err := client.CreateOrUpdateKubernetesSetting(ctx, "label-1", K8sClusterRegistration{EntityID: "uuid-1"})
+			require.NoError(t, err)
+			assert.Equal(t, "obj-123", objectID)
+		})
+
+		t.Run("fallback to v1 on 404", func(t *testing.T) {
+			apiClient := coremock.NewClient(t)
+			request := coremock.NewRequest(t)
+			request2 := coremock.NewRequest(t)
+
+			v1Value := value
+			v1Value.monitoringSettings = &monitoringSettings{CloudApplicationPipelineEnabled: true}
+
+			request.EXPECT().WithQueryParams(map[string]string{gen3ValidateOnlyParam: "false"}).Return(request).Once()
+			request.EXPECT().WithJSONBody(matchGen3Body(KubernetesSettingsSchemaID, hierarchicalMonitoringSettingsSchemaVersion, scope, value)).Return(request).Once()
+			request.EXPECT().Execute(new(postObjectsResponse)).Return(&core.HTTPError{StatusCode: 404}).Once()
+
+			request2.EXPECT().WithQueryParams(map[string]string{gen3ValidateOnlyParam: "false"}).Return(request2).Once()
+			request2.EXPECT().WithJSONBody(matchGen3Body(KubernetesSettingsSchemaID, schemaVersionV1, scope, v1Value)).Return(request2).Once()
+			request2.EXPECT().Execute(new(postObjectsResponse)).Run(injectResponse(postObjectsResponse{ObjectID: "obj-456"})).Return(nil).Once()
+
+			apiClient.EXPECT().POST(ctx, gen3ObjectsPath).Return(request).Once()
+			apiClient.EXPECT().POST(ctx, gen3ObjectsPath).Return(request2).Once()
+
+			client := NewClient(apiClient, Gen3)
+			objectID, err := client.CreateOrUpdateKubernetesSetting(ctx, "label-1", K8sClusterRegistration{EntityID: "uuid-1"})
+			require.NoError(t, err)
+			assert.Equal(t, "obj-456", objectID)
+		})
 	})
 }
 
 func TestCreateOrUpdateKubernetesAppSetting(t *testing.T) {
 	ctx := t.Context()
+	value := kubernetesAppObjectValue{KubernetesAppOptions: kubernetesAppOptions{EnableKubernetesApp: true}}
 
-	matchBody := func() any {
-		return matchJSONBody[kubernetesAppObjectValue](AppTransitionSchemaID, appTransitionSchemaVersion)
-	}
+	t.Run("gen2 uses the Monitored Entity ID as scope", func(t *testing.T) {
+		registration := K8sClusterRegistration{EntityID: "uuid-1", EntityScope: "scope-1"}
 
-	t.Run("success", func(t *testing.T) {
-		apiClient := coremock.NewClient(t)
-		request := coremock.NewRequest(t)
-		request.EXPECT().WithQueryParams(map[string]string{"validateOnly": "false"}).Return(request).Once()
-		request.EXPECT().WithJSONBody(matchBody()).Return(request).Once()
-		request.EXPECT().Execute(new([]postObjectsResponse)).Run(injectResponse([]postObjectsResponse{{"obj-app-1"}})).Return(nil).Once()
-		apiClient.EXPECT().POST(ctx, ObjectsPath).Return(request).Once()
+		t.Run("success", func(t *testing.T) {
+			apiClient := coremock.NewClient(t)
+			request := coremock.NewRequest(t)
+			request.EXPECT().WithQueryParams(map[string]string{gen2ValidateOnlyParam: "false"}).Return(request).Once()
+			request.EXPECT().WithJSONBody(matchGen2Body(AppTransitionSchemaID, appTransitionSchemaVersion, "scope-1", value)).Return(request).Once()
+			request.EXPECT().Execute(new([]postObjectsResponse)).Run(injectResponse([]postObjectsResponse{{ObjectID: "obj-app-1"}})).Return(nil).Once()
+			apiClient.EXPECT().POST(ctx, gen2ObjectsPath).Return(request).Once()
 
-		client := NewClient(apiClient)
-		objectID, err := client.CreateOrUpdateKubernetesAppSetting(ctx, "scope-1")
-		require.NoError(t, err)
-		assert.Equal(t, "obj-app-1", objectID)
+			client := NewClient(apiClient, Gen2)
+			objectID, err := client.CreateOrUpdateKubernetesAppSetting(ctx, registration)
+			require.NoError(t, err)
+			assert.Equal(t, "obj-app-1", objectID)
+		})
+
+		t.Run("error from API", func(t *testing.T) {
+			apiClient := coremock.NewClient(t)
+			request := coremock.NewRequest(t)
+			request.EXPECT().WithQueryParams(map[string]string{gen2ValidateOnlyParam: "false"}).Return(request).Once()
+			request.EXPECT().WithJSONBody(matchGen2Body(AppTransitionSchemaID, appTransitionSchemaVersion, "scope-1", value)).Return(request).Once()
+			request.EXPECT().Execute(new([]postObjectsResponse)).Return(errors.New("api error")).Once()
+			apiClient.EXPECT().POST(ctx, gen2ObjectsPath).Return(request).Once()
+
+			client := NewClient(apiClient, Gen2)
+			objectID, err := client.CreateOrUpdateKubernetesAppSetting(ctx, registration)
+			require.Error(t, err)
+			assert.Empty(t, objectID)
+		})
 	})
 
-	t.Run("error from API", func(t *testing.T) {
-		apiClient := coremock.NewClient(t)
-		request := coremock.NewRequest(t)
-		request.EXPECT().WithQueryParams(map[string]string{"validateOnly": "false"}).Return(request).Once()
-		request.EXPECT().WithJSONBody(matchBody()).Return(request).Once()
-		request.EXPECT().Execute(new([]postObjectsResponse)).Return(errors.New("api error")).Once()
-		apiClient.EXPECT().POST(ctx, ObjectsPath).Return(request).Once()
+	t.Run("gen3 reuses EntityScope once known", func(t *testing.T) {
+		registration := K8sClusterRegistration{EntityID: "uuid-1", EntityScope: "scope-1"}
+		const scope = "scope-1"
 
-		client := NewClient(apiClient)
-		objectID, err := client.CreateOrUpdateKubernetesAppSetting(ctx, "scope-1")
-		require.Error(t, err)
-		assert.Empty(t, objectID)
+		t.Run("success", func(t *testing.T) {
+			apiClient := coremock.NewClient(t)
+			request := coremock.NewRequest(t)
+			request.EXPECT().WithQueryParams(map[string]string{gen3ValidateOnlyParam: "false"}).Return(request).Once()
+			request.EXPECT().WithJSONBody(matchGen3Body(AppTransitionSchemaID, appTransitionSchemaVersion, scope, value)).Return(request).Once()
+			request.EXPECT().Execute(new(postObjectsResponse)).Run(injectResponse(postObjectsResponse{ObjectID: "obj-app-1"})).Return(nil).Once()
+			apiClient.EXPECT().POST(ctx, gen3ObjectsPath).Return(request).Once()
+
+			client := NewClient(apiClient, Gen3)
+			objectID, err := client.CreateOrUpdateKubernetesAppSetting(ctx, registration)
+			require.NoError(t, err)
+			assert.Equal(t, "obj-app-1", objectID)
+		})
+
+		t.Run("error from API", func(t *testing.T) {
+			apiClient := coremock.NewClient(t)
+			request := coremock.NewRequest(t)
+			request.EXPECT().WithQueryParams(map[string]string{gen3ValidateOnlyParam: "false"}).Return(request).Once()
+			request.EXPECT().WithJSONBody(matchGen3Body(AppTransitionSchemaID, appTransitionSchemaVersion, scope, value)).Return(request).Once()
+			request.EXPECT().Execute(new(postObjectsResponse)).Return(errors.New("api error")).Once()
+			apiClient.EXPECT().POST(ctx, gen3ObjectsPath).Return(request).Once()
+
+			client := NewClient(apiClient, Gen3)
+			objectID, err := client.CreateOrUpdateKubernetesAppSetting(ctx, registration)
+			require.Error(t, err)
+			assert.Empty(t, objectID)
+		})
 	})
 }

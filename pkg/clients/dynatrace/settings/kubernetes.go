@@ -17,7 +17,18 @@ const (
 	schemaVersionV1                             = "1.0.27"
 	hierarchicalMonitoringSettingsSchemaVersion = "3.0.0"
 	appTransitionSchemaVersion                  = "1.0.1"
+
+	kubernetesSettingsNeededFields = "value,scope"
+
+	k8sClusterUIDScopePrefix = "k8s.cluster.uid:"
 )
+
+// k8sClusterUIDScope returns the virtual scope that the builtin:cloud.kubernetes setting is created
+// and queried under on gen3. Once persisted, Dynatrace resolves this virtual scope to the actual
+// Kubernetes Cluster Monitored Entity ID.
+func k8sClusterUIDScope(kubeSystemUUID string) string {
+	return k8sClusterUIDScopePrefix + kubeSystemUUID
+}
 
 type kubernetesObjectValue struct {
 	*monitoringSettings
@@ -44,78 +55,49 @@ type kubernetesAppOptions struct {
 }
 
 // CreateOrUpdateKubernetesSetting returns the object ID of the created k8s settings.
-func (c *ClientImpl) CreateOrUpdateKubernetesSetting(ctx context.Context, clusterLabel, kubeSystemUUID, scope string) (string, error) {
-	if kubeSystemUUID == "" {
+// The scope used depends on the API generation: gen2 uses an empty scope and lets the backend create
+// the Monitored Entity asynchronously; gen3 has no unscoped writes, so it uses the Smartscape
+// cluster-UID lookup scope, which Dynatrace resolves to the Monitored Entity ID once persisted.
+func (c *ClientImpl) CreateOrUpdateKubernetesSetting(ctx context.Context, clusterLabel string, registration K8sClusterRegistration) (string, error) {
+	if registration.EntityID == "" {
 		return "", errMissingKubeSystemUUID
 	}
 
-	body := v3KubernetesObjectBody(clusterLabel, kubeSystemUUID, scope)
+	scope := c.api.scope(registration)
 
-	objectID, err := c.performCreateOrUpdateKubernetesSetting(ctx, body)
+	objectID, err := c.performCreateOrUpdateKubernetesSetting(ctx, KubernetesSettingsSchemaID, hierarchicalMonitoringSettingsSchemaVersion, scope,
+		newKubernetesObjectValue(clusterLabel, registration.EntityID))
 	if err != nil {
 		if !core.IsNotFound(err) {
 			return "", err
 		}
 
-		body = v1KubernetesObjectBody(clusterLabel, kubeSystemUUID, scope)
+		v1Value := newKubernetesObjectValue(clusterLabel, registration.EntityID)
+		v1Value.monitoringSettings = &monitoringSettings{CloudApplicationPipelineEnabled: true}
 
-		return c.performCreateOrUpdateKubernetesSetting(ctx, body)
+		return c.performCreateOrUpdateKubernetesSetting(ctx, KubernetesSettingsSchemaID, schemaVersionV1, scope, v1Value)
 	}
 
 	return objectID, nil
 }
 
 // CreateOrUpdateKubernetesAppSetting returns the object ID of the created k8s app settings.
-func (c *ClientImpl) CreateOrUpdateKubernetesAppSetting(ctx context.Context, scope string) (string, error) {
-	settings := newPostObjectsBody(
-		AppTransitionSchemaID, appTransitionSchemaVersion, scope,
+func (c *ClientImpl) CreateOrUpdateKubernetesAppSetting(ctx context.Context, registration K8sClusterRegistration) (string, error) {
+	return c.performCreateOrUpdateKubernetesSetting(ctx, AppTransitionSchemaID, appTransitionSchemaVersion, c.api.scope(registration),
 		kubernetesAppObjectValue{
-			kubernetesAppOptions{
+			KubernetesAppOptions: kubernetesAppOptions{
 				EnableKubernetesApp: true,
 			},
-		},
-	)
-
-	objectID, err := c.performCreateOrUpdateKubernetesSetting(ctx, settings)
-	if err != nil {
-		return "", err
-	}
-
-	return objectID, nil
+		})
 }
 
-func (c *ClientImpl) performCreateOrUpdateKubernetesSetting(ctx context.Context, body any) (string, error) {
-	var response []postObjectsResponse
-
-	err := c.apiClient.POST(ctx, ObjectsPath).
-		WithQueryParams(map[string]string{
-			validateOnlyQueryParam: "false",
-		}).
-		WithJSONBody(body).
-		Execute(&response)
+func (c *ClientImpl) performCreateOrUpdateKubernetesSetting(ctx context.Context, schemaID, schemaVersion, scope string, value any) (string, error) {
+	ids, err := c.api.createObject(ctx, schemaID, schemaVersion, scope, value)
 	if err != nil {
 		return "", fmt.Errorf("create kubernetes setting: %w", err)
 	}
 
-	return getObjectID(response)
-}
-
-func v1KubernetesObjectBody(clusterLabel, kubeSystemUUID, scope string) []postObjectsBody[kubernetesObjectValue] {
-	settings := newKubernetesObjectValue(clusterLabel, kubeSystemUUID)
-	settings.monitoringSettings = &monitoringSettings{
-		CloudApplicationPipelineEnabled: true,
-	}
-
-	return newPostObjectsBody(KubernetesSettingsSchemaID, schemaVersionV1, scope, settings)
-}
-
-func v3KubernetesObjectBody(clusterLabel, kubeSystemUUID, scope string) []postObjectsBody[kubernetesObjectValue] {
-	return newPostObjectsBody(
-		KubernetesSettingsSchemaID,
-		hierarchicalMonitoringSettingsSchemaVersion,
-		scope,
-		newKubernetesObjectValue(clusterLabel, kubeSystemUUID),
-	)
+	return singleID(ids)
 }
 
 func newKubernetesObjectValue(clusterLabel, kubeSystemUUID string) kubernetesObjectValue {

@@ -8,6 +8,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
@@ -18,6 +19,10 @@ const (
 	parameterKubernetesClusterID = "kubernetesClusterId"
 	requestHeaderEtag            = "If-None-Match"
 	responseHeaderEtag           = "ETag"
+
+	// gen3ScopePrefix identifies a gen3 Monitored Entity scope (e.g. K8S_CLUSTER-...). This classic
+	// endpoint does not support gen3 scopes yet, so calls with one are skipped rather than sent.
+	gen3ScopePrefix = "K8S_CLUSTER"
 )
 
 type ProcessGroupConfig struct {
@@ -36,12 +41,20 @@ type ProcessGroupConfig struct {
 //   - On HTTP 200: *ProcessGroupConfig with ETag from response header and CBOR data, nil error.
 //   - On HTTP 304: *ProcessGroupConfig with the original ETag and nil Data, nil error.
 //   - On HTTP 404: *ProcessGroupConfig (empty), nil error. Endpoint not available.
+//   - If kubernetesClusterID is a 3rd gen scope (e.g. K8S_CLUSTER-...): *ProcessGroupConfig (empty), nil
+//     error. This classic endpoint does not support 3rd gen scopes yet.
 //   - On other errors: non-nil error.
 func (c *ClientImpl) GetProcessGroupingConfig(ctx context.Context, kubernetesClusterID string, etag string) (*ProcessGroupConfig, error) {
 	ctx, log := logd.NewFromContext(ctx, loggerName)
 
 	if kubernetesClusterID == "" {
 		return nil, errors.New("kubernetesClusterID is required")
+	}
+
+	if strings.HasPrefix(kubernetesClusterID, gen3ScopePrefix) {
+		log.Info("attempted to query process grouping config API with a 3rd gen scope, which is not supported at the moment", "kubernetesClusterID", kubernetesClusterID)
+
+		return &ProcessGroupConfig{}, nil
 	}
 
 	params := map[string]string{

@@ -53,7 +53,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtClient settings.Client, dk
 		return nil
 	}
 
-	if dk.Status.KubeSystemUUID == "" {
+	if dk.Status.Registration.EntityID == "" {
 		return errMissingKubeSystemUUID
 	}
 
@@ -112,16 +112,15 @@ func (r *Reconciler) reconcileMEID(ctx context.Context, dtClient settings.Client
 
 	k8sconditions.SetStatusOutdated(dk.Conditions(), meIDConditionType, "kubernetesClusterMEID is outdated in the status")
 
-	k8sEntity, err := dtClient.GetK8sClusterME(ctx, dk.Status.KubeSystemUUID)
+	registration, err := dtClient.GetK8sClusterME(ctx, settings.K8sClusterRegistration(dk.Status.Registration))
 	if err != nil {
 		return fmt.Errorf("get kubernetesClusterMEID: %w", err)
 	}
 
 	// in the case the setting was deleted on the tenant, this should be respected in the DK
-	dk.Status.KubernetesClusterMEID = k8sEntity.ID
-	dk.Status.KubernetesClusterName = k8sEntity.Name
+	dk.Status.Registration = dynakube.Registration(registration)
 
-	if k8sEntity.ID == "" {
+	if registration.EntityScope == "" {
 		log.Info("no MEs found, no kubernetesClusterMEID will be set in the dynakube status")
 
 		return nil
@@ -129,7 +128,7 @@ func (r *Reconciler) reconcileMEID(ctx context.Context, dtClient settings.Client
 
 	k8sconditions.SetStatusUpdated(dk.Conditions(), meIDConditionType, "kubernetesClusterMEID is up to date")
 
-	log.Info("kubernetesClusterMEID set in dynakube status, done reconciling", "kubernetesClusterMEID", dk.Status.KubernetesClusterMEID)
+	log.Info("kubernetesClusterMEID set in dynakube status, done reconciling", "kubernetesClusterMEID", dk.Status.Registration.EntityScope)
 
 	return nil
 }
@@ -144,17 +143,16 @@ func (r *Reconciler) refreshMEIDWithRetry(ctx context.Context, dtClient settings
 	return retry.OnError(retry.DefaultRetry, func(err error) bool { return errors.Is(err, errNotAvailableME) }, func() error {
 		log.Info("refreshing kubernetesClusterMEID")
 
-		k8sEntity, err := dtClient.GetK8sClusterME(ctx, dk.Status.KubeSystemUUID)
+		registration, err := dtClient.GetK8sClusterME(ctx, settings.K8sClusterRegistration(dk.Status.Registration))
 		if err != nil {
 			return fmt.Errorf("get kubernetesClusterMEID: %w", err)
 		}
 
-		if k8sEntity.ID != "" {
-			dk.Status.KubernetesClusterMEID = k8sEntity.ID
-			dk.Status.KubernetesClusterName = k8sEntity.Name
+		if registration.EntityScope != "" {
+			dk.Status.Registration = dynakube.Registration(registration)
 			k8sconditions.SetStatusUpdated(dk.Conditions(), meIDConditionType, "Kubernetes Cluster MEID is up to date")
 
-			log.Info("kubernetesClusterMEID refreshed after settings creation", "kubernetesClusterMEID", dk.Status.KubernetesClusterMEID)
+			log.Info("kubernetesClusterMEID refreshed after settings creation", "kubernetesClusterMEID", dk.Status.Registration.EntityScope)
 
 			return nil
 		}
@@ -167,20 +165,20 @@ func (r *Reconciler) refreshMEIDWithRetry(ctx context.Context, dtClient settings
 
 func (r *Reconciler) createK8sConnectionSettingIfAbsent(ctx context.Context, dtClient settings.Client, dk *dynakube.DynaKube) (string, error) {
 	log := logd.FromContext(ctx)
-	if dk.Status.KubernetesClusterMEID != "" {
-		log.Info("kubernetes cluster setting already exists", "kubernetesClusterMEID", dk.Status.KubernetesClusterMEID, "kubernetesClusterName", dk.Status.KubernetesClusterName, "kubeSystemUUID", dk.Status.KubeSystemUUID)
+	if dk.Status.Registration.EntityScope != "" {
+		log.Info("kubernetes cluster setting already exists", "kubernetesClusterMEID", dk.Status.Registration.EntityScope, "kubernetesClusterName", dk.Status.Registration.EntityLabel, "kubeSystemUUID", dk.Status.Registration.EntityID)
 
 		return "", nil // settings already exist => don't need to create, and we do not update
 	}
 
 	kubernetesClusterName := getRegistrationClusterName(dk)
 
-	objectID, err := dtClient.CreateOrUpdateKubernetesSetting(ctx, kubernetesClusterName, dk.Status.KubeSystemUUID, "")
+	objectID, err := dtClient.CreateOrUpdateKubernetesSetting(ctx, kubernetesClusterName, settings.K8sClusterRegistration(dk.Status.Registration))
 	if err != nil {
 		return "", errors.WithMessage(err, "error creating dynatrace settings object")
 	}
 
-	log.Info("created kubernetes cluster setting", "kubernetesClusterName", kubernetesClusterName, "kubeSystemUUID", dk.Status.KubeSystemUUID, "objectID", objectID)
+	log.Info("created kubernetes cluster setting", "kubernetesClusterName", kubernetesClusterName, "kubeSystemUUID", dk.Status.Registration.EntityID, "objectID", objectID)
 
 	return objectID, nil
 }
@@ -188,23 +186,23 @@ func (r *Reconciler) createK8sConnectionSettingIfAbsent(ctx context.Context, dtC
 func (r *Reconciler) createK8sAppSettingIfAbsent(ctx context.Context, dtClient settings.Client, dk *dynakube.DynaKube) error {
 	log := logd.FromContext(ctx)
 
-	k8sEntity := settings.K8sClusterME{ID: dk.Status.KubernetesClusterMEID, Name: dk.Status.KubernetesClusterName}
+	registration := settings.K8sClusterRegistration(dk.Status.Registration)
 	if dk.FF().IsK8sAppEnabled() { //nolint:staticcheck
-		appSettings, err := dtClient.GetSettingsForMonitoredEntity(ctx, k8sEntity, settings.AppTransitionSchemaID)
+		appSettings, err := dtClient.GetSettingsForMonitoredEntity(ctx, registration, settings.AppTransitionSchemaID)
 		if err != nil {
 			if !core.IsNotFound(err) {
 				return errors.WithMessage(err, "error trying to check if app setting exists")
 			}
 
-			log.Info("skipping app-transition creation due to missing schema", "kubernetesClusterMEID", k8sEntity.ID, "schemaID", settings.AppTransitionSchemaID)
+			log.Info("skipping app-transition creation due to missing schema", "kubernetesClusterMEID", registration.EntityScope, "schemaID", settings.AppTransitionSchemaID)
 
 			return nil
 		}
 
 		if appSettings.TotalCount == 0 {
-			kubernetesClusterMEID := k8sEntity.ID
+			kubernetesClusterMEID := registration.EntityScope
 			if kubernetesClusterMEID != "" {
-				transitionSchemaObjectID, err := dtClient.CreateOrUpdateKubernetesAppSetting(ctx, kubernetesClusterMEID)
+				transitionSchemaObjectID, err := dtClient.CreateOrUpdateKubernetesAppSetting(ctx, registration)
 				if err != nil {
 					log.Info("schema app-transition.kubernetes failed to set", "kubernetesClusterMEID", kubernetesClusterMEID, "err", err)
 

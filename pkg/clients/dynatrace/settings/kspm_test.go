@@ -15,89 +15,118 @@ import (
 func TestGetKSPMSettings(t *testing.T) {
 	ctx := t.Context()
 
-	params := map[string]string{
-		validateOnlyQueryParam: "true",
-		schemaIDsQueryParam:    kspmSettingsSchemaID,
-		scopesQueryParam:       "entity-1",
-	}
+	t.Run("empty monitoredEntity", func(t *testing.T) {
+		apiClient := coremock.NewClient(t)
+		client := NewClient(apiClient, Gen2)
+		resp, err := client.GetKSPMSettings(ctx, K8sClusterRegistration{})
+		require.NoError(t, err)
+		assert.Equal(t, KSPMSettingsResponse{TotalCount: 0}, resp)
+	})
 
-	t.Run("success", func(t *testing.T) {
+	t.Run("gen2", func(t *testing.T) {
 		apiClient := coremock.NewClient(t)
 		request := coremock.NewRequest(t)
-		request.EXPECT().WithQueryParams(params).Return(request).Once()
+		request.EXPECT().WithQueryParams(map[string]string{
+			gen2ValidateOnlyParam: "true",
+			gen2SchemaIDsParam:    kspmSettingsSchemaID,
+			gen2ScopesParam:       "entity-1",
+		}).Return(request).Once()
 		request.EXPECT().Execute(new(KSPMSettingsResponse)).Run(injectResponse(KSPMSettingsResponse{TotalCount: 3})).Return(nil).Once()
-		apiClient.EXPECT().GET(ctx, ObjectsPath).Return(request).Once()
+		apiClient.EXPECT().GET(ctx, gen2ObjectsPath).Return(request).Once()
 
-		client := NewClient(apiClient)
-		resp, err := client.GetKSPMSettings(ctx, "entity-1")
+		client := NewClient(apiClient, Gen2)
+		resp, err := client.GetKSPMSettings(ctx, K8sClusterRegistration{EntityScope: "entity-1"})
 		require.NoError(t, err)
 		assert.Equal(t, KSPMSettingsResponse{TotalCount: 3}, resp)
 	})
 
-	t.Run("empty monitoredEntity", func(t *testing.T) {
+	t.Run("gen3 reuses EntityScope once known", func(t *testing.T) {
 		apiClient := coremock.NewClient(t)
-		client := NewClient(apiClient)
-		resp, err := client.GetKSPMSettings(ctx, "")
+		request := coremock.NewRequest(t)
+		request.EXPECT().WithQueryParams(map[string]string{
+			gen3SchemaIDParam: kspmSettingsSchemaID,
+			gen3ScopeParam:    "entity-1",
+		}).Return(request).Once()
+		request.EXPECT().Execute(new(KSPMSettingsResponse)).Run(injectResponse(KSPMSettingsResponse{TotalCount: 3})).Return(nil).Once()
+		apiClient.EXPECT().GET(ctx, gen3ObjectsPath).Return(request).Once()
+
+		client := NewClient(apiClient, Gen3)
+		resp, err := client.GetKSPMSettings(ctx, K8sClusterRegistration{EntityID: "uuid-1", EntityScope: "entity-1"})
 		require.NoError(t, err)
-		assert.Equal(t, KSPMSettingsResponse{TotalCount: 0}, resp)
+		assert.Equal(t, KSPMSettingsResponse{TotalCount: 3}, resp)
 	})
 }
 
 func TestCreateKSPMSetting(t *testing.T) {
 	ctx := t.Context()
-
-	matchBody := func() any {
-		return matchJSONBody[KSPMSettingsValue](kspmSettingsSchemaID, kspmSettingsSchemaVersion)
-	}
+	value := KSPMSettingsValue{DatasetPipelineEnabled: true}
 
 	t.Run("no ME", func(t *testing.T) {
 		apiClient := coremock.NewClient(t)
 
-		client := NewClient(apiClient)
-		objectID, err := client.CreateKSPMSetting(ctx, "", true)
+		client := NewClient(apiClient, Gen2)
+		objectID, err := client.CreateKSPMSetting(ctx, K8sClusterRegistration{}, true)
 		require.Error(t, err)
 		assert.Empty(t, objectID)
 	})
 
-	t.Run("success", func(t *testing.T) {
-		apiClient := coremock.NewClient(t)
-		request := coremock.NewRequest(t)
-		request.EXPECT().WithQueryParams(map[string]string{"validateOnly": "false"}).Return(request).Once()
-		request.EXPECT().WithJSONBody(matchBody()).Return(request).Once()
-		request.EXPECT().Execute(new([]postObjectsResponse)).Run(injectResponse([]postObjectsResponse{{ObjectID: "obj-123"}})).Return(nil).Once()
-		apiClient.EXPECT().POST(ctx, ObjectsPath).Return(request).Once()
+	t.Run("gen2", func(t *testing.T) {
+		t.Run("success", func(t *testing.T) {
+			apiClient := coremock.NewClient(t)
+			request := coremock.NewRequest(t)
+			request.EXPECT().WithQueryParams(map[string]string{gen2ValidateOnlyParam: "false"}).Return(request).Once()
+			request.EXPECT().WithJSONBody(matchGen2Body(kspmSettingsSchemaID, kspmSettingsSchemaVersion, "scope-1", value)).Return(request).Once()
+			request.EXPECT().Execute(new([]postObjectsResponse)).Run(injectResponse([]postObjectsResponse{{ObjectID: "obj-123"}})).Return(nil).Once()
+			apiClient.EXPECT().POST(ctx, gen2ObjectsPath).Return(request).Once()
 
-		settingsClient := NewClient(apiClient)
-		objectID, err := settingsClient.CreateKSPMSetting(ctx, "scope-1", true)
-		require.NoError(t, err)
-		assert.Equal(t, "obj-123", objectID)
+			settingsClient := NewClient(apiClient, Gen2)
+			objectID, err := settingsClient.CreateKSPMSetting(ctx, K8sClusterRegistration{EntityScope: "scope-1"}, true)
+			require.NoError(t, err)
+			assert.Equal(t, "obj-123", objectID)
+		})
+
+		t.Run("error from API", func(t *testing.T) {
+			apiClient := coremock.NewClient(t)
+			request := coremock.NewRequest(t)
+			request.EXPECT().WithQueryParams(map[string]string{gen2ValidateOnlyParam: "false"}).Return(request).Once()
+			request.EXPECT().WithJSONBody(matchGen2Body(kspmSettingsSchemaID, kspmSettingsSchemaVersion, "scope-1", value)).Return(request).Once()
+			request.EXPECT().Execute(new([]postObjectsResponse)).Return(errors.New("api error")).Once()
+			apiClient.EXPECT().POST(ctx, gen2ObjectsPath).Return(request).Once()
+
+			client := NewClient(apiClient, Gen2)
+			objectID, err := client.CreateKSPMSetting(ctx, K8sClusterRegistration{EntityScope: "scope-1"}, true)
+			require.Error(t, err)
+			assert.Empty(t, objectID)
+		})
 	})
 
-	t.Run("error from API", func(t *testing.T) {
-		apiClient := coremock.NewClient(t)
-		request := coremock.NewRequest(t)
-		request.EXPECT().WithQueryParams(map[string]string{"validateOnly": "false"}).Return(request).Once()
-		request.EXPECT().WithJSONBody(matchBody()).Return(request).Once()
-		request.EXPECT().Execute(new([]postObjectsResponse)).Return(errors.New("api error")).Once()
-		apiClient.EXPECT().POST(ctx, ObjectsPath).Return(request).Once()
+	t.Run("gen3 reuses EntityScope once known", func(t *testing.T) {
+		t.Run("success", func(t *testing.T) {
+			apiClient := coremock.NewClient(t)
+			request := coremock.NewRequest(t)
+			request.EXPECT().WithQueryParams(map[string]string{gen3ValidateOnlyParam: "false"}).Return(request).Once()
+			request.EXPECT().WithJSONBody(matchGen3Body(kspmSettingsSchemaID, kspmSettingsSchemaVersion, "scope-1", value)).Return(request).Once()
+			request.EXPECT().Execute(new(postObjectsResponse)).Run(injectResponse(postObjectsResponse{ObjectID: "obj-123"})).Return(nil).Once()
+			apiClient.EXPECT().POST(ctx, gen3ObjectsPath).Return(request).Once()
 
-		client := NewClient(apiClient)
-		objectID, err := client.CreateKSPMSetting(ctx, "scope-1", true)
-		require.Error(t, err)
-		assert.Empty(t, objectID)
-	})
+			settingsClient := NewClient(apiClient, Gen3)
+			objectID, err := settingsClient.CreateKSPMSetting(ctx, K8sClusterRegistration{EntityID: "uuid-1", EntityScope: "scope-1"}, true)
+			require.NoError(t, err)
+			assert.Equal(t, "obj-123", objectID)
+		})
 
-	t.Run("response not exactly one entry", func(t *testing.T) {
-		apiClient := coremock.NewClient(t)
-		request := coremock.NewRequest(t)
-		request.EXPECT().WithQueryParams(map[string]string{"validateOnly": "false"}).Return(request).Once()
-		request.EXPECT().WithJSONBody(matchBody()).Return(request).Once()
-		request.EXPECT().Execute(new([]postObjectsResponse)).Return(nil).Once()
-		apiClient.On("POST", ctx, ObjectsPath).Return(request)
+		t.Run("error from API", func(t *testing.T) {
+			apiClient := coremock.NewClient(t)
+			request := coremock.NewRequest(t)
+			request.EXPECT().WithQueryParams(map[string]string{gen3ValidateOnlyParam: "false"}).Return(request).Once()
+			request.EXPECT().WithJSONBody(matchGen3Body(kspmSettingsSchemaID, kspmSettingsSchemaVersion, "scope-1", value)).Return(request).Once()
+			request.EXPECT().Execute(new(postObjectsResponse)).Return(errors.New("api error")).Once()
+			apiClient.EXPECT().POST(ctx, gen3ObjectsPath).Return(request).Once()
 
-		settingsClient := NewClient(apiClient)
-		objectID, err := settingsClient.CreateKSPMSetting(ctx, "scope-1", true)
-		require.ErrorAs(t, err, new(notSingleEntryError))
-		assert.Empty(t, objectID)
+			client := NewClient(apiClient, Gen3)
+			objectID, err := client.CreateKSPMSetting(ctx, K8sClusterRegistration{EntityID: "uuid-1", EntityScope: "scope-1"}, true)
+			require.Error(t, err)
+			assert.Empty(t, objectID)
+		})
 	})
 }

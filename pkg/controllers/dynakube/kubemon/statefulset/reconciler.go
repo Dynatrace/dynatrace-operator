@@ -100,7 +100,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, image
 // ensureReady validates the DynaKube fields required to build the StatefulSet. Without any of
 // them the build fails either way, so we short-circuit here before doing any work or API calls.
 func ensureReady(dk *dynakube.DynaKube) error {
-	if dk.Status.KubeSystemUUID == "" {
+	if dk.Status.Registration.EntityID == "" {
 		return ErrMissingKubeSystemUID
 	}
 
@@ -146,7 +146,7 @@ func buildEnvs(dk *dynakube.DynaKube) []corev1.EnvVar {
 		},
 		{
 			Name:  agconsts.EnvDTIDSeedClusterID,
-			Value: dk.Status.KubeSystemUUID,
+			Value: dk.Status.Registration.EntityID,
 		},
 		{
 			Name: deploymentmetadata.EnvDTDeploymentMetadata,

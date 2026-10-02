@@ -366,7 +366,7 @@ func TestReconcileComponents(t *testing.T) {
 			kubemonReconciler:       mockKubemonReconciler,
 			injectionReconciler:     mockInjectionReconciler,
 		}
-		dtClient := &dynatrace.Client{Images: image.NewClient(nil), Settings: settings.NewClient(nil)}
+		dtClient := &dynatrace.Client{Images: image.NewClient(nil), Settings: settings.NewClient(nil, settings.Gen2)}
 
 		var err error
 
@@ -396,7 +396,7 @@ func TestReconcileComponents(t *testing.T) {
 		mockIstioReconciler := newMockIstioReconciler(t)
 		mockKSPMReconciler := newMockKspmReconciler(t)
 
-		dtClient := &dynatrace.Client{Images: image.NewClient(nil), Settings: settings.NewClient(nil)}
+		dtClient := &dynatrace.Client{Images: image.NewClient(nil), Settings: settings.NewClient(nil, settings.Gen2)}
 
 		mockLogMonitoringReconciler := newMockLogMonitoringReconciler(t)
 		mockLogMonitoringReconciler.EXPECT().Reconcile(anyCtx, dtClient, mock.Anything).Return(oaclient.NoCommunicationEndpointsError).Once()
@@ -456,7 +456,7 @@ func TestReconcileComponents(t *testing.T) {
 
 			requeueAfter: 10 * time.Minute,
 		}
-		dtClient := &dynatrace.Client{Images: image.NewClient(nil), Settings: settings.NewClient(nil)}
+		dtClient := &dynatrace.Client{Images: image.NewClient(nil), Settings: settings.NewClient(nil, settings.Gen2)}
 
 		mockK8sEntityReconciler.EXPECT().Reconcile(anyCtx, dtClient.Settings, dk).Return(nil).Once()
 		mockActiveGateReconciler.EXPECT().Reconcile(anyCtx, dk, dtClient, token.Tokens(nil)).Return(nil).Once()
@@ -503,7 +503,7 @@ func TestReconcileComponents(t *testing.T) {
 
 			requeueAfter: 10 * time.Minute,
 		}
-		dtClient := &dynatrace.Client{Images: image.NewClient(nil), Settings: settings.NewClient(nil)}
+		dtClient := &dynatrace.Client{Images: image.NewClient(nil), Settings: settings.NewClient(nil, settings.Gen2)}
 
 		mockK8sEntityReconciler.EXPECT().Reconcile(anyCtx, dtClient.Settings, dk).Return(nil).Once()
 		mockActiveGateReconciler.EXPECT().Reconcile(anyCtx, dk, dtClient, token.Tokens(nil)).Return(nil).Once()
@@ -541,7 +541,7 @@ func TestReconcileDynaKube(t *testing.T) {
 
 	dtClient := &dynatrace.Client{
 		Images:   image.NewClient(nil),
-		Settings: settings.NewClient(nil),
+		Settings: settings.NewClient(nil, settings.Gen2),
 		Token:    mockedTokenClient,
 	}
 

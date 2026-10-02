@@ -45,7 +45,7 @@ func (s *SecretGenerator) addPGC(ctx context.Context, dk *dynakube.DynaKube, dat
 func (s *SecretGenerator) preparePGC(ctx context.Context, dk *dynakube.DynaKube) (*oneagent.ProcessGroupConfig, error) {
 	log := logd.FromContext(ctx)
 
-	if dk.Status.KubernetesClusterMEID == "" {
+	if dk.Status.Registration.EntityScope == "" {
 		log.Info("kubernetesClusterMEID not available, skipping processgroupingconfig")
 
 		return &oneagent.ProcessGroupConfig{}, nil
@@ -53,7 +53,7 @@ func (s *SecretGenerator) preparePGC(ctx context.Context, dk *dynakube.DynaKube)
 
 	cachedPGC := s.readCachedPGC(ctx, dk)
 
-	pgc, err := s.dtClient.GetProcessGroupingConfig(ctx, dk.Status.KubernetesClusterMEID, cachedPGC.ETag)
+	pgc, err := s.dtClient.GetProcessGroupingConfig(ctx, dk.Status.Registration.EntityScope, cachedPGC.ETag)
 	if err != nil {
 		k8sconditions.SetDynatraceAPIError(dk.Conditions(), ConfigConditionType, err)
 

@@ -235,9 +235,9 @@ func (dst *DynaKube) fromStatus(src *dynakubelatest.DynaKube) {
 	dst.Status.KSPM.TokenSecretHash = src.Status.KSPM.TokenSecretHash
 	dst.Status.UpdatedTimestamp = src.Status.UpdatedTimestamp
 	dst.Status.Phase = src.Status.Phase
-	dst.Status.KubeSystemUUID = src.Status.KubeSystemUUID
-	dst.Status.KubernetesClusterMEID = src.Status.KubernetesClusterMEID
-	dst.Status.KubernetesClusterName = src.Status.KubernetesClusterName
+	dst.Status.KubeSystemUUID = src.Status.Registration.EntityID
+	dst.Status.KubernetesClusterMEID = src.Status.Registration.EntityScope
+	dst.Status.KubernetesClusterName = src.Status.Registration.EntityLabel
 	dst.Status.Conditions = src.Status.Conditions
 }
 

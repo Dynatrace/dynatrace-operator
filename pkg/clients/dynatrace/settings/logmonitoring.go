@@ -29,20 +29,18 @@ type ingestRuleMatchers struct {
 }
 
 // GetSettingsForLogModule returns the settings response with the number of settings objects and their values.
-func (c *ClientImpl) GetSettingsForLogModule(ctx context.Context, monitoredEntity string) (TotalCountSettingsResponse, error) {
-	if monitoredEntity == "" {
+func (c *ClientImpl) GetSettingsForLogModule(ctx context.Context, registration K8sClusterRegistration) (TotalCountSettingsResponse, error) {
+	if registration.EntityScope == "" {
 		return TotalCountSettingsResponse{}, nil
 	}
 
 	var resp TotalCountSettingsResponse
 
-	err := c.apiClient.GET(ctx, ObjectsPath).
-		WithQueryParams(map[string]string{
-			validateOnlyQueryParam: "true",
-			schemaIDsQueryParam:    logMonitoringSettingsSchemaID,
-			scopesQueryParam:       monitoredEntity,
-		}).
-		Execute(&resp)
+	err := c.api.listObjects(ctx, objectsCollection, listParams{
+		SchemaID:     logMonitoringSettingsSchemaID,
+		Scope:        c.api.scope(registration),
+		ValidateOnly: true,
+	}, &resp)
 	if err != nil {
 		return TotalCountSettingsResponse{}, fmt.Errorf("get logmonitoring settings: %w", err)
 	}
@@ -51,32 +49,19 @@ func (c *ClientImpl) GetSettingsForLogModule(ctx context.Context, monitoredEntit
 }
 
 // CreateLogMonitoringSetting returns the object ID of the created logmonitoring settings.
-func (c *ClientImpl) CreateLogMonitoringSetting(ctx context.Context, scope, clusterName string, matchers []logmonitoring.IngestRuleMatchers) (string, error) {
-	body := newPostObjectsBody(
-		logMonitoringSettingsSchemaID,
-		logMonitoringSchemaVersion,
-		scope,
+func (c *ClientImpl) CreateLogMonitoringSetting(ctx context.Context, registration K8sClusterRegistration, clusterName string, matchers []logmonitoring.IngestRuleMatchers) (string, error) {
+	ids, err := c.api.createObject(ctx, logMonitoringSettingsSchemaID, logMonitoringSchemaVersion, c.api.scope(registration),
 		logMonSettingsValue{
 			SendToStorage:   true,
 			Enabled:         true,
 			ConfigItemTitle: clusterName,
 			Matchers:        mapIngestRuleMatchers(matchers),
-		},
-	)
-
-	var response []postObjectsResponse
-
-	err := c.apiClient.POST(ctx, ObjectsPath).
-		WithQueryParams(map[string]string{
-			validateOnlyQueryParam: "false",
-		}).
-		WithJSONBody(body).
-		Execute(&response)
+		})
 	if err != nil {
 		return "", fmt.Errorf("create logmonitoring setting: %w", err)
 	}
 
-	return getObjectID(response)
+	return singleID(ids)
 }
 
 func mapIngestRuleMatchers(input []logmonitoring.IngestRuleMatchers) []ingestRuleMatchers {

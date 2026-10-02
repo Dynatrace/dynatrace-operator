@@ -77,7 +77,7 @@ func (r *Reconciler) checkKSPMSettings(ctx context.Context, dtClient dtsettings.
 	log := logd.FromContext(ctx)
 	log.Info("start reconciling kspm settings")
 
-	if dk.Status.KubernetesClusterMEID == "" {
+	if dk.Status.Registration.EntityScope == "" {
 		msg := "kubernetesClusterMEID is not available, which is needed for kspm settings creation, will skip it for now"
 		log.Info(msg)
 
@@ -103,7 +103,9 @@ func (r *Reconciler) checkKSPMSettings(ctx context.Context, dtClient dtsettings.
 		return nil
 	}
 
-	kspmSettings, err := dtClient.GetKSPMSettings(ctx, dk.Status.KubernetesClusterMEID)
+	registration := dtsettings.K8sClusterRegistration(dk.Status.Registration)
+
+	kspmSettings, err := dtClient.GetKSPMSettings(ctx, registration)
 	if err != nil {
 		return handleMissingScope(errors.WithMessage(err, "error trying to check if setting exists"))
 	}
@@ -118,7 +120,7 @@ func (r *Reconciler) checkKSPMSettings(ctx context.Context, dtClient dtsettings.
 
 	datasetPipelineEnabled := dk.KSPM().IsEnabled()
 
-	objectID, err := dtClient.CreateKSPMSetting(ctx, dk.Status.KubernetesClusterMEID, datasetPipelineEnabled)
+	objectID, err := dtClient.CreateKSPMSetting(ctx, registration, datasetPipelineEnabled)
 	if err != nil {
 		return handleMissingScope(err)
 	}

@@ -16,9 +16,7 @@ import (
 const (
 	legacyMetadataEnrichmentSchemaID = "builtin:kubernetes.generic.metadata.enrichment"
 	metadataEnrichmentSchemaID       = "builtin:ingest.enrichment.config"
-	scopeQueryParam                  = "scope"
 	globalScope                      = "environment"
-	effectiveValuesPath              = "/v2/settings/effectiveValues"
 )
 
 // EnrichmentRuleObject holds the objectId of a single enrichment rule settings object,
@@ -67,15 +65,13 @@ type ingestEnrichmentConfig struct {
 	Condition   string                      `json:"condition"`
 }
 
-func (c *ClientImpl) getEnrichmentRuleObjectsForSchema(ctx context.Context, schemaID, scope string) ([]EnrichmentRuleObject, error) {
+func (c *ClientImpl) getEnrichmentRuleObjectsForSchema(ctx context.Context, schemaID string, registration K8sClusterRegistration) ([]EnrichmentRuleObject, error) {
 	var resp enrichmentRulesObjectsResponse
 
-	err := c.apiClient.GET(ctx, ObjectsPath).
-		WithQueryParams(map[string]string{
-			schemaIDsQueryParam: schemaID,
-			scopesQueryParam:    scope,
-		}).
-		Execute(&resp)
+	err := c.api.listObjects(ctx, objectsCollection, listParams{
+		SchemaID: schemaID,
+		Scope:    c.api.scope(registration),
+	}, &resp)
 	if err != nil {
 		return nil, fmt.Errorf("get enrichment rule objects (%s): %w", schemaID, err)
 	}
@@ -83,64 +79,62 @@ func (c *ClientImpl) getEnrichmentRuleObjectsForSchema(ctx context.Context, sche
 	return resp.Items, nil
 }
 
-func (c *ClientImpl) GetEnrichmentRuleObjects(ctx context.Context, scope string) ([]EnrichmentRuleObject, error) {
-	if scope == "" {
+func (c *ClientImpl) GetEnrichmentRuleObjects(ctx context.Context, registration K8sClusterRegistration) ([]EnrichmentRuleObject, error) {
+	if registration.EntityScope == "" {
 		return nil, errors.New("no scope provided for getting enrichment rule objects")
 	}
 
-	return c.getEnrichmentRuleObjectsForSchema(ctx, metadataEnrichmentSchemaID, scope)
+	return c.getEnrichmentRuleObjectsForSchema(ctx, metadataEnrichmentSchemaID, registration)
 }
 
-func (c *ClientImpl) GetLegacyEnrichmentRuleObjects(ctx context.Context, scope string) ([]EnrichmentRuleObject, error) {
-	if scope == "" {
+func (c *ClientImpl) GetLegacyEnrichmentRuleObjects(ctx context.Context, registration K8sClusterRegistration) ([]EnrichmentRuleObject, error) {
+	if registration.EntityScope == "" {
 		return nil, errors.New("no scope provided for getting legacy enrichment rule objects")
 	}
 
-	return c.getEnrichmentRuleObjectsForSchema(ctx, legacyMetadataEnrichmentSchemaID, scope)
+	return c.getEnrichmentRuleObjectsForSchema(ctx, legacyMetadataEnrichmentSchemaID, registration)
 }
 
-func (c *ClientImpl) CreateEnrichmentRuleObject(ctx context.Context, scope string, rules ...metadataenrichment.Rule) ([]string, error) {
-	return c.createEnrichmentRule(ctx, metadataEnrichmentSchemaID, scope, rules)
+func (c *ClientImpl) CreateEnrichmentRuleObject(ctx context.Context, registration K8sClusterRegistration, rules ...metadataenrichment.Rule) ([]string, error) {
+	return c.createEnrichmentRule(ctx, metadataEnrichmentSchemaID, registration, rules)
 }
 
-func (c *ClientImpl) CreateLegacyEnrichmentRuleObject(ctx context.Context, scope string, rules ...metadataenrichment.Rule) ([]string, error) {
-	return c.createEnrichmentRule(ctx, legacyMetadataEnrichmentSchemaID, scope, rules)
+func (c *ClientImpl) CreateLegacyEnrichmentRuleObject(ctx context.Context, registration K8sClusterRegistration, rules ...metadataenrichment.Rule) ([]string, error) {
+	return c.createEnrichmentRule(ctx, legacyMetadataEnrichmentSchemaID, registration, rules)
 }
 
-func (c *ClientImpl) createEnrichmentRule(ctx context.Context, schemaID, scope string, rules []metadataenrichment.Rule) ([]string, error) {
-	if scope == "" {
+// createEnrichmentRule creates the settings object(s) for the given rules. The legacy schema keeps all
+// rules in a single object's value; the new schema creates one object per rule. Either way this is a
+// single createObject call - whether that takes one request or several (gen2 batches, gen3 loops) is
+// up to the objectAPI implementation.
+func (c *ClientImpl) createEnrichmentRule(ctx context.Context, schemaID string, registration K8sClusterRegistration, rules []metadataenrichment.Rule) ([]string, error) {
+	if registration.EntityScope == "" {
 		return nil, errors.New("no scope (MEID) was provided for creating the enrichment rule")
 	}
 
-	var response []postObjectsResponse
+	scope := c.api.scope(registration)
 
-	err := c.apiClient.POST(ctx, ObjectsPath).
-		WithQueryParams(map[string]string{validateOnlyQueryParam: "false"}).
-		WithJSONBody(buildEnrichmentBody(schemaID, scope, rules)).
-		Execute(&response)
-	if err != nil {
-		return nil, fmt.Errorf("create enrichment rule (%s): %w", schemaID, err)
-	}
+	var (
+		ids []string
+		err error
+	)
 
-	objectIDs := make([]string, len(response))
-	for i, resp := range response {
-		objectIDs[i] = resp.ObjectID
-	}
-
-	return objectIDs, nil
-}
-
-func buildEnrichmentBody(schemaID, scope string, rules []metadataenrichment.Rule) any {
 	if schemaID == metadataEnrichmentSchemaID {
-		values := make([]enrichmentRuleValue, len(rules))
+		values := make([]any, len(rules))
 		for i, rule := range rules {
 			values[i] = convertRule(rule)
 		}
 
-		return newPostObjectsBody(schemaID, "", scope, values...)
+		ids, err = c.api.createObject(ctx, schemaID, "", scope, values...)
+	} else {
+		ids, err = c.api.createObject(ctx, schemaID, "", scope, legacyEnrichmentValue{Rules: rules})
 	}
 
-	return newPostObjectsBody(schemaID, "", scope, legacyEnrichmentValue{Rules: rules})
+	if err != nil {
+		return nil, fmt.Errorf("create enrichment rule (%s): %w", schemaID, err)
+	}
+
+	return ids, nil
 }
 
 func convertRule(rule metadataenrichment.Rule) enrichmentRuleValue {
@@ -152,32 +146,32 @@ func convertRule(rule metadataenrichment.Rule) enrichmentRuleValue {
 }
 
 // GetRules returns metadata enrichment rules.
-func (c *ClientImpl) GetRules(ctx context.Context, kubeSystemUUID, entityID string) ([]metadataenrichment.Rule, error) {
+func (c *ClientImpl) GetRules(ctx context.Context, registration K8sClusterRegistration) ([]metadataenrichment.Rule, error) {
 	ctx, log := logd.NewFromContext(ctx, "dtclient-settings")
 
-	if kubeSystemUUID == "" {
+	if registration.EntityID == "" {
 		return nil, errMissingKubeSystemUUID
 	}
 
-	scope := entityID
+	// On gen2, the scope is the Monitored Entity ID, which may still be unknown; fall back to the
+	// global environment scope in that case. On gen3 the scope is either the already-resolved Monitored
+	// Entity scope, or (before that) derived from EntityID (which is guaranteed non-empty here), so this
+	// fallback never triggers.
+	scope := c.api.scope(registration)
 	if scope == "" {
 		log.Info("No Monitored Entity ID, getting environment enrichment rules")
 
 		scope = globalScope
 	}
 
-	params := map[string]string{
-		validateOnlyQueryParam: "true",
-		schemaIDsQueryParam:    legacyMetadataEnrichmentSchemaID,
-		scopeQueryParam:        scope,
-	}
+	params := listParams{SchemaID: legacyMetadataEnrichmentSchemaID, Scope: scope, ValidateOnly: true}
 
 	var (
 		resp         getRulesResponse
 		useNewSchema bool
 	)
 
-	if err := c.apiClient.GET(ctx, effectiveValuesPath).WithQueryParams(params).Execute(&resp); err != nil {
+	if err := c.api.listObjects(ctx, effectiveValuesCollection, params, &resp); err != nil {
 		if !core.IsNotFound(err) {
 			return nil, err
 		}
@@ -194,11 +188,11 @@ func (c *ClientImpl) GetRules(ctx context.Context, kubeSystemUUID, entityID stri
 	}
 
 	// Retry the request with the new schema. For managed this will always fail, but we have no practical way of knowing which environment we're running in.
-	params[schemaIDsQueryParam] = metadataEnrichmentSchemaID
+	params.SchemaID = metadataEnrichmentSchemaID
 	// Clear the input so that we don't keep stale data
 	resp = getRulesResponse{}
 
-	if err := c.apiClient.GET(ctx, effectiveValuesPath).WithQueryParams(params).Execute(&resp); err != nil {
+	if err := c.api.listObjects(ctx, effectiveValuesCollection, params, &resp); err != nil {
 		if useNewSchema || !core.IsNotFound(err) {
 			// The error is either not 404 or the user enabled the new schema explicitly. In this case a missing schema is an error.
 			return nil, fmt.Errorf("get rules settings for schema %s: %w", metadataEnrichmentSchemaID, err)

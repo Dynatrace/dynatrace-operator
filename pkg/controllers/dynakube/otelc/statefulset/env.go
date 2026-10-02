@@ -56,9 +56,9 @@ func getEnvs(dk *dynakube.DynaKube, replicas int32) []corev1.EnvVar {
 		},
 		{Name: envOTLPgrpcPort, Value: defaultOLTPgrpcPort},
 		{Name: envOTLPhttpPort, Value: defaultOLTPhttpPort},
-		{Name: envK8sClusterName, Value: dk.Status.KubernetesClusterName},
-		{Name: envK8sClusterUID, Value: dk.Status.KubeSystemUUID},
-		{Name: envDTentityK8sCluster, Value: dk.Status.KubernetesClusterMEID},
+		{Name: envK8sClusterName, Value: dk.Status.Registration.EntityLabel},
+		{Name: envK8sClusterUID, Value: dk.Status.Registration.EntityID},
+		{Name: envDTentityK8sCluster, Value: dk.Status.Registration.EntityScope},
 	}
 
 	if dk.HasProxy() {

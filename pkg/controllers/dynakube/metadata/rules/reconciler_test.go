@@ -13,6 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/tenant/optionalscope"
@@ -82,7 +83,7 @@ func TestReconcile(t *testing.T) {
 		k8sconditions.SetStatusUpdated(dk.Conditions(), conditionType, specialMessage)
 
 		dtClient := settingsmock.NewClient(t)
-		dtClient.EXPECT().GetRules(anyCtx, dk.Status.KubeSystemUUID, dk.Status.KubernetesClusterMEID).Return(expectedResponse, nil)
+		dtClient.EXPECT().GetRules(anyCtx, settings.K8sClusterRegistration(dk.Status.Registration)).Return(expectedResponse, nil)
 
 		futureTime := timeprovider.New()
 		futureTime.Set(time.Now().Add(time.Hour))
@@ -106,7 +107,7 @@ func TestReconcile(t *testing.T) {
 		expectedResponse := createRules()
 
 		dtClient := settingsmock.NewClient(t)
-		dtClient.EXPECT().GetRules(anyCtx, dk.Status.KubeSystemUUID, dk.Status.KubernetesClusterMEID).Return(expectedResponse, nil)
+		dtClient.EXPECT().GetRules(anyCtx, settings.K8sClusterRegistration(dk.Status.Registration)).Return(expectedResponse, nil)
 		reconciler := NewReconciler()
 
 		err := reconciler.Reconcile(ctx, dtClient, dk)
@@ -141,7 +142,7 @@ func TestReconcile(t *testing.T) {
 		optionalscope.SetAvailable(dk, token.ScopeSettingsRead)
 
 		dtClient := settingsmock.NewClient(t)
-		dtClient.EXPECT().GetRules(anyCtx, dk.Status.KubeSystemUUID, dk.Status.KubernetesClusterMEID).Return(nil, errors.New("BOOM"))
+		dtClient.EXPECT().GetRules(anyCtx, settings.K8sClusterRegistration(dk.Status.Registration)).Return(nil, errors.New("BOOM"))
 		reconciler := NewReconciler()
 
 		err := reconciler.Reconcile(ctx, dtClient, dk)
@@ -173,7 +174,7 @@ func TestReconcile(t *testing.T) {
 		dk.Status.APIToken.Platform = new(true)
 
 		dtClient := settingsmock.NewClient(t)
-		dtClient.EXPECT().GetRules(anyCtx, dk.Status.KubeSystemUUID, dk.Status.KubernetesClusterMEID).Return(nil, &core.HTTPError{StatusCode: 403})
+		dtClient.EXPECT().GetRules(anyCtx, settings.K8sClusterRegistration(dk.Status.Registration)).Return(nil, &core.HTTPError{StatusCode: 403})
 		reconciler := NewReconciler()
 
 		err := reconciler.Reconcile(ctx, dtClient, dk)
@@ -195,7 +196,7 @@ func createDynaKube() *dynakube.DynaKube {
 			},
 		},
 		Status: dynakube.DynaKubeStatus{
-			KubeSystemUUID: "kube-system-uuid",
+			Registration: dynakube.Registration{EntityID: "kube-system-uuid"},
 		},
 	}
 }

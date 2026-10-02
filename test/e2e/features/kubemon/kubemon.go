@@ -58,7 +58,7 @@ func FeatureSplitAG(t *testing.T) features.Feature {
 	// Note: A best effort check, if other tests already did the registration then it only checks that we get the results of that.
 	builder.Assess("registration was successful",
 		k8sobject.Expect(testDynakube.Name, testDynakube.Namespace, func(dk *dynakubeapi.DynaKube) bool {
-			return dk.Status.KubernetesClusterMEID != "" && dk.Status.KubernetesClusterName != ""
+			return dk.Status.Registration.EntityScope != "" && dk.Status.Registration.EntityLabel != ""
 		}))
 
 	// remove kubemon from dynakube and make sure it was cleaned up properly.

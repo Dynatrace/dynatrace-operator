@@ -146,7 +146,7 @@ func getUpdateStrategy(dk *dynakube.DynaKube) appsv1.DaemonSetUpdateStrategy {
 }
 
 func isMEConfigured(dk *dynakube.DynaKube) bool {
-	return dk.Status.KubernetesClusterMEID != "" && dk.Status.KubernetesClusterName != ""
+	return dk.Status.Registration.EntityScope != "" && dk.Status.Registration.EntityLabel != ""
 }
 
 func buildPodSecurityContext() *corev1.PodSecurityContext {

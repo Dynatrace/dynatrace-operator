@@ -6740,12 +6740,6 @@ spec:
                   tokenSecretHash:
                     type: string
                 type: object
-              kubeSystemUUID:
-                type: string
-              kubernetesClusterMEID:
-                type: string
-              kubernetesClusterName:
-                type: string
               kubernetesMonitoring:
                 properties:
                   connectionInfo:
@@ -6827,6 +6821,15 @@ spec:
                 type: string
               proxyURLHash:
                 type: string
+              registration:
+                properties:
+                  entityID:
+                    type: string
+                  entityLabel:
+                    type: string
+                  entityScope:
+                    type: string
+                type: object
               updatedTimestamp:
                 format: date-time
                 type: string

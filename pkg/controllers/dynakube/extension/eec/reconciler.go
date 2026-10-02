@@ -65,7 +65,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, imageClient image.Client, dk
 		return errors.New("tenantUUID unknown")
 	}
 
-	if dk.Status.KubeSystemUUID == "" {
+	if dk.Status.Registration.EntityID == "" {
 		k8sconditions.SetStatefulSetOutdated(dk.Conditions(), extensionControllerStatefulSetConditionType, dk.Extensions().GetExecutionControllerStatefulsetName())
 
 		return errors.New("kubeSystemUUID unknown")

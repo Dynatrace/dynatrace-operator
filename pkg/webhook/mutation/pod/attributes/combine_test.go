@@ -467,9 +467,11 @@ func TestCombine_ViaConstructors_AnnotationsOverrideAutoCollected(t *testing.T) 
 	makeDynaKube := func() *dynakube.DynaKube {
 		return &dynakube.DynaKube{
 			Status: dynakube.DynaKubeStatus{
-				KubeSystemUUID:        clusterUID,
-				KubernetesClusterName: clusterName,
-				KubernetesClusterMEID: clusterMEID,
+				Registration: dynakube.Registration{
+					EntityID:    clusterUID,
+					EntityLabel: clusterName,
+					EntityScope: clusterMEID,
+				},
 			},
 		}
 	}

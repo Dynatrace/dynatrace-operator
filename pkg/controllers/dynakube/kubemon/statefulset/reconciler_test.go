@@ -85,7 +85,7 @@ func TestReconcilePreconditionErrors(t *testing.T) {
 
 func TestReconcileMissingKubeSystemUID(t *testing.T) {
 	dk := newTestDynaKube()
-	dk.Status.KubeSystemUUID = ""
+	dk.Status.Registration.EntityID = ""
 	err := statefulset.NewReconciler(fake.NewClient(dk, newTestTenantSecret(dk), newTestAuthTokenSecret(dk))).Reconcile(t.Context(), dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t))
 	require.ErrorIs(t, err, statefulset.ErrMissingKubeSystemUID)
 }
@@ -230,7 +230,7 @@ func TestReconcileBuildsStatefulSet(t *testing.T) {
 
 		clusterIDEnv := k8senv.Find(container.Env, agconsts.EnvDTIDSeedClusterID)
 		require.NotNil(t, clusterIDEnv)
-		assert.Equal(t, dk.Status.KubeSystemUUID, clusterIDEnv.Value)
+		assert.Equal(t, dk.Status.Registration.EntityID, clusterIDEnv.Value)
 
 		metadataEnv := k8senv.Find(container.Env, deploymentmetadata.EnvDTDeploymentMetadata)
 		require.NotNil(t, metadataEnv)
@@ -975,7 +975,8 @@ func newTestDynaKube() *dynakube.DynaKube {
 			},
 		},
 		Status: dynakube.DynaKubeStatus{
-			KubeSystemUUID: "test-cluster-uuid", // set by the parent controller before any kubemon reconciler runs
+			// KubeSystemUUID is set by the parent controller before any kubemon reconciler runs
+			Registration: dynakube.Registration{EntityID: "test-cluster-uuid"},
 		},
 	}
 

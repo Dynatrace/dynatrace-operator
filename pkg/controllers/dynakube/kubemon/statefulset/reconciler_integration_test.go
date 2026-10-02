@@ -77,7 +77,7 @@ func TestReconcileLifecycle(t *testing.T) {
 			},
 		},
 		Status: dynakube.DynaKubeStatus{
-			KubeSystemUUID: integrationKubeSystemUUID,
+			Registration: dynakube.Registration{EntityID: integrationKubeSystemUUID},
 		},
 	}
 	integrationtests.CreateDynakube(t, clt, dk)
@@ -213,7 +213,7 @@ func TestReconcileLifecycleAutoImage(t *testing.T) {
 			KubernetesMonitoring: &kubemonapi.Spec{}, // no custom image — version client is called
 		},
 		Status: dynakube.DynaKubeStatus{
-			KubeSystemUUID: integrationKubeSystemUUID,
+			Registration: dynakube.Registration{EntityID: integrationKubeSystemUUID},
 		},
 	}
 	integrationtests.CreateDynakube(t, clt, dk)

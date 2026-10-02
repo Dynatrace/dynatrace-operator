@@ -48,9 +48,9 @@ func Test_Mutator_Mutate(t *testing.T) {
 	_ = corev1.AddToScheme(scheme.Scheme)
 
 	baseDK := latestdynakube.DynaKube{}
-	baseDK.Status.KubeSystemUUID = "cluster-uid"
-	baseDK.Status.KubernetesClusterName = "cluster-name"
-	baseDK.Status.KubernetesClusterMEID = "cluster-meid"
+	baseDK.Status.Registration.EntityID = "cluster-uid"
+	baseDK.Status.Registration.EntityLabel = "cluster-name"
+	baseDK.Status.Registration.EntityScope = "cluster-meid"
 	baseDK.Status.MetadataEnrichment.Rules = []metadataenrichment.Rule{
 		{
 			Type:   "LABEL",
@@ -392,9 +392,9 @@ func Test_Mutator_EncodesAttributeValues(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			baseDK := &latestdynakube.DynaKube{}
-			baseDK.Status.KubeSystemUUID = "cluster-uid"
-			baseDK.Status.KubernetesClusterName = tt.clusterName
-			baseDK.Status.KubernetesClusterMEID = "cluster-meid"
+			baseDK.Status.Registration.EntityID = "cluster-uid"
+			baseDK.Status.Registration.EntityLabel = tt.clusterName
+			baseDK.Status.Registration.EntityScope = "cluster-meid"
 
 			pod := &corev1.Pod{
 				Namespace: "ns", Annotations: tt.annotations,
@@ -448,8 +448,8 @@ func Test_Mutator_Reinvoke(t *testing.T) {
 	_ = corev1.AddToScheme(scheme.Scheme)
 
 	baseDK := &latestdynakube.DynaKube{}
-	baseDK.Status.KubeSystemUUID = "cluster-uid"
-	baseDK.Status.KubernetesClusterName = "cluster-name"
+	baseDK.Status.Registration.EntityID = "cluster-uid"
+	baseDK.Status.Registration.EntityLabel = "cluster-name"
 
 	pod := &corev1.Pod{
 		Namespace: "ns",

@@ -36,7 +36,7 @@ func TestReconcile(t *testing.T) {
 					activegate.KubeMonCapability.DisplayName,
 				},
 			},
-		}, Status: dynakube.DynaKubeStatus{KubernetesClusterMEID: meID}}
+		}, Status: dynakube.DynaKubeStatus{Registration: dynakube.Registration{EntityScope: meID}}}
 
 		if withKSPM {
 			dk.Spec.KSPM = &kspm.Spec{}
@@ -47,7 +47,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("normal run with all scopes and existing setting", func(t *testing.T) {
 		mockClient := settingsmock.NewClient(t)
-		mockClient.EXPECT().GetKSPMSettings(anyCtx, meID).
+		mockClient.EXPECT().GetKSPMSettings(anyCtx, settings.K8sClusterRegistration{EntityScope: meID}).
 			Return(settings.KSPMSettingsResponse{TotalCount: 1}, nil)
 
 		dk := getDK(true)
@@ -64,10 +64,10 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("normal run with all scopes and without existing setting", func(t *testing.T) {
 		mockClient := settingsmock.NewClient(t)
-		mockClient.EXPECT().GetKSPMSettings(anyCtx, meID).
+		mockClient.EXPECT().GetKSPMSettings(anyCtx, settings.K8sClusterRegistration{EntityScope: meID}).
 			Return(settings.KSPMSettingsResponse{TotalCount: 0}, nil)
 
-		mockClient.EXPECT().CreateKSPMSetting(anyCtx, meID, true).
+		mockClient.EXPECT().CreateKSPMSetting(anyCtx, settings.K8sClusterRegistration{EntityScope: meID}, true).
 			Return("test-object-id", nil)
 
 		dk := getDK(true)
@@ -113,10 +113,10 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("create setting without KSPM", func(t *testing.T) {
 		mockClient := settingsmock.NewClient(t)
-		mockClient.EXPECT().GetKSPMSettings(anyCtx, meID).
+		mockClient.EXPECT().GetKSPMSettings(anyCtx, settings.K8sClusterRegistration{EntityScope: meID}).
 			Return(settings.KSPMSettingsResponse{TotalCount: 0}, nil)
 
-		mockClient.EXPECT().CreateKSPMSetting(anyCtx, meID, false).
+		mockClient.EXPECT().CreateKSPMSetting(anyCtx, settings.K8sClusterRegistration{EntityScope: meID}, false).
 			Return("test-object-id", nil)
 
 		dk := getDK(false)
@@ -206,7 +206,7 @@ func TestCheckKSPMSettings(t *testing.T) {
 					activegate.KubeMonCapability.DisplayName,
 				},
 			},
-		}, Status: dynakube.DynaKubeStatus{KubernetesClusterMEID: meID}}
+		}, Status: dynakube.DynaKubeStatus{Registration: dynakube.Registration{EntityScope: meID}}}
 
 		if withKSPM {
 			dk.Spec.KSPM = &kspm.Spec{}
@@ -218,7 +218,7 @@ func TestCheckKSPMSettings(t *testing.T) {
 	t.Run("error fetching kspm settings", func(t *testing.T) {
 		testErr := errors.New("error when fetching")
 		mockClient := settingsmock.NewClient(t)
-		mockClient.EXPECT().GetKSPMSettings(anyCtx, meID).
+		mockClient.EXPECT().GetKSPMSettings(anyCtx, settings.K8sClusterRegistration{EntityScope: meID}).
 			Return(settings.KSPMSettingsResponse{}, testErr)
 
 		dk := getDK(true, meID)
@@ -245,7 +245,7 @@ func TestCheckKSPMSettings(t *testing.T) {
 
 	t.Run("kspm settings already exist", func(t *testing.T) {
 		mockClient := settingsmock.NewClient(t)
-		mockClient.EXPECT().GetKSPMSettings(anyCtx, meID).
+		mockClient.EXPECT().GetKSPMSettings(anyCtx, settings.K8sClusterRegistration{EntityScope: meID}).
 			Return(settings.KSPMSettingsResponse{TotalCount: 1}, nil)
 
 		dk := getDK(false, meID)
@@ -260,9 +260,9 @@ func TestCheckKSPMSettings(t *testing.T) {
 
 	t.Run("create kspm settings", func(t *testing.T) {
 		mockClient := settingsmock.NewClient(t)
-		mockClient.EXPECT().GetKSPMSettings(anyCtx, meID).
+		mockClient.EXPECT().GetKSPMSettings(anyCtx, settings.K8sClusterRegistration{EntityScope: meID}).
 			Return(settings.KSPMSettingsResponse{TotalCount: 0}, nil)
-		mockClient.EXPECT().CreateKSPMSetting(anyCtx, meID, true).
+		mockClient.EXPECT().CreateKSPMSetting(anyCtx, settings.K8sClusterRegistration{EntityScope: meID}, true).
 			Return("test-object-id", nil)
 
 		dk := getDK(true, meID)
@@ -277,9 +277,9 @@ func TestCheckKSPMSettings(t *testing.T) {
 
 	t.Run("create kubemon-only settings", func(t *testing.T) {
 		mockClient := settingsmock.NewClient(t)
-		mockClient.EXPECT().GetKSPMSettings(anyCtx, meID).
+		mockClient.EXPECT().GetKSPMSettings(anyCtx, settings.K8sClusterRegistration{EntityScope: meID}).
 			Return(settings.KSPMSettingsResponse{TotalCount: 0}, nil)
-		mockClient.EXPECT().CreateKSPMSetting(anyCtx, meID, false).
+		mockClient.EXPECT().CreateKSPMSetting(anyCtx, settings.K8sClusterRegistration{EntityScope: meID}, false).
 			Return("test-object-id", nil)
 
 		dk := getDK(false, meID)
@@ -295,9 +295,9 @@ func TestCheckKSPMSettings(t *testing.T) {
 	t.Run("error creating kspm settings", func(t *testing.T) {
 		testErr := errors.New("error when creating")
 		mockClient := settingsmock.NewClient(t)
-		mockClient.EXPECT().GetKSPMSettings(anyCtx, meID).
+		mockClient.EXPECT().GetKSPMSettings(anyCtx, settings.K8sClusterRegistration{EntityScope: meID}).
 			Return(settings.KSPMSettingsResponse{TotalCount: 0}, nil)
-		mockClient.EXPECT().CreateKSPMSetting(anyCtx, meID, true).
+		mockClient.EXPECT().CreateKSPMSetting(anyCtx, settings.K8sClusterRegistration{EntityScope: meID}, true).
 			Return("", testErr)
 
 		dk := getDK(true, meID)
@@ -313,7 +313,7 @@ func TestCheckKSPMSettings(t *testing.T) {
 	t.Run("forbidden error fetching kspm settings -> silently skip", func(t *testing.T) {
 		forbiddenErr := &core.HTTPError{StatusCode: http.StatusForbidden}
 		mockClient := settingsmock.NewClient(t)
-		mockClient.EXPECT().GetKSPMSettings(anyCtx, meID).
+		mockClient.EXPECT().GetKSPMSettings(anyCtx, settings.K8sClusterRegistration{EntityScope: meID}).
 			Return(settings.KSPMSettingsResponse{}, forbiddenErr)
 
 		dk := getDK(true, meID)
@@ -328,9 +328,9 @@ func TestCheckKSPMSettings(t *testing.T) {
 	t.Run("forbidden error creating kspm settings -> silently skip", func(t *testing.T) {
 		forbiddenErr := &core.HTTPError{StatusCode: http.StatusForbidden}
 		mockClient := settingsmock.NewClient(t)
-		mockClient.EXPECT().GetKSPMSettings(anyCtx, meID).
+		mockClient.EXPECT().GetKSPMSettings(anyCtx, settings.K8sClusterRegistration{EntityScope: meID}).
 			Return(settings.KSPMSettingsResponse{TotalCount: 0}, nil)
-		mockClient.EXPECT().CreateKSPMSetting(anyCtx, meID, true).
+		mockClient.EXPECT().CreateKSPMSetting(anyCtx, settings.K8sClusterRegistration{EntityScope: meID}, true).
 			Return("", forbiddenErr)
 
 		dk := getDK(true, meID)
@@ -345,7 +345,7 @@ func TestCheckKSPMSettings(t *testing.T) {
 	t.Run("forbidden error fetching kspm settings with platform token", func(t *testing.T) {
 		forbiddenErr := &core.HTTPError{StatusCode: http.StatusForbidden}
 		mockClient := settingsmock.NewClient(t)
-		mockClient.EXPECT().GetKSPMSettings(anyCtx, meID).
+		mockClient.EXPECT().GetKSPMSettings(anyCtx, settings.K8sClusterRegistration{EntityScope: meID}).
 			Return(settings.KSPMSettingsResponse{}, forbiddenErr)
 
 		dk := getDK(true, meID)
@@ -361,9 +361,9 @@ func TestCheckKSPMSettings(t *testing.T) {
 	t.Run("forbidden error creating kspm settings with platform token", func(t *testing.T) {
 		forbiddenErr := &core.HTTPError{StatusCode: http.StatusForbidden}
 		mockClient := settingsmock.NewClient(t)
-		mockClient.EXPECT().GetKSPMSettings(anyCtx, meID).
+		mockClient.EXPECT().GetKSPMSettings(anyCtx, settings.K8sClusterRegistration{EntityScope: meID}).
 			Return(settings.KSPMSettingsResponse{TotalCount: 0}, nil)
-		mockClient.EXPECT().CreateKSPMSetting(anyCtx, meID, true).
+		mockClient.EXPECT().CreateKSPMSetting(anyCtx, settings.K8sClusterRegistration{EntityScope: meID}, true).
 			Return("", forbiddenErr)
 
 		dk := getDK(true, meID)

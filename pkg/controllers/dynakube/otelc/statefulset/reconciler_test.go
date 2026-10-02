@@ -654,9 +654,11 @@ func getTestDynakube() *dynakube.DynaKube {
 			},
 		},
 		Status: dynakube.DynaKubeStatus{
-			KubeSystemUUID:        testKubeSystemUUID,
-			KubernetesClusterMEID: testKubernetesClusterMEID,
-			KubernetesClusterName: testKubernetesClusterName,
+			Registration: dynakube.Registration{
+				EntityID:    testKubeSystemUUID,
+				EntityScope: testKubernetesClusterMEID,
+				EntityLabel: testKubernetesClusterName,
+			},
 		},
 	}
 

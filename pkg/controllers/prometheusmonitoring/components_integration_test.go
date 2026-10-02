@@ -255,7 +255,7 @@ func newFixture(t *testing.T, clt client.Client, name string) *fixture {
 		Name:      testDynaKubeName,
 		Namespace: ns,
 		Spec:      dynakube.DynaKubeSpec{APIURL: testAPIURL},
-		Status:    dynakube.DynaKubeStatus{Phase: status.Running, KubernetesClusterName: testClusterName},
+		Status:    dynakube.DynaKubeStatus{Phase: status.Running, Registration: dynakube.Registration{EntityLabel: testClusterName}},
 	}
 	integrationtests.CreateDynakube(t, clt, dk)
 

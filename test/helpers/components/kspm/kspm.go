@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -24,12 +25,12 @@ func CheckKSPMSettingsExistOnTenant(secretConfig tenant.Secret, dk *dynakube.Dyn
 		resources := envConfig.Client().Resources()
 		require.NoError(t, resources.Get(ctx, dk.Name, dk.Namespace, dk))
 
-		require.NotEmpty(t, dk.Status.KubernetesClusterMEID, "KubernetesClusterMEID must be populated in DynaKube status")
+		require.NotEmpty(t, dk.Status.Registration.EntityScope, "KubernetesClusterMEID must be populated in DynaKube status")
 
 		settingsClient, err := tenant.BuildSettingsClient(secretConfig)
 		require.NoError(t, err)
 
-		kspmSettings, err := settingsClient.GetKSPMSettings(ctx, dk.Status.KubernetesClusterMEID)
+		kspmSettings, err := settingsClient.GetKSPMSettings(ctx, settings.K8sClusterRegistration(dk.Status.Registration))
 		require.NoError(t, err, "Failed to query KSPM settings from tenant")
 
 		assert.Positive(t, kspmSettings.TotalCount, "KSPM settings should exist on the tenant")
@@ -51,18 +52,18 @@ func DeleteKSPMSettingsFromTenant(secretConfig tenant.Secret) features.Func {
 		settingsClient, err := tenant.BuildSettingsClient(secretConfig)
 		require.NoError(t, err, "Could not build settings client")
 
-		k8sClusterME, err := settingsClient.GetK8sClusterME(ctx, kubeSystemUUID)
+		k8sClusterME, err := settingsClient.GetK8sClusterME(ctx, settings.K8sClusterRegistration{EntityID: kubeSystemUUID})
 		require.NoError(t, err, "Could not get K8s cluster MEID")
 
-		if k8sClusterME.ID == "" {
+		if k8sClusterME.EntityScope == "" {
 			t.Log("No Kubernetes Cluster MEID found, skipping KSPM settings cleanup")
 
 			return ctx
 		}
 
-		t.Logf("Found Kubernetes Cluster MEID: %s", k8sClusterME.ID)
+		t.Logf("Found Kubernetes Cluster MEID: %s", k8sClusterME.EntityScope)
 
-		kspmSettings, err := settingsClient.GetKSPMSettings(ctx, k8sClusterME.ID)
+		kspmSettings, err := settingsClient.GetKSPMSettings(ctx, k8sClusterME)
 		require.NoError(t, err, "Could not query KSPM settings")
 
 		if kspmSettings.TotalCount == 0 {

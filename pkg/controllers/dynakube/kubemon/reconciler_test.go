@@ -333,7 +333,8 @@ func newTestDynaKube() *dynakube.DynaKube {
 			},
 		},
 		Status: dynakube.DynaKubeStatus{
-			KubeSystemUUID: "test-cluster-uuid", // set by the parent controller before any kubemon reconciler runs
+			// KubeSystemUUID is set by the parent controller before any kubemon reconciler runs
+			Registration: dynakube.Registration{EntityID: "test-cluster-uuid"},
 		},
 	}
 

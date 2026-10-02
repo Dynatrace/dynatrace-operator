@@ -88,8 +88,8 @@ func TestGetInitContainer(t *testing.T) {
 
 	t.Run("get main container", func(t *testing.T) {
 		dk := &dynakube.DynaKube{}
-		dk.Status.KubernetesClusterMEID = "test-me-id"
-		dk.Status.KubernetesClusterName = "test-cluster-name"
+		dk.Status.Registration.EntityScope = "test-me-id"
+		dk.Status.Registration.EntityLabel = "test-cluster-name"
 
 		initContainer := getInitContainer(dk, tenantUUID, "")
 

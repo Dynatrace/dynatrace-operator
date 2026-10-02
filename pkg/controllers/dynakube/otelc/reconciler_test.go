@@ -106,7 +106,7 @@ func createDynaKube(activeGateEnabled bool) *dynakube.DynaKube {
 				},
 				VersionStatus: status.VersionStatus{},
 			},
-			KubeSystemUUID: testKubeSystemUUID,
+			Registration: dynakube.Registration{EntityID: testKubeSystemUUID},
 		},
 	}
 

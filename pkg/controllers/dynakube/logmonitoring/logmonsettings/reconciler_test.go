@@ -32,8 +32,10 @@ func TestReconcile(t *testing.T) {
 	getDK := func() *dynakube.DynaKube {
 		return &dynakube.DynaKube{
 			Status: dynakube.DynaKubeStatus{
-				KubernetesClusterMEID: meID,
-				KubernetesClusterName: clusterName,
+				Registration: dynakube.Registration{
+					EntityScope: meID,
+					EntityLabel: clusterName,
+				},
 			},
 			Spec: dynakube.DynaKubeSpec{
 				LogMonitoring: &logmonitoring.Spec{
@@ -43,9 +45,11 @@ func TestReconcile(t *testing.T) {
 		}
 	}
 
+	registration := settings.K8sClusterRegistration{EntityScope: meID, EntityLabel: clusterName}
+
 	t.Run("normal run with all scopes and existing setting", func(t *testing.T) {
 		mockClient := settingsmock.NewClient(t)
-		mockClient.EXPECT().GetSettingsForLogModule(mock.Anything, meID).
+		mockClient.EXPECT().GetSettingsForLogModule(mock.Anything, registration).
 			Return(settings.TotalCountSettingsResponse{TotalCount: 1}, nil)
 
 		dk := getDK()
@@ -62,9 +66,9 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("normal run with all scopes and without existing setting", func(t *testing.T) {
 		mockClient := settingsmock.NewClient(t)
-		mockClient.EXPECT().GetSettingsForLogModule(mock.Anything, meID).
+		mockClient.EXPECT().GetSettingsForLogModule(mock.Anything, registration).
 			Return(settings.TotalCountSettingsResponse{TotalCount: 0}, nil)
-		mockClient.EXPECT().CreateLogMonitoringSetting(mock.Anything, meID, clusterName, mock.Anything).
+		mockClient.EXPECT().CreateLogMonitoringSetting(mock.Anything, registration, clusterName, mock.Anything).
 			Return("test-object-id", nil)
 
 		dk := getDK()
@@ -126,7 +130,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("update condition timestamp if outdated", func(t *testing.T) {
 		mockClient := settingsmock.NewClient(t)
-		mockClient.EXPECT().GetSettingsForLogModule(mock.Anything, meID).
+		mockClient.EXPECT().GetSettingsForLogModule(mock.Anything, registration).
 			Return(settings.TotalCountSettingsResponse{TotalCount: 1}, nil)
 
 		dk := getDK()
@@ -179,7 +183,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("platform token cannot read settings", func(t *testing.T) {
 		mockClient := settingsmock.NewClient(t)
-		mockClient.EXPECT().GetSettingsForLogModule(mock.Anything, meID).
+		mockClient.EXPECT().GetSettingsForLogModule(mock.Anything, registration).
 			Return(settings.TotalCountSettingsResponse{}, &core.HTTPError{StatusCode: http.StatusForbidden}).
 			Once()
 
@@ -195,9 +199,9 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("platform token cannot write settings", func(t *testing.T) {
 		mockClient := settingsmock.NewClient(t)
-		mockClient.EXPECT().GetSettingsForLogModule(mock.Anything, meID).
+		mockClient.EXPECT().GetSettingsForLogModule(mock.Anything, registration).
 			Return(settings.TotalCountSettingsResponse{}, nil).Once()
-		mockClient.EXPECT().CreateLogMonitoringSetting(mock.Anything, meID, clusterName, []logmonitoring.IngestRuleMatchers{}).
+		mockClient.EXPECT().CreateLogMonitoringSetting(mock.Anything, registration, clusterName, []logmonitoring.IngestRuleMatchers{}).
 			Return("", &core.HTTPError{StatusCode: http.StatusForbidden})
 
 		dk := getDK()
@@ -220,8 +224,10 @@ func TestCheckLogMonitoringSettings(t *testing.T) {
 	getDK := func() *dynakube.DynaKube {
 		return &dynakube.DynaKube{
 			Status: dynakube.DynaKubeStatus{
-				KubernetesClusterMEID: meID,
-				KubernetesClusterName: clusterName,
+				Registration: dynakube.Registration{
+					EntityScope: meID,
+					EntityLabel: clusterName,
+				},
 			},
 			Spec: dynakube.DynaKubeSpec{
 				LogMonitoring: &logmonitoring.Spec{
@@ -231,9 +237,11 @@ func TestCheckLogMonitoringSettings(t *testing.T) {
 		}
 	}
 
+	registration := settings.K8sClusterRegistration{EntityScope: meID, EntityLabel: clusterName}
+
 	t.Run("error fetching log monitoring settings", func(t *testing.T) {
 		mockClient := settingsmock.NewClient(t)
-		mockClient.EXPECT().GetSettingsForLogModule(t.Context(), meID).
+		mockClient.EXPECT().GetSettingsForLogModule(t.Context(), registration).
 			Return(settings.TotalCountSettingsResponse{}, errors.New("error when fetching settings"))
 
 		dk := getDK()
@@ -250,7 +258,7 @@ func TestCheckLogMonitoringSettings(t *testing.T) {
 	t.Run("KubernetesClusterMEID is missing -> skip", func(t *testing.T) {
 		mockClient := settingsmock.NewClient(t)
 		dk := getDK()
-		dk.Status.KubernetesClusterMEID = ""
+		dk.Status.Registration.EntityScope = ""
 
 		r := NewReconciler()
 
@@ -262,7 +270,7 @@ func TestCheckLogMonitoringSettings(t *testing.T) {
 
 	t.Run("log monitoring settings already exist", func(t *testing.T) {
 		mockClient := settingsmock.NewClient(t)
-		mockClient.EXPECT().GetSettingsForLogModule(t.Context(), meID).
+		mockClient.EXPECT().GetSettingsForLogModule(t.Context(), registration).
 			Return(settings.TotalCountSettingsResponse{TotalCount: 1}, nil)
 
 		dk := getDK()
@@ -277,15 +285,17 @@ func TestCheckLogMonitoringSettings(t *testing.T) {
 
 	t.Run("create log monitoring settings", func(t *testing.T) {
 		mockClient := settingsmock.NewClient(t)
-		mockClient.EXPECT().GetSettingsForLogModule(t.Context(), meID).
+		mockClient.EXPECT().GetSettingsForLogModule(t.Context(), registration).
 			Return(settings.TotalCountSettingsResponse{TotalCount: 0}, nil)
-		mockClient.EXPECT().CreateLogMonitoringSetting(t.Context(), meID, clusterName, mock.Anything).
+		mockClient.EXPECT().CreateLogMonitoringSetting(t.Context(), registration, clusterName, mock.Anything).
 			Return("test-object-id", nil)
 
 		dk := &dynakube.DynaKube{
 			Status: dynakube.DynaKubeStatus{
-				KubernetesClusterMEID: meID,
-				KubernetesClusterName: clusterName,
+				Registration: dynakube.Registration{
+					EntityScope: meID,
+					EntityLabel: clusterName,
+				},
 			},
 			Spec: dynakube.DynaKubeSpec{
 				LogMonitoring: &logmonitoring.Spec{
@@ -304,9 +314,9 @@ func TestCheckLogMonitoringSettings(t *testing.T) {
 
 	t.Run("error creating log monitoring settings", func(t *testing.T) {
 		mockClient := settingsmock.NewClient(t)
-		mockClient.EXPECT().GetSettingsForLogModule(t.Context(), meID).
+		mockClient.EXPECT().GetSettingsForLogModule(t.Context(), registration).
 			Return(settings.TotalCountSettingsResponse{TotalCount: 0}, nil)
-		mockClient.EXPECT().CreateLogMonitoringSetting(t.Context(), meID, clusterName, mock.Anything).
+		mockClient.EXPECT().CreateLogMonitoringSetting(t.Context(), registration, clusterName, mock.Anything).
 			Return("", errors.New("error when creating"))
 
 		dk := getDK()

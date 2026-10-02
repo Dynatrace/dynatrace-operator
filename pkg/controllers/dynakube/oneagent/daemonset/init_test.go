@@ -97,9 +97,11 @@ func TestInitContainerEnvVars(t *testing.T) {
 
 func TestInitContainerArguments(t *testing.T) {
 	baseStatus := dynakube.DynaKubeStatus{
-		KubeSystemUUID:        testKubernetesClusterUID,
-		KubernetesClusterMEID: testKubernetesClusterMEID,
-		KubernetesClusterName: testKubernetesClusterName,
+		Registration: dynakube.Registration{
+			EntityID:    testKubernetesClusterUID,
+			EntityScope: testKubernetesClusterMEID,
+			EntityLabel: testKubernetesClusterName,
+		},
 	}
 
 	t.Run("baseline args structure", func(t *testing.T) {
@@ -205,7 +207,7 @@ func TestInitContainerArguments(t *testing.T) {
 
 	t.Run("sanitizes newline in value", func(t *testing.T) {
 		dsBuilder := builder{dk: &dynakube.DynaKube{
-			Status: dynakube.DynaKubeStatus{KubernetesClusterName: "cluster\nname"},
+			Status: dynakube.DynaKubeStatus{Registration: dynakube.Registration{EntityLabel: "cluster\nname"}},
 		}}
 		attributes := strings.Split(dsBuilder.initContainerArguments()[4], ",")
 		assert.Equal(t, "k8s.cluster.name=clustername", attributes[0])
@@ -213,7 +215,7 @@ func TestInitContainerArguments(t *testing.T) {
 
 	t.Run("sanitizes tab in value", func(t *testing.T) {
 		dsBuilder := builder{dk: &dynakube.DynaKube{
-			Status: dynakube.DynaKubeStatus{KubeSystemUUID: "uid\t123"},
+			Status: dynakube.DynaKubeStatus{Registration: dynakube.Registration{EntityID: "uid\t123"}},
 		}}
 		attributes := strings.Split(dsBuilder.initContainerArguments()[4], ",")
 		assert.Equal(t, "k8s.cluster.uid=uid123", attributes[1])
@@ -222,9 +224,11 @@ func TestInitContainerArguments(t *testing.T) {
 	t.Run("sanitizes carriage return in value", func(t *testing.T) {
 		dsBuilder := builder{dk: &dynakube.DynaKube{
 			Status: dynakube.DynaKubeStatus{
-				KubernetesClusterName: testKubernetesClusterName,
-				KubeSystemUUID:        testKubernetesClusterUID,
-				KubernetesClusterMEID: "meid\r123",
+				Registration: dynakube.Registration{
+					EntityLabel: testKubernetesClusterName,
+					EntityID:    testKubernetesClusterUID,
+					EntityScope: "meid\r123",
+				},
 			},
 		}}
 		attributes := strings.Split(dsBuilder.initContainerArguments()[4], ",")

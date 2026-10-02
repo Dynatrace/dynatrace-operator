@@ -66,8 +66,8 @@ func TestReconcileSecretReplicationLifecycle(t *testing.T) {
 			},
 		},
 		Status: dynakube.DynaKubeStatus{
-			KubernetesClusterMEID: lifecycleMEID,
-			APIToken:              dynakube.APITokenStatus{Platform: new(bool)},
+			Registration: dynakube.Registration{EntityScope: lifecycleMEID},
+			APIToken:     dynakube.APITokenStatus{Platform: new(bool)},
 		},
 	}
 	*dk.Spec.MetadataEnrichment.Enabled = true

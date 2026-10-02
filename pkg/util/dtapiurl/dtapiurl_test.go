@@ -95,3 +95,81 @@ func TestToSecondGen(t *testing.T) {
 		})
 	}
 }
+
+func TestMapToThirdGen(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{
+			input:    "https://tenant.live.dynatrace.com/api",
+			expected: "https://tenant.apps.dynatrace.com",
+		},
+		{
+			input:    "https://tenant.sprint.dynatrace.com/api",
+			expected: "https://tenant.sprint.apps.dynatrace.com",
+		},
+		{
+			input:    "https://tenant.dev.dynatrace.com/api",
+			expected: "https://tenant.dev.apps.dynatrace.com",
+		},
+		{
+			input:    "https://tenant.live.dynatrace.com:8443/api",
+			expected: "https://tenant.apps.dynatrace.com:8443",
+		},
+		{
+			input:    "https://tenant.sprint.dynatrace.com:9090/api",
+			expected: "https://tenant.sprint.apps.dynatrace.com:9090",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.input, func(t *testing.T) {
+			u, err := url.Parse(tc.input)
+			require.NoError(t, err)
+
+			mapToThirdGen(u)
+			assert.Equal(t, tc.expected, u.String())
+		})
+	}
+}
+
+func TestMapToThirdGenLeavesThirdGenUntouched(t *testing.T) {
+	input := "https://tenant.apps.dynatrace.com"
+
+	u, err := url.Parse(input)
+	require.NoError(t, err)
+
+	mapToThirdGen(u)
+	assert.Equal(t, input, u.String())
+}
+
+func TestToThirdGen(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "2nd gen url is remapped to 3rd gen",
+			input:    "https://tenant.live.dynatrace.com/api",
+			expected: "https://tenant.apps.dynatrace.com",
+		},
+		{
+			name:     "2nd gen url with subdomain is remapped to 3rd gen",
+			input:    "https://tenant.sprint.dynatrace.com/api",
+			expected: "https://tenant.sprint.apps.dynatrace.com",
+		},
+		{
+			name:     "3rd gen url is returned unchanged",
+			input:    "https://tenant.apps.dynatrace.com",
+			expected: "https://tenant.apps.dynatrace.com",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			assert.Equal(t, tc.expected, ToThirdGen(tc.input))
+		})
+	}
+}

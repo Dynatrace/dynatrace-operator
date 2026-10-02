@@ -25,23 +25,23 @@ import (
 // The creation part is not checked, to keep the test focused and not flaky.
 // The dynakubes used should either create it, or just use the ME already there.
 func NoUpdateMEID(t *testing.T) features.Feature {
-	assessME := func(builder *features.FeatureBuilder, prevDk *dynakube.DynaKube, prev *settings.K8sClusterME) {
+	assessME := func(builder *features.FeatureBuilder, prevDk *dynakube.DynaKube, prev *settings.K8sClusterRegistration) {
 		builder.Assess("checking current ME id and name", func(ctx context.Context, t *testing.T, c *envconf.Config) context.Context {
 			dk := prevDk.DeepCopy()
 			require.NoError(t, c.Client().Resources().Get(ctx, dk.Name, dk.Namespace, dk))
-			prev.ID = dk.Status.KubernetesClusterMEID
-			prev.Name = dk.Status.KubernetesClusterName
+			prev.EntityScope = dk.Status.Registration.EntityScope
+			prev.EntityLabel = dk.Status.Registration.EntityLabel
 			require.NotEmpty(t, prev)
 
 			return ctx
 		})
 	}
 
-	reAssessME := func(builder *features.FeatureBuilder, nextDk *dynakube.DynaKube, prev *settings.K8sClusterME) {
+	reAssessME := func(builder *features.FeatureBuilder, nextDk *dynakube.DynaKube, prev *settings.K8sClusterRegistration) {
 		builder.Assess("checking current ME id and name against previous", func(ctx context.Context, t *testing.T, c *envconf.Config) context.Context {
 			dk := nextDk.DeepCopy()
 			require.NoError(t, c.Client().Resources().Get(ctx, dk.Name, dk.Namespace, dk))
-			current := &settings.K8sClusterME{ID: dk.Status.KubernetesClusterMEID, Name: dk.Status.KubernetesClusterName}
+			current := &settings.K8sClusterRegistration{EntityScope: dk.Status.Registration.EntityScope, EntityLabel: dk.Status.Registration.EntityLabel}
 			require.Equal(t, prev, current)
 
 			return ctx
@@ -60,7 +60,7 @@ func NoUpdateMEID(t *testing.T) features.Feature {
 
 	builder := features.New("meid-no-update")
 
-	prevME := &settings.K8sClusterME{}
+	prevME := &settings.K8sClusterRegistration{}
 	dynakubeComponents.Install(builder, secretConfig, prevDynaKube)
 	assessME(builder, prevDynaKube, prevME)
 	dynakubeComponents.Delete(builder, helpers.LevelAssess, prevDynaKube)

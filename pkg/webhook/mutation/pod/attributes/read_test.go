@@ -985,9 +985,11 @@ func TestReadPodAttributes(t *testing.T) {
 			Pod: &corev1.Pod{Namespace: "ns"},
 			DynaKube: &dynakube.DynaKube{
 				Status: dynakube.DynaKubeStatus{
-					KubeSystemUUID:        "uid-123",
-					KubernetesClusterName: "my-cluster",
-					KubernetesClusterMEID: "KUBERNETES_CLUSTER-ABC",
+					Registration: dynakube.Registration{
+						EntityID:    "uid-123",
+						EntityLabel: "my-cluster",
+						EntityScope: "KUBERNETES_CLUSTER-ABC",
+					},
 				},
 			},
 		}

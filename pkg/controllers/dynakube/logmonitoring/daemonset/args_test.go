@@ -135,8 +135,8 @@ func Test_getInitArgs(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			dk := &dynakube.DynaKube{}
 			dk.Name = "dk-name-test"
-			dk.Status.KubernetesClusterMEID = tt.meID
-			dk.Status.KubernetesClusterName = tt.clusterName
+			dk.Status.Registration.EntityScope = tt.meID
+			dk.Status.Registration.EntityLabel = tt.clusterName
 			dk.Spec.ResourceAttributes = tt.resourceAttrs
 
 			if tt.templateArgs != nil {

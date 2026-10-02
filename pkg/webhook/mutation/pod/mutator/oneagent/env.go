@@ -19,7 +19,7 @@ func addDeploymentMetadataEnv(container *corev1.Container, dk *dynakube.DynaKube
 		return
 	}
 
-	deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(dk.Status.KubeSystemUUID, deploymentmetadata.GetOneAgentDeploymentType(dk))
+	deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(dk.Status.Registration.EntityID, deploymentmetadata.GetOneAgentDeploymentType(dk))
 	container.Env = append(container.Env,
 		corev1.EnvVar{
 			Name:  DynatraceMetadataEnv,

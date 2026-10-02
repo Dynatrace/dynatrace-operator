@@ -316,7 +316,7 @@ func TestStatefulSetUpdateWeakness(t *testing.T) {
 				},
 				VersionStatus: status.VersionStatus{},
 			},
-			KubeSystemUUID: testKubeSystemUUID,
+			Registration: dynakube.Registration{EntityID: testKubeSystemUUID},
 		},
 	}
 

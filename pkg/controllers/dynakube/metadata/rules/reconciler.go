@@ -79,7 +79,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtClient settings.Client, dk
 }
 
 func (r *Reconciler) getEnrichmentRules(ctx context.Context, dtClient settings.Client, dk *dynakube.DynaKube) ([]metadataenrichment.Rule, error) {
-	rules, err := dtClient.GetRules(ctx, dk.Status.KubeSystemUUID, dk.Status.KubernetesClusterMEID)
+	rules, err := dtClient.GetRules(ctx, settings.K8sClusterRegistration(dk.Status.Registration))
 	if err != nil {
 		k8sconditions.SetDynatraceAPIError(dk.Conditions(), conditionType, err)
 

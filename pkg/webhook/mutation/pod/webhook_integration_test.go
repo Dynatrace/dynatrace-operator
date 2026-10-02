@@ -776,10 +776,12 @@ func testMetadataJSON(t *testing.T, clt client.Client, tt metadataJSONTestCase) 
 			MetadataEnrichment: metadataenrichment.Spec{Enabled: new(true)},
 		},
 		Status: dynakube.DynaKubeStatus{
-			KubernetesClusterMEID: testMEID,
-			KubernetesClusterName: testClusterName,
-			KubeSystemUUID:        testClusterUUID,
-			MetadataEnrichment:    metadataenrichment.Status{Rules: tt.rules},
+			Registration: dynakube.Registration{
+				EntityScope: testMEID,
+				EntityLabel: testClusterName,
+				EntityID:    testClusterUUID,
+			},
+			MetadataEnrichment: metadataenrichment.Status{Rules: tt.rules},
 		},
 	}
 	if len(tt.oaAttributes) > 0 {
@@ -864,10 +866,12 @@ func testBootstrapperArgs(t *testing.T, clt client.Client, tt bootstrapperArgsTe
 			ResourceAttributes: tt.resourceAttributes,
 		},
 		Status: dynakube.DynaKubeStatus{
-			KubernetesClusterMEID: testMEID,
-			KubernetesClusterName: testClusterName,
-			KubeSystemUUID:        testClusterUUID,
-			MetadataEnrichment:    metadataenrichment.Status{Rules: tt.rules},
+			Registration: dynakube.Registration{
+				EntityScope: testMEID,
+				EntityLabel: testClusterName,
+				EntityID:    testClusterUUID,
+			},
+			MetadataEnrichment: metadataenrichment.Status{Rules: tt.rules},
 			OneAgent: oneagent.Status{
 				ConnectionInfo: communication.ConnectionInfo{
 					TenantUUID: uuid.New().String(),
@@ -1220,9 +1224,11 @@ func getReadyCNFSDynaKube() *dynakube.DynaKube {
 			},
 		},
 		Status: dynakube.DynaKubeStatus{
-			KubernetesClusterMEID: testMEID,
-			KubernetesClusterName: testClusterName,
-			KubeSystemUUID:        testClusterUUID,
+			Registration: dynakube.Registration{
+				EntityScope: testMEID,
+				EntityLabel: testClusterName,
+				EntityID:    testClusterUUID,
+			},
 			OneAgent: oneagent.Status{
 				ConnectionInfo: communication.ConnectionInfo{
 					TenantUUID: uuid.New().String(),
@@ -1258,9 +1264,11 @@ func getReadyOTLPDynaKube() *dynakube.DynaKube {
 			},
 		},
 		Status: dynakube.DynaKubeStatus{
-			KubernetesClusterMEID: testMEID,
-			KubernetesClusterName: testClusterName,
-			KubeSystemUUID:        testClusterUUID,
+			Registration: dynakube.Registration{
+				EntityScope: testMEID,
+				EntityLabel: testClusterName,
+				EntityID:    testClusterUUID,
+			},
 		},
 	}
 }

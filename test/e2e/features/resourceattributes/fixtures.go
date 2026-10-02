@@ -275,9 +275,9 @@ func buildExpectedDefaults(ctx context.Context, t *testing.T, envConfig *envconf
 	expectedDefaults["k8s.workload.kind"] = app.Kind()
 	expectedDefaults["k8s.workload.name"] = app.Name()
 	expectedDefaults["k8s.namespace.name"] = app.Namespace()
-	expectedDefaults["k8s.cluster.uid"] = dk.Status.KubeSystemUUID
-	expectedDefaults["k8s.cluster.name"] = dk.Status.KubernetesClusterName
-	expectedDefaults["dt.entity.kubernetes_cluster"] = dk.Status.KubernetesClusterMEID
+	expectedDefaults["k8s.cluster.uid"] = dk.Status.Registration.EntityID
+	expectedDefaults["k8s.cluster.name"] = dk.Status.Registration.EntityLabel
+	expectedDefaults["dt.entity.kubernetes_cluster"] = dk.Status.Registration.EntityScope
 	expectedDefaults["k8s.container.name"] = app.ContainerName()
 
 	return expectedDefaults
@@ -288,9 +288,9 @@ func buildExpectedNodeDefaults(ctx context.Context, t *testing.T, envConfig *env
 	require.NoError(t, err)
 
 	return map[string]string{
-		"k8s.cluster.uid":              dk.Status.KubeSystemUUID,
-		"k8s.cluster.name":             dk.Status.KubernetesClusterName,
-		"dt.entity.kubernetes_cluster": dk.Status.KubernetesClusterMEID,
+		"k8s.cluster.uid":              dk.Status.Registration.EntityID,
+		"k8s.cluster.name":             dk.Status.Registration.EntityLabel,
+		"dt.entity.kubernetes_cluster": dk.Status.Registration.EntityScope,
 	}
 }
 
