@@ -4,180 +4,105 @@
 x-google-marketplace:
   schemaVersion: v2
   applicationApiVersion: v1beta1
-  publishedVersion: 0.6.0
+  publishedVersion: 1.11.0
   publishedVersionMetadata:
-    releaseNote: >-
-      ## What's Changed
-      ### Bugfixes
-      * Fixes daemonset deletion issue by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/505
-      * Moves the tls in the correct postion for oneagent daemonset by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/514
-      * Change logging condition when ensuring agProxySecret is deleted by @luhi-DT in https://github.com/Dynatrace/dynatrace-operator/pull/556
-      * Makes checking the statusCode safer for ProcessModuleConfig endpoint by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/570
-      * Fix CSI driver daemonset by @chrismuellner in https://github.com/Dynatrace/dynatrace-operator/pull/599
-      * Add openshift scc for operator and webhook by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/602
-      * Add validity check for certificates on webhook startup by @luhi-DT in https://github.com/Dynatrace/dynatrace-operator/pull/592
-      * Update volume entry if exists by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/615
-      * Allows domainless tenant urls by @toszr in https://github.com/Dynatrace/dynatrace-operator/pull/617
-      * Fix phase field not updating by @gkrenn in https://github.com/Dynatrace/dynatrace-operator/pull/614
-      * Enables relevant ActiveGate service ports based on capability requirements by @toszr in https://github.com/Dynatrace/dynatrace-operator/pull/622
-      * Fix nil panic introduced by installer rework by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/620
-      * Fixes double insert to dynakube table by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/638
-      * Moves the version check in the correct volume publisher by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/648
-      * Webhook AppArmor annotation fixed by @aorcholski in https://github.com/Dynatrace/dynatrace-operator/pull/658
-      * ActiveGate webserver's CA mounted properly in OneAgents pods by @mjgrzybek in https://github.com/Dynatrace/dynatrace-operator/pull/661
-      * Simplifies the matchLabels for Oneagent daemonset by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/672
-      * Remove version from `matchLabels` in Helm and Activegate by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/683
-      * Add RW volume for AG tls certificate by @aorcholski in https://github.com/Dynatrace/dynatrace-operator/pull/722
-      * Fix check for empty high availability flag by @mjgrzybek in https://github.com/Dynatrace/dynatrace-operator/pull/747
-      * Fix automatic kubernetes api monitoring usage being skipped by @chrismuellner in https://github.com/Dynatrace/dynatrace-operator/pull/750
-      * Fix activegate service not updating when labels mismatch by @chrismuellner in https://github.com/Dynatrace/dynatrace-operator/pull/749
-      * Skip cache removal when file does not exist by @chrismuellner in https://github.com/Dynatrace/dynatrace-operator/pull/754
-      * Add ClusterRoles for OLM activegate by @luhi-DT in https://github.com/Dynatrace/dynatrace-operator/pull/759
-      * Replace the latest oneagent version endpoint to use the versions endpoint by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/760
-
-      ### Core changes
-      * Adds security context to the operator/webhook by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/580
-      * Removes admission.Errored responses from podmutator webhook by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/604
-      * Switch to distroless base image by @chrismuellner in https://github.com/Dynatrace/dynatrace-operator/pull/596
-      * SecurityContext added to ActiveGate container by @aorcholski in https://github.com/Dynatrace/dynatrace-operator/pull/597
-      * Dynatrace containers livenessprobes switched from `/healthz` to `/livez` by @mjgrzybek in https://github.com/Dynatrace/dynatrace-operator/pull/641
-      * Adds detailed logs for the standalone init by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/619
-      * Removes "alpha." from the feature flags + adds deprecation warning for old flags by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/611
-      * Adds database overview to the logs of the csi driver on error and startup by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/618
-      * Reworked phase/status-field handling by @gkrenn in https://github.com/Dynatrace/dynatrace-operator/pull/609
-      * Fix mock client for ARM architecture by @chrismuellner in https://github.com/Dynatrace/dynatrace-operator/pull/668
-      * Add malformed response to log metadata in dtclient by @gkrenn in https://github.com/Dynatrace/dynatrace-operator/pull/685
-      * Prunes the makefile by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/678
-      * Refactor component feature and version labels by @chrismuellner in https://github.com/Dynatrace/dynatrace-operator/pull/726
-      * Makes the deprecated feature-flag warning more precise by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/723
-      * Create symlink from filesystem instead of latest version on Dynakube by @chrismuellner in https://github.com/Dynatrace/dynatrace-operator/pull/757
-
-      ### Helm changes
-      * Makes apparmor setting more flexible in helm by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/612
-      * Change crdApplied to required for google marketplace by @waodim in https://github.com/Dynatrace/dynatrace-operator/pull/559
-      * Add highavailability option for webhook via helm by @waodim in https://github.com/Dynatrace/dynatrace-operator/pull/713
-
-      ### Component changes
-      * Adds DNSPolicy to the ActiveGate section by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/458
-      * Adds token scope check for activeGate features by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/461
-      * Add statsd ingest by @toszr in https://github.com/Dynatrace/dynatrace-operator/pull/313
-      * Adds warning for missing memory limit for activeGate by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/538
-      * Separate statsd-ingest capability from metrics-ingest by @toszr in https://github.com/Dynatrace/dynatrace-operator/pull/539
-      * Exposes custom StatsD and EEC images in DynaKube ActiveGate spec by @toszr in https://github.com/Dynatrace/dynatrace-operator/pull/546
-      * Adds Extension Controller/StatsD logs to the ActiveGate support archive by @toszr in https://github.com/Dynatrace/dynatrace-operator/pull/561
-      * Adds security context for EEC and StatsD containers (statsd-ingest) by @toszr in https://github.com/Dynatrace/dynatrace-operator/pull/586
-      * Maps certain StatsD-related annotations to EEC/StatsD container resource requests or limits by @toszr in https://github.com/Dynatrace/dynatrace-operator/pull/588
-      * Maps EEC/StatsD-related annotations to the EEC and data sources runtime properties by @toszr in https://github.com/Dynatrace/dynatrace-operator/pull/582
-      * Raw ActiveGate image support by @mjgrzybek in https://github.com/Dynatrace/dynatrace-operator/pull/544
-      * Defines constants for environment variables in EEC/StatsD containers by @toszr in https://github.com/Dynatrace/dynatrace-operator/pull/593
-      * Includes DT_STATSD_INGEST_URL in the endpoint.properties file injected to pods by @toszr in https://github.com/Dynatrace/dynatrace-operator/pull/594
-      * Set terminationGracePeriod for oneagent pods by @chrismuellner in https://github.com/Dynatrace/dynatrace-operator/pull/595
-      * Remove preview warning from CSI driver by @waodim in https://github.com/Dynatrace/dynatrace-operator/pull/603
-      * Removes statsd-ingest dependency on metrics-ingest by @toszr in https://github.com/Dynatrace/dynatrace-operator/pull/600
-      * Multiple osagents on the same node by @mjgrzybek in https://github.com/Dynatrace/dynatrace-operator/pull/608
-      * Added opt-in feature flag AnnotationFeatureEnableActivegateRawImage by @mjgrzybek in https://github.com/Dynatrace/dynatrace-operator/pull/616
-      * ActiveGate pods support setting PriorityClass by @mjgrzybek in https://github.com/Dynatrace/dynatrace-operator/pull/637
-      * Added TopologySpreadConstraints support to ActiveGate spec by @mjgrzybek in https://github.com/Dynatrace/dynatrace-operator/pull/652
-      * Remove dataingest environment variable from pod injection by @chrismuellner in https://github.com/Dynatrace/dynatrace-operator/pull/666
-      * `AnnotationFeatureDisableActivegateRawImage` defaults to `false` by @mjgrzybek in https://github.com/Dynatrace/dynatrace-operator/pull/669
-
-      **Full Changelog**: https://github.com/Dynatrace/dynatrace-operator/compare/v0.0.1...v0.6.0
+    releaseNote: "<!-- Release notes generated using configuration in .github/release.yml at v1.11.0 -->\n\n## What's Changed\n\n### Bugfixes \U0001FAB2\n* Always read token secret for validation by @avorima in https://github.com/Dynatrace/dynatrace-operator/pull/6928\n* Fix OA DaemonSet secret mount permissions. (#6974) by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/6975\n* Do not use `timeprovider.Provider` in the version reconciler by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/6970\n* Add missing license headers by @gkrenn in https://github.com/Dynatrace/dynatrace-operator/pull/7016\n* Fix webhook CrashLoopBackOff on gVisor nodes by @waodim in https://github.com/Dynatrace/dynatrace-operator/pull/7017\n* Delete replicated secrets on namespace deselection by @Incredible-O in https://github.com/Dynatrace/dynatrace-operator/pull/7047\n* Make init user/group configurable by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/7072\n* Report missing token scopes only once by @Incredible-O in https://github.com/Dynatrace/dynatrace-operator/pull/7199\n* Mount /etc/ld.so.preload readonly by @avorima in https://github.com/Dynatrace/dynatrace-operator/pull/7228\n* Fix mark-for-termination edge case by @gkrenn in https://github.com/Dynatrace/dynatrace-operator/pull/7321\n* Fix 'ImageHasBeenDownloaded' in e2e test by @gkrenn in https://github.com/Dynatrace/dynatrace-operator/pull/7517\n\n### Core changes \U0001F389\n* [Automatic] Update because new branch created release-1.10 by @operator-bot-account[bot] in https://github.com/Dynatrace/dynatrace-operator/pull/6863\n* Update GitHub Actions (main) by @renovate[bot] in https://github.com/Dynatrace/dynatrace-operator/pull/6859\n* Introduce OCP 4.22 ondemand env by @andriisoldatenko in https://github.com/Dynatrace/dynatrace-operator/pull/6870\n* Make `check-comment` action check fork status instead of author membership by @Incredible-O in https://github.com/Dynatrace/dynatrace-operator/pull/6873\n* Add missing platform tokens to e2e-kind workflow by @mihaitanasedt in https://github.com/Dynatrace/dynatrace-operator/pull/6876\n* Add the deployer cluster roles and e2e tests by @mihaitanasedt in https://github.com/Dynatrace/dynatrace-operator/pull/6864\n* e2e: Add ocp 4.22 to slack message, update script to render platform token by @andriisoldatenko in https://github.com/Dynatrace/dynatrace-operator/pull/6880\n* Update zizmorcore/zizmor-action action to v0.5.7 (main) by @renovate[bot] in https://github.com/Dynatrace/dynatrace-operator/pull/6877\n* Make `do-not-merge` label actually block PRs by @Incredible-O in https://github.com/Dynatrace/dynatrace-operator/pull/6904\n* fix: Trigger CI on new branch push by @waodim in https://github.com/Dynatrace/dynatrace-operator/pull/6908\n* Add data ingest platform token to the tests by @mihaitanasedt in https://github.com/Dynatrace/dynatrace-operator/pull/6922\n* Fix update csv bundles workflow for RC tags by @waodim in https://github.com/Dynatrace/dynatrace-operator/pull/6919\n* IsPublicRegistry feature flag supported by CSI driver provisioner installer selection function by @aorcholski in https://github.com/Dynatrace/dynatrace-operator/pull/6920\n* Run e2e tests with phase3 tenant by @mihaitanasedt in https://github.com/Dynatrace/dynatrace-operator/pull/6917\n* cherry-pick: Fix release workflow (update-csv-bundles & create-marketplace-forks) (#6986) (#6985) by @waodim in https://github.com/Dynatrace/dynatrace-operator/pull/6991\n* Update Dev tooling (main) by @renovate[bot] in https://github.com/Dynatrace/dynatrace-operator/pull/6856\n* Add license headers to files by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/6969\n* ci: add nightly fips builds by @svfoxat in https://github.com/Dynatrace/dynatrace-operator/pull/6976\n* feat: add omitzero to struct fields by @VLazarevic in https://github.com/Dynatrace/dynatrace-operator/pull/6942\n* Fix automated CSV bundle update to use GitHub-generated changelog by @waodim in https://github.com/Dynatrace/dynatrace-operator/pull/7018\n* Update GitHub Actions (main) by @renovate[bot] in https://github.com/Dynatrace/dynatrace-operator/pull/6898\n* Update GitHub Actions (main) by @renovate[bot] in https://github.com/Dynatrace/dynatrace-operator/pull/7028\n* Update GitHub Actions (main) (major) by @renovate[bot] in https://github.com/Dynatrace/dynatrace-operator/pull/6833\n* ci: nightly chart and image for daily fips e2e runs by @svfoxat in https://github.com/Dynatrace/dynatrace-operator/pull/7024\n* Pass data ingest platform token to e2e-kind workflow by @andriisoldatenko with @Copilot in https://github.com/Dynatrace/dynatrace-operator/pull/7075\n* fixup unbound variables e2e-kind by @andriisoldatenko in https://github.com/Dynatrace/dynatrace-operator/pull/7076\n* bump kind to 1.36x by @andriisoldatenko in https://github.com/Dynatrace/dynatrace-operator/pull/7071\n* Allow connection timeout configuration for Dynatrace Client by @aorcholski in https://github.com/Dynatrace/dynatrace-operator/pull/7027\n* Update GitHub Actions (main) by @renovate[bot] in https://github.com/Dynatrace/dynatrace-operator/pull/7123\n* Remove olm manifests make target by @waodim in https://github.com/Dynatrace/dynatrace-operator/pull/7198\n* Introduce manifests e2e tests by @mihaitanasedt in https://github.com/Dynatrace/dynatrace-operator/pull/7105\n* Update GitHub Actions (main) by @renovate[bot] in https://github.com/Dynatrace/dynatrace-operator/pull/7201\n* Preserve KSPM host path list in the `v1beta5` API by @Incredible-O in https://github.com/Dynatrace/dynatrace-operator/pull/7208\n* add rbac and crd for dtprometheus to helm chart by @svfoxat in https://github.com/Dynatrace/dynatrace-operator/pull/7121\n* Call create-sbom reusable workflow by @aorcholski in https://github.com/Dynatrace/dynatrace-operator/pull/6824\n* Update GitHub Actions (main) by @renovate[bot] in https://github.com/Dynatrace/dynatrace-operator/pull/7220\n* Update GitHub Actions (main) (major) by @renovate[bot] in https://github.com/Dynatrace/dynatrace-operator/pull/7234\n* Update Dev tooling (main) by @renovate[bot] in https://github.com/Dynatrace/dynatrace-operator/pull/7243\n* Update GitHub Actions (main) by @renovate[bot] in https://github.com/Dynatrace/dynatrace-operator/pull/7260\n* Make AG volumes and mounts user configurable by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/7272\n* Update Dev tooling (main) by @renovate[bot] in https://github.com/Dynatrace/dynatrace-operator/pull/7279\n* fixup: e2e tests for deployer permissions, add missing watch permission by @andriisoldatenko in https://github.com/Dynatrace/dynatrace-operator/pull/7308\n* Update GitHub Actions (main) by @renovate[bot] in https://github.com/Dynatrace/dynatrace-operator/pull/7295\n* bump test coverage threshold by @andriisoldatenko in https://github.com/Dynatrace/dynatrace-operator/pull/7323\n* chore: update dev tooling (main) by @dynatrace-llc-renovate-operator[bot] in https://github.com/Dynatrace/dynatrace-operator/pull/7333\n* chore: update github actions (main) by @dynatrace-llc-renovate-operator[bot] in https://github.com/Dynatrace/dynatrace-operator/pull/7331\n* chore: update actions/setup-java action to v6 (main) by @dynatrace-llc-renovate-operator[bot] in https://github.com/Dynatrace/dynatrace-operator/pull/7350\n* chore: update zizmorcore/zizmor-action action to v0.6.3 (main) by @dynatrace-llc-renovate-operator[bot] in https://github.com/Dynatrace/dynatrace-operator/pull/7349\n* chore: update aws-actions/configure-aws-credentials action to v6.2.4 (main) by @dynatrace-llc-renovate-operator[bot] in https://github.com/Dynatrace/dynatrace-operator/pull/7365\n* chore: update github actions (main) by @dynatrace-llc-renovate-operator[bot] in https://github.com/Dynatrace/dynatrace-operator/pull/7369\n* add k8s 1.37 to ondemand tests, remove 1.30 unsupported since aug 1, 2026 by @andriisoldatenko in https://github.com/Dynatrace/dynatrace-operator/pull/7393\n* Bump go version to 1.26.8 by @aorcholski in https://github.com/Dynatrace/dynatrace-operator/pull/7394\n* chore: update dev tooling (main) by @dynatrace-llc-renovate-operator[bot] in https://github.com/Dynatrace/dynatrace-operator/pull/7395\n* chore(config): migrate Renovate config by @dynatrace-llc-renovate-operator[bot] in https://github.com/Dynatrace/dynatrace-operator/pull/7378\n* fix: use golang version from Dockerfile for actions/setup-go by @jokuniew in https://github.com/Dynatrace/dynatrace-operator/pull/7404\n* chore: update zizmorcore/zizmor-action action to v0.6.4 (release-1.11) by @dynatrace-llc-renovate-operator[bot] in https://github.com/Dynatrace/dynatrace-operator/pull/7412\n* chore: update actions/setup-java action to v6.0.1 (release-1.11) by @dynatrace-llc-renovate-operator[bot] in https://github.com/Dynatrace/dynatrace-operator/pull/7413\n* fixup: fixup-copy-image-to-artifact-fips (#7443) by @andriisoldatenko in https://github.com/Dynatrace/dynatrace-operator/pull/7444\n* chore: update dependency redhat-openshift-ecosystem/openshift-preflight to v1.21.1 (release-1.11) by @dynatrace-llc-renovate-operator[bot] in https://github.com/Dynatrace/dynatrace-operator/pull/7511\n\n### Helm changes ⛑️\n* Deprecate link extraction from codemodules image by @avorima in https://github.com/Dynatrace/dynatrace-operator/pull/6874\n* Introduce Kubernetes Monitoring (kubemon) operand  by @jdanieck in https://github.com/Dynatrace/dynatrace-operator/pull/6757\n* feat: configurable cert-manager requeue and expiry intervals by @svfoxat in https://github.com/Dynatrace/dynatrace-operator/pull/6861\n* Remove outdated maintainers by @mihaitanasedt in https://github.com/Dynatrace/dynatrace-operator/pull/6989\n* Fix operator deadlock on OpenShift manifest-based install (#7042) by @waodim in https://github.com/Dynatrace/dynatrace-operator/pull/7045\n* kubemon: ag auth reconciler by @jdanieck in https://github.com/Dynatrace/dynatrace-operator/pull/6977\n* Prefix kubemon operand gate with experimental by @jdanieck in https://github.com/Dynatrace/dynatrace-operator/pull/7048\n* Fix helm chart notes template by @avorima in https://github.com/Dynatrace/dynatrace-operator/pull/7082\n* Move experimental helm section top-level by @avorima in https://github.com/Dynatrace/dynatrace-operator/pull/7101\n* Add image auto-update to kubemon sts by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/7074\n* feat: add omitzero to struct fields - edgeconnect - ICP-7911 by @VLazarevic in https://github.com/Dynatrace/dynatrace-operator/pull/7100\n* Fix: Helm unit tests silently pass on null paths for conditional initcontainer blocks by @waodim in https://github.com/Dynatrace/dynatrace-operator/pull/7197\n* kubemon: spec.kubernetesMonitoring.registration implementation by @jdanieck in https://github.com/Dynatrace/dynatrace-operator/pull/7196\n* ICP-7575 Handle docs string limits differently for prometheus/edgeconnect by @s-quatres in https://github.com/Dynatrace/dynatrace-operator/pull/7122\n* Introduce a limit for the value of metadata.dynatrace.com annotation by @aorcholski in https://github.com/Dynatrace/dynatrace-operator/pull/7106\n* Add DtPrometheus by @StefanHauth in https://github.com/Dynatrace/dynatrace-operator/pull/7107\n* Add custom annotations to the webhook service by @NigelVanHattum in https://github.com/Dynatrace/dynatrace-operator/pull/7215\n* add rbac objects for prometheus to helm chart by @svfoxat in https://github.com/Dynatrace/dynatrace-operator/pull/7231\n* Remove v1beta4 - ICP-8154 by @VLazarevic in https://github.com/Dynatrace/dynatrace-operator/pull/7236\n* Add dtprometheus reconciler by @avorima in https://github.com/Dynatrace/dynatrace-operator/pull/7235\n* Use correct webhook service selector by @avorima in https://github.com/Dynatrace/dynatrace-operator/pull/7247\n* Add patch permissions to DTPrometheus status by @mihaitanasedt in https://github.com/Dynatrace/dynatrace-operator/pull/7248\n* Add warning for increased log verbosity by @avorima in https://github.com/Dynatrace/dynatrace-operator/pull/7258\n* Remove dead code and include linter for v1alpha1/v1beta5 - ICP-995 by @VLazarevic in https://github.com/Dynatrace/dynatrace-operator/pull/7229\n* Implement target allocator reconciler by @avorima in https://github.com/Dynatrace/dynatrace-operator/pull/7237\n* Clean up license headers by @avorima in https://github.com/Dynatrace/dynatrace-operator/pull/7266\n* Make OTel component args configurable by @avorima in https://github.com/Dynatrace/dynatrace-operator/pull/7268\n* implement prometheus gateway fleet by @svfoxat in https://github.com/Dynatrace/dynatrace-operator/pull/7259\n* Gate Prometheus behind experimental flag by @jdanieck in https://github.com/Dynatrace/dynatrace-operator/pull/7301\n* Remove dynatracePreset from DTPrometheus by @VLazarevic in https://github.com/Dynatrace/dynatrace-operator/pull/7311\n* Remove prometheus extension - ICP-7535 by @VLazarevic in https://github.com/Dynatrace/dynatrace-operator/pull/7300\n* Add TLS cert to kubemon AG if KSPM is enabled by @aorcholski in https://github.com/Dynatrace/dynatrace-operator/pull/7312\n* [DTPrometheus] Auto-update Target Allocator image from fleet management by @waodim in https://github.com/Dynatrace/dynatrace-operator/pull/7317\n* [DynaKube] Auto-update OTelCollector image from fleet management by @jokuniew in https://github.com/Dynatrace/dynatrace-operator/pull/7319\n* Deploy the Prometheus scraper fleet by @StefanHauth in https://github.com/Dynatrace/dynatrace-operator/pull/7318\n* Add publicRegistryOverride to EdgeConnect by @waodim in https://github.com/Dynatrace/dynatrace-operator/pull/7355\n* fix: update kubernetes ecosystem to v0.37.0 (main) by @dynatrace-llc-renovate-operator[bot] in https://github.com/Dynatrace/dynatrace-operator/pull/7335\n* chore: update module sigs.k8s.io/controller-tools/cmd to v0.22.0 (main) by @dynatrace-llc-renovate-operator[bot] in https://github.com/Dynatrace/dynatrace-operator/pull/7345\n* [DynaKube] Auto-update NCC image from fleet management by @meibensteiner in https://github.com/Dynatrace/dynatrace-operator/pull/7375\n* e2e tests for kubemon (split, full, +kspm) by @jokuniew in https://github.com/Dynatrace/dynatrace-operator/pull/7374\n* Remove tlsSecretHash field from status.KubernetesMonitoring section by @aorcholski in https://github.com/Dynatrace/dynatrace-operator/pull/7385\n* [Prometheus] Validation warning if Prometheus CRDs are not present. by @VLazarevic in https://github.com/Dynatrace/dynatrace-operator/pull/7329\n* Automate prometheus-operator CRD sync by @avorima in https://github.com/Dynatrace/dynatrace-operator/pull/7379\n* chore: update module github.com/prometheus-operator/prometheus-operator to v0.94.0 (main) by @dynatrace-llc-renovate-operator[bot] in https://github.com/Dynatrace/dynatrace-operator/pull/7407\n* Add helm unit test for Prometheus Operator CRDs by @avorima in https://github.com/Dynatrace/dynatrace-operator/pull/7408\n* Prometheus CRD naming by @StefanHauth in https://github.com/Dynatrace/dynatrace-operator/pull/7401\n* Remove experimental kubemon flag by @avorima in https://github.com/Dynatrace/dynatrace-operator/pull/7409\n* [release-1.11] Bug: updateStrategy for Gateway and TargetAllocator is ignored - ICP-9602 by @VLazarevic in https://github.com/Dynatrace/dynatrace-operator/pull/7452\n* Rename dynaKubeRef -> dynaKubeName by @StefanHauth in https://github.com/Dynatrace/dynatrace-operator/pull/7471\n* Only configure admission webhook for Prometheus if experimental ff is… by @StefanHauth in https://github.com/Dynatrace/dynatrace-operator/pull/7473\n* chore: update module github.com/prometheus-operator/prometheus-operator to v0.94.1 (release-1.11) by @dynatrace-llc-renovate-operator[bot] in https://github.com/Dynatrace/dynatrace-operator/pull/7478\n* feat(helm): add annotations support to operator ServiceAccount (#7476) by @andriisoldatenko in https://github.com/Dynatrace/dynatrace-operator/pull/7483\n* Cherrypick of \"Fix cleanup of still used code modules (#7469)\" by @gkrenn in https://github.com/Dynatrace/dynatrace-operator/pull/7492\n\n### Component changes \U0001F6E0️\n* Sanitize OneAgent and Logmon args by @avorima in https://github.com/Dynatrace/dynatrace-operator/pull/6891\n* Set permissions of dynakube-internal-proxy files to 0o640 by @aorcholski in https://github.com/Dynatrace/dynatrace-operator/pull/6957\n* fix(api): don't omit explicitly set bool fields by @VLazarevic in https://github.com/Dynatrace/dynatrace-operator/pull/7009\n* Remove the `image.PullPolicy` type by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/7205\n* Replicate secrets according to namespace selectors by @avorima in https://github.com/Dynatrace/dynatrace-operator/pull/7218\n* Add network zone to KubeMon statefulset by @aorcholski in https://github.com/Dynatrace/dynatrace-operator/pull/7373\n\n### Documentation changes \U0001F4DA\n* Remove Go Report Card badge by @mihaitanasedt in https://github.com/Dynatrace/dynatrace-operator/pull/6931\n* e2e test use digest for all components + edgeconnect by @jokuniew in https://github.com/Dynatrace/dynatrace-operator/pull/6881\n* Update README.md by @Kenyatta-forbes in https://github.com/Dynatrace/dynatrace-operator/pull/7286\n\n## New Contributors\n* @NigelVanHattum made their first contribution in https://github.com/Dynatrace/dynatrace-operator/pull/7215\n* @Kenyatta-forbes made their first contribution in https://github.com/Dynatrace/dynatrace-operator/pull/7286\n\n**Full Changelog**: https://github.com/Dynatrace/dynatrace-operator/compare/v1.10.2...v1.11.0\n"
     releaseTypes:
-    - Feature
+      - Feature
     recommended: true
   managedUpdates:
     kalmSupported: true
   images:
-    ? ''
-    : properties:
+    '':
+      properties:
         image:
           type: FULL
   deployerServiceAccount:
     description: 'Service account used to configure the Dynatrace Operator'
     roles:
-    - type: ClusterRole
-      rulesType: CUSTOM
-      rules:
-      - apiGroups:
-        - admissionregistration.k8s.io
-        resources:
-        - mutatingwebhookconfigurations
-        verbs:
-        - get
-        - create
-        - list
-        - patch
-      - apiGroups:
-        - dynatrace.com
-        resources:
-        - dynakubes
-        verbs:
-        - get
-        - list
-        - create
-        - patch
-      - apiGroups:
-        - apiextensions.k8s.io
-        resources:
-        - customresourcedefinitions
-        verbs:
-        - get
-        - list
-        - create
-        - patch
-      - apiGroups:
-        - dynatrace.com
-        resources:
-        - dynakubes
-        verbs:
-        - get
-        - list
-        - watch
-        - update
-        - patch
-      - apiGroups:
-        - app.k8s.io
-        resources:
-        - applications
-        verbs:
-        - get
-        - list
-      - apiGroups:
-        - storage.k8s.io
-        resources:
-        - csidrivers
-        verbs:
-        - '*'
-      - apiGroups:
-        - ''
-        resources:
-        - services
-        - serviceaccounts
-        verbs:
-        - '*'
-      - apiGroups:
-        - rbac.authorization.k8s.io
-        resources:
-        - role
-        - rolebinding
-        - clusterroles
-        - clusterrolebindings
-        verbs:
-        - '*'
-      - apiGroups:
-        - admissionregistration.k8s.io
-        resources:
-        - validatingwebhookconfigurations
-        verbs:
-        - '*'
-      - apiGroups:
-        - scheduling.k8s.io
-        resources:
-        - priorityclasses
-        verbs:
-          - get
-          - create
-          - patch
+      - type: ClusterRole
+        rulesType: CUSTOM
+        rules:
+          - apiGroups:
+              - admissionregistration.k8s.io
+            resources:
+              - mutatingwebhookconfigurations
+            verbs:
+              - get
+              - create
+              - list
+              - patch
+          - apiGroups:
+              - dynatrace.com
+            resources:
+              - dynakubes
+            verbs:
+              - get
+              - list
+              - create
+              - patch
+          - apiGroups:
+              - apiextensions.k8s.io
+            resources:
+              - customresourcedefinitions
+            verbs:
+              - get
+              - list
+              - create
+              - patch
+          - apiGroups:
+              - dynatrace.com
+            resources:
+              - dynakubes
+            verbs:
+              - get
+              - list
+              - watch
+              - update
+              - patch
+          - apiGroups:
+              - app.k8s.io
+            resources:
+              - applications
+            verbs:
+              - get
+              - list
+          - apiGroups:
+              - storage.k8s.io
+            resources:
+              - csidrivers
+            verbs:
+              - '*'
+          - apiGroups:
+              - ''
+            resources:
+              - services
+              - serviceaccounts
+            verbs:
+              - '*'
+          - apiGroups:
+              - rbac.authorization.k8s.io
+            resources:
+              - role
+              - rolebinding
+              - clusterroles
+              - clusterrolebindings
+            verbs:
+              - '*'
+          - apiGroups:
+              - admissionregistration.k8s.io
+            resources:
+              - validatingwebhookconfigurations
+            verbs:
+              - '*'
+          - apiGroups:
+              - scheduling.k8s.io
+            resources:
+              - priorityclasses
+            verbs:
+              - get
+              - create
+              - patch
 properties:
   name:
     type: string
@@ -197,7 +122,6 @@ properties:
     title: Custom pull secret
     description: If the Operator image is in a private registry, the name of the appropriate pull secret can be set here
     default: ""
-
   imageRef.pullPolicy:
     type: string
     title: Operator image pull policy
@@ -207,7 +131,6 @@ properties:
       - IfNotPresent
       - Always
       - Never
-
   operator.apparmor:
     type: boolean
     title: Enables AppArmor for Operator
@@ -248,7 +171,6 @@ properties:
     type: integer
     title: Operator startup probe failureThreshold
     description: Number of times the startup probe can fail before giving up. Defaults to 1.
-
   webhook.hostNetwork:
     type: boolean
     title: Webhook uses Host network
@@ -323,7 +245,6 @@ properties:
     type: integer
     title: Webhook startup probe failureThreshold
     description: Number of times the startup probe can fail before giving up. Defaults to 1.
-
   webhook.certs.rootDuration:
     type: string
     title: Webhook CA root certificate duration
@@ -340,7 +261,6 @@ properties:
     type: string
     title: Webhook certificate controller requeueAfter
     description: Requeue interval for the webhook certificate controller when certificates are up to date. Accepts Go duration strings (e.g. 3h). Defaults to 3h, min 5m, max 11h. Must be less than renewalThreshold.
-
   csidriver.enabled:
     type: boolean
     title: Enables CSI driver
@@ -464,13 +384,11 @@ properties:
       The amount of memory allocation to which the cluster may limit the CSI driver.
       It is recommended for the memory limits to be the same as the memory requests.
     default: 30Mi
-
   activeGate.readOnlyFs:
     type: boolean
     title: Mount filesystem in read-only mode
     description: Restricts ActiveGate deployments to mount filesystems read-only.
     default: false
-
   installCRD:
     type: boolean
     title: Install DynaKube CRD
@@ -479,7 +397,6 @@ properties:
     default: true
     enum:
       - true
-
   platform:
     type: string
     title: Platform
@@ -489,13 +406,12 @@ properties:
     default: google-marketplace
     enum:
       - "google-marketplace"
-
   crdStorageMigrationJob:
     type: boolean
     title: Deploy helm hook
     default: false
     enum:
-    - false
+      - false
 required:
-- name
-- namespace
+  - name
+  - namespace
