@@ -123,6 +123,12 @@ func WithReplicas(replicas *int32) Option {
 	}
 }
 
+func WithCustomPullSecret(name string) Option {
+	return func(ec *edgeconnect.EdgeConnect) {
+		ec.Spec.CustomPullSecret = name
+	}
+}
+
 func GetLatestImageTagURI(t *testing.T) string {
 	t.Helper()
 
