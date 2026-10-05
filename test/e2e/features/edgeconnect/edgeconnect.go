@@ -406,7 +406,7 @@ func verifyImageRegistry(testEdgeConnect *edgeconnect.EdgeConnect, usePublicRegi
 		if usePublicRegistry {
 			assert.Contains(t, imageID, "amazonaws.com", "expected public registry image via fleet management, got %q", imageID)
 		} else {
-			assert.True(t, strings.HasPrefix(imageID, edgeconnect.DefaultEdgeConnectRepository), "expected docker hub image (fallback), got %q", imageID)
+			assert.True(t, strings.HasPrefix(imageID, edgeconnect.DefaultEdgeConnectRepository), "expected fallback image, got %q", imageID)
 		}
 
 		return k8sdeployment.VerifyUsesImage(current.Name, current.Namespace, imageID)(ctx, t, envConfig)
