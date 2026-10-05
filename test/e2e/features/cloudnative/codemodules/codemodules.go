@@ -497,7 +497,11 @@ func ImageHasBeenDownloaded(dk dynakube.DynaKube) features.Func {
 					return false, nil
 				}
 				expectedDirName := base64.StdEncoding.EncodeToString([]byte(customImage))
-				assert.Contains(t, latest, expectedDirName)
+				if !strings.Contains(latest, expectedDirName) {
+					t.Logf("latest codemodule link on %s is %s, waiting for it to contain %s", pod.Name, latest, expectedDirName)
+
+					return false, nil
+				}
 
 				return true, nil
 			}, wait.WithTimeout(time.Minute*5))
