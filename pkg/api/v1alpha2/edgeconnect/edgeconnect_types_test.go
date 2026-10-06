@@ -15,7 +15,7 @@ import (
 func Test_EdgeConnect_Image(t *testing.T) {
 	t.Run("defaults", func(t *testing.T) {
 		ec := EdgeConnect{}
-		require.Equal(t, defaultEdgeConnectRepository+":"+api.LatestTag, ec.Image())
+		require.Equal(t, DefaultEdgeConnectRepository+":"+api.LatestTag, ec.Image())
 	})
 
 	t.Run("custom repository and tag", func(t *testing.T) {
@@ -30,7 +30,7 @@ func Test_EdgeConnect_Image(t *testing.T) {
 
 	t.Run("digest with default repository", func(t *testing.T) {
 		ec := EdgeConnect{Spec: EdgeConnectSpec{ImageRef: image.Ref{Digest: "sha256:abc123"}}}
-		require.Equal(t, defaultEdgeConnectRepository+"@sha256:abc123", ec.Image())
+		require.Equal(t, DefaultEdgeConnectRepository+"@sha256:abc123", ec.Image())
 	})
 }
 
