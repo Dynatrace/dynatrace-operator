@@ -281,10 +281,10 @@ The following environment variables can be used to control which tests are execu
 
 By default, e2e tests deploy the operator from the local Helm chart. The install mode used by `InstallLocal` and `Uninstall` can be changed with environment variables:
 
-| Env var          | Install mode                                                                       | Notes                                                                                                                   |
-|------------------|------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------|
-| _(none)_         | Helm                                                                               | Default. Uninstalled via `make undeploy`.                                                                               |
-| `OLM=true`       | OLM bundle                                                                         | CSI tests are skipped. Also available as `make test/e2e/<scope>/olm`.                                                   |
+| Env var          | Install mode                                                                       | Notes                                                                                                                                                                                                  |
+|------------------|------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| _(none)_         | Helm                                                                               | Default. Uninstalled via `make undeploy`.                                                                                                                                                              |
+| `OLM=true`       | OLM bundle                                                                         | CSI tests are skipped. Also available as `make test/e2e/<scope>/olm`.                                                                                                                                  |
 | `MANIFESTS=true` | Generated manifests for the detected platform (`manifests/apply/<platform>[/csi]`) | Remaining DynaKubes and their tenant secrets are deleted first, then manifests are removed via `manifests/delete/<platform>[/csi]`. Helm options passed by the test are ignored (a warning is logged). |
 
 If both `OLM=true` and `MANIFESTS=true` are set, OLM takes precedence.
