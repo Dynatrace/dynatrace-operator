@@ -12,6 +12,7 @@ import (
 	tokenupgrade "github.com/Dynatrace/dynatrace-operator/test/e2e/features/token/upgrade"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/upgrade"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/events"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/environment"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/logs"
@@ -71,10 +72,14 @@ func TestRelease_operator_upgrade_18(t *testing.T) {
 }
 
 func TestRelease_operator_upgrade_17(t *testing.T) {
+	operator.SkipOnManifests(t)
+
 	testEnv.Test(t, upgrade.Feature(t, releaseTag17))
 }
 
 func TestRelease_operator_upgrade_16(t *testing.T) {
+	operator.SkipOnManifests(t)
+
 	testEnv.Test(t, upgrade.Feature(t, releaseTag16))
 }
 

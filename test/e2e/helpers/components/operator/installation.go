@@ -14,6 +14,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/csi"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/webhook"
@@ -376,4 +377,22 @@ func getImageRef(rootDir string, fips bool) (string, error) {
 	}
 
 	return imageRef, nil
+}
+
+// SkipOnManifests skips the test when the operator is installed via manifests (MANIFESTS=true).
+func SkipOnManifests(t *testing.T) {
+	t.Helper()
+
+	if os.Getenv("MANIFESTS") == "true" {
+		t.Skip("skipping test, not supported with manifest installation (MANIFESTS=true)")
+	}
+}
+
+// SkipUnlessManifests skips the test when the operator is not installed via manifests (MANIFESTS=true).
+func SkipUnlessManifests(t *testing.T) {
+	t.Helper()
+
+	if os.Getenv("MANIFESTS") != "true" {
+		t.Skip("skipping manifest test, MANIFESTS=true is not set")
+	}
 }
