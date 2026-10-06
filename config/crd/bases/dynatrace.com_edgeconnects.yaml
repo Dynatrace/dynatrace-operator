@@ -1384,6 +1384,11 @@ spec:
                 x-kubernetes-list-map-keys:
                 - type
                 x-kubernetes-list-type: map
+              image:
+                description: |-
+                  The resolved EdgeConnect image that is currently deployed.
+                  The Go field name is ResolvedImage to distinguish it from Spec.ImageRef.
+                type: string
               kubeSystemUID:
                 description: kube-system namespace uid
                 type: string
@@ -1395,28 +1400,6 @@ spec:
                 description: Indicates when the resource was last updated
                 format: date-time
                 type: string
-              version:
-                description: Version used for the Edgeconnect image
-                properties:
-                  imageID:
-                    description: Image ID
-                    type: string
-                  lastProbeTimestamp:
-                    description: Indicates when the last check for a new version was
-                      performed
-                    format: date-time
-                    type: string
-                  source:
-                    description: Source of the image (tenant-registry, public-registry,
-                      ...)
-                    type: string
-                  type:
-                    description: Image type
-                    type: string
-                  version:
-                    description: Image version
-                    type: string
-                type: object
             type: object
         required:
         - spec

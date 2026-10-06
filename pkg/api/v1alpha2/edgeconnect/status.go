@@ -17,10 +17,6 @@ type EdgeConnectStatus struct { //nolint:revive
 	// Defines the current state (Running, Updating, Error, ...)
 	DeploymentPhase status.DeploymentPhase `json:"phase,omitempty"`
 
-	// Version used for the Edgeconnect image
-	// +kubebuilder:validation:Optional
-	Version status.VersionStatus `json:"version,omitzero"`
-
 	// Indicates when the resource was last updated
 	// +kubebuilder:validation:Optional
 	UpdatedTimestamp metav1.Time `json:"updatedTimestamp,omitzero"`
@@ -32,6 +28,10 @@ type EdgeConnectStatus struct { //nolint:revive
 	// +listType=map
 	// +listMapKey=type
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
+
+	// The resolved EdgeConnect image that is currently deployed.
+	// The Go field name is ResolvedImage to distinguish it from Spec.ImageRef.
+	ResolvedImage string `json:"image,omitempty"`
 }
 
 // SetPhase sets the status phase on the EdgeConnect object.
