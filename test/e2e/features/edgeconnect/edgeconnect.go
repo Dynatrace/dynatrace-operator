@@ -134,7 +134,7 @@ func provisionerModeFeature(t *testing.T, featureName, expectedImage string, opt
 	if expectedImage != "" {
 		builder.Assess("edgeconnect deployment uses expected image", k8sdeployment.VerifyUsesImage(testEdgeConnect.Name, testEdgeConnect.Namespace, expectedImage))
 	} else {
-		builder.Assess("edgeconnect deployment uses image from expected registry", verifyImageRegistry(testEdgeConnect, usePublicRegistry))
+		builder.Assess("edgeconnect deployment uses image from expected registry", checkImageRegistry(testEdgeConnect, usePublicRegistry))
 	}
 	builder.Assess("check if EC configuration exists on the tenant", ecComponents.CheckECExistsOnTheTenant(secretConfig, edgeConnectTenantConfig))
 	builder.Assess("check hostPatterns on the tenant - testHostPattern", checkHostPatternOnTheTenant(secretConfig, edgeConnectTenantConfig, func() string { return testHostPattern }))
@@ -395,7 +395,7 @@ func checkSettingsNotExistsOnTheTenant(clientSecret tenant.EdgeConnectSecret, te
 	}
 }
 
-func verifyImageRegistry(testEdgeConnect *edgeconnect.EdgeConnect, usePublicRegistry bool) features.Func {
+func checkImageRegistry(testEdgeConnect *edgeconnect.EdgeConnect, usePublicRegistry bool) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		var current edgeconnect.EdgeConnect
 		require.NoError(t, envConfig.Client().Resources().Get(ctx, testEdgeConnect.Name, testEdgeConnect.Namespace, &current))
