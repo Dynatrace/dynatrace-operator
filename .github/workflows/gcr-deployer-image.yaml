@@ -2,7 +2,7 @@ name: GCR Deployer image
 on:
   pull_request:
     branches:
-      - release-*
+      - 'release-[0-9]+.[0-9]+'
     types:
       - closed
 
