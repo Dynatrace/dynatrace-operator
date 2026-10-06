@@ -46,7 +46,7 @@ jobs:
       - name: Checkout PR
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ needs.check-comment.outputs.pr_sha || github.event.merge_group.head_sha || github.sha }}
+          ref: ${{ needs.check-comment.outputs.pr_sha || github.sha }}
           fetch-depth: 0
           persist-credentials: false
       - name: Check and wait for image availability
@@ -89,7 +89,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ needs.check-comment.outputs.pr_sha || github.event.merge_group.head_sha || github.sha }}
+          ref: ${{ needs.check-comment.outputs.pr_sha || github.sha }}
           fetch-depth: 0
           persist-credentials: false
 
