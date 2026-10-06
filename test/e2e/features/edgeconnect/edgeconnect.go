@@ -404,7 +404,7 @@ func checkImageRegistry(testEdgeConnect *edgeconnect.EdgeConnect, usePublicRegis
 		require.NotEmpty(t, imageID)
 
 		if usePublicRegistry {
-			assert.Contains(t, imageID, "amazonaws.com", "expected public registry image via fleet management, got %q", imageID)
+			assert.True(t, strings.HasPrefix(imageID, "478983378254.dkr.ecr.us-east-1.amazonaws.com"), "expected public registry image via fleet management, got %q", imageID)
 		} else {
 			assert.True(t, strings.HasPrefix(imageID, edgeconnect.DefaultEdgeConnectRepository), "expected fallback image, got %q", imageID)
 		}
