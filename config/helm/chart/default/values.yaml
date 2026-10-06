@@ -8,11 +8,13 @@ platform: ""
 # supply either image or imageref; if both supplied, imageref will be disregarded
 image: ""
 #image description using tags
-#resulting image will be named <repository>:v<tag>, or <repository>@<digest> if a digest is provided
+#resulting image will be named <repository>:<tag>, or <repository>@<digest> if a digest is provided (requires repository)
+#if repository is not set, the default repository of the platform is used
+#if tag is set, it replaces the default tag (or the pinned digest of marketplace images), e.g. to install a FIPS image
 imageRef:
   repository: "" #path to repo
-  tag: "" #defaults to chart version
-  digest: "" #optional image digest (e.g. sha256:...), when set, the tag is ignored when rendering the image reference
+  tag: "" #used as is (no "v" prefix added), defaults to v<chart version>
+  digest: "" #optional image digest (e.g. sha256:...), when set, the tag is ignored when rendering the image reference; only applied together with repository, it is ignored if repository is not set
   pullPolicy: ""
 
 customPullSecret: ""

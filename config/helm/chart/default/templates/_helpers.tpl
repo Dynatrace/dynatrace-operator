@@ -13,27 +13,42 @@ Check if default image or imageref is used.
 When imageRef.digest is set, it wins over imageRef.tag. The rendered image
 reference uses <repository>@<digest> and the tag is omitted to avoid the
 confusing case where the tag and digest disagree.
+When imageRef.repository is not set, the platform default repository is used.
+imageRef.tag still applies there and replaces the platform default tag or digest.
 */}}
 {{- define "dynatrace-operator.image" -}}
 {{- if .Values.image -}}
 	{{- printf "%s" .Values.image -}}
 {{- else -}}
-    {{- if (.Values.imageRef).repository -}}
-        {{- if .Values.imageRef.digest -}}
-            {{- printf "%s@%s" .Values.imageRef.repository .Values.imageRef.digest -}}
+    {{- $ref := .Values.imageRef | default dict -}}
+    {{- if $ref.repository -}}
+        {{- if $ref.digest -}}
+            {{- printf "%s@%s" $ref.repository $ref.digest -}}
         {{- else -}}
-            {{- .Values.imageRef.tag | default (printf "v%s" .Chart.AppVersion) | printf "%s:%s" .Values.imageRef.repository -}}
+            {{- $ref.tag | default (printf "v%s" .Chart.AppVersion) | printf "%s:%s" $ref.repository -}}
         {{- end -}}
-    {{- else if hasPrefix "0.0.0-nightly-" .Chart.AppVersion -}}
-        {{- printf "%s:%s" "ghcr.io/dynatrace/dynatrace-operator" (.Chart.AppVersion | replace "0.0.0-" "") }}
-    {{- else if eq (include "dynatrace-operator.platform" .) "openshift" -}}
-        {{- printf "%s:v%s" "registry.connect.redhat.com/dynatrace/dynatrace-operator" .Chart.AppVersion }}
-    {{- else if eq (include "dynatrace-operator.platform" .) "google-marketplace" -}}
-    	{{- printf "%s:%s" "gcr.io/dynatrace-marketplace-prod/dynatrace-operator" .Chart.AppVersion }}
-    {{- else if eq (include "dynatrace-operator.platform" .) "azure-marketplace" -}}
-        {{- printf "%s/%s@%s" .Values.global.azure.images.operator.registry .Values.global.azure.images.operator.image .Values.global.azure.images.operator.digest }}
     {{- else -}}
-            {{- printf "%s:v%s" "public.ecr.aws/dynatrace/dynatrace-operator" .Chart.AppVersion }}
+        {{- $platform := include "dynatrace-operator.platform" . -}}
+        {{- $repo := "public.ecr.aws/dynatrace/dynatrace-operator" -}}
+        {{- $defaultRef := printf ":v%s" .Chart.AppVersion -}}
+        {{- if hasPrefix "0.0.0-nightly-" .Chart.AppVersion -}}
+            {{- $repo = "ghcr.io/dynatrace/dynatrace-operator" -}}
+            {{- $defaultRef = printf ":%s" (.Chart.AppVersion | replace "0.0.0-" "") -}}
+        {{- else if eq $platform "openshift" -}}
+            {{- $repo = "registry.connect.redhat.com/dynatrace/dynatrace-operator" -}}
+        {{- else if eq $platform "google-marketplace" -}}
+            {{- $repo = "gcr.io/dynatrace-marketplace-prod/dynatrace-operator" -}}
+            {{- $defaultRef = printf ":%s" .Chart.AppVersion -}}
+        {{- else if eq $platform "azure-marketplace" -}}
+            {{- $azure := .Values.global.azure.images.operator -}}
+            {{- $repo = printf "%s/%s" $azure.registry $azure.image -}}
+            {{- $defaultRef = printf "@%s" $azure.digest -}}
+        {{- end -}}
+        {{- if $ref.tag -}}
+            {{- printf "%s:%s" $repo $ref.tag -}}
+        {{- else -}}
+            {{- printf "%s%s" $repo $defaultRef -}}
+        {{- end -}}
     {{- end -}}
 {{- end -}}
 {{- end -}}
