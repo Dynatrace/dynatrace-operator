@@ -154,13 +154,6 @@ func testGetCurrentStatus() edgeconnect.EdgeConnectStatus {
 		KubeSystemUID:    "a",
 		DeploymentPhase:  status.Running,
 		UpdatedTimestamp: metav1.Time{Time: time.Now()},
-		Version: status.VersionStatus{
-			LastProbeTimestamp: &metav1.Time{Time: time.Now()},
-			Source:             "a",
-			ImageID:            "b",
-			Version:            "c",
-			Type:               "d",
-		},
 	}
 }
 
@@ -233,5 +226,5 @@ func testFromAreStatusesEqual(t *testing.T, src *edgeconnect.EdgeConnectStatus, 
 
 	assert.Equal(t, src.UpdatedTimestamp, dst.UpdatedTimestamp, "UpdatedTimestamp")
 
-	assert.Equal(t, src.Version, dst.Version, "Version")
+	assert.Empty(t, dst.Version.ImageID, "Version should be empty (populated by reconciler)")
 }

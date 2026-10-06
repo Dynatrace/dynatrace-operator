@@ -69,5 +69,5 @@ func (dst *EdgeConnect) fromStatus(src *edgeconnect.EdgeConnect) {
 	dst.Status.KubeSystemUID = src.Status.KubeSystemUID
 	dst.Status.DeploymentPhase = src.Status.DeploymentPhase
 	dst.Status.UpdatedTimestamp = src.Status.UpdatedTimestamp
-	dst.Status.Version = src.Status.Version
+	// Version left empty; the old reconciler will populate it on next run if needed
 }

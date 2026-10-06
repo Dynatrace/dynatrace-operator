@@ -75,5 +75,5 @@ func (src *EdgeConnect) toStatus(dst *edgeconnect.EdgeConnect) {
 	dst.Status.KubeSystemUID = src.Status.KubeSystemUID
 	dst.Status.DeploymentPhase = src.Status.DeploymentPhase
 	dst.Status.UpdatedTimestamp = src.Status.UpdatedTimestamp
-	dst.Status.Version = src.Status.Version
+	// ResolvedImage will be populated by the reconciler on next run
 }

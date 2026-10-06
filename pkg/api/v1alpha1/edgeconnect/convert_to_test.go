@@ -233,5 +233,5 @@ func testToAreStatusesEqual(t *testing.T, src *EdgeConnectStatus, dst *edgeconne
 
 	assert.Equal(t, src.UpdatedTimestamp, dst.UpdatedTimestamp, "UpdatedTimestamp")
 
-	assert.Equal(t, src.Version, dst.Version, "Version")
+	assert.Empty(t, dst.ResolvedImage, "ResolvedImage should be empty (populated by reconciler)")
 }
