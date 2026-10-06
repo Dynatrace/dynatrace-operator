@@ -3,6 +3,10 @@ name: E2E tests on kind
 on:
   issue_comment:
     types: [created]
+  merge_group:
+    types: [checks_requested]
+  # pull_request only reports the gate as "skipped" (counts as pass) so the PR can enter the queue
+  pull_request:
 
 jobs:
   check-comment:
@@ -31,7 +35,10 @@ jobs:
   prepare:
     name: Prepare E2E test run
     needs: check-comment
-    if: needs.check-comment.outputs.triggered == 'true' && needs.check-comment.outputs.detected-command == '/run-e2e-kind'
+    if: |
+      !cancelled() &&
+      ((needs.check-comment.outputs.triggered == 'true' && needs.check-comment.outputs.detected-command == '/run-e2e-kind') ||
+       github.event_name == 'merge_group')
     runs-on: ubuntu-24.04
     permissions:
       pull-requests: write
@@ -39,7 +46,7 @@ jobs:
       - name: Checkout PR
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ needs.check-comment.outputs.pr_sha }}
+          ref: ${{ needs.check-comment.outputs.pr_sha || github.event.merge_group.head_sha || github.sha }}
           fetch-depth: 0
           persist-credentials: false
       - name: Check and wait for image availability
@@ -48,8 +55,9 @@ jobs:
           TAG=snapshot-$(hack/build/ci/sanitize-branch-name.sh "${PR_BRANCH}")
           ./hack/build/ci/check-image-available.sh "$IMAGE" "$TAG"
         env:
-          PR_BRANCH: ${{ needs.check-comment.outputs.pr_branch }}
+          PR_BRANCH: ${{ needs.check-comment.outputs.pr_branch || github.ref_name }}
       - name: Comment with workflow link
+        if: github.event_name == 'issue_comment'
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         with:
           script: |
@@ -68,7 +76,7 @@ jobs:
   test:
     name: Run ${{ matrix.suite }} E2E tests
     needs: [check-comment, prepare]
-    if: needs.check-comment.outputs.triggered == 'true' && needs.check-comment.outputs.detected-command == '/run-e2e-kind'
+    if: ${{ !cancelled() && needs.prepare.result == 'success' }}
     runs-on: ubuntu-24.04
     environment: E2E
     permissions:
@@ -81,7 +89,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ needs.check-comment.outputs.pr_sha }}
+          ref: ${{ needs.check-comment.outputs.pr_sha || github.event.merge_group.head_sha || github.sha }}
           fetch-depth: 0
           persist-credentials: false
 
@@ -148,7 +156,7 @@ jobs:
         run: make test/e2e/$SUITE
         env:
           SUITE: ${{ matrix.suite }}
-          BRANCH: ${{ needs.check-comment.outputs.pr_branch }}
+          BRANCH: ${{ needs.check-comment.outputs.pr_branch || github.ref_name }}
 
       - name: Upload test results
         if: always()
@@ -166,13 +174,14 @@ jobs:
 
   report:
     name: Report E2E test results
-    needs: [check-comment, test]
-    if: needs.check-comment.outputs.triggered == 'true' && needs.check-comment.outputs.detected-command == '/run-e2e-kind' && always()
+    needs: [prepare, test]
+    if: ${{ !cancelled() && needs.prepare.result != 'skipped' }}
     runs-on: ubuntu-24.04
     permissions:
       pull-requests: write
     steps:
       - name: Comment result on PR
+        if: github.event_name == 'issue_comment'
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         with:
           script: |
