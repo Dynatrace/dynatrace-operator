@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
 	validation "github.com/Dynatrace/dynatrace-operator/pkg/api/validation/edgeconnect"
@@ -89,7 +88,8 @@ func TestSerialization(t *testing.T) {
 				},
 			},
 			status: &edgeconnect.EdgeConnectStatus{
-				Version: status.VersionStatus{Version: "1.2.3"},
+				//Version: status.VersionStatus{Version: "1.2.3"},
+				ResolvedImage: "foo:1.2.3",
 				// Fixed timestamp keeps the golden file deterministic.
 				UpdatedTimestamp: metav1.Date(2024, time.January, 1, 0, 0, 0, 0, time.UTC),
 			},

@@ -98,7 +98,7 @@ func buildAppLabels(ec *edgeconnect.EdgeConnect) *k8slabel.AppLabels {
 		k8slabel.EdgeConnectComponentLabel,
 		ec.Name,
 		consts.EdgeConnectUserProvisioned,
-		ec.Status.Version.Version)
+		ec.Status.ResolvedImage)
 }
 
 func buildContainerAnnotations() map[string]string {
@@ -110,7 +110,7 @@ func buildContainerAnnotations() map[string]string {
 func edgeConnectContainer(ec *edgeconnect.EdgeConnect) corev1.Container {
 	return corev1.Container{
 		Name:            consts.EdgeConnectContainerName,
-		Image:           ec.Status.Version.ImageID,
+		Image:           ec.Status.ResolvedImage,
 		ImagePullPolicy: ec.Spec.ImageRef.PullPolicy,
 		Env:             ec.Spec.Env,
 		Resources:       prepareResourceRequirements(ec),

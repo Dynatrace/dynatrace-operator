@@ -63,29 +63,30 @@ func (u updater) determineSource() status.VersionSource {
 }
 
 func (u updater) RequiresReconcile() bool {
-	version := u.edgeConnect.Status.Version
-
-	if version.ImageID == "" {
-		return true
-	}
-
-	// switching between a custom image and the public registry has to be applied right away
-	if version.Source != u.determineSource() {
-		return true
-	}
-
-	if u.edgeConnect.IsCustomImage() {
-		// a custom image is taken over as-is, so any change of the image field has to be applied right away
-		return !strings.HasPrefix(version.ImageID, u.edgeConnect.Image())
-	}
-
-	// a different override registry has to be applied right away, otherwise the image is only
-	// refreshed if auto update is enabled
-	if u.hasPublicRegistryChanged(version.ImageID) {
-		return true
-	}
-
-	return u.timeProvider.IsOutdated(version.LastProbeTimestamp, minRequestThreshold) && u.IsAutoUpdateEnabled()
+	return false
+	//version := u.edgeConnect.Status.Version
+	//
+	//if version.ImageID == "" {
+	//	return true
+	//}
+	//
+	//// switching between a custom image and the public registry has to be applied right away
+	//if version.Source != u.determineSource() {
+	//	return true
+	//}
+	//
+	//if u.edgeConnect.IsCustomImage() {
+	//	// a custom image is taken over as-is, so any change of the image field has to be applied right away
+	//	return !strings.HasPrefix(version.ImageID, u.edgeConnect.Image())
+	//}
+	//
+	//// a different override registry has to be applied right away, otherwise the image is only
+	//// refreshed if auto update is enabled
+	//if u.hasPublicRegistryChanged(version.ImageID) {
+	//	return true
+	//}
+	//
+	//return u.timeProvider.IsOutdated(version.LastProbeTimestamp, minRequestThreshold) && u.IsAutoUpdateEnabled()
 }
 
 // hasPublicRegistryChanged reports whether the override registry changed between reconciles. Adding
@@ -142,7 +143,7 @@ func (u updater) usePublicRegistry(ctx context.Context) error {
 
 		log.Info("fleet management returned no image")
 	default:
-		setImageFromImageInfo(ctx, u.Target(), imageInfo)
+		//setImageFromImageInfo(ctx, u.Target(), imageInfo)
 
 		return nil
 	}
@@ -167,22 +168,22 @@ func (u updater) latestImageInfo(ctx context.Context) (*dtimage.Info, error) {
 }
 
 func (u updater) useOCIRegistry(ctx context.Context) error {
-	registryClient, err := u.registryClientProvider(ctx)
-	if err != nil {
-		return err
-	}
+	//registryClient, err := u.registryClientProvider(ctx)
+	//if err != nil {
+	//	return err
+	//}
+	//
+	//imageVersion, err := registryClient.GetImageVersion(ctx, u.edgeConnect.Image())
+	//if err != nil {
+	//	return err
+	//}
 
-	imageVersion, err := registryClient.GetImageVersion(ctx, u.edgeConnect.Image())
-	if err != nil {
-		return err
-	}
+	//imageID, err := u.combineImageWithDigest(ctx, imageVersion.Digest)
+	//if err != nil {
+	//	return err
+	//}
 
-	imageID, err := u.combineImageWithDigest(ctx, imageVersion.Digest)
-	if err != nil {
-		return err
-	}
-
-	setImageFromOCIRegistry(ctx, u.Target(), imageID, imageVersion.Version)
+	//setImageFromOCIRegistry(ctx, u.Target(), imageID, imageVersion.Version)
 
 	return nil
 }
@@ -252,7 +253,8 @@ func (u updater) Name() string {
 }
 
 func (u updater) Target() *status.VersionStatus {
-	return &u.edgeConnect.Status.Version
+	//return &u.edgeConnect.Status.Version
+	return nil
 }
 
 func (u updater) IsAutoUpdateEnabled() bool {

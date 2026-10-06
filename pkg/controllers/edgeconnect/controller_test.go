@@ -107,10 +107,10 @@ func TestReconcile(t *testing.T) {
 		ec := createEdgeConnectRegularCR()
 		ec.Status = edgeconnect.EdgeConnectStatus{
 			UpdatedTimestamp: metav1.NewTime(time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC)),
-			Version: status.VersionStatus{
-				LastProbeTimestamp: new(metav1.Now()),
-				ImageID:            "docker.io/dynatrace/edgeconnectClient:latest",
-			},
+			//Version: status.VersionStatus{
+			//	LastProbeTimestamp: new(metav1.Now()),
+			//	ImageID:            "docker.io/dynatrace/edgeconnectClient:latest",
+			//},
 		}
 
 		controller := createFakeClientAndReconciler(t, createImageClientMock(t), ec,

@@ -20,6 +20,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect/deployment"
 	ecsecret "github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect/secret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect/version"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
@@ -29,7 +30,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sevent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/system"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/oci/registry"
+	ociregistry "github.com/Dynatrace/dynatrace-operator/pkg/util/oci/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	"golang.org/x/oauth2/clientcredentials"
@@ -79,7 +80,7 @@ type Controller struct {
 	apiReader                client.Reader
 	eventRecorder            events.EventRecorder
 	imageClientBuilder       imageClientBuilderType
-	registryClientBuilder    registry.ClientBuilder
+	registryClientBuilder    ociregistry.ClientBuilder
 	config                   *rest.Config
 	timeProvider             *timeprovider.Provider
 	edgeConnectClientBuilder edgeConnectClientBuilderType
@@ -96,7 +97,7 @@ func NewController(mgr manager.Manager) *Controller {
 		apiReader:                mgr.GetAPIReader(),
 		eventRecorder:            mgr.GetEventRecorder(controllerName),
 		imageClientBuilder:       newImageClient(),
-		registryClientBuilder:    registry.NewClient,
+		registryClientBuilder:    ociregistry.NewClient,
 		config:                   mgr.GetConfig(),
 		timeProvider:             timeprovider.New(),
 		edgeConnectClientBuilder: newEdgeConnectClient(),
@@ -273,8 +274,8 @@ func (controller *Controller) reconcileEdgeConnectCR(ctx context.Context, ec *ed
 		return err
 	}
 
-	if err := controller.updateVersionInfo(ctx, ec); err != nil {
-		log.Debug("updating version info failed")
+	if err := controller.resolveImage(ctx, ec); err != nil {
+		log.Debug("updating resolved image failed")
 
 		return err
 	}
@@ -340,7 +341,7 @@ func (controller *Controller) updateFinalizers(ctx context.Context, ec *edgeconn
 	return nil
 }
 
-func (controller *Controller) updateVersionInfo(ctx context.Context, ec *edgeconnect.EdgeConnect) error {
+func (controller *Controller) resolveImage(ctx context.Context, ec *edgeconnect.EdgeConnect) error {
 	log := logd.FromContext(ctx)
 
 	log.Info("updating version info")
@@ -353,6 +354,29 @@ func (controller *Controller) updateVersionInfo(ctx context.Context, ec *edgecon
 	}
 
 	log.Debug("EdgeConnect version info updated")
+
+	if ref := ec.Spec.ImageRef; ref.HasImage() {
+		ec.Status.ResolvedImage = ref.String()
+
+		return nil
+	}
+
+	provider := controller.imageClientProvider(ec)
+	imageClient, err := provider(ctx)
+	if err != nil {
+		return errors.Wrap(err, "failed to get image client")
+	}
+
+	imageURI, err := registry.ResolveImage(ctx, imageClient, ec.Spec.PublicRegistryOverride, dtimage.EdgeConnect)
+	if err != nil {
+		return err
+	}
+
+	if imageURI != "" {
+		ec.Status.ResolvedImage = imageURI
+	}
+
+	// eventually here fetch images from real public registry (docker.io etc.)
 
 	return nil
 }
@@ -380,17 +404,17 @@ func (controller *Controller) imageClientProvider(ec *edgeconnect.EdgeConnect) v
 // fallback actually has to resolve an image. Building it reads the pull secret, which the fleet
 // management path does not need, so an unreadable pull secret must not fail the version reconcile.
 func (controller *Controller) registryClientProvider(ec *edgeconnect.EdgeConnect) version.RegistryClientProvider {
-	return func(ctx context.Context) (registry.ImageGetter, error) {
+	return func(ctx context.Context) (ociregistry.ImageGetter, error) {
 		log := logd.FromContext(ctx)
 
 		transport := http.DefaultTransport.(*http.Transport).Clone()
 		keyChainSecret := ec.EmptyPullSecret()
 
 		registryClient, err := controller.registryClientBuilder(
-			registry.WithContext(ctx),
-			registry.WithAPIReader(controller.apiReader),
-			registry.WithTransport(transport),
-			registry.WithKeyChainSecret(keyChainSecret),
+			ociregistry.WithContext(ctx),
+			ociregistry.WithAPIReader(controller.apiReader),
+			ociregistry.WithTransport(transport),
+			ociregistry.WithKeyChainSecret(keyChainSecret),
 		)
 		if err != nil {
 			log.Debug("failed to create registry client", "secretName", keyChainSecret.Name)

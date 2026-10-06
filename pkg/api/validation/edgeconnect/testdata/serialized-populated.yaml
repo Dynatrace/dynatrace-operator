@@ -18,5 +18,4 @@ spec:
       cpu: 100m
 status:
   updatedTimestamp: "2024-01-01T00:00:00Z"
-  version:
-    version: 1.2.3
+  image: foo:1.2.3
