@@ -61,17 +61,13 @@ func InstallLocal(withCSI bool, extraOpts ...helm.Option) env.Func {
 				return ctx, nil
 			}
 
-			if len(extraOpts) > 0 {
-				fmt.Println("OLM=true: extraOpts are ignored") //nolint:forbidigo
-			}
+			warnExtraOptsIgnored("OLM", extraOpts)
 
 			if err := installViaOLMLocalBundle(); err != nil {
 				return ctx, err
 			}
 		case os.Getenv("MANIFESTS") == "true":
-			if len(extraOpts) > 0 {
-				fmt.Println("MANIFESTS=true: extraOpts are ignored")
-			}
+			warnExtraOptsIgnored("MANIFESTS", extraOpts)
 
 			p, err := platform.NewResolver().GetPlatform()
 			if err != nil {
@@ -88,6 +84,12 @@ func InstallLocal(withCSI bool, extraOpts ...helm.Option) env.Func {
 		}
 
 		return VerifyInstall(ctx, envConfig, withCSI)
+	}
+}
+
+func warnExtraOptsIgnored(method string, extraOpts []helm.Option) {
+	if len(extraOpts) > 0 {
+		fmt.Printf("%s=true: extraOpts are ignored\n", method) //nolint:forbidigo
 	}
 }
 
