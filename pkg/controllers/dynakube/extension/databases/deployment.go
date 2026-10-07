@@ -47,6 +47,9 @@ const (
 )
 
 // ListDeployments returns a list of database datasource deployments that are managed by the DynaKube.
+// TODO: deployments created by operator versions with the old label format (created-by/component instead of instance)
+// are not matched, so orphans with old labels are not cleaned up. Add a temporary second lookup with the old labels,
+// and remove it once upgrading from operator versions with the old label format is no longer supported.
 func ListDeployments(ctx context.Context, clt client.Reader, dk *dynakube.DynaKube) ([]appsv1.Deployment, error) {
 	deployments := &appsv1.DeploymentList{}
 
@@ -66,8 +69,13 @@ func buildAllLabels(dk *dynakube.DynaKube, dbSpec extensions.DatabaseSpec) (map[
 	labels := k8slabel.New(k8slabel.DatabaseSQLExecutorLabel, dk.Name, dk.Spec.Templates.SQLExtensionExecutor.ImageRef.Tag)
 
 	deploymentLabels := labels.AsMap()
+	deploymentLabels[executorIDLabelKey] = dbSpec.ID
+	deploymentLabels[consts.DatasourceLabelKey] = consts.DatabaseDatasourceLabelValue
+
 	matchLabels := labels.AsSelector()
+
 	podLabels := labels.AsSelector()
+	// TODO should these be on pod or on deployment label aswell
 	podLabels[executorIDLabelKey] = dbSpec.ID
 	podLabels[consts.DatasourceLabelKey] = consts.DatabaseDatasourceLabelValue
 

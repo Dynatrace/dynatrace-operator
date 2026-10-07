@@ -107,6 +107,10 @@ func TestReconcileSpec(t *testing.T) {
 		assert.Contains(t, deploy.Labels, k8slabel.AppManagedByLabel)
 		assert.Contains(t, deploy.Labels, k8slabel.AppVersionLabel)
 		assert.Contains(t, deploy.Labels, k8slabel.OperatorVersionLabel)
+		assert.Subset(t, deploy.Labels, map[string]string{
+			executorIDLabelKey:        db.ID,
+			consts.DatasourceLabelKey: consts.DatabaseDatasourceLabelValue,
+		})
 		assert.Subset(t, deploy.Spec.Template.Labels, deploy.Spec.Selector.MatchLabels)
 		assert.NotContains(t, deploy.Spec.Selector.MatchLabels, executorIDLabelKey)
 		assert.NotContains(t, deploy.Spec.Template.Labels, k8slabel.AppVersionLabel)

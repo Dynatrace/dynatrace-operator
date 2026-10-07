@@ -75,6 +75,9 @@ func (r *Reconciler) removeServiceOnce(ctx context.Context, dk *dynakube.DynaKub
 	r.removeAllServicesExcept(ctx, "", dk)
 }
 
+// TODO: services created by operator versions with the old label format (created-by/component instead of instance)
+// are not matched, so they are not cleaned up. Add a temporary second lookup with the old labels,
+// and remove it once upgrading from operator versions with the old label format is no longer supported.
 func (r *Reconciler) removeAllServicesExcept(ctx context.Context, actualServiceName string, dk *dynakube.DynaKube) {
 	log := logd.FromContext(ctx)
 	telemetryServiceList := &corev1.ServiceList{}
