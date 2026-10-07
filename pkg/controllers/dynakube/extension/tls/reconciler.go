@@ -110,10 +110,10 @@ func (r *Reconciler) createSelfSignedTLSSecret(ctx context.Context, dk *dynakube
 		return err
 	}
 
-	coreLabels := k8slabel.NewCoreLabels(dk.Name, k8slabel.ExtensionComponentLabel)
+	labels := k8slabel.New(k8slabel.ExtensionComponentLabel, dk.Name, "")
 	secretData := map[string][]byte{consts.TLSCrtDataName: pemCert, consts.TLSKeyDataName: pemPk}
 
-	secret, err := k8ssecret.Build(dk, dk.Extensions().GetSelfSignedTLSSecretName(), secretData, k8ssecret.SetLabels(coreLabels.BuildLabels()))
+	secret, err := k8ssecret.Build(dk, dk.Extensions().GetSelfSignedTLSSecretName(), secretData, k8ssecret.SetLabels(labels.AsMap()))
 	if err != nil {
 		k8sconditions.SetSecretGenFailed(dk.Conditions(), conditionType, err)
 

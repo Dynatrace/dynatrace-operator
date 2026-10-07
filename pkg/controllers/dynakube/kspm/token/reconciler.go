@@ -115,7 +115,7 @@ func generateKSPMTokenSecret(name string, dk *dynakube.DynaKube) (secret *corev1
 	secretConfig, err := k8ssecret.Build(dk,
 		name,
 		secretData,
-		k8ssecret.SetLabels(k8slabel.NewCoreLabels(dk.Name, k8slabel.KSPMComponentLabel).BuildLabels()),
+		k8ssecret.SetLabels(k8slabel.New(k8slabel.KSPMComponentLabel, dk.Name, "").AsMap()),
 	)
 	if err != nil {
 		return nil, err

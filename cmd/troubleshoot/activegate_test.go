@@ -10,7 +10,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
-	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -21,11 +20,7 @@ import (
 func TestCheckActiveGateOOMKilled(t *testing.T) {
 	dk := testNewDynakubeBuilder(testNamespace, testDynakube).build()
 
-	activeGateLabels := map[string]string{
-		k8slabel.AppNameLabel:      k8slabel.ActiveGateComponentLabel,
-		k8slabel.AppCreatedByLabel: testDynakube,
-		k8slabel.AppManagedByLabel: version.AppName,
-	}
+	activeGateLabels := k8slabel.New(k8slabel.ActiveGateComponentLabel, testDynakube, "").AsSelector()
 
 	t.Run("no ActiveGate pods found", func(t *testing.T) {
 		clt := fake.NewClientBuilder().WithScheme(scheme.Scheme).Build()

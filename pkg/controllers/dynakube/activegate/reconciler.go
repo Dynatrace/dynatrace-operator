@@ -184,12 +184,12 @@ func (r *Reconciler) createActiveGateTenantConnectionInfoConfigMap(ctx context.C
 
 	configMapData := extractPublicData(dk)
 
-	coreLabels := k8slabel.NewCoreLabels(dk.Name, k8slabel.ActiveGateComponentLabel)
+	labels := k8slabel.New(k8slabel.ActiveGateComponentLabel, dk.Name, "")
 
 	configMap, err := k8sconfigmap.Build(dk,
 		dk.ActiveGate().GetConnectionInfoConfigMapName(),
 		configMapData,
-		k8sconfigmap.SetLabels(coreLabels.BuildLabels()),
+		k8sconfigmap.SetLabels(labels.AsMap()),
 	)
 	if err != nil {
 		return errors.WithStack(err)
@@ -210,14 +210,14 @@ func (r *Reconciler) createDeploymentPropertiesConfigMap(ctx context.Context, dk
 		return nil
 	}
 
-	coreLabels := k8slabel.NewCoreLabels(dk.Name, k8slabel.ActiveGateComponentLabel)
+	labels := k8slabel.New(k8slabel.ActiveGateComponentLabel, dk.Name, "")
 
 	configMap, err := k8sconfigmap.Build(dk,
 		dk.ActiveGate().GetDeploymentPropertiesConfigMapName(),
 		map[string]string{
 			consts.DeploymentPropertiesFileName: deploymentproperties.BuildContent(dk),
 		},
-		k8sconfigmap.SetLabels(coreLabels.BuildLabels()),
+		k8sconfigmap.SetLabels(labels.AsMap()),
 	)
 	if err != nil {
 		return errors.WithStack(err)

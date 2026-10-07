@@ -81,10 +81,7 @@ func (r *Reconciler) removeAllServicesExcept(ctx context.Context, actualServiceN
 
 	listOps := []client.ListOption{
 		client.InNamespace(dk.Namespace),
-		client.MatchingLabels{
-			k8slabel.AppComponentLabel: k8slabel.OTelColComponentLabel,
-			k8slabel.AppCreatedByLabel: dk.Name,
-		},
+		client.MatchingLabels(k8slabel.New(k8slabel.OTelColComponentLabel, dk.Name, "").AsSelector()),
 	}
 
 	if err := r.apiReader.List(ctx, telemetryServiceList, listOps...); err != nil {
@@ -128,14 +125,13 @@ func (r *Reconciler) createOrUpdateService(ctx context.Context, dk *dynakube.Dyn
 }
 
 func (r *Reconciler) buildService(ctx context.Context, dk *dynakube.DynaKube) (*corev1.Service, error) {
-	coreLabels := k8slabel.NewCoreLabels(dk.Name, k8slabel.OTelColComponentLabel)
-	appLabels := k8slabel.NewAppLabels(k8slabel.OTelColComponentLabel, dk.Name, k8slabel.OTelColComponentLabel, "")
+	labels := k8slabel.New(k8slabel.OTelColComponentLabel, dk.Name, "")
 
 	return k8sservice.Build(dk,
 		dk.TelemetryIngest().GetServiceName(),
-		appLabels.BuildMatchLabels(),
+		labels.AsSelector(),
 		buildServicePortList(ctx, dk.TelemetryIngest().GetProtocols()),
-		k8sservice.SetLabels(coreLabels.BuildLabels()),
+		k8sservice.SetLabels(labels.AsMap()),
 		k8sservice.SetType(corev1.ServiceTypeClusterIP),
 	)
 }

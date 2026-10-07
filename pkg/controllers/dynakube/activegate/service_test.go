@@ -64,17 +64,17 @@ func TestCreateService(t *testing.T) {
 		assert.Equal(t, dk.Namespace, service.Namespace)
 
 		expectedLabels := map[string]string{
-			k8slabel.AppCreatedByLabel: testName,
-			k8slabel.AppComponentLabel: k8slabel.ActiveGateComponentLabel,
-			k8slabel.AppNameLabel:      version.AppName,
-			k8slabel.AppVersionLabel:   version.Version,
+			k8slabel.AppNameLabel:         k8slabel.ActiveGateComponentLabel,
+			k8slabel.AppInstanceLabel:     testName,
+			k8slabel.AppManagedByLabel:    version.AppName,
+			k8slabel.OperatorVersionLabel: version.Version,
 		}
 		assert.Equal(t, expectedLabels, service.Labels)
 
 		expectedSelector := map[string]string{
-			k8slabel.AppCreatedByLabel: testName,
-			k8slabel.AppManagedByLabel: version.AppName,
 			k8slabel.AppNameLabel:      k8slabel.ActiveGateComponentLabel,
+			k8slabel.AppInstanceLabel:  testName,
+			k8slabel.AppManagedByLabel: version.AppName,
 		}
 		serviceSpec := service.Spec
 		assert.Equal(t, corev1.ServiceTypeClusterIP, serviceSpec.Type)

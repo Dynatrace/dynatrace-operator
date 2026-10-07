@@ -252,8 +252,8 @@ func TestTopologySpreadConstraints(t *testing.T) {
 	t.Run("the default TopologySpreadConstraints", func(t *testing.T) {
 		dk := getTestDynakube()
 		statefulSet := getStatefulset(t, dk)
-		appLabels := buildAppLabels(dk)
-		assert.Equal(t, k8stopology.MaxOnePerNode(appLabels), statefulSet.Spec.Template.Spec.TopologySpreadConstraints)
+		labels := buildLabels(dk)
+		assert.Equal(t, k8stopology.MaxOnePerNode(labels), statefulSet.Spec.Template.Spec.TopologySpreadConstraints)
 	})
 
 	t.Run("custom TopologySpreadConstraints", func(t *testing.T) {
@@ -843,11 +843,11 @@ func TestLabels(t *testing.T) {
 
 		statefulSet := getStatefulset(t, dk)
 
-		appLabels := buildAppLabels(dk)
+		labels := buildLabels(dk)
 
-		assert.Equal(t, appLabels.BuildLabels(), statefulSet.Labels)
-		assert.Equal(t, &metav1.LabelSelector{MatchLabels: appLabels.BuildMatchLabels()}, statefulSet.Spec.Selector)
-		assert.Equal(t, appLabels.BuildLabels(), statefulSet.Spec.Template.Labels)
+		assert.Equal(t, labels.AsMap(), statefulSet.Labels)
+		assert.Equal(t, &metav1.LabelSelector{MatchLabels: labels.AsSelector()}, statefulSet.Spec.Selector)
+		assert.Equal(t, labels.AsSelector(), statefulSet.Spec.Template.Labels)
 	})
 
 	t.Run("custom labels", func(t *testing.T) {
@@ -859,11 +859,11 @@ func TestLabels(t *testing.T) {
 
 		statefulSet := getStatefulset(t, dk)
 
-		appLabels := buildAppLabels(dk)
-		podLabels := maputils.MergeMap(customLabels, appLabels.BuildLabels())
+		labels := buildLabels(dk)
+		podLabels := maputils.MergeMap(customLabels, labels.AsSelector())
 
-		assert.Equal(t, appLabels.BuildLabels(), statefulSet.Labels)
-		assert.Equal(t, &metav1.LabelSelector{MatchLabels: appLabels.BuildMatchLabels()}, statefulSet.Spec.Selector)
+		assert.Equal(t, labels.AsMap(), statefulSet.Labels)
+		assert.Equal(t, &metav1.LabelSelector{MatchLabels: labels.AsSelector()}, statefulSet.Spec.Selector)
 		assert.Equal(t, podLabels, statefulSet.Spec.Template.Labels)
 	})
 }

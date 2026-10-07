@@ -33,12 +33,11 @@ func New(ctx context.Context, ec *edgeconnect.EdgeConnect) *appsv1.Deployment {
 func create(ctx context.Context, ec *edgeconnect.EdgeConnect) *appsv1.Deployment {
 	log := logd.FromContext(ctx)
 
-	appLabels := buildAppLabels(ec)
-	labels := appLabels.BuildLabels()
+	labels := buildLabels(ec)
 
 	customPodLabels := maputils.MergeMap(
 		ec.Spec.Labels,
-		labels, // higher priority
+		labels.AsSelector(), // higher priority
 	)
 
 	log.Debug("EdgeConnect deployment app labels", "labels", labels)
@@ -49,11 +48,11 @@ func create(ctx context.Context, ec *edgeconnect.EdgeConnect) *appsv1.Deployment
 	return &appsv1.Deployment{
 		Name:      ec.Name,
 		Namespace: ec.Namespace,
-		Labels:    labels,
+		Labels:    labels.AsMap(),
 		Spec: appsv1.DeploymentSpec{
 			Replicas: ec.Spec.Replicas,
 			Selector: &metav1.LabelSelector{
-				MatchLabels: appLabels.BuildMatchLabels(),
+				MatchLabels: labels.AsSelector(),
 			},
 			Template: corev1.PodTemplateSpec{
 				Annotations: annotations,
@@ -93,12 +92,8 @@ func prepareImagePullSecrets(ec *edgeconnect.EdgeConnect) []corev1.LocalObjectRe
 	return nil
 }
 
-func buildAppLabels(ec *edgeconnect.EdgeConnect) *k8slabel.AppLabels {
-	return k8slabel.NewAppLabels(
-		k8slabel.EdgeConnectComponentLabel,
-		ec.Name,
-		consts.EdgeConnectUserProvisioned,
-		ec.Status.Version.Version)
+func buildLabels(ec *edgeconnect.EdgeConnect) *k8slabel.Labels {
+	return k8slabel.New(k8slabel.EdgeConnectComponentLabel, ec.Name, ec.Status.Version.Version)
 }
 
 func buildContainerAnnotations() map[string]string {

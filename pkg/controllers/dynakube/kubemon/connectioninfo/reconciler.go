@@ -86,12 +86,12 @@ func (r *Reconciler) createOrUpdateConfigMap(ctx context.Context, dk *dynakube.D
 		connectioninfo.CommunicationEndpointsKey: info.Endpoints,
 	}
 
-	coreLabels := k8slabel.NewCoreLabels(dk.Name, k8slabel.KubeMonComponentLabel)
+	labels := k8slabel.New(k8slabel.KubeMonComponentLabel, dk.Name, "")
 
 	cm, err := k8sconfigmap.Build(dk,
 		dk.KubernetesMonitoring().GetConnectionInfoConfigMapName(),
 		data,
-		k8sconfigmap.SetLabels(coreLabels.BuildLabels()),
+		k8sconfigmap.SetLabels(labels.AsMap()),
 	)
 	if err != nil {
 		return pkgerrors.WithStack(err)

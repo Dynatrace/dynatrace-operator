@@ -166,12 +166,11 @@ func (b *builder) BuildDaemonSet(ctx context.Context) (*appsv1.DaemonSet, error)
 
 	versionLabelValue := dk.OneAgent().GetVersion()
 
-	appLabels := k8slabel.NewAppLabels(k8slabel.OneAgentComponentLabel, dk.Name,
-		b.deploymentType, versionLabelValue)
-	labels := maputils.MergeMap(
-		appLabels.BuildLabels(),
-		b.hostInjectSpec.Labels,
-	)
+	labels := k8slabel.New(k8slabel.OneAgentComponentLabel, dk.Name, versionLabelValue)
+
+	// operator labels are merged last, so custom labels can't override them
+	dsLabels := maputils.MergeMap(b.hostInjectSpec.Labels, labels.AsMap())
+	podLabels := maputils.MergeMap(b.hostInjectSpec.Labels, labels.AsSelector())
 
 	templateAnnotations := map[string]string{
 		appArmorAnnotation:                appArmorUnconfined,
@@ -191,14 +190,14 @@ func (b *builder) BuildDaemonSet(ctx context.Context) (*appsv1.DaemonSet, error)
 	result := &appsv1.DaemonSet{
 		Name:        dk.Name,
 		Namespace:   dk.Namespace,
-		Labels:      labels,
+		Labels:      dsLabels,
 		Annotations: map[string]string{},
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
-				MatchLabels: appLabels.BuildMatchLabels(),
+				MatchLabels: labels.AsSelector(),
 			},
 			Template: corev1.PodTemplateSpec{
-				Labels:      labels,
+				Labels:      podLabels,
 				Annotations: templateAnnotations,
 				Spec:        podSpec,
 			},

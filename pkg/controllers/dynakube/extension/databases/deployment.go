@@ -50,10 +50,10 @@ const (
 func ListDeployments(ctx context.Context, clt client.Reader, dk *dynakube.DynaKube) ([]appsv1.Deployment, error) {
 	deployments := &appsv1.DeploymentList{}
 
-	// We have to build labels from an empty DB spec to allow cleaning up orphans (without having to delete the DynaKube).
-	deploymentLabels, _, _ := buildAllLabels(dk, extensions.DatabaseSpec{})
+	// Only use the stable selector labels (no app/operator version) to find all related deployments, including orphans.
+	selector := k8slabel.New(k8slabel.DatabaseSQLExecutorLabel, dk.Name, "").AsSelector()
 
-	if err := clt.List(ctx, deployments, client.InNamespace(dk.Namespace), sanitizedListLabels(deploymentLabels)); err != nil {
+	if err := clt.List(ctx, deployments, client.InNamespace(dk.Namespace), client.MatchingLabels(selector)); err != nil {
 		return nil, fmt.Errorf("list deployments: %w", err)
 	}
 
@@ -63,11 +63,11 @@ func ListDeployments(ctx context.Context, clt client.Reader, dk *dynakube.DynaKu
 // Returns labels for deployment, deployment selector and deployment pod template in that order.
 // Do NOT modify maps produced by this function.
 func buildAllLabels(dk *dynakube.DynaKube, dbSpec extensions.DatabaseSpec) (map[string]string, map[string]string, map[string]string) {
-	appLabels := k8slabel.NewAppLabels(k8slabel.DatabaseSQLExecutorLabel, dk.Name, k8slabel.DatabaseSQLExecutorLabel, dk.Spec.Templates.SQLExtensionExecutor.ImageRef.Tag)
+	labels := k8slabel.New(k8slabel.DatabaseSQLExecutorLabel, dk.Name, dk.Spec.Templates.SQLExtensionExecutor.ImageRef.Tag)
 
-	deploymentLabels := appLabels.BuildLabels()
-	matchLabels := appLabels.BuildMatchLabels()
-	podLabels := deploymentLabels
+	deploymentLabels := labels.AsMap()
+	matchLabels := labels.AsSelector()
+	podLabels := labels.AsSelector()
 	podLabels[executorIDLabelKey] = dbSpec.ID
 	podLabels[consts.DatasourceLabelKey] = consts.DatabaseDatasourceLabelValue
 
@@ -78,7 +78,6 @@ func buildAllLabels(dk *dynakube.DynaKube, dbSpec extensions.DatabaseSpec) (map[
 		podLabels = temp
 	}
 
-	// Reuse pod labels for deployment
 	return deploymentLabels, matchLabels, podLabels
 }
 
@@ -305,13 +304,4 @@ func deleteDeployments(ctx context.Context, clt client.Client, dk *dynakube.Dyna
 	}
 
 	return nil
-}
-
-func sanitizedListLabels(deploymentLabels map[string]string) client.MatchingLabels {
-	// Remove instance-specific keys to ensure we get all related deployments.
-	delete(deploymentLabels, executorIDLabelKey)
-	delete(deploymentLabels, consts.DatasourceLabelKey)
-	delete(deploymentLabels, k8slabel.AppVersionLabel)
-
-	return deploymentLabels
 }

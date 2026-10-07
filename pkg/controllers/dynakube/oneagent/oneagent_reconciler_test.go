@@ -268,9 +268,7 @@ func TestReconcile_InstancesSet(t *testing.T) {
 
 	expectedLabels := map[string]string{
 		k8slabel.AppNameLabel:      k8slabel.OneAgentComponentLabel,
-		k8slabel.AppComponentLabel: "classicfullstack",
-		k8slabel.AppCreatedByLabel: name,
-		k8slabel.AppVersionLabel:   oldComponentVersion,
+		k8slabel.AppInstanceLabel:  name,
 		k8slabel.AppManagedByLabel: version.AppName,
 	}
 

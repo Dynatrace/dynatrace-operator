@@ -106,9 +106,9 @@ func (r *Reconciler) buildSecret(eecToken dttoken.Token, otelcToken dttoken.Toke
 		consts.DatasourceTokenSecretKey: []byte(otelcToken.String()),
 	}
 
-	coreLabels := k8slabel.NewCoreLabels(dk.Name, k8slabel.ExtensionComponentLabel)
+	labels := k8slabel.New(k8slabel.ExtensionComponentLabel, dk.Name, "")
 
-	return k8ssecret.Build(dk, r.getSecretName(dk), secretData, k8ssecret.SetLabels(coreLabels.BuildLabels()))
+	return k8ssecret.Build(dk, r.getSecretName(dk), secretData, k8ssecret.SetLabels(labels.AsMap()))
 }
 
 func (r *Reconciler) getSecretName(dk *dynakube.DynaKube) string {

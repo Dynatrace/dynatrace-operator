@@ -124,14 +124,14 @@ func (r *Reconciler) createSelfSignedTLSSecret(ctx context.Context, dk *dynakube
 		return err
 	}
 
-	coreLabels := k8slabel.NewCoreLabels(dk.Name, k8slabel.ActiveGateComponentLabel)
+	labels := k8slabel.New(k8slabel.ActiveGateComponentLabel, dk.Name, "")
 	secretData := map[string][]byte{
 		consts.TLSCrtDataName:       pemCert,
 		consts.TLSKeyDataName:       pemPk,
 		consts.TLSServerCrtDataName: pemCert,
 	}
 
-	secret, err := k8ssecret.Build(dk, dk.ActiveGate().GetTLSSecretName(), secretData, k8ssecret.SetLabels(coreLabels.BuildLabels()))
+	secret, err := k8ssecret.Build(dk, dk.ActiveGate().GetTLSSecretName(), secretData, k8ssecret.SetLabels(labels.AsMap()))
 	if err != nil {
 		k8sconditions.SetSecretGenFailed(dk.Conditions(), conditionType, err)
 

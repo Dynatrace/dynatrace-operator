@@ -27,9 +27,9 @@ func GetSourceCertsSecretName(dkName string) string {
 }
 
 func (s *SecretGenerator) createSourceForWebhook(ctx context.Context, dk *dynakube.DynaKube, secretName, conditionType string, data map[string][]byte, annotations map[string]string) error { //nolint:revive
-	coreLabels := k8slabel.NewCoreLabels(dk.Name, k8slabel.WebhookComponentLabel)
+	labels := k8slabel.New(k8slabel.WebhookComponentLabel, dk.Name, "")
 
-	secret, err := k8ssecret.BuildForNamespace(secretName, dk.Namespace, data, k8ssecret.SetLabels(coreLabels.BuildLabels()))
+	secret, err := k8ssecret.BuildForNamespace(secretName, dk.Namespace, data, k8ssecret.SetLabels(labels.AsMap()))
 	if err != nil {
 		k8sconditions.SetSecretGenFailed(dk.Conditions(), conditionType, err)
 

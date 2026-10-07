@@ -78,12 +78,12 @@ func (r *Reconciler) ensureSecret(ctx context.Context, agClient agclient.Client,
 		return errors.WithStack(err)
 	}
 
-	coreLabels := k8slabel.NewCoreLabels(dk.Name, k8slabel.KubeMonComponentLabel)
+	labels := k8slabel.New(k8slabel.KubeMonComponentLabel, dk.Name, "")
 
 	secret, err := k8ssecret.Build(dk,
 		dk.KubernetesMonitoring().GetAuthTokenSecretName(),
 		map[string][]byte{SecretKey: []byte(authTokenInfo.Token)},
-		k8ssecret.SetLabels(coreLabels.BuildLabels()),
+		k8ssecret.SetLabels(labels.AsMap()),
 		k8ssecret.SetImmutable(true),
 	)
 	if err != nil {

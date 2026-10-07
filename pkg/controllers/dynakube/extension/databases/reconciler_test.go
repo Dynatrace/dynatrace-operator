@@ -102,10 +102,15 @@ func TestReconcileSpec(t *testing.T) {
 			executorIDLabelKey:        db.ID,
 			consts.DatasourceLabelKey: consts.DatabaseDatasourceLabelValue,
 		})
-		assert.Contains(t, deploy.Labels, k8slabel.AppComponentLabel)
+		assert.Contains(t, deploy.Labels, k8slabel.AppNameLabel)
+		assert.Contains(t, deploy.Labels, k8slabel.AppInstanceLabel)
 		assert.Contains(t, deploy.Labels, k8slabel.AppManagedByLabel)
 		assert.Contains(t, deploy.Labels, k8slabel.AppVersionLabel)
-		assert.Equal(t, deploy.Labels, deploy.Spec.Template.Labels)
+		assert.Contains(t, deploy.Labels, k8slabel.OperatorVersionLabel)
+		assert.Subset(t, deploy.Spec.Template.Labels, deploy.Spec.Selector.MatchLabels)
+		assert.NotContains(t, deploy.Spec.Selector.MatchLabels, executorIDLabelKey)
+		assert.NotContains(t, deploy.Spec.Template.Labels, k8slabel.AppVersionLabel)
+		assert.NotContains(t, deploy.Spec.Template.Labels, k8slabel.OperatorVersionLabel)
 		assert.NotNil(t, deploy.Spec.Template.Spec.SecurityContext)
 		assert.Len(t, deploy.Spec.Template.Spec.Volumes, 4)
 		for _, vol := range deploy.Spec.Template.Spec.Volumes {
@@ -162,7 +167,7 @@ func TestReconcileSpec(t *testing.T) {
 		dk.Spec.Extensions.Databases[0].Labels = map[string]string{"foo": "bar"}
 		deploy := getReconciledDeployment(t, fakeClient(), dk)
 		assert.NotEqual(t, deploy.Labels, deploy.Spec.Template.Labels)
-		assert.Subset(t, deploy.Spec.Template.Labels, deploy.Labels)
+		assert.Subset(t, deploy.Spec.Template.Labels, deploy.Spec.Selector.MatchLabels)
 		assert.Subset(t, deploy.Spec.Template.Labels, dk.Spec.Extensions.Databases[0].Labels)
 	})
 

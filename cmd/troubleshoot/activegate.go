@@ -9,7 +9,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
-	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -32,11 +31,7 @@ func checkActiveGates(ctx context.Context, baseLog logd.Logger, apiReader client
 func checkActiveGateOOM(ctx context.Context, log logd.Logger, apiReader client.Reader, dk *dynakube.DynaKube) error {
 	logNewCheckf(log, "Checking ActiveGate pods")
 
-	labels := map[string]string{
-		k8slabel.AppNameLabel:      k8slabel.ActiveGateComponentLabel,
-		k8slabel.AppCreatedByLabel: dk.Name,
-		k8slabel.AppManagedByLabel: version.AppName,
-	}
+	labels := k8slabel.New(k8slabel.ActiveGateComponentLabel, dk.Name, "").AsSelector()
 
 	return checkOOMKilled(ctx, log, apiReader, dk.Namespace, labels)
 }

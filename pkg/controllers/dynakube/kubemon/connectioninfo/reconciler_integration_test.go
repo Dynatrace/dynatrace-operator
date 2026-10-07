@@ -220,8 +220,8 @@ func isConnectionInfoApplied(ctx context.Context, reader client.Reader, dk *dyna
 func assertManagedLabels(t *testing.T, labels map[string]string, dk *dynakube.DynaKube) {
 	t.Helper()
 
-	assert.Equal(t, k8slabel.KubeMonComponentLabel, labels[k8slabel.AppComponentLabel])
-	assert.Equal(t, dk.Name, labels[k8slabel.AppCreatedByLabel])
+	assert.Equal(t, k8slabel.KubeMonComponentLabel, labels[k8slabel.AppNameLabel])
+	assert.Equal(t, dk.Name, labels[k8slabel.AppInstanceLabel])
 }
 
 // TestConnectionInfoCache verifies that the HTTP-level response cache used by the AG

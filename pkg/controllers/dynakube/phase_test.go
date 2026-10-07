@@ -595,7 +595,7 @@ func createDeployment(dk *dynakube.DynaKube, replicas, readyReplicas int32) *app
 	return &appsv1.Deployment{
 		Name:      "foo",
 		Namespace: dk.Namespace,
-		Labels:    k8slabel.NewAppLabels(k8slabel.DatabaseSQLExecutorLabel, dk.Name, k8slabel.DatabaseSQLExecutorLabel, "").BuildLabels(),
+		Labels:    k8slabel.New(k8slabel.DatabaseSQLExecutorLabel, dk.Name, "").AsMap(),
 		Spec: appsv1.DeploymentSpec{
 			Replicas: &replicas,
 		},
