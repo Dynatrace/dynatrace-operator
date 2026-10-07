@@ -6,6 +6,7 @@
 package upgrade
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strings"
@@ -22,16 +23,43 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/sample"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
 	"github.com/stretchr/testify/require"
+	rbacv1 "k8s.io/api/rbac/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/e2e-framework/klient/k8s"
 	"sigs.k8s.io/e2e-framework/pkg/env"
+	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-const withCSI = true
+const (
+	withCSI                  = true
+	extensionsPrometheusName = "dynatrace-extensions-prometheus"
+)
 
 // sanitizeReleaseTag makes a release tag (e.g. "1.10.2") safe to use inside a Kubernetes object name,
 // which must be a valid RFC 1123 label and therefore cannot contain dots.
 func sanitizeReleaseTag(releaseTag string) string {
 	return strings.ReplaceAll(releaseTag, ".", "-")
+}
+
+// cleanupOrphanedManifestResources removes cluster-scoped resources left over by a previous manifest installation.
+func cleanupOrphanedManifestResources() features.Func {
+	return func(ctx context.Context, t *testing.T, c *envconf.Config) context.Context {
+		objects := []k8s.Object{
+			&rbacv1.ClusterRole{ObjectMeta: metav1.ObjectMeta{Name: extensionsPrometheusName}},
+			&rbacv1.ClusterRoleBinding{ObjectMeta: metav1.ObjectMeta{Name: extensionsPrometheusName}},
+		}
+
+		for _, obj := range objects {
+			err := c.Client().Resources().Delete(ctx, obj)
+			if !k8serrors.IsNotFound(err) {
+				require.NoError(t, err)
+			}
+		}
+
+		return ctx
+	}
 }
 
 // Feature builds an upgrade scenario that installs a released operator version and upgrades to the current build.
@@ -46,10 +74,12 @@ func Feature(t *testing.T, releaseTag string) features.Feature {
 		installOld = operator.InstallReleasedManifest(releaseTag, withCSI)
 	}
 
-	return buildUpgradeFeature(t, features.New(featureName), releaseTag, installOld)
+	return buildUpgradeFeature(t, features.New(featureName), releaseTag, installOld, viaManifests)
 }
 
-func buildUpgradeFeature(t *testing.T, builder *features.FeatureBuilder, releaseTag string, installOld env.Func) features.Feature {
+func buildUpgradeFeature(t *testing.T, builder *features.FeatureBuilder, releaseTag string, installOld env.Func, viaManifests bool) features.Feature {
+	// if manifest upgrade test was run before - the remaining resources can fail helm install
+	builder.Assess("cleanup orphaned manifest resources", cleanupOrphanedManifestResources())
 	builder.Assess("install operator "+releaseTag, helpers.ToFeatureFunc(installOld, true))
 
 	secretConfig := tenant.GetSingleTenantSecret(t)
@@ -111,6 +141,10 @@ func buildUpgradeFeature(t *testing.T, builder *features.FeatureBuilder, release
 	dynakube.Cleanup(builder, testDynakube)
 
 	builder.WithTeardown("uninstall operator", helpers.SkipOnFailFast(helpers.ToFeatureFunc(operator.Uninstall(withCSI), false)))
+
+	if viaManifests {
+		builder.WithTeardown("cleanup old manifest resources", cleanupOrphanedManifestResources())
+	}
 
 	return builder.Feature()
 }
