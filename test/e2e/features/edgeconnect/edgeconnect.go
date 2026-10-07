@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 	"uuid"
@@ -101,7 +102,7 @@ func provisionerModeFeature(t *testing.T, featureName, expectedImage string, opt
 	testHostPattern := fmt.Sprintf("%s.e2eTestHostPattern.internal.org", testECname)
 	testHostPattern2 := fmt.Sprintf("%s.e2eTestHostPattern2.internal.org", testECname)
 
-	ecOpts := append([]ecComponents.Option{
+	opts = append([]ecComponents.Option{
 		ecComponents.WithName(testECname),
 		ecComponents.WithAPIServer(secretConfig.APIServer),
 		ecComponents.WithOAuthClientSecret(ecComponents.BuildOAuthClientSecretName(testECname)),
@@ -110,7 +111,8 @@ func provisionerModeFeature(t *testing.T, featureName, expectedImage string, opt
 		ecComponents.WithProvisionerMode(true),
 		ecComponents.WithHostPattern(testHostPattern),
 	}, opts...)
-	testEdgeConnect := ecComponents.New(ecOpts...)
+
+	testEdgeConnect := ecComponents.New(opts...)
 
 	ecComponents.Install(builder, secretConfig, testEdgeConnect)
 
@@ -119,6 +121,8 @@ func provisionerModeFeature(t *testing.T, featureName, expectedImage string, opt
 
 	if expectedImage != "" {
 		builder.Assess("edgeconnect deployment uses expected image", k8sdeployment.VerifyUsesImage(testEdgeConnect.Name, testEdgeConnect.Namespace, expectedImage))
+	} else {
+		builder.Assess("edgeconnect deployment uses image from expected registry", checkImageRegistry(testEdgeConnect))
 	}
 	builder.Assess("check if EC configuration exists on the tenant", ecComponents.CheckECExistsOnTheTenant(secretConfig, edgeConnectTenantConfig))
 	builder.Assess("check hostPatterns on the tenant - testHostPattern", checkHostPatternOnTheTenant(secretConfig, edgeConnectTenantConfig, func() string { return testHostPattern }))
@@ -376,6 +380,25 @@ func checkSettingsNotExistsOnTheTenant(clientSecret tenant.EdgeConnectSecret, te
 		assert.Equal(t, edgeconnectClient.EnvironmentSetting{}, se)
 
 		return ctx
+	}
+}
+
+func checkImageRegistry(testEdgeConnect *edgeconnect.EdgeConnect) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		var current edgeconnect.EdgeConnect
+		require.NoError(t, envConfig.Client().Resources().Get(ctx, testEdgeConnect.Name, testEdgeConnect.Namespace, &current))
+
+		imageID := current.Status.Version.ImageID
+		require.NotEmpty(t, imageID)
+
+		usePublicRegistry := tenant.UsePhase3Tenant()
+		if usePublicRegistry {
+			assert.True(t, strings.HasPrefix(imageID, "478983378254.dkr.ecr.us-east-1.amazonaws.com"), "expected public registry image via fleet management, got %q", imageID)
+		} else {
+			assert.True(t, strings.HasPrefix(imageID, edgeconnect.DefaultEdgeConnectRepository), "expected fallback image, got %q", imageID)
+		}
+
+		return k8sdeployment.VerifyUsesImage(current.Name, current.Namespace, imageID)(ctx, t, envConfig)
 	}
 }
 

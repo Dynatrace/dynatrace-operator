@@ -16,11 +16,11 @@ const (
 	// The limit is necessary because kubernetes uses the name of some resources for the label value, which has a limit of 63 characters. (see https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set)
 	MaxNameLength = 40
 
-	defaultEdgeConnectRepository = "docker.io/dynatrace/edgeconnect"
+	DefaultEdgeConnectRepository = "docker.io/dynatrace/edgeconnect"
 )
 
 func (ec *EdgeConnect) Image() string {
-	return ec.Spec.ImageRef.StringWithDefaults(defaultEdgeConnectRepository, api.LatestTag)
+	return ec.Spec.ImageRef.StringWithDefaults(DefaultEdgeConnectRepository, api.LatestTag)
 }
 
 func (ec *EdgeConnect) IsCustomImage() bool {
