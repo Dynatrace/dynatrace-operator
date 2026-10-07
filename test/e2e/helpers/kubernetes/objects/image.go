@@ -3,7 +3,7 @@
 
 //go:build e2e
 
-package objects
+package k8sobject
 
 import (
 	"testing"

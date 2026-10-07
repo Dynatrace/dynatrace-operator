@@ -97,7 +97,7 @@ func VerifyUsesImage(name, namespace, expectedImage string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		var ds appsv1.DaemonSet
 		require.NoError(t, envConfig.Client().Resources().Get(ctx, name, namespace, &ds))
-		objects.VerifyWorkloadUsesImage(t, ds.Spec.Template.Spec.Containers, expectedImage, name)
+		k8sobject.VerifyWorkloadUsesImage(t, ds.Spec.Template.Spec.Containers, expectedImage, name)
 
 		return ctx
 	}
