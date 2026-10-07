@@ -21,6 +21,10 @@ imageRef.tag still applies there and replaces the platform default tag or digest
 	{{- printf "%s" .Values.image -}}
 {{- else -}}
     {{- $ref := .Values.imageRef | default dict -}}
+    {{- $tag := "" -}}
+    {{- with $ref.tag -}}
+        {{- $tag = printf ":%s" . -}}
+    {{- end -}}
     {{- if $ref.repository -}}
         {{- if $ref.digest -}}
             {{- printf "%s@%s" $ref.repository $ref.digest -}}
@@ -44,11 +48,7 @@ imageRef.tag still applies there and replaces the platform default tag or digest
             {{- $repo = printf "%s/%s" $azure.registry $azure.image -}}
             {{- $defaultRef = printf "@%s" $azure.digest -}}
         {{- end -}}
-        {{- if $ref.tag -}}
-            {{- printf "%s:%s" $repo $ref.tag -}}
-        {{- else -}}
-            {{- printf "%s%s" $repo $defaultRef -}}
-        {{- end -}}
+        {{- printf "%s%s" $repo ($tag | default $defaultRef) -}}
     {{- end -}}
 {{- end -}}
 {{- end -}}
