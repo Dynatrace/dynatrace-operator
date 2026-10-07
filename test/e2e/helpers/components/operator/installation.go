@@ -61,6 +61,10 @@ func InstallLocal(withCSI bool, extraOpts ...helm.Option) env.Func {
 				return ctx, nil
 			}
 
+			if len(extraOpts) > 0 {
+				fmt.Println("OLM=true: extraOpts are ignored") //nolint:forbidigo
+			}
+
 			if err := installViaOLMLocalBundle(); err != nil {
 				return ctx, err
 			}
