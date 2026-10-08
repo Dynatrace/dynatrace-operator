@@ -270,6 +270,8 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		k8slabel.AppNameLabel:      k8slabel.OneAgentComponentLabel,
 		k8slabel.AppInstanceLabel:  name,
 		k8slabel.AppManagedByLabel: version.AppName,
+		k8slabel.AppComponentLabel: "classicfullstack",
+		k8slabel.AppVersionLabel:   oldComponentVersion,
 	}
 
 	t.Run("Status.OneAgent.Instances set, if autoUpdate is true", func(t *testing.T) {
@@ -333,6 +335,56 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		assert.NotNil(t, dk.Status.OneAgent.Instances)
 		assert.NotEmpty(t, dk.Status.OneAgent.Instances)
 	})
+}
+
+func TestGetOneagentPods(t *testing.T) {
+	const (
+		namespace      = "dynatrace"
+		dkName         = "dynakube"
+		currentVersion = "1.300.0.0-0"
+		oldVersion     = "1.298.0.0-0"
+	)
+
+	dk := &dynakube.DynaKube{
+		Name:      dkName,
+		Namespace: namespace,
+		Spec: dynakube.DynaKubeSpec{
+			OneAgent: oneagent.Spec{ClassicFullStack: &oneagent.HostInjectSpec{}},
+		},
+		Status: dynakube.DynaKubeStatus{OneAgent: oneagent.Status{Version: currentVersion}},
+	}
+
+	podLabels := func(instance, component, ver string) map[string]string {
+		return map[string]string{
+			k8slabel.AppNameLabel:      k8slabel.OneAgentComponentLabel,
+			k8slabel.AppInstanceLabel:  instance,
+			k8slabel.AppManagedByLabel: version.AppName,
+			k8slabel.AppComponentLabel: component,
+			k8slabel.AppVersionLabel:   ver,
+		}
+	}
+
+	pods := map[string]map[string]string{
+		"current":        podLabels(dkName, "classicfullstack", currentVersion),
+		"old-version":    podLabels(dkName, "classicfullstack", oldVersion),
+		"other-mode":     podLabels(dkName, "cloudnative", currentVersion),
+		"other-dynakube": podLabels("other", "classicfullstack", currentVersion),
+	}
+
+	clt := fake.NewClient()
+
+	for name, labels := range pods {
+		require.NoError(t, clt.Create(t.Context(), &corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace, Labels: labels},
+		}))
+	}
+
+	reconciler := &Reconciler{client: clt, apiReader: clt}
+
+	found, _, err := reconciler.getOneagentPods(t.Context(), dk, deploymentmetadata.ClassicFullStackDeploymentType)
+	require.NoError(t, err)
+	require.Len(t, found, 1)
+	assert.Equal(t, "current", found[0].Name)
 }
 
 func TestMigrationForDaemonSetWithoutAnnotation(t *testing.T) {

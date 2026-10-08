@@ -6,6 +6,7 @@ package daemonset
 import (
 	"context"
 	"path/filepath"
+	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -155,6 +156,18 @@ func (classic *classicFullStack) BuildDaemonSet(ctx context.Context) (*appsv1.Da
 	return result, nil
 }
 
+func VersionAndModeLabels(labels *k8slabel.Labels, mode string) map[string]string {
+	result := map[string]string{
+		k8slabel.AppComponentLabel: strings.ReplaceAll(mode, "_", ""),
+	}
+
+	if labels.Version != "" {
+		result[k8slabel.AppVersionLabel] = labels.Version
+	}
+
+	return result
+}
+
 func (b *builder) BuildDaemonSet(ctx context.Context) (*appsv1.DaemonSet, error) {
 	ctx, _ = logd.NewFromContext(ctx, "daemonset")
 	dk := b.dk
@@ -169,8 +182,8 @@ func (b *builder) BuildDaemonSet(ctx context.Context) (*appsv1.DaemonSet, error)
 	labels := k8slabel.New(k8slabel.OneAgentComponentLabel, dk.Name, versionLabelValue)
 
 	// operator labels are merged last, so custom labels can't override them
-	dsLabels := maputils.MergeMap(b.hostInjectSpec.Labels, labels.AsMap())
-	podLabels := maputils.MergeMap(b.hostInjectSpec.Labels, labels.AsSelector())
+	dsLabels := maputils.MergeMap(b.hostInjectSpec.Labels, VersionAndModeLabels(labels, b.deploymentType), labels.AsMap())
+	podLabels := maputils.MergeMap(b.hostInjectSpec.Labels, VersionAndModeLabels(labels, b.deploymentType), labels.AsSelector())
 
 	templateAnnotations := map[string]string{
 		appArmorAnnotation:                appArmorUnconfined,

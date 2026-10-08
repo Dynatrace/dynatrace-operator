@@ -87,6 +87,7 @@ func TestLabels(t *testing.T) {
 			k8slabel.AppNameLabel:         k8slabel.OneAgentComponentLabel,
 			k8slabel.AppInstanceLabel:     dk.Name,
 			k8slabel.AppManagedByLabel:    version.AppName,
+			k8slabel.AppComponentLabel:    "classicfullstack",
 			k8slabel.AppVersionLabel:      testImageTag,
 			k8slabel.OperatorVersionLabel: version.Version,
 		}
@@ -96,7 +97,10 @@ func TestLabels(t *testing.T) {
 
 		assert.Equal(t, expectedLabels, ds.Labels)
 		assert.Equal(t, expectedSelector(dk), ds.Spec.Selector.MatchLabels)
-		assert.Equal(t, expectedSelector(dk), ds.Spec.Template.Labels)
+		expectedPodLabels := expectedSelector(dk)
+		expectedPodLabels[k8slabel.AppComponentLabel] = "classicfullstack"
+		expectedPodLabels[k8slabel.AppVersionLabel] = testImageTag
+		assert.Equal(t, expectedPodLabels, ds.Spec.Template.Labels)
 	})
 	t.Run("if no version is set, no version label", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
@@ -111,6 +115,7 @@ func TestLabels(t *testing.T) {
 			k8slabel.AppNameLabel:         k8slabel.OneAgentComponentLabel,
 			k8slabel.AppInstanceLabel:     dk.Name,
 			k8slabel.AppManagedByLabel:    version.AppName,
+			k8slabel.AppComponentLabel:    "classicfullstack",
 			k8slabel.OperatorVersionLabel: version.Version,
 		}
 
@@ -120,7 +125,9 @@ func TestLabels(t *testing.T) {
 
 		assert.Equal(t, expectedLabels, ds.Labels)
 		assert.Equal(t, expectedSelector(dk), ds.Spec.Selector.MatchLabels)
-		assert.Equal(t, expectedSelector(dk), ds.Spec.Template.Labels)
+		expectedPodLabels := expectedSelector(dk)
+		expectedPodLabels[k8slabel.AppComponentLabel] = "classicfullstack"
+		assert.Equal(t, expectedPodLabels, ds.Spec.Template.Labels)
 	})
 	t.Run("custom labels are set on daemonset and pods, but can't override operator labels", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
@@ -146,10 +153,13 @@ func TestLabels(t *testing.T) {
 			k8slabel.AppNameLabel:         k8slabel.OneAgentComponentLabel,
 			k8slabel.AppInstanceLabel:     dk.Name,
 			k8slabel.AppManagedByLabel:    version.AppName,
+			k8slabel.AppComponentLabel:    "classicfullstack",
 			k8slabel.AppVersionLabel:      testImageTag,
 			k8slabel.OperatorVersionLabel: version.Version,
 		}
 		expectedPodLabels := expectedSelector(dk)
+		expectedPodLabels[k8slabel.AppComponentLabel] = "classicfullstack"
+		expectedPodLabels[k8slabel.AppVersionLabel] = testImageTag
 		expectedPodLabels["custom"] = "label"
 
 		dsBuilder := NewClassicFullStack(dk, testClusterID)
