@@ -827,9 +827,6 @@ func TestTokenConditions(t *testing.T) {
 			Status: dynakube.DynaKubeStatus{
 				Conditions: []metav1.Condition{
 					{
-						Type: dynakube.PaaSTokenConditionType,
-					},
-					{
 						Type: dynakube.APITokenConditionType,
 					},
 					{
@@ -1163,10 +1160,10 @@ func TestSetupTokensAndClientForConnectionTimeout(t *testing.T) {
 }
 
 func testDTClientBuilder(t *testing.T, timeout time.Duration) dynatrace.ClientFactory {
-	return func(ctx context.Context, apiReader client.Reader, dk *dynakube.DynaKube, apiToken, paasToken, userAgentSuffix string, clientConnectionTimeout time.Duration) (*dynatrace.Client, error) {
+	return func(ctx context.Context, apiReader client.Reader, dk *dynakube.DynaKube, apiToken, userAgentSuffix string, clientConnectionTimeout time.Duration) (*dynatrace.Client, error) {
 		assert.Equal(t, timeout, clientConnectionTimeout)
 
-		return dynatrace.NewClientFromDynakube(ctx, apiReader, dk, apiToken, paasToken, userAgentSuffix, clientConnectionTimeout)
+		return dynatrace.NewClientFromDynakube(ctx, apiReader, dk, apiToken, userAgentSuffix, clientConnectionTimeout)
 	}
 }
 
@@ -1245,13 +1242,13 @@ func createCRD(t *testing.T) *apiextensionsv1.CustomResourceDefinition {
 }
 
 func newClientFactory(dtClient *dynatrace.Client) dynatrace.ClientFactory {
-	return func(_ context.Context, _ client.Reader, _ *dynakube.DynaKube, _, _, _ string, _ time.Duration) (*dynatrace.Client, error) {
+	return func(_ context.Context, _ client.Reader, _ *dynakube.DynaKube, _, _ string, _ time.Duration) (*dynatrace.Client, error) {
 		return dtClient, nil
 	}
 }
 
 func newErrorClientFactory(err error) dynatrace.ClientFactory {
-	return func(_ context.Context, _ client.Reader, _ *dynakube.DynaKube, _, _, _ string, _ time.Duration) (*dynatrace.Client, error) {
+	return func(_ context.Context, _ client.Reader, _ *dynakube.DynaKube, _, _ string, _ time.Duration) (*dynatrace.Client, error) {
 		return nil, err
 	}
 }

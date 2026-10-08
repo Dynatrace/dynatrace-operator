@@ -263,7 +263,7 @@ func newPublicRegistryDynaKube() *dynakube.DynaKube {
 
 // newVersionClient builds a dtversion.Client whose HTTP transport is the given
 // fakeTransport wrapped in a cache round-tripper with ttl.
-// PaasToken is set to t.Name() so every subtest has a unique Authorization
+// APIToken is set to t.Name() so every subtest has a unique Authorization
 // header, giving each subtest an isolated namespace in the global cache.
 func newVersionClient(t *testing.T, transport http.RoundTripper, ttl time.Duration) dtversion.Client {
 	t.Helper()
@@ -271,7 +271,7 @@ func newVersionClient(t *testing.T, transport http.RoundTripper, ttl time.Durati
 	return dtversion.NewClient(core.NewClient(core.Config{
 		BaseURL:    mustParseURL(t, "http://fake-dt.test"),
 		HTTPClient: &http.Client{Transport: middleware.NewCacheRoundTripper(transport, ttl)},
-		PaasToken:  t.Name(),
+		APIToken:     t.Name(),
 	}))
 }
 

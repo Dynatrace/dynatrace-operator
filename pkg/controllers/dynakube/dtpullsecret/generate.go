@@ -44,12 +44,10 @@ func generateData(dk *dynakube.DynaKube, tokens token.Tokens) (map[string][]byte
 	registry := dk.APIURLHost()
 
 	switch {
-	case tokens.PaasToken().Value != "":
-		registryToken = tokens.PaasToken().Value
 	case tokens.APIToken().Value != "":
 		registryToken = tokens.APIToken().Value
 	default:
-		return nil, errors.New("token secret does not contain a paas or api token, cannot generate docker config")
+		return nil, errors.New("token secret does not contain an api token, cannot generate docker config")
 	}
 
 	tenantUUID, err := dk.TenantUUID()

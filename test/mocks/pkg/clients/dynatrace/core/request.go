@@ -277,52 +277,6 @@ func (_c *Request_WithJSONBody_Call) RunAndReturn(run func(body any) core.Reques
 	return _c
 }
 
-// WithPaasToken provides a mock function for the type Request
-func (_mock *Request) WithPaasToken() core.Request {
-	ret := _mock.Called()
-
-	if len(ret) == 0 {
-		panic("no return value specified for WithPaasToken")
-	}
-
-	var r0 core.Request
-	if returnFunc, ok := ret.Get(0).(func() core.Request); ok {
-		r0 = returnFunc()
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(core.Request)
-		}
-	}
-	return r0
-}
-
-// Request_WithPaasToken_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithPaasToken'
-type Request_WithPaasToken_Call struct {
-	*mock.Call
-}
-
-// WithPaasToken is a helper method to define mock.On call
-func (_e *Request_Expecter) WithPaasToken() *Request_WithPaasToken_Call {
-	return &Request_WithPaasToken_Call{Call: _e.mock.On("WithPaasToken")}
-}
-
-func (_c *Request_WithPaasToken_Call) Run(run func()) *Request_WithPaasToken_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run()
-	})
-	return _c
-}
-
-func (_c *Request_WithPaasToken_Call) Return(request core.Request) *Request_WithPaasToken_Call {
-	_c.Call.Return(request)
-	return _c
-}
-
-func (_c *Request_WithPaasToken_Call) RunAndReturn(run func() core.Request) *Request_WithPaasToken_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // WithPath provides a mock function for the type Request
 func (_mock *Request) WithPath(path ...string) core.Request {
 	var tmpRet mock.Arguments

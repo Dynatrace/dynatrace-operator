@@ -15,7 +15,6 @@ import (
 )
 
 const (
-	PaaSKey       = "paasToken"
 	APIKey        = "apiToken"
 	DataIngestKey = "dataIngestToken"
 )
@@ -24,10 +23,6 @@ type Tokens map[string]*Token
 
 func (tokens Tokens) APIToken() *Token {
 	return tokens.getToken(APIKey)
-}
-
-func (tokens Tokens) PaasToken() *Token {
-	return tokens.getToken(PaaSKey)
 }
 
 func (tokens Tokens) DataIngestToken() *Token {
@@ -44,14 +39,11 @@ func (tokens Tokens) getToken(tokenName string) *Token {
 }
 
 func (tokens Tokens) AddFeatureScopesToTokens() Tokens {
-	_, hasPaasToken := tokens[PaaSKey]
 
 	for _, token := range tokens {
 		switch token.Type {
 		case APIKey:
-			token.addFeatures(getFeaturesForAPIToken(hasPaasToken))
-		case PaaSKey:
-			token.addFeatures(getFeaturesForPaaSToken())
+			token.addFeatures(getFeaturesForAPIToken())
 		case DataIngestKey:
 			token.addFeatures(getFeaturesForDataIngest())
 		}

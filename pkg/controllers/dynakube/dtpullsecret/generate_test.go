@@ -41,7 +41,6 @@ func TestGenerateData(t *testing.T) {
 		tokens      token.Tokens
 		expectToken string
 	}{
-		{"use paas token", token.Tokens{token.PaaSKey: &token.Token{Value: testPaasToken}}, testPaasToken},
 		{"use api token", token.Tokens{token.APIKey: &token.Token{Value: testAPIToken}}, testAPIToken},
 	}
 

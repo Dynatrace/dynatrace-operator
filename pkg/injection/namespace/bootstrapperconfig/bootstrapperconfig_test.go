@@ -35,8 +35,7 @@ import (
 )
 
 const (
-	testPaasToken = "test-paas-token"
-	testAPIToken  = "test-api-token"
+	testAPIToken = "test-api-token"
 
 	testUUID        = "test-uuid"
 	testTenantToken = "abcd"
@@ -94,8 +93,7 @@ func TestGenerateForDynakube(t *testing.T) {
 			dk,
 			namespace,
 			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
-				token.APIKey:  []byte(testAPIToken),
-				token.PaaSKey: []byte(testPaasToken),
+				token.APIKey: []byte(testAPIToken),
 			}),
 			clientSecret(dk.OneAgent().GetTenantSecret(), testNamespaceDynatrace, map[string][]byte{
 				"tenant-token": []byte(testTenantToken),
@@ -161,8 +159,7 @@ func TestGenerateForDynakube(t *testing.T) {
 			dk,
 			namespace,
 			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
-				token.APIKey:  []byte(testAPIToken),
-				token.PaaSKey: []byte(testPaasToken),
+				token.APIKey: []byte(testAPIToken),
 			}),
 			clientSecret(dk.ActiveGate().TLSSecretName, testNamespaceDynatrace, map[string][]byte{
 				consts.TLSServerCrtDataName: []byte("test-cert-value"),
@@ -259,8 +256,7 @@ func TestGenerateForDynakube(t *testing.T) {
 			dk,
 			namespace,
 			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
-				token.APIKey:  []byte(testAPIToken),
-				token.PaaSKey: []byte(testPaasToken),
+				token.APIKey: []byte(testAPIToken),
 			}),
 			clientSecret(dk.ActiveGate().TLSSecretName, testNamespaceDynatrace, map[string][]byte{
 				consts.TLSServerCrtDataName: []byte("test-cert-value"),
@@ -340,8 +336,7 @@ func TestGenerateForDynakube(t *testing.T) {
 			dk,
 			clientInjectedNamespace(testNamespace, testDynakube),
 			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
-				token.APIKey:  []byte(testAPIToken),
-				token.PaaSKey: []byte(testPaasToken),
+				token.APIKey: []byte(testAPIToken),
 			}),
 		)
 
@@ -389,8 +384,7 @@ func TestGenerateForDynakube(t *testing.T) {
 			dk,
 			namespace,
 			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
-				token.APIKey:  []byte(testAPIToken),
-				token.PaaSKey: []byte(testPaasToken),
+				token.APIKey: []byte(testAPIToken),
 			}),
 			clientSecret(dk.ActiveGate().TLSSecretName, testNamespaceDynatrace, map[string][]byte{
 				consts.TLSServerCrtDataName: []byte("test-cert-value"),
@@ -453,7 +447,6 @@ func TestGenerateForDynakube(t *testing.T) {
 			namespace,
 			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
 				token.APIKey:  []byte(testAPIToken),
-				token.PaaSKey: []byte(testPaasToken),
 			}),
 			clientSecret(dk.ActiveGate().TLSSecretName, testNamespaceDynatrace, map[string][]byte{
 				consts.TLSServerCrtDataName: []byte("test-cert-value"),
@@ -568,7 +561,6 @@ func TestCleanup(t *testing.T) {
 		clientInjectedNamespace(testNamespace, testDynakube),
 		clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
 			token.APIKey:  []byte(testAPIToken),
-			token.PaaSKey: []byte(testPaasToken),
 		}),
 		clientSecret(dk.OneAgent().GetTenantSecret(), testNamespaceDynatrace, map[string][]byte{
 			"tenant-token": []byte(testTenantToken),

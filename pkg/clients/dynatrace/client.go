@@ -21,7 +21,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/version"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	operatorversion "github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/pkg/errors"
@@ -47,7 +46,6 @@ type OAuthClient struct {
 
 type Config struct {
 	APIToken    string
-	PaasToken   string
 	NetworkZone string
 	HostGroup   string
 	UserAgent   string
@@ -74,12 +72,8 @@ func NewClient(options ...Option) (*Client, error) {
 
 	addCacheMiddleware(httpClient, config)
 
-	if len(config.APIToken) == 0 && len(config.PaasToken) == 0 {
+	if len(config.APIToken) == 0 {
 		return nil, errors.New("tokens are empty")
-	}
-
-	if dttoken.IsPlatform(config.APIToken) || config.PaasToken == "" {
-		config.PaasToken = config.APIToken
 	}
 
 	apiClient := core.NewClient(core.Config{
@@ -87,7 +81,6 @@ func NewClient(options ...Option) (*Client, error) {
 		HTTPClient: httpClient,
 		UserAgent:  config.UserAgent,
 		APIToken:   config.APIToken,
-		PaasToken:  config.PaasToken,
 	})
 
 	return &Client{
@@ -135,16 +128,6 @@ func WithAPIToken(token string) Option {
 	}
 }
 
-// WithPaasToken sets the PaaS token
-func WithPaasToken(token string) Option {
-	return func(c *Config) error {
-		c.PaasToken = token
-
-		return nil
-	}
-}
-
-// WithNetworkZone sets the network zone
 func WithNetworkZone(networkZone string) Option {
 	return func(c *Config) error {
 		c.NetworkZone = networkZone

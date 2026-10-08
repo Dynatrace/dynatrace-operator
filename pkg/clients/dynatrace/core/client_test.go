@@ -141,19 +141,13 @@ func TestClient_TokenTypes(t *testing.T) {
 	defer s.Close()
 
 	c := NewClient(Config{
-		BaseURL:   must(url.Parse(s.URL)),
-		APIToken:  "api",
-		PaasToken: "paas",
+		BaseURL: must(url.Parse(s.URL)),
+		APIToken:"api",
 	})
 
 	t.Run("default", func(t *testing.T) {
 		expectAuthHeader = "Api-Token api"
 		assert.NoError(t, c.GET(t.Context(), "/test").Execute(nil))
-	})
-
-	t.Run("paas", func(t *testing.T) {
-		expectAuthHeader = "Api-Token paas"
-		assert.NoError(t, c.GET(t.Context(), "/test").WithPaasToken().Execute(nil))
 	})
 
 	t.Run("without token", func(t *testing.T) {
