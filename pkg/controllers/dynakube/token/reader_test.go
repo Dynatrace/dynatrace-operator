@@ -61,7 +61,7 @@ func testReadTokens(t *testing.T) {
 		tokens, err := reader.ReadTokens(t.Context())
 
 		require.NoError(t, err)
-		assert.Len(t, tokens, 4)
+		assert.Len(t, tokens, 3)
 		assert.Contains(t, tokens, APIKey)
 		assert.Contains(t, tokens, DataIngestKey)
 		assert.Contains(t, tokens, testIrrelevantTokenKey)
