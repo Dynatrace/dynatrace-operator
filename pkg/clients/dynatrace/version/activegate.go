@@ -30,7 +30,7 @@ func (c *ClientImpl) GetLatestActiveGateVersion(ctx context.Context, os string) 
 
 	err := c.apiClient.GET(ctx, "/v1/deployment/installer/gateway").
 		WithPath(os, "latest/metainfo").
-		WithPaasToken().Execute(&resp)
+		Execute(&resp)
 
 	return resp.LatestGatewayVersion, errors.WithStack(err)
 }

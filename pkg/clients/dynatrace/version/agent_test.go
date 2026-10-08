@@ -19,7 +19,6 @@ func TestGetLatestAgentVersion(t *testing.T) {
 		req := coremock.NewRequest(t)
 		req.EXPECT().WithPath([]string{os, installerType, "latest/metainfo"}).Return(req).Once()
 		req.EXPECT().WithQueryParams(queryParams).Return(req).Once()
-		req.EXPECT().WithPaasToken().Return(req).Once()
 		req.EXPECT().
 			Execute(new(latestAgentVersionResponse)).
 			Run(func(model any) {

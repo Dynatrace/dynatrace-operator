@@ -48,8 +48,6 @@ type Request interface {
 	WithRawQueryParams(params url.Values) Request
 	// WithJSONBody sets the request body as JSON
 	WithJSONBody(body any) Request
-	// WithPaasToken sets the token type to PaaS
-	WithPaasToken() Request
 	// WithoutToken explicitly disables authentication for the request
 	WithoutToken() Request
 	// WithHeader sets a custom header for the request, overriding any default value
@@ -67,7 +65,6 @@ type Config struct {
 	HTTPClient *http.Client
 	UserAgent  string
 	APIToken   string
-	PaasToken  string
 }
 
 type ClientImpl struct {
@@ -98,7 +95,6 @@ type TokenType int
 
 const (
 	TokenTypeAPI TokenType = iota
-	TokenTypePaaS
 	TokenTypeNone
 )
 
@@ -195,13 +191,6 @@ func (r *RequestImpl) WithJSONBody(body any) Request {
 	return r
 }
 
-// WithPaasToken sets the token type to PaaS
-func (r *RequestImpl) WithPaasToken() Request {
-	r.tokenType = TokenTypePaaS
-
-	return r
-}
-
 // WithoutToken explicitly disables authentication for the request
 func (r *RequestImpl) WithoutToken() Request {
 	r.tokenType = TokenTypeNone
@@ -251,8 +240,6 @@ func (r *RequestImpl) ExecuteWriter(writer io.Writer) (http.Header, error) {
 
 func (r *RequestImpl) getToken() string {
 	switch r.tokenType {
-	case TokenTypePaaS:
-		return r.client.cfg.PaasToken
 	case TokenTypeNone:
 		return ""
 	default:

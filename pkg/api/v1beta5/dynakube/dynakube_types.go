@@ -26,14 +26,10 @@ const (
 	// APITokenConditionType identifies the API Token validity condition.
 	APITokenConditionType string = "APIToken"
 
-	// PaaSTokenConditionType identifies the PaaS Token validity condition.
-	PaaSTokenConditionType string = "PaaSToken"
-
-	// DataIngestTokenConditionType identifies the DataIngest Token validity condition.
 	DataIngestTokenConditionType string = "DataIngestToken"
 )
 
-// Possible reasons for APIToken and PaaSToken conditions.
+// Possible reasons for APIToken  conditions.
 const (
 	// ReasonTokenReady is set when a token has passed verifications.
 	ReasonTokenReady string = "TokenReady"
