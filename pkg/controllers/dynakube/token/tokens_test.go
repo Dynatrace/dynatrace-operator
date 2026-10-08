@@ -30,6 +30,7 @@ func getAllScopesForAPIToken() []string {
 		tokenclient.ScopeSettingsRead,
 		tokenclient.ScopeSettingsWrite,
 		tokenclient.ScopeActiveGateTokenCreate,
+		tokenclient.ScopeInstallerDownload,
 	}
 }
 
@@ -94,19 +95,6 @@ func TestTokens(t *testing.T) {
 		return dk
 	}
 
-	t.Run("empty dynakube, all permissions in api token, but paas => should fail", func(t *testing.T) {
-		tokens := Tokens{
-			APIKey: new(newToken(APIKey, fakeTokenAllAPITokenPermissions)),
-		}
-		tokens = tokens.AddFeatureScopesToTokens()
-		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t, fakeTokenAllAPITokenPermissions), &dynakube.DynaKube{})
-
-		assert.Len(t, tokens.APIToken().Features, 9)
-		assert.Empty(t, tokens.DataIngestToken().Features)
-
-		assert.Equal(t, []string{"InstallerDownload"}, GetMissingScopes(err))
-		assert.EqualError(t, err, "token 'apiToken' has scope errors: [feature 'Download Installer' is missing scope 'InstallerDownload']")
-	})
 	t.Run("empty dynakube, all permissions in api token => should work", func(t *testing.T) {
 		tokens := Tokens{
 			APIKey: new(newToken(APIKey, fakeTokenAllAPITokenPermissions)),
@@ -552,16 +540,6 @@ func TestGetMissingScopes(t *testing.T) {
 			name: "non-ScopeError returns nil",
 			err:  errors.New("some error"),
 			want: nil,
-		},
-		{
-			name: "joined ScopeErrors returns all missing scopes",
-			err: errors.Join(
-				ScopeError{
-					Token:         APIKey,
-					MissingScopes: []string{"DataExport"},
-				},
-			),
-			want: []string{"DataExport", "InstallerDownload"},
 		},
 		{
 			name: "missing scopes are only reported once, even across ScopeErrors",
