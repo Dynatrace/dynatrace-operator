@@ -47,9 +47,8 @@ const (
 )
 
 // ListDeployments returns a list of database datasource deployments that are managed by the DynaKube.
-// TODO: deployments created by operator versions with the old label format (created-by/component instead of instance)
-// are not matched, so orphans with old labels are not cleaned up. Add a temporary second lookup with the old labels,
-// and remove it once upgrading from operator versions with the old label format is no longer supported.
+// NOTE: deployments with the old labels (created-by/component) are not matched until they are recreated.
+// Only matters if their DB entry is removed before the first reconcile after an operator upgrade, in which case they are left behind.
 func ListDeployments(ctx context.Context, clt client.Reader, dk *dynakube.DynaKube) ([]appsv1.Deployment, error) {
 	deployments := &appsv1.DeploymentList{}
 

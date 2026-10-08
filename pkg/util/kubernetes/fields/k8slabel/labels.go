@@ -16,10 +16,8 @@ import (
 var log = logd.Get().WithName("k8slabel")
 
 const (
-	AppNameLabel     = "app.kubernetes.io/name"
-	AppInstanceLabel = "app.kubernetes.io/instance"
-	// Deprecated: Use AppInstanceLabel instead. See https://kubernetes.io/docs/reference/labels-annotations-taints/#app-kubernetes-io-created-by-deprecated
-	AppCreatedByLabel    = "app.kubernetes.io/created-by"
+	AppNameLabel         = "app.kubernetes.io/name"
+	AppInstanceLabel     = "app.kubernetes.io/instance"
 	AppManagedByLabel    = "app.kubernetes.io/managed-by"
 	AppComponentLabel    = "app.kubernetes.io/component"
 	AppVersionLabel      = "app.kubernetes.io/version"
@@ -38,15 +36,11 @@ const (
 	DatabaseSQLExecutorLabel    = "dynatrace-sql-extension-executor"
 	NodeControllerLabel         = "node-controller"
 	OperatorComponentLabel      = "operator"
+
+	OTelTargetAllocatorComponentLabel = "opentelemetry-target-allocator"
+	OTelScraperComponentLabel         = "opentelemetry-collector"
+	OTelGatewayComponentLabel         = "opentelemetry-gateway"
 )
-
-func OTelTargetAllocator() *Labels {
-	return New("opentelemetry-target-allocator", "otel-allocator", "")
-}
-
-func OTelScraper() *Labels {
-	return New("opentelemetry-collector", "otel-scraper", "")
-}
 
 type Labels struct {
 	Name            string

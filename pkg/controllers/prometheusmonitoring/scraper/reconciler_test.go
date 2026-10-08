@@ -63,7 +63,7 @@ func newTestScopeWithDynaKube(pm *prometheusmonitoring.PrometheusMonitoring, dk 
 		Owner:     pm,
 		DynaKube:  dk,
 		Spec:      pm.Scraper(),
-		AppLabels: k8slabel.OTelScraper(),
+		AppLabels: k8slabel.New(k8slabel.OTelScraperComponentLabel, pm.Name, ""),
 	}
 }
 
@@ -146,7 +146,7 @@ func TestReconcileConfigMap(t *testing.T) {
 		cm := &corev1.ConfigMap{}
 		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetDeploymentName(), Namespace: pm.Namespace}, cm))
 		assert.Equal(t, "value", cm.Labels["custom"])
-		assert.Equal(t, k8slabel.OTelScraper().Instance, cm.Labels[k8slabel.AppInstanceLabel])
+		assert.Equal(t, pm.Name, cm.Labels[k8slabel.AppInstanceLabel])
 	})
 
 	t.Run("propagate error", func(t *testing.T) {

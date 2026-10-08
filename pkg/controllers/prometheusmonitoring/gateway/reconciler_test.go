@@ -40,7 +40,7 @@ func newTestScopeWithDynaKube(pm *prometheusmonitoring.PrometheusMonitoring, dk 
 		Owner:     pm,
 		DynaKube:  dk,
 		Spec:      pm.Gateway(),
-		AppLabels: k8slabel.New("opentelemetry-gateway", "otel-gateway", ""),
+		AppLabels: k8slabel.New(k8slabel.OTelGatewayComponentLabel, pm.Name, ""),
 	}
 }
 
@@ -176,7 +176,7 @@ func TestReconcileConfigMap(t *testing.T) {
 		cm := &corev1.ConfigMap{}
 		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetStatefulSetName(), Namespace: pm.Namespace}, cm))
 		assert.Equal(t, "value", cm.Labels["custom"])
-		assert.Equal(t, "otel-gateway", cm.Labels[k8slabel.AppInstanceLabel])
+		assert.Equal(t, "pm", cm.Labels[k8slabel.AppInstanceLabel])
 	})
 
 	t.Run("propagate error", func(t *testing.T) {
@@ -216,7 +216,7 @@ func TestReconcileService(t *testing.T) {
 		svc := &corev1.Service{}
 		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetStatefulSetName(), Namespace: pm.Namespace}, svc))
 		assert.Equal(t, "value", svc.Labels["custom"])
-		assert.Equal(t, "otel-gateway", svc.Labels[k8slabel.AppInstanceLabel])
+		assert.Equal(t, "pm", svc.Labels[k8slabel.AppInstanceLabel])
 	})
 
 	t.Run("propagate error", func(t *testing.T) {
