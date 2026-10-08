@@ -156,13 +156,15 @@ func (classic *classicFullStack) BuildDaemonSet(ctx context.Context) (*appsv1.Da
 	return result, nil
 }
 
-func VersionAndModeLabels(labels *k8slabel.Labels, mode string) map[string]string {
+// VersionAndModeLabels returns the OneAgent specific labels (mode as component, and version if set) used on top of the common ones.
+func VersionAndModeLabels(version, mode string) map[string]string {
+	// TODO check later if these are the right labels, or maybe rename them to something internal
 	result := map[string]string{
 		k8slabel.AppComponentLabel: strings.ReplaceAll(mode, "_", ""),
 	}
 
-	if labels.Version != "" {
-		result[k8slabel.AppVersionLabel] = labels.Version
+	if version != "" {
+		result[k8slabel.AppVersionLabel] = version
 	}
 
 	return result
@@ -182,8 +184,9 @@ func (b *builder) BuildDaemonSet(ctx context.Context) (*appsv1.DaemonSet, error)
 	labels := k8slabel.New(k8slabel.OneAgentComponentLabel, dk.Name, versionLabelValue)
 
 	// operator labels are merged last, so custom labels can't override them
-	dsLabels := maputils.MergeMap(b.hostInjectSpec.Labels, VersionAndModeLabels(labels, b.deploymentType), labels.AsMap())
-	podLabels := maputils.MergeMap(b.hostInjectSpec.Labels, VersionAndModeLabels(labels, b.deploymentType), labels.AsSelector())
+	modeLabels := VersionAndModeLabels(labels.Version, b.deploymentType)
+	dsLabels := maputils.MergeMap(b.hostInjectSpec.Labels, modeLabels, labels.AsMap())
+	podLabels := maputils.MergeMap(b.hostInjectSpec.Labels, modeLabels, labels.AsSelector())
 
 	templateAnnotations := map[string]string{
 		appArmorAnnotation:                appArmorUnconfined,

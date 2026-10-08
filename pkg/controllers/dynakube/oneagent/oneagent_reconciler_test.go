@@ -668,9 +668,9 @@ func TestInstanceStatus(t *testing.T) {
 		Name:      "test-pod-1",
 		Namespace: namespace,
 		Labels: map[string]string{
-			"app.kubernetes.io/name":          "dynatrace-operator",
-			"app.kubernetes.io/component":     "oneagent",
-			"app.kubernetes.io/created-by":    dkName,
+			"app.kubernetes.io/name":          "oneagent",
+			"app.kubernetes.io/instance":      dkName,
+			"app.kubernetes.io/managed-by":    "dynatrace-operator",
 			"app.kubernetes.io/version":       "snapshot",
 			"component.dynatrace.com/feature": deploymentmetadata.HostMonitoringDeploymentType,
 		},

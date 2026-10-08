@@ -304,7 +304,7 @@ func (r *Reconciler) getOneagentPods(ctx context.Context, dk *dynakube.DynaKube,
 	listOps := []client.ListOption{
 		client.InNamespace(dk.GetNamespace()),
 		// only the pods of the current OneAgent version and mode
-		client.MatchingLabels(maputils.MergeMap(labels.AsSelector(), daemonset.VersionAndModeLabels(labels, feature))),
+		client.MatchingLabels(maputils.MergeMap(labels.AsSelector(), daemonset.VersionAndModeLabels(labels.Version, feature))),
 	}
 	err := r.client.List(ctx, podList, listOps...)
 

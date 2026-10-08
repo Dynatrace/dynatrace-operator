@@ -9,7 +9,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func MaxOnePerNode(appLabels *k8slabel.Labels) []corev1.TopologySpreadConstraint {
+func MaxOnePerNode(labels *k8slabel.Labels) []corev1.TopologySpreadConstraint {
 	nodeInclusionPolicyHonor := corev1.NodeInclusionPolicyHonor
 
 	return []corev1.TopologySpreadConstraint{
@@ -17,14 +17,14 @@ func MaxOnePerNode(appLabels *k8slabel.Labels) []corev1.TopologySpreadConstraint
 			MaxSkew:           1,
 			TopologyKey:       "topology.kubernetes.io/zone",
 			WhenUnsatisfiable: "ScheduleAnyway",
-			LabelSelector:     &metav1.LabelSelector{MatchLabels: appLabels.AsSelector()},
+			LabelSelector:     &metav1.LabelSelector{MatchLabels: labels.AsSelector()},
 		},
 		{
 			MaxSkew:           1,
 			TopologyKey:       "kubernetes.io/hostname",
 			WhenUnsatisfiable: "DoNotSchedule",
 			NodeTaintsPolicy:  &nodeInclusionPolicyHonor,
-			LabelSelector:     &metav1.LabelSelector{MatchLabels: appLabels.AsSelector()},
+			LabelSelector:     &metav1.LabelSelector{MatchLabels: labels.AsSelector()},
 		},
 	}
 }

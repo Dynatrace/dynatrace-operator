@@ -75,7 +75,6 @@ func buildAllLabels(dk *dynakube.DynaKube, dbSpec extensions.DatabaseSpec) (map[
 	matchLabels := labels.AsSelector()
 
 	podLabels := labels.AsSelector()
-	// TODO should these be on pod or on deployment label aswell
 	podLabels[executorIDLabelKey] = dbSpec.ID
 	podLabels[consts.DatasourceLabelKey] = consts.DatabaseDatasourceLabelValue
 

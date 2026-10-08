@@ -40,7 +40,7 @@ func create(ctx context.Context, ec *edgeconnect.EdgeConnect) *appsv1.Deployment
 		labels.AsSelector(), // higher priority
 	)
 
-	log.Debug("EdgeConnect deployment app labels", "labels", labels)
+	log.Debug("EdgeConnect deployment app labels", "labels", labels.AsMap())
 
 	annotations := maputils.MergeMap(buildContainerAnnotations(), ec.Spec.Annotations)
 	annotations = k8ssecuritycontext.RemoveAppArmorAnnotation(annotations, consts.EdgeConnectContainerName)
