@@ -58,19 +58,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, imageClient dtimage.Client, 
 		return nil
 	}
 
-	// templates section takes precedence over public registry
-	var imageURI string
-
-	templateImageRef := dk.Spec.Templates.SQLExtensionExecutor.ImageRef
-	if templateImageRef.HasImage() {
-		imageURI = templateImageRef.String()
-	} else {
-		var err error
-
-		imageURI, err = resolveImageURI(ctx, imageClient, dk)
-		if err != nil {
-			return err
-		}
+	if err := resolveImage(ctx, imageClient, dk); err != nil {
+		return err
 	}
 
 	query := k8sdeployment.Query(r.client, r.apiReader)
@@ -95,7 +84,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, imageClient dtimage.Client, 
 			k8sdeployment.SetImagePullSecrets(dk.CustomPullSecretReferences()),
 			k8sdeployment.SetServiceAccount(buildServiceAccountName(dbSpec)),
 			k8sdeployment.SetSecurityContext(buildPodSecurityContext()),
-			k8sdeployment.SetContainer(buildContainer(dk, dbSpec, imageURI)),
+			k8sdeployment.SetContainer(buildContainer(dk, dbSpec, dk.Status.SQLExtensionExecutor.ResolvedImage)),
 			k8sdeployment.SetVolumes(buildVolumes(dk, dbSpec)),
 		)
 		if err != nil {
@@ -118,6 +107,29 @@ func (r *Reconciler) Reconcile(ctx context.Context, imageClient dtimage.Client, 
 	}
 
 	k8sconditions.SetDeploymentsApplied(dk, conditionType, expectedDeploymentNames)
+
+	return nil
+}
+
+// resolveImage records the image to deploy in the status. The templates section takes
+// precedence over the image reported by the public registry.
+func resolveImage(ctx context.Context, imageClient dtimage.Client, dk *dynakube.DynaKube) error {
+	// templates section takes precedence over public registry
+	var imageURI string
+
+	templateImageRef := dk.Spec.Templates.SQLExtensionExecutor.ImageRef
+	if templateImageRef.HasImage() {
+		imageURI = templateImageRef.String()
+	} else {
+		var err error
+
+		imageURI, err = resolveImageURI(ctx, imageClient, dk)
+		if err != nil {
+			return err
+		}
+	}
+
+	dk.Status.SQLExtensionExecutor.ResolvedImage = imageURI
 
 	return nil
 }

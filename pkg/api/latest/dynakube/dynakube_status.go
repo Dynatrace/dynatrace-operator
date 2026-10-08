@@ -7,11 +7,14 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/sqlextensionexecutor"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/pkg/errors"
@@ -51,6 +54,18 @@ type DynaKubeStatus struct { //nolint:revive
 	// Observed state of the OpenTelemetry Collector
 	// +kubebuilder:validation:Optional
 	OTelCollector otlp.Status `json:"otelCollector,omitzero"`
+
+	// Observed state of Extensions
+	// +kubebuilder:validation:Optional
+	Extensions extensions.Status `json:"extensions,omitzero"`
+
+	// Observed state of SQL Extension Executor
+	// +kubebuilder:validation:Optional
+	SQLExtensionExecutor sqlextensionexecutor.Status `json:"sqlExtensionExecutor,omitzero"`
+
+	// Observed state of LogMonitoring
+	// +kubebuilder:validation:Optional
+	LogMonitoring logmonitoring.Status `json:"logMonitoring,omitzero"`
 
 	// UpdatedTimestamp indicates when the instance was last updated
 	// +operator-sdk:gen-csv:customresourcedefinitions.statusDescriptors=true

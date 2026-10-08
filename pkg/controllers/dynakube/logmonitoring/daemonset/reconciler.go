@@ -59,22 +59,11 @@ func (r *Reconciler) Reconcile(ctx context.Context, imageClient dtimage.Client, 
 		return nil // clean-up shouldn't cause a failure
 	}
 
-	// templates section takes precedence over public registry
-	var imageURI string
-
-	templateImageRef := dk.LogMonitoring().Template().ImageRef
-	if templateImageRef.HasImage() {
-		imageURI = templateImageRef.String()
-	} else {
-		var err error
-
-		imageURI, err = registry.ResolveImage(ctx, imageClient, dk.PublicRegistryOverride(), dtimage.LogModule)
-		if err != nil {
-			return err
-		}
+	if err := resolveImage(ctx, imageClient, dk); err != nil {
+		return err
 	}
 
-	ds, err := r.generateDaemonSet(dk, imageURI)
+	ds, err := r.generateDaemonSet(dk, dk.Status.LogMonitoring.ResolvedImage)
 	if err != nil {
 		return err
 	}
@@ -90,6 +79,29 @@ func (r *Reconciler) Reconcile(ctx context.Context, imageClient dtimage.Client, 
 		k8sconditions.SetDaemonSetOutdated(dk.Conditions(), ConditionType, dk.LogMonitoring().GetDaemonSetName()) // needed to reset the timestamp
 		k8sconditions.SetDaemonSetCreated(dk.Conditions(), ConditionType, dk.LogMonitoring().GetDaemonSetName())
 	}
+
+	return nil
+}
+
+// resolveImage records the image to deploy in the status. The templates section takes
+// precedence over the image reported by the public registry.
+func resolveImage(ctx context.Context, imageClient dtimage.Client, dk *dynakube.DynaKube) error {
+	// templates section takes precedence over public registry
+	var imageURI string
+
+	templateImageRef := dk.LogMonitoring().Template().ImageRef
+	if templateImageRef.HasImage() {
+		imageURI = templateImageRef.String()
+	} else {
+		var err error
+
+		imageURI, err = registry.ResolveImage(ctx, imageClient, dk.PublicRegistryOverride(), dtimage.LogModule)
+		if err != nil {
+			return err
+		}
+	}
+
+	dk.Status.LogMonitoring.ResolvedImage = imageURI
 
 	return nil
 }
