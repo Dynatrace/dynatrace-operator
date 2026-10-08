@@ -30,6 +30,8 @@ kubectl api-resources --verbs=list -o name --namespaced=false | \
 echo -n -e "\nRemoving Dynatrace Operator secrets and configmaps from all namespaces "
 for ns in $(kubectl get ns -o jsonpath="{.items[*].metadata.name}"); do
     kubectl delete secret,cm -l app.kubernetes.io/name=dynatrace-operator --ignore-not-found -n "$ns" > /dev/null 2>&1
+    # For the new labels structure
+    kubectl delete secret,cm -l app.kubernetes.io/managed-by=dynatrace-operator --ignore-not-found -n "$ns" > /dev/null 2>&1
     printf '.'
 done
 echo "done"
