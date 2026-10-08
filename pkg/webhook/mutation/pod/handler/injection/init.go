@@ -102,7 +102,7 @@ func securityContextForInitContainer(ctx context.Context, pod *corev1.Pod, dk *d
 		initSecurityCtx.RunAsUser = new(oacommon.DefaultUser)
 	}
 
-	addSeccompProfile(&initSecurityCtx, dk)
+	addSeccompProfile(ctx, dk, pod, &initSecurityCtx, isOpenShift)
 
 	return combineSecurityContexts(ctx, initSecurityCtx, pod)
 }
@@ -162,9 +162,34 @@ func getValidatedID(ctx context.Context, value string) *int64 {
 	return new(int64(parsed))
 }
 
-func addSeccompProfile(ctx *corev1.SecurityContext, dk *dynakube.DynaKube) {
-	if dk.FF().HasInitSeccomp() {
-		ctx.SeccompProfile = &corev1.SeccompProfile{Type: corev1.SeccompProfileTypeRuntimeDefault}
+func addSeccompProfile(ctx context.Context, dk *dynakube.DynaKube, pod *corev1.Pod, sc *corev1.SecurityContext, isOpenShift bool) {
+	log := logd.FromContext(ctx)
+
+	isUsable := func(p *corev1.SeccompProfile) bool {
+		return p != nil && p.Type == corev1.SeccompProfileTypeRuntimeDefault
+	}
+
+	if pod.Spec.SecurityContext != nil && isUsable(pod.Spec.SecurityContext.SeccompProfile) {
+		sc.SeccompProfile = pod.Spec.SecurityContext.SeccompProfile
+		log.Info("set init container seccomp profile from pod", "seccompProfile", sc.SeccompProfile)
+
+		return
+	}
+
+	for _, c := range pod.Spec.Containers {
+		if c.SecurityContext != nil && isUsable(c.SecurityContext.SeccompProfile) {
+			sc.SeccompProfile = c.SecurityContext.SeccompProfile
+			log.Info("set init container seccomp profile from container", "containerName", c.Name, "seccompProfile", sc.SeccompProfile)
+
+			return
+		}
+	}
+
+	if !isOpenShift && dk.FF().HasInitSeccomp() {
+		sc.SeccompProfile = &corev1.SeccompProfile{Type: corev1.SeccompProfileTypeRuntimeDefault}
+		log.Info("set default init container seccomp profile", "seccompProfile", sc.SeccompProfile)
+	} else {
+		log.Info("no init container seccomp profile set")
 	}
 }
 

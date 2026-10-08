@@ -133,6 +133,7 @@ func TestCreateInitContainerBase(t *testing.T) {
 		require.NotNil(t, *initContainer.SecurityContext.RunAsGroup)
 		assert.Equal(t, RootGroup, *initContainer.SecurityContext.RunAsGroup)
 	})
+
 	t.Run("should set seccomp profile if feature flag is enabled", func(t *testing.T) {
 		dk := getTestDynakube()
 		dk.Annotations = map[string]string{exp.InjectionSeccompKey: "true"} //nolint:staticcheck
@@ -142,6 +143,18 @@ func TestCreateInitContainerBase(t *testing.T) {
 		initContainer := wh.createInitContainerBase(t.Context(), pod, dk)
 
 		assert.Equal(t, corev1.SeccompProfileTypeRuntimeDefault, initContainer.SecurityContext.SeccompProfile.Type)
+	})
+
+	t.Run("should prefer container seccomp profile", func(t *testing.T) {
+		dk := getTestDynakube()
+		dk.Annotations = map[string]string{exp.InjectionSeccompKey: "false"} //nolint:staticcheck
+		pod := getTestPod()
+		pod.Spec.Containers[0].SecurityContext.SeccompProfile = &corev1.SeccompProfile{Type: corev1.SeccompProfileTypeUnconfined}
+		pod.Annotations = map[string]string{}
+
+		initContainer := wh.createInitContainerBase(t.Context(), pod, dk)
+
+		assert.Equal(t, corev1.SeccompProfileTypeUnconfined, initContainer.SecurityContext.SeccompProfile.Type)
 	})
 
 	t.Run("should not set suppress-error arg - according to dk", func(t *testing.T) {

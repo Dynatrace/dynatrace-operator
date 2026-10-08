@@ -142,6 +142,8 @@ func (h *Handler) handlePodReinvocation(mutationRequest *dtwebhook.MutationReque
 	log := logd.FromContext(mutationRequest.Context)
 	log.Debug("Dynatrace init-container already present, skipping mutation, doing reinvocation", "containerName", dtwebhook.InstallContainerName)
 
+	addSeccompProfile(mutationRequest.Context, mutationRequest.DynaKube, mutationRequest.Pod, mutationRequest.InstallContainer.SecurityContext, h.isOpenShift)
+
 	updated, err := metadata.AddContainerAttributes(mutationRequest.BaseRequest, mutationRequest.InstallContainer)
 	if err != nil {
 		log.Error(err, "failed to update container-attributes on the init container during reinvoke")
