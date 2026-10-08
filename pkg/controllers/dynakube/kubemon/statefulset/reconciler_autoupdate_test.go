@@ -259,14 +259,14 @@ func newAutoUpdatePublicRegistryDynaKube(apiURL string) *dynakube.DynaKube {
 
 // newVersionClientForAutoUpdate builds a real dtversion.Client whose HTTP transport is the given
 // fakeAutoUpdateTransport wrapped in a cache round-tripper with the specified TTL.
-// PaasToken is set to t.Name() so each subtest has an isolated namespace in the global cache.
+// APIToken is set to t.Name() so each subtest has an isolated namespace in the global cache.
 func newVersionClientForAutoUpdate(t *testing.T, transport http.RoundTripper, ttl time.Duration) dtversion.Client {
 	t.Helper()
 
 	return dtversion.NewClient(core.NewClient(core.Config{
 		BaseURL:    mustParseURL(t, "http://fake-dt.test"),
 		HTTPClient: &http.Client{Transport: middleware.NewCacheRoundTripper(transport, ttl)},
-		PaasToken:  t.Name(),
+		APIToken:    t.Name(),
 	}))
 }
 

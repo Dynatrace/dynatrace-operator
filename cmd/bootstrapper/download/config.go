@@ -31,7 +31,6 @@ func (c Config) toDTClientOptions() []dynatrace.Option {
 
 	if c.APIToken != "" {
 		options = append(options, dynatrace.WithAPIToken(c.APIToken))
-		options = append(options, dynatrace.WithPaasToken(c.APIToken))
 	}
 
 	if c.HostGroup != "" {

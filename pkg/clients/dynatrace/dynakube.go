@@ -14,11 +14,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type ClientFactory func(ctx context.Context, apiReader client.Reader, dk *dynakube.DynaKube, apiToken, paasToken, userAgentSuffix string, clientConnectionTimeout time.Duration) (*Client, error)
+type ClientFactory func(ctx context.Context, apiReader client.Reader, dk *dynakube.DynaKube, apiToken, userAgentSuffix string, clientConnectionTimeout time.Duration) (*Client, error)
 
 // NewClientFromDynakube creates a new Dynatrace dtClient using the provided DynaKube configuration and tokens.
-func NewClientFromDynakube(ctx context.Context, apiReader client.Reader, dk *dynakube.DynaKube, apiToken, paasToken, userAgentSuffix string, clientConnectionTimeout time.Duration) (*Client, error) {
-	opts, err := optionsFromDynakube(ctx, apiReader, dk, apiToken, paasToken, userAgentSuffix, clientConnectionTimeout)
+func NewClientFromDynakube(ctx context.Context, apiReader client.Reader, dk *dynakube.DynaKube, apiToken, userAgentSuffix string, clientConnectionTimeout time.Duration) (*Client, error) {
+	opts, err := optionsFromDynakube(ctx, apiReader, dk, apiToken, userAgentSuffix, clientConnectionTimeout)
 	if err != nil {
 		return nil, err
 	}
@@ -26,11 +26,10 @@ func NewClientFromDynakube(ctx context.Context, apiReader client.Reader, dk *dyn
 	return NewClient(opts...)
 }
 
-func optionsFromDynakube(ctx context.Context, apiReader client.Reader, dk *dynakube.DynaKube, apiToken, paasToken, userAgentSuffix string, clientConnectionTimeout time.Duration) ([]Option, error) {
+func optionsFromDynakube(ctx context.Context, apiReader client.Reader, dk *dynakube.DynaKube, apiToken, userAgentSuffix string, clientConnectionTimeout time.Duration) ([]Option, error) {
 	options := []Option{
 		WithBaseURL(dk.APIURL()),
 		WithAPIToken(apiToken),
-		WithPaasToken(paasToken),
 		WithSkipCertificateValidation(ptr.Deref(dk.Spec.SkipCertCheck, false)),
 		WithUserAgentSuffix(userAgentSuffix),
 		WithCacheTTL(dk.APIRequestThreshold()),

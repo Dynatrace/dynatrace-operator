@@ -90,7 +90,6 @@ func (c *ClientImpl) GetConnectionInfo(ctx context.Context) (ConnectionInfo, err
 	var resp connectionInfoJSONResponse
 
 	err := c.apiClient.GET(ctx, connectionInfoPath).
-		WithPaasToken().
 		Execute(&resp)
 	if err != nil {
 		return ConnectionInfo{}, errors.WithStack(err)

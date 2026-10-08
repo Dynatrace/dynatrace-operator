@@ -14,8 +14,7 @@ import (
 )
 
 type Tokens struct {
-	APIToken  string
-	PaasToken string
+	APIToken string
 }
 
 func ExtractToken(secret *corev1.Secret, key string) (string, error) {

@@ -17,7 +17,6 @@ import (
 
 const (
 	testAPIToken        = "test-api-token"
-	testPaasToken       = "test-paas-token"
 	testDataIngestToken = "test-data-ingest-token"
 	testIrrelevantToken = "test-irrelevant-token"
 
@@ -50,7 +49,6 @@ func testReadTokens(t *testing.T) {
 		}
 		testSecret, err := k8ssecret.Build(dk, "dynakube", map[string][]byte{
 			APIKey:                 []byte(testAPIToken),
-			PaaSKey:                []byte(testPaasToken),
 			DataIngestKey:          []byte(testDataIngestToken),
 			testIrrelevantTokenKey: []byte(testIrrelevantToken),
 		})
@@ -65,11 +63,9 @@ func testReadTokens(t *testing.T) {
 		require.NoError(t, err)
 		assert.Len(t, tokens, 4)
 		assert.Contains(t, tokens, APIKey)
-		assert.Contains(t, tokens, PaaSKey)
 		assert.Contains(t, tokens, DataIngestKey)
 		assert.Contains(t, tokens, testIrrelevantTokenKey)
 		assert.Equal(t, testAPIToken, tokens[APIKey].Value)
-		assert.Equal(t, testPaasToken, tokens[PaaSKey].Value)
 		assert.Equal(t, testDataIngestToken, tokens[DataIngestKey].Value)
 		assert.Equal(t, testIrrelevantToken, tokens[testIrrelevantTokenKey].Value)
 	})
