@@ -33,11 +33,12 @@ var (
 	uninstallOneAgentDaemonSetPath = filepath.Join(project.TestDataDir(), "oneagent/uninstall-oneagent.yaml")
 )
 
+// RunClassicUninstall removes the OneAgent files from the nodes. Steps at LevelTeardown are skipped on fail-fast.
 func RunClassicUninstall(builder *features.FeatureBuilder, level features.Level, testDynakube *dynakube.DynaKube) {
-	builder.WithStep("clean up OneAgent files from nodes", level, createUninstallDaemonSet(testDynakube))
-	builder.WithStep("wait for daemonset", level, waitForUninstallDaemonset(testDynakube.Namespace))
-	builder.WithStep("OneAgent files removed from nodes", level, executeUninstall(testDynakube.Namespace))
-	builder.WithStep("clean up removed", level, removeUninstallDaemonset(testDynakube.Namespace))
+	builder.WithStep("clean up OneAgent files from nodes", level, helpers.GuardTeardown(level, createUninstallDaemonSet(testDynakube)))
+	builder.WithStep("wait for daemonset", level, helpers.GuardTeardown(level, waitForUninstallDaemonset(testDynakube.Namespace)))
+	builder.WithStep("OneAgent files removed from nodes", level, helpers.GuardTeardown(level, executeUninstall(testDynakube.Namespace)))
+	builder.WithStep("clean up removed", level, helpers.GuardTeardown(level, removeUninstallDaemonset(testDynakube.Namespace)))
 }
 
 func createUninstallDaemonSet(dk *dynakube.DynaKube) features.Func {

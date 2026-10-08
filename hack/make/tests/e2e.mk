@@ -78,15 +78,15 @@ test/e2e/deploy/permissions:
 
 ## Run deploy e2e test manifest
 test/e2e/deploy/manifests:
-	$(GOTESTCMD) -timeout 40m ./test/e2e/scenarios/deploy -run "manifest" $(SKIPCLEANUP)
+	MANIFESTS=true $(GOTESTCMD) -timeout 40m ./test/e2e/scenarios/deploy -run "manifest" $(SKIPCLEANUP)
 
 ## Run deploy e2e test manifest kubernetes
 test/e2e/deploy/manifests/kubernetes:
-	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/deploy -run "manifest_kubernetes" $(SKIPCLEANUP)
+	MANIFESTS=true $(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/deploy -run "manifest_kubernetes" $(SKIPCLEANUP)
 
 ## Run deploy e2e test manifest openshift
 test/e2e/deploy/manifests/openshift:
-	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/deploy -run "manifest_openshift" $(SKIPCLEANUP)
+	MANIFESTS=true $(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/deploy -run "manifest_openshift" $(SKIPCLEANUP)
 
 ## Runs ActiveGate e2e test only
 test/e2e/activegate:
@@ -178,15 +178,11 @@ test/e2e/cloudnative/csi-migration:
 
 ## Runs manifest-based operator upgrade e2e tests (install released version → upgrade to current build via kubectl apply)
 test/e2e/manifest/upgrade:
-	$(GOTESTCMD) -timeout 30m ./test/e2e/scenarios/release -run "manifest_upgrade" $(SKIPCLEANUP)
+	MANIFESTS=true $(GOTESTCMD) -timeout 30m ./test/e2e/scenarios/release -run "operator_upgrade" $(SKIPCLEANUP)
 
 ## Runs helm-based operator upgrade e2e test only
 test/e2e/helm/upgrade:
-	$(GOTESTCMD) -timeout 100m ./test/e2e/scenarios/release -run "helm_upgrade" $(SKIPCLEANUP)
-
-## Runs extensions upgrade e2e test only
-test/e2e/extensions/upgrade:
-	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/release -run "extensions_upgrade" $(SKIPCLEANUP)
+	$(GOTESTCMD) -timeout 60m ./test/e2e/scenarios/release -run "operator_upgrade" $(SKIPCLEANUP)
 
 test/e2e/token/upgrade:
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/release -run "token_upgrade" $(SKIPCLEANUP)
