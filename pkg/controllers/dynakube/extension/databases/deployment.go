@@ -47,12 +47,9 @@ const (
 )
 
 // ListDeployments returns a list of database datasource deployments that are managed by the DynaKube.
-// NOTE: deployments with the old labels (created-by/component) are not matched until they are recreated.
-// Only matters if their DB entry is removed before the first reconcile after an operator upgrade, in which case they are left behind.
 func ListDeployments(ctx context.Context, clt client.Reader, dk *dynakube.DynaKube) ([]appsv1.Deployment, error) {
 	deployments := &appsv1.DeploymentList{}
 
-	// Only use the stable selector labels (no app/operator version) to find all related deployments, including orphans.
 	selector := k8slabel.New(k8slabel.DatabaseSQLExecutorLabel, dk.Name, "").AsSelector()
 
 	if err := clt.List(ctx, deployments, client.InNamespace(dk.Namespace), client.MatchingLabels(selector)); err != nil {

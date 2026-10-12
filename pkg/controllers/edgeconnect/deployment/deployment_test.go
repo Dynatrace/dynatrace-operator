@@ -68,7 +68,7 @@ func Test_buildLabels(t *testing.T) {
 	}
 
 	t.Run("Check version label set correctly", func(t *testing.T) {
-		labels := buildLabels(ec)
+		labels := k8slabel.New(k8slabel.EdgeConnectComponentLabel, ec.Name, ec.Status.Version.Version)
 		assert.Empty(t, labels.Version)
 	})
 }
@@ -103,7 +103,6 @@ func TestLabels(t *testing.T) {
 		assert.Equal(t, expectedSelector, deployment.Spec.Selector.MatchLabels)
 		assert.Equal(t, expectedSelector, deployment.Spec.Template.Labels)
 
-		// status.version is empty, so no app version label
 		require.Len(t, deployment.Labels, 4)
 		assert.Subset(t, deployment.Labels, expectedSelector)
 		assert.Contains(t, deployment.Labels, k8slabel.OperatorVersionLabel)

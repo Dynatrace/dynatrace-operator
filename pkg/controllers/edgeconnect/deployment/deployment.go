@@ -33,7 +33,7 @@ func New(ctx context.Context, ec *edgeconnect.EdgeConnect) *appsv1.Deployment {
 func create(ctx context.Context, ec *edgeconnect.EdgeConnect) *appsv1.Deployment {
 	log := logd.FromContext(ctx)
 
-	labels := buildLabels(ec)
+	labels := k8slabel.New(k8slabel.EdgeConnectComponentLabel, ec.Name, ec.Status.Version.Version)
 
 	customPodLabels := maputils.MergeMap(
 		ec.Spec.Labels,
@@ -90,10 +90,6 @@ func prepareImagePullSecrets(ec *edgeconnect.EdgeConnect) []corev1.LocalObjectRe
 	}
 
 	return nil
-}
-
-func buildLabels(ec *edgeconnect.EdgeConnect) *k8slabel.Labels {
-	return k8slabel.New(k8slabel.EdgeConnectComponentLabel, ec.Name, ec.Status.Version.Version)
 }
 
 func buildContainerAnnotations() map[string]string {
