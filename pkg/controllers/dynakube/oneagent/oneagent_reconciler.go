@@ -32,7 +32,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sconfigmap"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sdaemonset"
-	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
@@ -298,13 +297,11 @@ func (r *Reconciler) reconcileRollout(ctx context.Context, dk *dynakube.DynaKube
 	return nil
 }
 
-func (r *Reconciler) getOneagentPods(ctx context.Context, dk *dynakube.DynaKube, feature string) ([]corev1.Pod, []client.ListOption, error) {
-	labels := k8slabel.New(k8slabel.OneAgentComponentLabel, dk.Name, dk.OneAgent().GetVersion())
+func (r *Reconciler) getOneagentPods(ctx context.Context, dk *dynakube.DynaKube) ([]corev1.Pod, []client.ListOption, error) {
 	podList := &corev1.PodList{}
 	listOps := []client.ListOption{
 		client.InNamespace(dk.GetNamespace()),
-		// only the pods of the current OneAgent version and mode
-		client.MatchingLabels(maputils.MergeMap(labels.AsSelector(), daemonset.VersionAndModeLabels(labels.Version, feature))),
+		client.MatchingLabels(k8slabel.New(k8slabel.OneAgentComponentLabel, dk.Name, "").AsSelector()),
 	}
 	err := r.client.List(ctx, podList, listOps...)
 
@@ -343,7 +340,7 @@ func (r *Reconciler) buildDesiredDaemonSet(ctx context.Context, dk *dynakube.Dyn
 }
 
 func (r *Reconciler) reconcileInstanceStatuses(ctx context.Context, dk *dynakube.DynaKube) error {
-	pods, listOpts, err := r.getOneagentPods(ctx, dk, deploymentmetadata.GetOneAgentDeploymentType(dk))
+	pods, listOpts, err := r.getOneagentPods(ctx, dk)
 	if err != nil {
 		handlePodListError(ctx, err, listOpts)
 	}

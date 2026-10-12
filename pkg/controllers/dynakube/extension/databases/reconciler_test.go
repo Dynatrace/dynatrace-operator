@@ -30,6 +30,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8slabels "k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/rand"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -112,7 +113,9 @@ func TestReconcileSpec(t *testing.T) {
 			consts.DatasourceLabelKey: consts.DatabaseDatasourceLabelValue,
 		})
 		assert.Subset(t, deploy.Spec.Template.Labels, deploy.Spec.Selector.MatchLabels)
-		assert.NotContains(t, deploy.Spec.Selector.MatchLabels, executorIDLabelKey)
+		expectedSelector := k8slabel.New(k8slabel.DatabaseSQLExecutorLabel, dk.Name, "").AsSelector()
+		expectedSelector[executorIDLabelKey] = db.ID
+		assert.Equal(t, expectedSelector, deploy.Spec.Selector.MatchLabels)
 		assert.NotContains(t, deploy.Spec.Template.Labels, k8slabel.AppVersionLabel)
 		assert.NotContains(t, deploy.Spec.Template.Labels, k8slabel.OperatorVersionLabel)
 		assert.NotNil(t, deploy.Spec.Template.Spec.SecurityContext)
@@ -173,6 +176,34 @@ func TestReconcileSpec(t *testing.T) {
 		assert.NotEqual(t, deploy.Labels, deploy.Spec.Template.Labels)
 		assert.Subset(t, deploy.Spec.Template.Labels, deploy.Spec.Selector.MatchLabels)
 		assert.Subset(t, deploy.Spec.Template.Labels, dk.Spec.Extensions.Databases[0].Labels)
+	})
+
+	t.Run("selectors of multiple executors don't overlap", func(t *testing.T) {
+		t.Cleanup(version.DisableCacheForTest(123))
+
+		dk := getTestDynakube()
+		dk.Spec.Extensions.Databases = append(dk.Spec.Extensions.Databases, extensions.DatabaseSpec{
+			ID:       "other",
+			Replicas: new(int32(1)),
+		})
+		clt := fakeClient()
+
+		require.NoError(t, NewReconciler(clt, clt).Reconcile(t.Context(), nil, dk))
+		deployments := &appsv1.DeploymentList{}
+		require.NoError(t, clt.List(t.Context(), deployments))
+		require.Len(t, deployments.Items, 2)
+
+		for _, deploy := range deployments.Items {
+			for _, other := range deployments.Items {
+				selector := k8slabels.SelectorFromSet(deploy.Spec.Selector.MatchLabels)
+				assert.Equal(t, deploy.Name == other.Name, selector.Matches(k8slabels.Set(other.Spec.Template.Labels)),
+					"selector of %s vs pods of %s", deploy.Name, other.Name)
+			}
+		}
+
+		listed, err := ListDeployments(t.Context(), clt, dk)
+		require.NoError(t, err)
+		assert.Len(t, listed, 2)
 	})
 
 	t.Run("override annotations", func(t *testing.T) {

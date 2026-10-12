@@ -6,13 +6,11 @@ package daemonset
 import (
 	"context"
 	"path/filepath"
-	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/bootstrapperconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtversion"
@@ -87,7 +85,6 @@ type builder struct {
 	dk                     *dynakube.DynaKube
 	hostInjectSpec         *oneagent.HostInjectSpec
 	clusterID              string
-	deploymentType         string
 	processGroupConfigHash string
 }
 
@@ -101,7 +98,6 @@ func NewHostMonitoring(dk *dynakube.DynaKube, clusterID, processGroupConfigHash 
 			dk:                     dk,
 			hostInjectSpec:         dk.Spec.OneAgent.HostMonitoring,
 			clusterID:              clusterID,
-			deploymentType:         deploymentmetadata.HostMonitoringDeploymentType,
 			processGroupConfigHash: processGroupConfigHash,
 		},
 	}
@@ -113,7 +109,6 @@ func NewCloudNativeFullStack(dk *dynakube.DynaKube, clusterID, processGroupConfi
 			dk:                     dk,
 			hostInjectSpec:         &dk.Spec.OneAgent.CloudNativeFullStack.HostInjectSpec,
 			clusterID:              clusterID,
-			deploymentType:         deploymentmetadata.CloudNativeDeploymentType,
 			processGroupConfigHash: processGroupConfigHash,
 		},
 	}
@@ -125,7 +120,6 @@ func NewClassicFullStack(dk *dynakube.DynaKube, clusterID string) Builder {
 			dk:             dk,
 			hostInjectSpec: dk.Spec.OneAgent.ClassicFullStack,
 			clusterID:      clusterID,
-			deploymentType: deploymentmetadata.ClassicFullStackDeploymentType,
 		},
 	}
 }
@@ -156,20 +150,6 @@ func (classic *classicFullStack) BuildDaemonSet(ctx context.Context) (*appsv1.Da
 	return result, nil
 }
 
-// VersionAndModeLabels returns the OneAgent specific labels (mode as component, and version if set) used on top of the common ones.
-func VersionAndModeLabels(version, mode string) map[string]string {
-	// TODO check later if these are the right labels, or maybe rename them to something internal
-	result := map[string]string{
-		k8slabel.AppComponentLabel: strings.ReplaceAll(mode, "_", ""),
-	}
-
-	if version != "" {
-		result[k8slabel.AppVersionLabel] = version
-	}
-
-	return result
-}
-
 func (b *builder) BuildDaemonSet(ctx context.Context) (*appsv1.DaemonSet, error) {
 	ctx, _ = logd.NewFromContext(ctx, "daemonset")
 	dk := b.dk
@@ -179,14 +159,11 @@ func (b *builder) BuildDaemonSet(ctx context.Context) (*appsv1.DaemonSet, error)
 		return nil, err
 	}
 
-	versionLabelValue := dk.OneAgent().GetVersion()
-
-	labels := k8slabel.New(k8slabel.OneAgentComponentLabel, dk.Name, versionLabelValue)
+	labels := k8slabel.New(k8slabel.OneAgentComponentLabel, dk.Name, dk.OneAgent().GetVersion())
 
 	// operator labels are merged last, so custom labels can't override them
-	modeLabels := VersionAndModeLabels(labels.Version, b.deploymentType)
-	dsLabels := maputils.MergeMap(b.hostInjectSpec.Labels, modeLabels, labels.AsMap())
-	podLabels := maputils.MergeMap(b.hostInjectSpec.Labels, modeLabels, labels.AsSelector())
+	dsLabels := maputils.MergeMap(b.hostInjectSpec.Labels, labels.AsMap())
+	podLabels := maputils.MergeMap(b.hostInjectSpec.Labels, labels.AsSelector())
 
 	templateAnnotations := map[string]string{
 		appArmorAnnotation:                appArmorUnconfined,

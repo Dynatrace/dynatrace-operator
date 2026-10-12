@@ -37,10 +37,10 @@ func newTestScope(pm *prometheusmonitoring.PrometheusMonitoring) *reconcileScope
 
 func newTestScopeWithDynaKube(pm *prometheusmonitoring.PrometheusMonitoring, dk *dynakube.DynaKube) *reconcileScope {
 	return &reconcileScope{
-		Owner:     pm,
-		DynaKube:  dk,
-		Spec:      pm.Gateway(),
-		AppLabels: k8slabel.New(k8slabel.OTelGatewayComponentLabel, pm.Name, ""),
+		Owner:    pm,
+		DynaKube: dk,
+		Spec:     pm.Gateway(),
+		Labels:   k8slabel.New(k8slabel.OTelGatewayComponentLabel, pm.Name, ""),
 	}
 }
 

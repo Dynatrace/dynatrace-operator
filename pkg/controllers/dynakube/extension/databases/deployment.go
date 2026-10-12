@@ -72,6 +72,7 @@ func buildAllLabels(dk *dynakube.DynaKube, dbSpec extensions.DatabaseSpec) (map[
 	deploymentLabels[consts.DatasourceLabelKey] = consts.DatabaseDatasourceLabelValue
 
 	matchLabels := labels.AsSelector()
+	matchLabels[executorIDLabelKey] = dbSpec.ID
 
 	podLabels := labels.AsSelector()
 	podLabels[executorIDLabelKey] = dbSpec.ID

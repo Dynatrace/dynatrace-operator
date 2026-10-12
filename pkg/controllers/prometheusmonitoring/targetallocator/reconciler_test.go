@@ -55,10 +55,10 @@ func newTestPM(name, namespace string) *prometheusmonitoring.PrometheusMonitorin
 
 func newTestScope(pm *prometheusmonitoring.PrometheusMonitoring) *reconcileScope {
 	return &reconcileScope{
-		Owner:     pm,
-		DynaKube:  &dynakube.DynaKube{Name: "dk", Namespace: "dynatrace"},
-		Spec:      pm.TargetAllocator(),
-		AppLabels: k8slabel.New(k8slabel.OTelTargetAllocatorComponentLabel, pm.Name, ""),
+		Owner:    pm,
+		DynaKube: &dynakube.DynaKube{Name: "dk", Namespace: "dynatrace"},
+		Spec:     pm.TargetAllocator(),
+		Labels:   k8slabel.New(k8slabel.OTelTargetAllocatorComponentLabel, pm.Name, ""),
 	}
 }
 
