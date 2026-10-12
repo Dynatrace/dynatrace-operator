@@ -904,6 +904,101 @@ tests:
           path: spec.template.spec.containers[0].image
           value: "gcr.io/dynatrace-marketplace-prod/dynatrace-operator:1.0.1"
 
+  - it: not setting image or imageref but platform to openshift defaults to correct repo and version
+    set:
+      platform: openshift
+
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "registry.connect.redhat.com/dynatrace/dynatrace-operator:v1.0.1"
+
+  - it: not setting image or imageref but platform to azure-marketplace defaults to registry, image and digest
+    set:
+      platform: azure-marketplace
+      global:
+        azure:
+          images:
+            operator:
+              registry: azure-registry.io
+              image: azure/operator
+              digest: sha256:aaaa
+
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "azure-registry.io/azure/operator@sha256:aaaa"
+
+  - it: imageref.tag without repository overrides the tag on the kubernetes default repo
+    set:
+      platform: kubernetes
+      imageRef:
+        tag: 1.2.3-fips
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "public.ecr.aws/dynatrace/dynatrace-operator:1.2.3-fips"
+
+  - it: imageref.tag without repository overrides the tag on the openshift default repo
+    set:
+      platform: openshift
+      imageRef:
+        tag: 1.2.3-fips
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "registry.connect.redhat.com/dynatrace/dynatrace-operator:1.2.3-fips"
+
+  - it: imageref.tag without repository overrides the tag on the google-marketplace default repo
+    set:
+      platform: google-marketplace
+      imageRef:
+        tag: 1.2.3-fips
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "gcr.io/dynatrace-marketplace-prod/dynatrace-operator:1.2.3-fips"
+
+  - it: imageref.tag without repository overrides the tag on the nightly default repo
+    chart:
+      appVersion: 0.0.0-nightly-2026-01-01
+    set:
+      platform: kubernetes
+      imageRef:
+        tag: 1.2.3-fips
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "ghcr.io/dynatrace/dynatrace-operator:1.2.3-fips"
+
+  - it: imageref.tag without repository replaces the digest on the azure-marketplace default repo
+    set:
+      platform: azure-marketplace
+      global:
+        azure:
+          images:
+            operator:
+              registry: azure-registry.io
+              image: azure/operator
+              digest: sha256:aaaa
+      imageRef:
+        tag: 1.2.3-fips
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "azure-registry.io/azure/operator:1.2.3-fips"
+
+  - it: image field has precedence over imageref.tag without repository
+    set:
+      platform: kubernetes
+      image: image-name
+      imageRef:
+        tag: 1.2.3-fips
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "image-name"
+
   - it: should have apparmor annotation when enabled on Kubernetes < 1.31.0
     set:
       platform: kubernetes

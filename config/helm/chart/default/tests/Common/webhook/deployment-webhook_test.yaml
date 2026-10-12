@@ -708,6 +708,16 @@ tests:
           path: spec.template.spec.containers[0].image
           value: "some-repo:v1.0.1"
 
+  - it: imageref.tag without repository overrides the tag on the kubernetes default repo
+    set:
+      platform: kubernetes
+      imageRef:
+        tag: 1.2.3-fips
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "public.ecr.aws/dynatrace/dynatrace-operator:1.2.3-fips"
+
   - it: digest in imageref wins over tag and omits the tag
     set:
       platform: kubernetes

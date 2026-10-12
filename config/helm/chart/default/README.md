@@ -37,6 +37,24 @@ Install `dynatrace-operator` helm chart using the OCI repository and create the 
 helm install dynatrace-operator oci://public.ecr.aws/dynatrace/dynatrace-operator  -n dynatrace --create-namespace --atomic
 ```
 
+## Selecting the operator image
+
+By default, the chart uses the operator image of the platform (for example `public.ecr.aws/dynatrace/dynatrace-operator`) with the tag matching the chart version.
+
+Use `imageRef` to change that:
+
+- `imageRef.tag`: overrides the default tag, the platform's default repository is kept. The tag is used as is, no `v` prefix is added.
+- `imageRef.repository`: overrides the default repository.
+
+For example, to install a FIPS image from the default repository:
+
+```console
+helm install dynatrace-operator oci://public.ecr.aws/dynatrace/dynatrace-operator -n dynatrace --create-namespace --atomic \
+  --set imageRef.tag=<version>-fips
+```
+
+The obsolete `image` value takes precedence over everything in `imageRef`.
+
 ## Uninstall chart
 
 > Full instructions can be found in the [official help page](https://www.dynatrace.com/support/help/shortlink/guides-k8s-update-uninstall-operator)
