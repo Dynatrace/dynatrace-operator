@@ -22,10 +22,10 @@ require (
 	go.opentelemetry.io/collector/pipeline v1.68.0
 	go.opentelemetry.io/collector/service v0.162.0
 	go.uber.org/zap v1.28.0
-	golang.org/x/mod v0.41.0
+	golang.org/x/mod v0.42.0
 	golang.org/x/net v0.59.0
 	golang.org/x/oauth2 v0.37.0
-	golang.org/x/sys v0.48.0
+	golang.org/x/sys v0.49.0
 	google.golang.org/grpc v1.84.0
 	gopkg.in/yaml.v3 v3.0.1
 	istio.io/api v1.31.1
