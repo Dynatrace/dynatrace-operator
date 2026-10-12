@@ -35,7 +35,7 @@ Override with .Values.rbac.kubeletFineGrainedAuthz: true/false
         {{- if .Values.rbac.kubeletFineGrainedAuthz -}}
             {{- "true" -}}
         {{- end -}}
-    {{- else if semverCompare ">=1.36.0" .Capabilities.KubeVersion.Version -}}
+    {{- else if semverCompare ">=1.36.0-0" .Capabilities.KubeVersion.Version -}}
         {{- "true" -}}
     {{- end -}}
 {{- end -}}
