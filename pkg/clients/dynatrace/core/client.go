@@ -80,23 +80,15 @@ func NewClient(cfg Config) *ClientImpl {
 type RequestImpl struct {
 	client *ClientImpl
 
-	ctx       context.Context
-	query     url.Values
-	headers   http.Header
-	method    string
-	path      string
-	body      []byte
-	tokenType TokenType
-	err       error
+	ctx          context.Context
+	query        url.Values
+	headers      http.Header
+	method       string
+	path         string
+	body         []byte
+	withoutToken bool
+	err          error
 }
-
-// TokenType represents the type of authentication token to use
-type TokenType int
-
-const (
-	TokenTypeAPI TokenType = iota
-	TokenTypeNone
-)
 
 func (c *ClientImpl) newRequest(ctx context.Context) *RequestImpl {
 	headers := make(http.Header)
@@ -193,7 +185,7 @@ func (r *RequestImpl) WithJSONBody(body any) Request {
 
 // WithoutToken explicitly disables authentication for the request
 func (r *RequestImpl) WithoutToken() Request {
-	r.tokenType = TokenTypeNone
+	r.withoutToken = true
 
 	return r
 }
@@ -239,12 +231,11 @@ func (r *RequestImpl) ExecuteWriter(writer io.Writer) (http.Header, error) {
 }
 
 func (r *RequestImpl) getToken() string {
-	switch r.tokenType {
-	case TokenTypeNone:
+	if r.withoutToken {
 		return ""
-	default:
-		return r.client.cfg.APIToken
 	}
+
+	return r.client.cfg.APIToken
 }
 
 func (r *RequestImpl) buildURL() (*url.URL, error) {

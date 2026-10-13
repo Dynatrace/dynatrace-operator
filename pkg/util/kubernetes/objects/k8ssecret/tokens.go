@@ -13,10 +13,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type Tokens struct {
-	APIToken string
-}
-
 func ExtractToken(secret *corev1.Secret, key string) (string, error) {
 	value, hasKey := secret.Data[key]
 	if !hasKey {

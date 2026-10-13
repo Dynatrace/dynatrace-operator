@@ -39,16 +39,12 @@ func newDockerConfigWithAuth(username string, password string, registry string, 
 }
 
 func generateData(dk *dynakube.DynaKube, tokens token.Tokens) (map[string][]byte, error) {
-	var registryToken string
-
-	registry := dk.APIURLHost()
-
-	switch {
-	case tokens.APIToken().Value != "":
-		registryToken = tokens.APIToken().Value
-	default:
+	registryToken := tokens.APIToken().Value
+	if registryToken == "" {
 		return nil, errors.New("token secret does not contain an api token, cannot generate docker config")
 	}
+
+	registry := dk.APIURLHost()
 
 	tenantUUID, err := dk.TenantUUID()
 	if err != nil {

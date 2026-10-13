@@ -73,7 +73,7 @@ func NewClient(options ...Option) (*Client, error) {
 	addCacheMiddleware(httpClient, config)
 
 	if len(config.APIToken) == 0 {
-		return nil, errors.New("tokens are empty")
+		return nil, errors.New("api token is empty")
 	}
 
 	apiClient := core.NewClient(core.Config{
