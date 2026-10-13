@@ -6,6 +6,7 @@
 package prometheusmonitoring
 
 import (
+	"os"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
@@ -33,6 +34,9 @@ const (
 
 func Feature(t *testing.T) features.Feature {
 	builder := features.New("lifecycle")
+	if os.Getenv("OLM") == "true" {
+		t.Skip("Skipping Prometheus tests with OLM installation")
+	}
 
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
@@ -113,6 +117,9 @@ func Feature(t *testing.T) features.Feature {
 
 func PublicRegistry(t *testing.T) features.Feature {
 	builder := features.New("public-registry")
+	if os.Getenv("OLM") == "true" {
+		t.Skip("Skipping Prometheus tests with OLM installation")
+	}
 	builder.Assess("devregistry pull secret exists", k8sobject.Expect(consts.DevRegistryPullSecretName, operator.DefaultNamespace, k8sobject.SecretExists))
 
 	secretConfig := tenant.GetSingleTenantSecret(t)
