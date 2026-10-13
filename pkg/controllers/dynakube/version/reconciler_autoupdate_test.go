@@ -271,7 +271,7 @@ func newVersionClient(t *testing.T, transport http.RoundTripper, ttl time.Durati
 	return dtversion.NewClient(core.NewClient(core.Config{
 		BaseURL:    mustParseURL(t, "http://fake-dt.test"),
 		HTTPClient: &http.Client{Transport: middleware.NewCacheRoundTripper(transport, ttl)},
-		APIToken:     t.Name(),
+		APIToken:   t.Name(),
 	}))
 }
 

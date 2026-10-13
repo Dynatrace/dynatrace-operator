@@ -39,7 +39,6 @@ func (tokens Tokens) getToken(tokenName string) *Token {
 }
 
 func (tokens Tokens) AddFeatureScopesToTokens() Tokens {
-
 	for _, token := range tokens {
 		switch token.Type {
 		case APIKey:

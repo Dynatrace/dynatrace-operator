@@ -141,8 +141,8 @@ func TestClient_TokenTypes(t *testing.T) {
 	defer s.Close()
 
 	c := NewClient(Config{
-		BaseURL: must(url.Parse(s.URL)),
-		APIToken:"api",
+		BaseURL:  must(url.Parse(s.URL)),
+		APIToken: "api",
 	})
 
 	t.Run("default", func(t *testing.T) {

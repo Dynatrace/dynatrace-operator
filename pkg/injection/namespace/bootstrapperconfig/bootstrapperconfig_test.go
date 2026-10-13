@@ -446,7 +446,7 @@ func TestGenerateForDynakube(t *testing.T) {
 		failClient := createConfigFailClient(dk,
 			namespace,
 			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
-				token.APIKey:  []byte(testAPIToken),
+				token.APIKey: []byte(testAPIToken),
 			}),
 			clientSecret(dk.ActiveGate().TLSSecretName, testNamespaceDynatrace, map[string][]byte{
 				consts.TLSServerCrtDataName: []byte("test-cert-value"),
@@ -560,7 +560,7 @@ func TestCleanup(t *testing.T) {
 		dk,
 		clientInjectedNamespace(testNamespace, testDynakube),
 		clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
-			token.APIKey:  []byte(testAPIToken),
+			token.APIKey: []byte(testAPIToken),
 		}),
 		clientSecret(dk.OneAgent().GetTenantSecret(), testNamespaceDynatrace, map[string][]byte{
 			"tenant-token": []byte(testTenantToken),

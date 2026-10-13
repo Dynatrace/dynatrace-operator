@@ -168,7 +168,7 @@ func TestReconciler(t *testing.T) {
 			clientSecret(consts.OTLPExporterSecretName, testNamespace, nil),
 			clientSecret(consts.OTLPExporterSecretName, testNamespace2, nil),
 			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
-				token.APIKey:[]byte(testAPIToken),
+				token.APIKey: []byte(testAPIToken),
 			}),
 			dk,
 		)
@@ -836,7 +836,7 @@ func clientOneAgentInjection() client.Client {
 		clientInjectedNamespace(testNamespace, testDynakube),
 		clientInjectedNamespace(testNamespace2, testDynakube2),
 		clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
-			token.APIKey:[]byte(testAPIToken),
+			token.APIKey: []byte(testAPIToken),
 		}),
 	)
 }
