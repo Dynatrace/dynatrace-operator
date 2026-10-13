@@ -75,8 +75,6 @@ func (r *Reconciler) removeServiceOnce(ctx context.Context, dk *dynakube.DynaKub
 	r.removeAllServicesExcept(ctx, "", dk)
 }
 
-// NOTE: a service with the old labels (created-by/component) is not matched until it is updated.
-// Only matters if telemetry ingest is disabled before the first reconcile after an operator upgrade, in which case it is left behind (unused).
 func (r *Reconciler) removeAllServicesExcept(ctx context.Context, actualServiceName string, dk *dynakube.DynaKube) {
 	log := logd.FromContext(ctx)
 	telemetryServiceList := &corev1.ServiceList{}
