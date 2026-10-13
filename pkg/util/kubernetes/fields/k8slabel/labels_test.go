@@ -36,31 +36,31 @@ func TestLabels(t *testing.T) {
 			name:       "all labels",
 			appVersion: labelsVersion,
 			expectedLabels: map[string]string{
-				AppNameLabel:         labelsName,
-				AppInstanceLabel:     labelsInstance,
-				AppManagedByLabel:    version.AppName,
-				AppVersionLabel:      labelsVersion,
-				OperatorVersionLabel: version.Version,
+				AppName:         labelsName,
+				AppInstance:     labelsInstance,
+				AppManagedBy:    version.AppName,
+				AppVersion:      labelsVersion,
+				OperatorVersion: version.Version,
 			},
 			expectedMatch: map[string]string{
-				AppNameLabel:      labelsName,
-				AppInstanceLabel:  labelsInstance,
-				AppManagedByLabel: version.AppName,
+				AppName:      labelsName,
+				AppInstance:  labelsInstance,
+				AppManagedBy: version.AppName,
 			},
 		},
 		{
 			name:       "empty workload version",
 			appVersion: "",
 			expectedLabels: map[string]string{
-				AppNameLabel:         labelsName,
-				AppInstanceLabel:     labelsInstance,
-				AppManagedByLabel:    version.AppName,
-				OperatorVersionLabel: version.Version,
+				AppName:         labelsName,
+				AppInstance:     labelsInstance,
+				AppManagedBy:    version.AppName,
+				OperatorVersion: version.Version,
 			},
 			expectedMatch: map[string]string{
-				AppNameLabel:      labelsName,
-				AppInstanceLabel:  labelsInstance,
-				AppManagedByLabel: version.AppName,
+				AppName:      labelsName,
+				AppInstance:  labelsInstance,
+				AppManagedBy: version.AppName,
 			},
 		},
 		{
@@ -68,15 +68,15 @@ func TestLabels(t *testing.T) {
 			appVersion:      labelsVersion,
 			operatorVersion: new(""),
 			expectedLabels: map[string]string{
-				AppNameLabel:      labelsName,
-				AppInstanceLabel:  labelsInstance,
-				AppManagedByLabel: version.AppName,
-				AppVersionLabel:   labelsVersion,
+				AppName:      labelsName,
+				AppInstance:  labelsInstance,
+				AppManagedBy: version.AppName,
+				AppVersion:   labelsVersion,
 			},
 			expectedMatch: map[string]string{
-				AppNameLabel:      labelsName,
-				AppInstanceLabel:  labelsInstance,
-				AppManagedByLabel: version.AppName,
+				AppName:      labelsName,
+				AppInstance:  labelsInstance,
+				AppManagedBy: version.AppName,
 			},
 		},
 		{
@@ -84,46 +84,46 @@ func TestLabels(t *testing.T) {
 			appVersion:      strings.Repeat("a", 64),
 			operatorVersion: new(strings.Repeat("b", 64)),
 			expectedLabels: map[string]string{
-				AppNameLabel:         labelsName,
-				AppInstanceLabel:     labelsInstance,
-				AppManagedByLabel:    version.AppName,
-				AppVersionLabel:      strings.Repeat("a", 63),
-				OperatorVersionLabel: strings.Repeat("b", 63),
+				AppName:         labelsName,
+				AppInstance:     labelsInstance,
+				AppManagedBy:    version.AppName,
+				AppVersion:      strings.Repeat("a", 63),
+				OperatorVersion: strings.Repeat("b", 63),
 			},
 			expectedMatch: map[string]string{
-				AppNameLabel:      labelsName,
-				AppInstanceLabel:  labelsInstance,
-				AppManagedByLabel: version.AppName,
+				AppName:      labelsName,
+				AppInstance:  labelsInstance,
+				AppManagedBy: version.AppName,
 			},
 		},
 		{
 			name:       "app version with invalid character",
 			appVersion: "_debug",
 			expectedLabels: map[string]string{
-				AppNameLabel:         labelsName,
-				AppInstanceLabel:     labelsInstance,
-				AppManagedByLabel:    version.AppName,
-				OperatorVersionLabel: version.Version,
+				AppName:         labelsName,
+				AppInstance:     labelsInstance,
+				AppManagedBy:    version.AppName,
+				OperatorVersion: version.Version,
 			},
 			expectedMatch: map[string]string{
-				AppNameLabel:      labelsName,
-				AppInstanceLabel:  labelsInstance,
-				AppManagedByLabel: version.AppName,
+				AppName:      labelsName,
+				AppInstance:  labelsInstance,
+				AppManagedBy: version.AppName,
 			},
 		},
 		{
 			name:       "app version invalid after truncation",
 			appVersion: strings.Repeat("a", 62) + "-suffix",
 			expectedLabels: map[string]string{
-				AppNameLabel:         labelsName,
-				AppInstanceLabel:     labelsInstance,
-				AppManagedByLabel:    version.AppName,
-				OperatorVersionLabel: version.Version,
+				AppName:         labelsName,
+				AppInstance:     labelsInstance,
+				AppManagedBy:    version.AppName,
+				OperatorVersion: version.Version,
 			},
 			expectedMatch: map[string]string{
-				AppNameLabel:      labelsName,
-				AppInstanceLabel:  labelsInstance,
-				AppManagedByLabel: version.AppName,
+				AppName:      labelsName,
+				AppInstance:  labelsInstance,
+				AppManagedBy: version.AppName,
 			},
 		},
 	}
@@ -163,14 +163,14 @@ func TestMergeInto(t *testing.T) {
 		labels.MergeInto(cm)
 
 		assert.Equal(t, "me", cm.Labels["keep"])
-		assert.Equal(t, testAppName, cm.Labels[AppNameLabel])
+		assert.Equal(t, testAppName, cm.Labels[AppName])
 	})
 	t.Run("overwrites colliding keys", func(t *testing.T) {
 		cm := &corev1.ConfigMap{
-			Labels: map[string]string{AppNameLabel: "stale"}}
+			Labels: map[string]string{AppName: "stale"}}
 
 		labels.MergeInto(cm)
 
-		assert.Equal(t, testAppName, cm.Labels[AppNameLabel])
+		assert.Equal(t, testAppName, cm.Labels[AppName])
 	})
 }

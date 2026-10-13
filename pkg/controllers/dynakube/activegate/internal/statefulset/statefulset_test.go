@@ -190,7 +190,7 @@ func TestAddLabels(t *testing.T) {
 		multiCapability := capability.NewMultiCapability(dk)
 		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
 		sts := &appsv1.StatefulSet{}
-		labels := k8slabel.New(k8slabel.ActiveGateComponentLabel, builder.dynakube.Name, "")
+		labels := k8slabel.New(k8slabel.ActiveGate, builder.dynakube.Name, "")
 		builder.addLabels(sts)
 
 		require.NotEmpty(t, sts.Labels)
@@ -207,7 +207,7 @@ func TestAddLabels(t *testing.T) {
 		multiCapability := capability.NewMultiCapability(dk)
 		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
 		sts := &appsv1.StatefulSet{}
-		labels := k8slabel.New(k8slabel.ActiveGateComponentLabel, builder.dynakube.Name, "")
+		labels := k8slabel.New(k8slabel.ActiveGate, builder.dynakube.Name, "")
 		expectedTemplateLabels := labels.AsSelector()
 		expectedTemplateLabels["test"] = "test"
 

@@ -86,7 +86,7 @@ func (r *Reconciler) createOrUpdateConfigMap(ctx context.Context, dk *dynakube.D
 		connectioninfo.CommunicationEndpointsKey: info.Endpoints,
 	}
 
-	labels := k8slabel.New(k8slabel.KubeMonComponentLabel, dk.Name, "")
+	labels := k8slabel.New(k8slabel.KubeMon, dk.Name, "")
 
 	cm, err := k8sconfigmap.Build(dk,
 		dk.KubernetesMonitoring().GetConnectionInfoConfigMapName(),
@@ -103,7 +103,7 @@ func (r *Reconciler) createOrUpdateConfigMap(ctx context.Context, dk *dynakube.D
 }
 
 func (r *Reconciler) createOrUpdateSecret(ctx context.Context, dk *dynakube.DynaKube, tenantToken string) error {
-	secret, err := connectioninfo.BuildTenantSecret(dk, k8slabel.KubeMonComponentLabel, dk.KubernetesMonitoring().GetTenantSecretName(), tenantToken)
+	secret, err := connectioninfo.BuildTenantSecret(dk, k8slabel.KubeMon, dk.KubernetesMonitoring().GetTenantSecretName(), tenantToken)
 	if err != nil {
 		return pkgerrors.WithStack(err)
 	}

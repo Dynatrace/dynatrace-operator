@@ -78,7 +78,7 @@ func (r *Reconciler) ensureSecret(ctx context.Context, agClient agclient.Client,
 		return errors.WithStack(err)
 	}
 
-	labels := k8slabel.New(k8slabel.KubeMonComponentLabel, dk.Name, "")
+	labels := k8slabel.New(k8slabel.KubeMon, dk.Name, "")
 
 	secret, err := k8ssecret.Build(dk,
 		dk.KubernetesMonitoring().GetAuthTokenSecretName(),

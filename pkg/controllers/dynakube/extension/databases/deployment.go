@@ -50,7 +50,7 @@ const (
 func ListDeployments(ctx context.Context, clt client.Reader, dk *dynakube.DynaKube) ([]appsv1.Deployment, error) {
 	deployments := &appsv1.DeploymentList{}
 
-	selector := k8slabel.New(k8slabel.DatabaseSQLExecutorLabel, dk.Name, "").AsSelector()
+	selector := k8slabel.New(k8slabel.DatabaseSQLExecutor, dk.Name, "").AsSelector()
 
 	if err := clt.List(ctx, deployments, client.InNamespace(dk.Namespace), client.MatchingLabels(selector)); err != nil {
 		return nil, fmt.Errorf("list deployments: %w", err)
@@ -62,7 +62,7 @@ func ListDeployments(ctx context.Context, clt client.Reader, dk *dynakube.DynaKu
 // Returns labels for deployment, deployment selector and deployment pod template in that order.
 // Do NOT modify maps produced by this function.
 func buildAllLabels(dk *dynakube.DynaKube, dbSpec extensions.DatabaseSpec) (map[string]string, map[string]string, map[string]string) {
-	labels := k8slabel.New(k8slabel.DatabaseSQLExecutorLabel, dk.Name, dk.Spec.Templates.SQLExtensionExecutor.ImageRef.Tag)
+	labels := k8slabel.New(k8slabel.DatabaseSQLExecutor, dk.Name, dk.Spec.Templates.SQLExtensionExecutor.ImageRef.Tag)
 
 	deploymentLabels := labels.AsMap()
 	deploymentLabels[executorIDLabelKey] = dbSpec.ID

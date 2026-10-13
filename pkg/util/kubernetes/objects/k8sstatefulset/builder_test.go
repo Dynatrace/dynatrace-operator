@@ -65,23 +65,23 @@ func TestBuild(t *testing.T) {
 		assert.Equal(t, testDeploymentName, statefulSet.OwnerReferences[0].Name)
 		assert.Equal(t, testStatefulSetName, statefulSet.Name)
 		expectedSelector := map[string]string{
-			k8slabel.AppNameLabel:      testAppName,
-			k8slabel.AppInstanceLabel:  testDynakubeName,
-			k8slabel.AppManagedByLabel: version.AppName,
+			k8slabel.AppName:      testAppName,
+			k8slabel.AppInstance:  testDynakubeName,
+			k8slabel.AppManagedBy: version.AppName,
 		}
 		expectedLabels := map[string]string{
-			k8slabel.AppNameLabel:         testAppName,
-			k8slabel.AppInstanceLabel:     testDynakubeName,
-			k8slabel.AppManagedByLabel:    version.AppName,
-			k8slabel.AppVersionLabel:      testVersion,
-			k8slabel.OperatorVersionLabel: version.Version,
+			k8slabel.AppName:         testAppName,
+			k8slabel.AppInstance:     testDynakubeName,
+			k8slabel.AppManagedBy:    version.AppName,
+			k8slabel.AppVersion:      testVersion,
+			k8slabel.OperatorVersion: version.Version,
 		}
 		// only template labels get the custom labels merged in
 		expectedTemplateLabels := map[string]string{
-			k8slabel.AppNameLabel:      testAppName,
-			k8slabel.AppInstanceLabel:  testDynakubeName,
-			k8slabel.AppManagedByLabel: version.AppName,
-			labelName:                  labelValue,
+			k8slabel.AppName:      testAppName,
+			k8slabel.AppInstance:  testDynakubeName,
+			k8slabel.AppManagedBy: version.AppName,
+			labelName:             labelValue,
 		}
 
 		assert.Equal(t, expectedLabels, statefulSet.Labels)

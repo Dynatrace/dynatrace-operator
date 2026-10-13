@@ -117,7 +117,7 @@ func (r *Reconciler) generateDaemonSet(dk *dynakube.DynaKube, tlsSecretHash stri
 		return nil, err
 	}
 
-	labels := k8slabel.New(k8slabel.KSPMComponentLabel, dk.Name, dk.Spec.Templates.KSPMNodeConfigurationCollector.ImageRef.Tag)
+	labels := k8slabel.New(k8slabel.KSPM, dk.Name, dk.Spec.Templates.KSPMNodeConfigurationCollector.ImageRef.Tag)
 	templateAnnotations := map[string]string{
 		tokenSecretHashAnnotation: dk.KSPM().TokenSecretHash,
 		tlsSecretHashAnnotation:   tlsSecretHash,

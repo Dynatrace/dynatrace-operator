@@ -20,7 +20,7 @@ import (
 func TestCheckActiveGateOOMKilled(t *testing.T) {
 	dk := testNewDynakubeBuilder(testNamespace, testDynakube).build()
 
-	activeGateLabels := k8slabel.New(k8slabel.ActiveGateComponentLabel, testDynakube, "").AsSelector()
+	activeGateLabels := k8slabel.New(k8slabel.ActiveGate, testDynakube, "").AsSelector()
 
 	t.Run("no ActiveGate pods found", func(t *testing.T) {
 		clt := fake.NewClientBuilder().WithScheme(scheme.Scheme).Build()

@@ -125,7 +125,7 @@ func (r *Reconciler) getActiveGateAuthToken(ctx context.Context, dk *dynakube.Dy
 func (r *Reconciler) createSecret(ctx context.Context, dk *dynakube.DynaKube, secretData map[string][]byte) error {
 	secretName := dk.ActiveGate().GetAuthTokenSecretName()
 
-	labels := k8slabel.New(k8slabel.ActiveGateComponentLabel, dk.Name, "")
+	labels := k8slabel.New(k8slabel.ActiveGate, dk.Name, "")
 
 	secret, err := k8ssecret.Build(dk,
 		secretName,

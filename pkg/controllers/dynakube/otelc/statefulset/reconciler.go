@@ -296,7 +296,7 @@ func buildPodSecurityContext() *corev1.PodSecurityContext {
 }
 
 func buildLabels(dkName string) *k8slabel.Labels {
-	return k8slabel.New(k8slabel.OTelColComponentLabel, dkName, "")
+	return k8slabel.New(k8slabel.OTelCol, dkName, "")
 }
 
 func buildAffinity() corev1.Affinity {

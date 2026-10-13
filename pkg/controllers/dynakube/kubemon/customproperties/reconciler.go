@@ -89,7 +89,7 @@ func (r *Reconciler) resolveData(ctx context.Context, dk *dynakube.DynaKube) ([]
 }
 
 func (r *Reconciler) ensureSecret(ctx context.Context, dk *dynakube.DynaKube, data []byte) error {
-	labels := k8slabel.New(k8slabel.KubeMonComponentLabel, dk.Name, "")
+	labels := k8slabel.New(k8slabel.KubeMon, dk.Name, "")
 
 	secret, err := k8ssecret.Build(dk,
 		dk.KubernetesMonitoring().GetCustomPropertiesSecretName(),

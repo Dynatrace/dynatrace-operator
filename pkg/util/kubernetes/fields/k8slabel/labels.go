@@ -16,30 +16,28 @@ import (
 var log = logd.Get().WithName("k8slabel")
 
 const (
-	AppNameLabel         = "app.kubernetes.io/name"
-	AppInstanceLabel     = "app.kubernetes.io/instance"
-	AppManagedByLabel    = "app.kubernetes.io/managed-by"
-	AppComponentLabel    = "app.kubernetes.io/component"
-	AppVersionLabel      = "app.kubernetes.io/version"
-	OperatorVersionLabel = "internal.dynatrace.com/operator-version"
+	AppName         = "app.kubernetes.io/name"
+	AppInstance     = "app.kubernetes.io/instance"
+	AppManagedBy    = "app.kubernetes.io/managed-by"
+	AppVersion      = "app.kubernetes.io/version"
+	OperatorVersion = "internal.dynatrace.com/operator-version"
 
-	OneAgentComponentLabel      = "oneagent"
-	CodeModuleComponentLabel    = "codemodule"
-	LogMonitoringComponentLabel = "logmonitoring"
-	KSPMComponentLabel          = "kspm"
-	ActiveGateComponentLabel    = "activegate"
-	KubeMonComponentLabel       = "kubemon"
-	WebhookComponentLabel       = "webhook"
-	EdgeConnectComponentLabel   = "edgeconnect"
-	ExtensionComponentLabel     = "dynatrace-extension-controller"
-	OTelColComponentLabel       = "dynatrace-otel-collector"
-	DatabaseSQLExecutorLabel    = "dynatrace-sql-extension-executor"
-	NodeControllerLabel         = "node-controller"
-	OperatorComponentLabel      = "operator"
-
-	OTelTargetAllocatorComponentLabel = "opentelemetry-target-allocator"
-	OTelScraperComponentLabel         = "opentelemetry-collector"
-	OTelGatewayComponentLabel         = "opentelemetry-gateway"
+	OneAgent            = "oneagent"
+	CodeModule          = "codemodule"
+	LogMonitoring       = "logmonitoring"
+	KSPM                = "kspm"
+	ActiveGate          = "activegate"
+	KubeMon             = "kubemon"
+	Webhook             = "webhook"
+	EdgeConnect         = "edgeconnect"
+	Extension           = "dynatrace-extension-controller"
+	OTelCol             = "dynatrace-otel-collector"
+	DatabaseSQLExecutor = "dynatrace-sql-extension-executor"
+	NodeController      = "node-controller"
+	Operator            = "operator"
+	OTelTargetAllocator = "opentelemetry-target-allocator"
+	OTelScraper         = "opentelemetry-collector"
+	OTelGateway         = "opentelemetry-gateway"
 )
 
 type Labels struct {
@@ -67,11 +65,11 @@ func (labels *Labels) AsMap() map[string]string {
 	labelsMap := labels.AsSelector()
 
 	if labels.Version != "" {
-		labelsMap[AppVersionLabel] = labels.Version
+		labelsMap[AppVersion] = labels.Version
 	}
 
 	if labels.OperatorVersion != "" {
-		labelsMap[OperatorVersionLabel] = labels.OperatorVersion
+		labelsMap[OperatorVersion] = labels.OperatorVersion
 	}
 
 	return labelsMap
@@ -92,9 +90,9 @@ func (labels *Labels) MergeInto(obj metav1.Object) {
 // AsSelector returns the stable labels used to select resources
 func (labels *Labels) AsSelector() map[string]string {
 	return map[string]string{
-		AppNameLabel:      labels.Name,
-		AppInstanceLabel:  labels.Instance,
-		AppManagedByLabel: labels.ManagedBy,
+		AppName:      labels.Name,
+		AppInstance:  labels.Instance,
+		AppManagedBy: labels.ManagedBy,
 	}
 }
 

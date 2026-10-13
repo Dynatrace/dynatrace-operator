@@ -204,7 +204,7 @@ func (r *Reconciler) createOneAgentTenantConnectionInfoConfigMap(ctx context.Con
 	log := logd.FromContext(ctx)
 	configMapData := extractPublicData(dk)
 
-	labels := k8slabel.New(k8slabel.OneAgentComponentLabel, dk.Name, "")
+	labels := k8slabel.New(k8slabel.OneAgent, dk.Name, "")
 
 	configMap, err := k8sconfigmap.Build(dk,
 		dk.OneAgent().GetConnectionInfoConfigMapName(),
@@ -301,7 +301,7 @@ func (r *Reconciler) getOneagentPods(ctx context.Context, dk *dynakube.DynaKube)
 	podList := &corev1.PodList{}
 	listOps := []client.ListOption{
 		client.InNamespace(dk.GetNamespace()),
-		client.MatchingLabels(k8slabel.New(k8slabel.OneAgentComponentLabel, dk.Name, "").AsSelector()),
+		client.MatchingLabels(k8slabel.New(k8slabel.OneAgent, dk.Name, "").AsSelector()),
 	}
 	err := r.client.List(ctx, podList, listOps...)
 

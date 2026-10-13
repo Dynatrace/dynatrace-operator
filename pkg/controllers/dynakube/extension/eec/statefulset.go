@@ -159,7 +159,7 @@ func (r *Reconciler) buildTemplateAnnotations(ctx context.Context, dk *dynakube.
 }
 
 func buildLabels(dk *dynakube.DynaKube) *k8slabel.Labels {
-	return k8slabel.New(k8slabel.ExtensionComponentLabel, dk.Name, dk.Spec.Templates.ExtensionExecutionController.ImageRef.Tag)
+	return k8slabel.New(k8slabel.Extension, dk.Name, dk.Spec.Templates.ExtensionExecutionController.ImageRef.Tag)
 }
 
 func buildAffinity() corev1.Affinity {

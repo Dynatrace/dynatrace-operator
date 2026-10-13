@@ -117,7 +117,7 @@ func (s *SecretGenerator) createSecretForNSlist( //nolint:revive // argument-lim
 ) error {
 	log := logd.FromContext(ctx)
 
-	labels := k8slabel.New(k8slabel.WebhookComponentLabel, dk.Name, "")
+	labels := k8slabel.New(k8slabel.Webhook, dk.Name, "")
 
 	secret, err := k8ssecret.BuildForNamespace(secretName, "", data, k8ssecret.SetLabels(labels.AsMap()))
 	if err != nil {

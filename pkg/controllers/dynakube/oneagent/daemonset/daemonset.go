@@ -159,7 +159,7 @@ func (b *builder) BuildDaemonSet(ctx context.Context) (*appsv1.DaemonSet, error)
 		return nil, err
 	}
 
-	labels := k8slabel.New(k8slabel.OneAgentComponentLabel, dk.Name, dk.OneAgent().GetVersion())
+	labels := k8slabel.New(k8slabel.OneAgent, dk.Name, dk.OneAgent().GetVersion())
 
 	// operator labels are merged last, so custom labels can't override them
 	dsLabels := maputils.MergeMap(b.hostInjectSpec.Labels, labels.AsMap())

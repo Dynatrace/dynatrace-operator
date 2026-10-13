@@ -22,16 +22,16 @@ func TestReconciler_prepareService(t *testing.T) {
 		svc, err := r.buildService(dk)
 		require.NoError(t, err)
 		assert.Equal(t, map[string]string{
-			k8slabel.AppNameLabel:         k8slabel.ExtensionComponentLabel,
-			k8slabel.AppInstanceLabel:     dk.Name,
-			k8slabel.AppManagedByLabel:    version.AppName,
-			k8slabel.OperatorVersionLabel: version.Version,
+			k8slabel.AppName:         k8slabel.Extension,
+			k8slabel.AppInstance:     dk.Name,
+			k8slabel.AppManagedBy:    version.AppName,
+			k8slabel.OperatorVersion: version.Version,
 		}, svc.Labels)
 
 		assert.Equal(t, map[string]string{
-			k8slabel.AppNameLabel:      k8slabel.ExtensionComponentLabel,
-			k8slabel.AppInstanceLabel:  dk.Name,
-			k8slabel.AppManagedByLabel: version.AppName,
+			k8slabel.AppName:      k8slabel.Extension,
+			k8slabel.AppInstance:  dk.Name,
+			k8slabel.AppManagedBy: version.AppName,
 		}, svc.Spec.Selector)
 	})
 }

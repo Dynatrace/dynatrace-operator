@@ -172,7 +172,7 @@ func (s *SecretGenerator) generateCerts(ctx context.Context, dk *dynakube.DynaKu
 func (s *SecretGenerator) createSecretForNamespaces(ctx context.Context, secretName, conditionType string, nsList []corev1.Namespace, dk *dynakube.DynaKube, data map[string][]byte) error { //nolint:revive
 	log := logd.FromContext(ctx)
 
-	labels := k8slabel.New(k8slabel.WebhookComponentLabel, dk.Name, "")
+	labels := k8slabel.New(k8slabel.Webhook, dk.Name, "")
 
 	secret, err := k8ssecret.BuildForNamespace(secretName, "", data, k8ssecret.SetLabels(labels.AsMap()))
 	if err != nil {
@@ -195,7 +195,7 @@ func (s *SecretGenerator) createSecretForNamespaces(ctx context.Context, secretN
 }
 
 func (s *SecretGenerator) createSourceForWebhook(ctx context.Context, dk *dynakube.DynaKube, name string, conditionType string, data map[string][]byte) error {
-	labels := k8slabel.New(k8slabel.WebhookComponentLabel, dk.Name, "")
+	labels := k8slabel.New(k8slabel.Webhook, dk.Name, "")
 
 	secret, err := k8ssecret.BuildForNamespace(name, dk.Namespace, data, k8ssecret.SetLabels(labels.AsMap()))
 	if err != nil {

@@ -110,7 +110,7 @@ func CreateService(dk *dynakube.DynaKube) *corev1.Service {
 		},
 	}
 
-	labels := k8slabel.New(k8slabel.ActiveGateComponentLabel, dk.Name, "")
+	labels := k8slabel.New(k8slabel.ActiveGate, dk.Name, "")
 
 	return &corev1.Service{
 		Name:      capability.BuildServiceName(dk.Name),

@@ -106,7 +106,7 @@ func (r *Reconciler) buildSecret(eecToken dttoken.Token, otelcToken dttoken.Toke
 		consts.DatasourceTokenSecretKey: []byte(otelcToken.String()),
 	}
 
-	labels := k8slabel.New(k8slabel.ExtensionComponentLabel, dk.Name, "")
+	labels := k8slabel.New(k8slabel.Extension, dk.Name, "")
 
 	return k8ssecret.Build(dk, r.getSecretName(dk), secretData, k8ssecret.SetLabels(labels.AsMap()))
 }

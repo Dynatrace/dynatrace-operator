@@ -33,7 +33,7 @@ func (inst *Installer) buildJobName() string {
 }
 
 func (inst *Installer) buildJob(name, targetDir string) (*batchv1.Job, error) {
-	labels := k8slabel.New(k8slabel.CodeModuleComponentLabel, inst.props.Owner.GetName(), "")
+	labels := k8slabel.New(k8slabel.CodeModule, inst.props.Owner.GetName(), "")
 
 	container := corev1.Container{
 		Name:            "codemodule-download",

@@ -133,7 +133,7 @@ func TestService(t *testing.T) {
 		err := mockK8sClient.Create(t.Context(), &corev1.Service{
 			Name:      dk.TelemetryIngest().GetDefaultServiceName(),
 			Namespace: dk.Namespace,
-			Labels:    k8slabel.New(k8slabel.OTelColComponentLabel, dk.Name, "").AsMap(),
+			Labels:    k8slabel.New(k8slabel.OTelCol, dk.Name, "").AsMap(),
 		})
 		require.NoError(t, err)
 
@@ -159,7 +159,7 @@ func TestService(t *testing.T) {
 		err := mockK8sClient.Create(t.Context(), &corev1.Service{
 			Name:      testServiceName,
 			Namespace: dk.Namespace,
-			Labels:    k8slabel.New(k8slabel.OTelColComponentLabel, dk.Name, "").AsMap(),
+			Labels:    k8slabel.New(k8slabel.OTelCol, dk.Name, "").AsMap(),
 		})
 		require.NoError(t, err)
 

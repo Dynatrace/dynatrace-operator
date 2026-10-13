@@ -33,7 +33,7 @@ func New(ctx context.Context, ec *edgeconnect.EdgeConnect) *appsv1.Deployment {
 func create(ctx context.Context, ec *edgeconnect.EdgeConnect) *appsv1.Deployment {
 	log := logd.FromContext(ctx)
 
-	labels := k8slabel.New(k8slabel.EdgeConnectComponentLabel, ec.Name, ec.Status.Version.Version)
+	labels := k8slabel.New(k8slabel.EdgeConnect, ec.Name, ec.Status.Version.Version)
 
 	customPodLabels := maputils.MergeMap(
 		ec.Spec.Labels,

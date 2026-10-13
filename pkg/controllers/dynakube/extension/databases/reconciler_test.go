@@ -103,21 +103,21 @@ func TestReconcileSpec(t *testing.T) {
 			executorIDLabelKey:        db.ID,
 			consts.DatasourceLabelKey: consts.DatabaseDatasourceLabelValue,
 		})
-		assert.Contains(t, deploy.Labels, k8slabel.AppNameLabel)
-		assert.Contains(t, deploy.Labels, k8slabel.AppInstanceLabel)
-		assert.Contains(t, deploy.Labels, k8slabel.AppManagedByLabel)
-		assert.Contains(t, deploy.Labels, k8slabel.AppVersionLabel)
-		assert.Contains(t, deploy.Labels, k8slabel.OperatorVersionLabel)
+		assert.Contains(t, deploy.Labels, k8slabel.AppName)
+		assert.Contains(t, deploy.Labels, k8slabel.AppInstance)
+		assert.Contains(t, deploy.Labels, k8slabel.AppManagedBy)
+		assert.Contains(t, deploy.Labels, k8slabel.AppVersion)
+		assert.Contains(t, deploy.Labels, k8slabel.OperatorVersion)
 		assert.Subset(t, deploy.Labels, map[string]string{
 			executorIDLabelKey:        db.ID,
 			consts.DatasourceLabelKey: consts.DatabaseDatasourceLabelValue,
 		})
 		assert.Subset(t, deploy.Spec.Template.Labels, deploy.Spec.Selector.MatchLabels)
-		expectedSelector := k8slabel.New(k8slabel.DatabaseSQLExecutorLabel, dk.Name, "").AsSelector()
+		expectedSelector := k8slabel.New(k8slabel.DatabaseSQLExecutor, dk.Name, "").AsSelector()
 		expectedSelector[executorIDLabelKey] = db.ID
 		assert.Equal(t, expectedSelector, deploy.Spec.Selector.MatchLabels)
-		assert.NotContains(t, deploy.Spec.Template.Labels, k8slabel.AppVersionLabel)
-		assert.NotContains(t, deploy.Spec.Template.Labels, k8slabel.OperatorVersionLabel)
+		assert.NotContains(t, deploy.Spec.Template.Labels, k8slabel.AppVersion)
+		assert.NotContains(t, deploy.Spec.Template.Labels, k8slabel.OperatorVersion)
 		assert.NotNil(t, deploy.Spec.Template.Spec.SecurityContext)
 		assert.Len(t, deploy.Spec.Template.Spec.Volumes, 4)
 		for _, vol := range deploy.Spec.Template.Spec.Volumes {

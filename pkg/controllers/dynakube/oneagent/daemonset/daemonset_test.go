@@ -63,9 +63,9 @@ func TestLabels(t *testing.T) {
 
 	expectedSelector := func(dk *dynakube.DynaKube) map[string]string {
 		return map[string]string{
-			k8slabel.AppNameLabel:      k8slabel.OneAgentComponentLabel,
-			k8slabel.AppInstanceLabel:  dk.Name,
-			k8slabel.AppManagedByLabel: version.AppName,
+			k8slabel.AppName:      k8slabel.OneAgent,
+			k8slabel.AppInstance:  dk.Name,
+			k8slabel.AppManagedBy: version.AppName,
 		}
 	}
 
@@ -84,11 +84,11 @@ func TestLabels(t *testing.T) {
 			},
 		}
 		expectedLabels := map[string]string{
-			k8slabel.AppNameLabel:         k8slabel.OneAgentComponentLabel,
-			k8slabel.AppInstanceLabel:     dk.Name,
-			k8slabel.AppManagedByLabel:    version.AppName,
-			k8slabel.AppVersionLabel:      testImageTag,
-			k8slabel.OperatorVersionLabel: version.Version,
+			k8slabel.AppName:         k8slabel.OneAgent,
+			k8slabel.AppInstance:     dk.Name,
+			k8slabel.AppManagedBy:    version.AppName,
+			k8slabel.AppVersion:      testImageTag,
+			k8slabel.OperatorVersion: version.Version,
 		}
 		dsBuilder := NewClassicFullStack(dk, testClusterID)
 		ds, err := dsBuilder.BuildDaemonSet(t.Context())
@@ -109,10 +109,10 @@ func TestLabels(t *testing.T) {
 			},
 		}
 		expectedLabels := map[string]string{
-			k8slabel.AppNameLabel:         k8slabel.OneAgentComponentLabel,
-			k8slabel.AppInstanceLabel:     dk.Name,
-			k8slabel.AppManagedByLabel:    version.AppName,
-			k8slabel.OperatorVersionLabel: version.Version,
+			k8slabel.AppName:         k8slabel.OneAgent,
+			k8slabel.AppInstance:     dk.Name,
+			k8slabel.AppManagedBy:    version.AppName,
+			k8slabel.OperatorVersion: version.Version,
 		}
 
 		dsBuilder := NewClassicFullStack(dk, testClusterID)
@@ -131,8 +131,8 @@ func TestLabels(t *testing.T) {
 				OneAgent: oneagent.Spec{
 					ClassicFullStack: &oneagent.HostInjectSpec{
 						Labels: map[string]string{
-							"custom":              "label",
-							k8slabel.AppNameLabel: "override",
+							"custom":         "label",
+							k8slabel.AppName: "override",
 						},
 					},
 				},
@@ -144,12 +144,12 @@ func TestLabels(t *testing.T) {
 			},
 		}
 		expectedLabels := map[string]string{
-			"custom":                      "label",
-			k8slabel.AppNameLabel:         k8slabel.OneAgentComponentLabel,
-			k8slabel.AppInstanceLabel:     dk.Name,
-			k8slabel.AppManagedByLabel:    version.AppName,
-			k8slabel.AppVersionLabel:      testImageTag,
-			k8slabel.OperatorVersionLabel: version.Version,
+			"custom":                 "label",
+			k8slabel.AppName:         k8slabel.OneAgent,
+			k8slabel.AppInstance:     dk.Name,
+			k8slabel.AppManagedBy:    version.AppName,
+			k8slabel.AppVersion:      testImageTag,
+			k8slabel.OperatorVersion: version.Version,
 		}
 		expectedPodLabels := expectedSelector(dk)
 		expectedPodLabels["custom"] = "label"

@@ -89,7 +89,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, pm *prometheusmonitoring.Pro
 		Owner:       pm,
 		DynaKube:    dk,
 		Spec:        pm.Gateway(),
-		Labels:      k8slabel.New(k8slabel.OTelGatewayComponentLabel, pm.Name, ""),
+		Labels:      k8slabel.New(k8slabel.OTelGateway, pm.Name, ""),
 		ImageClient: imageClient,
 	}
 

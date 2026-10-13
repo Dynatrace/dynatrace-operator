@@ -99,7 +99,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, pm *prometheusmonitoring.Pro
 		Owner:       pm,
 		DynaKube:    dk,
 		Spec:        pm.TargetAllocator(),
-		Labels:      k8slabel.New(k8slabel.OTelTargetAllocatorComponentLabel, pm.Name, ""),
+		Labels:      k8slabel.New(k8slabel.OTelTargetAllocator, pm.Name, ""),
 		ImageClient: imageClient,
 	}
 
@@ -130,7 +130,7 @@ func (r *Reconciler) reconcileConfigMap(ctx context.Context, s *reconcileScope) 
 		AllocationStrategy: "consistent-hashing",
 		CollectorNamespace: s.Owner.Namespace,
 		CollectorSelector: &metav1.LabelSelector{
-			MatchLabels: k8slabel.New(k8slabel.OTelScraperComponentLabel, s.Owner.Name, "").AsSelector(),
+			MatchLabels: k8slabel.New(k8slabel.OTelScraper, s.Owner.Name, "").AsSelector(),
 		},
 		FilterStrategy: "relabel-config",
 		HTTPS: &HTTPSConfig{

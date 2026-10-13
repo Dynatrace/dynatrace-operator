@@ -31,7 +31,7 @@ func checkActiveGates(ctx context.Context, baseLog logd.Logger, apiReader client
 func checkActiveGateOOM(ctx context.Context, log logd.Logger, apiReader client.Reader, dk *dynakube.DynaKube) error {
 	logNewCheckf(log, "Checking ActiveGate pods")
 
-	labels := k8slabel.New(k8slabel.ActiveGateComponentLabel, dk.Name, "").AsSelector()
+	labels := k8slabel.New(k8slabel.ActiveGate, dk.Name, "").AsSelector()
 
 	return checkOOMKilled(ctx, log, apiReader, dk.Namespace, labels)
 }

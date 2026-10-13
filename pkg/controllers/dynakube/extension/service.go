@@ -68,7 +68,7 @@ func (r *Reconciler) createOrUpdateService(ctx context.Context, dk *dynakube.Dyn
 }
 
 func (r *Reconciler) buildService(dk *dynakube.DynaKube) (*corev1.Service, error) {
-	labels := k8slabel.New(k8slabel.ExtensionComponentLabel, dk.Name, "")
+	labels := k8slabel.New(k8slabel.Extension, dk.Name, "")
 
 	svcPorts := []corev1.ServicePort{
 		{

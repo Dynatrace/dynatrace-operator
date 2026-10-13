@@ -83,7 +83,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, pm *prometheusmonitoring.Pro
 		Owner:       pm,
 		DynaKube:    dk,
 		Spec:        pm.Scraper(),
-		Labels:      k8slabel.New(k8slabel.OTelScraperComponentLabel, pm.Name, ""),
+		Labels:      k8slabel.New(k8slabel.OTelScraper, pm.Name, ""),
 		ImageClient: imageClient,
 	}
 

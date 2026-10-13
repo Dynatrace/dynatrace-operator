@@ -267,9 +267,9 @@ func TestReconcile_InstancesSet(t *testing.T) {
 	}
 
 	expectedLabels := map[string]string{
-		k8slabel.AppNameLabel:      k8slabel.OneAgentComponentLabel,
-		k8slabel.AppInstanceLabel:  name,
-		k8slabel.AppManagedByLabel: version.AppName,
+		k8slabel.AppName:      k8slabel.OneAgent,
+		k8slabel.AppInstance:  name,
+		k8slabel.AppManagedBy: version.AppName,
 	}
 
 	t.Run("Status.OneAgent.Instances set, if autoUpdate is true", func(t *testing.T) {

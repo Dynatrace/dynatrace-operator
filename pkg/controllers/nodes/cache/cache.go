@@ -75,7 +75,7 @@ func New(ctx context.Context, apiReader client.Reader, ns string, owner client.O
 	}
 
 	if k8serrors.IsNotFound(err) {
-		labels := k8slabel.New(k8slabel.NodeControllerLabel, version.AppName, "")
+		labels := k8slabel.New(k8slabel.NodeController, version.AppName, "")
 
 		cm := &corev1.ConfigMap{
 			Name:      ConfigMapName,

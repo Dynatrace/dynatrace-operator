@@ -68,7 +68,7 @@ func Test_buildLabels(t *testing.T) {
 	}
 
 	t.Run("Check version label set correctly", func(t *testing.T) {
-		labels := k8slabel.New(k8slabel.EdgeConnectComponentLabel, ec.Name, ec.Status.Version.Version)
+		labels := k8slabel.New(k8slabel.EdgeConnect, ec.Name, ec.Status.Version.Version)
 		assert.Empty(t, labels.Version)
 	})
 }
@@ -83,9 +83,9 @@ func TestLabels(t *testing.T) {
 	testLabelValue := "test-label-value"
 
 	expectedSelector := map[string]string{
-		k8slabel.AppNameLabel:      k8slabel.EdgeConnectComponentLabel,
-		k8slabel.AppInstanceLabel:  testName,
-		k8slabel.AppManagedByLabel: "dynatrace-operator",
+		k8slabel.AppName:      k8slabel.EdgeConnect,
+		k8slabel.AppInstance:  testName,
+		k8slabel.AppManagedBy: "dynatrace-operator",
 	}
 
 	t.Run("Check empty custom labels", func(t *testing.T) {
@@ -105,7 +105,7 @@ func TestLabels(t *testing.T) {
 
 		require.Len(t, deployment.Labels, 4)
 		assert.Subset(t, deployment.Labels, expectedSelector)
-		assert.Contains(t, deployment.Labels, k8slabel.OperatorVersionLabel)
+		assert.Contains(t, deployment.Labels, k8slabel.OperatorVersion)
 	})
 
 	t.Run("Check custom label set correctly", func(t *testing.T) {
@@ -132,7 +132,7 @@ func TestLabels(t *testing.T) {
 
 		require.Len(t, deployment.Labels, 4)
 		assert.Subset(t, deployment.Labels, expectedSelector)
-		assert.Contains(t, deployment.Labels, k8slabel.OperatorVersionLabel)
+		assert.Contains(t, deployment.Labels, k8slabel.OperatorVersion)
 		assert.NotContains(t, deployment.Labels, testLabelKey)
 	})
 }

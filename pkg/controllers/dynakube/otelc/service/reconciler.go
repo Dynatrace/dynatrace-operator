@@ -81,7 +81,7 @@ func (r *Reconciler) removeAllServicesExcept(ctx context.Context, actualServiceN
 
 	listOps := []client.ListOption{
 		client.InNamespace(dk.Namespace),
-		client.MatchingLabels(k8slabel.New(k8slabel.OTelColComponentLabel, dk.Name, "").AsSelector()),
+		client.MatchingLabels(k8slabel.New(k8slabel.OTelCol, dk.Name, "").AsSelector()),
 	}
 
 	if err := r.apiReader.List(ctx, telemetryServiceList, listOps...); err != nil {
@@ -125,7 +125,7 @@ func (r *Reconciler) createOrUpdateService(ctx context.Context, dk *dynakube.Dyn
 }
 
 func (r *Reconciler) buildService(ctx context.Context, dk *dynakube.DynaKube) (*corev1.Service, error) {
-	labels := k8slabel.New(k8slabel.OTelColComponentLabel, dk.Name, "")
+	labels := k8slabel.New(k8slabel.OTelCol, dk.Name, "")
 
 	return k8sservice.Build(dk,
 		dk.TelemetryIngest().GetServiceName(),

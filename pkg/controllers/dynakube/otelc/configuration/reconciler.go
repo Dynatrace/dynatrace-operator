@@ -85,7 +85,7 @@ func (r *Reconciler) prepareConfigMap(dk *dynakube.DynaKube) (*corev1.ConfigMap,
 		return nil, err
 	}
 
-	labels := k8slabel.New(k8slabel.OTelColComponentLabel, dk.Name, "")
+	labels := k8slabel.New(k8slabel.OTelCol, dk.Name, "")
 
 	newSecret, err := k8sconfigmap.Build(dk,
 		GetConfigMapName(dk.Name),

@@ -113,7 +113,7 @@ func (statefulSetBuilder Builder) addLabels(sts *appsv1.StatefulSet) {
 func (statefulSetBuilder Builder) buildLabels() *k8slabel.Labels {
 	version := statefulSetBuilder.dynakube.Status.ActiveGate.Version
 
-	return k8slabel.New(k8slabel.ActiveGateComponentLabel, statefulSetBuilder.dynakube.Name, version)
+	return k8slabel.New(k8slabel.ActiveGate, statefulSetBuilder.dynakube.Name, version)
 }
 
 func (statefulSetBuilder Builder) addUserAnnotations(sts *appsv1.StatefulSet) {

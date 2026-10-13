@@ -108,7 +108,7 @@ func (r *Reconciler) prepareSecret(ctx context.Context, dk *dynakube.DynaKube) (
 		return nil, err
 	}
 
-	labels := k8slabel.New(k8slabel.LogMonitoringComponentLabel, dk.Name, "")
+	labels := k8slabel.New(k8slabel.LogMonitoring, dk.Name, "")
 
 	newSecret, err := k8ssecret.Build(dk,
 		GetSecretName(dk.Name),

@@ -184,7 +184,7 @@ func (r *Reconciler) createActiveGateTenantConnectionInfoConfigMap(ctx context.C
 
 	configMapData := extractPublicData(dk)
 
-	labels := k8slabel.New(k8slabel.ActiveGateComponentLabel, dk.Name, "")
+	labels := k8slabel.New(k8slabel.ActiveGate, dk.Name, "")
 
 	configMap, err := k8sconfigmap.Build(dk,
 		dk.ActiveGate().GetConnectionInfoConfigMapName(),
@@ -210,7 +210,7 @@ func (r *Reconciler) createDeploymentPropertiesConfigMap(ctx context.Context, dk
 		return nil
 	}
 
-	labels := k8slabel.New(k8slabel.ActiveGateComponentLabel, dk.Name, "")
+	labels := k8slabel.New(k8slabel.ActiveGate, dk.Name, "")
 
 	configMap, err := k8sconfigmap.Build(dk,
 		dk.ActiveGate().GetDeploymentPropertiesConfigMapName(),
