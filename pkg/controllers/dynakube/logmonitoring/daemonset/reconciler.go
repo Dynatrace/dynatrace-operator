@@ -86,19 +86,15 @@ func (r *Reconciler) Reconcile(ctx context.Context, imageClient dtimage.Client, 
 // resolveImage records the image to deploy in the status. The templates section takes
 // precedence over the image reported by the public registry.
 func resolveImage(ctx context.Context, imageClient dtimage.Client, dk *dynakube.DynaKube) error {
-	// templates section takes precedence over public registry
-	var imageURI string
+	if ref := dk.LogMonitoring().Template().ImageRef; ref.HasImage() {
+		dk.Status.LogMonitoring.ResolvedImage = ref.String()
 
-	templateImageRef := dk.LogMonitoring().Template().ImageRef
-	if templateImageRef.HasImage() {
-		imageURI = templateImageRef.String()
-	} else {
-		var err error
+		return nil
+	}
 
-		imageURI, err = registry.ResolveImage(ctx, imageClient, dk.PublicRegistryOverride(), dtimage.LogModule)
-		if err != nil {
-			return err
-		}
+	imageURI, err := registry.ResolveImage(ctx, imageClient, dk.PublicRegistryOverride(), dtimage.LogModule)
+	if err != nil {
+		return err
 	}
 
 	dk.Status.LogMonitoring.ResolvedImage = imageURI
