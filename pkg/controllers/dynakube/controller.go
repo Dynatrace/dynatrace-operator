@@ -547,19 +547,19 @@ func (controller *Controller) verifyTokenScopes(ctx context.Context, dtClient to
 	return nil
 }
 
-func (controller *Controller) updateOptionalScopesConditions(dk *dynakube.DynaKube, optionalScopes map[string]bool) {
+func (controller *Controller) updateOptionalScopesConditions(dk *dynakube.DynaKube, optionalScopes map[string]token.OptionalScope) {
 	unavailableScopes := []string{}
 
 	for _, scope := range tokenclient.OptionalScopes {
-		available, ok := optionalScopes[scope]
+		optionalScope, ok := optionalScopes[scope]
 		switch {
-		case !ok:
-			optionalscope.SetMissing(dk, scope)
-		case available:
+		case ok && optionalScope.Available:
 			optionalscope.SetAvailable(dk, scope)
-		case !available:
+		case ok && optionalScope.Requested:
 			optionalscope.SetMissing(dk, scope)
 			unavailableScopes = append(unavailableScopes, scope)
+		default:
+			optionalscope.SetMissing(dk, scope)
 		}
 	}
 

@@ -28,6 +28,9 @@ var (
 // meIDConditionType is the condition type used to cache the Kubernetes Cluster Monitored Entity ID in the DynaKube status.
 const meIDConditionType = "MonitoredEntity"
 
+// MissingMEIDMessage is used by all conditions that are affected by a missing Kubernetes cluster MEID.
+const MissingMEIDMessage = "no KubernetesMEID found"
+
 type Reconciler struct {
 	timeProvider *timeprovider.Provider
 }
@@ -123,6 +126,7 @@ func (r *Reconciler) reconcileMEID(ctx context.Context, dtClient settings.Client
 
 	if k8sEntity.ID == "" {
 		log.Info("no MEs found, no kubernetesClusterMEID will be set in the dynakube status")
+		k8sconditions.SetStatusOutdated(dk.Conditions(), meIDConditionType, MissingMEIDMessage)
 
 		return nil
 	}

@@ -51,10 +51,10 @@ func (tokens Tokens) AddFeatureScopesToTokens() Tokens {
 	return tokens
 }
 
-func (tokens Tokens) VerifyScopes(ctx context.Context, dtClient token.Client, dk *dynakube.DynaKube) (map[string]bool, error) {
+func (tokens Tokens) VerifyScopes(ctx context.Context, dtClient token.Client, dk *dynakube.DynaKube) (map[string]OptionalScope, error) {
 	var err error
 
-	collectedMissingOptionalScopes := map[string]bool{}
+	collectedMissingOptionalScopes := map[string]OptionalScope{}
 
 	for _, token := range tokens {
 		missingOptionalScopes, scopeError := token.verifyScopes(ctx, dtClient, dk)
