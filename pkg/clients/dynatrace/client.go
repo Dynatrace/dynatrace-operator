@@ -128,6 +128,7 @@ func WithAPIToken(token string) Option {
 	}
 }
 
+// WithNetworkZone sets the network zone
 func WithNetworkZone(networkZone string) Option {
 	return func(c *Config) error {
 		c.NetworkZone = networkZone

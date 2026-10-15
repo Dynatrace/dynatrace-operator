@@ -1,5 +1,5 @@
 // Copyright Dynatrace LLC
-// -License-Identifier: Apache-2.0
+// SPDX-License-Identifier: Apache-2.0
 
 package scraper
 

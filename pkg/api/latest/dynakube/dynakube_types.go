@@ -32,6 +32,7 @@ const (
 	// APITokenConditionType identifies the API Token validity condition.
 	APITokenConditionType string = "APIToken"
 
+	// DataIngestTokenConditionType identifies the DataIngest Token validity condition.
 	DataIngestTokenConditionType string = "DataIngestToken"
 )
 

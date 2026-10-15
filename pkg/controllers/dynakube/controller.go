@@ -497,6 +497,7 @@ func (controller *Controller) createDynakubeMapper(ctx context.Context, dk *dyna
 	return &dkMapper
 }
 
+// Verify the provided tokens for structural and functional correctness. The former checks that there aren't any unexpected characters in the token values and
 // the latter validates the token scopes using the tenant API.
 // If a platform token is provided, no API call is made and all optional scope related fields and conditions are cleared from the status.
 func (controller *Controller) verifyTokens(ctx context.Context, dtClient tokenclient.Client, dk *dynakube.DynaKube) error {
