@@ -19,6 +19,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8saffinity"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8stopology"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/version"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
@@ -323,7 +324,7 @@ func TestTopologySpreadConstraints(t *testing.T) {
 	t.Run("the default TopologySpreadConstraints", func(t *testing.T) {
 		dk := getTestDynakubeWithTelemetryIngest()
 		statefulSet := getWorkload(t, dk)
-		labels := buildLabels(dk.Name)
+		labels := k8slabel.New(k8slabel.OTelCol, dk.Name, "")
 		assert.Equal(t, k8stopology.MaxOnePerNode(labels), statefulSet.Spec.Template.Spec.TopologySpreadConstraints)
 	})
 
@@ -420,7 +421,7 @@ func TestLabels(t *testing.T) {
 
 		statefulSet := getWorkload(t, dk)
 
-		labels := buildLabels(dk.Name)
+		labels := k8slabel.New(k8slabel.OTelCol, dk.Name, "")
 
 		assert.Equal(t, labels.AsMap(), statefulSet.Labels)
 		assert.Equal(t, &metav1.LabelSelector{MatchLabels: labels.AsSelector()}, statefulSet.Spec.Selector)
@@ -436,7 +437,7 @@ func TestLabels(t *testing.T) {
 
 		statefulSet := getWorkload(t, dk)
 
-		labels := buildLabels(dk.Name)
+		labels := k8slabel.New(k8slabel.OTelCol, dk.Name, "")
 		podLabels := maputils.MergeMap(customLabels, labels.AsSelector())
 
 		assert.Equal(t, labels.AsMap(), statefulSet.Labels)
@@ -580,7 +581,7 @@ func TestReconcileReplicas(t *testing.T) {
 					Namespace: dk.Namespace,
 					Spec: appsv1.StatefulSetSpec{
 						Replicas: tc.existingReplicas,
-						Selector: &metav1.LabelSelector{MatchLabels: buildLabels(dk.Name).AsSelector()},
+						Selector: &metav1.LabelSelector{MatchLabels: k8slabel.New(k8slabel.OTelCol, dk.Name, "").AsSelector()},
 					},
 				})
 			}

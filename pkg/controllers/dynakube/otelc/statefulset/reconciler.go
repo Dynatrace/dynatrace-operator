@@ -114,7 +114,7 @@ func (r *Reconciler) createOrUpdateStatefulset(ctx context.Context, dk *dynakube
 		return nil
 	}
 
-	labels := buildLabels(dk.Name)
+	labels := k8slabel.New(k8slabel.OTelCol, dk.Name, "")
 
 	templateAnnotations, err := r.buildTemplateAnnotations(ctx, dk)
 	if err != nil {
@@ -293,10 +293,6 @@ func buildPodSecurityContext() *corev1.PodSecurityContext {
 			Type: corev1.SeccompProfileTypeRuntimeDefault,
 		},
 	}
-}
-
-func buildLabels(dkName string) *k8slabel.Labels {
-	return k8slabel.New(k8slabel.OTelCol, dkName, "")
 }
 
 func buildAffinity() corev1.Affinity {

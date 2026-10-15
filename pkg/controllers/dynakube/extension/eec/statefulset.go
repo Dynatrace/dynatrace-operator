@@ -88,7 +88,7 @@ func useLegacyMounts(dk *dynakube.DynaKube) bool {
 func (r *Reconciler) createOrUpdateStatefulset(ctx context.Context, dk *dynakube.DynaKube, imageURI string) error {
 	log := logd.FromContext(ctx)
 
-	labels := buildLabels(dk)
+	labels := k8slabel.New(k8slabel.Extension, dk.Name, dk.Spec.Templates.ExtensionExecutionController.ImageRef.Tag)
 
 	templateAnnotations, err := r.buildTemplateAnnotations(ctx, dk)
 	if err != nil {
@@ -156,10 +156,6 @@ func (r *Reconciler) buildTemplateAnnotations(ctx context.Context, dk *dynakube.
 	templateAnnotations[api.AnnotationExtensionsSecretHash] = tlsSecretHash
 
 	return templateAnnotations, nil
-}
-
-func buildLabels(dk *dynakube.DynaKube) *k8slabel.Labels {
-	return k8slabel.New(k8slabel.Extension, dk.Name, dk.Spec.Templates.ExtensionExecutionController.ImageRef.Tag)
 }
 
 func buildAffinity() corev1.Affinity {
