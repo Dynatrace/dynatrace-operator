@@ -280,7 +280,7 @@ func (r *RequestImpl) doRequestStream(writer io.Writer) (responseHeaders http.He
 		return nil, fmt.Errorf("create HTTP request: %w", err)
 	}
 
-	setHeaders(req, r.client.cfg.UserAgent, r.getToken(), r.headers)
+	r.setHeaders(req)
 
 	httpClient := r.client.cfg.HTTPClient
 	if httpClient == nil {
@@ -341,7 +341,7 @@ func (r *RequestImpl) doRequest() (body []byte, cacheKey string, err error) {
 		return nil, "", fmt.Errorf("create HTTP request: %w", err)
 	}
 
-	setHeaders(req, r.client.cfg.UserAgent, r.getToken(), r.headers)
+	r.setHeaders(req)
 
 	httpClient := r.client.cfg.HTTPClient
 	if httpClient == nil {
@@ -376,22 +376,22 @@ func (r *RequestImpl) doRequest() (body []byte, cacheKey string, err error) {
 }
 
 // setHeaders sets the common headers for the request
-func setHeaders(req *http.Request, userAgent, token string, customHeaders http.Header) {
+func (r *RequestImpl) setHeaders(req *http.Request) {
 	req.Header.Set("Accept", "application/json")
 
-	if token != "" {
+	if token := r.getToken(); token != "" {
 		req.Header.Set("Authorization", apiTokenHeader+token)
 	}
 
-	if userAgent != "" {
-		req.Header.Set("User-Agent", userAgent)
+	if r.client.cfg.UserAgent != "" {
+		req.Header.Set("User-Agent", r.client.cfg.UserAgent)
 	}
 
 	if req.GetBody != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}
 
-	for key, values := range customHeaders {
+	for key, values := range r.headers {
 		if len(values) == 0 {
 			continue
 		}
