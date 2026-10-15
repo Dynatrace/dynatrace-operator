@@ -32,7 +32,7 @@ func TestGetLatestAgentVersion(t *testing.T) {
 		return NewClient(apiClient)
 	}
 
-	t.Run("ok, uses paas token, installer.TypeDefault", func(t *testing.T) {
+	t.Run("ok, installer.TypeDefault", func(t *testing.T) {
 		queryParams := map[string]string{
 			"bitness": "64",
 			"flavor":  arch.FlavorDefault,
@@ -44,7 +44,7 @@ func TestGetLatestAgentVersion(t *testing.T) {
 		assert.Equal(t, "1.2.3", version)
 	})
 
-	t.Run("ok, uses paas token, installer.TypePaaS", func(t *testing.T) {
+	t.Run("ok, installer.TypePaaS", func(t *testing.T) {
 		queryParams := map[string]string{
 			"bitness": "64",
 			"flavor":  arch.Flavor,

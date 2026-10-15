@@ -34,7 +34,7 @@ func Test_optionsFromDynakube(t *testing.T) {
 			Spec:      dynakube.DynaKubeSpec{APIURL: testAPIURL},
 		}
 	}
-	t.Run("sets base URL, tokens and default user agent", func(t *testing.T) {
+	t.Run("sets base URL, API token and default user agent", func(t *testing.T) {
 		dk := getDynakube()
 
 		opts, err := optionsFromDynakube(t.Context(), fake.NewClient(), dk, testAPIToken, "", testConnectionTimeout)

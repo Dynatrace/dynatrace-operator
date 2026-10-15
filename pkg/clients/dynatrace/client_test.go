@@ -10,7 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
 	operatorversion "github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -18,9 +17,7 @@ import (
 )
 
 const (
-	testAPIToken       = "test-api-token"
-	testPlatformToken  = dttoken.PlatformPrefix + ".test-api-token"
-	testConnectionInfo = `{"tenantUUID":"test-tenant","tenantToken":"test-tenant-token","communicationEndpoints":""}`
+	testAPIToken = "test-api-token"
 )
 
 func TestNewClient(t *testing.T) {
@@ -67,6 +64,12 @@ func TestWithAPIToken(t *testing.T) {
 	cfg := &Config{}
 	require.NoError(t, WithAPIToken("token")(cfg))
 	assert.Equal(t, "token", cfg.APIToken)
+}
+
+func TestWithNetworkZone(t *testing.T) {
+	cfg := &Config{}
+	require.NoError(t, WithNetworkZone("zone")(cfg))
+	assert.Equal(t, "zone", cfg.NetworkZone)
 }
 
 func TestWithHostGroup(t *testing.T) {

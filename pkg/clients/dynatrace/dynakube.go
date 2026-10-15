@@ -16,7 +16,7 @@ import (
 
 type ClientFactory func(ctx context.Context, apiReader client.Reader, dk *dynakube.DynaKube, apiToken, userAgentSuffix string, clientConnectionTimeout time.Duration) (*Client, error)
 
-// NewClientFromDynakube creates a new Dynatrace dtClient using the provided DynaKube configuration and tokens.
+// NewClientFromDynakube creates a new Dynatrace dtClient using the provided DynaKube configuration and API token.
 func NewClientFromDynakube(ctx context.Context, apiReader client.Reader, dk *dynakube.DynaKube, apiToken, userAgentSuffix string, clientConnectionTimeout time.Duration) (*Client, error) {
 	opts, err := optionsFromDynakube(ctx, apiReader, dk, apiToken, userAgentSuffix, clientConnectionTimeout)
 	if err != nil {
