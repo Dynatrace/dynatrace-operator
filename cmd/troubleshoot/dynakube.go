@@ -205,7 +205,7 @@ func checkPullSecretsExist(ctx context.Context, baseLog logd.Logger, apiReader c
 func checkPullSecretHasRequiredTokens(baseLog logd.Logger, pullSecret *corev1.Secret) error {
 	log := baseLog.WithName(dynakubeCheckLoggerName)
 
-	if _, err := k8ssecret.ExtractToken(pullSecret, dtpullsecret.DockerConfigJSON); err != nil {
+	if _, err := k8ssecret.ExtractKey(pullSecret, dtpullsecret.DockerConfigJSON); err != nil {
 		return errors.Wrapf(err, "invalid '%s:%s' secret", pullSecret.Namespace, pullSecret.Name)
 	}
 
