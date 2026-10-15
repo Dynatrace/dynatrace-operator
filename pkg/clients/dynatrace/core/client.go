@@ -48,8 +48,6 @@ type Request interface {
 	WithRawQueryParams(params url.Values) Request
 	// WithJSONBody sets the request body as JSON
 	WithJSONBody(body any) Request
-	// WithoutToken explicitly disables authentication for the request
-	WithoutToken() Request
 	// WithHeader sets a custom header for the request, overriding any default value
 	WithHeader(key, value string) Request
 	// Execute executes the request and unmarshals the response into the provided model
@@ -80,14 +78,13 @@ func NewClient(cfg Config) *ClientImpl {
 type RequestImpl struct {
 	client *ClientImpl
 
-	ctx          context.Context
-	query        url.Values
-	headers      http.Header
-	method       string
-	path         string
-	body         []byte
-	withoutToken bool
-	err          error
+	ctx     context.Context
+	query   url.Values
+	headers http.Header
+	method  string
+	path    string
+	body    []byte
+	err     error
 }
 
 func (c *ClientImpl) newRequest(ctx context.Context) *RequestImpl {
@@ -183,13 +180,6 @@ func (r *RequestImpl) WithJSONBody(body any) Request {
 	return r
 }
 
-// WithoutToken explicitly disables authentication for the request
-func (r *RequestImpl) WithoutToken() Request {
-	r.withoutToken = true
-
-	return r
-}
-
 // WithHeader sets a custom header for the request, overriding existing value
 func (r *RequestImpl) WithHeader(key, value string) Request {
 	r.headers.Set(key, value)
@@ -228,14 +218,6 @@ func (r *RequestImpl) Execute(model any) error {
 // and returns the response headers on success.
 func (r *RequestImpl) ExecuteWriter(writer io.Writer) (http.Header, error) {
 	return r.doRequestStream(writer)
-}
-
-func (r *RequestImpl) getToken() string {
-	if r.withoutToken {
-		return ""
-	}
-
-	return r.client.cfg.APIToken
 }
 
 func (r *RequestImpl) buildURL() (*url.URL, error) {
@@ -379,12 +361,12 @@ func (r *RequestImpl) doRequest() (body []byte, cacheKey string, err error) {
 func (r *RequestImpl) setHeaders(req *http.Request) {
 	req.Header.Set("Accept", "application/json")
 
-	if token := r.getToken(); token != "" {
+	if token := r.client.cfg.APIToken; token != "" {
 		req.Header.Set("Authorization", apiTokenHeader+token)
 	}
 
-	if r.client.cfg.UserAgent != "" {
-		req.Header.Set("User-Agent", r.client.cfg.UserAgent)
+	if agent := r.client.cfg.UserAgent; agent != "" {
+		req.Header.Set("User-Agent", agent)
 	}
 
 	if req.GetBody != nil {

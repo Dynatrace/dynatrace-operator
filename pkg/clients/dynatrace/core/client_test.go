@@ -150,9 +150,10 @@ func TestClient_TokenTypes(t *testing.T) {
 		assert.NoError(t, c.GET(t.Context(), "/test").Execute(nil))
 	})
 
-	t.Run("without token", func(t *testing.T) {
+	t.Run("no api token configured", func(t *testing.T) {
 		expectAuthHeader = ""
-		assert.NoError(t, c.GET(t.Context(), "/test").WithoutToken().Execute(nil))
+		noTokenClient := NewClient(Config{BaseURL: must(url.Parse(s.URL))})
+		assert.NoError(t, noTokenClient.GET(t.Context(), "/test").Execute(nil))
 	})
 }
 
