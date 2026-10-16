@@ -1095,6 +1095,7 @@ func TestTokenConditionsOptionalScopesWithRegistrationDisabled(t *testing.T) {
 
 		assert.False(t, ptr.Deref(dk.Status.APIToken.AvailableOptionalScopes.SettingsRead, true))
 		assert.False(t, ptr.Deref(dk.Status.APIToken.AvailableOptionalScopes.SettingsWrite, true))
+		assert.Nil(t, meta.FindStatusCondition(*dk.Conditions(), conditionTypeAPITokenOptionalScopes))
 
 		condition := meta.FindStatusCondition(*dk.Conditions(), "MonitoredEntity")
 		require.NotNil(t, condition)

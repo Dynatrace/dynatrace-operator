@@ -54,18 +54,18 @@ func (tokens Tokens) AddFeatureScopesToTokens() Tokens {
 func (tokens Tokens) VerifyScopes(ctx context.Context, dtClient token.Client, dk *dynakube.DynaKube) (map[string]OptionalScope, error) {
 	var err error
 
-	collectedMissingOptionalScopes := map[string]OptionalScope{}
+	collectedOptionalScopes := map[string]OptionalScope{}
 
-	for _, token := range tokens {
-		missingOptionalScopes, scopeError := token.verifyScopes(ctx, dtClient, dk)
+	for _, t := range tokens {
+		optionalScopes, scopeError := t.verifyScopes(ctx, dtClient, dk)
 		if scopeError != nil {
 			err = errors.Join(err, scopeError)
 		}
 
-		maps.Insert(collectedMissingOptionalScopes, maps.All(missingOptionalScopes))
+		maps.Insert(collectedOptionalScopes, maps.All(optionalScopes))
 	}
 
-	return collectedMissingOptionalScopes, err
+	return collectedOptionalScopes, err
 }
 
 func (tokens Tokens) VerifyValues() (err error) {
