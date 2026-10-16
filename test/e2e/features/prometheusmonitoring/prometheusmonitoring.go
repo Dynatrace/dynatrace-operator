@@ -14,7 +14,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sdeployment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/consts"
-	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/operator"
 	k8sobject "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects"
@@ -22,7 +21,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
 	appsv1 "k8s.io/api/apps/v1"
 	"sigs.k8s.io/e2e-framework/pkg/features"
-	"sigs.k8s.io/e2e-framework/third_party/helm"
 )
 
 const (
@@ -33,10 +31,9 @@ const (
 
 func Feature(t *testing.T) features.Feature {
 	builder := features.New("lifecycle")
-	if os.Getenv("OLM") == "true" {
-		t.Skip("Skipping Prometheus tests with OLM installation")
-	}
-	// skipping if deployed via manifests due to --set experimental.enablePrometheus=true and --set prometheus.installCRDs=true
+
+	// skipping if deployed via manifests due to --set prometheus.installCRDs=true
+	// which can break if ran againsts OCP, as OCP has those CRDs builtin
 	if os.Getenv("MANIFESTS") == "true" {
 		t.Skip("Skipping Prometheus tests with manifests installation, helm options are not supported")
 	}
@@ -63,8 +60,6 @@ func Feature(t *testing.T) features.Feature {
 			},
 		},
 	}
-
-	enablePrometheus(builder)
 
 	dynakube.Install(builder, secretConfig, dk)
 
@@ -105,17 +100,14 @@ func Feature(t *testing.T) features.Feature {
 	// Ensure the object gets cleaned up even if a previous step failed
 	builder.Teardown(k8sobject.Delete(pm))
 
-	disablePrometheus(builder)
-
 	return builder.Feature()
 }
 
 func PublicRegistry(t *testing.T) features.Feature {
 	builder := features.New("public-registry")
-	if os.Getenv("OLM") == "true" {
-		t.Skip("Skipping Prometheus tests with OLM installation")
-	}
-	// skipping if deployed via manifests due to --set experimental.enablePrometheus=true and --set prometheus.installCRDs=true
+
+	// skipping if deployed via manifests due to --set prometheus.installCRDs=true
+	// which can break if ran againsts OCP, as OCP has those CRDs builtin
 	if os.Getenv("MANIFESTS") == "true" {
 		t.Skip("Skipping Prometheus tests with manifests installation, helm options are not supported")
 	}
@@ -136,8 +128,6 @@ func PublicRegistry(t *testing.T) features.Feature {
 		},
 	}
 
-	enablePrometheus(builder)
-
 	dynakube.Install(builder, secretConfig, dk)
 
 	builder.Assess("created PrometheusMonitoring", k8sobject.Create(pm))
@@ -147,8 +137,6 @@ func PublicRegistry(t *testing.T) features.Feature {
 	builder.Assess("target allocator is ready", k8sobject.Expect(pm.TargetAllocator().GetDeploymentName(), pm.Namespace, k8sdeployment.IsRolloutComplete))
 
 	builder.Teardown(k8sobject.Delete(pm))
-
-	disablePrometheus(builder)
 
 	return builder.Feature()
 }
@@ -169,23 +157,4 @@ func waitForPhase(pm *pmapi.PrometheusMonitoring, expectedPhase status.Deploymen
 	return k8sobject.Eventually(pm.Name, pm.Namespace, func(pm *pmapi.PrometheusMonitoring) bool {
 		return pm.Status.Phase == expectedPhase
 	})
-}
-
-// TODO: remove this when prometheus is no longer experimental
-func enablePrometheus(builder *features.FeatureBuilder) {
-	builder.WithSetup("enable prometheus feature", helpers.ToFeatureFunc(operator.InstallLocal(false, helm.WithArgs(
-		"--set", "experimental.enablePrometheus=true",
-		"--set", "prometheus.installCRDs=true",
-		// Enable helm to overwrite pre-installed CRDs
-		"--take-ownership",
-		"--force-conflicts",
-	)), true))
-}
-
-// TODO: remove this when prometheus is no longer experimental
-func disablePrometheus(builder *features.FeatureBuilder) {
-	builder.WithTeardown("disable prometheus feature", helpers.ToFeatureFunc(operator.InstallLocal(false, helm.WithArgs(
-		"--set", "experimental.enablePrometheus=false",
-		"--set", "prometheus.installCRDs=false",
-	)), true))
 }
