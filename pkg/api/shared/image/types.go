@@ -51,6 +51,15 @@ func (ref Ref) String() string {
 	return ref.Repository + ":" + ref.Tag
 }
 
+// StringOrEmpty returns a String if it's usable as an image. Otherwise returns the empty string.
+func (ref Ref) StringOrEmpty() string {
+	if ref.HasImage() {
+		return ref.String()
+	}
+
+	return ""
+}
+
 // HasImage returns true when the ref points to a resolvable image — i.e. a repository
 // plus at least one of a tag or a digest.
 func (ref *Ref) HasImage() bool {

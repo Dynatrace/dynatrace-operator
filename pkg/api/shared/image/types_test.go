@@ -71,3 +71,24 @@ func TestRef_HasImage(t *testing.T) {
 		})
 	}
 }
+
+func TestRef_StringOrEmpty(t *testing.T) {
+	tests := []struct {
+		name      string
+		ref       Ref
+		wantEmpty bool
+	}{
+		{"zero", Ref{}, true},
+		{"only repo", Ref{Repository: "test"}, true},
+		{"with tag", Ref{Repository: "test", Tag: "1"}, false},
+		{"with digest", Ref{Repository: "test", Digest: "2"}, false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := tt.ref.StringOrEmpty()
+			empty := s == ""
+			assert.Equal(t, tt.wantEmpty, empty, s)
+		})
+	}
+}

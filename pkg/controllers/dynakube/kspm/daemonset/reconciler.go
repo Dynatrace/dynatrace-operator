@@ -46,17 +46,8 @@ func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 
 type imageResolver struct{ *dynakube.DynaKube }
 
-func (r imageResolver) GetImage() string {
-	if ref := r.KSPM().ImageRef; ref.HasImage() {
-		return ref.String()
-	}
-
-	return ""
-}
-
-func (r imageResolver) SetImage(imageURI string) {
-	r.Status.KSPM.ResolvedImage = imageURI
-}
+func (r imageResolver) GetImage() string         { return r.KSPM().ImageRef.StringOrEmpty() }
+func (r imageResolver) SetImage(imageURI string) { r.Status.KSPM.ResolvedImage = imageURI }
 
 func (r *Reconciler) Reconcile(ctx context.Context, imageClient dtimage.Client, dk *dynakube.DynaKube) error {
 	ctx, log := logd.NewFromContext(ctx, "daemonset")

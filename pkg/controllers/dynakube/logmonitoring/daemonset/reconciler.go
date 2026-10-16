@@ -33,7 +33,8 @@ type Reconciler struct {
 }
 
 func NewReconciler(clt client.Client,
-	apiReader client.Reader) *Reconciler {
+	apiReader client.Reader,
+) *Reconciler {
 	return &Reconciler{
 		daemonset: k8sdaemonset.Query(clt, apiReader),
 	}
@@ -86,16 +87,9 @@ func (r *Reconciler) Reconcile(ctx context.Context, imageClient dtimage.Client, 
 type imageResolver struct{ *dynakube.DynaKube }
 
 func (r imageResolver) GetImage() string {
-	if ref := r.LogMonitoring().Template().ImageRef; ref.HasImage() {
-		return ref.String()
-	}
-
-	return ""
+	return r.LogMonitoring().Template().ImageRef.StringOrEmpty()
 }
-
-func (r imageResolver) SetImage(imageURI string) {
-	r.Status.LogMonitoring.ResolvedImage = imageURI
-}
+func (r imageResolver) SetImage(imageURI string) { r.Status.LogMonitoring.ResolvedImage = imageURI }
 
 func (r *Reconciler) generateDaemonSet(dk *dynakube.DynaKube, imageURI string) (*appsv1.DaemonSet, error) {
 	tenantUUID, err := dk.TenantUUID()
@@ -110,7 +104,8 @@ func (r *Reconciler) generateDaemonSet(dk *dynakube.DynaKube, imageURI string) (
 
 	labels := k8slabel.NewAppLabels(k8slabel.LogMonitoringComponentLabel, dk.Name, k8slabel.LogMonitoringComponentLabel, tag)
 
-	ds, err := k8sdaemonset.Build(dk, dk.LogMonitoring().GetDaemonSetName(), getContainer(dk, tenantUUID, imageURI),
+	ds, err := k8sdaemonset.Build(
+		dk, dk.LogMonitoring().GetDaemonSetName(), getContainer(dk, tenantUUID, imageURI),
 		k8sdaemonset.SetInitContainer(getInitContainer(dk, tenantUUID, imageURI)),
 		k8sdaemonset.SetAllLabels(labels.BuildLabels(), labels.BuildMatchLabels(), labels.BuildLabels(), dk.LogMonitoring().Template().Labels),
 		k8sdaemonset.SetAllAnnotations(nil, r.getAnnotations(dk)),
