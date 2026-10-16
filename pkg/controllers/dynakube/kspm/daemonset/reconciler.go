@@ -44,23 +44,18 @@ func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 	}
 }
 
-// resolveImage records the image to deploy in the status. The templates section takes
-// precedence over the image reported by the public registry.
-func resolveImage(ctx context.Context, imageClient dtimage.Client, dk *dynakube.DynaKube) error {
-	if ref := dk.KSPM().ImageRef; ref.HasImage() {
-		dk.Status.KSPM.ResolvedImage = ref.String()
+type imageResolver struct{ *dynakube.DynaKube }
 
-		return nil
+func (r imageResolver) GetImage() string {
+	if ref := r.KSPM().ImageRef; ref.HasImage() {
+		return ref.String()
 	}
 
-	imageURI, err := registry.ResolveImage(ctx, imageClient, dk.PublicRegistryOverride(), dtimage.NCC)
-	if err != nil {
-		return err
-	}
+	return ""
+}
 
-	dk.Status.KSPM.ResolvedImage = imageURI
-
-	return nil
+func (r imageResolver) SetImage(imageURI string) {
+	r.Status.KSPM.ResolvedImage = imageURI
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, imageClient dtimage.Client, dk *dynakube.DynaKube) error {
@@ -82,7 +77,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, imageClient dtimage.Client, 
 	}
 
 	// has to run before the daemonset is generated, the container image is taken from the status
-	if err := resolveImage(ctx, imageClient, dk); err != nil {
+	if err := registry.ResolveImage(ctx, imageResolver{dk}, imageClient, dtimage.NCC); err != nil {
 		return err
 	}
 
@@ -129,7 +124,8 @@ func (r *Reconciler) generateDaemonSet(dk *dynakube.DynaKube, tlsSecretHash stri
 		affinity.NodeAffinity = dk.KSPM().NodeAffinity
 	}
 
-	ds, err := k8sdaemonset.Build(dk, dk.KSPM().GetDaemonSetName(), getContainer(dk, tenantUUID),
+	ds, err := k8sdaemonset.Build(
+		dk, dk.KSPM().GetDaemonSetName(), getContainer(dk, tenantUUID),
 		k8sdaemonset.SetAllLabels(labels.BuildLabels(), labels.BuildMatchLabels(), labels.BuildLabels(), dk.KSPM().Labels),
 		k8sdaemonset.SetAllAnnotations(dk.KSPM().Annotations, templateAnnotations),
 		k8sdaemonset.SetServiceAccount(serviceAccountName),

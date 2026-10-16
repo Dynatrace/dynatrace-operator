@@ -111,24 +111,13 @@ func (r *Reconciler) Reconcile(ctx context.Context, pm *prometheusmonitoring.Pro
 	return err
 }
 
-// resolveImage uses the explicit image from .spec.gateway.image when set, otherwise resolves
-// the latest gateway image from the fleet management API.
-func (r *Reconciler) resolveImage(ctx context.Context, s *reconcileScope) error {
-	if s.Spec.Image != "" {
-		s.Owner.Status.Gateway.ResolvedImage = s.Spec.Image
-
-		return nil
-	}
-
-	imageURI, err := registry.ResolveImage(ctx, s.ImageClient, s.Owner.Spec.PublicRegistryOverride, image.Gateway)
-	if err != nil {
-		return err
-	}
-
-	s.Owner.Status.Gateway.ResolvedImage = imageURI
-
-	return nil
+type imageResolver struct {
+	*prometheusmonitoring.PrometheusMonitoring
 }
+
+func (r imageResolver) GetImage() string               { return r.Spec.Gateway.Image }
+func (r imageResolver) SetImage(imageURI string)       { r.Status.Gateway.ResolvedImage = imageURI }
+func (r imageResolver) PublicRegistryOverride() string { return r.Spec.PublicRegistryOverride }
 
 func (r *Reconciler) reconcileConfigMap(ctx context.Context, s *reconcileScope) error {
 	name := s.Spec.GetStatefulSetName()
@@ -183,7 +172,7 @@ func renderGatewayConfig(data gatewayConfigData) (string, error) {
 }
 
 func (r *Reconciler) reconcileStatefulset(ctx context.Context, s *reconcileScope) error {
-	if err := r.resolveImage(ctx, s); err != nil {
+	if err := registry.ResolveImage(ctx, imageResolver{s.Owner}, s.ImageClient, image.Gateway); err != nil {
 		return fmt.Errorf("resolve image: %w", err)
 	}
 

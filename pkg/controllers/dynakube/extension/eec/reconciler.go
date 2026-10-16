@@ -71,28 +71,23 @@ func (r *Reconciler) Reconcile(ctx context.Context, imageClient image.Client, dk
 		return errors.New("kubeSystemUUID unknown")
 	}
 
-	if err := resolveImage(ctx, imageClient, dk); err != nil {
+	if err := registry.ResolveImage(ctx, imageResolver{dk}, imageClient, image.EEC); err != nil {
 		return err
 	}
 
 	return r.createOrUpdateStatefulset(ctx, dk, dk.Status.Extensions.ResolvedImage)
 }
 
-// resolveImage records the image to deploy in the status. The templates section takes
-// precedence over the image reported by the public registry.
-func resolveImage(ctx context.Context, imageClient image.Client, dk *dynakube.DynaKube) error {
-	if ref := dk.Spec.Templates.ExtensionExecutionController.ImageRef; ref.HasImage() {
-		dk.Status.Extensions.ResolvedImage = ref.String()
+type imageResolver struct{ *dynakube.DynaKube }
 
-		return nil
+func (r imageResolver) GetImage() string {
+	if ref := r.Spec.Templates.ExtensionExecutionController.ImageRef; ref.HasImage() {
+		return ref.String()
 	}
 
-	imageURI, err := registry.ResolveImage(ctx, imageClient, dk.PublicRegistryOverride(), image.EEC)
-	if err != nil {
-		return err
-	}
+	return ""
+}
 
-	dk.Status.Extensions.ResolvedImage = imageURI
-
-	return nil
+func (r imageResolver) SetImage(imageURI string) {
+	r.Status.Extensions.ResolvedImage = imageURI
 }

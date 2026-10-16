@@ -59,7 +59,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, imageClient dtimage.Client, 
 		return nil // clean-up shouldn't cause a failure
 	}
 
-	if err := resolveImage(ctx, imageClient, dk); err != nil {
+	if err := registry.ResolveImage(ctx, imageResolver{dk}, imageClient, dtimage.LogModule); err != nil {
 		return err
 	}
 
@@ -83,23 +83,18 @@ func (r *Reconciler) Reconcile(ctx context.Context, imageClient dtimage.Client, 
 	return nil
 }
 
-// resolveImage records the image to deploy in the status. The templates section takes
-// precedence over the image reported by the public registry.
-func resolveImage(ctx context.Context, imageClient dtimage.Client, dk *dynakube.DynaKube) error {
-	if ref := dk.LogMonitoring().Template().ImageRef; ref.HasImage() {
-		dk.Status.LogMonitoring.ResolvedImage = ref.String()
+type imageResolver struct{ *dynakube.DynaKube }
 
-		return nil
+func (r imageResolver) GetImage() string {
+	if ref := r.LogMonitoring().Template().ImageRef; ref.HasImage() {
+		return ref.String()
 	}
 
-	imageURI, err := registry.ResolveImage(ctx, imageClient, dk.PublicRegistryOverride(), dtimage.LogModule)
-	if err != nil {
-		return err
-	}
+	return ""
+}
 
-	dk.Status.LogMonitoring.ResolvedImage = imageURI
-
-	return nil
+func (r imageResolver) SetImage(imageURI string) {
+	r.Status.LogMonitoring.ResolvedImage = imageURI
 }
 
 func (r *Reconciler) generateDaemonSet(dk *dynakube.DynaKube, imageURI string) (*appsv1.DaemonSet, error) {
