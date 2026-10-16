@@ -162,7 +162,6 @@ func (r *Reconciler) buildDynatraceClient(ctx context.Context, dk *dynakube.Dyna
 		r,
 		dk,
 		tokens.APIToken().Value,
-		tokens.PaasToken().Value,
 		"prometheusmonitoring",
 		k8senv.GetOperatorDTClientConnectionTimeout(ctx),
 	)

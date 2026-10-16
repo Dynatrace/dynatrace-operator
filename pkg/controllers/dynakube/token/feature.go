@@ -41,7 +41,7 @@ func (feature *Feature) CollectOptionalScopes(availableScopes []string) map[stri
 	return optionalScopes
 }
 
-func getFeaturesForAPIToken(paasTokenExists bool) []Feature {
+func getFeaturesForAPIToken() []Feature {
 	return []Feature{
 		{
 			Name:           "Access problem and event feed, metrics, and topology",
@@ -97,7 +97,7 @@ func getFeaturesForAPIToken(paasTokenExists bool) []Feature {
 			Name:           "Download Installer",
 			RequiredScopes: []string{tokenclient.ScopeInstallerDownload},
 			IsEnabled: func(_ *dynakube.DynaKube) bool {
-				return !paasTokenExists
+				return true
 			},
 		},
 		{
@@ -112,18 +112,6 @@ func getFeaturesForAPIToken(paasTokenExists bool) []Feature {
 			OptionalScopes: []string{tokenclient.ScopeSettingsRead},
 			IsEnabled: func(dk *dynakube.DynaKube) bool {
 				return dk.OTLPExporterConfiguration().IsEnabled()
-			},
-		},
-	}
-}
-
-func getFeaturesForPaaSToken() []Feature {
-	return []Feature{
-		{
-			Name:           "PaaS Token",
-			RequiredScopes: []string{tokenclient.ScopeInstallerDownload},
-			IsEnabled: func(_ *dynakube.DynaKube) bool {
-				return true
 			},
 		},
 	}

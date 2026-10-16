@@ -23,7 +23,6 @@ const (
 	testDynatraceSecret       = testDynakube
 	testOtherDynatraceSecret  = "otherDynatraceSecret"
 	testAPIToken              = "apiTokenValue"
-	testPaasToken             = "passTokenValue"
 	testSecretName            = "customSecret"
 	testCustomPullSecretToken = "secretTokenValue"
 )
@@ -115,7 +114,7 @@ func TestDynatraceSecret(t *testing.T) {
 			WithObjects(
 				dk,
 				testBuildNamespace(testNamespace),
-				testNewSecretBuilder(testNamespace, testDynatraceSecret).dataAppend("apiToken", testAPIToken).dataAppend("paasToken", testPaasToken).build(),
+				testNewSecretBuilder(testNamespace, testDynatraceSecret).dataAppend("apiToken", testAPIToken).build(),
 			).
 			Build()
 
@@ -129,7 +128,7 @@ func TestDynatraceSecret(t *testing.T) {
 			WithObjects(
 				dk,
 				testBuildNamespace(testNamespace),
-				testNewSecretBuilder(testNamespace, testDynatraceSecret).dataAppend("paasToken", testPaasToken).build(),
+				testNewSecretBuilder(testNamespace, testDynatraceSecret).build(),
 			).
 			Build()
 

@@ -48,10 +48,6 @@ type Request interface {
 	WithRawQueryParams(params url.Values) Request
 	// WithJSONBody sets the request body as JSON
 	WithJSONBody(body any) Request
-	// WithPaasToken sets the token type to PaaS
-	WithPaasToken() Request
-	// WithoutToken explicitly disables authentication for the request
-	WithoutToken() Request
 	// WithHeader sets a custom header for the request, overriding any default value
 	WithHeader(key, value string) Request
 	// Execute executes the request and unmarshals the response into the provided model
@@ -67,7 +63,6 @@ type Config struct {
 	HTTPClient *http.Client
 	UserAgent  string
 	APIToken   string
-	PaasToken  string
 }
 
 type ClientImpl struct {
@@ -83,24 +78,14 @@ func NewClient(cfg Config) *ClientImpl {
 type RequestImpl struct {
 	client *ClientImpl
 
-	ctx       context.Context
-	query     url.Values
-	headers   http.Header
-	method    string
-	path      string
-	body      []byte
-	tokenType TokenType
-	err       error
+	ctx     context.Context
+	query   url.Values
+	headers http.Header
+	method  string
+	path    string
+	body    []byte
+	err     error
 }
-
-// TokenType represents the type of authentication token to use
-type TokenType int
-
-const (
-	TokenTypeAPI TokenType = iota
-	TokenTypePaaS
-	TokenTypeNone
-)
 
 func (c *ClientImpl) newRequest(ctx context.Context) *RequestImpl {
 	headers := make(http.Header)
@@ -195,20 +180,6 @@ func (r *RequestImpl) WithJSONBody(body any) Request {
 	return r
 }
 
-// WithPaasToken sets the token type to PaaS
-func (r *RequestImpl) WithPaasToken() Request {
-	r.tokenType = TokenTypePaaS
-
-	return r
-}
-
-// WithoutToken explicitly disables authentication for the request
-func (r *RequestImpl) WithoutToken() Request {
-	r.tokenType = TokenTypeNone
-
-	return r
-}
-
 // WithHeader sets a custom header for the request, overriding existing value
 func (r *RequestImpl) WithHeader(key, value string) Request {
 	r.headers.Set(key, value)
@@ -247,17 +218,6 @@ func (r *RequestImpl) Execute(model any) error {
 // and returns the response headers on success.
 func (r *RequestImpl) ExecuteWriter(writer io.Writer) (http.Header, error) {
 	return r.doRequestStream(writer)
-}
-
-func (r *RequestImpl) getToken() string {
-	switch r.tokenType {
-	case TokenTypePaaS:
-		return r.client.cfg.PaasToken
-	case TokenTypeNone:
-		return ""
-	default:
-		return r.client.cfg.APIToken
-	}
 }
 
 func (r *RequestImpl) buildURL() (*url.URL, error) {
@@ -302,7 +262,7 @@ func (r *RequestImpl) doRequestStream(writer io.Writer) (responseHeaders http.He
 		return nil, fmt.Errorf("create HTTP request: %w", err)
 	}
 
-	setHeaders(req, r.client.cfg.UserAgent, r.getToken(), r.headers)
+	r.setHeaders(req)
 
 	httpClient := r.client.cfg.HTTPClient
 	if httpClient == nil {
@@ -363,7 +323,7 @@ func (r *RequestImpl) doRequest() (body []byte, cacheKey string, err error) {
 		return nil, "", fmt.Errorf("create HTTP request: %w", err)
 	}
 
-	setHeaders(req, r.client.cfg.UserAgent, r.getToken(), r.headers)
+	r.setHeaders(req)
 
 	httpClient := r.client.cfg.HTTPClient
 	if httpClient == nil {
@@ -398,22 +358,22 @@ func (r *RequestImpl) doRequest() (body []byte, cacheKey string, err error) {
 }
 
 // setHeaders sets the common headers for the request
-func setHeaders(req *http.Request, userAgent, token string, customHeaders http.Header) {
+func (r *RequestImpl) setHeaders(req *http.Request) {
 	req.Header.Set("Accept", "application/json")
 
-	if token != "" {
+	if token := r.client.cfg.APIToken; token != "" {
 		req.Header.Set("Authorization", apiTokenHeader+token)
 	}
 
-	if userAgent != "" {
-		req.Header.Set("User-Agent", userAgent)
+	if agent := r.client.cfg.UserAgent; agent != "" {
+		req.Header.Set("User-Agent", agent)
 	}
 
 	if req.GetBody != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}
 
-	for key, values := range customHeaders {
+	for key, values := range r.headers {
 		if len(values) == 0 {
 			continue
 		}

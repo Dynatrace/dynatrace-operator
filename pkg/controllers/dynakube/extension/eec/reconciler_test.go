@@ -1847,6 +1847,7 @@ func TestPublicRegistryImage(t *testing.T) {
 	sts := getStatefulset(t, dk)
 
 	require.Equal(t, expectedImageURI, sts.Spec.Template.Spec.Containers[0].Image)
+	assert.Equal(t, expectedImageURI, dk.Status.Extensions.ResolvedImage)
 
 	t.Run("template image takes precedence over public registry", func(t *testing.T) {
 		t.Cleanup(version.DisableCacheForTest(123))
@@ -1868,5 +1869,6 @@ func TestPublicRegistryImage(t *testing.T) {
 		require.NoError(t, err)
 
 		require.Equal(t, templateImageURI, statefulSet.Spec.Template.Spec.Containers[0].Image)
+		assert.Equal(t, templateImageURI, dk.Status.Extensions.ResolvedImage)
 	})
 }
