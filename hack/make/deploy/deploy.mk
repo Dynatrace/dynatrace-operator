@@ -7,6 +7,7 @@ PROFILING ?= true
 PLATFORM ?= "kubernetes"
 HELM_CHART ?= config/helm/chart/default
 IMAGE_PULL_POLICY ?= Always
+PROMETHEUS_CRDS ?= true
 
 ## Display the image name used to deploy the helm chart
 deploy/show-image-ref:
@@ -36,7 +37,7 @@ deploy: manifests/crd/helm
 			--create-namespace \
 			--atomic \
 			--set installCRD=true \
-			--set prometheus.installCRDs=true \
+			--set prometheus.installCRDs=$(PROMETHEUS_CRDS) \
 			--set csidriver.enabled=$(ENABLE_CSI) \
 			--set csidriver.migrationMode=$(CSI_MIGRATION_MODE) \
 			--set webhook.replicas=$(WEBHOOK_REPLICAS) \
