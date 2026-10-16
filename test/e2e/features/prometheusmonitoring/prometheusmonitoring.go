@@ -14,7 +14,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sdeployment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/consts"
-	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/operator"
 	k8sobject "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects"
@@ -22,7 +21,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
 	appsv1 "k8s.io/api/apps/v1"
 	"sigs.k8s.io/e2e-framework/pkg/features"
-	"sigs.k8s.io/e2e-framework/third_party/helm"
 )
 
 const (
@@ -64,8 +62,6 @@ func Feature(t *testing.T) features.Feature {
 		},
 	}
 
-	installPrometheusCRDs(builder)
-
 	dynakube.Install(builder, secretConfig, dk)
 
 	builder.Assess("created PrometheusMonitoring", k8sobject.Create(pm))
@@ -105,8 +101,6 @@ func Feature(t *testing.T) features.Feature {
 	// Ensure the object gets cleaned up even if a previous step failed
 	builder.Teardown(k8sobject.Delete(pm))
 
-	uninstallPrometheusCRDs(builder)
-
 	return builder.Feature()
 }
 
@@ -136,8 +130,6 @@ func PublicRegistry(t *testing.T) features.Feature {
 		},
 	}
 
-	installPrometheusCRDs(builder)
-
 	dynakube.Install(builder, secretConfig, dk)
 
 	builder.Assess("created PrometheusMonitoring", k8sobject.Create(pm))
@@ -147,8 +139,6 @@ func PublicRegistry(t *testing.T) features.Feature {
 	builder.Assess("target allocator is ready", k8sobject.Expect(pm.TargetAllocator().GetDeploymentName(), pm.Namespace, k8sdeployment.IsRolloutComplete))
 
 	builder.Teardown(k8sobject.Delete(pm))
-
-	uninstallPrometheusCRDs(builder)
 
 	return builder.Feature()
 }
@@ -169,19 +159,4 @@ func waitForPhase(pm *pmapi.PrometheusMonitoring, expectedPhase status.Deploymen
 	return k8sobject.Eventually(pm.Name, pm.Namespace, func(pm *pmapi.PrometheusMonitoring) bool {
 		return pm.Status.Phase == expectedPhase
 	})
-}
-
-func installPrometheusCRDs(builder *features.FeatureBuilder) {
-	builder.WithSetup("install prometheus CRDs", helpers.ToFeatureFunc(operator.InstallLocal(false, helm.WithArgs(
-		"--set", "prometheus.installCRDs=true",
-		// Enable helm to overwrite pre-installed CRDs
-		"--take-ownership",
-		"--force-conflicts",
-	)), true))
-}
-
-func uninstallPrometheusCRDs(builder *features.FeatureBuilder) {
-	builder.WithTeardown("remove prometheus CRDs", helpers.ToFeatureFunc(operator.InstallLocal(false, helm.WithArgs(
-		"--set", "prometheus.installCRDs=false",
-	)), true))
 }
