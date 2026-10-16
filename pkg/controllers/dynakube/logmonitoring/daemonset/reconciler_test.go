@@ -196,6 +196,8 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, templateImageURI, daemonset.Spec.Template.Spec.Containers[0].Image)
 		assert.Equal(t, templateImageURI, daemonset.Spec.Template.Spec.InitContainers[0].Image)
+
+		assert.Equal(t, templateImageURI, dk.Status.LogMonitoring.ResolvedImage)
 	})
 }
 

@@ -169,7 +169,6 @@ func (c *ClientImpl) GetProcessModuleConfig(ctx context.Context) (*ProcessModule
 	}
 
 	err := c.apiClient.GET(ctx, processModuleConfigPath).
-		WithPaasToken().
 		WithQueryParams(params).
 		Execute(&resp)
 	if err != nil {

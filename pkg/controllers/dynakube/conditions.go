@@ -74,10 +74,6 @@ func areStatusesEqual(statusCondition *metav1.Condition, newCondition metav1.Con
 }
 
 func (controller *Controller) removeDeprecatedConditionTypes(dk *dynakube.DynaKube) {
-	if meta.FindStatusCondition(dk.Status.Conditions, dynakube.PaaSTokenConditionType) != nil {
-		meta.RemoveStatusCondition(&dk.Status.Conditions, dynakube.PaaSTokenConditionType)
-	}
-
 	if meta.FindStatusCondition(dk.Status.Conditions, dynakube.APITokenConditionType) != nil {
 		meta.RemoveStatusCondition(&dk.Status.Conditions, dynakube.APITokenConditionType)
 	}

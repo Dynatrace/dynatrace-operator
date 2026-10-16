@@ -96,7 +96,6 @@ func TestGetConnectionInfo(t *testing.T) {
 		apiClient := coremock.NewClient(t)
 		request := coremock.NewRequest(t)
 
-		request.EXPECT().WithPaasToken().Return(request).Once()
 		request.EXPECT().Execute(new(connectionInfoJSONResponse)).Run(func(obj any) {
 			target := obj.(*connectionInfoJSONResponse)
 			target.TenantUUID = "uuid"
@@ -119,7 +118,6 @@ func TestGetConnectionInfo(t *testing.T) {
 		apiClient := coremock.NewClient(t)
 		request := coremock.NewRequest(t)
 
-		request.EXPECT().WithPaasToken().Return(request).Once()
 		request.EXPECT().Execute(new(connectionInfoJSONResponse)).Return(errors.New("api error")).Once()
 
 		apiClient.EXPECT().GET(ctx, connectionInfoPath).Return(request).Once()
@@ -135,7 +133,6 @@ func TestGetConnectionInfo(t *testing.T) {
 		apiClient := coremock.NewClient(t)
 		request := coremock.NewRequest(t)
 
-		request.EXPECT().WithPaasToken().Return(request).Once()
 		request.EXPECT().Execute(new(connectionInfoJSONResponse)).Run(func(obj any) {
 			target := obj.(*connectionInfoJSONResponse)
 			target.TenantUUID = "uuid"
