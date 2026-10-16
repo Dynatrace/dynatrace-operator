@@ -309,6 +309,3 @@ rbac:
   prometheus:
     create: true
   supportability: true
-
-experimental:
-  enablePrometheus: false # temporary gate; set to true to enable prometheus integration in dev/test. Remove when prometheus integration is complete.

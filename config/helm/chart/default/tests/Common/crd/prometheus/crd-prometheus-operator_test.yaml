@@ -10,24 +10,25 @@ tests:
       - hasDocuments:
           count: 0
 
-  - it: Prometheus Operator CRDs should be absent when experimental.enablePrometheus is false
+  - it: Prometheus Operator CRDs should be absent when prometheus.installCRDs is false
     set:
-      prometheus.installCRDs: true
+      platform: kubernetes
     asserts:
       - hasDocuments:
           count: 0
 
-  - it: Prometheus Operator CRDs should be absent when prometheus.installCRDs is false
+  - it: Prometheus Operator CRDs should be absent on openshift even if prometheus.installCRDs is true
     set:
-      experimental.enablePrometheus: true
+      platform: openshift
+      prometheus.installCRDs: true
     asserts:
       - hasDocuments:
           count: 0
 
   - it: Prometheus Operator CRDs should render when enabled
     set:
+      platform: kubernetes
       prometheus.installCRDs: true
-      experimental.enablePrometheus: true
     asserts:
       - hasDocuments:
           count: 1
@@ -57,8 +58,8 @@ tests:
 
   - it: Prometheus Operator CRDs should be independent of the global installCRD switch
     set:
+      platform: kubernetes
       prometheus.installCRDs: true
-      experimental.enablePrometheus: true
       installCRD: false
     asserts:
       - hasDocuments:
