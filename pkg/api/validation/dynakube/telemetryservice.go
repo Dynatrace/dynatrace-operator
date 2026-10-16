@@ -159,7 +159,7 @@ func missingOTelCollectorImage(_ context.Context, _ *Validator, dk *dynakube.Dyn
 		return ""
 	}
 
-	if dk.Spec.Templates.OpenTelemetryCollector.ImageRef.HasImage() {
+	if dk.Spec.Templates.OpenTelemetryCollector.ImageRef.String() != "" {
 		return ""
 	}
 
