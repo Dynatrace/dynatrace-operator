@@ -53,7 +53,6 @@ func (c *ClientImpl) Get(ctx context.Context, args GetParams, writer io.Writer) 
 
 	apiRequest := c.apiClient.GET(ctx, agentDeploymentPath).
 		WithPath(args.OS, args.InstallerType, "version", args.Version).
-		WithPaasToken().
 		WithQueryParams(map[string]string{
 			"flavor":       args.Flavor,
 			"arch":         arch.Arch,
@@ -84,7 +83,6 @@ func (c *ClientImpl) GetLatest(ctx context.Context, args GetParams, writer io.Wr
 
 	apiRequest := c.apiClient.GET(ctx, agentDeploymentPath).
 		WithPath(args.OS, args.InstallerType, "latest").
-		WithPaasToken().
 		WithQueryParams(map[string]string{
 			"flavor":       args.Flavor,
 			"arch":         arch.Arch,
@@ -129,7 +127,6 @@ func (c *ClientImpl) GetVersions(ctx context.Context, args GetParams) ([]string,
 	err := c.apiClient.GET(ctx, agentDeploymentPath).
 		WithPath("versions", args.OS, args.InstallerType).
 		WithQueryParams(params).
-		WithPaasToken().
 		Execute(&resp)
 
 	return resp.AvailableVersions, errors.WithStack(err)

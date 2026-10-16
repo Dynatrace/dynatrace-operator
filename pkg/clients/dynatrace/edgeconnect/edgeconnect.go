@@ -66,7 +66,7 @@ func (c *ClientImpl) GetEdgeConnect(ctx context.Context, id string) (APIResponse
 
 	var response APIResponse
 
-	err := c.apiClient.GET(ctx, edgeConnectsPath).WithPath(id).WithoutToken().Execute(&response)
+	err := c.apiClient.GET(ctx, edgeConnectsPath).WithPath(id).Execute(&response)
 	if err != nil {
 		return APIResponse{}, errors.Wrap(err, "failed to get EdgeConnect")
 	}
@@ -78,7 +78,7 @@ func (c *ClientImpl) GetEdgeConnect(ctx context.Context, id string) (APIResponse
 func (c *ClientImpl) CreateEdgeConnect(ctx context.Context, request *Request) (APIResponse, error) {
 	var response APIResponse
 
-	err := c.apiClient.POST(ctx, edgeConnectsPath).WithoutToken().WithJSONBody(request).Execute(&response)
+	err := c.apiClient.POST(ctx, edgeConnectsPath).WithJSONBody(request).Execute(&response)
 	if err != nil {
 		return APIResponse{}, errors.Wrap(err, "failed to create EdgeConnect")
 	}
@@ -92,7 +92,7 @@ func (c *ClientImpl) UpdateEdgeConnect(ctx context.Context, id string, request *
 		return errNoEdgeConnectID
 	}
 
-	err := c.apiClient.PUT(ctx, edgeConnectsPath).WithPath(id).WithoutToken().WithJSONBody(request).Execute(nil)
+	err := c.apiClient.PUT(ctx, edgeConnectsPath).WithPath(id).WithJSONBody(request).Execute(nil)
 	if err != nil {
 		return errors.Wrap(err, "failed to update EdgeConnect")
 	}
@@ -109,7 +109,7 @@ func (c *ClientImpl) ListEdgeConnects(ctx context.Context, name string) ([]APIRe
 		"filter":     fmt.Sprintf("name='%s'", name),
 	}
 
-	err := c.apiClient.GET(ctx, edgeConnectsPath).WithoutToken().WithQueryParams(qp).Execute(&response)
+	err := c.apiClient.GET(ctx, edgeConnectsPath).WithQueryParams(qp).Execute(&response)
 	if err != nil {
 		return []APIResponse{}, errors.Wrap(err, "failed to get EdgeConnects")
 	}
@@ -123,7 +123,7 @@ func (c *ClientImpl) DeleteEdgeConnect(ctx context.Context, id string) error {
 		return errNoEdgeConnectID
 	}
 
-	err := c.apiClient.DELETE(ctx, edgeConnectsPath).WithPath(id).WithoutToken().Execute(nil)
+	err := c.apiClient.DELETE(ctx, edgeConnectsPath).WithPath(id).Execute(nil)
 	if err != nil {
 		return errors.Wrap(err, "failed to delete EdgeConnect")
 	}

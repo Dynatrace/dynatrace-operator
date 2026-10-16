@@ -106,7 +106,6 @@ var (
 		globalResourceAttributesExceedsLimit,
 		oneAgentResourceAttributesExceedsLimit,
 		otlpResourceAttributesExceedsLimit,
-		deprecatedPaasToken,
 		publicRegistryFlagIgnoredForPlatformToken,
 		isNodeImagePullWithoutCSI,
 		warnGlobalResourceAttributesSanitization,

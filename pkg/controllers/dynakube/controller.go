@@ -367,14 +367,12 @@ func (controller *Controller) setupTokensAndClient(ctx context.Context, dk *dyna
 
 	controller.tokens = tokens
 
-	dtClient, err := controller.dtClientFactory(ctx, controller.apiReader, dk, tokens.APIToken().String(), tokens.PaasToken().String(), "", k8senv.GetOperatorDTClientConnectionTimeout(ctx))
+	dtClient, err := controller.dtClientFactory(ctx, controller.apiReader, dk, tokens.APIToken().String(), "", k8senv.GetOperatorDTClientConnectionTimeout(ctx))
 	if err != nil {
 		controller.setConditionTokenError(dk, err)
 
 		return nil, err
 	}
-
-	controller.warnAboutDeprecatedTokens(ctx)
 
 	err = controller.verifyTokens(ctx, dtClient.Token, dk)
 	if err != nil {
@@ -497,18 +495,6 @@ func (controller *Controller) createDynakubeMapper(ctx context.Context, dk *dyna
 	dkMapper := mapper.NewDynakubeMapper(ctx, controller.client, controller.apiReader, controller.operatorNamespace, dk)
 
 	return &dkMapper
-}
-
-func (controller *Controller) warnAboutDeprecatedTokens(ctx context.Context) {
-	log := logd.FromContext(ctx)
-
-	if controller.tokens.PaasToken().Value != "" {
-		if controller.tokens.HasPlatformToken() {
-			log.Info("The '" + token.PaaSKey + "' token in the spec.tokens secret is deprecated. It will be ignored because the '" + token.APIKey + "' field in the secret contains a platform token, which will be used for authentication.")
-		} else {
-			log.Info("The '" + token.PaaSKey + "' token in the spec.tokens secret is deprecated. It will be used for authentication because the '" + token.APIKey + "' field in the secret does not contain a platform token.")
-		}
-	}
 }
 
 // Verify the provided tokens for structural and functional correctness. The former checks that there aren't any unexpected characters in the token values and
