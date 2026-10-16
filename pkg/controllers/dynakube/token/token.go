@@ -81,9 +81,9 @@ func (token *Token) verifyScopes(ctx context.Context, dtClient tokenclient.Clien
 
 	missingOptionalScopes := []string{}
 
-	for scope, optionalScope := range optionalScopes {
-		if optionalScope.IsMissing() {
-			missingOptionalScopes = append(missingOptionalScopes, scope)
+	for name, scope := range optionalScopes {
+		if scope.IsMissing() {
+			missingOptionalScopes = append(missingOptionalScopes, name)
 		}
 	}
 
