@@ -81,6 +81,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, imageClient image.Client, dk
 type imageResolver struct{ *dynakube.DynaKube }
 
 func (r imageResolver) GetImage() string {
-	return r.Spec.Templates.ExtensionExecutionController.ImageRef.StringOrEmpty()
+	return r.Spec.Templates.ExtensionExecutionController.ImageRef.String()
 }
 func (r imageResolver) SetImage(imageURI string) { r.Status.Extensions.ResolvedImage = imageURI }

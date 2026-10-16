@@ -16,19 +16,29 @@ func TestRef_String(t *testing.T) {
 		expected string
 	}{
 		{
-			name:     "repository and tag",
-			ref:      Ref{Repository: "docker.io/dynatrace/image", Tag: "1.2.3"},
-			expected: "docker.io/dynatrace/image:1.2.3",
+			"repository and tag",
+			Ref{Repository: "docker.io/dynatrace/image", Tag: "1.2.3"},
+			"docker.io/dynatrace/image:1.2.3",
 		},
 		{
-			name:     "digest wins over tag",
-			ref:      Ref{Repository: "docker.io/dynatrace/image", Tag: "1.2.3", Digest: "sha256:abc"},
-			expected: "docker.io/dynatrace/image@sha256:abc",
+			"digest wins over tag",
+			Ref{Repository: "docker.io/dynatrace/image", Tag: "1.2.3", Digest: "sha256:abc"},
+			"docker.io/dynatrace/image@sha256:abc",
 		},
 		{
-			name:     "digest without tag",
-			ref:      Ref{Repository: "docker.io/dynatrace/image", Digest: "sha256:abc"},
-			expected: "docker.io/dynatrace/image@sha256:abc",
+			"digest without tag",
+			Ref{Repository: "docker.io/dynatrace/image", Digest: "sha256:abc"},
+			"docker.io/dynatrace/image@sha256:abc",
+		},
+		{
+			"zero",
+			Ref{},
+			"",
+		},
+		{
+			"missing repository",
+			Ref{Tag: "test"},
+			"",
 		},
 	}
 
@@ -68,27 +78,6 @@ func TestRef_HasImage(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			assert.Equal(t, tc.expected, tc.ref.HasImage())
-		})
-	}
-}
-
-func TestRef_StringOrEmpty(t *testing.T) {
-	tests := []struct {
-		name      string
-		ref       Ref
-		wantEmpty bool
-	}{
-		{"zero", Ref{}, true},
-		{"only repo", Ref{Repository: "test"}, true},
-		{"with tag", Ref{Repository: "test", Tag: "1"}, false},
-		{"with digest", Ref{Repository: "test", Digest: "2"}, false},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			s := tt.ref.StringOrEmpty()
-			empty := s == ""
-			assert.Equal(t, tt.wantEmpty, empty, s)
 		})
 	}
 }

@@ -57,7 +57,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 type imageResolver struct{ *dynakube.DynaKube }
 
 func (r imageResolver) GetImage() string {
-	return r.Spec.Templates.OpenTelemetryCollector.ImageRef.StringOrEmpty()
+	return r.Spec.Templates.OpenTelemetryCollector.ImageRef.String()
 }
 func (r imageResolver) SetImage(imageURI string) { r.Status.OTelCollector.ResolvedImage = imageURI }
 

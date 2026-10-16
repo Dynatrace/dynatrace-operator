@@ -43,21 +43,17 @@ func (ref Ref) StringWithDefaults(repo, tag string) string {
 
 // String renders the image reference. If a digest is set, the tag is omitted to avoid the
 // confusing case where the tag and digest disagree — the digest always wins.
+// Returns the empty string if repository and tag/digest are not set.
 func (ref Ref) String() string {
+	if !ref.HasImage() {
+		return ""
+	}
+
 	if ref.Digest != "" {
 		return ref.Repository + "@" + ref.Digest
 	}
 
 	return ref.Repository + ":" + ref.Tag
-}
-
-// StringOrEmpty returns a String if it's usable as an image. Otherwise returns the empty string.
-func (ref Ref) StringOrEmpty() string {
-	if ref.HasImage() {
-		return ref.String()
-	}
-
-	return ""
 }
 
 // HasImage returns true when the ref points to a resolvable image — i.e. a repository

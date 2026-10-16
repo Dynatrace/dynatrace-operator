@@ -112,7 +112,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, imageClient dtimage.Client, 
 type imageResolver struct{ *dynakube.DynaKube }
 
 func (r imageResolver) GetImage() string {
-	return r.Spec.Templates.SQLExtensionExecutor.ImageRef.StringOrEmpty()
+	return r.Spec.Templates.SQLExtensionExecutor.ImageRef.String()
 }
 
 func (r imageResolver) SetImage(imageURI string) {

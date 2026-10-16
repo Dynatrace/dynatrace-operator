@@ -24,7 +24,7 @@ func TestGetContainer(t *testing.T) {
 
 	t.Run("get main container", func(t *testing.T) {
 		dk := &dynakube.DynaKube{}
-		mainContainer := getContainer(dk, tenantUUID, "")
+		mainContainer := getContainer(dk, tenantUUID, "image")
 
 		require.NotEmpty(t, mainContainer)
 
@@ -91,7 +91,7 @@ func TestGetInitContainer(t *testing.T) {
 		dk.Status.KubernetesClusterMEID = "test-me-id"
 		dk.Status.KubernetesClusterName = "test-cluster-name"
 
-		initContainer := getInitContainer(dk, tenantUUID, "")
+		initContainer := getInitContainer(dk, tenantUUID, "image")
 
 		require.NotEmpty(t, initContainer)
 

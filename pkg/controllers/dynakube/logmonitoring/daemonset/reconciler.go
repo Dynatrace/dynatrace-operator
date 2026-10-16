@@ -86,9 +86,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, imageClient dtimage.Client, 
 
 type imageResolver struct{ *dynakube.DynaKube }
 
-func (r imageResolver) GetImage() string {
-	return r.LogMonitoring().Template().ImageRef.StringOrEmpty()
-}
+func (r imageResolver) GetImage() string         { return r.LogMonitoring().Template().ImageRef.String() }
 func (r imageResolver) SetImage(imageURI string) { r.Status.LogMonitoring.ResolvedImage = imageURI }
 
 func (r *Reconciler) generateDaemonSet(dk *dynakube.DynaKube, imageURI string) (*appsv1.DaemonSet, error) {
