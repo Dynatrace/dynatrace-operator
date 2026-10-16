@@ -31,9 +31,7 @@ const (
 
 func Feature(t *testing.T) features.Feature {
 	builder := features.New("lifecycle")
-	if os.Getenv("OLM") == "true" {
-		t.Skip("Skipping Prometheus tests with OLM installation")
-	}
+
 	// skipping if deployed via manifests due to --set prometheus.installCRDs=true
 	if os.Getenv("MANIFESTS") == "true" {
 		t.Skip("Skipping Prometheus tests with manifests installation, helm options are not supported")
@@ -106,9 +104,7 @@ func Feature(t *testing.T) features.Feature {
 
 func PublicRegistry(t *testing.T) features.Feature {
 	builder := features.New("public-registry")
-	if os.Getenv("OLM") == "true" {
-		t.Skip("Skipping Prometheus tests with OLM installation")
-	}
+
 	// skipping if deployed via manifests due to --set prometheus.installCRDs=true
 	if os.Getenv("MANIFESTS") == "true" {
 		t.Skip("Skipping Prometheus tests with manifests installation, helm options are not supported")
