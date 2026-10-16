@@ -28,6 +28,11 @@ type OptionalScope struct {
 	Requested bool
 }
 
+// IsMissing reports whether an enabled feature requests the scope but the token doesn't have it.
+func (s OptionalScope) IsMissing() bool {
+	return s.Requested && !s.Available
+}
+
 type ScopeError struct {
 	Token         string
 	MissingScopes []string
@@ -72,12 +77,12 @@ func (token *Token) verifyScopes(ctx context.Context, dtClient tokenclient.Clien
 
 	err = token.verifyRequiredScopes(scopes, dk)
 
-	optionalScopes := token.collectOptionalScopes(scopes, dk)
+	optionalScopes := token.evaluateOptionalScopes(scopes, dk)
 
 	missingOptionalScopes := []string{}
 
 	for scope, optionalScope := range optionalScopes {
-		if optionalScope.Requested && !optionalScope.Available {
+		if optionalScope.IsMissing() {
 			missingOptionalScopes = append(missingOptionalScopes, scope)
 		}
 	}
@@ -113,9 +118,11 @@ func (token *Token) verifyRequiredScopes(scopes []string, dk *dynakube.DynaKube)
 	return nil
 }
 
-// collectOptionalScopes reports the availability of all optional scopes for the API token, independent of
-// the enabled features, because some consumers (e.g. the MEID lookup) are not tied to a feature.
-func (token *Token) collectOptionalScopes(availableScopes []string, dk *dynakube.DynaKube) map[string]OptionalScope {
+// evaluateOptionalScopes returns the optional scopes of the API token. For any other token it returns an empty map.
+// Every scope in tokenclient.OptionalScopes is included with Available set from the token's scopes, independent of
+// the enabled features, because some consumers (e.g. the MEID lookup) don't belong to a feature.
+// Requested marks scopes that an enabled feature lists as optional.
+func (token *Token) evaluateOptionalScopes(availableScopes []string, dk *dynakube.DynaKube) map[string]OptionalScope {
 	optionalScopes := map[string]OptionalScope{}
 	if token.Type != APIKey {
 		return optionalScopes

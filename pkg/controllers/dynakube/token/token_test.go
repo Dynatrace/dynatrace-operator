@@ -48,13 +48,13 @@ func TestTokenVerifyScopesNoFeatures(t *testing.T) {
 	assert.Empty(t, optionalScopes)
 }
 
-func TestTokenCollectOptionalScopes(t *testing.T) {
+func TestTokenEvaluateOptionalScopes(t *testing.T) {
 	availableScopes := []string{tokenclient.ScopeSettingsRead, tokenclient.ScopeSettingsWrite}
 
 	t.Run("api token reports all optional scopes even without enabled features", func(t *testing.T) {
 		apiToken := newToken(APIKey, "api-token")
 
-		optionalScopes := apiToken.collectOptionalScopes(availableScopes, &dynakube.DynaKube{})
+		optionalScopes := apiToken.evaluateOptionalScopes(availableScopes, &dynakube.DynaKube{})
 
 		assert.Equal(t, map[string]OptionalScope{
 			tokenclient.ScopeSettingsRead:  {Available: true},
@@ -65,7 +65,7 @@ func TestTokenCollectOptionalScopes(t *testing.T) {
 	t.Run("data ingest token reports no optional scopes", func(t *testing.T) {
 		dataIngestToken := newToken(DataIngestKey, "data-ingest-token")
 
-		optionalScopes := dataIngestToken.collectOptionalScopes(availableScopes, &dynakube.DynaKube{})
+		optionalScopes := dataIngestToken.evaluateOptionalScopes(availableScopes, &dynakube.DynaKube{})
 
 		assert.Empty(t, optionalScopes)
 	})

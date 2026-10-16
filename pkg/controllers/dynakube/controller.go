@@ -551,11 +551,11 @@ func (controller *Controller) updateOptionalScopesConditions(dk *dynakube.DynaKu
 	unavailableScopes := []string{}
 
 	for _, scope := range tokenclient.OptionalScopes {
-		optionalScope, ok := optionalScopes[scope]
+		optionalScope := optionalScopes[scope]
 		switch {
-		case ok && optionalScope.Available:
+		case optionalScope.Available:
 			optionalscope.SetAvailable(dk, scope)
-		case ok && optionalScope.Requested:
+		case optionalScope.IsMissing():
 			optionalscope.SetMissing(dk, scope)
 			unavailableScopes = append(unavailableScopes, scope)
 		default:

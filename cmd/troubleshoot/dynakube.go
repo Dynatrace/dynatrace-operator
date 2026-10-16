@@ -147,7 +147,7 @@ func checkDynatraceAPITokenScopes(ctx context.Context, baseLog logd.Logger, apiR
 	missingOptionalScopes := []string{}
 
 	for scope, optionalScope := range optionalScopes {
-		if optionalScope.Requested && !optionalScope.Available {
+		if optionalScope.IsMissing() {
 			missingOptionalScopes = append(missingOptionalScopes, scope)
 		}
 	}

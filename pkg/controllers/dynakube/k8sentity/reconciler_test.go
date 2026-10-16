@@ -320,7 +320,7 @@ func TestReconcileMEID(t *testing.T) {
 
 		condition := meta.FindStatusCondition(*dk.Conditions(), meIDConditionType)
 		require.NotNil(t, condition)
-		assert.Equal(t, MissingMEIDMessage, condition.Message)
+		assert.Equal(t, k8sconditions.MissingMEIDMessage, condition.Message)
 	})
 }
 

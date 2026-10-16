@@ -12,7 +12,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/k8sentity"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/tenant/optionalscope"
@@ -89,7 +88,7 @@ func (r *Reconciler) checkLogMonitoringSettings(ctx context.Context, dtClient se
 	log.Info("start reconciling log monitoring settings")
 
 	if dk.Status.KubernetesClusterMEID == "" {
-		msg := k8sentity.MissingMEIDMessage
+		msg := k8sconditions.MissingMEIDMessage
 		log.Info(msg)
 
 		setSkippedCondition(dk.Conditions(), msg)
