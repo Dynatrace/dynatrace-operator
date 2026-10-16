@@ -1,6 +1,6 @@
 # check=skip=RedundantTargetPlatform
 # setup build image
-FROM --platform=$BUILDPLATFORM golang:1.26.5@sha256:079e59808d2d252516e27e3f3a9c003740dee7f75e55aa71528766d52bcfc16a AS operator-build
+FROM --platform=$BUILDPLATFORM golang:1.26.9@sha256:cf7e928cb9edc2ed8b3cc6fe77ee1ee30b9fea28149564c8840097321a7600ea AS operator-build
 
 WORKDIR /app
 
@@ -32,8 +32,8 @@ RUN --mount=type=cache,target="/root/.cache/go-build" \
 RUN cyclonedx-gomod app -licenses -assert-licenses -json -main cmd/ -output ./build/_output/bin/dynatrace-operator-bin-sbom.cdx.json
 
 # platform is required, otherwise the copy command will copy the wrong architecture files, don't trust GitHub Actions linting warnings
-FROM --platform=$TARGETPLATFORM registry.access.redhat.com/ubi9-micro:9.7-1778461406@sha256:1ef916d40ff7f1a4882a31ad5ab37f9572baa7bd182c3519d5e0cb557ffc04f3 AS base
-FROM --platform=$TARGETPLATFORM registry.access.redhat.com/ubi9:9.7-1778576335@sha256:8ca59004c1c505bdabadd5202bd3363986f5bf873fcfb36f60561d7362fe52a7 AS dependency
+FROM --platform=$TARGETPLATFORM registry.access.redhat.com/ubi9-micro:9.8-1791895366@sha256:5be877a2a280ae36eb9ab80ca4efb28bbf77c57abbba38137cdc37a03b8465e6 AS base
+FROM --platform=$TARGETPLATFORM registry.access.redhat.com/ubi9:9.8-1791888712@sha256:16e9e43d99e181463513cc84a514859b1abb9460f1c4d9e208da4b4e51cd5cc3 AS dependency
 RUN mkdir -p /tmp/rootfs-dependency
 COPY --from=base / /tmp/rootfs-dependency
 RUN dnf install --installroot /tmp/rootfs-dependency \
