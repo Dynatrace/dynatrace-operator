@@ -33,6 +33,7 @@ func Feature(t *testing.T) features.Feature {
 	builder := features.New("lifecycle")
 
 	// skipping if deployed via manifests due to --set prometheus.installCRDs=true
+	// which can break if ran againsts OCP, as OCP has those CRDs builtin
 	if os.Getenv("MANIFESTS") == "true" {
 		t.Skip("Skipping Prometheus tests with manifests installation, helm options are not supported")
 	}
@@ -106,6 +107,7 @@ func PublicRegistry(t *testing.T) features.Feature {
 	builder := features.New("public-registry")
 
 	// skipping if deployed via manifests due to --set prometheus.installCRDs=true
+	// which can break if ran againsts OCP, as OCP has those CRDs builtin
 	if os.Getenv("MANIFESTS") == "true" {
 		t.Skip("Skipping Prometheus tests with manifests installation, helm options are not supported")
 	}
