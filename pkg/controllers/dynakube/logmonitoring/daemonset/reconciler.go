@@ -105,11 +105,11 @@ func (r *Reconciler) generateDaemonSet(dk *dynakube.DynaKube, imageURI string) (
 		tag = dk.Spec.Templates.LogMonitoring.ImageRef.Tag
 	}
 
-	labels := k8slabel.NewAppLabels(k8slabel.LogMonitoringComponentLabel, dk.Name, k8slabel.LogMonitoringComponentLabel, tag)
+	labels := k8slabel.New(k8slabel.LogMonitoring, dk.Name, tag)
 
 	ds, err := k8sdaemonset.Build(dk, dk.LogMonitoring().GetDaemonSetName(), getContainer(dk, tenantUUID, imageURI),
 		k8sdaemonset.SetInitContainer(getInitContainer(dk, tenantUUID, imageURI)),
-		k8sdaemonset.SetAllLabels(labels.BuildLabels(), labels.BuildMatchLabels(), labels.BuildLabels(), dk.LogMonitoring().Template().Labels),
+		k8sdaemonset.SetAllLabels(labels.AsMap(), labels.AsSelector(), labels.AsSelector(), dk.LogMonitoring().Template().Labels),
 		k8sdaemonset.SetAllAnnotations(nil, r.getAnnotations(dk)),
 		k8sdaemonset.SetServiceAccount(serviceAccountName),
 		k8sdaemonset.SetDNSPolicy(dk.LogMonitoring().Template().DNSPolicy),

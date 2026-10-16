@@ -104,16 +104,16 @@ func (statefulSetBuilder Builder) getBaseSpec() appsv1.StatefulSetSpec {
 }
 
 func (statefulSetBuilder Builder) addLabels(sts *appsv1.StatefulSet) {
-	appLabels := statefulSetBuilder.buildAppLabels()
-	sts.Labels = appLabels.BuildLabels()
-	sts.Spec.Selector = &metav1.LabelSelector{MatchLabels: appLabels.BuildMatchLabels()}
-	sts.Spec.Template.Labels = maputils.MergeMap(statefulSetBuilder.capability.Properties().Labels, appLabels.BuildLabels())
+	labels := statefulSetBuilder.buildLabels()
+	sts.Labels = labels.AsMap()
+	sts.Spec.Selector = &metav1.LabelSelector{MatchLabels: labels.AsSelector()}
+	sts.Spec.Template.Labels = maputils.MergeMap(statefulSetBuilder.capability.Properties().Labels, labels.AsSelector())
 }
 
-func (statefulSetBuilder Builder) buildAppLabels() *k8slabel.AppLabels {
+func (statefulSetBuilder Builder) buildLabels() *k8slabel.Labels {
 	version := statefulSetBuilder.dynakube.Status.ActiveGate.Version
 
-	return k8slabel.NewAppLabels(k8slabel.ActiveGateComponentLabel, statefulSetBuilder.dynakube.Name, consts.MultiActiveGateName, version)
+	return k8slabel.New(k8slabel.ActiveGate, statefulSetBuilder.dynakube.Name, version)
 }
 
 func (statefulSetBuilder Builder) addUserAnnotations(sts *appsv1.StatefulSet) {
@@ -190,7 +190,7 @@ func (statefulSetBuilder Builder) buildPodSecurityContext() *corev1.PodSecurityC
 }
 
 func (statefulSetBuilder Builder) defaultTopologyConstraints() []corev1.TopologySpreadConstraint {
-	appLabels := statefulSetBuilder.buildAppLabels()
+	labels := statefulSetBuilder.buildLabels()
 	nodeInclusionPolicyHonor := corev1.NodeInclusionPolicyHonor
 
 	return []corev1.TopologySpreadConstraint{
@@ -198,14 +198,14 @@ func (statefulSetBuilder Builder) defaultTopologyConstraints() []corev1.Topology
 			MaxSkew:           1,
 			TopologyKey:       corev1.LabelTopologyZone,
 			WhenUnsatisfiable: corev1.ScheduleAnyway,
-			LabelSelector:     &metav1.LabelSelector{MatchLabels: appLabels.BuildMatchLabels()},
+			LabelSelector:     &metav1.LabelSelector{MatchLabels: labels.AsSelector()},
 		},
 		{
 			MaxSkew:           1,
 			TopologyKey:       corev1.LabelHostname,
 			WhenUnsatisfiable: corev1.ScheduleAnyway,
 			NodeTaintsPolicy:  &nodeInclusionPolicyHonor,
-			LabelSelector:     &metav1.LabelSelector{MatchLabels: appLabels.BuildMatchLabels()},
+			LabelSelector:     &metav1.LabelSelector{MatchLabels: labels.AsSelector()},
 		},
 	}
 }

@@ -25,7 +25,7 @@ func TestIsLatestVersion(t *testing.T) {
 
 	t.Run("DynaKube version matches", func(t *testing.T) {
 		testDynaKubeCRD.Labels = map[string]string{
-			k8slabel.AppVersionLabel: "1.2.3",
+			k8slabel.AppVersion: "1.2.3",
 		}
 		t.Setenv(k8senv.AppVersion, "1.2.3")
 
@@ -35,7 +35,7 @@ func TestIsLatestVersion(t *testing.T) {
 	})
 	t.Run("DynaKube version doesn't match", func(t *testing.T) {
 		testDynaKubeCRD.Labels = map[string]string{
-			k8slabel.AppVersionLabel: "1.2.3",
+			k8slabel.AppVersion: "1.2.3",
 		}
 		t.Setenv(k8senv.AppVersion, "0.0.0-snapshot")
 
@@ -45,7 +45,7 @@ func TestIsLatestVersion(t *testing.T) {
 	})
 	t.Run("EdgeConnect version matches", func(t *testing.T) {
 		testEdgeConnectCRD.Labels = map[string]string{
-			k8slabel.AppVersionLabel: "1.2.3",
+			k8slabel.AppVersion: "1.2.3",
 		}
 		t.Setenv(k8senv.AppVersion, "1.2.3")
 
@@ -55,7 +55,7 @@ func TestIsLatestVersion(t *testing.T) {
 	})
 	t.Run("EdgeConnect version doesn't match", func(t *testing.T) {
 		testEdgeConnectCRD.Labels = map[string]string{
-			k8slabel.AppVersionLabel: "1.2.3",
+			k8slabel.AppVersion: "1.2.3",
 		}
 		t.Setenv(k8senv.AppVersion, "0.0.0-snapshot")
 
@@ -73,7 +73,7 @@ func TestIsLatestVersion(t *testing.T) {
 	})
 	t.Run("Fail if env var is missing", func(t *testing.T) {
 		testDynaKubeCRD.Labels = map[string]string{
-			k8slabel.AppVersionLabel: "1.2.3",
+			k8slabel.AppVersion: "1.2.3",
 		}
 
 		result, err := IsLatestVersion(t.Context(), fake.NewClientWithIndex(testDynaKubeCRD), DynaKubeName)

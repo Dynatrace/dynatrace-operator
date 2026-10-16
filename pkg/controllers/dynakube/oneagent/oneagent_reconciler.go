@@ -204,12 +204,12 @@ func (r *Reconciler) createOneAgentTenantConnectionInfoConfigMap(ctx context.Con
 	log := logd.FromContext(ctx)
 	configMapData := extractPublicData(dk)
 
-	coreLabels := k8slabel.NewCoreLabels(dk.Name, k8slabel.OneAgentComponentLabel)
+	labels := k8slabel.New(k8slabel.OneAgent, dk.Name, "")
 
 	configMap, err := k8sconfigmap.Build(dk,
 		dk.OneAgent().GetConnectionInfoConfigMapName(),
 		configMapData,
-		k8sconfigmap.SetLabels(coreLabels.BuildLabels()),
+		k8sconfigmap.SetLabels(labels.AsMap()),
 	)
 	if err != nil {
 		return errors.WithStack(err)
@@ -297,14 +297,11 @@ func (r *Reconciler) reconcileRollout(ctx context.Context, dk *dynakube.DynaKube
 	return nil
 }
 
-func (r *Reconciler) getOneagentPods(ctx context.Context, dk *dynakube.DynaKube, feature string) ([]corev1.Pod, []client.ListOption, error) {
-	agentVersion := dk.OneAgent().GetVersion()
-	appLabels := k8slabel.NewAppLabels(k8slabel.OneAgentComponentLabel, dk.Name,
-		feature, agentVersion)
+func (r *Reconciler) getOneagentPods(ctx context.Context, dk *dynakube.DynaKube) ([]corev1.Pod, []client.ListOption, error) {
 	podList := &corev1.PodList{}
 	listOps := []client.ListOption{
 		client.InNamespace(dk.GetNamespace()),
-		client.MatchingLabels(appLabels.BuildLabels()),
+		client.MatchingLabels(k8slabel.New(k8slabel.OneAgent, dk.Name, "").AsSelector()),
 	}
 	err := r.client.List(ctx, podList, listOps...)
 
@@ -343,7 +340,7 @@ func (r *Reconciler) buildDesiredDaemonSet(ctx context.Context, dk *dynakube.Dyn
 }
 
 func (r *Reconciler) reconcileInstanceStatuses(ctx context.Context, dk *dynakube.DynaKube) error {
-	pods, listOpts, err := r.getOneagentPods(ctx, dk, deploymentmetadata.GetOneAgentDeploymentType(dk))
+	pods, listOpts, err := r.getOneagentPods(ctx, dk)
 	if err != nil {
 		handlePodListError(ctx, err, listOpts)
 	}

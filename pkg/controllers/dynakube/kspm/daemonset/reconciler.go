@@ -117,7 +117,7 @@ func (r *Reconciler) generateDaemonSet(dk *dynakube.DynaKube, tlsSecretHash stri
 		return nil, err
 	}
 
-	labels := k8slabel.NewAppLabels(k8slabel.KSPMComponentLabel, dk.Name, k8slabel.KSPMComponentLabel, dk.Spec.Templates.KSPMNodeConfigurationCollector.ImageRef.Tag)
+	labels := k8slabel.New(k8slabel.KSPM, dk.Name, dk.Spec.Templates.KSPMNodeConfigurationCollector.ImageRef.Tag)
 	templateAnnotations := map[string]string{
 		tokenSecretHashAnnotation: dk.KSPM().TokenSecretHash,
 		tlsSecretHashAnnotation:   tlsSecretHash,
@@ -130,7 +130,7 @@ func (r *Reconciler) generateDaemonSet(dk *dynakube.DynaKube, tlsSecretHash stri
 	}
 
 	ds, err := k8sdaemonset.Build(dk, dk.KSPM().GetDaemonSetName(), getContainer(dk, tenantUUID),
-		k8sdaemonset.SetAllLabels(labels.BuildLabels(), labels.BuildMatchLabels(), labels.BuildLabels(), dk.KSPM().Labels),
+		k8sdaemonset.SetAllLabels(labels.AsMap(), labels.AsSelector(), labels.AsSelector(), dk.KSPM().Labels),
 		k8sdaemonset.SetAllAnnotations(dk.KSPM().Annotations, templateAnnotations),
 		k8sdaemonset.SetServiceAccount(serviceAccountName),
 		k8sdaemonset.SetAffinity(affinity),

@@ -100,7 +100,7 @@ func (r *Reconciler) setDynakubeStatus(dk *dynakube.DynaKube, connectionInfo agc
 func (r *Reconciler) createTenantTokenSecret(ctx context.Context, dk *dynakube.DynaKube, secretName string, connectionInfo agclient.ConnectionInfo) error {
 	log := logd.FromContext(ctx)
 
-	secret, err := connectioninfo.BuildTenantSecret(dk, k8slabel.ActiveGateComponentLabel, secretName, connectionInfo.TenantToken)
+	secret, err := connectioninfo.BuildTenantSecret(dk, k8slabel.ActiveGate, secretName, connectionInfo.TenantToken)
 	if err != nil {
 		return errors.WithStack(err)
 	}

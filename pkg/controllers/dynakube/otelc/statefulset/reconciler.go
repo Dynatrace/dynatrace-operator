@@ -114,14 +114,14 @@ func (r *Reconciler) createOrUpdateStatefulset(ctx context.Context, dk *dynakube
 		return nil
 	}
 
-	appLabels := buildAppLabels(dk.Name)
+	labels := k8slabel.New(k8slabel.OTelCol, dk.Name, "")
 
 	templateAnnotations, err := r.buildTemplateAnnotations(ctx, dk)
 	if err != nil {
 		return err
 	}
 
-	topologySpreadConstraints := k8stopology.MaxOnePerNode(appLabels)
+	topologySpreadConstraints := k8stopology.MaxOnePerNode(labels)
 	if len(dk.Spec.Templates.OpenTelemetryCollector.TopologySpreadConstraints) > 0 {
 		topologySpreadConstraints = dk.Spec.Templates.OpenTelemetryCollector.TopologySpreadConstraints
 	}
@@ -134,7 +134,7 @@ func (r *Reconciler) createOrUpdateStatefulset(ctx context.Context, dk *dynakube
 	sts, err := k8sstatefulset.Build(dk, dk.OTelCollectorStatefulsetName(), getContainer(dk, replicas),
 		k8sstatefulset.SetReplicas(replicas),
 		k8sstatefulset.SetPodManagementPolicy(appsv1.ParallelPodManagement),
-		k8sstatefulset.SetAllLabels(appLabels.BuildLabels(), appLabels.BuildMatchLabels(), appLabels.BuildLabels(), dk.Spec.Templates.OpenTelemetryCollector.Labels),
+		k8sstatefulset.SetAllLabels(labels.AsMap(), labels.AsSelector(), labels.AsSelector(), dk.Spec.Templates.OpenTelemetryCollector.Labels),
 		k8sstatefulset.SetAllAnnotations(nil, templateAnnotations),
 		k8sstatefulset.SetAffinity(buildAffinity()),
 		k8sstatefulset.SetServiceAccount(serviceAccountName),
@@ -293,10 +293,6 @@ func buildPodSecurityContext() *corev1.PodSecurityContext {
 			Type: corev1.SeccompProfileTypeRuntimeDefault,
 		},
 	}
-}
-
-func buildAppLabels(dkName string) *k8slabel.AppLabels {
-	return k8slabel.NewAppLabels(k8slabel.OTelColComponentLabel, dkName, k8slabel.OTelColComponentLabel, "")
 }
 
 func buildAffinity() corev1.Affinity {

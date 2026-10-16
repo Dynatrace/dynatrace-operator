@@ -125,7 +125,7 @@ func IsPostponedError(err error) bool {
 func (r *Reconciler) createTenantTokenSecret(ctx context.Context, dk *dynakube.DynaKube, secretName string, connectionInfo oneagent.ConnectionInfo) error {
 	log := logd.FromContext(ctx)
 
-	secret, err := connectioninfo.BuildTenantSecret(dk, k8slabel.OneAgentComponentLabel, secretName, connectionInfo.TenantToken)
+	secret, err := connectioninfo.BuildTenantSecret(dk, k8slabel.OneAgent, secretName, connectionInfo.TenantToken)
 	if err != nil {
 		return errors.WithStack(err)
 	}

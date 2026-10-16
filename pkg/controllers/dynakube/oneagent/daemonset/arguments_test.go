@@ -294,7 +294,6 @@ func TestArguments(t *testing.T) {
 		builder := builder{
 			dk:             &dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{OneAgent: oneagent.Spec{ClassicFullStack: &oneagent.HostInjectSpec{}}}},
 			hostInjectSpec: &oneagent.HostInjectSpec{Args: custArgs},
-			deploymentType: deploymentmetadata.CloudNativeDeploymentType,
 		}
 
 		arguments, _ := builder.arguments()
@@ -332,7 +331,6 @@ func TestArguments(t *testing.T) {
 				},
 			},
 			hostInjectSpec: &oneagent.HostInjectSpec{Args: custArgs},
-			deploymentType: deploymentmetadata.CloudNativeDeploymentType,
 		}
 
 		arguments, _ := builder.arguments()
@@ -367,7 +365,6 @@ func TestPodSpec_Arguments(t *testing.T) {
 			dk:             dk,
 			hostInjectSpec: hostInjectSpecs,
 			clusterID:      testClusterID,
-			deploymentType: deploymentmetadata.ClassicFullStackDeploymentType,
 		},
 	}
 
