@@ -104,24 +104,13 @@ func (r *Reconciler) Reconcile(ctx context.Context, pm *prometheusmonitoring.Pro
 	return err
 }
 
-// resolveImage uses the explicit image from .spec.scraper.image when set, otherwise
-// resolves the latest scraper image from the fleet management API.
-func (r *Reconciler) resolveImage(ctx context.Context, s *reconcileScope) error {
-	imageURI := s.Spec.Image
-
-	if imageURI == "" {
-		var err error
-
-		imageURI, err = registry.ResolveImage(ctx, s.ImageClient, s.Owner.Spec.PublicRegistryOverride, image.Scraper)
-		if err != nil {
-			return err
-		}
-	}
-
-	s.Owner.Status.Scraper.ResolvedImage = imageURI
-
-	return nil
+type imageResolver struct {
+	*prometheusmonitoring.PrometheusMonitoring
 }
+
+func (r imageResolver) GetImage() string               { return r.Spec.Scraper.Image }
+func (r imageResolver) SetImage(imageURI string)       { r.Status.Scraper.ResolvedImage = imageURI }
+func (r imageResolver) PublicRegistryOverride() string { return r.Spec.PublicRegistryOverride }
 
 func (r *Reconciler) reconcileConfigMap(ctx context.Context, s *reconcileScope) error {
 	log := logd.FromContext(ctx)
@@ -184,7 +173,7 @@ func (r *Reconciler) reconcileDeployment(ctx context.Context, s *reconcileScope)
 	log := logd.FromContext(ctx)
 	log.Debug("reconciling deployment")
 
-	if err := r.resolveImage(ctx, s); err != nil {
+	if err := registry.ResolveImage(ctx, imageResolver{s.Owner}, s.ImageClient, image.Scraper); err != nil {
 		return fmt.Errorf("resolve image: %w", err)
 	}
 
