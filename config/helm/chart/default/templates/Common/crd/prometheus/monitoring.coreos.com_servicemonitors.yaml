@@ -1,4 +1,4 @@
-{{- if and (.Values.prometheus).installCRDs (.Values.experimental).enablePrometheus }}
+{{- if and (.Values.prometheus).installCRDs (ne (include "dynatrace-operator.platform" .) "openshift") }}
 # Source: https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.94.1/example/prometheus-operator-crd/monitoring.coreos.com_servicemonitors.yaml
 # Licensed under the Apache License, Version 2.0 (https://www.apache.org/licenses/LICENSE-2.0)
 #

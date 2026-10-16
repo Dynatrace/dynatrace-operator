@@ -36,7 +36,7 @@ func Feature(t *testing.T) features.Feature {
 	if os.Getenv("OLM") == "true" {
 		t.Skip("Skipping Prometheus tests with OLM installation")
 	}
-	// skipping if deployed via manifests due to --set experimental.enablePrometheus=true and --set prometheus.installCRDs=true
+	// skipping if deployed via manifests due to --set prometheus.installCRDs=true
 	if os.Getenv("MANIFESTS") == "true" {
 		t.Skip("Skipping Prometheus tests with manifests installation, helm options are not supported")
 	}
@@ -64,7 +64,7 @@ func Feature(t *testing.T) features.Feature {
 		},
 	}
 
-	enablePrometheus(builder)
+	installPrometheusCRDs(builder)
 
 	dynakube.Install(builder, secretConfig, dk)
 
@@ -105,7 +105,7 @@ func Feature(t *testing.T) features.Feature {
 	// Ensure the object gets cleaned up even if a previous step failed
 	builder.Teardown(k8sobject.Delete(pm))
 
-	disablePrometheus(builder)
+	uninstallPrometheusCRDs(builder)
 
 	return builder.Feature()
 }
@@ -115,7 +115,7 @@ func PublicRegistry(t *testing.T) features.Feature {
 	if os.Getenv("OLM") == "true" {
 		t.Skip("Skipping Prometheus tests with OLM installation")
 	}
-	// skipping if deployed via manifests due to --set experimental.enablePrometheus=true and --set prometheus.installCRDs=true
+	// skipping if deployed via manifests due to --set prometheus.installCRDs=true
 	if os.Getenv("MANIFESTS") == "true" {
 		t.Skip("Skipping Prometheus tests with manifests installation, helm options are not supported")
 	}
@@ -136,7 +136,7 @@ func PublicRegistry(t *testing.T) features.Feature {
 		},
 	}
 
-	enablePrometheus(builder)
+	installPrometheusCRDs(builder)
 
 	dynakube.Install(builder, secretConfig, dk)
 
@@ -148,7 +148,7 @@ func PublicRegistry(t *testing.T) features.Feature {
 
 	builder.Teardown(k8sobject.Delete(pm))
 
-	disablePrometheus(builder)
+	uninstallPrometheusCRDs(builder)
 
 	return builder.Feature()
 }
@@ -171,10 +171,8 @@ func waitForPhase(pm *pmapi.PrometheusMonitoring, expectedPhase status.Deploymen
 	})
 }
 
-// TODO: remove this when prometheus is no longer experimental
-func enablePrometheus(builder *features.FeatureBuilder) {
-	builder.WithSetup("enable prometheus feature", helpers.ToFeatureFunc(operator.InstallLocal(false, helm.WithArgs(
-		"--set", "experimental.enablePrometheus=true",
+func installPrometheusCRDs(builder *features.FeatureBuilder) {
+	builder.WithSetup("install prometheus CRDs", helpers.ToFeatureFunc(operator.InstallLocal(false, helm.WithArgs(
 		"--set", "prometheus.installCRDs=true",
 		// Enable helm to overwrite pre-installed CRDs
 		"--take-ownership",
@@ -182,10 +180,8 @@ func enablePrometheus(builder *features.FeatureBuilder) {
 	)), true))
 }
 
-// TODO: remove this when prometheus is no longer experimental
-func disablePrometheus(builder *features.FeatureBuilder) {
-	builder.WithTeardown("disable prometheus feature", helpers.ToFeatureFunc(operator.InstallLocal(false, helm.WithArgs(
-		"--set", "experimental.enablePrometheus=false",
+func uninstallPrometheusCRDs(builder *features.FeatureBuilder) {
+	builder.WithTeardown("remove prometheus CRDs", helpers.ToFeatureFunc(operator.InstallLocal(false, helm.WithArgs(
 		"--set", "prometheus.installCRDs=false",
 	)), true))
 }
