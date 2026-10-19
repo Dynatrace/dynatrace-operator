@@ -50,6 +50,15 @@ tests:
       - isNotEmpty:
           path: spec.template.spec.containers[0].securityContext
 
+  - it: should have inject annotation set to false
+    set:
+      platform: kubernetes
+      crdStorageMigrationJob: true
+    asserts:
+      - equal:
+          path: spec.template.metadata.annotations["dynatrace.com/inject"]
+          value: "false"
+
   - it: should have apparmor annotation when enabled
     set:
       platform: kubernetes
