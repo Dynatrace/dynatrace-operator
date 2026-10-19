@@ -41,7 +41,6 @@ func (c *ClientImpl) GetLatestAgentVersion(ctx context.Context, os, installerTyp
 
 	err := c.apiClient.GET(ctx, "/v1/deployment/installer/agent").
 		WithPath(os, installerType, "latest/metainfo").
-		WithPaasToken().
 		WithQueryParams(queryParams).Execute(&resp)
 
 	return resp.LatestAgentVersion, errors.WithStack(err)

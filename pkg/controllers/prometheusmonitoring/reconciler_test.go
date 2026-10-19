@@ -114,7 +114,7 @@ func TestReconcile(t *testing.T) {
 		c := fake.NewClient(pm, dk, secret)
 		r := NewReconciler(c)
 		expectErr := errors.New("boom")
-		r.newDynatraceClient = func(context.Context, client.Reader, *dynakube.DynaKube, string, string, string, time.Duration) (*dynatrace.Client, error) {
+		r.newDynatraceClient = func(context.Context, client.Reader, *dynakube.DynaKube, string, string, time.Duration) (*dynatrace.Client, error) {
 			return nil, expectErr
 		}
 
@@ -137,7 +137,7 @@ func TestReconcile(t *testing.T) {
 		m.EXPECT().Reconcile(t.Context(), pm, dk, image.Client(nil)).Return(expectErr).Once()
 		c := fake.NewClient(pm, dk, secret)
 		r := NewReconciler(c)
-		r.newDynatraceClient = func(context.Context, client.Reader, *dynakube.DynaKube, string, string, string, time.Duration) (*dynatrace.Client, error) {
+		r.newDynatraceClient = func(context.Context, client.Reader, *dynakube.DynaKube, string, string, time.Duration) (*dynatrace.Client, error) {
 			return &dynatrace.Client{}, nil
 		}
 		r.gateway = gm
@@ -164,7 +164,7 @@ func TestReconcile(t *testing.T) {
 		sm.EXPECT().Reconcile(t.Context(), pm, dk, image.Client(nil)).Return(expectErr).Once()
 		c := fake.NewClient(pm, dk, secret)
 		r := NewReconciler(c)
-		r.newDynatraceClient = func(context.Context, client.Reader, *dynakube.DynaKube, string, string, string, time.Duration) (*dynatrace.Client, error) {
+		r.newDynatraceClient = func(context.Context, client.Reader, *dynakube.DynaKube, string, string, time.Duration) (*dynatrace.Client, error) {
 			return &dynatrace.Client{}, nil
 		}
 		r.gateway = gm

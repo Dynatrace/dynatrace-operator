@@ -579,12 +579,12 @@ func (controller *Controller) getOauthCredentials(ctx context.Context, ec *edgec
 		return oauthCredentialsType{}, errors.WithStack(err)
 	}
 
-	oauthClientID, err := k8ssecret.ExtractToken(secret, consts.KeyEdgeConnectOauthClientID)
+	oauthClientID, err := k8ssecret.ExtractKey(secret, consts.KeyEdgeConnectOauthClientID)
 	if err != nil {
 		return oauthCredentialsType{}, errors.WithStack(err)
 	}
 
-	oauthClientSecret, err := k8ssecret.ExtractToken(secret, consts.KeyEdgeConnectOauthClientSecret)
+	oauthClientSecret, err := k8ssecret.ExtractKey(secret, consts.KeyEdgeConnectOauthClientSecret)
 	if err != nil {
 		return oauthCredentialsType{}, errors.WithStack(err)
 	}
@@ -653,7 +653,7 @@ func (controller *Controller) getEdgeConnectIDFromClientSecret(ctx context.Conte
 		}
 	}
 
-	id, err := k8ssecret.ExtractToken(secret, consts.KeyEdgeConnectID)
+	id, err := k8ssecret.ExtractKey(secret, consts.KeyEdgeConnectID)
 	if err != nil {
 		log.Debug("unable to extract EdgeConnect tokens")
 
@@ -712,14 +712,14 @@ func (controller *Controller) updateEdgeConnect(ctx context.Context, edgeConnect
 		return err
 	}
 
-	id, err := k8ssecret.ExtractToken(secret, consts.KeyEdgeConnectID)
+	id, err := k8ssecret.ExtractKey(secret, consts.KeyEdgeConnectID)
 	if err != nil {
 		log.Debug("EdgeConnect ID token not found")
 
 		return err
 	}
 
-	oauthClientID, err := k8ssecret.ExtractToken(secret, consts.KeyEdgeConnectOauthClientID)
+	oauthClientID, err := k8ssecret.ExtractKey(secret, consts.KeyEdgeConnectOauthClientID)
 	if err != nil {
 		log.Debug("EdgeConnect OAuth client token not found")
 
