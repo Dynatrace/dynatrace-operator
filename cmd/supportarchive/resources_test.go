@@ -269,7 +269,7 @@ func objectMeta(name string) metav1.ObjectMeta {
 		Name:      name,
 		Namespace: testOperatorNamespace,
 		Labels: map[string]string{
-			k8slabel.AppNameLabel: "dynatrace-operator",
+			k8slabel.AppName: "dynatrace-operator",
 		},
 	}
 }

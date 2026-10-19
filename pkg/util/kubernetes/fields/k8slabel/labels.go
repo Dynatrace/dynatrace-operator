@@ -5,7 +5,6 @@ package k8slabel
 
 import (
 	"maps"
-	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
@@ -17,49 +16,29 @@ import (
 var log = logd.Get().WithName("k8slabel")
 
 const (
-	AppNameLabel     = "app.kubernetes.io/name"
-	AppInstanceLabel = "app.kubernetes.io/instance"
-	// Deprecated: Use AppInstanceLabel instead. See https://kubernetes.io/docs/reference/labels-annotations-taints/#app-kubernetes-io-created-by-deprecated
-	AppCreatedByLabel    = "app.kubernetes.io/created-by"
-	AppManagedByLabel    = "app.kubernetes.io/managed-by"
-	AppComponentLabel    = "app.kubernetes.io/component"
-	AppVersionLabel      = "app.kubernetes.io/version"
-	OperatorVersionLabel = "internal.dynatrace.com/operator-version"
+	AppName         = "app.kubernetes.io/name"
+	AppInstance     = "app.kubernetes.io/instance"
+	AppManagedBy    = "app.kubernetes.io/managed-by"
+	AppVersion      = "app.kubernetes.io/version"
+	OperatorVersion = "internal.dynatrace.com/operator-version"
 
-	OneAgentComponentLabel      = "oneagent"
-	CodeModuleComponentLabel    = "codemodule"
-	LogMonitoringComponentLabel = "logmonitoring"
-	KSPMComponentLabel          = "kspm"
-	ActiveGateComponentLabel    = "activegate"
-	KubeMonComponentLabel       = "kubemon"
-	WebhookComponentLabel       = "webhook"
-	EdgeConnectComponentLabel   = "edgeconnect"
-	ExtensionComponentLabel     = "dynatrace-extension-controller"
-	OTelColComponentLabel       = "dynatrace-otel-collector"
-	DatabaseSQLExecutorLabel    = "dynatrace-sql-extension-executor"
-	NodeControllerLabel         = "node-controller"
-	OperatorComponentLabel      = "operator"
+	OneAgent            = "oneagent"
+	CodeModule          = "codemodule"
+	LogMonitoring       = "logmonitoring"
+	KSPM                = "kspm"
+	ActiveGate          = "activegate"
+	KubeMon             = "kubemon"
+	Webhook             = "webhook"
+	EdgeConnect         = "edgeconnect"
+	Extension           = "dynatrace-extension-controller"
+	OTelCol             = "dynatrace-otel-collector"
+	DatabaseSQLExecutor = "dynatrace-sql-extension-executor"
+	NodeController      = "node-controller"
+	Operator            = "operator"
+	OTelTargetAllocator = "opentelemetry-target-allocator"
+	OTelScraper         = "opentelemetry-collector"
+	OTelGateway         = "opentelemetry-gateway"
 )
-
-func OTelTargetAllocator() *Labels {
-	return New("opentelemetry-target-allocator", "otel-allocator", "")
-}
-
-func OTelScraper() *Labels {
-	return New("opentelemetry-collector", "otel-scraper", "")
-}
-
-type AppMatchLabels struct {
-	Name      string
-	CreatedBy string
-	ManagedBy string
-}
-
-type coreMatchLabels struct {
-	Name      string
-	CreatedBy string
-	Component string
-}
 
 type Labels struct {
 	Name            string
@@ -69,19 +48,7 @@ type Labels struct {
 	OperatorVersion string
 }
 
-type AppLabels struct {
-	AppMatchLabels
-	Component string
-	Version   string
-}
-
-type CoreLabels struct {
-	coreMatchLabels
-	Version string
-}
-
 // New will return a simplified Labels struct that contains all the necessary info related to the ownership of a resource.
-// It should be used instead of NewAppLabels and NewCoreLabels, as those are overcomplicating things.
 // If appVersion is empty the related `version` label will be omitted. This should be done for resources that have no version in general, like a `Secret`.
 func New(appName, instanceName, appVersion string) *Labels {
 	return &Labels{
@@ -93,54 +60,16 @@ func New(appName, instanceName, appVersion string) *Labels {
 	}
 }
 
-// NewAppLabels abstracts labels that are specific to an application managed by the operator
-// which have their own version separate from the operator version.
-// Follows the recommended label pattern: https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels
-//
-// Deprecated: Use New instead.
-func NewAppLabels(appName, name, component, ver string) *AppLabels {
-	if len(ver) > validation.DNS1035LabelMaxLength {
-		ver = ver[:validation.DNS1035LabelMaxLength]
-	}
-
-	return &AppLabels{
-		Name:      appName,
-		CreatedBy: name,
-		ManagedBy: version.AppName,
-		Component: strings.ReplaceAll(component, "_", ""),
-		Version:   ver,
-	}
-}
-
-// NewCoreLabels abstracts labels that are used for statefulsetreconciler functionality in the operator
-// which are not specific to an application's version
-// Follows the recommended label pattern: https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels
-//
-// Deprecated: Use New instead.
-func NewCoreLabels(dynakubeName, component string) *CoreLabels {
-	ver := version.Version
-	if len(ver) > validation.DNS1035LabelMaxLength {
-		ver = ver[:validation.DNS1035LabelMaxLength]
-	}
-
-	return &CoreLabels{
-		Name:      version.AppName,
-		CreatedBy: dynakubeName,
-		Component: component,
-		Version:   ver,
-	}
-}
-
 // AsMap returns all labels, including version metadata
 func (labels *Labels) AsMap() map[string]string {
 	labelsMap := labels.AsSelector()
 
 	if labels.Version != "" {
-		labelsMap[AppVersionLabel] = labels.Version
+		labelsMap[AppVersion] = labels.Version
 	}
 
 	if labels.OperatorVersion != "" {
-		labelsMap[OperatorVersionLabel] = labels.OperatorVersion
+		labelsMap[OperatorVersion] = labels.OperatorVersion
 	}
 
 	return labelsMap
@@ -161,50 +90,12 @@ func (labels *Labels) MergeInto(obj metav1.Object) {
 // AsSelector returns the stable labels used to select resources
 func (labels *Labels) AsSelector() map[string]string {
 	return map[string]string{
-		AppNameLabel:      labels.Name,
-		AppInstanceLabel:  labels.Instance,
-		AppManagedByLabel: labels.ManagedBy,
+		AppName:      labels.Name,
+		AppInstance:  labels.Instance,
+		AppManagedBy: labels.ManagedBy,
 	}
 }
 
-// BuildLabels creates labels that
-// include operator version
-func (labels *CoreLabels) BuildLabels() map[string]string {
-	labelsMap := labels.BuildMatchLabels()
-	labelsMap[AppVersionLabel] = labels.Version
-
-	return labelsMap
-}
-
-// BuildLabels creates labels that
-// include oneagent or activegate mode and version
-func (labels *AppLabels) BuildLabels() map[string]string {
-	labelsMap := labels.BuildMatchLabels()
-	labelsMap[AppVersionLabel] = labels.Version
-	labelsMap[AppComponentLabel] = labels.Component
-
-	return labelsMap
-}
-
-// BuildMatchLabels creates labels that
-// don't change when switching operator versions
-func (labels *coreMatchLabels) BuildMatchLabels() map[string]string {
-	return map[string]string{
-		AppNameLabel:      labels.Name,
-		AppCreatedByLabel: labels.CreatedBy,
-		AppComponentLabel: labels.Component,
-	}
-}
-
-// BuildMatchLabels creates labels that
-// don't change when switching oneagent or activegate mode
-func (labels *AppLabels) BuildMatchLabels() map[string]string {
-	return map[string]string{
-		AppNameLabel:      labels.Name,
-		AppCreatedByLabel: labels.CreatedBy,
-		AppManagedByLabel: labels.ManagedBy,
-	}
-}
 func NotEqual(currentLabels, desiredLabels map[string]string) bool {
 	return !maps.Equal(currentLabels, desiredLabels)
 }

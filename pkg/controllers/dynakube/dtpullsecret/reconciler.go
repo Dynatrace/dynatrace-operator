@@ -87,12 +87,12 @@ func (r *Reconciler) reconcilePullSecret(ctx context.Context, dk *dynakube.DynaK
 		return errors.WithMessage(err, "could not generate pull secret data")
 	}
 
-	coreLabels := k8slabel.NewCoreLabels(dk.Name, k8slabel.OperatorComponentLabel)
+	labels := k8slabel.New(k8slabel.Operator, dk.Name, "")
 
 	secret, err := k8ssecret.Build(dk,
 		extendWithPullSecretSuffix(dk.Name), pullSecretData,
 		k8ssecret.SetType(corev1.SecretTypeDockerConfigJson),
-		k8ssecret.SetLabels(coreLabels.BuildLabels()),
+		k8ssecret.SetLabels(labels.AsMap()),
 	)
 	if err != nil {
 		k8sconditions.SetKubeAPIError(dk.Conditions(), PullSecretConditionType, err)

@@ -190,16 +190,13 @@ func TestAddLabels(t *testing.T) {
 		multiCapability := capability.NewMultiCapability(dk)
 		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
 		sts := &appsv1.StatefulSet{}
-		appLabels := k8slabel.NewAppLabels(k8slabel.ActiveGateComponentLabel, builder.dynakube.Name, consts.MultiActiveGateName, "")
-		expectedLabels := appLabels.BuildLabels()
-		expectedSelectorLabels := metav1.LabelSelector{MatchLabels: appLabels.BuildMatchLabels()}
-
+		labels := k8slabel.New(k8slabel.ActiveGate, builder.dynakube.Name, "")
 		builder.addLabels(sts)
 
 		require.NotEmpty(t, sts.Labels)
-		assert.Equal(t, expectedLabels, sts.Labels)
-		assert.Equal(t, expectedSelectorLabels, *sts.Spec.Selector)
-		assert.Equal(t, expectedLabels, sts.Spec.Template.Labels)
+		assert.Equal(t, labels.AsMap(), sts.Labels)
+		assert.Equal(t, metav1.LabelSelector{MatchLabels: labels.AsSelector()}, *sts.Spec.Selector)
+		assert.Equal(t, labels.AsSelector(), sts.Spec.Template.Labels)
 	})
 
 	t.Run("merge labels", func(t *testing.T) {
@@ -210,8 +207,8 @@ func TestAddLabels(t *testing.T) {
 		multiCapability := capability.NewMultiCapability(dk)
 		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
 		sts := &appsv1.StatefulSet{}
-		appLabels := k8slabel.NewAppLabels(k8slabel.ActiveGateComponentLabel, builder.dynakube.Name, consts.MultiActiveGateName, "")
-		expectedTemplateLabels := appLabels.BuildLabels()
+		labels := k8slabel.New(k8slabel.ActiveGate, builder.dynakube.Name, "")
+		expectedTemplateLabels := labels.AsSelector()
 		expectedTemplateLabels["test"] = "test"
 
 		builder.addLabels(sts)

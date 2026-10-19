@@ -50,9 +50,9 @@ func IsTenantSecretPresent(ctx context.Context, secrets k8ssecret.QueryObject, s
 func BuildTenantSecret(dk *dynakube.DynaKube, componentName string, secretName string, tenantToken string) (*corev1.Secret, error) {
 	secretData := ExtractSensitiveData(tenantToken)
 
-	coreLabels := k8slabel.NewCoreLabels(dk.Name, componentName)
+	labels := k8slabel.New(componentName, dk.Name, "")
 
-	return k8ssecret.Build(dk, secretName, secretData, k8ssecret.SetLabels(coreLabels.BuildLabels()))
+	return k8ssecret.Build(dk, secretName, secretData, k8ssecret.SetLabels(labels.AsMap()))
 }
 
 func ExtractSensitiveData(tenantToken string) map[string][]byte {

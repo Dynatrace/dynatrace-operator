@@ -113,7 +113,7 @@ func getAppNameLabel(ctx context.Context, pods clientgocorev1.PodInterface) stri
 			return defaultOperatorAppName
 		}
 
-		return pod.Labels[k8slabel.AppNameLabel]
+		return pod.Labels[k8slabel.AppName]
 	}
 
 	return defaultOperatorAppName
@@ -140,7 +140,7 @@ func runCollectors(log logd.Logger, supportArchive archiver) error {
 	pods := clientSet.CoreV1().Pods(namespaceFlagValue)
 	appName := getAppNameLabel(ctx, pods)
 
-	logInfof(log, "%s=%s", k8slabel.AppNameLabel, appName)
+	logInfof(log, "%s=%s", k8slabel.AppName, appName)
 
 	collectors := []collector{
 		newOperatorVersionCollector(log, supportArchive),

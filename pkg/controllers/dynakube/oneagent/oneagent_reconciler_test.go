@@ -267,11 +267,9 @@ func TestReconcile_InstancesSet(t *testing.T) {
 	}
 
 	expectedLabels := map[string]string{
-		k8slabel.AppNameLabel:      k8slabel.OneAgentComponentLabel,
-		k8slabel.AppComponentLabel: "classicfullstack",
-		k8slabel.AppCreatedByLabel: name,
-		k8slabel.AppVersionLabel:   oldComponentVersion,
-		k8slabel.AppManagedByLabel: version.AppName,
+		k8slabel.AppName:      k8slabel.OneAgent,
+		k8slabel.AppInstance:  name,
+		k8slabel.AppManagedBy: version.AppName,
 	}
 
 	t.Run("Status.OneAgent.Instances set, if autoUpdate is true", func(t *testing.T) {
@@ -618,9 +616,9 @@ func TestInstanceStatus(t *testing.T) {
 		Name:      "test-pod-1",
 		Namespace: namespace,
 		Labels: map[string]string{
-			"app.kubernetes.io/name":          "dynatrace-operator",
-			"app.kubernetes.io/component":     "oneagent",
-			"app.kubernetes.io/created-by":    dkName,
+			"app.kubernetes.io/name":          "oneagent",
+			"app.kubernetes.io/instance":      dkName,
+			"app.kubernetes.io/managed-by":    "dynatrace-operator",
 			"app.kubernetes.io/version":       "snapshot",
 			"component.dynatrace.com/feature": deploymentmetadata.HostMonitoringDeploymentType,
 		},

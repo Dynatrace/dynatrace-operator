@@ -528,7 +528,7 @@ func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.D
 
 	km.Annotations = k8ssecuritycontext.RemoveAppArmorAnnotation(km.Annotations, agconsts.InitContainerName, ContainerName)
 
-	labels := k8slabel.New(k8slabel.KubeMonComponentLabel, dk.GetName(), "")
+	labels := k8slabel.New(k8slabel.KubeMon, dk.GetName(), "")
 
 	opts := []k8sstatefulset.Option{
 		k8sstatefulset.SetReplicas(replicas),

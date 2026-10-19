@@ -253,7 +253,7 @@ func (r *Reconciler) reconcileIPServiceEntry(ctx context.Context, ipHosts []conn
 		objectMeta := buildObjectMeta(
 			entryName,
 			owner.GetNamespace(),
-			k8slabel.NewCoreLabels(owner.GetName(), component).BuildLabels(),
+			k8slabel.New(component, owner.GetName(), "").AsMap(),
 		)
 
 		serviceEntry := buildServiceEntryIPs(objectMeta, ipHosts)
@@ -285,7 +285,7 @@ func (r *Reconciler) reconcileFQDNServiceEntry(ctx context.Context, fqdnHosts []
 		objectMeta := buildObjectMeta(
 			entryName,
 			owner.GetNamespace(),
-			k8slabel.NewCoreLabels(owner.GetName(), component).BuildLabels(),
+			k8slabel.New(component, owner.GetName(), "").AsMap(),
 		)
 
 		serviceEntry := buildServiceEntryFQDNs(objectMeta, fqdnHosts)

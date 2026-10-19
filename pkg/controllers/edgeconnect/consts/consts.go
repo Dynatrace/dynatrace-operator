@@ -7,7 +7,6 @@ import "github.com/Dynatrace/dynatrace-operator/pkg/api"
 
 const (
 	EdgeConnectAnnotationSecretHash  = api.InternalFlagPrefix + "secret-hash"
-	EdgeConnectUserProvisioned       = "user-provisioned"
 	EdgeConnectContainerName         = "edge-connect"
 	EdgeConnectMountPath             = "/etc/edge_connect_certs"
 	EdgeConnectCustomCertificateName = "certificate.pem"

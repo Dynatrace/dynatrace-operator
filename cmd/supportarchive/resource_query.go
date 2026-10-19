@@ -40,8 +40,8 @@ func getQueries(namespace string, appName string) []resourceQuery {
 	return slices.Concat(
 		getInjectedNamespaceQueryGroup().getQueries(),
 		getOperatorNamespaceQueryGroup(namespace).getQueries(),
-		getComponentsQueryGroup(namespace, appName, k8slabel.AppNameLabel).getQueries(),
-		getComponentsQueryGroup(namespace, appName, k8slabel.AppManagedByLabel).getQueries(),
+		getComponentsQueryGroup(namespace, appName, k8slabel.AppName).getQueries(),
+		getComponentsQueryGroup(namespace, appName, k8slabel.AppManagedBy).getQueries(),
 		getCustomResourcesQueryGroup(namespace).getQueries(),
 		getConfigMapQueryGroup(namespace).getQueries(),
 		getEventsQueryGroup(namespace).getQueries(),

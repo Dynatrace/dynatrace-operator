@@ -88,14 +88,14 @@ func useLegacyMounts(dk *dynakube.DynaKube) bool {
 func (r *Reconciler) createOrUpdateStatefulset(ctx context.Context, dk *dynakube.DynaKube, imageURI string) error {
 	log := logd.FromContext(ctx)
 
-	appLabels := buildAppLabels(dk)
+	labels := k8slabel.New(k8slabel.Extension, dk.Name, dk.Spec.Templates.ExtensionExecutionController.ImageRef.Tag)
 
 	templateAnnotations, err := r.buildTemplateAnnotations(ctx, dk)
 	if err != nil {
 		return err
 	}
 
-	topologySpreadConstraints := k8stopology.MaxOnePerNode(appLabels)
+	topologySpreadConstraints := k8stopology.MaxOnePerNode(labels)
 	if len(dk.Spec.Templates.ExtensionExecutionController.TopologySpreadConstraints) > 0 {
 		topologySpreadConstraints = dk.Spec.Templates.ExtensionExecutionController.TopologySpreadConstraints
 	}
@@ -103,7 +103,7 @@ func (r *Reconciler) createOrUpdateStatefulset(ctx context.Context, dk *dynakube
 	desiredSts, err := k8sstatefulset.Build(dk, dk.Extensions().GetExecutionControllerStatefulsetName(), buildContainer(dk, imageURI),
 		k8sstatefulset.SetReplicas(1),
 		k8sstatefulset.SetPodManagementPolicy(appsv1.ParallelPodManagement),
-		k8sstatefulset.SetAllLabels(appLabels.BuildLabels(), appLabels.BuildMatchLabels(), appLabels.BuildLabels(), dk.Spec.Templates.ExtensionExecutionController.Labels),
+		k8sstatefulset.SetAllLabels(labels.AsMap(), labels.AsSelector(), labels.AsSelector(), dk.Spec.Templates.ExtensionExecutionController.Labels),
 		k8sstatefulset.SetAllAnnotations(nil, templateAnnotations),
 		k8sstatefulset.SetAffinity(buildAffinity()),
 		k8sstatefulset.SetTolerations(dk.Spec.Templates.ExtensionExecutionController.Tolerations),
@@ -156,10 +156,6 @@ func (r *Reconciler) buildTemplateAnnotations(ctx context.Context, dk *dynakube.
 	templateAnnotations[api.AnnotationExtensionsSecretHash] = tlsSecretHash
 
 	return templateAnnotations, nil
-}
-
-func buildAppLabels(dk *dynakube.DynaKube) *k8slabel.AppLabels {
-	return k8slabel.NewAppLabels(k8slabel.ExtensionComponentLabel, dk.Name, k8slabel.ExtensionComponentLabel, dk.Spec.Templates.ExtensionExecutionController.ImageRef.Tag)
 }
 
 func buildAffinity() corev1.Affinity {

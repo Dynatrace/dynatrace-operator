@@ -57,30 +57,35 @@ func TestBuild(t *testing.T) {
 		customLabels := map[string]string{
 			labelName: labelValue,
 		}
-		appLabels := k8slabel.NewAppLabels(testAppName, testDynakubeName, k8slabel.ExtensionComponentLabel, testVersion)
+		labels := k8slabel.New(testAppName, testDynakubeName, testVersion)
 		statefulSet, err := Build(
-			createDeployment(), testStatefulSetName, container, SetAllLabels(appLabels.BuildLabels(), appLabels.BuildMatchLabels(), appLabels.BuildLabels(), customLabels))
+			createDeployment(), testStatefulSetName, container, SetAllLabels(labels.AsMap(), labels.AsSelector(), labels.AsSelector(), customLabels))
 		require.NoError(t, err)
 		require.Len(t, statefulSet.OwnerReferences, 1)
 		assert.Equal(t, testDeploymentName, statefulSet.OwnerReferences[0].Name)
 		assert.Equal(t, testStatefulSetName, statefulSet.Name)
-		require.Len(t, statefulSet.Labels, 5)
-		require.Len(t, statefulSet.Spec.Selector.MatchLabels, 3)
-		// only Template labels must have both since we merge them
-		require.Len(t, statefulSet.Spec.Template.Labels, 6)
-		assert.Empty(t, statefulSet.Labels[labelName])
-		assert.Equal(t, labelValue, statefulSet.Spec.Template.Labels[labelName])
+		expectedSelector := map[string]string{
+			k8slabel.AppName:      testAppName,
+			k8slabel.AppInstance:  testDynakubeName,
+			k8slabel.AppManagedBy: version.AppName,
+		}
+		expectedLabels := map[string]string{
+			k8slabel.AppName:         testAppName,
+			k8slabel.AppInstance:     testDynakubeName,
+			k8slabel.AppManagedBy:    version.AppName,
+			k8slabel.AppVersion:      testVersion,
+			k8slabel.OperatorVersion: version.Version,
+		}
+		// only template labels get the custom labels merged in
+		expectedTemplateLabels := map[string]string{
+			k8slabel.AppName:      testAppName,
+			k8slabel.AppInstance:  testDynakubeName,
+			k8slabel.AppManagedBy: version.AppName,
+			labelName:             labelValue,
+		}
 
-		assert.Equal(t, testAppName, statefulSet.Labels[k8slabel.AppNameLabel])
-		assert.Equal(t, testDynakubeName, statefulSet.Labels[k8slabel.AppCreatedByLabel])
-		assert.Equal(t, version.AppName, statefulSet.Labels[k8slabel.AppManagedByLabel])
-		assert.Equal(t, k8slabel.ExtensionComponentLabel, statefulSet.Labels[k8slabel.AppComponentLabel])
-		assert.Equal(t, testVersion, statefulSet.Labels[k8slabel.AppVersionLabel])
-
-		assert.Equal(t, testAppName, statefulSet.Spec.Template.Labels[k8slabel.AppNameLabel])
-		assert.Equal(t, testDynakubeName, statefulSet.Spec.Template.Labels[k8slabel.AppCreatedByLabel])
-		assert.Equal(t, version.AppName, statefulSet.Spec.Template.Labels[k8slabel.AppManagedByLabel])
-		assert.Equal(t, k8slabel.ExtensionComponentLabel, statefulSet.Spec.Template.Labels[k8slabel.AppComponentLabel])
-		assert.Equal(t, testVersion, statefulSet.Spec.Template.Labels[k8slabel.AppVersionLabel])
+		assert.Equal(t, expectedLabels, statefulSet.Labels)
+		assert.Equal(t, expectedSelector, statefulSet.Spec.Selector.MatchLabels)
+		assert.Equal(t, expectedTemplateLabels, statefulSet.Spec.Template.Labels)
 	})
 }

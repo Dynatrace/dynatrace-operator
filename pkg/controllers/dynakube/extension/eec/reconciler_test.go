@@ -24,6 +24,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8saffinity"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8stopology"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/version"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
@@ -252,8 +253,8 @@ func TestTopologySpreadConstraints(t *testing.T) {
 	t.Run("the default TopologySpreadConstraints", func(t *testing.T) {
 		dk := getTestDynakube()
 		statefulSet := getStatefulset(t, dk)
-		appLabels := buildAppLabels(dk)
-		assert.Equal(t, k8stopology.MaxOnePerNode(appLabels), statefulSet.Spec.Template.Spec.TopologySpreadConstraints)
+		labels := k8slabel.New(k8slabel.Extension, dk.Name, dk.Spec.Templates.ExtensionExecutionController.ImageRef.Tag)
+		assert.Equal(t, k8stopology.MaxOnePerNode(labels), statefulSet.Spec.Template.Spec.TopologySpreadConstraints)
 	})
 
 	t.Run("custom TopologySpreadConstraints", func(t *testing.T) {
@@ -843,11 +844,11 @@ func TestLabels(t *testing.T) {
 
 		statefulSet := getStatefulset(t, dk)
 
-		appLabels := buildAppLabels(dk)
+		labels := k8slabel.New(k8slabel.Extension, dk.Name, dk.Spec.Templates.ExtensionExecutionController.ImageRef.Tag)
 
-		assert.Equal(t, appLabels.BuildLabels(), statefulSet.Labels)
-		assert.Equal(t, &metav1.LabelSelector{MatchLabels: appLabels.BuildMatchLabels()}, statefulSet.Spec.Selector)
-		assert.Equal(t, appLabels.BuildLabels(), statefulSet.Spec.Template.Labels)
+		assert.Equal(t, labels.AsMap(), statefulSet.Labels)
+		assert.Equal(t, &metav1.LabelSelector{MatchLabels: labels.AsSelector()}, statefulSet.Spec.Selector)
+		assert.Equal(t, labels.AsSelector(), statefulSet.Spec.Template.Labels)
 	})
 
 	t.Run("custom labels", func(t *testing.T) {
@@ -859,11 +860,11 @@ func TestLabels(t *testing.T) {
 
 		statefulSet := getStatefulset(t, dk)
 
-		appLabels := buildAppLabels(dk)
-		podLabels := maputils.MergeMap(customLabels, appLabels.BuildLabels())
+		labels := k8slabel.New(k8slabel.Extension, dk.Name, dk.Spec.Templates.ExtensionExecutionController.ImageRef.Tag)
+		podLabels := maputils.MergeMap(customLabels, labels.AsSelector())
 
-		assert.Equal(t, appLabels.BuildLabels(), statefulSet.Labels)
-		assert.Equal(t, &metav1.LabelSelector{MatchLabels: appLabels.BuildMatchLabels()}, statefulSet.Spec.Selector)
+		assert.Equal(t, labels.AsMap(), statefulSet.Labels)
+		assert.Equal(t, &metav1.LabelSelector{MatchLabels: labels.AsSelector()}, statefulSet.Spec.Selector)
 		assert.Equal(t, podLabels, statefulSet.Spec.Template.Labels)
 	})
 }

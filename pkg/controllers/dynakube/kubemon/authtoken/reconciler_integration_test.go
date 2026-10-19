@@ -99,8 +99,8 @@ func runProvisionPhase(t *testing.T, deps lifecycleDeps) {
 	secret := getSecret(t, deps.clt, deps.dk)
 	assert.Len(t, secret.Data, 1)
 	assert.Equal(t, []byte(integrationInitialToken), secret.Data[authtoken.SecretKey])
-	assert.Equal(t, k8slabel.KubeMonComponentLabel, secret.Labels[k8slabel.AppComponentLabel])
-	assert.Equal(t, deps.dk.Name, secret.Labels[k8slabel.AppCreatedByLabel])
+	assert.Equal(t, k8slabel.KubeMon, secret.Labels[k8slabel.AppName])
+	assert.Equal(t, deps.dk.Name, secret.Labels[k8slabel.AppInstance])
 	assert.True(t, metav1.IsControlledBy(secret, deps.dk))
 }
 

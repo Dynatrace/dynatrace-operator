@@ -110,22 +110,16 @@ func CreateService(dk *dynakube.DynaKube) *corev1.Service {
 		},
 	}
 
-	coreLabels := k8slabel.NewCoreLabels(dk.Name, k8slabel.ActiveGateComponentLabel)
+	labels := k8slabel.New(k8slabel.ActiveGate, dk.Name, "")
 
 	return &corev1.Service{
 		Name:      capability.BuildServiceName(dk.Name),
 		Namespace: dk.Namespace,
-		Labels:    coreLabels.BuildLabels(),
+		Labels:    labels.AsMap(),
 		Spec: corev1.ServiceSpec{
 			Type:     corev1.ServiceTypeClusterIP,
-			Selector: buildSelectorLabels(dk.Name),
+			Selector: labels.AsSelector(),
 			Ports:    ports,
 		},
 	}
-}
-
-func buildSelectorLabels(dynakubeName string) map[string]string {
-	appLabels := k8slabel.NewAppLabels(k8slabel.ActiveGateComponentLabel, dynakubeName, "", "")
-
-	return appLabels.BuildMatchLabels()
 }
