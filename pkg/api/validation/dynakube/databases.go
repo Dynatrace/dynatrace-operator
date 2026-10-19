@@ -37,7 +37,7 @@ func missingDatabaseExecutorImage(ctx context.Context, dv *Validator, dk *dynaku
 		return ""
 	}
 
-	if !dk.Spec.Templates.SQLExtensionExecutor.ImageRef.HasImage() {
+	if dk.Spec.Templates.SQLExtensionExecutor.ImageRef.String() == "" {
 		log.Info("requested dynakube doesn't specify the sqlExtensionExecutor image.")
 
 		return errorExtensionDatabaseExecutorImageNotSpecified

@@ -176,28 +176,19 @@ func (r *Reconciler) reconcileConfigMap(ctx context.Context, s *reconcileScope) 
 	return nil
 }
 
-func (r *Reconciler) resolveImage(ctx context.Context, s *reconcileScope) error {
-	if s.Spec.Image != "" {
-		s.Owner.Status.TargetAllocator.ResolvedImage = s.Spec.Image
-
-		return nil
-	}
-
-	imageURI, err := registry.ResolveImage(ctx, s.ImageClient, s.Owner.Spec.PublicRegistryOverride, image.TargetAllocator)
-	if err != nil {
-		return err
-	}
-
-	s.Owner.Status.TargetAllocator.ResolvedImage = imageURI
-
-	return nil
+type imageResolver struct {
+	*prometheusmonitoring.PrometheusMonitoring
 }
+
+func (r imageResolver) GetImage() string               { return r.Spec.TargetAllocator.Image }
+func (r imageResolver) SetImage(imageURI string)       { r.Status.TargetAllocator.ResolvedImage = imageURI }
+func (r imageResolver) PublicRegistryOverride() string { return r.Spec.PublicRegistryOverride }
 
 func (r *Reconciler) reconcileDeployment(ctx context.Context, s *reconcileScope) error {
 	log := logd.FromContext(ctx)
 	log.Debug("reconciling deployment")
 
-	if err := r.resolveImage(ctx, s); err != nil {
+	if err := registry.ResolveImage(ctx, imageResolver{s.Owner}, s.ImageClient, image.TargetAllocator); err != nil {
 		return fmt.Errorf("resolve image: %w", err)
 	}
 

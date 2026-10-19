@@ -33,7 +33,8 @@ type Reconciler struct {
 }
 
 func NewReconciler(clt client.Client,
-	apiReader client.Reader) *Reconciler {
+	apiReader client.Reader,
+) *Reconciler {
 	return &Reconciler{
 		daemonset: k8sdaemonset.Query(clt, apiReader),
 	}
@@ -59,7 +60,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, imageClient dtimage.Client, 
 		return nil // clean-up shouldn't cause a failure
 	}
 
-	if err := resolveImage(ctx, imageClient, dk); err != nil {
+	if err := registry.ResolveImage(ctx, imageResolver{dk}, imageClient, dtimage.LogModule); err != nil {
 		return err
 	}
 
@@ -83,24 +84,10 @@ func (r *Reconciler) Reconcile(ctx context.Context, imageClient dtimage.Client, 
 	return nil
 }
 
-// resolveImage records the image to deploy in the status. The templates section takes
-// precedence over the image reported by the public registry.
-func resolveImage(ctx context.Context, imageClient dtimage.Client, dk *dynakube.DynaKube) error {
-	if ref := dk.LogMonitoring().Template().ImageRef; ref.HasImage() {
-		dk.Status.LogMonitoring.ResolvedImage = ref.String()
+type imageResolver struct{ *dynakube.DynaKube }
 
-		return nil
-	}
-
-	imageURI, err := registry.ResolveImage(ctx, imageClient, dk.PublicRegistryOverride(), dtimage.LogModule)
-	if err != nil {
-		return err
-	}
-
-	dk.Status.LogMonitoring.ResolvedImage = imageURI
-
-	return nil
-}
+func (r imageResolver) GetImage() string         { return r.LogMonitoring().Template().ImageRef.String() }
+func (r imageResolver) SetImage(imageURI string) { r.Status.LogMonitoring.ResolvedImage = imageURI }
 
 func (r *Reconciler) generateDaemonSet(dk *dynakube.DynaKube, imageURI string) (*appsv1.DaemonSet, error) {
 	tenantUUID, err := dk.TenantUUID()
@@ -115,7 +102,8 @@ func (r *Reconciler) generateDaemonSet(dk *dynakube.DynaKube, imageURI string) (
 
 	labels := k8slabel.NewAppLabels(k8slabel.LogMonitoringComponentLabel, dk.Name, k8slabel.LogMonitoringComponentLabel, tag)
 
-	ds, err := k8sdaemonset.Build(dk, dk.LogMonitoring().GetDaemonSetName(), getContainer(dk, tenantUUID, imageURI),
+	ds, err := k8sdaemonset.Build(
+		dk, dk.LogMonitoring().GetDaemonSetName(), getContainer(dk, tenantUUID, imageURI),
 		k8sdaemonset.SetInitContainer(getInitContainer(dk, tenantUUID, imageURI)),
 		k8sdaemonset.SetAllLabels(labels.BuildLabels(), labels.BuildMatchLabels(), labels.BuildLabels(), dk.LogMonitoring().Template().Labels),
 		k8sdaemonset.SetAllAnnotations(nil, r.getAnnotations(dk)),
