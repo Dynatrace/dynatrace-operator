@@ -275,6 +275,7 @@ csidriver:
 
 prometheus:
   # If true, install Prometheus Operator CRDs used by OTEL target allocators. WARNING: this will overwrite existing CRDs.
+  # Will not have an affect on Openshift clusters. WARNING: Manually setting `.Values.platform` may affect this.
   installCRDs: false
 
 rbac:
@@ -309,6 +310,3 @@ rbac:
   prometheus:
     create: true
   supportability: true
-
-experimental:
-  enablePrometheus: false # temporary gate; set to true to enable prometheus integration in dev/test. Remove when prometheus integration is complete.
