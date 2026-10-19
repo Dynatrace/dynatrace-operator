@@ -33,7 +33,6 @@ jobs:
       prerequisites_changed: ${{ steps.prerequisites.outputs.any_changed == 'true' && 'true' || '' }}
       ci_changed: ${{ steps.ci.outputs.any_changed == 'true' && 'true' || '' }}
       is_protected_branch: ${{ steps.is-protected-branch.outputs.is_protected_branch == 'true' && 'true' || '' }}
-      is_snyk_authorized: ${{ steps.is-snyk-authorized.outputs.is_authorized == 'true' && 'true' || '' }}
       is_docker_authorized: ${{ steps.is-docker-authorized.outputs.is_authorized == 'true' && 'true' || '' }}
       markdown_changed: ${{ steps.markdown.outputs.any_changed == 'true' && 'true' || '' }}
       go_version: ${{ steps.go-version.outputs.go_version }}
@@ -52,10 +51,6 @@ jobs:
           else
             echo "is_protected_branch=false" >> "$GITHUB_OUTPUT"
           fi
-      - name: Check if synk credentials are present
-        id: is-snyk-authorized
-        run: |
-          echo "is_authorized=${{ secrets.SNYK_API_TOKEN != '' }}" >> $GITHUB_OUTPUT
       - name: Check if docker credentials are present
         id: is-docker-authorized
         run: |
@@ -267,25 +262,6 @@ jobs:
           make add-license-headers
           git diff --exit-code
 
-  security:
-    needs: [detect-changes]
-    if: >
-      needs.detect-changes.outputs.is_snyk_authorized &&
-      (needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.docker_changed || needs.detect-changes.outputs.ci_changed)
-    name: Code security scanning alerts
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - name: Run Snyk to check for vulnerabilities
-        uses: snyk/actions/golang@9adf32b1121593767fc3c057af55b55db032dc04 # v1.0.0
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_API_TOKEN }}
-        with:
-          args: --severity-threshold=high
-
   ci-security:
     needs: [detect-changes]
     if: needs.detect-changes.outputs.ci_changed
@@ -304,7 +280,6 @@ jobs:
   govulncheck:
     needs: [detect-changes]
     if: >
-        !needs.detect-changes.outputs.is_snyk_authorized &&
         (needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.docker_changed || needs.detect-changes.outputs.ci_changed)
     name: Govulncheck
     runs-on: ubuntu-24.04
@@ -316,7 +291,7 @@ jobs:
       - name: Run govulncheck
         uses: golang/govulncheck-action@032d45514ae346b1db93c04b0c90b841c370344f # v1.1.0
         with:
-          go-version-file: "${{ github.workspace }}/go.mod"
+          go-version-input: ${{ needs.detect-changes.outputs.go_version }}
           check-latest: true # Always check for the latest patch release
           repo-checkout: false
 
