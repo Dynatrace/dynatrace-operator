@@ -45,8 +45,8 @@ test/e2e-publish:
 	make test/e2e/release/publish || RC=1; \
 	exit $$RC
 
-## Start tests that support kind
-test/e2e/kind:
+## Run kind-compatible smoke tests.
+test/e2e/smoke:
 	RC=0; \
 	$(GOTESTCMD) -timeout 20m ./test/e2e/scenarios/nocsi \
 		-run '^TestNoCSI_(activegate|metadata_enrichment|enrichment_rules|resource_attributes_logmon_only|resource_attributes_metadata_only|resource_attributes_otlp|logmonitoring|telemetryingest_w_public_ag|telemetryingest_w_otel_collector_endpoint_tls|telemetryingest_configuration_update|kspm)$$' $(SKIPCLEANUP) || RC=1; \
