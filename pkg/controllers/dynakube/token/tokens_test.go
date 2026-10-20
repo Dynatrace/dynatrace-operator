@@ -207,7 +207,7 @@ func TestTokens_VerifyScopes(t *testing.T) {
 		title            string
 		dk               *dynakube.DynaKube
 		availableScopes  []string
-		expectedOptional map[string]bool
+		expectedOptional map[string]OptionalScope
 		shouldError      bool
 	}
 
@@ -233,9 +233,9 @@ func TestTokens_VerifyScopes(t *testing.T) {
 				tokenclient.ScopeInstallerDownload, // TODO: is this really necessary? I think this is only needed in case of appmon (when we download the zip)
 				tokenclient.ScopeActiveGateTokenCreate,
 			},
-			expectedOptional: map[string]bool{
-				tokenclient.ScopeSettingsRead:  true,
-				tokenclient.ScopeSettingsWrite: true,
+			expectedOptional: map[string]OptionalScope{
+				tokenclient.ScopeSettingsRead:  {Available: true, Requested: true},
+				tokenclient.ScopeSettingsWrite: {Available: true, Requested: true},
 			},
 			shouldError: false,
 		},
@@ -259,9 +259,9 @@ func TestTokens_VerifyScopes(t *testing.T) {
 				tokenclient.ScopeSettingsWrite,
 				tokenclient.ScopeInstallerDownload, // TODO: is this really necessary? I think this is only needed in case of appmon (when we download the zip)
 			},
-			expectedOptional: map[string]bool{
-				tokenclient.ScopeSettingsRead:  true,
-				tokenclient.ScopeSettingsWrite: true,
+			expectedOptional: map[string]OptionalScope{
+				tokenclient.ScopeSettingsRead:  {Available: true, Requested: true},
+				tokenclient.ScopeSettingsWrite: {Available: true, Requested: true},
 			},
 			shouldError: true,
 		},
@@ -284,9 +284,9 @@ func TestTokens_VerifyScopes(t *testing.T) {
 				tokenclient.ScopeActiveGateTokenCreate,
 				tokenclient.ScopeInstallerDownload, // TODO: is this really necessary? I think this is only needed in case of appmon (when we download the zip)
 			},
-			expectedOptional: map[string]bool{
-				tokenclient.ScopeSettingsRead:  false,
-				tokenclient.ScopeSettingsWrite: false,
+			expectedOptional: map[string]OptionalScope{
+				tokenclient.ScopeSettingsRead:  {Available: false, Requested: true},
+				tokenclient.ScopeSettingsWrite: {Available: false, Requested: true},
 			},
 			shouldError: false,
 		},
@@ -305,9 +305,9 @@ func TestTokens_VerifyScopes(t *testing.T) {
 				tokenclient.ScopeSettingsWrite,
 				tokenclient.ScopeInstallerDownload,
 			},
-			expectedOptional: map[string]bool{
-				tokenclient.ScopeSettingsRead:  true,
-				tokenclient.ScopeSettingsWrite: true,
+			expectedOptional: map[string]OptionalScope{
+				tokenclient.ScopeSettingsRead:  {Available: true, Requested: true},
+				tokenclient.ScopeSettingsWrite: {Available: true, Requested: true},
 			},
 			shouldError: false,
 		},
@@ -322,8 +322,30 @@ func TestTokens_VerifyScopes(t *testing.T) {
 				tokenclient.ScopeDataExport,
 				tokenclient.ScopeInstallerDownload,
 			},
-			expectedOptional: map[string]bool{},
-			shouldError:      false,
+			expectedOptional: map[string]OptionalScope{
+				tokenclient.ScopeSettingsRead:  {Available: false, Requested: false},
+				tokenclient.ScopeSettingsWrite: {Available: false, Requested: false},
+			},
+			shouldError: false,
+		},
+		{
+			title: "kubernetesMonitoring operand without registration, optional scopes present",
+			dk: &dynakube.DynaKube{
+				Spec: dynakube.DynaKubeSpec{
+					KubernetesMonitoring: &kubemon.Spec{},
+				},
+			},
+			availableScopes: []string{
+				tokenclient.ScopeDataExport,
+				tokenclient.ScopeSettingsRead,
+				tokenclient.ScopeSettingsWrite,
+				tokenclient.ScopeInstallerDownload,
+			},
+			expectedOptional: map[string]OptionalScope{
+				tokenclient.ScopeSettingsRead:  {Available: true, Requested: false},
+				tokenclient.ScopeSettingsWrite: {Available: true, Requested: false},
+			},
+			shouldError: false,
 		},
 		{
 			title: "metadataEnrichment - all scopes present",
@@ -339,8 +361,9 @@ func TestTokens_VerifyScopes(t *testing.T) {
 				tokenclient.ScopeSettingsRead,
 				tokenclient.ScopeInstallerDownload, // TODO: is this really necessary? I think this is only needed in case of appmon (when we download the zip)
 			},
-			expectedOptional: map[string]bool{
-				tokenclient.ScopeSettingsRead: true,
+			expectedOptional: map[string]OptionalScope{
+				tokenclient.ScopeSettingsRead:  {Available: true, Requested: true},
+				tokenclient.ScopeSettingsWrite: {Available: false, Requested: false},
 			},
 			shouldError: false,
 		},
@@ -357,8 +380,9 @@ func TestTokens_VerifyScopes(t *testing.T) {
 				tokenclient.ScopeDataExport,
 				tokenclient.ScopeSettingsRead,
 			},
-			expectedOptional: map[string]bool{
-				tokenclient.ScopeSettingsRead: true,
+			expectedOptional: map[string]OptionalScope{
+				tokenclient.ScopeSettingsRead:  {Available: true, Requested: true},
+				tokenclient.ScopeSettingsWrite: {Available: false, Requested: false},
 			},
 			shouldError: true,
 		},
@@ -375,8 +399,9 @@ func TestTokens_VerifyScopes(t *testing.T) {
 				tokenclient.ScopeDataExport,
 				tokenclient.ScopeInstallerDownload, // TODO: is this really necessary? I think this is only needed in case of appmon (when we download the zip)
 			},
-			expectedOptional: map[string]bool{
-				tokenclient.ScopeSettingsRead: false,
+			expectedOptional: map[string]OptionalScope{
+				tokenclient.ScopeSettingsRead:  {Available: false, Requested: true},
+				tokenclient.ScopeSettingsWrite: {Available: false, Requested: false},
 			},
 			shouldError: false,
 		},
@@ -393,9 +418,9 @@ func TestTokens_VerifyScopes(t *testing.T) {
 				tokenclient.ScopeSettingsWrite,
 				tokenclient.ScopeInstallerDownload, // TODO: is this really necessary? I think this is only needed in case of appmon (when we download the zip)
 			},
-			expectedOptional: map[string]bool{
-				tokenclient.ScopeSettingsRead:  true,
-				tokenclient.ScopeSettingsWrite: true,
+			expectedOptional: map[string]OptionalScope{
+				tokenclient.ScopeSettingsRead:  {Available: true, Requested: true},
+				tokenclient.ScopeSettingsWrite: {Available: true, Requested: true},
 			},
 			shouldError: false,
 		},
@@ -410,9 +435,9 @@ func TestTokens_VerifyScopes(t *testing.T) {
 				tokenclient.ScopeDataExport,
 				tokenclient.ScopeInstallerDownload, // TODO: is this really necessary? I think this is only needed in case of appmon (when we download the zip)
 			},
-			expectedOptional: map[string]bool{
-				tokenclient.ScopeSettingsRead:  false,
-				tokenclient.ScopeSettingsWrite: false,
+			expectedOptional: map[string]OptionalScope{
+				tokenclient.ScopeSettingsRead:  {Available: false, Requested: true},
+				tokenclient.ScopeSettingsWrite: {Available: false, Requested: true},
 			},
 			shouldError: false,
 		},

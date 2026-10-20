@@ -123,6 +123,7 @@ func (r *Reconciler) reconcileMEID(ctx context.Context, dtClient settings.Client
 
 	if k8sEntity.ID == "" {
 		log.Info("no MEs found, no kubernetesClusterMEID will be set in the dynakube status")
+		k8sconditions.SetStatusOutdated(dk.Conditions(), meIDConditionType, k8sconditions.MissingMEIDMessage)
 
 		return nil
 	}

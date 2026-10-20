@@ -31,16 +31,6 @@ func (feature *Feature) CollectMissingRequiredScopes(availableScopes []string) [
 	return missingScopes
 }
 
-func (feature *Feature) CollectOptionalScopes(availableScopes []string) map[string]bool {
-	optionalScopes := map[string]bool{}
-
-	for _, scope := range feature.OptionalScopes {
-		optionalScopes[scope] = slices.Contains(availableScopes, scope)
-	}
-
-	return optionalScopes
-}
-
 func getFeaturesForAPIToken() []Feature {
 	return []Feature{
 		{
