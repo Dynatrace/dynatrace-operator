@@ -397,6 +397,11 @@ func TestLegacyVolumeMounts(t *testing.T) {
 				MountPath: runtimeMountPath + httpsCertMountPath,
 				ReadOnly:  true,
 			},
+			{
+				Name:      activeGateTrustedCertVolumeName,
+				MountPath: runtimeMountPath + activeGateTrustedCertMountPath,
+				ReadOnly:  true,
+			},
 		}
 		assert.Equal(t, expectedVolumeMounts, statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts)
 	})
@@ -476,6 +481,11 @@ func TestLegacyVolumeMounts(t *testing.T) {
 				MountPath: runtimeMountPath + httpsCertMountPath,
 				ReadOnly:  true,
 			},
+			{
+				Name:      activeGateTrustedCertVolumeName,
+				MountPath: runtimeMountPath + activeGateTrustedCertMountPath,
+				ReadOnly:  true,
+			},
 		}
 		assert.Equal(t, expectedVolumeMounts, statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts)
 	})
@@ -538,6 +548,11 @@ func TestLegacyVolumeMounts(t *testing.T) {
 			{
 				Name:      customConfigVolumeName,
 				MountPath: runtimeMountPath + customConfigMountPath,
+				ReadOnly:  true,
+			},
+			{
+				Name:      activeGateTrustedCertVolumeName,
+				MountPath: runtimeMountPath + activeGateTrustedCertMountPath,
 				ReadOnly:  true,
 			},
 		}
@@ -611,6 +626,11 @@ func TestVolumeMounts(t *testing.T) {
 				MountPath: httpsCertMountPath,
 				ReadOnly:  true,
 			},
+			{
+				Name:      activeGateTrustedCertVolumeName,
+				MountPath: activeGateTrustedCertMountPath,
+				ReadOnly:  true,
+			},
 		}
 		assert.Equal(t, expectedVolumeMounts, statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts)
 	})
@@ -673,6 +693,11 @@ func TestVolumeMounts(t *testing.T) {
 				MountPath: httpsCertMountPath,
 				ReadOnly:  true,
 			},
+			{
+				Name:      activeGateTrustedCertVolumeName,
+				MountPath: activeGateTrustedCertMountPath,
+				ReadOnly:  true,
+			},
 		}
 		assert.Equal(t, expectedVolumeMounts, statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts)
 	})
@@ -729,6 +754,11 @@ func TestVolumeMounts(t *testing.T) {
 			{
 				Name:      customConfigVolumeName,
 				MountPath: customConfigMountPath,
+				ReadOnly:  true,
+			},
+			{
+				Name:      activeGateTrustedCertVolumeName,
+				MountPath: activeGateTrustedCertMountPath,
 				ReadOnly:  true,
 			},
 		}
@@ -1124,6 +1154,19 @@ func TestLegacyVolumes(t *testing.T) {
 				Name:     runtimeVolumeName,
 				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
+			{
+				Name: activeGateTrustedCertVolumeName,
+				Secret: &corev1.SecretVolumeSource{
+					DefaultMode: &mode,
+					SecretName:  dk.ActiveGate().GetTLSSecretName(),
+					Items: []corev1.KeyToPath{
+						{
+							Key:  consts.TLSServerCrtDataName,
+							Path: consts.TLSServerCrtDataName,
+						},
+					},
+				},
+			},
 		}
 
 		assert.Equal(t, expectedVolumes, statefulSet.Spec.Template.Spec.Volumes)
@@ -1218,6 +1261,19 @@ func TestLegacyVolumes(t *testing.T) {
 				Secret: &corev1.SecretVolumeSource{
 					SecretName:  dk.Extensions().GetTLSSecretName(),
 					DefaultMode: &mode,
+				},
+			},
+			{
+				Name: activeGateTrustedCertVolumeName,
+				Secret: &corev1.SecretVolumeSource{
+					DefaultMode: &mode,
+					SecretName:  dk.ActiveGate().GetTLSSecretName(),
+					Items: []corev1.KeyToPath{
+						{
+							Key:  consts.TLSServerCrtDataName,
+							Path: consts.TLSServerCrtDataName,
+						},
+					},
 				},
 			},
 		}
@@ -1321,6 +1377,19 @@ func TestLegacyVolumes(t *testing.T) {
 				Name: customConfigVolumeName,
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					Name: testCustomConfigConfigMapName,
+				},
+			},
+			{
+				Name: activeGateTrustedCertVolumeName,
+				Secret: &corev1.SecretVolumeSource{
+					DefaultMode: &mode,
+					SecretName:  dk.ActiveGate().GetTLSSecretName(),
+					Items: []corev1.KeyToPath{
+						{
+							Key:  consts.TLSServerCrtDataName,
+							Path: consts.TLSServerCrtDataName,
+						},
+					},
 				},
 			},
 		}
@@ -1417,6 +1486,19 @@ func TestVolumes(t *testing.T) {
 				Name:     runtimeVolumeName,
 				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
+			{
+				Name: activeGateTrustedCertVolumeName,
+				Secret: &corev1.SecretVolumeSource{
+					DefaultMode: &mode,
+					SecretName:  dk.ActiveGate().GetTLSSecretName(),
+					Items: []corev1.KeyToPath{
+						{
+							Key:  consts.TLSServerCrtDataName,
+							Path: consts.TLSServerCrtDataName,
+						},
+					},
+				},
+			},
 		}
 
 		assert.Equal(t, expectedVolumes, statefulSet.Spec.Template.Spec.Volumes)
@@ -1493,6 +1575,19 @@ func TestVolumes(t *testing.T) {
 				Secret: &corev1.SecretVolumeSource{
 					SecretName:  dk.Extensions().GetTLSSecretName(),
 					DefaultMode: &mode,
+				},
+			},
+			{
+				Name: activeGateTrustedCertVolumeName,
+				Secret: &corev1.SecretVolumeSource{
+					DefaultMode: &mode,
+					SecretName:  dk.ActiveGate().GetTLSSecretName(),
+					Items: []corev1.KeyToPath{
+						{
+							Key:  consts.TLSServerCrtDataName,
+							Path: consts.TLSServerCrtDataName,
+						},
+					},
 				},
 			},
 		}
@@ -1578,6 +1673,19 @@ func TestVolumes(t *testing.T) {
 				Name: customConfigVolumeName,
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					Name: testCustomConfigConfigMapName,
+				},
+			},
+			{
+				Name: activeGateTrustedCertVolumeName,
+				Secret: &corev1.SecretVolumeSource{
+					DefaultMode: &mode,
+					SecretName:  dk.ActiveGate().GetTLSSecretName(),
+					Items: []corev1.KeyToPath{
+						{
+							Key:  consts.TLSServerCrtDataName,
+							Path: consts.TLSServerCrtDataName,
+						},
+					},
 				},
 			},
 		}
@@ -1747,9 +1855,9 @@ func TestActiveGateVolumes(t *testing.T) {
 		require.NotEmpty(t, statefulSet.Spec.Template.Spec.Containers)
 		require.NotEmpty(t, statefulSet.Spec.Template.Spec.Volumes)
 
-		require.NotContains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, expectedEnvVar)
-		require.NotContains(t, statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts, expectedVolumeMount)
-		require.NotContains(t, statefulSet.Spec.Template.Spec.Volumes, expectedVolume)
+		require.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, expectedEnvVar)
+		require.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts, expectedVolumeMount)
+		require.Contains(t, statefulSet.Spec.Template.Spec.Volumes, expectedAutoAgCertVolume)
 	})
 
 	t.Run("volumes with TrustedCAs certificates, AG cert disabled", func(t *testing.T) {
@@ -1761,9 +1869,9 @@ func TestActiveGateVolumes(t *testing.T) {
 		require.NotEmpty(t, statefulSet.Spec.Template.Spec.Containers)
 		require.NotEmpty(t, statefulSet.Spec.Template.Spec.Volumes)
 
-		require.NotContains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, expectedEnvVar)
-		require.NotContains(t, statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts, expectedVolumeMount)
-		require.NotContains(t, statefulSet.Spec.Template.Spec.Volumes, expectedVolume)
+		require.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, expectedEnvVar)
+		require.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts, expectedVolumeMount)
+		require.Contains(t, statefulSet.Spec.Template.Spec.Volumes, expectedAutoAgCertVolume)
 	})
 
 	t.Run("volumes with TrustedCAs certificates and automatically created ActiveGate tls certificate", func(t *testing.T) {

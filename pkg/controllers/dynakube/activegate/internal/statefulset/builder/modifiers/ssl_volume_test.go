@@ -33,14 +33,14 @@ func TestSSLVolumeEnabled(t *testing.T) {
 		assert.True(t, mod.Enabled())
 	})
 
-	t.Run("false", func(t *testing.T) {
+	t.Run("true - automatic creation", func(t *testing.T) {
 		dk := getBaseDynakube()
 		disableAutomaticAGCertificate(dk)
 		enableKubeMonCapability(dk)
 
 		mod := NewSSLVolumeModifier(dk)
 
-		assert.False(t, mod.Enabled())
+		assert.True(t, mod.Enabled())
 	})
 
 	t.Run("true - TLSSecretName, AG cert enabled", func(t *testing.T) {

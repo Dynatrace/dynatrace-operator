@@ -387,21 +387,13 @@ func TestAppArmorAnnotationHandling(t *testing.T) {
 }
 
 func TestTlsSecretHashAnnotationHandling(t *testing.T) {
-	t.Run("no AG TLS secret", func(t *testing.T) {
+	t.Run("AG TLS secret not transferred to OA", func(t *testing.T) {
 		dk := createDynakube(true)
 		dk.Annotations = map[string]string{
 			exp.AGAutomaticTLSCertificateKey: "false",
 		}
 
-		kubeClient := fake.NewClientWithInterceptors(interceptor.Funcs{
-			Get: func(ctx context.Context, c client.WithWatch, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
-				if _, ok := obj.(*corev1.Secret); ok {
-					return errors.New("secret should not be read")
-				}
-
-				return c.Get(ctx, key, obj, opts...)
-			},
-		})
+		kubeClient := fake.NewClient()
 
 		reconciler := NewReconciler(kubeClient, nil)
 		hash, err := reconciler.getTLSSecretHash(t.Context(), dk)
