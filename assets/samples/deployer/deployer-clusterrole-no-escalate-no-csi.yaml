@@ -31,10 +31,14 @@ rules:
   - apiGroups: ["batch"]
     resources: ["jobs"]
     verbs: ["create", "get", "update", "patch", "delete", "list", "watch"]
-  # --- DynaKube / EdgeConnect custom resources (namespace-scoped) ---
+  # --- DynaKube / EdgeConnect / PrometheusMonitoring custom resources (namespace-scoped) ---
   - apiGroups: ["dynatrace.com"]
-    resources: ["dynakubes", "edgeconnects"]
+    resources: ["dynakubes", "edgeconnects", "prometheusmonitorings"]
     verbs: ["create", "get", "update", "patch", "delete", "list"]
+  # --- Needed if prometheus.installCRDs: true, 3rd party prometheus custom resources (cluster-scoped) ---
+  - apiGroups: ["monitoring.coreos.com"]
+    resources: ["podmonitors", "probes", "scrapeconfigs", "servicemonitors"]
+    verbs: ["get", "list", "watch"]
   # --- Platform-specific (only needed if the API exists on the cluster) ---
   - apiGroups: ["auto.gke.io"]
     resources: ["allowlistsynchronizers"]
@@ -95,11 +99,14 @@ rules:
     resources: ["endpointslices"]
     verbs: ["get", "list", "watch"]
   - apiGroups: ["dynatrace.com"]
-    resources: ["dynakubes", "edgeconnects"]
+    resources: ["dynakubes", "edgeconnects", "prometheusmonitorings"]
     verbs: ["get", "list", "update", "watch"]
   - apiGroups: ["dynatrace.com"]
-    resources: ["dynakubes/finalizers", "dynakubes/status", "edgeconnects/finalizers", "edgeconnects/status"]
+    resources: ["dynakubes/finalizers", "dynakubes/status", "edgeconnects/finalizers", "edgeconnects/status", "prometheusmonitorings/finalizers"]
     verbs: ["update"]
+  - apiGroups: ["dynatrace.com"]
+    resources: ["prometheusmonitorings/status"]
+    verbs: ["patch"]
   - apiGroups: ["events.k8s.io"]
     resources: ["events"]
     verbs: ["create", "get", "list", "patch"]
