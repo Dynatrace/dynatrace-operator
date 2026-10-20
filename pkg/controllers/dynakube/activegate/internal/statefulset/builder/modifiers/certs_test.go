@@ -27,7 +27,7 @@ func disableAutomaticAGCertificate(dk *dynakube.DynaKube) {
 }
 
 func TestCertEnabled(t *testing.T) {
-	t.Run("true", func(t *testing.T) {
+	t.Run("true custom cert", func(t *testing.T) {
 		dk := getBaseDynakube()
 		disableAutomaticAGCertificate(dk)
 		enableKubeMonCapability(dk)
@@ -38,7 +38,7 @@ func TestCertEnabled(t *testing.T) {
 		assert.True(t, mod.Enabled())
 	})
 
-	t.Run("false", func(t *testing.T) {
+	t.Run("true automatic cert", func(t *testing.T) {
 		dk := getBaseDynakube()
 		disableAutomaticAGCertificate(dk)
 		enableKubeMonCapability(dk)
@@ -46,7 +46,7 @@ func TestCertEnabled(t *testing.T) {
 
 		mod := NewCertificatesModifier(dk)
 
-		assert.False(t, mod.Enabled())
+		assert.True(t, mod.Enabled())
 	})
 
 	t.Run("true, AG cert enabled", func(t *testing.T) {

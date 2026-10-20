@@ -482,6 +482,108 @@ func TestGenerateForDynakube(t *testing.T) {
 	})
 }
 
+func TestGenerateForDynakubeWithAutomaticAGTLSCertificateDisbled(t *testing.T) {
+	t.Run("successfully generate secret with fields for dynakube but without AG cert if FF used", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			Name:      testDynakube,
+			Namespace: testNamespaceDynatrace,
+			Annotations: map[string]string{
+				exp.OAInitialConnectRetryKey:     "6500",
+				exp.AGAutomaticTLSCertificateKey: "false",
+			},
+			Spec: dynakube.DynaKubeSpec{
+				APIURL:     testAPIurl,
+				TrustedCAs: "test-trusted-ca",
+				MetadataEnrichment: metadataenrichment.Spec{
+					Enabled: new(true),
+				},
+				OneAgent: oneagent.Spec{
+					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
+				},
+				ActiveGate: activegate.Spec{
+					Capabilities: []activegate.CapabilityDisplayName{
+						activegate.KubeMonCapability.DisplayName,
+					},
+					TLSSecretName: "test-tls-secret-name",
+				},
+			},
+			Status: dynakube.DynaKubeStatus{
+				KubernetesClusterMEID: "KUBERNETES_CLUSTER-test",
+			},
+		}
+
+		namespace := clientInjectedNamespace(testNamespace, testDynakube)
+
+		clt := fake.NewClientWithIndex(
+			dk,
+			namespace,
+			clientSecret(testDynakube, testNamespaceDynatrace, map[string][]byte{
+				token.APIKey: []byte(testAPIToken),
+			}),
+			clientSecret(dk.ActiveGate().TLSSecretName, testNamespaceDynatrace, map[string][]byte{
+				consts.TLSServerCrtDataName: []byte("test-cert-value"),
+			}),
+			clientSecret(dk.OneAgent().GetTenantSecret(), testNamespaceDynatrace, map[string][]byte{
+				"tenant-token": []byte(testTenantToken),
+			}),
+			&corev1.ConfigMap{
+				Name:      "test-trusted-ca",
+				Namespace: testNamespaceDynatrace,
+				Data: map[string]string{
+					dynakube.TrustedCAKey: "test-trusted-ca-value",
+				},
+			},
+		)
+
+		mockDTClient := oneagentclientmock.NewClient(t)
+		mockDTClient.EXPECT().GetProcessModuleConfig(mock.Anything).Return(&oneagentclient.ProcessModuleConfig{}, nil).Once()
+		mockDTClient.EXPECT().GetProcessGroupingConfig(mock.Anything, mock.Anything, "").Return(&oneagentclient.ProcessGroupConfig{}, nil).Once()
+
+		secretGenerator := NewSecretGenerator(clt, clt, mockDTClient)
+		err := secretGenerator.GenerateForDynakube(t.Context(), dk, []corev1.Namespace{*namespace})
+		require.NoError(t, err)
+
+		var secret corev1.Secret
+		err = clt.Get(t.Context(), client.ObjectKey{Name: consts.BootstrapperInitSecretName, Namespace: testNamespace}, &secret)
+		require.NoError(t, err)
+		require.NotEmpty(t, secret)
+		assert.Equal(t, consts.BootstrapperInitSecretName, secret.Name)
+
+		_, ok := secret.Data[pmc.InputFileName]
+		require.True(t, ok)
+
+		_, ok = secret.Data[curl.InputFileName]
+		require.True(t, ok)
+
+		_, ok = secret.Data[endpoint.InputFileName]
+		require.True(t, ok)
+
+		// check certs secret
+		var secretCerts corev1.Secret
+		err = clt.Get(t.Context(), client.ObjectKey{Name: consts.BootstrapperInitCertsSecretName, Namespace: testNamespace}, &secretCerts)
+		require.NoError(t, err)
+		require.NotEmpty(t, secretCerts)
+		assert.Equal(t, consts.BootstrapperInitCertsSecretName, secretCerts.Name)
+
+		_, ok = secretCerts.Data[ca.TrustedCertsInputFile]
+		require.True(t, ok)
+
+		_, ok = secretCerts.Data[ca.AgCertsInputFile]
+		require.False(t, ok)
+
+		var sourceSecret corev1.Secret
+		err = clt.Get(t.Context(), client.ObjectKey{Name: GetSourceConfigSecretName(dk.Name), Namespace: dk.Namespace}, &sourceSecret)
+		require.NoError(t, err)
+
+		require.Equal(t, GetSourceConfigSecretName(dk.Name), sourceSecret.Name)
+		assert.Equal(t, secret.Data, sourceSecret.Data)
+
+		c := meta.FindStatusCondition(*dk.Conditions(), ConfigConditionType)
+		require.NotNil(t, c)
+		assert.Equal(t, metav1.ConditionTrue, c.Status)
+	})
+}
+
 func TestGenerateForDynakubeHostMonitoring(t *testing.T) {
 	t.Run("source secret created with declarative.cbor, no app-namespace secrets", func(t *testing.T) {
 		dk := &dynakube.DynaKube{

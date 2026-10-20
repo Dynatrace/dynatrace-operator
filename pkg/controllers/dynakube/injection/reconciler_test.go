@@ -713,10 +713,10 @@ func TestGenerateCorrectOTLPCertInitSecret(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, ns := range namespaces {
-			assertSecretNotFound(t, clt, consts.OTLPExporterCertsSecretName, ns.Name)
+			assertSecretFound(t, clt, consts.OTLPExporterCertsSecretName, ns.Name)
 		}
 
-		assertSecretNotFound(t, clt, exporterconfig.GetSourceCertsSecretName(dk.Name), dk.Namespace)
+		assertSecretFound(t, clt, exporterconfig.GetSourceCertsSecretName(dk.Name), dk.Namespace)
 	})
 }
 

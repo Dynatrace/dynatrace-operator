@@ -95,6 +95,27 @@ func TestPrepareVolumes(t *testing.T) {
 		volumes := prepareVolumes(dk, "")
 		assert.Contains(t, volumes, getActiveGateCaCertVolume(dk))
 	})
+	t.Run("does not have automatically created AG tls volume if FF is used", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			Name: "dynakube",
+			Annotations: map[string]string{
+				exp.AGAutomaticTLSCertificateKey: "false",
+			},
+			Spec: dynakube.DynaKubeSpec{
+				ActiveGate: activegate.Spec{
+					Capabilities: []activegate.CapabilityDisplayName{
+						activegate.KubeMonCapability.DisplayName,
+					},
+				},
+				TrustedCAs: testName,
+				OneAgent: oneagent.Spec{
+					HostMonitoring: &oneagent.HostInjectSpec{},
+				},
+			},
+		}
+		volumes := prepareVolumes(dk, "")
+		assert.NotContains(t, volumes, getActiveGateCaCertVolume(dk))
+	})
 	t.Run("csi volume not supported on classicFullStack", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
@@ -252,6 +273,31 @@ func TestPrepareVolumeMounts(t *testing.T) {
 		assert.Contains(t, volumeMounts, getReadOnlyRootMount())
 		assert.Contains(t, volumeMounts, getClusterCaCertVolumeMount())
 		assert.Contains(t, volumeMounts, getActiveGateCaCertVolumeMount())
+	})
+	t.Run("does not have automatically created ActiveGate CA volume mount if FF is used", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			Name: "dynakube",
+			Annotations: map[string]string{
+				exp.AGAutomaticTLSCertificateKey: "false",
+			},
+			Spec: dynakube.DynaKubeSpec{
+				OneAgent: oneagent.Spec{
+					HostMonitoring: &oneagent.HostInjectSpec{},
+				},
+				TrustedCAs: testName,
+				ActiveGate: activegate.Spec{
+					Capabilities: []activegate.CapabilityDisplayName{
+						activegate.KubeMonCapability.DisplayName,
+					},
+				},
+			},
+		}
+
+		volumeMounts := prepareVolumeMounts(dk, "")
+
+		assert.Contains(t, volumeMounts, getReadOnlyRootMount())
+		assert.Contains(t, volumeMounts, getClusterCaCertVolumeMount())
+		assert.NotContains(t, volumeMounts, getActiveGateCaCertVolumeMount())
 	})
 	t.Run("readonly volume not supported on classicFullStack", func(t *testing.T) {
 		dk := &dynakube.DynaKube{

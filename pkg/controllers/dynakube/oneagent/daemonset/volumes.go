@@ -40,7 +40,7 @@ func prepareVolumeMounts(dk *dynakube.DynaKube, processGroupConfigHash string) [
 		volumeMounts = append(volumeMounts, getClusterCaCertVolumeMount())
 	}
 
-	if dk.ActiveGate().HasCaCert() {
+	if dk.ActiveGate().HasCaCertForOA() {
 		volumeMounts = append(volumeMounts, getActiveGateCaCertVolumeMount())
 	}
 
@@ -146,7 +146,7 @@ func prepareVolumes(dk *dynakube.DynaKube, processGroupConfigHash string) []core
 		volumes = append(volumes, getCertificateVolume(dk))
 	}
 
-	if dk.ActiveGate().HasCaCert() {
+	if dk.ActiveGate().HasCaCertForOA() {
 		volumes = append(volumes, getActiveGateCaCertVolume(dk))
 	}
 
