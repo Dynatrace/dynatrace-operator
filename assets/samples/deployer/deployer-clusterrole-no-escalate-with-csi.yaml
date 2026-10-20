@@ -34,10 +34,14 @@ rules:
   - apiGroups: ["batch"]
     resources: ["jobs"]
     verbs: ["create", "get", "update", "patch", "delete", "list", "watch"]
-  # --- DynaKube / EdgeConnect custom resources (namespace-scoped) ---
+  # --- DynaKube / EdgeConnect / PrometheusMonitoring custom resources (namespace-scoped) ---
   - apiGroups: ["dynatrace.com"]
     resources: ["dynakubes", "edgeconnects", "prometheusmonitorings"]
     verbs: ["create", "get", "update", "patch", "delete", "list"]
+  # --- Needed if prometheus.installCRDs: true, 3rd party prometheus custom resources (cluster-scoped) ---
+  - apiGroups: ["monitoring.coreos.com"]
+    resources: ["podmonitors", "probes", "scrapeconfigs", "servicemonitors"]
+    verbs: ["get", "list", "watch"]
   # --- Platform-specific (only needed if the API exists on the cluster) ---
   - apiGroups: ["auto.gke.io"]
     resources: ["allowlistsynchronizers"]
