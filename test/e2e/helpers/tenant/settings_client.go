@@ -7,6 +7,7 @@ package tenant
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -19,10 +20,11 @@ import (
 )
 
 const (
-	legacyMetadataEnrichmentSchemaID = "builtin:kubernetes.generic.metadata.enrichment"
-	metadataEnrichmentSchemaID       = "builtin:ingest.enrichment.config"
+	LegacyMetadataEnrichmentSchemaID = "builtin:kubernetes.generic.metadata.enrichment"
+	MetadataEnrichmentSchemaID       = "builtin:ingest.enrichment.config"
 
 	objectsPath            = dtsettings.ObjectsPath
+	fieldsQueryParam       = "fields"
 	validateOnlyQueryParam = "validateOnly"
 	schemaIDsQueryParam    = "schemaIds"
 	scopesQueryParam       = "scopes"
@@ -39,14 +41,14 @@ type SettingsClient struct {
 	apiClient core.Client
 }
 
-// EnrichmentRuleObject holds the objectId of a single enrichment rule settings object,
-// used to identify rules for deletion.
-type EnrichmentRuleObject struct {
-	ObjectID string `json:"objectId"`
+// RawObject is a settings object with its value kept as raw JSON, which allows restoring it later on.
+type RawObject struct {
+	ObjectID string          `json:"objectId"`
+	Value    json.RawMessage `json:"value,omitempty"`
 }
 
-type enrichmentRulesObjectsResponse struct {
-	Items []EnrichmentRuleObject `json:"items"`
+type rawObjectsResponse struct {
+	Items []RawObject `json:"items"`
 }
 
 type enrichmentRuleValue struct {
@@ -105,50 +107,15 @@ func newSettingsClient(apiClient core.Client) *SettingsClient {
 	}
 }
 
-func (c *SettingsClient) getEnrichmentRuleObjectsForSchema(ctx context.Context, schemaID, scope string) ([]EnrichmentRuleObject, error) {
-	var resp enrichmentRulesObjectsResponse
-
-	err := c.apiClient.GET(ctx, objectsPath).
-		WithQueryParams(map[string]string{
-			schemaIDsQueryParam: schemaID,
-			scopesQueryParam:    scope,
-		}).
-		Execute(&resp)
-	if err != nil {
-		return nil, fmt.Errorf("get enrichment rule objects (%s): %w", schemaID, err)
-	}
-
-	return resp.Items, nil
-}
-
-// GetEnrichmentRuleObjects returns the list of enrichment rule settings objects (with objectIds) for the given scope.
-// Does not handle pagination.
-func (c *SettingsClient) GetEnrichmentRuleObjects(ctx context.Context, scope string) ([]EnrichmentRuleObject, error) {
-	if scope == "" {
-		return nil, errors.New("no scope provided for getting enrichment rule objects")
-	}
-
-	return c.getEnrichmentRuleObjectsForSchema(ctx, metadataEnrichmentSchemaID, scope)
-}
-
-// GetLegacyEnrichmentRuleObjects returns enrichment rule settings objects for the legacy schema (builtin:kubernetes.generic.metadata.enrichment).
-// Does not handle pagination.
-func (c *SettingsClient) GetLegacyEnrichmentRuleObjects(ctx context.Context, scope string) ([]EnrichmentRuleObject, error) {
-	if scope == "" {
-		return nil, errors.New("no scope provided for getting legacy enrichment rule objects")
-	}
-
-	return c.getEnrichmentRuleObjectsForSchema(ctx, legacyMetadataEnrichmentSchemaID, scope)
-}
-
 // CreateEnrichmentRuleObject creates a settings object for the builtin:ingest.enrichment.config schema.
 func (c *SettingsClient) CreateEnrichmentRuleObject(ctx context.Context, scope string, rules ...metadataenrichment.Rule) ([]string, error) {
-	return c.createEnrichmentRule(ctx, metadataEnrichmentSchemaID, scope, rules)
+	return c.createEnrichmentRule(ctx, MetadataEnrichmentSchemaID, scope, rules)
 }
 
 // CreateLegacyEnrichmentRuleObject creates a settings object for the builtin:kubernetes.generic.metadata.enrichment schema.
+// The schema allows a single object per scope holding all rules, so this fails if the scope already has one.
 func (c *SettingsClient) CreateLegacyEnrichmentRuleObject(ctx context.Context, scope string, rules ...metadataenrichment.Rule) ([]string, error) {
-	return c.createEnrichmentRule(ctx, legacyMetadataEnrichmentSchemaID, scope, rules)
+	return c.createEnrichmentRule(ctx, LegacyMetadataEnrichmentSchemaID, scope, rules)
 }
 
 func (c *SettingsClient) createEnrichmentRule(ctx context.Context, schemaID, scope string, rules []metadataenrichment.Rule) ([]string, error) {
@@ -156,11 +123,24 @@ func (c *SettingsClient) createEnrichmentRule(ctx context.Context, schemaID, sco
 		return nil, errors.New("no scope (MEID) was provided for creating the enrichment rule")
 	}
 
+	buildBody := func() any {
+		if schemaID == MetadataEnrichmentSchemaID {
+			values := make([]enrichmentRuleValue, len(rules))
+			for i, rule := range rules {
+				values[i] = convertRule(rule)
+			}
+
+			return newPostObjectsBody(schemaID, "", scope, values...)
+		}
+
+		return newPostObjectsBody(schemaID, "", scope, legacyEnrichmentValue{Rules: rules})
+	}
+
 	var response []postObjectsResponse
 
 	err := c.apiClient.POST(ctx, objectsPath).
 		WithQueryParams(map[string]string{validateOnlyQueryParam: "false"}).
-		WithJSONBody(buildEnrichmentBody(schemaID, scope, rules)).
+		WithJSONBody(buildBody()).
 		Execute(&response)
 	if err != nil {
 		return nil, fmt.Errorf("create enrichment rule (%s): %w", schemaID, err)
@@ -174,25 +154,58 @@ func (c *SettingsClient) createEnrichmentRule(ctx context.Context, schemaID, sco
 	return objectIDs, nil
 }
 
-func buildEnrichmentBody(schemaID, scope string, rules []metadataenrichment.Rule) any {
-	if schemaID == metadataEnrichmentSchemaID {
-		values := make([]enrichmentRuleValue, len(rules))
-		for i, rule := range rules {
-			values[i] = convertRule(rule)
-		}
-
-		return newPostObjectsBody(schemaID, "", scope, values...)
-	}
-
-	return newPostObjectsBody(schemaID, "", scope, legacyEnrichmentValue{Rules: rules})
-}
-
 func convertRule(rule metadataenrichment.Rule) enrichmentRuleValue {
 	return enrichmentRuleValue{
 		Type:        rule.Type,
 		ValueSource: rule.Source,
 		Target:      rule.Target,
 	}
+}
+
+// GetRawObjects returns the settings objects (with objectId and raw value) of the given schema for the given scope.
+// Does not handle pagination.
+func (c *SettingsClient) GetRawObjects(ctx context.Context, schemaID, scope string) ([]RawObject, error) {
+	if scope == "" {
+		return nil, errors.New("no scope provided for getting settings objects")
+	}
+
+	var resp rawObjectsResponse
+
+	err := c.apiClient.GET(ctx, objectsPath).
+		WithQueryParams(map[string]string{
+			schemaIDsQueryParam: schemaID,
+			scopesQueryParam:    scope,
+			fieldsQueryParam:    "objectId,value",
+		}).
+		Execute(&resp)
+	if err != nil {
+		return nil, fmt.Errorf("get settings objects (%s): %w", schemaID, err)
+	}
+
+	return resp.Items, nil
+}
+
+// CreateRawObject creates a settings object with the given raw value, e.g. to restore a previously backed up object.
+func (c *SettingsClient) CreateRawObject(ctx context.Context, schemaID, scope string, value json.RawMessage) (string, error) {
+	if scope == "" {
+		return "", errors.New("no scope (MEID) was provided for creating the settings object")
+	}
+
+	var response []postObjectsResponse
+
+	err := c.apiClient.POST(ctx, objectsPath).
+		WithQueryParams(map[string]string{validateOnlyQueryParam: "false"}).
+		WithJSONBody(newPostObjectsBody(schemaID, "", scope, value)).
+		Execute(&response)
+	if err != nil {
+		return "", fmt.Errorf("create settings object (%s): %w", schemaID, err)
+	}
+
+	if len(response) != 1 {
+		return "", fmt.Errorf("expected exactly one created object, got %d", len(response))
+	}
+
+	return response[0].ObjectID, nil
 }
 
 // DeleteSettings deletes the settings using the settings object ID.

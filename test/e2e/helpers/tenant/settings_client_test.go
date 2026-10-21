@@ -7,6 +7,7 @@ package tenant
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"testing"
 
@@ -27,33 +28,34 @@ func injectResponse[T any](resp T) func(any) {
 	}
 }
 
-func TestGetEnrichmentRuleObjects(t *testing.T) {
+func TestGetRawObjects(t *testing.T) {
 	ctx := t.Context()
+	const scope = "KUBERNETES_CLUSTER-123"
 
 	params := map[string]string{
-		schemaIDsQueryParam: metadataEnrichmentSchemaID,
-		scopesQueryParam:    "KUBERNETES_CLUSTER-123",
+		schemaIDsQueryParam: LegacyMetadataEnrichmentSchemaID,
+		scopesQueryParam:    scope,
+		fieldsQueryParam:    "objectId,value",
 	}
 
 	t.Run("success", func(t *testing.T) {
+		expected := []RawObject{{ObjectID: "obj-1", Value: json.RawMessage(`{"rules":[]}`)}}
+
 		apiClient := coremock.NewClient(t)
 		request := coremock.NewRequest(t)
 		request.EXPECT().WithQueryParams(params).Return(request).Once()
-		request.EXPECT().Execute(new(enrichmentRulesObjectsResponse)).
-			Run(injectResponse(enrichmentRulesObjectsResponse{Items: []EnrichmentRuleObject{{ObjectID: "obj-1"}, {ObjectID: "obj-2"}}})).
+		request.EXPECT().Execute(new(rawObjectsResponse)).
+			Run(injectResponse(rawObjectsResponse{Items: expected})).
 			Return(nil).Once()
 		apiClient.EXPECT().GET(anyCtx, objectsPath).Return(request).Once()
 
-		client := newSettingsClient(apiClient)
-		objects, err := client.GetEnrichmentRuleObjects(ctx, "KUBERNETES_CLUSTER-123")
+		objects, err := newSettingsClient(apiClient).GetRawObjects(ctx, LegacyMetadataEnrichmentSchemaID, scope)
 		require.NoError(t, err)
-		assert.Equal(t, []EnrichmentRuleObject{{ObjectID: "obj-1"}, {ObjectID: "obj-2"}}, objects)
+		assert.Equal(t, expected, objects)
 	})
 
 	t.Run("empty scope", func(t *testing.T) {
-		apiClient := coremock.NewClient(t)
-		client := newSettingsClient(apiClient)
-		objects, err := client.GetEnrichmentRuleObjects(ctx, "")
+		objects, err := newSettingsClient(coremock.NewClient(t)).GetRawObjects(ctx, LegacyMetadataEnrichmentSchemaID, "")
 		require.Error(t, err)
 		assert.Empty(t, objects)
 	})
@@ -62,11 +64,10 @@ func TestGetEnrichmentRuleObjects(t *testing.T) {
 		apiClient := coremock.NewClient(t)
 		request := coremock.NewRequest(t)
 		request.EXPECT().WithQueryParams(params).Return(request).Once()
-		request.EXPECT().Execute(new(enrichmentRulesObjectsResponse)).Return(errors.New("api error")).Once()
+		request.EXPECT().Execute(new(rawObjectsResponse)).Return(errors.New("api error")).Once()
 		apiClient.EXPECT().GET(anyCtx, objectsPath).Return(request).Once()
 
-		client := newSettingsClient(apiClient)
-		objects, err := client.GetEnrichmentRuleObjects(ctx, "KUBERNETES_CLUSTER-123")
+		objects, err := newSettingsClient(apiClient).GetRawObjects(ctx, LegacyMetadataEnrichmentSchemaID, scope)
 		require.Error(t, err)
 		assert.Empty(t, objects)
 	})
@@ -83,7 +84,7 @@ func TestCreateEnrichmentRuleObject(t *testing.T) {
 
 		return ok &&
 			len(body) == 1 &&
-			body[0].SchemaID == metadataEnrichmentSchemaID &&
+			body[0].SchemaID == MetadataEnrichmentSchemaID &&
 			body[0].Scope == scope &&
 			body[0].Value == convertRule(rule)
 	})
@@ -134,10 +135,10 @@ func TestCreateEnrichmentRuleObject(t *testing.T) {
 
 			return ok &&
 				len(body) == 2 &&
-				body[0].SchemaID == metadataEnrichmentSchemaID &&
+				body[0].SchemaID == MetadataEnrichmentSchemaID &&
 				body[0].Scope == scope &&
 				body[0].Value == convertRule(rule) &&
-				body[1].SchemaID == metadataEnrichmentSchemaID &&
+				body[1].SchemaID == MetadataEnrichmentSchemaID &&
 				body[1].Scope == scope &&
 				body[1].Value == convertRule(rule2)
 		})
@@ -170,7 +171,7 @@ func TestCreateLegacyEnrichmentRuleObject(t *testing.T) {
 
 		return ok &&
 			len(body) == 1 &&
-			body[0].SchemaID == legacyMetadataEnrichmentSchemaID &&
+			body[0].SchemaID == LegacyMetadataEnrichmentSchemaID &&
 			body[0].Scope == scope &&
 			len(body[0].Value.Rules) == 1 &&
 			body[0].Value.Rules[0] == rule
@@ -222,7 +223,7 @@ func TestCreateLegacyEnrichmentRuleObject(t *testing.T) {
 
 			return ok &&
 				len(body) == 1 &&
-				body[0].SchemaID == legacyMetadataEnrichmentSchemaID &&
+				body[0].SchemaID == LegacyMetadataEnrichmentSchemaID &&
 				body[0].Scope == scope &&
 				len(body[0].Value.Rules) == 2 &&
 				body[0].Value.Rules[0] == rule &&
@@ -242,51 +243,6 @@ func TestCreateLegacyEnrichmentRuleObject(t *testing.T) {
 		objectIDs, err := client.CreateLegacyEnrichmentRuleObject(ctx, scope, rule, rule2)
 		require.NoError(t, err)
 		assert.Equal(t, []string{"obj-456"}, objectIDs)
-	})
-}
-
-func TestGetLegacyEnrichmentRuleObjects(t *testing.T) {
-	ctx := t.Context()
-
-	params := map[string]string{
-		schemaIDsQueryParam: legacyMetadataEnrichmentSchemaID,
-		scopesQueryParam:    "KUBERNETES_CLUSTER-123",
-	}
-
-	t.Run("success", func(t *testing.T) {
-		apiClient := coremock.NewClient(t)
-		request := coremock.NewRequest(t)
-		request.EXPECT().WithQueryParams(params).Return(request).Once()
-		request.EXPECT().Execute(new(enrichmentRulesObjectsResponse)).
-			Run(injectResponse(enrichmentRulesObjectsResponse{Items: []EnrichmentRuleObject{{ObjectID: "obj-1"}}})).
-			Return(nil).Once()
-		apiClient.EXPECT().GET(anyCtx, objectsPath).Return(request).Once()
-
-		client := newSettingsClient(apiClient)
-		objects, err := client.GetLegacyEnrichmentRuleObjects(ctx, "KUBERNETES_CLUSTER-123")
-		require.NoError(t, err)
-		assert.Equal(t, []EnrichmentRuleObject{{ObjectID: "obj-1"}}, objects)
-	})
-
-	t.Run("empty scope", func(t *testing.T) {
-		apiClient := coremock.NewClient(t)
-		client := newSettingsClient(apiClient)
-		objects, err := client.GetLegacyEnrichmentRuleObjects(ctx, "")
-		require.Error(t, err)
-		assert.Empty(t, objects)
-	})
-
-	t.Run("error from API", func(t *testing.T) {
-		apiClient := coremock.NewClient(t)
-		request := coremock.NewRequest(t)
-		request.EXPECT().WithQueryParams(params).Return(request).Once()
-		request.EXPECT().Execute(new(enrichmentRulesObjectsResponse)).Return(errors.New("api error")).Once()
-		apiClient.EXPECT().GET(anyCtx, objectsPath).Return(request).Once()
-
-		client := newSettingsClient(apiClient)
-		objects, err := client.GetLegacyEnrichmentRuleObjects(ctx, "KUBERNETES_CLUSTER-123")
-		require.Error(t, err)
-		assert.Empty(t, objects)
 	})
 }
 
@@ -323,5 +279,37 @@ func TestDeleteSettings(t *testing.T) {
 		err := client.DeleteSettings(ctx, "")
 		require.Error(t, err)
 		assert.ErrorIs(t, err, errNoSettingsIDProvided)
+	})
+}
+
+func TestCreateRawObject(t *testing.T) {
+	ctx := t.Context()
+	const scope = "KUBERNETES_CLUSTER-123"
+
+	value := json.RawMessage(`{"rules":[]}`)
+	matchBody := mock.MatchedBy(func(arg any) bool {
+		body, ok := arg.([]postObjectsBody[json.RawMessage])
+
+		return ok && len(body) == 1 && body[0].SchemaID == LegacyMetadataEnrichmentSchemaID && body[0].Scope == scope && string(body[0].Value) == string(value)
+	})
+
+	t.Run("success", func(t *testing.T) {
+		apiClient := coremock.NewClient(t)
+		request := coremock.NewRequest(t)
+		request.EXPECT().WithQueryParams(map[string]string{validateOnlyQueryParam: "false"}).Return(request).Once()
+		request.EXPECT().WithJSONBody(matchBody).Return(request).Once()
+		request.EXPECT().Execute(new([]postObjectsResponse)).
+			Run(injectResponse([]postObjectsResponse{{ObjectID: "obj-1"}})).
+			Return(nil).Once()
+		apiClient.EXPECT().POST(ctx, objectsPath).Return(request).Once()
+
+		id, err := newSettingsClient(apiClient).CreateRawObject(ctx, LegacyMetadataEnrichmentSchemaID, scope, value)
+		require.NoError(t, err)
+		assert.Equal(t, "obj-1", id)
+	})
+
+	t.Run("empty scope", func(t *testing.T) {
+		_, err := newSettingsClient(coremock.NewClient(t)).CreateRawObject(ctx, LegacyMetadataEnrichmentSchemaID, "", value)
+		require.Error(t, err)
 	})
 }
