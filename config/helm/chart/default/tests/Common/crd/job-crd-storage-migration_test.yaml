@@ -28,6 +28,10 @@ tests:
       - equal:
           path: spec.template.spec.serviceAccountName
           value: dynatrace-crd-storage-migration
+      - equal:
+          path: spec.template.metadata.annotations
+          value:
+            dynatrace.com/inject: "false"
 
   - it: should have correct container configuration
     set:
@@ -92,8 +96,10 @@ tests:
       minorVersion: 30
     asserts:
       - equal:
-          path: spec.template.metadata.annotations["container.apparmor.security.beta.kubernetes.io/crd-storage-migration"]
-          value: runtime/default
+          path: spec.template.metadata.annotations
+          value:
+            dynatrace.com/inject: "false"
+            container.apparmor.security.beta.kubernetes.io/crd-storage-migration: runtime/default
       - isNull:
           path: spec.template.spec.securityContext.appArmorProfile
 
@@ -107,8 +113,10 @@ tests:
       majorVersion: 1
       minorVersion: 31
     asserts:
-      - isNull:
-          path: spec.template.metadata.annotations["container.apparmor.security.beta.kubernetes.io/crd-storage-migration"]
+      - equal:
+          path: spec.template.metadata.annotations
+          value:
+            dynatrace.com/inject: "false"
       - equal:
           path: spec.template.spec.securityContext.appArmorProfile.type
           value: RuntimeDefault
@@ -123,8 +131,10 @@ tests:
       majorVersion: 1
       minorVersion: 30
     asserts:
-      - isNull:
-          path: spec.template.metadata.annotations["container.apparmor.security.beta.kubernetes.io/crd-storage-migration"]
+      - equal:
+          path: spec.template.metadata.annotations
+          value:
+            dynatrace.com/inject: "false"
       - isNull:
           path: spec.template.spec.securityContext.appArmorProfile
 
@@ -138,8 +148,10 @@ tests:
       majorVersion: 1
       minorVersion: 31
     asserts:
-      - isNull:
-          path: spec.template.metadata.annotations["container.apparmor.security.beta.kubernetes.io/crd-storage-migration"]
+      - equal:
+          path: spec.template.metadata.annotations
+          value:
+            dynatrace.com/inject: "false"
       - isNull:
           path: spec.template.spec.securityContext.appArmorProfile
 
