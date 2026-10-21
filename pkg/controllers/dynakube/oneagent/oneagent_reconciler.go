@@ -18,6 +18,7 @@ import (
 	dtimage "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	oaclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
 	dtversion "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/version"
+	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	oaconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
@@ -319,6 +320,16 @@ func (r *Reconciler) buildDesiredDaemonSet(ctx context.Context, dk *dynakube.Dyn
 		return nil, err
 	}
 
+	agTLSCertHash, err := r.getActiveGateTLSCertHash(ctx, dk)
+	if err != nil {
+		return nil, err
+	}
+
+	trustedCAsHash, err := r.getTrustedCAsHash(ctx, dk)
+	if err != nil {
+		return nil, err
+	}
+
 	switch {
 	case dk.OneAgent().IsClassicFullStackMode():
 		ds, err = daemonset.NewClassicFullStack(dk, r.clusterID).BuildDaemonSet(ctx)
@@ -330,6 +341,14 @@ func (r *Reconciler) buildDesiredDaemonSet(ctx context.Context, dk *dynakube.Dyn
 
 	if err != nil {
 		return nil, err
+	}
+
+	if agTLSCertHash != "" {
+		ds.Spec.Template.Annotations[daemonset.AnnotationActiveGateTLSCertHash] = agTLSCertHash
+	}
+
+	if trustedCAsHash != "" {
+		ds.Spec.Template.Annotations[daemonset.AnnotationTrustedCAsHash] = trustedCAsHash
 	}
 
 	dsHash, err := hasher.GenerateHash(ds)
@@ -388,6 +407,54 @@ func (r *Reconciler) getProcessGroupConfigHash(ctx context.Context, dk *dynakube
 	}
 
 	return hasher.GenerateHash(pgcData)
+}
+
+func (r *Reconciler) getActiveGateTLSCertHash(ctx context.Context, dk *dynakube.DynaKube) (string, error) {
+	if !dk.ActiveGate().HasCaCert() {
+		return "", nil
+	}
+
+	var secret corev1.Secret
+
+	err := r.apiReader.Get(ctx, client.ObjectKey{Name: dk.ActiveGate().GetTLSSecretName(), Namespace: dk.Namespace}, &secret)
+	if k8serrors.IsNotFound(err) {
+		return "", nil
+	}
+
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+
+	certData := secret.Data[consts.TLSServerCrtDataName]
+	if certData == nil {
+		return "", nil
+	}
+
+	return hasher.GenerateHash(certData)
+}
+
+func (r *Reconciler) getTrustedCAsHash(ctx context.Context, dk *dynakube.DynaKube) (string, error) {
+	if dk.Spec.TrustedCAs == "" {
+		return "", nil
+	}
+
+	var configMap corev1.ConfigMap
+
+	err := r.apiReader.Get(ctx, client.ObjectKey{Name: dk.Spec.TrustedCAs, Namespace: dk.Namespace}, &configMap)
+	if k8serrors.IsNotFound(err) {
+		return "", nil
+	}
+
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+
+	caData := configMap.Data[dynakube.TrustedCAKey]
+	if caData == "" {
+		return "", nil
+	}
+
+	return hasher.GenerateHash(caData)
 }
 
 func getInstanceStatuses(pods []corev1.Pod) map[string]oneagent.Instance {

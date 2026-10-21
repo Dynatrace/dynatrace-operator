@@ -8,11 +8,13 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	oaclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/oneagent/daemonset"
@@ -787,6 +789,167 @@ func TestPGCConfigHash(t *testing.T) {
 		hash, err := r.getProcessGroupConfigHash(t.Context(), dk)
 		require.NoError(t, err)
 		assert.Empty(t, hash)
+	})
+}
+
+func TestGetActiveGateTLSCertHash(t *testing.T) {
+	const testNamespace = "test-namespace"
+	const testDynakubeName = "test-dynakube"
+
+	dk := &dynakube.DynaKube{
+		Name: testDynakubeName, Namespace: testNamespace,
+		Spec: dynakube.DynaKubeSpec{
+			ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.RoutingCapability.DisplayName}},
+		},
+	}
+
+	newSecret := func(data map[string][]byte) *corev1.Secret {
+		return &corev1.Secret{
+			Name:      dk.ActiveGate().GetTLSSecretName(),
+			Namespace: testNamespace,
+			Data:      data,
+		}
+	}
+
+	t.Run("no activegate cert returns empty hash", func(t *testing.T) {
+		r := &Reconciler{apiReader: fake.NewClient()}
+
+		hash, err := r.getActiveGateTLSCertHash(t.Context(), &dynakube.DynaKube{Name: testDynakubeName, Namespace: testNamespace})
+		require.NoError(t, err)
+		assert.Empty(t, hash)
+	})
+
+	t.Run("secret not found returns empty hash", func(t *testing.T) {
+		r := &Reconciler{apiReader: fake.NewClient()}
+
+		hash, err := r.getActiveGateTLSCertHash(t.Context(), dk)
+		require.NoError(t, err)
+		assert.Empty(t, hash)
+	})
+
+	t.Run("secret found returns hash of server.crt", func(t *testing.T) {
+		certData := []byte("some-tls-cert")
+		r := &Reconciler{apiReader: fake.NewClient(newSecret(map[string][]byte{consts.TLSServerCrtDataName: certData}))}
+
+		hash, err := r.getActiveGateTLSCertHash(t.Context(), dk)
+		require.NoError(t, err)
+
+		expectedHash, err := hasher.GenerateHash(certData)
+		require.NoError(t, err)
+		assert.Equal(t, expectedHash, hash)
+	})
+
+	t.Run("hash only depends on server.crt", func(t *testing.T) {
+		r1 := &Reconciler{apiReader: fake.NewClient(newSecret(map[string][]byte{
+			consts.TLSServerCrtDataName: []byte("cert"),
+			consts.TLSCrtDataName:       []byte("cert-1"),
+			consts.TLSKeyDataName:       []byte("key-1"),
+		}))}
+		r2 := &Reconciler{apiReader: fake.NewClient(newSecret(map[string][]byte{
+			consts.TLSServerCrtDataName: []byte("cert"),
+			consts.TLSCrtDataName:       []byte("cert-2"),
+			consts.TLSKeyDataName:       []byte("key-2"),
+		}))}
+
+		hash1, err := r1.getActiveGateTLSCertHash(t.Context(), dk)
+		require.NoError(t, err)
+		hash2, err := r2.getActiveGateTLSCertHash(t.Context(), dk)
+		require.NoError(t, err)
+
+		assert.NotEmpty(t, hash1)
+		assert.Equal(t, hash1, hash2)
+	})
+}
+
+func TestGetTrustedCAsHash(t *testing.T) {
+	const testNamespace = "test-namespace"
+	const testDynakubeName = "test-dynakube"
+	const trustedCAsName = "test-trusted-ca"
+
+	dk := &dynakube.DynaKube{
+		Name: testDynakubeName, Namespace: testNamespace,
+		Spec: dynakube.DynaKubeSpec{TrustedCAs: trustedCAsName},
+	}
+
+	t.Run("configmap not found returns empty hash", func(t *testing.T) {
+		r := &Reconciler{apiReader: fake.NewClient()}
+
+		hash, err := r.getTrustedCAsHash(t.Context(), dk)
+		require.NoError(t, err)
+		assert.Empty(t, hash)
+	})
+
+	t.Run("configmap found returns hash of certs", func(t *testing.T) {
+		caData := "some-ca"
+		configMap := &corev1.ConfigMap{
+			Name:      trustedCAsName,
+			Namespace: testNamespace,
+			Data:      map[string]string{dynakube.TrustedCAKey: caData},
+		}
+		r := &Reconciler{apiReader: fake.NewClient(configMap)}
+
+		hash, err := r.getTrustedCAsHash(t.Context(), dk)
+		require.NoError(t, err)
+
+		expectedHash, err := hasher.GenerateHash(caData)
+		require.NoError(t, err)
+		assert.Equal(t, expectedHash, hash)
+	})
+}
+
+func TestBuildDesiredDaemonSet_CertHashes(t *testing.T) {
+	const trustedCAsName = "test-trusted-ca"
+
+	newDK := func() *dynakube.DynaKube {
+		dk := newDynaKube()
+		dk.Spec.TrustedCAs = trustedCAsName
+		dk.Spec.ActiveGate = activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.RoutingCapability.DisplayName}}
+
+		return dk
+	}
+
+	buildDS := func(t *testing.T, cert, ca string) *appsv1.DaemonSet {
+		dk := newDK()
+		secret := &corev1.Secret{
+			Name:      dk.ActiveGate().GetTLSSecretName(),
+			Namespace: dk.Namespace,
+			Data:      map[string][]byte{consts.TLSServerCrtDataName: []byte(cert)},
+		}
+		configMap := &corev1.ConfigMap{
+			Name:      trustedCAsName,
+			Namespace: dk.Namespace,
+			Data:      map[string]string{dynakube.TrustedCAKey: ca},
+		}
+		r := Reconciler{apiReader: fake.NewClient(secret, configMap)}
+
+		ds, err := r.buildDesiredDaemonSet(t.Context(), dk)
+		require.NoError(t, err)
+
+		return ds
+	}
+
+	t.Run("annotations are not set without activegate cert and trustedCAs", func(t *testing.T) {
+		r := Reconciler{apiReader: fake.NewClient()}
+
+		ds, err := r.buildDesiredDaemonSet(t.Context(), newDynaKube())
+		require.NoError(t, err)
+		assert.NotContains(t, ds.Spec.Template.Annotations, daemonset.AnnotationActiveGateTLSCertHash)
+		assert.NotContains(t, ds.Spec.Template.Annotations, daemonset.AnnotationTrustedCAsHash)
+	})
+
+	t.Run("annotations are set", func(t *testing.T) {
+		ds := buildDS(t, "cert", "ca")
+
+		assert.NotEmpty(t, ds.Spec.Template.Annotations[daemonset.AnnotationActiveGateTLSCertHash])
+		assert.NotEmpty(t, ds.Spec.Template.Annotations[daemonset.AnnotationTrustedCAsHash])
+	})
+
+	t.Run("daemonset hash changes when cert or trustedCAs change", func(t *testing.T) {
+		base := buildDS(t, "cert-1", "ca-1").Annotations[hasher.AnnotationHash]
+
+		assert.Equal(t, base, buildDS(t, "cert-1", "ca-1").Annotations[hasher.AnnotationHash])
+		assert.NotEqual(t, base, buildDS(t, "cert-2", "ca-1").Annotations[hasher.AnnotationHash])
+		assert.NotEqual(t, base, buildDS(t, "cert-1", "ca-2").Annotations[hasher.AnnotationHash])
 	})
 }
 

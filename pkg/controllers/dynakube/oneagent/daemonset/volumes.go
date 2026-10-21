@@ -5,6 +5,7 @@ package daemonset
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	csivolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/server/volumes"
 	hostvolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/server/volumes/host"
@@ -170,7 +171,7 @@ func getCertificateVolume(dk *dynakube.DynaKube) corev1.Volume {
 			Name: dk.Spec.TrustedCAs,
 			Items: []corev1.KeyToPath{
 				{
-					Key:  "certs",
+					Key:  dynakube.TrustedCAKey,
 					Path: "certs.pem",
 				},
 			},
@@ -208,7 +209,7 @@ func getActiveGateCaCertVolume(dk *dynakube.DynaKube) corev1.Volume {
 			SecretName: dk.Spec.ActiveGate.GetTLSSecretName(),
 			Items: []corev1.KeyToPath{
 				{
-					Key:  "server.crt",
+					Key:  consts.TLSServerCrtDataName,
 					Path: "custom.pem",
 				},
 			},
