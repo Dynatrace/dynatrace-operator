@@ -7,8 +7,8 @@ description: The Dynatrace Operator Helm chart for Kubernetes and OpenShift
 icon: https://assets.dynatrace.com/global/resources/Signet_Logo_RGB_CP_512x512px.png
 home: https://www.dynatrace.com/
 type: application
-version: 1.11.0
-appVersion: 1.11.0
+version: 1.11.1
+appVersion: 1.11.1
 kubeVersion: '>=1.25.0-0'
 maintainers:
   - name: team-kubernetes-operator
