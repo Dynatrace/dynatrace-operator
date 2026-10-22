@@ -34,7 +34,7 @@ const (
 	annotationEnableDaemonSetEviction = "cluster-autoscaler.kubernetes.io/enable-ds-eviction"
 	AnnotationPGCHash                 = api.InternalFlagPrefix + "pgc-hash"
 	AnnotationActiveGateTLSCertHash   = api.InternalFlagPrefix + "activegate-tls-cert-hash"
-	AnnotationTrustedCAsHash          = api.InternalFlagPrefix + "trusted-cas-hash"
+	AnnotationTrustedCAHash           = api.InternalFlagPrefix + "trusted-ca-hash"
 
 	serviceAccountName = "dynatrace-dynakube-oneagent"
 

@@ -348,7 +348,7 @@ func (r *Reconciler) buildDesiredDaemonSet(ctx context.Context, dk *dynakube.Dyn
 	}
 
 	if trustedCAsHash != "" {
-		ds.Spec.Template.Annotations[daemonset.AnnotationTrustedCAsHash] = trustedCAsHash
+		ds.Spec.Template.Annotations[daemonset.AnnotationTrustedCAHash] = trustedCAsHash
 	}
 
 	dsHash, err := hasher.GenerateHash(ds)

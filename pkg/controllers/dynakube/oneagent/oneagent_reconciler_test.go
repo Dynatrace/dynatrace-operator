@@ -934,14 +934,14 @@ func TestBuildDesiredDaemonSet_CertHashes(t *testing.T) {
 		ds, err := r.buildDesiredDaemonSet(t.Context(), newDynaKube())
 		require.NoError(t, err)
 		assert.NotContains(t, ds.Spec.Template.Annotations, daemonset.AnnotationActiveGateTLSCertHash)
-		assert.NotContains(t, ds.Spec.Template.Annotations, daemonset.AnnotationTrustedCAsHash)
+		assert.NotContains(t, ds.Spec.Template.Annotations, daemonset.AnnotationTrustedCAHash)
 	})
 
 	t.Run("annotations are set", func(t *testing.T) {
 		ds := buildDS(t, "cert", "ca")
 
 		assert.NotEmpty(t, ds.Spec.Template.Annotations[daemonset.AnnotationActiveGateTLSCertHash])
-		assert.NotEmpty(t, ds.Spec.Template.Annotations[daemonset.AnnotationTrustedCAsHash])
+		assert.NotEmpty(t, ds.Spec.Template.Annotations[daemonset.AnnotationTrustedCAHash])
 	})
 
 	t.Run("daemonset hash changes when cert or trustedCAs change", func(t *testing.T) {
