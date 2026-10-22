@@ -83,6 +83,7 @@ RUN if [ "$TARGETPLATFORM" = "linux/amd64" ]; then \
 # do not install man pages
 RUN make DESTDIR=/tmp/rootfs-dependency install_sw install_ssldirs install_fips
 
+# platform is required, otherwise the copy command will copy the wrong architecture files, don't trust GitHub Actions linting warnings
 FROM base
 
 ARG TARGETPLATFORM
