@@ -30,7 +30,6 @@ type Spec struct {
 // +kubebuilder:object:generate=true
 
 type ExecutionControllerSpec struct {
-
 	// Defines storage device
 	// +kubebuilder:validation:Optional
 	PersistentVolumeClaim *corev1.PersistentVolumeClaimSpec `json:"persistentVolumeClaim,omitempty"`
@@ -115,8 +114,9 @@ type DatabaseSpec struct {
 // +kubebuilder:object:generate=true
 
 type DatabaseExecutorSpec struct {
-	// +kubebuilder:validation:Required
-	ImageRef image.Ref `json:"imageRef"`
+	// Overrides the default image
+	// +kubebuilder:validation:Optional
+	ImageRef image.Ref `json:"imageRef,omitzero"`
 
 	// +kubebuilder:validation:Optional
 	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
