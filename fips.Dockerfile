@@ -25,13 +25,9 @@ RUN --mount=type=cache,target="/root/.cache/go-build" \
     go build -tags "${GO_BUILD_TAGS}" -trimpath -ldflags="${GO_LINKER_ARGS}" \
     -o ./build/_output/bin/dynatrace-operator ./cmd/
 
-# renovate depName=github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod
-RUN go install github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod@v1.10.0
-RUN CGO_ENABLED=1 cyclonedx-gomod app -licenses -assert-licenses -json -main cmd/ -output ./build/_output/bin/dynatrace-operator-bin-sbom.cdx.json
-
 # platform is required, otherwise the copy command will copy the wrong architecture files, don't trust GitHub Actions linting warnings
-FROM registry.access.redhat.com/ubi9-micro:9.7-1778461406@sha256:1ef916d40ff7f1a4882a31ad5ab37f9572baa7bd182c3519d5e0cb557ffc04f3 AS base
-FROM registry.access.redhat.com/ubi9:9.7-1778576335@sha256:8ca59004c1c505bdabadd5202bd3363986f5bf873fcfb36f60561d7362fe52a7 AS dependency
+FROM --platform=$TARGETPLATFORM registry.access.redhat.com/ubi9-micro:9.8-1791895366@sha256:5be877a2a280ae36eb9ab80ca4efb28bbf77c57abbba38137cdc37a03b8465e6 AS base
+FROM --platform=$TARGETPLATFORM registry.access.redhat.com/ubi9:9.8-1791888712@sha256:16e9e43d99e181463513cc84a514859b1abb9460f1c4d9e208da4b4e51cd5cc3 AS dependency
 RUN mkdir -p /tmp/rootfs-dependency
 COPY --from=base / /tmp/rootfs-dependency
 RUN dnf install --installroot /tmp/rootfs-dependency \
@@ -39,42 +35,26 @@ RUN dnf install --installroot /tmp/rootfs-dependency \
       --releasever 9 \
       --setopt install_weak_deps=false \
       --nodocs -y \
+      d=/etc/pki/ca-trust/source/blocklist; [ -d $d ] || d=/etc/pki/ca-trust/source/blacklist \
+      trust extract --overwrite --format=pem-bundle \
+       --filter='pkcs11:object=emSign%20ECC%20Root%20CA%20-%20G3;type=cert' \
+       $d/emSign_ECC_Root_CA_-_G3.pem &&
+      openssl x509 -in $d/emSign_ECC_Root_CA_-_G3.pem \
+       -out $d/emSign_ECC_Root_CA_-_G3.pem -trustout -addreject anyExtendedKeyUsage && \
+      trust extract --overwrite --format=pem-bundle \
+       --filter='pkcs11:object=Comodo%20AAA%20Services%20root;type=cert' \
+       $d/Comodo_AAA_Services_root.pem &&
+      openssl x509 -in $d/Comodo_AAA_Services_root.pem \
+       -out $d/Comodo_AAA_Services_root.pem -trustout -addreject anyExtendedKeyUsage && \
+      update-ca-trust \
  && dnf --installroot /tmp/rootfs-dependency clean all \
  && rm -rf \
       /tmp/rootfs-dependency/var/cache/* \
       /tmp/rootfs-dependency/var/log/dnf* \
       /tmp/rootfs-dependency/var/log/yum.*
 
-# install openssl-dependencies
-RUN dnf install --setopt install_weak_deps=false --nodocs -y make gcc perl
-
-WORKDIR /openssl_build
-# build and install openssl
-# version must be FIPS certified, details https://openssl-library.org/source/
-# get the sha256 from trusted source (e.g. Github release, https://github.com/openssl/openssl/releases)
-ENV OPENSSL_BUILD_VERSION="3.1.2"
-ENV OPENSSL_BUILD_TARBALL_SHA256="a0ce69b8b97ea6a35b96875235aa453b966ba3cba8af2de23657d8b6767d6539"
-ENV OPENSSL_BUILD_CONFIGURE_ARGS="enable-fips"
-
-RUN curl -L -o openssl.tar.gz https://github.com/openssl/openssl/releases/download/openssl-${OPENSSL_BUILD_VERSION}/openssl-${OPENSSL_BUILD_VERSION}.tar.gz && \
-    sha256sum --quiet -c - <<< "${OPENSSL_BUILD_TARBALL_SHA256}  openssl.tar.gz" && \
-    tar --strip-components=1 -xzf openssl.tar.gz
-
-# disable the aflag test because it doesn't work on qemu (aka cross compile, see https://github.com/openssl/openssl/pull/17945)
-RUN if [ "$TARGETPLATFORM" = "linux/amd64" ]; then \
-        ./Configure ${OPENSSL_BUILD_CONFIGURE_ARGS} && make && make test TESTS="-test_afalg"; \
-    else \
-        echo "skipping -test_afalg"; \
-        ./Configure ${OPENSSL_BUILD_CONFIGURE_ARGS} && make; \
-    fi
-
-# do not install man pages
-RUN make DESTDIR=/tmp/rootfs-dependency install_sw install_ssldirs install_fips
-
 # platform is required, otherwise the copy command will copy the wrong architecture files, don't trust GitHub Actions linting warnings
-FROM base
-
-ARG TARGETPLATFORM
+FROM --platform=$TARGETPLATFORM base
 
 COPY --from=dependency /tmp/rootfs-dependency /
 
