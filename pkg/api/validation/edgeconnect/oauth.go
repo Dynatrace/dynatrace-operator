@@ -22,7 +22,7 @@ const (
 	Example valid values:
 	-  For prod: "sso.dynatrace.com"
 	-  For dev: "sso-dev.dynatracelabs.com",
-	-  For sprint: "sso.sprint.dynatracelabs.com"
+	-  For sprint: "sso-sprint.dynatracelabs.com"
 	Make sure you correctly specify the endpoint in your custom resource.
 	`
 )
@@ -30,7 +30,7 @@ const (
 var (
 	allowedSSODomains = []string{
 		"sso-dev.dynatracelabs.com",
-		"sso.sprint.dynatracelabs.com",
+		"sso-sprint.dynatracelabs.com",
 		"sso.dynatrace.com",
 	}
 )
