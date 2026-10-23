@@ -11,8 +11,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
@@ -22,15 +24,18 @@ import (
 	oaclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	tokenclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/k8sentity"
 	kubemonconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8scrd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/tenant/optionalscope"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
+	settingsmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/settings"
 	tokenclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/token"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -827,9 +832,6 @@ func TestTokenConditions(t *testing.T) {
 			Status: dynakube.DynaKubeStatus{
 				Conditions: []metav1.Condition{
 					{
-						Type: dynakube.PaaSTokenConditionType,
-					},
-					{
 						Type: dynakube.APITokenConditionType,
 					},
 					{
@@ -1042,6 +1044,65 @@ func TestTokenConditionsOptionalScopes(t *testing.T) {
 	})
 }
 
+func TestTokenConditionsOptionalScopesWithRegistrationDisabled(t *testing.T) {
+	const kubeSystemUUID = "kube-system-uuid"
+
+	requiredScopes := []string{
+		tokenclient.ScopeDataExport,
+		tokenclient.ScopeInstallerDownload,
+		tokenclient.ScopeActiveGateTokenCreate,
+	}
+	allScopes := []string{
+		tokenclient.ScopeDataExport,
+		tokenclient.ScopeInstallerDownload,
+		tokenclient.ScopeActiveGateTokenCreate,
+		tokenclient.ScopeSettingsRead,
+		tokenclient.ScopeSettingsWrite,
+	}
+
+	t.Run("kubemon without registration", func(t *testing.T) {
+		dk := newRegistrationDisabledDynaKube(kubeSystemUUID)
+		dk.Spec.KubernetesMonitoring = &kubemon.Spec{}
+
+		settingsClient := settingsmock.NewClient(t)
+		settingsClient.EXPECT().GetK8sClusterME(anyCtx, kubeSystemUUID).Return(settings.K8sClusterME{}, nil).Once()
+
+		reconcileTokensAndK8sEntity(t, dk, allScopes, settingsClient)
+
+		assertOptionalScopesAvailable(t, dk)
+		assertMEIDConditionNotScopeMissing(t, dk)
+	})
+
+	t.Run("kubernetes-monitoring with automatic-kubernetes-api-monitoring disabled", func(t *testing.T) {
+		dk := newRegistrationDisabledDynaKube(kubeSystemUUID)
+		dk.Annotations = map[string]string{exp.AGAutomaticK8sAPIMonitoringKey: "false"}
+		dk.Spec.ActiveGate.Capabilities = []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}
+
+		settingsClient := settingsmock.NewClient(t)
+		settingsClient.EXPECT().GetK8sClusterME(anyCtx, kubeSystemUUID).Return(settings.K8sClusterME{}, nil).Once()
+
+		reconcileTokensAndK8sEntity(t, dk, allScopes, settingsClient)
+
+		assertOptionalScopesAvailable(t, dk)
+		assertMEIDConditionNotScopeMissing(t, dk)
+	})
+
+	t.Run("token without settings scopes still reports ScopeMissing", func(t *testing.T) {
+		dk := newRegistrationDisabledDynaKube(kubeSystemUUID)
+		dk.Spec.KubernetesMonitoring = &kubemon.Spec{}
+
+		reconcileTokensAndK8sEntity(t, dk, requiredScopes, settingsmock.NewClient(t))
+
+		assert.False(t, ptr.Deref(dk.Status.APIToken.AvailableOptionalScopes.SettingsRead, true))
+		assert.False(t, ptr.Deref(dk.Status.APIToken.AvailableOptionalScopes.SettingsWrite, true))
+		assert.Nil(t, meta.FindStatusCondition(*dk.Conditions(), conditionTypeAPITokenOptionalScopes))
+
+		condition := meta.FindStatusCondition(*dk.Conditions(), "MonitoredEntity")
+		require.NotNil(t, condition)
+		assert.Equal(t, k8sconditions.OptionalScopeMissingReason, condition.Reason)
+	})
+}
+
 func TestSetupTokensAndClientForPlatformToken(t *testing.T) {
 	fakeClient := fake.NewClient(&corev1.Secret{
 		Name:      testName,
@@ -1163,10 +1224,10 @@ func TestSetupTokensAndClientForConnectionTimeout(t *testing.T) {
 }
 
 func testDTClientBuilder(t *testing.T, timeout time.Duration) dynatrace.ClientFactory {
-	return func(ctx context.Context, apiReader client.Reader, dk *dynakube.DynaKube, apiToken, paasToken, userAgentSuffix string, clientConnectionTimeout time.Duration) (*dynatrace.Client, error) {
+	return func(ctx context.Context, apiReader client.Reader, dk *dynakube.DynaKube, apiToken, userAgentSuffix string, clientConnectionTimeout time.Duration) (*dynatrace.Client, error) {
 		assert.Equal(t, timeout, clientConnectionTimeout)
 
-		return dynatrace.NewClientFromDynakube(ctx, apiReader, dk, apiToken, paasToken, userAgentSuffix, clientConnectionTimeout)
+		return dynatrace.NewClientFromDynakube(ctx, apiReader, dk, apiToken, userAgentSuffix, clientConnectionTimeout)
 	}
 }
 
@@ -1245,13 +1306,63 @@ func createCRD(t *testing.T) *apiextensionsv1.CustomResourceDefinition {
 }
 
 func newClientFactory(dtClient *dynatrace.Client) dynatrace.ClientFactory {
-	return func(_ context.Context, _ client.Reader, _ *dynakube.DynaKube, _, _, _ string, _ time.Duration) (*dynatrace.Client, error) {
+	return func(_ context.Context, _ client.Reader, _ *dynakube.DynaKube, _, _ string, _ time.Duration) (*dynatrace.Client, error) {
 		return dtClient, nil
 	}
 }
 
 func newErrorClientFactory(err error) dynatrace.ClientFactory {
-	return func(_ context.Context, _ client.Reader, _ *dynakube.DynaKube, _, _, _ string, _ time.Duration) (*dynatrace.Client, error) {
+	return func(_ context.Context, _ client.Reader, _ *dynakube.DynaKube, _, _ string, _ time.Duration) (*dynatrace.Client, error) {
 		return nil, err
 	}
+}
+
+func newRegistrationDisabledDynaKube(kubeSystemUUID string) *dynakube.DynaKube {
+	dk := &dynakube.DynaKube{
+		Name:      testName,
+		Namespace: testNamespace,
+		Spec: dynakube.DynaKubeSpec{
+			APIURL: testAPIURL,
+		},
+	}
+	dk.Status.KubeSystemUUID = kubeSystemUUID
+
+	return dk
+}
+
+func reconcileTokensAndK8sEntity(t *testing.T, dk *dynakube.DynaKube, tokenScopes []string, settingsClient *settingsmock.Client) {
+	t.Helper()
+
+	tokenClient := tokenclientmock.NewClient(t)
+	tokenClient.EXPECT().GetScopes(anyCtx, testAPIToken).Return(tokenScopes, nil)
+
+	fakeClient := fake.NewClient(createAPISecret())
+	controller := &Controller{
+		client:              fakeClient,
+		apiReader:           fakeClient,
+		dtClientFactory:     newClientFactory(&dynatrace.Client{Token: tokenClient, Settings: settingsClient}),
+		k8sEntityReconciler: k8sentity.NewReconciler(),
+	}
+
+	dtClient, err := controller.setupTokensAndClient(t.Context(), dk)
+	require.NoError(t, err)
+
+	err = controller.k8sEntityReconciler.Reconcile(t.Context(), dtClient.Settings, dk)
+	require.NoError(t, err)
+}
+
+func assertOptionalScopesAvailable(t *testing.T, dk *dynakube.DynaKube) {
+	t.Helper()
+
+	assert.True(t, ptr.Deref(dk.Status.APIToken.AvailableOptionalScopes.SettingsRead, false))
+	assert.True(t, ptr.Deref(dk.Status.APIToken.AvailableOptionalScopes.SettingsWrite, false))
+}
+
+func assertMEIDConditionNotScopeMissing(t *testing.T, dk *dynakube.DynaKube) {
+	t.Helper()
+
+	condition := meta.FindStatusCondition(*dk.Conditions(), "MonitoredEntity")
+	require.NotNil(t, condition)
+	assert.NotEqual(t, k8sconditions.OptionalScopeMissingReason, condition.Reason)
+	assert.Empty(t, dk.Status.KubernetesClusterMEID)
 }

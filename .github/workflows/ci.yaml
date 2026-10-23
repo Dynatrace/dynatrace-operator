@@ -33,7 +33,6 @@ jobs:
       prerequisites_changed: ${{ steps.prerequisites.outputs.any_changed == 'true' && 'true' || '' }}
       ci_changed: ${{ steps.ci.outputs.any_changed == 'true' && 'true' || '' }}
       is_protected_branch: ${{ steps.is-protected-branch.outputs.is_protected_branch == 'true' && 'true' || '' }}
-      is_snyk_authorized: ${{ steps.is-snyk-authorized.outputs.is_authorized == 'true' && 'true' || '' }}
       is_docker_authorized: ${{ steps.is-docker-authorized.outputs.is_authorized == 'true' && 'true' || '' }}
       markdown_changed: ${{ steps.markdown.outputs.any_changed == 'true' && 'true' || '' }}
       go_version: ${{ steps.go-version.outputs.go_version }}
@@ -52,10 +51,6 @@ jobs:
           else
             echo "is_protected_branch=false" >> "$GITHUB_OUTPUT"
           fi
-      - name: Check if synk credentials are present
-        id: is-snyk-authorized
-        run: |
-          echo "is_authorized=${{ secrets.SNYK_API_TOKEN != '' }}" >> $GITHUB_OUTPUT
       - name: Check if docker credentials are present
         id: is-docker-authorized
         run: |
@@ -146,7 +141,7 @@ jobs:
         uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
         with:
           # renovate datasource=github-releases depName=helm/helm
-          version: v4.3.0
+          version: v4.3.1
       - name: Run Unit tests
         id: helm-unittest
         run: |
@@ -166,7 +161,7 @@ jobs:
         uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
         with:
           # renovate datasource=github-releases depName=helm/helm
-          version: v4.3.0
+          version: v4.3.1
       - name: Run Linting
         id: helm-linting
         run: |
@@ -241,8 +236,8 @@ jobs:
         uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
         with:
           # usually we use latest, but 3.18.0 has bug https://github.com/helm/helm/issues/30890
-          version: v4.3.0
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+          version: v4.3.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           package-manager-cache: false
       - name: Check deepcopy files are up-to-date
@@ -267,25 +262,6 @@ jobs:
           make add-license-headers
           git diff --exit-code
 
-  security:
-    needs: [detect-changes]
-    if: >
-      needs.detect-changes.outputs.is_snyk_authorized &&
-      (needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.docker_changed || needs.detect-changes.outputs.ci_changed)
-    name: Code security scanning alerts
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - name: Run Snyk to check for vulnerabilities
-        uses: snyk/actions/golang@9adf32b1121593767fc3c057af55b55db032dc04 # v1.0.0
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_API_TOKEN }}
-        with:
-          args: --severity-threshold=high
-
   ci-security:
     needs: [detect-changes]
     if: needs.detect-changes.outputs.ci_changed
@@ -299,12 +275,11 @@ jobs:
         with:
           persist-credentials: false
       - name: Run zizmor
-        uses: zizmorcore/zizmor-action@cc914d7f3750a2d13d75c7f184a1060aa0e9d482 # v0.6.4
+        uses: zizmorcore/zizmor-action@85b2b9fb8e3325e7a23d7d0a9d7ba5ae0f999e3e # v0.7.1
 
   govulncheck:
     needs: [detect-changes]
     if: >
-        !needs.detect-changes.outputs.is_snyk_authorized &&
         (needs.detect-changes.outputs.is_protected_branch || needs.detect-changes.outputs.go_changed || needs.detect-changes.outputs.docker_changed || needs.detect-changes.outputs.ci_changed)
     name: Govulncheck
     runs-on: ubuntu-24.04
@@ -316,7 +291,7 @@ jobs:
       - name: Run govulncheck
         uses: golang/govulncheck-action@032d45514ae346b1db93c04b0c90b841c370344f # v1.1.0
         with:
-          go-version-file: "${{ github.workspace }}/go.mod"
+          go-version-input: ${{ needs.detect-changes.outputs.go_version }}
           check-latest: true # Always check for the latest patch release
           repo-checkout: false
 

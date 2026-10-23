@@ -54,27 +54,17 @@ func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 	}
 }
 
-func resolveImage(ctx context.Context, imageClient dtimage.Client, dk *dynakube.DynaKube) error {
-	if ref := dk.Spec.Templates.OpenTelemetryCollector.ImageRef; ref.HasImage() {
-		dk.Status.OTelCollector.ResolvedImage = ref.String()
+type imageResolver struct{ *dynakube.DynaKube }
 
-		return nil
-	}
-
-	imageURI, err := registry.ResolveImage(ctx, imageClient, dk.PublicRegistryOverride(), dtimage.OTelCollector)
-	if err != nil {
-		return err
-	}
-
-	dk.Status.OTelCollector.ResolvedImage = imageURI
-
-	return nil
+func (r imageResolver) GetImage() string {
+	return r.Spec.Templates.OpenTelemetryCollector.ImageRef.String()
 }
+func (r imageResolver) SetImage(imageURI string) { r.Status.OTelCollector.ResolvedImage = imageURI }
 
 func (r *Reconciler) Reconcile(ctx context.Context, imageClient dtimage.Client, dk *dynakube.DynaKube) error {
 	ctx, log := logd.NewFromContext(ctx, "statefulset")
 	if dk.TelemetryIngest().IsEnabled() {
-		if err := resolveImage(ctx, imageClient, dk); err != nil {
+		if err := registry.ResolveImage(ctx, imageResolver{dk}, imageClient, dtimage.OTelCollector); err != nil {
 			return err
 		}
 
@@ -131,7 +121,8 @@ func (r *Reconciler) createOrUpdateStatefulset(ctx context.Context, dk *dynakube
 		return err
 	}
 
-	sts, err := k8sstatefulset.Build(dk, dk.OTelCollectorStatefulsetName(), getContainer(dk, replicas),
+	sts, err := k8sstatefulset.Build(
+		dk, dk.OTelCollectorStatefulsetName(), getContainer(dk, replicas),
 		k8sstatefulset.SetReplicas(replicas),
 		k8sstatefulset.SetPodManagementPolicy(appsv1.ParallelPodManagement),
 		k8sstatefulset.SetAllLabels(appLabels.BuildLabels(), appLabels.BuildMatchLabels(), appLabels.BuildLabels(), dk.Spec.Templates.OpenTelemetryCollector.Labels),

@@ -5,12 +5,8 @@ HELM_CRD_DIR="$2"
 MAINFEST_DIR="$3"
 KUSTOMIZE_DIR="$4"
 OUTPUT_FILENAME="$5"
-EXPERIMENTAL_FLAG="$6"
 
 HELM_HEADER='{{ if .Values.installCRD }}'
-if [ -n "${EXPERIMENTAL_FLAG}" ]; then
-  HELM_HEADER="{{ if and .Values.installCRD (.Values.experimental).${EXPERIMENTAL_FLAG} }}"
-fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BOILERPLATE="${SCRIPT_DIR}/../boilerplate.go.txt"

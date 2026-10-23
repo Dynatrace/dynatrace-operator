@@ -211,6 +211,9 @@ func (in *DynaKubeStatus) DeepCopyInto(out *DynaKubeStatus) {
 	in.MetadataEnrichment.DeepCopyInto(&out.MetadataEnrichment)
 	out.KSPM = in.KSPM
 	out.OTelCollector = in.OTelCollector
+	out.Extensions = in.Extensions
+	out.SQLExtensionExecutor = in.SQLExtensionExecutor
+	out.LogMonitoring = in.LogMonitoring
 	in.UpdatedTimestamp.DeepCopyInto(&out.UpdatedTimestamp)
 	if in.Conditions != nil {
 		in, out := &in.Conditions, &out.Conditions

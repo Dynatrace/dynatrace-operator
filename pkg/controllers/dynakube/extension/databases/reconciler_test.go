@@ -359,6 +359,8 @@ func TestPublicRegistryImage(t *testing.T) {
 			require.NoError(t, clt.List(t.Context(), deployments))
 			require.Len(t, deployments.Items, 1)
 
+			assert.Equal(t, expectedImageURI, dk.Status.SQLExtensionExecutor.ResolvedImage)
+
 			return &deployments.Items[0]
 		}
 
@@ -385,6 +387,8 @@ func TestPublicRegistryImage(t *testing.T) {
 			deployments := &appsv1.DeploymentList{}
 			require.NoError(t, clt.List(t.Context(), deployments))
 			require.Len(t, deployments.Items, 1)
+
+			assert.Equal(t, expectedImageURI, dk.Status.SQLExtensionExecutor.ResolvedImage)
 
 			return &deployments.Items[0]
 		}
@@ -435,6 +439,7 @@ func TestPublicRegistryImage(t *testing.T) {
 		require.NoError(t, clt.List(t.Context(), deployments))
 		require.Len(t, deployments.Items, 1)
 		require.Equal(t, fmt.Sprintf("%s:%s", templateImage, tempateTag), deployments.Items[0].Spec.Template.Spec.Containers[0].Image)
+		assert.Equal(t, fmt.Sprintf("%s:%s", templateImage, tempateTag), dk.Status.SQLExtensionExecutor.ResolvedImage)
 	})
 }
 

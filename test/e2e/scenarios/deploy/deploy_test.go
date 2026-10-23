@@ -12,6 +12,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/deploy/manifest"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/deploy/permissions"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/events"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/environment"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/platform"
@@ -63,29 +64,37 @@ func TestDeploy_permissions_deployer_no_escalate_with_csi(t *testing.T) {
 }
 
 func TestDeploy_manifest_kubernetes_no_csi(t *testing.T) {
+	operator.SkipUnlessManifests(t)
+
 	if isOpenshift {
 		t.Skip("skipping kubernetes manifests, cluster is openshift")
 	}
-	testEnv.Test(t, manifest.KubernetesNoCSI())
+	testEnv.Test(t, manifest.NoCSI(t))
 }
 
 func TestDeploy_manifest_kubernetes_csi(t *testing.T) {
+	operator.SkipUnlessManifests(t)
+
 	if isOpenshift {
 		t.Skip("skipping kubernetes manifests, cluster is openshift")
 	}
-	testEnv.Test(t, manifest.KubernetesCSI())
+	testEnv.Test(t, manifest.CSI(t))
 }
 
 func TestDeploy_manifest_openshift_no_csi(t *testing.T) {
+	operator.SkipUnlessManifests(t)
+
 	if !isOpenshift {
 		t.Skip("skipping openshift manifests, cluster is kubernetes")
 	}
-	testEnv.Test(t, manifest.OpenshiftNoCSI())
+	testEnv.Test(t, manifest.NoCSI(t))
 }
 
 func TestDeploy_manifest_openshift_csi(t *testing.T) {
+	operator.SkipUnlessManifests(t)
+
 	if !isOpenshift {
 		t.Skip("skipping openshift manifests, cluster is kubernetes")
 	}
-	testEnv.Test(t, manifest.OpenshiftCSI())
+	testEnv.Test(t, manifest.CSI(t))
 }

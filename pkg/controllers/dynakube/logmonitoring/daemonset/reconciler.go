@@ -33,7 +33,8 @@ type Reconciler struct {
 }
 
 func NewReconciler(clt client.Client,
-	apiReader client.Reader) *Reconciler {
+	apiReader client.Reader,
+) *Reconciler {
 	return &Reconciler{
 		daemonset: k8sdaemonset.Query(clt, apiReader),
 	}
@@ -59,22 +60,11 @@ func (r *Reconciler) Reconcile(ctx context.Context, imageClient dtimage.Client, 
 		return nil // clean-up shouldn't cause a failure
 	}
 
-	// templates section takes precedence over public registry
-	var imageURI string
-
-	templateImageRef := dk.LogMonitoring().Template().ImageRef
-	if templateImageRef.HasImage() {
-		imageURI = templateImageRef.String()
-	} else {
-		var err error
-
-		imageURI, err = registry.ResolveImage(ctx, imageClient, dk.PublicRegistryOverride(), dtimage.LogModule)
-		if err != nil {
-			return err
-		}
+	if err := registry.ResolveImage(ctx, imageResolver{dk}, imageClient, dtimage.LogModule); err != nil {
+		return err
 	}
 
-	ds, err := r.generateDaemonSet(dk, imageURI)
+	ds, err := r.generateDaemonSet(dk, dk.Status.LogMonitoring.ResolvedImage)
 	if err != nil {
 		return err
 	}
@@ -94,6 +84,11 @@ func (r *Reconciler) Reconcile(ctx context.Context, imageClient dtimage.Client, 
 	return nil
 }
 
+type imageResolver struct{ *dynakube.DynaKube }
+
+func (r imageResolver) GetImage() string         { return r.LogMonitoring().Template().ImageRef.String() }
+func (r imageResolver) SetImage(imageURI string) { r.Status.LogMonitoring.ResolvedImage = imageURI }
+
 func (r *Reconciler) generateDaemonSet(dk *dynakube.DynaKube, imageURI string) (*appsv1.DaemonSet, error) {
 	tenantUUID, err := dk.TenantUUID()
 	if err != nil {
@@ -107,7 +102,8 @@ func (r *Reconciler) generateDaemonSet(dk *dynakube.DynaKube, imageURI string) (
 
 	labels := k8slabel.NewAppLabels(k8slabel.LogMonitoringComponentLabel, dk.Name, k8slabel.LogMonitoringComponentLabel, tag)
 
-	ds, err := k8sdaemonset.Build(dk, dk.LogMonitoring().GetDaemonSetName(), getContainer(dk, tenantUUID, imageURI),
+	ds, err := k8sdaemonset.Build(
+		dk, dk.LogMonitoring().GetDaemonSetName(), getContainer(dk, tenantUUID, imageURI),
 		k8sdaemonset.SetInitContainer(getInitContainer(dk, tenantUUID, imageURI)),
 		k8sdaemonset.SetAllLabels(labels.BuildLabels(), labels.BuildMatchLabels(), labels.BuildLabels(), dk.LogMonitoring().Template().Labels),
 		k8sdaemonset.SetAllAnnotations(nil, r.getAnnotations(dk)),

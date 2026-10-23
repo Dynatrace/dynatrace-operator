@@ -88,7 +88,7 @@ func (r *Reconciler) checkLogMonitoringSettings(ctx context.Context, dtClient se
 	log.Info("start reconciling log monitoring settings")
 
 	if dk.Status.KubernetesClusterMEID == "" {
-		msg := "kubernetesClusterMEID is not available, which is needed for logmonitoring settings creation, will skip it for now"
+		msg := k8sconditions.MissingMEIDMessage
 		log.Info(msg)
 
 		setSkippedCondition(dk.Conditions(), msg)

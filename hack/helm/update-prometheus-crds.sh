@@ -11,7 +11,7 @@ create_crd_file() {
     local crd_file=$2
 
     cat > "$crd_file" <<EOM
-{{- if and (.Values.prometheus).installCRDs (.Values.experimental).enablePrometheus }}
+{{- if and (.Values.prometheus).installCRDs (not (include "dynatrace-operator.openshiftOrOlm" .)) }}
 # Source: $download_url
 # Licensed under the Apache License, Version 2.0 (https://www.apache.org/licenses/LICENSE-2.0)
 #

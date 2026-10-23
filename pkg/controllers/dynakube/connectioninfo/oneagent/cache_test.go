@@ -182,7 +182,7 @@ func newConnectionInfoOAClient(t *testing.T, transport http.RoundTripper, ttl ti
 		BaseURL:    u,
 		HTTPClient: &http.Client{Transport: middleware.NewCacheRoundTripper(transport, ttl)},
 		// Each subtest has an isolated namespace in the global cache.
-		PaasToken: t.Name(),
+		APIToken: t.Name(),
 	}), "", "")
 }
 

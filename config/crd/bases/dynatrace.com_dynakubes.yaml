@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.22.0
+    controller-gen.kubebuilder.io/version: v0.23.0
   name: dynakubes.dynatrace.com
 spec:
   group: dynatrace.com
@@ -6733,6 +6733,11 @@ spec:
                 x-kubernetes-list-map-keys:
                 - type
                 x-kubernetes-list-type: map
+              extensions:
+                properties:
+                  image:
+                    type: string
+                type: object
               kspm:
                 properties:
                   image:
@@ -6760,6 +6765,11 @@ spec:
                       tenantUUID:
                         type: string
                     type: object
+                  image:
+                    type: string
+                type: object
+              logMonitoring:
+                properties:
                   image:
                     type: string
                 type: object
@@ -6827,6 +6837,11 @@ spec:
                 type: string
               proxyURLHash:
                 type: string
+              sqlExtensionExecutor:
+                properties:
+                  image:
+                    type: string
+                type: object
               updatedTimestamp:
                 format: date-time
                 type: string

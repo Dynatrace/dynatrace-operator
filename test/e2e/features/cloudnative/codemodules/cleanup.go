@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"os"
 	"path"
 	"strings"
 	"testing"
@@ -58,6 +59,11 @@ const (
 // directory that running pods still used as the lower dir of their overlay mount. The agent then
 // failed as soon as it had to read a file that was not already in the dentry cache.
 func CleanupKeepsMountedCodeModules(t *testing.T) features.Feature {
+	// skipping if deployed via manifests due to --set csidriver.cleanupPeriod=<cleanupPeriod>
+	if os.Getenv("MANIFESTS") == "true" {
+		t.Skip("Skipping with manifests installation, helm options are not supported")
+	}
+
 	builder := features.New("cloudnative-codemodules-cleanup-keeps-mounted")
 	secretConfig := tenant.GetSingleTenantSecret(t)
 

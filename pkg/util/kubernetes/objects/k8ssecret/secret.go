@@ -13,15 +13,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type Tokens struct {
-	APIToken  string
-	PaasToken string
-}
-
-func ExtractToken(secret *corev1.Secret, key string) (string, error) {
+func ExtractKey(secret *corev1.Secret, key string) (string, error) {
 	value, hasKey := secret.Data[key]
 	if !hasKey {
-		err := errors.Errorf("missing token %s", key)
+		err := errors.Errorf("missing key %s", key)
 
 		return "", err
 	}
@@ -37,7 +32,7 @@ func GetDataFromSecretName(ctx context.Context, apiReader client.Reader, namespa
 		return "", err
 	}
 
-	value, err := ExtractToken(secret, dataKey)
+	value, err := ExtractKey(secret, dataKey)
 	if err != nil {
 		return "", err
 	}

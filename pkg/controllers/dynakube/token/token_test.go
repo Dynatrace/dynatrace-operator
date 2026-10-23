@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	tokenclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -45,4 +46,27 @@ func TestTokenVerifyScopesNoFeatures(t *testing.T) {
 	optionalScopes, err := (&Token{}).verifyScopes(t.Context(), nil, &dynakube.DynaKube{})
 	require.NoError(t, err)
 	assert.Empty(t, optionalScopes)
+}
+
+func TestTokenEvaluateOptionalScopes(t *testing.T) {
+	availableScopes := []string{tokenclient.ScopeSettingsRead, tokenclient.ScopeSettingsWrite}
+
+	t.Run("api token reports all optional scopes even without enabled features", func(t *testing.T) {
+		apiToken := newToken(APIKey, "api-token")
+
+		optionalScopes := apiToken.evaluateOptionalScopes(availableScopes, &dynakube.DynaKube{})
+
+		assert.Equal(t, map[string]OptionalScope{
+			tokenclient.ScopeSettingsRead:  {Available: true},
+			tokenclient.ScopeSettingsWrite: {Available: true},
+		}, optionalScopes)
+	})
+
+	t.Run("data ingest token reports no optional scopes", func(t *testing.T) {
+		dataIngestToken := newToken(DataIngestKey, "data-ingest-token")
+
+		optionalScopes := dataIngestToken.evaluateOptionalScopes(availableScopes, &dynakube.DynaKube{})
+
+		assert.Empty(t, optionalScopes)
+	})
 }
