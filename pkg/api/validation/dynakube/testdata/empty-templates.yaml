@@ -1,0 +1,15 @@
+apiVersion: dynatrace.com/v1beta6
+kind: DynaKube
+metadata:
+  name: empty-templates
+  namespace: default
+  annotations:
+    feature.dynatrace.com/use-public-registry: "true"
+spec:
+  apiUrl: https://test.localhost/api
+  templates:
+    logMonitoring: {}
+    kspmNodeConfigurationCollector: {}
+    otelCollector: {}
+    sqlExtensionExecutor: {}
+    extensionExecutionController: {}
