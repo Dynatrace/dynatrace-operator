@@ -45,7 +45,7 @@ func NewReconciler(client client.Client, apiReader client.Reader) *Reconciler {
 func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube) error {
 	ctx, _ = logd.NewFromContext(ctx, "tls-secret")
 
-	if dk.ActiveGate().IsEnabled() && dk.ActiveGate().IsAutomaticTLSSecretEnabled() && dk.ActiveGate().TLSSecretName == "" {
+	if dk.ActiveGate().IsEnabled() && dk.ActiveGate().TLSSecretName == "" {
 		return r.reconcileSelfSignedTLSSecret(ctx, dk)
 	}
 
