@@ -37,6 +37,19 @@ func (installer *Installer) extractAgentBinariesFromImage(ctx context.Context, p
 
 	image := *img
 
+	layers, err := image.Layers()
+	if err != nil {
+		log.Info("failed to get image layers", "err", err)
+
+		return errors.WithStack(err)
+	}
+
+	if len(layers) > 1 {
+		log.Info("the image contains more than 1 layer", "image", imageName, "layers", len(layers))
+
+		return errors.New("multi-layered images are not supported")
+	}
+
 	err = installer.pullOCIimage(ctx, image, imageName, pullInfo.imageCacheDir, pullInfo.targetDir)
 	if err != nil {
 		log.Info("pullOCIimage", "err", err)
@@ -50,7 +63,7 @@ func (installer *Installer) extractAgentBinariesFromImage(ctx context.Context, p
 func (installer *Installer) pullImageInfo(ctx context.Context, imageName string) (*containerv1.Image, error) {
 	ref, err := name.ParseReference(imageName)
 	if err != nil {
-		return nil, errors.WithMessagef(err, "parsing reference %q:", imageName)
+		return nil, errors.WithStack(errors.WithMessagef(err, "parsing reference %q:", imageName))
 	}
 
 	image, err := remote.Image(ref, remote.WithContext(ctx),
@@ -59,7 +72,7 @@ func (installer *Installer) pullImageInfo(ctx context.Context, imageName string)
 		remote.WithPlatform(arch.ImagePlatform),
 	)
 	if err != nil {
-		return nil, errors.WithMessagef(err, "getting image %q", imageName)
+		return nil, errors.WithStack(errors.WithMessagef(err, "getting image %q", imageName))
 	}
 
 	return &image, nil
@@ -70,7 +83,7 @@ func (installer *Installer) pullOCIimage(ctx context.Context, image containerv1.
 
 	ref, err := name.ParseReference(imageName)
 	if err != nil {
-		return errors.WithMessagef(err, "parsing reference %q", imageName)
+		return errors.WithStack(errors.WithMessagef(err, "parsing reference %q", imageName))
 	}
 
 	log.Info("pullOciImage", "ref_identifier", ref.Identifier(), "ref.Name", ref.Name(), "ref.String", ref.String())
@@ -88,7 +101,7 @@ func (installer *Installer) pullOCIimage(ctx context.Context, image containerv1.
 	if err := crane.SaveOCI(image, imageCachePath); err != nil {
 		log.Info("saving v1.Image img as an OCI Image Layout at path", "dir", imageCacheDir, "err", err)
 
-		return errors.WithMessagef(err, "saving v1.Image img as an OCI Image Layout at path %s", imageCacheDir)
+		return errors.WithStack(errors.WithMessagef(err, "saving v1.Image img as an OCI Image Layout at path %s", imageCacheDir))
 	}
 
 	layers, err := image.Layers()
