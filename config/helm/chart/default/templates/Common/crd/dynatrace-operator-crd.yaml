@@ -6637,8 +6637,6 @@ spec:
                               type: string
                           type: object
                         type: array
-                    required:
-                    - imageRef
                     type: object
                 type: object
               tokens:
