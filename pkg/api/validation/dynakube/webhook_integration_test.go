@@ -26,7 +26,8 @@ import (
 )
 
 func TestWebhook(t *testing.T) {
-	clt := integrationtests.SetupWebhookTestEnvironment(t,
+	clt := integrationtests.SetupWebhookTestEnvironment(
+		t,
 		envtest.WebhookInstallOptions{
 			// TODO(avorima): Load this from a file using Paths
 			ValidatingWebhooks: []*admissionregistrationv1.ValidatingWebhookConfiguration{
@@ -184,11 +185,17 @@ func TestWebhook(t *testing.T) {
 			require.True(t, apierrors.IsInvalid(err), err)
 		})
 	}
+
+	t.Run("accept empty imageRef", func(t *testing.T) {
+		obj := readTestData(t, "empty-templates")
+		err := clt.Create(t.Context(), obj, client.DryRunAll)
+		require.NoError(t, err)
+	})
 }
 
 func compareWebhookResult(t *testing.T, clt client.Client, version, name string, seen sets.Set[string]) {
 	t.Helper()
-	oldObj := readTestData(t, version, name)
+	oldObj := readTestData(t, version+"-"+name)
 
 	require.NoError(t, clt.Create(t.Context(), oldObj))
 	t.Cleanup(func() {
@@ -241,9 +248,9 @@ func getConvertedObject(t *testing.T, clt client.Client, srcObj *unstructured.Un
 	return gotObj
 }
 
-func readTestData(t *testing.T, version, name string) *unstructured.Unstructured {
+func readTestData(t *testing.T, name string) *unstructured.Unstructured {
 	t.Helper()
-	data, err := os.ReadFile(filepath.Join("testdata", version+"-"+name+".yaml"))
+	data, err := os.ReadFile(filepath.Join("testdata", name+".yaml"))
 	require.NoError(t, err)
 
 	// Use unstructured to
