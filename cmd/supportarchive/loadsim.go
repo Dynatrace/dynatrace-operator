@@ -81,7 +81,7 @@ func (lg *loadGenerator) Read(p []byte) (n int, err error) {
 	if lg.fileSize > 0 {
 		i := 0
 		for ; i < len(p) && lg.fileSize > 0; i++ {
-			p[i] = letters[rand.IntN(len(letters))]
+			p[i] = letters[rand.IntN(len(letters))] //nolint:gosec // filler data for load simulation, not security-sensitive
 			lg.fileSize--
 		}
 
