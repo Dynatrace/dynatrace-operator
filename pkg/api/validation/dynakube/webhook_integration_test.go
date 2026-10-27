@@ -134,7 +134,7 @@ func TestWebhook(t *testing.T) {
 	}
 	for _, version := range unServedVersions {
 		t.Run(version, func(t *testing.T) {
-			oldObj := readTestData(t, version, "default")
+			oldObj := readTestData(t, version+"-default")
 
 			err := clt.Create(t.Context(), oldObj)
 			require.True(t, meta.IsNoMatchError(err))

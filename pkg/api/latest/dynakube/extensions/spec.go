@@ -121,7 +121,7 @@ type DatabaseSpec struct {
 type DatabaseExecutorSpec struct {
 	// Overrides the default image
 	// +kubebuilder:validation:Optional
-	ImageRef image.Ref `json:"imageRef,omitzero"`
+	ImageRef image.Ref `json:"imageRef"`
 
 	// +kubebuilder:validation:Optional
 	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
