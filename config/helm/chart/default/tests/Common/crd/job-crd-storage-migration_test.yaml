@@ -28,6 +28,9 @@ tests:
       - equal:
           path: spec.template.spec.serviceAccountName
           value: dynatrace-crd-storage-migration
+      - equal:
+          path: spec.template.metadata.annotations["dynatrace.com/inject"]
+          value: "false"
 
   - it: should have correct container configuration
     set:
@@ -70,6 +73,9 @@ tests:
     asserts:
       - isNull:
           path: spec.template.metadata.annotations["container.apparmor.security.beta.kubernetes.io/crd-storage-migration"]
+      - equal:
+          path: spec.template.metadata.annotations["dynatrace.com/inject"]
+          value: "false"
 
   - it: should have custom pull secret when specified
     set:
