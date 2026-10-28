@@ -27,6 +27,7 @@ func prepareVolumeMounts(dk *dynakube.DynaKube, processGroupConfigHash string) [
 
 	if dk.OneAgent().IsReadOnlyFSSupported() {
 		volumeMounts = append(volumeMounts, getReadOnlyRootMount())
+
 		if dk.OneAgent().IsCSIAvailable() {
 			volumeMounts = append(volumeMounts, getCSIStorageMount())
 		} else {
@@ -34,6 +35,10 @@ func prepareVolumeMounts(dk *dynakube.DynaKube, processGroupConfigHash string) [
 		}
 	} else {
 		volumeMounts = append(volumeMounts, getRootMount())
+
+		if dk.OneAgent().IsClassicNonRoot() {
+			volumeMounts = append(volumeMounts, getStorageVolumeMount(dk))
+		}
 	}
 
 	if dk.Spec.TrustedCAs != "" {
@@ -128,12 +133,11 @@ func getHTTPProxyMount() corev1.VolumeMount {
 func prepareVolumes(dk *dynakube.DynaKube, processGroupConfigHash string) []corev1.Volume {
 	volumes := []corev1.Volume{getRootVolume(), getNodeMetadataVolume(), getOneAgentSecretVolume(dk)}
 
-	if dk.OneAgent().IsReadOnlyFSSupported() {
-		if dk.OneAgent().IsCSIAvailable() {
-			volumes = append(volumes, getCSIStorageVolume(dk))
-		} else {
-			volumes = append(volumes, getStorageVolume(dk))
-		}
+	switch {
+	case dk.OneAgent().IsReadOnlyFSSupported() && dk.OneAgent().IsCSIAvailable():
+		volumes = append(volumes, getCSIStorageVolume(dk))
+	case dk.OneAgent().IsReadOnlyFSSupported() || dk.OneAgent().IsClassicNonRoot():
+		volumes = append(volumes, getStorageVolume(dk))
 	}
 
 	// Mount the PGC secret volume only if the PGC is needed and the processGroupConfigHash is not empty meaning that the

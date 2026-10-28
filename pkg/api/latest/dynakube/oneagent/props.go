@@ -25,7 +25,7 @@ const (
 
 func NewOneAgent(spec *Spec, status *Status, codeModulesStatus *CodeModulesStatus, //nolint:revive
 	name, apiURLHost string,
-	featureOneAgentPrivileged, featureOneAgentSkipLivenessProbe bool,
+	ffPrivileged, ffSkipLivenessProbe bool, ffClassicNonRoot bool,
 	globalResourceAttributes map[string]string) *OneAgent {
 	return &OneAgent{
 		Spec:              spec,
@@ -37,8 +37,9 @@ func NewOneAgent(spec *Spec, status *Status, codeModulesStatus *CodeModulesStatu
 
 		globalResourceAttributes: globalResourceAttributes,
 
-		featureOneAgentPrivileged:        featureOneAgentPrivileged,
-		featureOneAgentSkipLivenessProbe: featureOneAgentSkipLivenessProbe,
+		ffPrivileged:        ffPrivileged,
+		ffSkipLivenessProbe: ffSkipLivenessProbe,
+		ffClassicNonRoot:    ffClassicNonRoot,
 	}
 }
 
@@ -76,7 +77,7 @@ func (oa *OneAgent) GetDaemonsetName() string {
 }
 
 func (oa *OneAgent) IsPrivilegedNeeded() bool {
-	return oa.featureOneAgentPrivileged
+	return oa.ffPrivileged
 }
 
 func (oa *OneAgent) IsReadinessProbeNeeded() bool {
@@ -84,7 +85,7 @@ func (oa *OneAgent) IsReadinessProbeNeeded() bool {
 }
 
 func (oa *OneAgent) IsLivenessProbeNeeded() bool {
-	return oa.Healthcheck != nil && !oa.featureOneAgentSkipLivenessProbe
+	return oa.Healthcheck != nil && !oa.ffSkipLivenessProbe
 }
 
 // IsAutoUpdateEnabled returns true if the Operator should update OneAgent instances automatically.
@@ -112,6 +113,10 @@ func (oa *OneAgent) GetConnectionInfoConfigMapName() string {
 
 func (oa *OneAgent) IsReadOnlyFSSupported() bool {
 	return oa.IsCloudNativeFullstackMode() || oa.IsHostMonitoringMode()
+}
+
+func (oa *OneAgent) IsClassicNonRoot() bool {
+	return oa.IsClassicFullStackMode() && oa.ffClassicNonRoot
 }
 
 func (oa *OneAgent) IsAppInjectionNeeded() bool {
@@ -368,6 +373,14 @@ func (oa *OneAgent) GetHostPath() string {
 	if oa.IsHostMonitoringMode() {
 		if oa.HostMonitoring.StorageHostPath != "" {
 			return oa.HostMonitoring.StorageHostPath
+		}
+
+		return StorageVolumeDefaultHostPath
+	}
+
+	if oa.IsClassicNonRoot() {
+		if oa.ClassicFullStack.StorageHostPath != "" {
+			return oa.ClassicFullStack.StorageHostPath
 		}
 
 		return StorageVolumeDefaultHostPath

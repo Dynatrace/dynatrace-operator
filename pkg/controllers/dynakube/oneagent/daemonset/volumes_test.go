@@ -342,6 +342,32 @@ func TestPrepareVolumeMounts(t *testing.T) {
 	})
 }
 
+func TestClassicNonRootVolumes(t *testing.T) {
+	newDK := func(annotations map[string]string) *dynakube.DynaKube {
+		return &dynakube.DynaKube{
+			Annotations: annotations,
+			Spec: dynakube.DynaKubeSpec{
+				OneAgent: oneagent.Spec{ClassicFullStack: &oneagent.HostInjectSpec{}},
+			},
+		}
+	}
+
+	t.Run("has storage volume and mount with classic nonroot", func(t *testing.T) {
+		dk := newDK(map[string]string{exp.OAClassicNonRootKey: "true"})
+
+		assert.Contains(t, prepareVolumes(dk, ""), getStorageVolume(dk))
+		mounts := prepareVolumeMounts(dk, "")
+		assert.Contains(t, mounts, getRootMount())
+		assert.Contains(t, mounts, getStorageVolumeMount(dk))
+	})
+	t.Run("no storage volume and mount without feature flag", func(t *testing.T) {
+		dk := newDK(nil)
+
+		assert.NotContains(t, prepareVolumes(dk, ""), getStorageVolume(dk))
+		assert.NotContains(t, prepareVolumeMounts(dk, ""), getStorageVolumeMount(dk))
+	})
+}
+
 func TestVolumesAndVolumeMountsVsCSIDriver(t *testing.T) {
 	dkHostMonitoring := &dynakube.DynaKube{
 		Spec: dynakube.DynaKubeSpec{

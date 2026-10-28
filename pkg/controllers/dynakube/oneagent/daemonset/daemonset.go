@@ -372,7 +372,7 @@ func (b *builder) securityContext(ctx context.Context) *corev1.SecurityContext {
 		setNonRoot(securityContext)
 		securityContext.ReadOnlyRootFilesystem = new(b.isRootFsReadonly(ctx))
 	} else {
-		if b.dk.FF().IsClassicOneAgentNonRoot() {
+		if b.dk.OneAgent().IsClassicNonRoot() {
 			setNonRoot(securityContext)
 		}
 

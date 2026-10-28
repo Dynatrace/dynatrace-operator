@@ -21,6 +21,7 @@ const (
 
 	oneagentDisableContainerInjection = "ONEAGENT_DISABLE_CONTAINER_INJECTION"
 	oneagentReadOnlyMode              = "ONEAGENT_READ_ONLY_MODE"
+	enableVolumeStorage               = "ONEAGENT_ENABLE_VOLUME_STORAGE"
 
 	proxyEnv = "https_proxy"
 
@@ -46,6 +47,10 @@ func (b *builder) environmentVariables() ([]corev1.EnvVar, error) {
 	b.addConnectionInfoEnvs(envMap)
 	b.addReadOnlyEnv(envMap)
 	b.addLogMonitoringEnv(envMap)
+
+	if b.dk.OneAgent().IsClassicNonRoot() {
+		addDefaultValue(envMap, enableVolumeStorage, "true")
+	}
 
 	isProxyAsEnvDeprecated, err := isProxyAsEnvVarDeprecated(b.dk.OneAgent().GetVersion())
 	if err != nil {

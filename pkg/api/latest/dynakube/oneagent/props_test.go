@@ -54,13 +54,13 @@ func TestDefaultOneAgentImage(t *testing.T) {
 
 	t.Run("OneAgentImage adds raw postfix", func(t *testing.T) {
 		hostURL, _ := url.Parse(testAPIURL)
-		oneAgent := NewOneAgent(&Spec{}, &Status{}, &CodeModulesStatus{}, "", hostURL.Host, false, false, nil)
+		oneAgent := NewOneAgent(&Spec{}, &Status{}, &CodeModulesStatus{}, "", hostURL.Host, false, false, false, nil)
 		assert.Equal(t, "test-endpoint/linux/oneagent:1.234.5-raw", oneAgent.GetDefaultImage("1.234.5"))
 	})
 
 	t.Run("OneAgentImage doesn't add 'raw' postfix if present", func(t *testing.T) {
 		hostURL, _ := url.Parse(testAPIURL)
-		oneAgent := NewOneAgent(&Spec{}, &Status{}, &CodeModulesStatus{}, "", hostURL.Host, false, false, nil)
+		oneAgent := NewOneAgent(&Spec{}, &Status{}, &CodeModulesStatus{}, "", hostURL.Host, false, false, false, nil)
 		assert.Equal(t, "test-endpoint/linux/oneagent:1.234.5-raw", oneAgent.GetDefaultImage("1.234.5-raw"))
 	})
 
@@ -68,7 +68,7 @@ func TestDefaultOneAgentImage(t *testing.T) {
 		version := "1.239.14.20220325-164521"
 		expectedImage := "test-endpoint/linux/oneagent:1.239.14-raw"
 		hostURL, _ := url.Parse(testAPIURL)
-		oneAgent := NewOneAgent(&Spec{}, &Status{}, &CodeModulesStatus{}, "", hostURL.Host, false, false, nil)
+		oneAgent := NewOneAgent(&Spec{}, &Status{}, &CodeModulesStatus{}, "", hostURL.Host, false, false, false, nil)
 		assert.Equal(t, expectedImage, oneAgent.GetDefaultImage(version))
 	})
 }
@@ -125,7 +125,7 @@ func TestCodeModulesVersion(t *testing.T) {
 
 	t.Run("use status", func(t *testing.T) {
 		codeModulesStatus := &CodeModulesStatus{Version: testVersion}
-		oneAgent := NewOneAgent(&Spec{}, &Status{}, codeModulesStatus, "", "", false, false, nil)
+		oneAgent := NewOneAgent(&Spec{}, &Status{}, codeModulesStatus, "", "", false, false, false, nil)
 		version := oneAgent.GetCodeModulesVersion()
 		assert.Equal(t, testVersion, version)
 	})
@@ -133,7 +133,7 @@ func TestCodeModulesVersion(t *testing.T) {
 		codeModulesStatus := &CodeModulesStatus{Version: "other"}
 		oneAgent := NewOneAgent(&Spec{
 			ApplicationMonitoring: &ApplicationMonitoringSpec{Version: testVersion},
-		}, &Status{}, codeModulesStatus, "", "", false, false, nil)
+		}, &Status{}, codeModulesStatus, "", "", false, false, false, nil)
 		version := oneAgent.GetCustomCodeModulesVersion()
 
 		assert.Equal(t, testVersion, version)
@@ -482,7 +482,7 @@ func TestOneAgent_IsAutoUpdateEnabled(t *testing.T) {
 		}
 
 		for _, tc := range tcs {
-			oa := NewOneAgent(tc.spec, nil, nil, "", "", false, false, nil)
+			oa := NewOneAgent(tc.spec, nil, nil, "", "", false, false, false, nil)
 			assert.Equal(t, tc.autoUpdateEnabled, oa.IsAutoUpdateEnabled(), tc.name)
 		}
 	})
@@ -496,7 +496,7 @@ func TestOneAgent_IsAutoUpdateEnabled(t *testing.T) {
 			autoUpdateEnabled: false,
 		}
 
-		oa := NewOneAgent(tc.spec, nil, nil, "", "", false, false, nil)
+		oa := NewOneAgent(tc.spec, nil, nil, "", "", false, false, false, nil)
 		assert.Equal(t, tc.autoUpdateEnabled, oa.IsAutoUpdateEnabled(), tc.name)
 	})
 }
@@ -622,4 +622,34 @@ func TestOneAgent_GetResourceAttributes(t *testing.T) {
 			assert.Equal(t, tt.expected, oa.GetResourceAttributes())
 		})
 	}
+}
+
+func TestIsClassicNonRoot(t *testing.T) {
+	t.Run("true for classic fullstack with feature flag", func(t *testing.T) {
+		oa := NewOneAgent(&Spec{ClassicFullStack: &HostInjectSpec{}}, nil, nil, "", "", false, false, true, nil)
+		assert.True(t, oa.IsClassicNonRoot())
+	})
+	t.Run("false for classic fullstack without feature flag", func(t *testing.T) {
+		oa := NewOneAgent(&Spec{ClassicFullStack: &HostInjectSpec{}}, nil, nil, "", "", false, false, false, nil)
+		assert.False(t, oa.IsClassicNonRoot())
+	})
+	t.Run("false for other modes with feature flag", func(t *testing.T) {
+		oa := NewOneAgent(&Spec{HostMonitoring: &HostInjectSpec{}}, nil, nil, "", "", false, false, true, nil)
+		assert.False(t, oa.IsClassicNonRoot())
+	})
+}
+
+func TestGetHostPathClassicNonRoot(t *testing.T) {
+	t.Run("default host path", func(t *testing.T) {
+		oa := NewOneAgent(&Spec{ClassicFullStack: &HostInjectSpec{}}, nil, nil, "", "", false, false, true, nil)
+		assert.Equal(t, StorageVolumeDefaultHostPath, oa.GetHostPath())
+	})
+	t.Run("custom host path", func(t *testing.T) {
+		oa := NewOneAgent(&Spec{ClassicFullStack: &HostInjectSpec{StorageHostPath: "/custom"}}, nil, nil, "", "", false, false, true, nil)
+		assert.Equal(t, "/custom", oa.GetHostPath())
+	})
+	t.Run("empty without feature flag", func(t *testing.T) {
+		oa := NewOneAgent(&Spec{ClassicFullStack: &HostInjectSpec{StorageHostPath: "/custom"}}, nil, nil, "", "", false, false, false, nil)
+		assert.Empty(t, oa.GetHostPath())
+	})
 }

@@ -6,6 +6,7 @@ package daemonset
 import (
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
@@ -19,6 +20,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestEnvironmentVariables(t *testing.T) {
@@ -89,6 +91,34 @@ func assertEnvVarNameAndValue(t *testing.T, envVars []corev1.EnvVar, name, value
 	env := k8senv.Find(envVars, name)
 	assert.Equal(t, name, env.Name)
 	assert.Equal(t, value, env.Value)
+}
+
+func TestEnableVolumeStorageEnv(t *testing.T) {
+	newDK := func(annotations map[string]string) *dynakube.DynaKube {
+		return &dynakube.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{Annotations: annotations},
+			Spec: dynakube.DynaKubeSpec{
+				OneAgent: oneagent.Spec{ClassicFullStack: &oneagent.HostInjectSpec{}},
+			},
+		}
+	}
+
+	t.Run("set for classic nonroot", func(t *testing.T) {
+		dsBuilder := builder{dk: newDK(map[string]string{exp.OAClassicNonRootKey: "true"})}
+		envVars, err := dsBuilder.environmentVariables()
+		require.NoError(t, err)
+
+		env := k8senv.Find(envVars, enableVolumeStorage)
+		require.NotNil(t, env)
+		assert.Equal(t, "true", env.Value)
+	})
+	t.Run("not set without feature flag", func(t *testing.T) {
+		dsBuilder := builder{dk: newDK(nil)}
+		envVars, err := dsBuilder.environmentVariables()
+		require.NoError(t, err)
+
+		assert.False(t, k8senv.Contains(envVars, enableVolumeStorage))
+	})
 }
 
 func TestAddNodeNameEnv(t *testing.T) {

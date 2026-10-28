@@ -20,8 +20,9 @@ type OneAgent struct {
 
 	globalResourceAttributes map[string]string
 
-	featureOneAgentPrivileged        bool
-	featureOneAgentSkipLivenessProbe bool
+	ffPrivileged        bool
+	ffSkipLivenessProbe bool
+	ffClassicNonRoot    bool
 }
 
 type Mode string
