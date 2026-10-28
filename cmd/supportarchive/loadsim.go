@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"math/rand/v2"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+	"golang.org/x/exp/rand" //nolint:staticcheck // deprecated, but fine for load simulation filler data
 	clientgocorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
@@ -81,7 +81,7 @@ func (lg *loadGenerator) Read(p []byte) (n int, err error) {
 	if lg.fileSize > 0 {
 		i := 0
 		for ; i < len(p) && lg.fileSize > 0; i++ {
-			p[i] = letters[rand.IntN(len(letters))] //nolint:gosec // filler data for load simulation, not security-sensitive
+			p[i] = letters[rand.Intn(len(letters))]
 			lg.fileSize--
 		}
 
