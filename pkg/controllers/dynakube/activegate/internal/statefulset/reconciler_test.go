@@ -264,14 +264,14 @@ func TestReconcile_GetTLSSecretHash(t *testing.T) {
 		secret := &corev1.Secret{
 			Name:      testName,
 			Namespace: testNamespace,
-			Data:      map[string][]byte{"server.p12": []byte("cert-1")},
+			Data:      map[string][]byte{"server": []byte("cert-1")},
 		}
 		require.NoError(t, clt.Create(ctx, secret))
 
 		hash1, err := r.calculateActiveGateConfigurationHash(ctx, dk, agCapability)
 		require.NoError(t, err)
 
-		secret.Data = map[string][]byte{"server.p12": []byte("cert-2")}
+		secret.Data = map[string][]byte{"server": []byte("cert-2")}
 		require.NoError(t, clt.Update(ctx, secret))
 
 		hash2, err := r.calculateActiveGateConfigurationHash(ctx, dk, agCapability)
@@ -290,7 +290,7 @@ func TestReconcile_GetTLSSecretHash(t *testing.T) {
 		require.NoError(t, clt.Create(ctx, &corev1.Secret{
 			Name:      dk.ActiveGate().GetAutoTLSSecretName(),
 			Namespace: testNamespace,
-			Data:      map[string][]byte{"server.crt": []byte("cert")},
+			Data:      map[string][]byte{"server": []byte("cert")},
 		}))
 
 		hashWith, err := r.calculateActiveGateConfigurationHash(ctx, dk, agCapability)
@@ -385,7 +385,7 @@ func TestReconcile_ConfigurationHashIsSetOnPodTemplate(t *testing.T) {
 	require.NoError(t, clt.Create(ctx, &corev1.Secret{
 		Name:      testName,
 		Namespace: testNamespace,
-		Data:      map[string][]byte{"server.p12": []byte("cert")},
+		Data:      map[string][]byte{"server": []byte("cert")},
 	}))
 
 	require.NoError(t, r.Reconcile(ctx, dk, agCapability))
