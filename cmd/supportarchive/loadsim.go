@@ -6,7 +6,7 @@ import (
 	"io"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
-	"golang.org/x/exp/rand"
+	"golang.org/x/exp/rand" //nolint:staticcheck // deprecated, but fine for load simulation filler data
 	clientgocorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
