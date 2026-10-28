@@ -12,9 +12,6 @@ spec:
 
   # Optional: Enable self-monitoring. Deploy an OTEL collector that is configured for ingesting Dynatrace Operator component metrics.
   selfMonitoring: {}
-    # Optional: Specify an image for the OTEL collector.
-    #
-    # image: public.ecr.aws/dynatrace/dynatrace-otel-collector:<tag>
 
   # Optional: Name of the secret holding the tokens used for connecting to Dynatrace.
   #
