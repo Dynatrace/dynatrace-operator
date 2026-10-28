@@ -72,7 +72,7 @@ spec:
     # resources:
     #   requests:
     #     cpu: 100m
-    #     requests: 256Mi
+    #     memory: 256Mi
 
     # Optional: Define container volume mounts. Must match provides pod volume names.
     #
