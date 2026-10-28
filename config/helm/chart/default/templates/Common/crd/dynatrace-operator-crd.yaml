@@ -6275,6 +6275,10 @@ spec:
                   image:
                     type: string
                   imagePullPolicy:
+                    enum:
+                    - IfNotPresent
+                    - Always
+                    - Never
                     type: string
                   labels:
                     additionalProperties:

@@ -253,6 +253,7 @@ type SelfMonitoringSpec struct {
 	// +kubebuilder:validation:Optional
 	Image string `json:"image,omitempty"`
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Enum=IfNotPresent;Always;Never
 	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
 	// +kubebuilder:validation:Optional
 	Args []string `json:"args,omitempty"`
