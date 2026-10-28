@@ -8,6 +8,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
@@ -15,6 +16,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/authtoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
@@ -234,6 +236,165 @@ func TestReconcile_GetResourceAttributesHash(t *testing.T) {
 
 		assert.NotEqual(t, hash1, hash2)
 	})
+}
+
+func TestReconcile_GetTLSSecretHash(t *testing.T) {
+	ctx := t.Context()
+
+	t.Run("missing TLS secret does not change the hash", func(t *testing.T) {
+		r, _, dk := createDefaultReconciler(t)
+		dk.Annotations[exp.AGAutomaticTLSCertificateKey] = "false"
+		agCapability := capability.NewMultiCapability(dk)
+
+		hashWithoutTLS, err := r.calculateActiveGateConfigurationHash(ctx, dk, agCapability)
+		require.NoError(t, err)
+
+		dk.Spec.ActiveGate.TLSSecretName = testName
+		hashWithMissingSecret, err := r.calculateActiveGateConfigurationHash(ctx, dk, agCapability)
+		require.NoError(t, err)
+
+		assert.Equal(t, hashWithoutTLS, hashWithMissingSecret)
+	})
+
+	t.Run("TLS secret content changes the hash", func(t *testing.T) {
+		r, clt, dk := createDefaultReconciler(t)
+		dk.Spec.ActiveGate.TLSSecretName = testName
+		agCapability := capability.NewMultiCapability(dk)
+
+		secret := &corev1.Secret{
+			Name:      testName,
+			Namespace: testNamespace,
+			Data:      map[string][]byte{"server.p12": []byte("cert-1")},
+		}
+		require.NoError(t, clt.Create(ctx, secret))
+
+		hash1, err := r.calculateActiveGateConfigurationHash(ctx, dk, agCapability)
+		require.NoError(t, err)
+
+		secret.Data = map[string][]byte{"server.p12": []byte("cert-2")}
+		require.NoError(t, clt.Update(ctx, secret))
+
+		hash2, err := r.calculateActiveGateConfigurationHash(ctx, dk, agCapability)
+		require.NoError(t, err)
+
+		assert.NotEqual(t, hash1, hash2)
+	})
+
+	t.Run("automatic TLS secret changes the hash", func(t *testing.T) {
+		r, clt, dk := createDefaultReconciler(t)
+		agCapability := capability.NewMultiCapability(dk)
+
+		hashWithout, err := r.calculateActiveGateConfigurationHash(ctx, dk, agCapability)
+		require.NoError(t, err)
+
+		require.NoError(t, clt.Create(ctx, &corev1.Secret{
+			Name:      dk.ActiveGate().GetAutoTLSSecretName(),
+			Namespace: testNamespace,
+			Data:      map[string][]byte{"server.crt": []byte("cert")},
+		}))
+
+		hashWith, err := r.calculateActiveGateConfigurationHash(ctx, dk, agCapability)
+		require.NoError(t, err)
+
+		assert.NotEqual(t, hashWithout, hashWith)
+	})
+
+	t.Run("API error is returned", func(t *testing.T) {
+		r, clt, dk := createDefaultReconciler(t)
+		dk.Spec.ActiveGate.TLSSecretName = testName
+		r.apiReader = interceptor.NewClient(clt, interceptor.Funcs{
+			Get: func(ctx context.Context, c client.WithWatch, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
+				if key.Name == testName {
+					return errors.New("BOOM")
+				}
+
+				return c.Get(ctx, key, obj, opts...)
+			},
+		})
+
+		_, err := r.calculateActiveGateConfigurationHash(ctx, dk, capability.NewMultiCapability(dk))
+		require.ErrorContains(t, err, "BOOM")
+	})
+}
+
+func TestReconcile_GetTrustedCAsHash(t *testing.T) {
+	ctx := t.Context()
+
+	t.Run("missing trustedCAs configmap does not change the hash", func(t *testing.T) {
+		r, _, dk := createDefaultReconciler(t)
+		agCapability := capability.NewMultiCapability(dk)
+
+		hashWithoutCAs, err := r.calculateActiveGateConfigurationHash(ctx, dk, agCapability)
+		require.NoError(t, err)
+
+		dk.Spec.TrustedCAs = testName
+		hashWithMissingConfigMap, err := r.calculateActiveGateConfigurationHash(ctx, dk, agCapability)
+		require.NoError(t, err)
+
+		assert.Equal(t, hashWithoutCAs, hashWithMissingConfigMap)
+	})
+
+	t.Run("certs content changes the hash", func(t *testing.T) {
+		r, clt, dk := createDefaultReconciler(t)
+		dk.Spec.TrustedCAs = testName
+		agCapability := capability.NewMultiCapability(dk)
+
+		configMap := &corev1.ConfigMap{
+			Name:      testName,
+			Namespace: testNamespace,
+			Data:      map[string]string{dynakube.TrustedCAKey: "ca-1"},
+		}
+		require.NoError(t, clt.Create(ctx, configMap))
+
+		hash1, err := r.calculateActiveGateConfigurationHash(ctx, dk, agCapability)
+		require.NoError(t, err)
+
+		configMap.Data[dynakube.TrustedCAKey] = "ca-2"
+		require.NoError(t, clt.Update(ctx, configMap))
+
+		hash2, err := r.calculateActiveGateConfigurationHash(ctx, dk, agCapability)
+		require.NoError(t, err)
+
+		assert.NotEqual(t, hash1, hash2)
+	})
+
+	t.Run("API error is returned", func(t *testing.T) {
+		r, clt, dk := createDefaultReconciler(t)
+		dk.Spec.TrustedCAs = testName
+		r.apiReader = interceptor.NewClient(clt, interceptor.Funcs{
+			Get: func(ctx context.Context, c client.WithWatch, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
+				if key.Name == testName {
+					return errors.New("BOOM")
+				}
+
+				return c.Get(ctx, key, obj, opts...)
+			},
+		})
+
+		_, err := r.calculateActiveGateConfigurationHash(ctx, dk, capability.NewMultiCapability(dk))
+		require.ErrorContains(t, err, "BOOM")
+	})
+}
+
+func TestReconcile_ConfigurationHashIsSetOnPodTemplate(t *testing.T) {
+	ctx := t.Context()
+	r, clt, dk := createDefaultReconciler(t)
+	dk.Spec.ActiveGate.TLSSecretName = testName
+	agCapability := capability.NewMultiCapability(dk)
+
+	require.NoError(t, clt.Create(ctx, &corev1.Secret{
+		Name:      testName,
+		Namespace: testNamespace,
+		Data:      map[string][]byte{"server.p12": []byte("cert")},
+	}))
+
+	require.NoError(t, r.Reconcile(ctx, dk, agCapability))
+
+	expectedHash, err := r.calculateActiveGateConfigurationHash(ctx, dk, agCapability)
+	require.NoError(t, err)
+
+	statefulSet := getStatefulSet(t, clt, dk)
+	assert.Equal(t, expectedHash, statefulSet.Spec.Template.Annotations[consts.AnnotationActiveGateConfigurationHash])
 }
 
 func TestManageStatefulSet(t *testing.T) {
