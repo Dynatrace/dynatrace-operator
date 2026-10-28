@@ -145,7 +145,7 @@ func (r *Reconciler) getTLSData(ctx context.Context, dk *dynakube.DynaKube) (str
 	if k8serrors.IsNotFound(err) {
 		return "", nil
 	} else if err != nil {
-		return "", errors.WithStack(err)
+		return "", err
 	}
 
 	data, err := json.Marshal(secret.Data)
