@@ -19,8 +19,8 @@ const testSecretFileContent = "apiUrl: apiUrl\napiToken: apiToken"
 func TestNewFromConfig(t *testing.T) {
 	workingDir := t.TempDir()
 
-	secretsPath := filepath.Join(workingDir, "..", "testdata", "Secrets")
-	require.NoError(t, os.MkdirAll(secretsPath, 0655))
+	secretsPath := filepath.Join(workingDir, "testdata", "Secrets")
+	require.NoError(t, os.MkdirAll(secretsPath, 0755))
 
 	require.NoError(t, os.WriteFile(filepath.Join(secretsPath, "Secrets-test.yaml"),
 		[]byte(testSecretFileContent), 0600))
