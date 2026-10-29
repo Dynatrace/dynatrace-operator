@@ -123,6 +123,14 @@ app.kubernetes.io/component: logmonitoring
 {{- end -}}
 
 {{/*
+Self-monitoring labels
+*/}}
+{{- define "dynatrace-operator.selfMonitoringLabels" -}}
+{{ include "dynatrace-operator.commonLabels" . }}
+app.kubernetes.io/component: self-monitoring
+{{- end -}}
+
+{{/*
 KSPM labels
 */}}
 {{- define "dynatrace-operator.kspmLabels" -}}

@@ -305,6 +305,9 @@ rbac:
   kspm:
     create: true
     annotations: {}
+  selfMonitoring:
+    create: true
+    annotations: {}
   operator:
     annotations: {}
   prometheus:
