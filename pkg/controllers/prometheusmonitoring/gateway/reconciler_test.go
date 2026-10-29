@@ -19,6 +19,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -232,4 +233,21 @@ func createErrorClient(createErr error) client.Client {
 			return createErr
 		},
 	})
+}
+
+func TestMutateStatefulSetKeepsExistingTemplateMetadata(t *testing.T) {
+	obj := &appsv1.StatefulSet{}
+	obj.Spec.Template.Annotations = map[string]string{"kubectl.kubernetes.io/restartedAt": "now"}
+	obj.Spec.Template.Labels = map[string]string{"user": "label"}
+
+	s := newTestScope(newTestPM("pm", "dynatrace"))
+	s.Spec.Annotations = map[string]string{"from": "spec"}
+	s.Spec.Labels = map[string]string{"spec": "label"}
+
+	mutateStatefulSet(obj, s)
+
+	assert.Equal(t, "now", obj.Spec.Template.Annotations["kubectl.kubernetes.io/restartedAt"])
+	assert.Equal(t, "spec", obj.Spec.Template.Annotations["from"])
+	assert.Equal(t, "label", obj.Spec.Template.Labels["user"])
+	assert.Equal(t, "label", obj.Spec.Template.Labels["spec"])
 }
