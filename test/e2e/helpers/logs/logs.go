@@ -80,14 +80,25 @@ func AssertContains(t *testing.T, logStream io.ReadCloser, contains string) {
 	assert.Contains(t, buffer.String(), contains)
 }
 
-func FindLineContainingText(log, searchText string) string {
+// FindLineContainingText returns the first log line that contains all the given search texts, or "" if there is none.
+func FindLineContainingText(log string, searchTexts ...string) string {
 	for line := range strings.SplitSeq(log, "\n") {
-		if strings.Contains(line, searchText) {
+		if containsAll(line, searchTexts) {
 			return line
 		}
 	}
 
 	return ""
+}
+
+func containsAll(line string, searchTexts []string) bool {
+	for _, text := range searchTexts {
+		if !strings.Contains(line, text) {
+			return false
+		}
+	}
+
+	return true
 }
 
 type logParams struct {
