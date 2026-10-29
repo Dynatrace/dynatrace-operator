@@ -79,5 +79,5 @@ func waitForNamespaceAdmission(t *testing.T, clt client.Client, namespace string
 		err := clt.Create(t.Context(), cm, client.DryRunAll)
 
 		return !k8serrors.HasStatusCause(err, corev1.NamespaceTerminatingCause)
-	}, 10*time.Second, 20*time.Millisecond)
+	}, 10*time.Second, 250*time.Millisecond)
 }
