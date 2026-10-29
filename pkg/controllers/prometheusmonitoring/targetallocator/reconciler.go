@@ -64,8 +64,8 @@ type HTTPSConfig struct {
 	Enabled         bool   `json:"enabled"`
 	ListenAddr      string `json:"listen_addr"`
 	TLSCertFilePath string `json:"tls_cert_file_path"`
-	TLSKeyFilePath  string `json:"tls_keyt_file_path"`
-	CAFilePath      string `json:"ca_cert_file_path"`
+	TLSKeyFilePath  string `json:"tls_key_file_path"`
+	CAFilePath      string `json:"ca_file_path"`
 }
 
 type ScrapeConfig struct {

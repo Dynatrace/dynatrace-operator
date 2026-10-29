@@ -26,11 +26,11 @@ data:
         app.kubernetes.io/name: opentelemetry-collector
     filter_strategy: relabel-config
     https:
-      ca_cert_file_path: ""
+      ca_file_path: ""
       enabled: false
       listen_addr: :8443
       tls_cert_file_path: ""
-      tls_keyt_file_path: ""
+      tls_key_file_path: ""
     listen_addr: :8080
     prometheus_cr:
       enabled: true

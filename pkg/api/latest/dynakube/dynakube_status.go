@@ -23,6 +23,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// SelfMonitoringAvailable indicates whether self-monitoring is available.
+const SelfMonitoringAvailable = "SelfMonitoringAvailable"
+
 // DynaKubeStatus defines the observed state of DynaKube
 // +k8s:openapi-gen=true
 type DynaKubeStatus struct { //nolint:revive
@@ -98,6 +101,9 @@ type DynaKubeStatus struct { //nolint:revive
 
 	// +kubebuilder:validation:Optional
 	APIToken APITokenStatus `json:"apiToken,omitzero"`
+
+	// +kubebuilder:validation:Optional
+	SelfMonitoring SelfMonitoringStatus `json:"selfMonitoring,omitzero"`
 }
 
 type APITokenStatus struct {
@@ -111,6 +117,12 @@ type APITokenStatus struct {
 type AvailableOptionalScopes struct {
 	SettingsRead  *bool `json:"settingsRead,omitempty"`
 	SettingsWrite *bool `json:"settingsWrite,omitempty"`
+}
+
+type SelfMonitoringStatus struct {
+	// Resolved image
+	// +kubebuilder:validation:Optional
+	Image string `json:"image,omitempty"`
 }
 
 // SetPhase sets the status phase on the DynaKube object.
