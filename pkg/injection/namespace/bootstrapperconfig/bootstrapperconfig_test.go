@@ -143,7 +143,7 @@ func TestGenerateForDynakube(t *testing.T) {
 				},
 				ActiveGate: activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{
-						activegate.KubeMonCapability.DisplayName,
+						activegate.RoutingCapability.DisplayName,
 					},
 					TLSSecretName: "test-tls-secret-name",
 				},
@@ -482,7 +482,7 @@ func TestGenerateForDynakube(t *testing.T) {
 	})
 }
 
-func TestGenerateForDynakubeWithAutomaticAGTLSCertificateDisbled(t *testing.T) {
+func TestGenerateForDynakubeWithAutomaticAGTLSCertificateDisabled(t *testing.T) {
 	t.Run("successfully generate secret with fields for dynakube but without AG cert if FF used", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			Name:      testDynakube,
@@ -502,7 +502,7 @@ func TestGenerateForDynakubeWithAutomaticAGTLSCertificateDisbled(t *testing.T) {
 				},
 				ActiveGate: activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{
-						activegate.KubeMonCapability.DisplayName,
+						activegate.RoutingCapability.DisplayName,
 					},
 					TLSSecretName: "test-tls-secret-name",
 				},
