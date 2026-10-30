@@ -50,7 +50,7 @@ func (installer *Installer) extractAgentBinariesFromImage(ctx context.Context, p
 func (installer *Installer) pullImageInfo(ctx context.Context, imageName string) (*containerv1.Image, error) {
 	ref, err := name.ParseReference(imageName)
 	if err != nil {
-		return nil, errors.WithMessagef(err, "parsing reference %q:", imageName)
+		return nil, errors.Wrapf(err, "parsing reference %q:", imageName)
 	}
 
 	image, err := remote.Image(ref, remote.WithContext(ctx),
@@ -59,7 +59,7 @@ func (installer *Installer) pullImageInfo(ctx context.Context, imageName string)
 		remote.WithPlatform(arch.ImagePlatform),
 	)
 	if err != nil {
-		return nil, errors.WithMessagef(err, "getting image %q", imageName)
+		return nil, errors.Wrapf(err, "getting image %q", imageName)
 	}
 
 	return &image, nil
@@ -68,9 +68,28 @@ func (installer *Installer) pullImageInfo(ctx context.Context, imageName string)
 func (installer *Installer) pullOCIimage(ctx context.Context, image containerv1.Image, imageName string, imageCacheDir string, targetDir string) error {
 	log := logd.FromContext(ctx)
 
+	layers, err := image.Layers()
+	if err != nil {
+		log.Info("failed to get image layers", "err", err)
+
+		return errors.WithStack(err)
+	}
+
+	if len(layers) == 0 {
+		log.Info("the image contains no layers", "image", imageName, "layers", len(layers))
+
+		return errors.New("no-layer images are not supported")
+	}
+
+	if len(layers) > 1 {
+		log.Info("the image contains more than 1 layer", "image", imageName, "layers", len(layers))
+
+		return errors.New("multi-layered images are not supported")
+	}
+
 	ref, err := name.ParseReference(imageName)
 	if err != nil {
-		return errors.WithMessagef(err, "parsing reference %q", imageName)
+		return errors.Wrapf(err, "parsing reference %q", imageName)
 	}
 
 	log.Info("pullOciImage", "ref_identifier", ref.Identifier(), "ref.Name", ref.Name(), "ref.String", ref.String())
@@ -88,17 +107,10 @@ func (installer *Installer) pullOCIimage(ctx context.Context, image containerv1.
 	if err := crane.SaveOCI(image, imageCachePath); err != nil {
 		log.Info("saving v1.Image img as an OCI Image Layout at path", "dir", imageCacheDir, "err", err)
 
-		return errors.WithMessagef(err, "saving v1.Image img as an OCI Image Layout at path %s", imageCacheDir)
+		return errors.Wrapf(err, "saving v1.Image img as an OCI Image Layout at path %s", imageCacheDir)
 	}
 
-	layers, err := image.Layers()
-	if err != nil {
-		log.Info("failed to get image layers", "err", err)
-
-		return errors.WithStack(err)
-	}
-
-	err = installer.unpackOciImage(ctx, layers, imageCachePath, targetDir)
+	err = installer.unpackOciImage(ctx, layers[0], imageCachePath, targetDir)
 	if err != nil {
 		log.Info("failed to unpackOciImage", "error", err)
 
@@ -108,25 +120,23 @@ func (installer *Installer) pullOCIimage(ctx context.Context, image containerv1.
 	return nil
 }
 
-func (installer *Installer) unpackOciImage(ctx context.Context, layers []containerv1.Layer, imageCacheDir string, targetDir string) error {
+func (installer *Installer) unpackOciImage(ctx context.Context, layer containerv1.Layer, imageCacheDir string, targetDir string) error {
 	log := logd.FromContext(ctx)
 
-	for _, layer := range layers {
-		mediaType, _ := layer.MediaType()
-		switch mediaType {
-		case types.DockerLayer, types.OCILayer:
-			digest, _ := layer.Digest()
-			sourcePath := filepath.Join(imageCacheDir, "blobs", digest.Algorithm, digest.Hex)
-			log.Info("unpackOciImage", "sourcePath", sourcePath)
+	mediaType, _ := layer.MediaType()
+	switch mediaType {
+	case types.DockerLayer, types.OCILayer:
+		digest, _ := layer.Digest()
+		sourcePath := filepath.Join(imageCacheDir, "blobs", digest.Algorithm, digest.Hex)
+		log.Info("unpackOciImage", "sourcePath", sourcePath)
 
-			if err := installer.extractor.ExtractGzip(ctx, sourcePath, targetDir); err != nil {
-				return err
-			}
-		case types.OCILayerZStd:
-			return errors.New("OCILayerZStd is not implemented")
-		default:
-			return errors.Errorf("media type %s is not implemented", mediaType)
+		if err := installer.extractor.ExtractGzip(ctx, sourcePath, targetDir); err != nil {
+			return err
 		}
+	case types.OCILayerZStd:
+		return errors.New("OCILayerZStd is not implemented")
+	default:
+		return errors.Errorf("media type %s is not implemented", mediaType)
 	}
 
 	log.Info("unpackOciImage", "targetDir", targetDir)
