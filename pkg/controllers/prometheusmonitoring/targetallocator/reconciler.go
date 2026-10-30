@@ -195,7 +195,12 @@ func (r *Reconciler) reconcileDeployment(ctx context.Context, s *reconcileScope)
 	deploy := &appsv1.Deployment{Name: s.Spec.GetDeploymentName(), Namespace: s.Owner.Namespace}
 
 	err := k8sobject.RetryCreateOrUpdate(ctx, r, deploy, func() error {
+		current := deploy.DeepCopy()
 		mutateDeployment(deploy, s)
+
+		if err := k8sdeployment.CheckImmutableFields(current, deploy); err != nil {
+			return err
+		}
 
 		return controllerutil.SetControllerReference(s.Owner, deploy, r.Scheme())
 	})

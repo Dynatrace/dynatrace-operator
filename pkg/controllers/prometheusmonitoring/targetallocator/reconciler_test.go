@@ -240,7 +240,10 @@ func TestReconcileDeployment(t *testing.T) {
 		s := newTestScope(pm)
 		existing := &appsv1.Deployment{
 			Name: s.Spec.GetDeploymentName(), Namespace: pm.Namespace,
-			Spec: appsv1.DeploymentSpec{Replicas: new(int32(5))},
+			Spec: appsv1.DeploymentSpec{
+				Replicas: new(int32(5)),
+				Selector: &metav1.LabelSelector{MatchLabels: s.AppLabels.AsSelector()},
+			},
 		}
 		c := fake.NewClient(existing)
 		r := &Reconciler{Client: c}
