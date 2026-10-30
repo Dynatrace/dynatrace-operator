@@ -1,4 +1,3 @@
-connectors: {}
 exporters: {}
 extensions: {}
 processors: {}
@@ -9,13 +8,13 @@ service:
   pipelines:
     traces:
       exporters:
-        - otlphttp
+        - otlp_http
       receivers:
         - zipkin
       processors:
         - memory_limiter
         - transform/add-pod-ip
-        - k8sattributes/annotations
-        - k8sattributes/facts
+        - k8s_attributes/annotations
+        - k8s_attributes/facts
         - transform
         - batch/traces

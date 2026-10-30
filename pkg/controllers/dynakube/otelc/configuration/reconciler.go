@@ -87,7 +87,8 @@ func (r *Reconciler) prepareConfigMap(dk *dynakube.DynaKube) (*corev1.ConfigMap,
 
 	coreLabels := k8slabel.NewCoreLabels(dk.Name, k8slabel.OTelColComponentLabel).BuildLabels()
 
-	newSecret, err := k8sconfigmap.Build(dk,
+	newSecret, err := k8sconfigmap.Build(
+		dk,
 		GetConfigMapName(dk.Name),
 		data,
 		k8sconfigmap.SetLabels(coreLabels),
@@ -102,37 +103,26 @@ func (r *Reconciler) prepareConfigMap(dk *dynakube.DynaKube) (*corev1.ConfigMap,
 }
 
 func (r *Reconciler) getData(dk *dynakube.DynaKube) (map[string]string, error) {
-	myPodIP := "${env:MY_POD_IP}"
-
-	options := []otelcgen.Option{
-		otelcgen.WithAPIToken("${env:" + otelcconsts.EnvDataIngestToken + "}"),
-		otelcgen.WithExportersEndpoint("${env:DT_ENDPOINT}"),
+	spec := otelcgen.TelemetryIngestSpec{
+		Protocols:          dk.TelemetryIngest().GetProtocols(),
+		Endpoint:           "${env:DT_ENDPOINT}",
+		APIToken:           "${env:" + otelcconsts.EnvDataIngestToken + "}",
+		ResourceAttributes: dk.Spec.ResourceAttributes,
 	}
 
 	if dk.IsAGCertificateNeeded() {
-		options = append(options, otelcgen.WithCA(otelcconsts.ActiveGateTLSCertVolumePath))
+		spec.CAFile = otelcconsts.ActiveGateTLSCertVolumePath
 	} else if dk.IsCACertificateNeeded() {
-		options = append(options, otelcgen.WithCA(otelcconsts.TrustedCAVolumePath))
-		options = append(options, otelcgen.WithSystemCAs(true))
+		spec.CAFile = otelcconsts.TrustedCAVolumePath
+		spec.IncludeSystemCAs = true
 	}
 
 	if dk.TelemetryIngest().IsEnabled() && dk.TelemetryIngest().TLSRefName != "" {
-		options = append(options, otelcgen.WithTLS(filepath.Join(otelcconsts.CustomTLSCertMountPath, consts.TLSCrtDataName), filepath.Join(otelcconsts.CustomTLSCertMountPath, consts.TLSKeyDataName)))
+		spec.TLSCert = filepath.Join(otelcconsts.CustomTLSCertMountPath, consts.TLSCrtDataName)
+		spec.TLSKey = filepath.Join(otelcconsts.CustomTLSCertMountPath, consts.TLSKeyDataName)
 	}
 
-	options = append(options,
-		otelcgen.WithResourceAttributes(dk.Spec.ResourceAttributes),
-		otelcgen.WithExporters(),
-		otelcgen.WithProcessors(),
-		otelcgen.WithReceivers(),
-		otelcgen.WithExtensions(),
-		otelcgen.WithServices(),
-	)
-
-	config, err := otelcgen.NewConfig(myPodIP, dk.TelemetryIngest().GetProtocols(), options...)
-	if err != nil {
-		return nil, err
-	}
+	config := otelcgen.NewTelemetryIngest(spec)
 
 	configBytes, err := config.Marshal()
 	if err != nil {

@@ -1,4 +1,3 @@
-connectors: {}
 exporters: {}
 extensions: {}
 processors: {}
@@ -6,15 +5,14 @@ receivers:
     otlp:
         protocols:
             grpc:
-                endpoint: test:4317
+                endpoint: ${env:MY_POD_IP}:4317
                 tls:
                     cert_file: /run/opensignals/tls/tls.crt
                     key_file: /run/opensignals/tls/tls.key
             http:
-                endpoint: test:4318
+                endpoint: ${env:MY_POD_IP}:4318
                 tls:
                     cert_file: /run/opensignals/tls/tls.crt
                     key_file: /run/opensignals/tls/tls.key
 service:
-    extensions: []
     pipelines: {}

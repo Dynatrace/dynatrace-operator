@@ -1,10 +1,9 @@
-connectors: {}
 exporters: {}
 extensions: {}
 processors: {}
 receivers:
     statsd:
-        endpoint: test:8125
+        endpoint: ${env:MY_POD_IP}:8125
         timer_histogram_mapping:
           - histogram:
               max_size: 10
@@ -19,5 +18,4 @@ receivers:
             observer_type: histogram
             statsd_type: distribution
 service:
-    extensions: []
     pipelines: {}

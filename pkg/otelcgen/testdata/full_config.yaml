@@ -1,6 +1,5 @@
-connectors: {}
 exporters:
-  otlphttp:
+  otlp_http:
     endpoint: "exporters-test-endpoint"
     tls:
       ca_file: "/run/opensignals/cacerts/certs"
@@ -9,10 +8,10 @@ exporters:
       Authorization: "Api-Token test-token"
 extensions:
   health_check:
-    endpoint: test:13133
+    endpoint: ${env:MY_POD_IP}:13133
 processors:
-  cumulativetodelta: {}
-  k8sattributes/annotations:
+  cumulative_to_delta: {}
+  k8s_attributes/annotations:
     extract:
       metadata: []
       annotations:
@@ -36,7 +35,7 @@ processors:
             name: k8s.pod.uid
       - sources:
           - from: connection
-  k8sattributes/facts:
+  k8s_attributes/facts:
     extract:
       metadata:
         - k8s.cluster.uid
@@ -160,15 +159,15 @@ processors:
   batch/traces:
     send_batch_size: 5000
     send_batch_max_size: 5000
-    timeout: 60s
+    timeout: 1m0s
   batch/metrics:
     send_batch_size: 3000
     send_batch_max_size: 3000
-    timeout: 60s
+    timeout: 1m0s
   batch/logs:
     send_batch_size: 1800
     send_batch_max_size: 2000
-    timeout: 60s
+    timeout: 1m0s
   memory_limiter:
     check_interval: 1s
     limit_percentage: 70
@@ -177,38 +176,38 @@ receivers:
   otlp:
     protocols:
       grpc:
-        endpoint: test:4317
+        endpoint: ${env:MY_POD_IP}:4317
         tls:
           cert_file: /run/opensignals/tls/tls.crt
           key_file: /run/opensignals/tls/tls.key
       http:
-        endpoint: test:4318
+        endpoint: ${env:MY_POD_IP}:4318
         tls:
           cert_file: /run/opensignals/tls/tls.crt
           key_file: /run/opensignals/tls/tls.key
   jaeger:
     protocols:
       grpc:
-        endpoint: test:14250
+        endpoint: ${env:MY_POD_IP}:14250
         tls:
           cert_file: /run/opensignals/tls/tls.crt
           key_file: /run/opensignals/tls/tls.key
       thrift_binary:
-        endpoint: test:6832
+        endpoint: ${env:MY_POD_IP}:6832
       thrift_compact:
-        endpoint: test:6831
+        endpoint: ${env:MY_POD_IP}:6831
       thrift_http:
-        endpoint: test:14268
+        endpoint: ${env:MY_POD_IP}:14268
         tls:
           cert_file: /run/opensignals/tls/tls.crt
           key_file: /run/opensignals/tls/tls.key
   zipkin:
-    endpoint: test:9411
+    endpoint: ${env:MY_POD_IP}:9411
     tls:
       cert_file: /run/opensignals/tls/tls.crt
       key_file: /run/opensignals/tls/tls.key
   statsd:
-    endpoint: test:8125
+    endpoint: ${env:MY_POD_IP}:8125
     timer_histogram_mapping:
       - histogram:
           max_size: 10
@@ -228,33 +227,33 @@ service:
   pipelines:
     logs:
       exporters:
-        - otlphttp
+        - otlp_http
       receivers:
         - otlp
       processors:
         - memory_limiter
         - transform/add-pod-ip
-        - k8sattributes/annotations
-        - k8sattributes/facts
+        - k8s_attributes/annotations
+        - k8s_attributes/facts
         - transform
         - batch/logs
     metrics:
       exporters:
-        - otlphttp
+        - otlp_http
       receivers:
         - otlp
         - statsd
       processors:
         - memory_limiter
         - transform/add-pod-ip
-        - k8sattributes/annotations
-        - k8sattributes/facts
+        - k8s_attributes/annotations
+        - k8s_attributes/facts
         - transform
-        - cumulativetodelta
+        - cumulative_to_delta
         - batch/metrics
     traces:
       exporters:
-        - otlphttp
+        - otlp_http
       receivers:
         - otlp
         - jaeger
@@ -262,7 +261,7 @@ service:
       processors:
         - memory_limiter
         - transform/add-pod-ip
-        - k8sattributes/annotations
-        - k8sattributes/facts
+        - k8s_attributes/annotations
+        - k8s_attributes/facts
         - transform
         - batch/traces
