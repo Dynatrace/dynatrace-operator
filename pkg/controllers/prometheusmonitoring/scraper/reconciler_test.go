@@ -326,3 +326,20 @@ func TestImagePullSecrets(t *testing.T) {
 		assert.NotContains(t, deploy.Spec.Template.Spec.ImagePullSecrets, corev1.LocalObjectReference{Name: dk.TenantRegistryPullSecretName()})
 	})
 }
+
+func TestMutateDeploymentKeepsExistingTemplateMetadata(t *testing.T) {
+	obj := &appsv1.Deployment{}
+	obj.Spec.Template.Annotations = map[string]string{"kubectl.kubernetes.io/restartedAt": "now"}
+	obj.Spec.Template.Labels = map[string]string{"user": "label"}
+
+	s := newTestScope(newTestPM("pm", "dynatrace"))
+	s.Spec.Annotations = map[string]string{"from": "spec"}
+	s.Spec.Labels = map[string]string{"spec": "label"}
+
+	mutateDeployment(obj, s)
+
+	assert.Equal(t, "now", obj.Spec.Template.Annotations["kubectl.kubernetes.io/restartedAt"])
+	assert.Equal(t, "spec", obj.Spec.Template.Annotations["from"])
+	assert.Equal(t, "label", obj.Spec.Template.Labels["user"])
+	assert.Equal(t, "label", obj.Spec.Template.Labels["spec"])
+}

@@ -195,18 +195,20 @@ func (r *Reconciler) reconcileStatefulset(ctx context.Context, s *reconcileScope
 func mutateStatefulSet(sts *appsv1.StatefulSet, s *reconcileScope) {
 	s.AppLabels.MergeInto(sts)
 
-	sts.Spec.Template.Labels = maps.Clone(s.Spec.Labels)
 	if sts.Spec.Template.Labels == nil {
 		sts.Spec.Template.Labels = make(map[string]string)
 	}
 
+	// merge instead of replace to keep metadata applied by users or kubectl (e.g. restartedAt)
+	maps.Copy(sts.Spec.Template.Labels, s.Spec.Labels)
 	maps.Copy(sts.Spec.Template.Labels, s.AppLabels.AsSelector())
 
-	sts.Spec.Template.Annotations = maps.Clone(s.Spec.Annotations)
 	if sts.Spec.Template.Annotations == nil {
 		sts.Spec.Template.Annotations = make(map[string]string)
 	}
 
+	// merge instead of replace to keep metadata applied by users or kubectl (e.g. restartedAt)
+	maps.Copy(sts.Spec.Template.Annotations, s.Spec.Annotations)
 	sts.Spec.Template.Annotations[configHashAnnotation] = s.ConfigMapHash
 
 	if s.Spec.Replicas != nil {
