@@ -9,7 +9,6 @@ import (
 	"context"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
@@ -22,7 +21,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/cloudnative"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/consts"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/activegate"
-	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/csi"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/csi/provisioner"
 	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sdaemonset"
@@ -30,7 +29,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8snamespace"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8ssecret"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sstatefulset"
-	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/logs"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/platform"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/registry"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/sample"
@@ -38,8 +36,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/project"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	corev1 "k8s.io/api/core/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
@@ -281,50 +277,11 @@ func codeModulesWithCSIFeature(t *testing.T, featureName, dkName, sampleNamespac
 	builder.Assess("CodeModules status reports public-registry source",
 		statusSourceIsPublicRegistry(testDynakube, image.CodeModules))
 
-	var imageID string
-
-	builder.Assess("get CodeModules imageID", getStatusCodeModulesImageID(testDynakube, &imageID))
-
-	builder.Assess("verify if CSI provisioner uses public-registry image", isProvisionerUsingPublicRegistry(testDynakube.Name, testDynakube.Namespace, &imageID))
+	builder.Assess("verify if CSI provisioner uses public-registry image", provisionerInstalledStatusImage(testDynakube))
 
 	builder.Teardown(sampleApp.Uninstall())
 
 	return builder.Feature()
-}
-
-func isProvisionerUsingPublicRegistry(dkName string, namespace string, imageID *string) features.Func {
-	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		resource := envConfig.Client().Resources()
-
-		err := k8sdaemonset.NewQuery(ctx, resource, client.ObjectKey{
-			Name:      csi.DaemonSetName,
-			Namespace: namespace,
-		}).ForEachPod(checkProvisionerLog(ctx, t, envConfig, dkName, *imageID))
-
-		assert.NoError(t, err)
-
-		return ctx
-	}
-}
-
-func checkProvisionerLog(ctx context.Context, t *testing.T, envConfig *envconf.Config, dkName string, imageID string) k8sdaemonset.PodConsumer {
-	return func(pod *corev1.Pod) {
-		provisionerLog := logs.ReadLog(ctx, t, envConfig, pod.Namespace, pod.Name, "provisioner")
-
-		// expected message: `{"level":"info",...,"msg":"pullOciImage",...,"name":"use-public-registry-cm-with-csi",..."ref.String":"<registry>:<version>@sha256:<sha256>"}`
-
-		msg := ""
-		for line := range strings.SplitSeq(provisionerLog, "\n") {
-			if strings.Contains(line, "pullOciImage") {
-				msg = line
-			}
-		}
-		require.NotEmpty(t, msg, "pullOciImage message not found in the provisioner log for %s POD", pod.Name)
-
-		require.Contains(t, msg, dkName, "the latest pullOciImage message is not related to the current %s dynakube instance for %s POD", dkName, pod.Name)
-
-		assert.Contains(t, msg, imageID, "the latest pullOciImage message does not contain the expected imageID for %s POD", pod.Name)
-	}
 }
 
 func dbExecutorFeature(t *testing.T, featureName, dkName, override string) features.Feature {
@@ -630,16 +587,16 @@ func statusSourceIs(dk *dynakube.DynaKube, component image.ComponentType, expect
 	}
 }
 
-func getStatusCodeModulesImageID(dk *dynakube.DynaKube, imageID *string) features.Func {
+// provisionerInstalledStatusImage asserts that the provisioner installed the CodeModules image reported in the DynaKube status.
+func provisionerInstalledStatusImage(dk *dynakube.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		var current dynakube.DynaKube
 		require.NoError(t,
 			envConfig.Client().Resources().Get(ctx, dk.Name, dk.Namespace, &current))
 
-		*imageID = current.Status.CodeModules.ImageID
+		imageID := current.Status.CodeModules.ImageID
+		require.NotEmpty(t, imageID)
 
-		assert.NotEmpty(t, *imageID)
-
-		return ctx
+		return provisioner.InstalledImage(dk.Namespace, imageID)(ctx, t, envConfig)
 	}
 }

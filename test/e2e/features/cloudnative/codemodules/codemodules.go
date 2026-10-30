@@ -7,13 +7,11 @@ package codemodules
 
 import (
 	"context"
-	"encoding/base64"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -25,6 +23,7 @@ import (
 	oacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/cloudnative"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/csi"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/csi/provisioner"
 	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/istio"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sconfigmap"
@@ -44,7 +43,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
-	"sigs.k8s.io/e2e-framework/klient/wait"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
@@ -474,45 +472,7 @@ func codeModulesAppInjectSpec(t *testing.T) *oneagent.AppInjectionSpec {
 }
 
 func ImageHasBeenDownloaded(dk *dynakube.DynaKube) features.Func {
-	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		resource := envConfig.Client().Resources()
-
-		customImage := dk.OneAgent().GetCustomCodeModulesImage()
-		require.NotEmpty(t, customImage)
-
-		err := k8sdaemonset.NewQuery(ctx, resource, client.ObjectKey{
-			Name:      csi.DaemonSetName,
-			Namespace: dk.Namespace,
-		}).ForEachPod(func(pod *corev1.Pod) {
-			err := wait.For(func(ctx context.Context) (done bool, err error) {
-				latest, readErr := readLatestCodeModule(ctx, resource, pod, dk.Name)
-				if readErr != nil {
-					t.Logf("failed to read the latest codemodule link on %s, retrying: %v", pod.Name, readErr)
-
-					return false, nil
-				}
-				expectedDirName := base64.StdEncoding.EncodeToString([]byte(customImage))
-				if !strings.Contains(latest, expectedDirName) {
-					t.Logf("latest codemodule link on %s is %s, waiting for it to contain %s", pod.Name, latest, expectedDirName)
-
-					return false, nil
-				}
-
-				return true, nil
-			}, wait.WithTimeout(time.Minute*5))
-			require.NoError(t, err)
-
-			listCommand := shell.ListDirectory(dataPath)
-			result, err := k8spod.Exec(ctx, resource, pod, provisionerContainerName, listCommand...)
-
-			require.NoError(t, err)
-			assert.Contains(t, result.StdOut.String(), dtcsi.SharedAgentBinDir)
-		})
-
-		require.NoError(t, err)
-
-		return ctx
-	}
+	return provisioner.InstalledImage(dk.Namespace, dk.OneAgent().GetCustomCodeModulesImage())
 }
 
 func measureDiskUsage(namespace string, storageMap map[string]int) features.Func {
