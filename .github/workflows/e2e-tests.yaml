@@ -87,6 +87,8 @@ jobs:
           fi
   run-in-ocp-fips:
     name: Run in FIPS OpenShift (${{ github.event.inputs.target || 'main' }})
+    # no FIPS image is built on this release branch, see fips-ci.yaml
+    if: false
     environment: E2E
     runs-on:
       - self-hosted
@@ -143,7 +145,11 @@ jobs:
 
           K8S_STATUS=$(get_status "${{ needs.run-in-k8s.outputs.cluster_status }}" "${{ needs.run-in-k8s.result }}")
           OCP_STATUS=$(get_status "${{ needs.run-in-ocp.outputs.cluster_status }}" "${{ needs.run-in-ocp.result }}")
-          OCP_FIPS_STATUS=$(get_status "${{ needs.run-in-ocp-fips.outputs.cluster_status }}" "${{ needs.run-in-ocp-fips.result }}")
+          if [ "${{ needs.run-in-ocp-fips.result }}" = "skipped" ] && [ -z "${{ needs.run-in-ocp-fips.outputs.cluster_status }}" ]; then
+            OCP_FIPS_STATUS="not run for this release :white_circle:"
+          else
+            OCP_FIPS_STATUS=$(get_status "${{ needs.run-in-ocp-fips.outputs.cluster_status }}" "${{ needs.run-in-ocp-fips.result }}")
+          fi
 
           MESSAGE="${K8S_STATUS} on kubernetes :kubernetes:\n${OCP_STATUS} on openshift :openshift:\n${OCP_FIPS_STATUS} on FIPS openshift :lock:\nusing ${{ github.event.inputs.target || 'main' }} branch (${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
           echo "SLACK_MESSAGE=$MESSAGE" >> $GITHUB_ENV

@@ -37,6 +37,7 @@ RUN mkdir -p /tmp/rootfs-dependency
 COPY --from=base / /tmp/rootfs-dependency
 RUN dnf install --installroot /tmp/rootfs-dependency \
       util-linux-core \
+      ca-certificates \  
       --releasever 9 \
       --setopt install_weak_deps=false \
       --nodocs -y \
@@ -71,6 +72,9 @@ RUN if [ "$TARGETPLATFORM" = "linux/amd64" ]; then \
 
 # do not install man pages
 RUN make DESTDIR=/tmp/rootfs-dependency install_sw install_ssldirs install_fips
+
+# self-built openssl looks for CAs in /usr/local/ssl, point it to the system bundle
+RUN ln -sf /etc/pki/tls/certs/ca-bundle.crt /tmp/rootfs-dependency/usr/local/ssl/cert.pem
 
 # platform is required, otherwise the copy command will copy the wrong architecture files, don't trust GitHub Actions linting warnings
 FROM base

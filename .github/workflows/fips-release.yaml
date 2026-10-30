@@ -11,6 +11,9 @@ jobs:
       contents: read
       id-token: write
     name: Prepare properties
+    # FIPS images are not released from this release branch: go.mod requires go 1.26 and no FIPS-tagged Go 1.26 builder image exists.
+    # build-images and index depend on this job, so they are skipped as well.
+    if: false
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
