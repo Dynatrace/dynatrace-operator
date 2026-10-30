@@ -100,7 +100,7 @@ func (ag *Spec) HasCaCert() bool {
 }
 
 func (ag *Spec) HasCaCertForOA() bool {
-	return ag.IsEnabled() && ag.IsAutomaticTLSSecretEnabled()
+	return ag.IsEnabled() && ag.IsRoutingEnabled() && ag.IsAutomaticTLSSecretEnabled()
 }
 
 // GetTenantSecretName returns the name of the secret containing tenant UUID, token and communication endpoints for ActiveGate.
