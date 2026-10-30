@@ -36,23 +36,9 @@ RUN mkdir -p /tmp/rootfs-dependency
 COPY --from=base / /tmp/rootfs-dependency
 RUN dnf install --installroot /tmp/rootfs-dependency \
       util-linux-core \
-      ca-certificates \
       --releasever 9 \
       --setopt install_weak_deps=false \
-      --nodocs -y && \
-      r=/tmp/rootfs-dependency && \
-      d=/etc/pki/ca-trust/source/blocklist; [ -d $r$d ] || d=/etc/pki/ca-trust/source/blacklist && \
-      trust extract --overwrite --format=pem-bundle \
-       --filter='pkcs11:object=emSign%20ECC%20Root%20CA%20-%20G3;type=cert' \
-       $r$d/emSign_ECC_Root_CA_-_G3.pem && \
-      openssl x509 -in $r$d/emSign_ECC_Root_CA_-_G3.pem \
-       -out $r$d/emSign_ECC_Root_CA_-_G3.pem -trustout -addreject anyExtendedKeyUsage && \
-      trust extract --overwrite --format=pem-bundle \
-       --filter='pkcs11:object=Comodo%20AAA%20Services%20root;type=cert' \
-       $r$d/Comodo_AAA_Services_root.pem && \
-      openssl x509 -in $r$d/Comodo_AAA_Services_root.pem \
-       -out $r$d/Comodo_AAA_Services_root.pem -trustout -addreject anyExtendedKeyUsage && \
-      chroot $r update-ca-trust \
+      --nodocs -y \
  && dnf --installroot /tmp/rootfs-dependency clean all \
  && rm -rf \
       /tmp/rootfs-dependency/var/cache/* \
@@ -84,9 +70,6 @@ RUN if [ "$TARGETPLATFORM" = "linux/amd64" ]; then \
 
 # do not install man pages
 RUN make DESTDIR=/tmp/rootfs-dependency install_sw install_ssldirs install_fips
-
-# self-built openssl looks for CAs in /usr/local/ssl, point it to the system bundle (with blocklisted certs removed)
-RUN ln -sf /etc/pki/tls/certs/ca-bundle.crt /tmp/rootfs-dependency/usr/local/ssl/cert.pem
 
 # platform is required, otherwise the copy command will copy the wrong architecture files, don't trust GitHub Actions linting warnings
 FROM base
