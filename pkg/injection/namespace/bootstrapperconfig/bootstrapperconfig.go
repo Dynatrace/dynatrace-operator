@@ -261,11 +261,17 @@ func NeedsPGC(dk *dynakube.DynaKube) bool {
 func (s *SecretGenerator) generateCerts(ctx context.Context, dk *dynakube.DynaKube) (map[string][]byte, error) {
 	data := map[string][]byte{}
 
-	agCerts, err := dk.ActiveGateTLSCert(ctx, s.apiReader)
-	if err != nil {
-		k8sconditions.SetKubeAPIError(dk.Conditions(), CertsConditionType, err)
+	var agCerts []byte
 
-		return nil, errors.WithStack(err)
+	if dk.ActiveGate().HasCaCertForOA() {
+		var err error
+
+		agCerts, err = dk.ActiveGateTLSCert(ctx, s.apiReader)
+		if err != nil {
+			k8sconditions.SetKubeAPIError(dk.Conditions(), CertsConditionType, err)
+
+			return nil, errors.WithStack(err)
+		}
 	}
 
 	if len(agCerts) != 0 {
