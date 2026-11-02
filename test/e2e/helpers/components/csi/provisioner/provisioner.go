@@ -41,7 +41,8 @@ func InstalledImage(namespace, image string) features.Func {
 			Name:      csi.DaemonSetName,
 			Namespace: namespace,
 		}).ForEachPod(func(pod *corev1.Pod) {
-			err := wait.For(func(ctx context.Context) (bool, error) {
+			// ReadLog fails the test on error, which would hide the assertion message below on timeout.
+			err := wait.For(func(context.Context) (bool, error) {
 				provisionerLog := logs.ReadLog(ctx, t, envConfig, pod.Namespace, pod.Name, provisionerContainerName)
 
 				for _, message := range []string{installedMessage, alreadyInstalledMessage} {
