@@ -111,6 +111,7 @@ var (
 		warnGlobalResourceAttributesSanitization,
 		warnOneAgentResourceAttributesSanitization,
 		warnOTLPResourceAttributesSanitization,
+		selfMonitoringDisabled,
 	}
 	updateValidatorErrorFuncs = []updateValidatorFunc{
 		IsMutatedAPIURL,
