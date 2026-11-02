@@ -17,4 +17,5 @@ const (
 	ReasonError       = "Error"
 	ReasonAvailable   = "Available"
 	ReasonReconciling = "Reconciling"
+	ReasonOff         = "Off"
 )
