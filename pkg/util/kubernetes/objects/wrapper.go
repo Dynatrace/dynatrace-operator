@@ -44,7 +44,9 @@ func RetryCreateOrUpdate(ctx context.Context, c client.Client, obj client.Object
 
 		logd.FromContext(ctx).Info("recreating "+kind, "reason", fnerr.Error())
 
-		if err := c.Delete(ctx, obj); client.IgnoreNotFound(err) != nil {
+		// obj may come from a stale cache, so only delete the object that failed the check and not a newer one with the same name
+		uid := obj.GetUID()
+		if err := c.Delete(ctx, obj, client.Preconditions{UID: &uid}); client.IgnoreNotFound(err) != nil {
 			return fmt.Errorf("delete for recreate: %w", err)
 		}
 
