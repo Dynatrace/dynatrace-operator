@@ -22,7 +22,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
 
-func TestRetryCreateOrUpate(t *testing.T) {
+func TestRetryCreateOrUpdate(t *testing.T) { //nolint:revive // cognitive-complexity
 	t.Run("create", func(t *testing.T) {
 		obj := &corev1.ConfigMap{Name: "test", Data: map[string]string{"foo": "bar"}}
 		var calls int
@@ -92,14 +92,6 @@ func TestRetryCreateOrUpate(t *testing.T) {
 		require.Equal(t, 1, calls)
 	})
 
-	t.Run("missing scheme", func(t *testing.T) {
-		obj := &UnregisteredObject{}
-		err := RetryCreateOrUpdate(t.Context(), fake.NewClient(), obj, func() error { return nil })
-		require.Truef(t, runtime.IsNotRegisteredError(err), "%v", err)
-	})
-}
-
-func TestRetryCreateOrUpdateRecreate(t *testing.T) {
 	t.Run("recreate", func(t *testing.T) {
 		existing := &appsv1.Deployment{
 			Name: "test",
@@ -147,6 +139,12 @@ func TestRetryCreateOrUpdateRecreate(t *testing.T) {
 		err := RetryCreateOrUpdate(t.Context(), c, obj, func() error { return ErrRecreate })
 
 		require.ErrorIs(t, err, expectErr)
+	})
+
+	t.Run("missing scheme", func(t *testing.T) {
+		obj := &UnregisteredObject{}
+		err := RetryCreateOrUpdate(t.Context(), fake.NewClient(), obj, func() error { return nil })
+		require.Truef(t, runtime.IsNotRegisteredError(err), "%v", err)
 	})
 }
 
