@@ -213,6 +213,54 @@ func TestReconcileDeployment(t *testing.T) {
 		assert.Equal(t, testImage, pm.Status.Scraper.ResolvedImage)
 	})
 
+	t.Run("recreate on selector change", func(t *testing.T) {
+		pm := newTestPM("pm", "dynatrace")
+		pm.Spec.Scraper.Image = testImage
+		s := newTestScope(pm)
+		existing := &appsv1.Deployment{
+			Name: s.Spec.GetDeploymentName(), Namespace: pm.Namespace,
+			Spec: appsv1.DeploymentSpec{Selector: &metav1.LabelSelector{MatchLabels: map[string]string{"app": "old"}}},
+		}
+		var deletes int
+		c := fake.NewClientWithInterceptors(interceptor.Funcs{
+			Delete: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.DeleteOption) error {
+				deletes++
+
+				return client.Delete(ctx, obj, opts...)
+			},
+		}, existing)
+		r := &Reconciler{Client: c}
+
+		require.NoError(t, r.reconcileDeployment(t.Context(), s))
+		assert.Equal(t, 1, deletes)
+
+		deploy := &appsv1.Deployment{}
+		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetDeploymentName(), Namespace: pm.Namespace}, deploy))
+		assert.Equal(t, s.AppLabels.AsSelector(), deploy.Spec.Selector.MatchLabels)
+	})
+
+	t.Run("no recreate when selector is unchanged", func(t *testing.T) {
+		pm := newTestPM("pm", "dynatrace")
+		pm.Spec.Scraper.Image = testImage
+		s := newTestScope(pm)
+		existing := &appsv1.Deployment{
+			Name: s.Spec.GetDeploymentName(), Namespace: pm.Namespace,
+			Spec: appsv1.DeploymentSpec{Selector: &metav1.LabelSelector{MatchLabels: s.AppLabels.AsSelector()}},
+		}
+		var deletes int
+		c := fake.NewClientWithInterceptors(interceptor.Funcs{
+			Delete: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.DeleteOption) error {
+				deletes++
+
+				return client.Delete(ctx, obj, opts...)
+			},
+		}, existing)
+		r := &Reconciler{Client: c}
+
+		require.NoError(t, r.reconcileDeployment(t.Context(), s))
+		assert.Zero(t, deletes)
+	})
+
 	t.Run("propagate error", func(t *testing.T) {
 		pm := newTestPM("pm", "dynatrace")
 		pm.Spec.Scraper.Image = testImage
