@@ -8,10 +8,12 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -48,8 +50,21 @@ func RetryCreateOrUpdate(ctx context.Context, c client.Client, obj client.Object
 			return fmt.Errorf("delete for recreate: %w", err)
 		}
 
+		// Wait for deletion, the client, on creation, may read from a cache that still contains the deleted object
+		if err := wait.PollUntilContextTimeout(ctx, 100*time.Millisecond, 5*time.Second, true, func(ctx context.Context) (bool, error) {
+			geterr := c.Get(ctx, client.ObjectKeyFromObject(obj), obj.DeepCopyObject().(client.Object))
+			if k8serrors.IsNotFound(geterr) {
+				return true, nil
+			}
+
+			return false, geterr
+		}); err != nil {
+			return fmt.Errorf("wait for deletion: %w", err)
+		}
+
 		// Get does not reset obj on NotFound, but Create rejects a set resource version
 		obj.SetResourceVersion("")
+		obj.SetManagedFields(nil)
 
 		return k8serrors.NewConflict(schema.GroupResource{Group: group, Resource: kind}, obj.GetName(), fnerr)
 	})

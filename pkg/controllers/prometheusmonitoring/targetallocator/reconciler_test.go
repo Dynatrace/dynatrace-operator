@@ -245,7 +245,14 @@ func TestReconcileDeployment(t *testing.T) {
 				Selector: &metav1.LabelSelector{MatchLabels: s.AppLabels.AsSelector()},
 			},
 		}
-		c := fake.NewClient(existing)
+		var deletes int
+		c := fake.NewClientWithInterceptors(interceptor.Funcs{
+			Delete: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.DeleteOption) error {
+				deletes++
+
+				return client.Delete(ctx, obj, opts...)
+			},
+		}, existing)
 		r := &Reconciler{Client: c}
 
 		require.NoError(t, r.reconcileDeployment(t.Context(), s))
@@ -253,6 +260,7 @@ func TestReconcileDeployment(t *testing.T) {
 		deploy := &appsv1.Deployment{}
 		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetDeploymentName(), Namespace: pm.Namespace}, deploy))
 		assert.Equal(t, new(int32(5)), deploy.Spec.Replicas)
+		assert.Zero(t, deletes)
 	})
 
 	t.Run("recreate on selector change", func(t *testing.T) {
