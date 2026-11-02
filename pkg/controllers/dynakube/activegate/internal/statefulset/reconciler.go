@@ -6,8 +6,6 @@ package statefulset
 import (
 	"context"
 	"encoding/json"
-	"hash/fnv"
-	"strconv"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
@@ -16,10 +14,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/authtoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
-	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -125,12 +123,7 @@ func (r *Reconciler) calculateActiveGateConfigurationHash(ctx context.Context, d
 		return "", err
 	}
 
-	hash := fnv.New32()
-	if _, err := hash.Write([]byte(customPropertyData + authTokenData + deploymentPropertiesData + tlsData + trustedCAs)); err != nil {
-		return "", errors.WithStack(err)
-	}
-
-	return strconv.FormatUint(uint64(hash.Sum32()), 10), nil
+	return hasher.GenerateSecureHash(customPropertyData + authTokenData + deploymentPropertiesData + tlsData + trustedCAs)
 }
 
 func (r *Reconciler) getTLSData(ctx context.Context, dk *dynakube.DynaKube) (string, error) {

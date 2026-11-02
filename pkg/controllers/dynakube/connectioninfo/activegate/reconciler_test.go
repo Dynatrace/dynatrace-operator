@@ -110,7 +110,7 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
 		assert.Equal(t, k8sconditions.SecretCreatedReason, condition.Reason)
 
-		tenantTokenHash, err := hasher.GenerateHash(testTenantToken)
+		tenantTokenHash, err := hasher.GenerateSecureHash(testTenantToken)
 
 		require.NoError(t, err)
 		assert.Equal(t, testTenantUUID, dk.Status.ActiveGate.ConnectionInfo.TenantUUID)
