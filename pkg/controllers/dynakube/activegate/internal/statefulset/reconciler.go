@@ -5,8 +5,7 @@ package statefulset
 
 import (
 	"context"
-	"hash/fnv"
-	"strconv"
+	"encoding/json"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
@@ -15,11 +14,13 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/authtoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
-	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -112,12 +113,46 @@ func (r *Reconciler) calculateActiveGateConfigurationHash(ctx context.Context, d
 
 	deploymentPropertiesData := deploymentproperties.BuildContent(dk)
 
-	hash := fnv.New32()
-	if _, err := hash.Write([]byte(customPropertyData + authTokenData + deploymentPropertiesData)); err != nil {
-		return "", errors.WithStack(err)
+	tlsData, err := r.getTLSData(ctx, dk)
+	if err != nil {
+		return "", err
 	}
 
-	return strconv.FormatUint(uint64(hash.Sum32()), 10), nil
+	trustedCAs, err := r.getTrustedCAs(ctx, dk)
+	if err != nil {
+		return "", err
+	}
+
+	return hasher.GenerateSecureHash([]string{customPropertyData, authTokenData, deploymentPropertiesData, tlsData, trustedCAs})
+}
+
+func (r *Reconciler) getTLSData(ctx context.Context, dk *dynakube.DynaKube) (string, error) {
+	tlsSecretName := dk.ActiveGate().GetTLSSecretName()
+	if tlsSecretName == "" {
+		return "", nil
+	}
+
+	var secret corev1.Secret
+
+	err := r.apiReader.Get(ctx, client.ObjectKey{Name: tlsSecretName, Namespace: dk.Namespace}, &secret)
+	if k8serrors.IsNotFound(err) {
+		return "", nil
+	} else if err != nil {
+		return "", err
+	}
+
+	data, err := json.Marshal(secret.Data)
+
+	return string(data), err
+}
+
+func (r *Reconciler) getTrustedCAs(ctx context.Context, dk *dynakube.DynaKube) (string, error) {
+	trustedCAs, err := dk.TrustedCAs(ctx, r.apiReader)
+	if k8serrors.IsNotFound(err) {
+		return "", nil
+	}
+
+	return string(trustedCAs), err
 }
 
 func (r *Reconciler) getCustomPropertyValue(ctx context.Context, dk *dynakube.DynaKube, agCapability capability.Capability) (string, error) {

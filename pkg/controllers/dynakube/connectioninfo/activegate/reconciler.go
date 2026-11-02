@@ -82,7 +82,7 @@ func (r *Reconciler) reconcileConnectionInfo(ctx context.Context, dk *dynakube.D
 		return err
 	}
 
-	dk.Status.ActiveGate.ConnectionInfo.TenantTokenHash, err = hasher.GenerateHash(connectionInfo.TenantToken)
+	dk.Status.ActiveGate.ConnectionInfo.TenantTokenHash, err = hasher.GenerateSecureHash(connectionInfo.TenantToken)
 	if err != nil {
 		return errors.Wrap(err, "failed to generate TenantTokenHash")
 	}
