@@ -47,9 +47,9 @@ func EnrichmentRules(t *testing.T) features.Feature {
 
 	// Setup: pre-create the Kubernetes Cluster MEID on the tenant so the rule can be
 	// scoped directly to the cluster without waiting for DynaKube reconciliation.
-	// Then clean any leftover rules from previous runs before creating the test rule.
+	// Then back up and remove the existing rules, they are restored at the end of the test.
 	builder.Setup(enrichment.EnsureKubernetesClusterMEID(secretConfig))
-	builder.Setup(enrichment.DeleteEnrichmentRulesFromTenant(secretConfig))
+	builder.Setup(enrichment.BackupEnrichmentRulesOnTenant(secretConfig))
 
 	// Be aware that this requires additional permissions on the service user group if platform token is used
 	// Add a new policy to your service user group that allows write access to 'ingest.enrichment.config'
@@ -80,8 +80,8 @@ func EnrichmentRules(t *testing.T) features.Feature {
 		checkEnrichmentAttributeInMetadataFile(sampleApp, expectedRule.Target, enrichmentLabelValue))
 
 	builder.WithTeardown("uninstall sample app", sampleApp.Uninstall())
-	builder.WithTeardown("delete enrichment rules from tenant",
-		enrichment.DeleteEnrichmentRulesFromTenant(secretConfig))
+	builder.WithTeardown("restore enrichment rules on tenant",
+		enrichment.RestoreEnrichmentRulesOnTenant(secretConfig))
 
 	return builder.Feature()
 }

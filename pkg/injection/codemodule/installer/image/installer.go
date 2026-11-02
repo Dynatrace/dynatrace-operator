@@ -85,7 +85,7 @@ func (installer *Installer) InstallAgent(ctx context.Context, targetDir string) 
 
 		log.Info("failed to install agent from image", "err", err)
 
-		return false, errors.WithStack(err)
+		return false, err
 	}
 
 	if err := symlink.CreateForCurrentVersionIfNotExists(ctx, targetDir); err != nil {
@@ -126,7 +126,7 @@ func (installer *Installer) installAgentFromImage(ctx context.Context, targetDir
 	if err != nil {
 		log.Info("failed to extract agent binaries from image", "image", image, "imageCacheDir", CacheDir, "err", err)
 
-		return errors.WithStack(err)
+		return err
 	}
 
 	return nil

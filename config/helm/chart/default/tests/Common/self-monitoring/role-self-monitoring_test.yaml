@@ -1,0 +1,68 @@
+# Copyright Dynatrace LLC
+# SPDX-License-Identifier: Apache-2.0
+
+suite: test role for self-monitoring
+templates:
+  - Common/self-monitoring/role-self-monitoring.yaml
+tests:
+  - it: Role and RoleBinding exist
+    asserts:
+      - hasDocuments:
+          count: 2
+  - it: Role has correct permissions
+    documentIndex: 0
+    asserts:
+      - isKind:
+          of: Role
+      - equal:
+          path: metadata.name
+          value: dynatrace-self-monitoring
+      - equal:
+          path: metadata.namespace
+          value: NAMESPACE
+      - isNotEmpty:
+          path: metadata.labels
+      - equal:
+          path: rules
+          value:
+            - apiGroups:
+                - ""
+              resources:
+                - pods
+              verbs: [get, list, watch]
+            - apiGroups:
+                - apps
+              resources:
+                - replicasets
+              verbs: [get, list, watch]
+            - apiGroups:
+                - batch
+              resources:
+                - cronjobs
+                - jobs
+              verbs: [get, list, watch]
+            - apiGroups:
+                - discovery.k8s.io
+              resources:
+                - endpointslices
+              verbs: [get, list, watch]
+  - it: RoleBinding binds the service account
+    documentIndex: 1
+    asserts:
+      - isKind:
+          of: RoleBinding
+      - equal:
+          path: roleRef.name
+          value: dynatrace-self-monitoring
+      - equal:
+          path: subjects
+          value:
+            - kind: ServiceAccount
+              name: dynatrace-self-monitoring
+              namespace: NAMESPACE
+  - it: shouldn't exist if turned off
+    set:
+      rbac.selfMonitoring.create: false
+    asserts:
+      - hasDocuments:
+          count: 0

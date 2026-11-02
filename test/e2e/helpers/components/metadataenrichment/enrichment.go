@@ -7,6 +7,7 @@ package metadataenrichment
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"slices"
 	"testing"
@@ -73,77 +74,145 @@ func EnsureKubernetesClusterMEID(secretConfig tenant.Secret) features.Func {
 	}
 }
 
-// CreateEnrichmentRuleOnTenant creates a single enrichment rule scoped to the cluster MEID.
-// It tries the legacy schema first; if that schema is unavailable (404) it falls back to the new schema.
-func CreateEnrichmentRuleOnTenant(secretConfig tenant.Secret, rules ...metadataenrichment.Rule) features.Func {
+type rulesStateKey struct{}
+
+// rulesState tracks what the test changed on the tenant, so that it can be reverted without touching anything else.
+type rulesState struct {
+	scope string
+	// legacyBackup holds the value of the legacy schema object that existed before the test, nil if there was none.
+	legacyBackup json.RawMessage
+	// createdNewSchema holds the IDs of the objects the test created with the new schema.
+	createdNewSchema []string
+}
+
+func getRulesState(ctx context.Context, t *testing.T) *rulesState {
+	t.Helper()
+
+	state, ok := ctx.Value(rulesStateKey{}).(*rulesState)
+	require.True(t, ok, "BackupEnrichmentRulesOnTenant must run before changing enrichment rules")
+
+	return state
+}
+
+// getLegacyRuleObject returns the legacy schema object of the scope, nil if there is none.
+// The schema allows at most one object per scope.
+func getLegacyRuleObject(ctx context.Context, t *testing.T, settingsClient *tenant.SettingsClient, scope string) *tenant.RawObject {
+	t.Helper()
+
+	objects, err := settingsClient.GetRawObjects(ctx, tenant.LegacyMetadataEnrichmentSchemaID, scope)
+	if core.IsNotFound(err) {
+		// the schema is not available on the tenant, so there is nothing to find
+		return nil
+	}
+
+	require.NoError(t, err, "Could not get legacy enrichment rule object")
+	require.LessOrEqual(t, len(objects), 1, "The legacy enrichment schema allows a single object per scope")
+
+	if len(objects) == 0 {
+		return nil
+	}
+
+	return &objects[0]
+}
+
+func deleteObject(ctx context.Context, t *testing.T, settingsClient *tenant.SettingsClient, objectID string) {
+	t.Helper()
+
+	if err := settingsClient.DeleteSettings(ctx, objectID); err != nil {
+		t.Errorf("Failed to delete enrichment rule %s: %v", objectID, err)
+	} else {
+		t.Logf("Deleted enrichment rule: %s", objectID)
+	}
+}
+
+// BackupEnrichmentRulesOnTenant prepares the tenant for creating enrichment rules without losing the existing ones.
+// The legacy schema (builtin:kubernetes.generic.metadata.enrichment) only allows a single object per scope, which can't be extended,
+// so the existing object is stored and removed. RestoreEnrichmentRulesOnTenant brings it back.
+// The new schema (builtin:ingest.enrichment.config) supports multiple objects, so the existing rules are left alone.
+func BackupEnrichmentRulesOnTenant(secretConfig tenant.Secret) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		settingsClient, err := tenant.BuildSettingsClient(secretConfig)
 		require.NoError(t, err)
 
-		kubeSystemUUID := getKubeSystemUUID(ctx, t, envConfig)
-
-		k8sClusterME, err := settingsClient.GetK8sClusterME(ctx, kubeSystemUUID)
+		k8sClusterME, err := settingsClient.GetK8sClusterME(ctx, getKubeSystemUUID(ctx, t, envConfig))
 		require.NoError(t, err, "Could not get K8s cluster MEID")
-		require.NotEmpty(t, k8sClusterME.ID, "Kubernetes Cluster MEID must exist before creating enrichment rules")
+		require.NotEmpty(t, k8sClusterME.ID, "Kubernetes Cluster MEID must exist before backing up enrichment rules")
 
-		objectIDs, err := settingsClient.CreateLegacyEnrichmentRuleObject(ctx, k8sClusterME.ID, rules...)
-		if core.IsNotFound(err) {
-			t.Log("Legacy schema not available, falling back to new schema")
+		existing := getLegacyRuleObject(ctx, t, settingsClient, k8sClusterME.ID)
 
-			objectIDs, err = settingsClient.CreateEnrichmentRuleObject(ctx, k8sClusterME.ID, rules...)
-			require.NoError(t, err, "Could not create enrichment rule on tenant with new schema either. Please follow comment on ICP-1164 how to enable on tenant.")
+		state := &rulesState{scope: k8sClusterME.ID}
+
+		if existing != nil {
+			state.legacyBackup = existing.Value
+			// Logged so that the rules can be recovered manually if the restore fails.
+			t.Logf("Backing up legacy enrichment rule object (scope: %s): %s", state.scope, string(existing.Value))
 		}
 
-		require.NoError(t, err, "Could not create enrichment rule on tenant")
-		t.Logf("Created enrichment rule with objectId: %v (scope: %s)", objectIDs, k8sClusterME.ID)
+		// Register the state before deleting anything, so the restore always knows what to put back.
+		ctx = context.WithValue(ctx, rulesStateKey{}, state)
+
+		if existing != nil {
+			deleteObject(ctx, t, settingsClient, existing.ObjectID)
+		}
 
 		return ctx
 	}
 }
 
-// DeleteEnrichmentRulesFromTenant deletes all enrichment rule objects scoped to the cluster MEID.
+// CreateEnrichmentRuleOnTenant creates the given enrichment rules scoped to the cluster MEID.
 // It tries the legacy schema first; if that schema is unavailable (404) it falls back to the new schema.
-func DeleteEnrichmentRulesFromTenant(secretConfig tenant.Secret) features.Func {
+// BackupEnrichmentRulesOnTenant must run first.
+func CreateEnrichmentRuleOnTenant(secretConfig tenant.Secret, rules ...metadataenrichment.Rule) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		state := getRulesState(ctx, t)
+
 		settingsClient, err := tenant.BuildSettingsClient(secretConfig)
 		require.NoError(t, err)
 
-		kubeSystemUUID := getKubeSystemUUID(ctx, t, envConfig)
-
-		k8sClusterME, err := settingsClient.GetK8sClusterME(ctx, kubeSystemUUID)
-		require.NoError(t, err, "Could not get K8s cluster MEID")
-
-		if k8sClusterME.ID == "" {
-			t.Log("No Kubernetes Cluster MEID found, skipping enrichment rules cleanup")
-
-			return ctx
-		}
-
-		t.Logf("Deleting enrichment rules for MEID: %s", k8sClusterME.ID)
-
-		objects, err := settingsClient.GetLegacyEnrichmentRuleObjects(ctx, k8sClusterME.ID)
+		objectIDs, err := settingsClient.CreateLegacyEnrichmentRuleObject(ctx, state.scope, rules...)
 		if core.IsNotFound(err) {
 			t.Log("Legacy schema not available, falling back to new schema")
 
-			objects, err = settingsClient.GetEnrichmentRuleObjects(ctx, k8sClusterME.ID)
+			objectIDs, err = settingsClient.CreateEnrichmentRuleObject(ctx, state.scope, rules...)
+			require.NoError(t, err, "Could not create enrichment rule on tenant with new schema either. Please follow comment on ICP-1164 how to enable on tenant.")
+
+			state.createdNewSchema = append(state.createdNewSchema, objectIDs...)
 		}
 
-		require.NoError(t, err, "Could not list enrichment rule objects")
+		require.NoError(t, err, "Could not create enrichment rule on tenant")
+		t.Logf("Created enrichment rule with objectId: %v (scope: %s)", objectIDs, state.scope)
 
-		if len(objects) == 0 {
-			t.Log("No enrichment rules found on tenant, nothing to clean up")
+		return ctx
+	}
+}
+
+// RestoreEnrichmentRulesOnTenant removes the enrichment rules created by the test and restores the legacy object saved by BackupEnrichmentRulesOnTenant.
+// Nothing is touched if no backup was made, to avoid deleting rules that do not belong to the test.
+func RestoreEnrichmentRulesOnTenant(secretConfig tenant.Secret) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		state, ok := ctx.Value(rulesStateKey{}).(*rulesState)
+		if !ok {
+			t.Log("No enrichment rule backup found, skipping restore")
 
 			return ctx
 		}
 
-		t.Logf("Found %d enrichment rule(s), deleting", len(objects))
+		settingsClient, err := tenant.BuildSettingsClient(secretConfig)
+		require.NoError(t, err)
 
-		for _, obj := range objects {
-			if err := settingsClient.DeleteSettings(ctx, obj.ObjectID); err != nil {
-				t.Logf("Failed to delete enrichment rule %s: %v", obj.ObjectID, err)
-			} else {
-				t.Logf("Deleted enrichment rule: %s", obj.ObjectID)
-			}
+		// The legacy backup was removed in the setup, so whatever exists now was created by the test.
+		if testLegacy := getLegacyRuleObject(ctx, t, settingsClient, state.scope); testLegacy != nil {
+			deleteObject(ctx, t, settingsClient, testLegacy.ObjectID)
+		}
+
+		for _, objectID := range state.createdNewSchema {
+			deleteObject(ctx, t, settingsClient, objectID)
+		}
+
+		if state.legacyBackup != nil {
+			objectID, err := settingsClient.CreateRawObject(ctx, tenant.LegacyMetadataEnrichmentSchemaID, state.scope, state.legacyBackup)
+			require.NoError(t, err, "Could not restore legacy enrichment rule object: %s", string(state.legacyBackup))
+			t.Logf("Restored legacy enrichment rule object: %s", objectID)
 		}
 
 		return ctx

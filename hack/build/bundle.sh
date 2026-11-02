@@ -37,6 +37,7 @@ SDK_PARAMS=(
     --extra-service-accounts dynatrace-sql-ext-exec
     --extra-service-accounts dynatrace-logmonitoring
     --extra-service-accounts dynatrace-node-config-collector
+    --extra-service-accounts dynatrace-self-monitoring
 )
 
 if [[ -n ${BUNDLE_CHANNELS} ]]; then
