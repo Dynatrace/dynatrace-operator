@@ -124,7 +124,7 @@ func TestActiveGateConflictingVolumes(t *testing.T) {
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testAPIURL,
 				ActiveGate: activegate.Spec{
-					Volumes: types.VolumeSpecs{
+					Volumes: types.Volumes{
 						{Name: "my-custom-volume", AllowedVolumeSource: types.AllowedVolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}}},
 					},
 					VolumeMounts: []corev1.VolumeMount{
@@ -143,7 +143,7 @@ func TestActiveGateConflictingVolumes(t *testing.T) {
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
 					ActiveGate: activegate.Spec{
-						Volumes: types.VolumeSpecs{
+						Volumes: types.Volumes{
 							{Name: agconsts.AuthTokenSecretVolumeName},
 						},
 					},

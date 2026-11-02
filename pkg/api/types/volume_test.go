@@ -44,7 +44,7 @@ func TestAllowedSourceAsCoreV1(t *testing.T) {
 }
 
 func TestSpecAsCoreV1(t *testing.T) {
-	spec := VolumeSpec{
+	spec := Volume{
 		Name:   "my-volume",
 		Secret: &corev1.SecretVolumeSource{SecretName: "s"},
 	}
@@ -57,11 +57,11 @@ func TestSpecAsCoreV1(t *testing.T) {
 
 func TestSpecsAsCoreV1(t *testing.T) {
 	t.Run("nil specs result in empty slice", func(t *testing.T) {
-		assert.Empty(t, VolumeSpecs(nil).AsCoreV1())
+		assert.Empty(t, Volumes(nil).AsCoreV1())
 	})
 
 	t.Run("order and content are preserved", func(t *testing.T) {
-		specs := VolumeSpecs{
+		specs := Volumes{
 			{Name: "a", EmptyDir: &corev1.EmptyDirVolumeSource{}},
 			{Name: "b", ConfigMap: &corev1.ConfigMapVolumeSource{}},
 		}

@@ -190,7 +190,7 @@ type CapabilityProperties struct {
 
 	// Adds additional Volumes to the ActiveGate pods
 	// +kubebuilder:validation:Optional
-	Volumes types.VolumeSpecs `json:"volumes,omitempty"`
+	Volumes types.Volumes `json:"volumes,omitempty"`
 
 	// Adds additional VolumeMounts to the ActiveGate container
 	// +kubebuilder:validation:Optional

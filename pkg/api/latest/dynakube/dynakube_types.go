@@ -246,7 +246,7 @@ type SelfMonitoringSpec struct {
 	// +kubebuilder:validation:Optional
 	PriorityClassName string `json:"priorityClassName,omitempty"`
 	// +kubebuilder:validation:Optional
-	Volumes types.VolumeSpecs `json:"volumes,omitempty"`
+	Volumes types.Volumes `json:"volumes,omitempty"`
 
 	// Container
 

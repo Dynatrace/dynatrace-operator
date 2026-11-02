@@ -719,7 +719,7 @@ func TestBuildVolumes(t *testing.T) {
 		}
 
 		dk := getTestDynakube()
-		dk.Spec.ActiveGate.Volumes = types.VolumeSpecs{{Name: userVolume.Name, AllowedVolumeSource: types.AllowedVolumeSource{EmptyDir: userVolume.EmptyDir}}}
+		dk.Spec.ActiveGate.Volumes = types.Volumes{{Name: userVolume.Name, AllowedVolumeSource: types.AllowedVolumeSource{EmptyDir: userVolume.EmptyDir}}}
 		multiCapability := capability.NewMultiCapability(dk)
 		statefulsetBuilder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
 		sts := statefulsetBuilder.getBase()

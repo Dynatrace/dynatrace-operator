@@ -88,7 +88,7 @@ func TestStatefulSet(t *testing.T) {
 			Name:      "my-user-volume",
 			MountPath: "/my/custom/path",
 		}
-		dk.Spec.ActiveGate.Volumes = types.VolumeSpecs{{Name: userVolume.Name, AllowedVolumeSource: types.AllowedVolumeSource{EmptyDir: userVolume.EmptyDir}}}
+		dk.Spec.ActiveGate.Volumes = types.Volumes{{Name: userVolume.Name, AllowedVolumeSource: types.AllowedVolumeSource{EmptyDir: userVolume.EmptyDir}}}
 		dk.Spec.ActiveGate.VolumeMounts = []corev1.VolumeMount{userVolumeMount}
 
 		integrationtests.CreateNamespace(t, clt, ns)
@@ -134,7 +134,7 @@ func TestStatefulSet(t *testing.T) {
 			Name:      "my-user-volume",
 			MountPath: "/my/custom/path",
 		}
-		dk.Spec.ActiveGate.Volumes = types.VolumeSpecs{{Name: userVolume.Name, AllowedVolumeSource: types.AllowedVolumeSource{EmptyDir: userVolume.EmptyDir}}}
+		dk.Spec.ActiveGate.Volumes = types.Volumes{{Name: userVolume.Name, AllowedVolumeSource: types.AllowedVolumeSource{EmptyDir: userVolume.EmptyDir}}}
 		dk.Spec.ActiveGate.VolumeMounts = []corev1.VolumeMount{userVolumeMount}
 
 		integrationtests.CreateNamespace(t, clt, ns)

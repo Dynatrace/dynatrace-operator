@@ -69,7 +69,7 @@ func (in *CapabilityProperties) DeepCopyInto(out *CapabilityProperties) {
 	}
 	if in.Volumes != nil {
 		in, out := &in.Volumes, &out.Volumes
-		*out = make(types.VolumeSpecs, len(*in))
+		*out = make(types.Volumes, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}

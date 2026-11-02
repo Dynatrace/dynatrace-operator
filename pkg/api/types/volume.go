@@ -9,12 +9,12 @@ import (
 
 // +kubebuilder:object:generate=true
 
-type VolumeSpec struct {
+type Volume struct {
 	Name                string `json:"name"`
 	AllowedVolumeSource `json:",inline"`
 }
 
-func (v VolumeSpec) AsCoreV1() corev1.Volume {
+func (v Volume) AsCoreV1() corev1.Volume {
 	return corev1.Volume{
 		Name:         v.Name,
 		VolumeSource: v.AllowedVolumeSource.AsCoreV1(),
@@ -23,9 +23,9 @@ func (v VolumeSpec) AsCoreV1() corev1.Volume {
 
 // +kubebuilder:object:generate=true
 
-type VolumeSpecs []VolumeSpec
+type Volumes []Volume
 
-func (v VolumeSpecs) AsCoreV1() []corev1.Volume {
+func (v Volumes) AsCoreV1() []corev1.Volume {
 	volumes := make([]corev1.Volume, len(v))
 	for i, volume := range v {
 		volumes[i] = volume.AsCoreV1()
