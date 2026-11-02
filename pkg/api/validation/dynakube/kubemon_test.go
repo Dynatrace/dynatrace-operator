@@ -9,7 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 )
 
 func TestKubemonMutualExclusiveCustomPropertiesValue(t *testing.T) {
@@ -27,7 +27,7 @@ func TestKubemonMutualExclusiveCustomPropertiesValue(t *testing.T) {
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testAPIURL,
 				KubernetesMonitoring: &kubemon.Spec{
-					CustomProperties: &value.Source{Value: "inline"},
+					CustomProperties: &types.ValueSource{Value: "inline"},
 				},
 			},
 		})
@@ -38,7 +38,7 @@ func TestKubemonMutualExclusiveCustomPropertiesValue(t *testing.T) {
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testAPIURL,
 				KubernetesMonitoring: &kubemon.Spec{
-					CustomProperties: &value.Source{ValueFrom: "secret"},
+					CustomProperties: &types.ValueSource{ValueFrom: "secret"},
 				},
 			},
 		})
@@ -50,7 +50,7 @@ func TestKubemonMutualExclusiveCustomPropertiesValue(t *testing.T) {
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testAPIURL,
 				KubernetesMonitoring: &kubemon.Spec{
-					CustomProperties: &value.Source{
+					CustomProperties: &types.ValueSource{
 						Value:     "inline",
 						ValueFrom: "secret",
 					},

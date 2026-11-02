@@ -4,7 +4,7 @@
 package extensions
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -43,7 +43,7 @@ type ExecutionControllerSpec struct {
 
 	// Overrides the default image
 	// +kubebuilder:validation:Optional
-	ImageRef image.Ref `json:"imageRef,omitzero"`
+	ImageRef types.ImageRef `json:"imageRef,omitzero"`
 
 	// +kubebuilder:validation:Optional
 	TLSRefName string `json:"tlsRefName,omitempty"`
@@ -116,7 +116,7 @@ type DatabaseSpec struct {
 type DatabaseExecutorSpec struct {
 	// Overrides the default image
 	// +kubebuilder:validation:Optional
-	ImageRef image.Ref `json:"imageRef,omitzero"`
+	ImageRef types.ImageRef `json:"imageRef,omitzero"`
 
 	// +kubebuilder:validation:Optional
 	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`

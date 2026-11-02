@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -15,7 +15,7 @@ import (
 const testProxyName = "test-proxy"
 
 func setProxyUsage(dk *dynakube.DynaKube, isUsed bool) {
-	dk.Spec.Proxy = &value.Source{}
+	dk.Spec.Proxy = &types.ValueSource{}
 	if isUsed {
 		dk.Spec.Proxy.ValueFrom = testProxyName
 	} else {

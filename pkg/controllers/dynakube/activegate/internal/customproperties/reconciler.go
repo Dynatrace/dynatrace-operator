@@ -8,13 +8,12 @@ import (
 	"fmt"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -36,7 +35,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 	}
 }
 
-func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, customPropertiesOwnerName string, customPropertiesSource *value.Source) error {
+func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, customPropertiesOwnerName string, customPropertiesSource *types.ValueSource) error {
 	ctx, log := logd.NewFromContext(ctx, "customproperties")
 
 	if customPropertiesSource == nil {
@@ -85,14 +84,14 @@ func (r *Reconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, custo
 	return nil
 }
 
-func (r *Reconciler) buildCustomPropertiesValue(ctx context.Context, dk *dynakube.DynaKube, customPropertiesSource *value.Source) ([]byte, error) {
+func (r *Reconciler) buildCustomPropertiesValue(ctx context.Context, dk *dynakube.DynaKube, customPropertiesSource *types.ValueSource) ([]byte, error) {
 	customPropertiesValue := ""
 
 	if customPropertiesSource != nil {
 		if customPropertiesSource.Value != "" {
 			customPropertiesValue = customPropertiesSource.Value
 		} else if customPropertiesSource.ValueFrom != "" {
-			customPropertiesSecret, err := r.secrets.Get(ctx, types.NamespacedName{
+			customPropertiesSecret, err := r.secrets.Get(ctx, client.ObjectKey{
 				Name:      customPropertiesSource.ValueFrom,
 				Namespace: dk.Namespace})
 			if err != nil {

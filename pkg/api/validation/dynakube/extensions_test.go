@@ -11,7 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -69,19 +69,19 @@ func createStandaloneExtensionsDynakube(name, apiURL string) *dynakube.DynaKube 
 			APIURL: apiURL,
 			Templates: dynakube.TemplatesSpec{
 				ExtensionExecutionController: extensions.ExecutionControllerSpec{
-					ImageRef: image.Ref{
+					ImageRef: types.ImageRef{
 						Repository: "repo/image",
 						Tag:        "version",
 					},
 				},
 				OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{
-					ImageRef: image.Ref{
+					ImageRef: types.ImageRef{
 						Repository: "repo/otel-collector",
 						Tag:        "version",
 					},
 				},
 				SQLExtensionExecutor: extensions.DatabaseExecutorSpec{
-					ImageRef: image.Ref{
+					ImageRef: types.ImageRef{
 						Repository: "repo/image",
 						Tag:        "version",
 					},

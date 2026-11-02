@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/resourceattributes"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	corev1 "k8s.io/api/core/v1"
@@ -377,7 +377,7 @@ func (oa *OneAgent) GetHostPath() string {
 }
 
 func (oa *OneAgent) GetResourceAttributes() map[string]string {
-	return resourceattributes.Merge(oa.globalResourceAttributes, oa.GetAdditionalResourceAttributes())
+	return types.MergeResourceAttributes(oa.globalResourceAttributes, oa.GetAdditionalResourceAttributes())
 }
 
 func (oa *OneAgent) HasAdditionalResourceAttributes() bool {

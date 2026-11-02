@@ -11,7 +11,7 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/version"
@@ -651,7 +651,7 @@ func (_m *mockCustomPropertiesReconciler) EXPECT() *mockCustomPropertiesReconcil
 }
 
 // Reconcile provides a mock function for the type mockCustomPropertiesReconciler
-func (_mock *mockCustomPropertiesReconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, customPropertiesOwnerName string, customPropertiesSource *value.Source) error {
+func (_mock *mockCustomPropertiesReconciler) Reconcile(ctx context.Context, dk *dynakube.DynaKube, customPropertiesOwnerName string, customPropertiesSource *types.ValueSource) error {
 	ret := _mock.Called(ctx, dk, customPropertiesOwnerName, customPropertiesSource)
 
 	if len(ret) == 0 {
@@ -659,7 +659,7 @@ func (_mock *mockCustomPropertiesReconciler) Reconcile(ctx context.Context, dk *
 	}
 
 	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, *dynakube.DynaKube, string, *value.Source) error); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *dynakube.DynaKube, string, *types.ValueSource) error); ok {
 		r0 = returnFunc(ctx, dk, customPropertiesOwnerName, customPropertiesSource)
 	} else {
 		r0 = ret.Error(0)
@@ -676,12 +676,12 @@ type mockCustomPropertiesReconciler_Reconcile_Call struct {
 //   - ctx context.Context
 //   - dk *dynakube.DynaKube
 //   - customPropertiesOwnerName string
-//   - customPropertiesSource *value.Source
+//   - customPropertiesSource *types.ValueSource
 func (_e *mockCustomPropertiesReconciler_Expecter) Reconcile(ctx any, dk any, customPropertiesOwnerName any, customPropertiesSource any) *mockCustomPropertiesReconciler_Reconcile_Call {
 	return &mockCustomPropertiesReconciler_Reconcile_Call{Call: _e.mock.On("Reconcile", ctx, dk, customPropertiesOwnerName, customPropertiesSource)}
 }
 
-func (_c *mockCustomPropertiesReconciler_Reconcile_Call) Run(run func(ctx context.Context, dk *dynakube.DynaKube, customPropertiesOwnerName string, customPropertiesSource *value.Source)) *mockCustomPropertiesReconciler_Reconcile_Call {
+func (_c *mockCustomPropertiesReconciler_Reconcile_Call) Run(run func(ctx context.Context, dk *dynakube.DynaKube, customPropertiesOwnerName string, customPropertiesSource *types.ValueSource)) *mockCustomPropertiesReconciler_Reconcile_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -695,9 +695,9 @@ func (_c *mockCustomPropertiesReconciler_Reconcile_Call) Run(run func(ctx contex
 		if args[2] != nil {
 			arg2 = args[2].(string)
 		}
-		var arg3 *value.Source
+		var arg3 *types.ValueSource
 		if args[3] != nil {
-			arg3 = args[3].(*value.Source)
+			arg3 = args[3].(*types.ValueSource)
 		}
 		run(
 			arg0,
@@ -714,7 +714,7 @@ func (_c *mockCustomPropertiesReconciler_Reconcile_Call) Return(err error) *mock
 	return _c
 }
 
-func (_c *mockCustomPropertiesReconciler_Reconcile_Call) RunAndReturn(run func(ctx context.Context, dk *dynakube.DynaKube, customPropertiesOwnerName string, customPropertiesSource *value.Source) error) *mockCustomPropertiesReconciler_Reconcile_Call {
+func (_c *mockCustomPropertiesReconciler_Reconcile_Call) RunAndReturn(run func(ctx context.Context, dk *dynakube.DynaKube, customPropertiesOwnerName string, customPropertiesSource *types.ValueSource) error) *mockCustomPropertiesReconciler_Reconcile_Call {
 	_c.Call.Return(run)
 	return _c
 }

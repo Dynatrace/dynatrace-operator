@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
 	validation "github.com/Dynatrace/dynatrace-operator/pkg/api/validation/edgeconnect"
@@ -81,7 +81,7 @@ func TestSerialization(t *testing.T) {
 					Endpoint:     "https://sso.dynatrace.com/sso/oauth2/token",
 					Resource:     "urn:dtaccount:test",
 				},
-				ImageRef: image.Ref{Repository: "my.registry/edgeconnect", Tag: "1.2.3"},
+				ImageRef: types.ImageRef{Repository: "my.registry/edgeconnect", Tag: "1.2.3"},
 				Resources: corev1.ResourceRequirements{
 					Requests: corev1.ResourceList{
 						corev1.ResourceCPU: resource.MustParse("100m"),

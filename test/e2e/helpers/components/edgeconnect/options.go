@@ -8,7 +8,7 @@ package edgeconnect
 import (
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/proxy"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/consts"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/registry"
@@ -111,7 +111,7 @@ func WithCACert(refName string) Option {
 	}
 }
 
-func WithProxy(spec *proxy.Spec) Option {
+func WithProxy(spec *types.ProxySpec) Option {
 	return func(ec *edgeconnect.EdgeConnect) {
 		ec.Spec.Proxy = spec
 	}

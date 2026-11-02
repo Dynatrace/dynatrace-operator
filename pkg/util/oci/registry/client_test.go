@@ -11,7 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -27,7 +27,7 @@ func TestProxy(t *testing.T) {
 				exp.NoProxyKey: "working.url,url.working",
 			},
 			Spec: dynakube.DynaKubeSpec{
-				Proxy:  &value.Source{Value: proxyRawURL},
+				Proxy:  &types.ValueSource{Value: proxyRawURL},
 				APIURL: "https://testApiUrl.dev.dynatracelabs.com/api",
 				OneAgent: oneagent.Spec{
 					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},

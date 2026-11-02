@@ -7,7 +7,7 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
@@ -47,7 +47,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, oaClient oneagent.Client, dk
 		}
 
 		meta.RemoveStatusCondition(dk.Conditions(), oaConnectionInfoConditionType)
-		dk.Status.OneAgent.ConnectionInfo = communication.ConnectionInfo{}
+		dk.Status.OneAgent.ConnectionInfo = types.ConnectionInfo{}
 
 		return nil // clean-up shouldn't cause a failure
 	}

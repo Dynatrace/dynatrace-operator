@@ -13,8 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	oneagentclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
@@ -50,7 +49,7 @@ func TestPreparePMC(t *testing.T) {
 			},
 			Status: dynakube.DynaKubeStatus{
 				OneAgent: oneagent.Status{
-					ConnectionInfo: communication.ConnectionInfo{
+					ConnectionInfo: types.ConnectionInfo{
 						TenantUUID: testUUID,
 						Endpoints:  testCommunicationEndpoint,
 					},
@@ -94,13 +93,13 @@ func TestPreparePMC(t *testing.T) {
 					HostGroup:            testHostGroup,
 					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
 				},
-				Proxy: &value.Source{
+				Proxy: &types.ValueSource{
 					Value: testProxyURL,
 				},
 			},
 			Status: dynakube.DynaKubeStatus{
 				OneAgent: oneagent.Status{
-					ConnectionInfo: communication.ConnectionInfo{
+					ConnectionInfo: types.ConnectionInfo{
 						TenantUUID: testUUID,
 						Endpoints:  testCommunicationEndpoint,
 					},
@@ -202,13 +201,13 @@ func TestPreparePMC(t *testing.T) {
 				OneAgent: oneagent.Spec{
 					CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
 				},
-				Proxy: &value.Source{
+				Proxy: &types.ValueSource{
 					ValueFrom: "non-existent-secret", // This will cause an error
 				},
 			},
 			Status: dynakube.DynaKubeStatus{
 				OneAgent: oneagent.Status{
-					ConnectionInfo: communication.ConnectionInfo{
+					ConnectionInfo: types.ConnectionInfo{
 						TenantUUID: testUUID,
 						Endpoints:  testCommunicationEndpoint,
 					},
@@ -250,7 +249,7 @@ func TestPreparePMC(t *testing.T) {
 			},
 			Status: dynakube.DynaKubeStatus{
 				OneAgent: oneagent.Status{
-					ConnectionInfo: communication.ConnectionInfo{
+					ConnectionInfo: types.ConnectionInfo{
 						TenantUUID: testUUID,
 						Endpoints:  testCommunicationEndpoint,
 					},

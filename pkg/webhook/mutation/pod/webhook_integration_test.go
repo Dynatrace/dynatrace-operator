@@ -20,7 +20,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	otlpspec "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	agconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
@@ -43,7 +43,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
+	k8stypes "k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -177,7 +177,7 @@ func TestWebhook(t *testing.T) { //nolint:revive // Function too long
 							APIVersion: "apps/v1",
 							Kind:       "Deployment",
 							Name:       "missing",
-							UID:        types.UID(uuid.New().String()),
+							UID:        k8stypes.UID(uuid.New().String()),
 							Controller: new(true),
 						},
 					}
@@ -869,7 +869,7 @@ func testBootstrapperArgs(t *testing.T, clt client.Client, tt bootstrapperArgsTe
 			KubeSystemUUID:        testClusterUUID,
 			MetadataEnrichment:    metadataenrichment.Status{Rules: tt.rules},
 			OneAgent: oneagent.Status{
-				ConnectionInfo: communication.ConnectionInfo{
+				ConnectionInfo: types.ConnectionInfo{
 					TenantUUID: uuid.New().String(),
 				},
 			},
@@ -1224,7 +1224,7 @@ func getReadyCNFSDynaKube() *dynakube.DynaKube {
 			KubernetesClusterName: testClusterName,
 			KubeSystemUUID:        testClusterUUID,
 			OneAgent: oneagent.Status{
-				ConnectionInfo: communication.ConnectionInfo{
+				ConnectionInfo: types.ConnectionInfo{
 					TenantUUID: uuid.New().String(),
 				},
 			},

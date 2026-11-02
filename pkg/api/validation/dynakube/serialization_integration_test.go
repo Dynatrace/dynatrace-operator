@@ -15,7 +15,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	validation "github.com/Dynatrace/dynatrace-operator/pkg/api/validation/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/integrationtests"
 	"github.com/stretchr/testify/assert"
@@ -120,7 +120,7 @@ func TestSerialization(t *testing.T) {
 			},
 			status: &dynakube.DynaKubeStatus{
 				OneAgent: oneagent.Status{
-					ConnectionInfo: communication.ConnectionInfo{
+					ConnectionInfo: types.ConnectionInfo{
 						TenantUUID: "abc12345",
 						Endpoints:  "https://abc12345.dev.dynatracelabs.com",
 					},

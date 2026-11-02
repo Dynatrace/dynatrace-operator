@@ -10,7 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/volume"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	agconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	k8sversion "github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/version"
 	appsv1 "k8s.io/api/apps/v1"
@@ -124,8 +124,8 @@ func TestActiveGateConflictingVolumes(t *testing.T) {
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testAPIURL,
 				ActiveGate: activegate.Spec{
-					Volumes: volume.Specs{
-						{Name: "my-custom-volume", AllowedSource: volume.AllowedSource{EmptyDir: &corev1.EmptyDirVolumeSource{}}},
+					Volumes: types.VolumeSpecs{
+						{Name: "my-custom-volume", AllowedVolumeSource: types.AllowedVolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}}},
 					},
 					VolumeMounts: []corev1.VolumeMount{
 						{Name: "my-custom-volume", MountPath: "/my/custom/path"},
@@ -143,7 +143,7 @@ func TestActiveGateConflictingVolumes(t *testing.T) {
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
 					ActiveGate: activegate.Spec{
-						Volumes: volume.Specs{
+						Volumes: types.VolumeSpecs{
 							{Name: agconsts.AuthTokenSecretVolumeName},
 						},
 					},

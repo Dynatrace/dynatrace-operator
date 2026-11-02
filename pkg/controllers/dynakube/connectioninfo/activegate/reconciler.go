@@ -7,7 +7,7 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	agclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
@@ -41,7 +41,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, agClient agclient.Client, dk
 			return nil
 		}
 
-		dk.Status.ActiveGate.ConnectionInfo = communication.ConnectionInfo{}
+		dk.Status.ActiveGate.ConnectionInfo = types.ConnectionInfo{}
 
 		err := r.secrets.Delete(ctx, &corev1.Secret{Name: dk.ActiveGate().GetTenantSecretName(), Namespace: dk.Namespace})
 		if err != nil {

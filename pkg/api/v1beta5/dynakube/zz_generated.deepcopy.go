@@ -8,7 +8,7 @@
 package dynakube
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/telemetryingest"
@@ -82,7 +82,7 @@ func (in *DynaKubeSpec) DeepCopyInto(out *DynaKubeSpec) {
 	in.MetadataEnrichment.DeepCopyInto(&out.MetadataEnrichment)
 	if in.Proxy != nil {
 		in, out := &in.Proxy, &out.Proxy
-		*out = new(value.Source)
+		*out = new(types.ValueSource)
 		**out = **in
 	}
 	if in.LogMonitoring != nil {

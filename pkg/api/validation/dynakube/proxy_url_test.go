@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -32,7 +32,7 @@ func TestInvalidActiveGateProxy(t *testing.T) {
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
-					Proxy: &value.Source{
+					Proxy: &types.ValueSource{
 						Value:     validEncodedProxyURL,
 						ValueFrom: "",
 					},
@@ -46,7 +46,7 @@ func TestInvalidActiveGateProxy(t *testing.T) {
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
-					Proxy: &value.Source{
+					Proxy: &types.ValueSource{
 						Value:     validEncodedProxyURLNoPassword,
 						ValueFrom: "",
 					},
@@ -61,7 +61,7 @@ func TestInvalidActiveGateProxy(t *testing.T) {
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
-					Proxy: &value.Source{
+					Proxy: &types.ValueSource{
 						Value:     invalidPlainTextProxyURL,
 						ValueFrom: "",
 					},
@@ -75,7 +75,7 @@ func TestInvalidActiveGateProxy(t *testing.T) {
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
-					Proxy: &value.Source{
+					Proxy: &types.ValueSource{
 						Value:     "",
 						ValueFrom: testProxySecret,
 					},
@@ -97,7 +97,7 @@ func TestInvalidActiveGateProxy(t *testing.T) {
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
-					Proxy: &value.Source{
+					Proxy: &types.ValueSource{
 						Value:     "",
 						ValueFrom: testProxySecret,
 					},
@@ -112,7 +112,7 @@ func TestInvalidActiveGateProxy(t *testing.T) {
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
-					Proxy: &value.Source{
+					Proxy: &types.ValueSource{
 						Value:     "",
 						ValueFrom: testProxySecret,
 					},
@@ -134,7 +134,7 @@ func TestInvalidActiveGateProxy(t *testing.T) {
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
-					Proxy: &value.Source{
+					Proxy: &types.ValueSource{
 						Value:     "",
 						ValueFrom: testProxySecret,
 					},

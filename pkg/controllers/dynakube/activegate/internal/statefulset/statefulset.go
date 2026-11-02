@@ -25,7 +25,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
 )
 
@@ -37,12 +36,12 @@ const (
 type Builder struct {
 	capability capability.Capability
 	envMap     *prioritymap.Map
-	kubeUID    types.UID
+	kubeUID    string
 	configHash string
 	dynakube   *dynakube.DynaKube
 }
 
-func NewStatefulSetBuilder(kubeUID types.UID, configHash string, dk *dynakube.DynaKube, capability capability.Capability) Builder {
+func NewStatefulSetBuilder(kubeUID string, configHash string, dk *dynakube.DynaKube, capability capability.Capability) Builder {
 	return Builder{
 		kubeUID:    kubeUID,
 		configHash: configHash,
@@ -237,7 +236,7 @@ func (statefulSetBuilder Builder) buildCommonEnvs() []corev1.EnvVar {
 	prioritymap.Append(statefulSetBuilder.envMap, []corev1.EnvVar{
 		{Name: consts.EnvDTCapabilities, Value: statefulSetBuilder.capability.ArgName()},
 		{Name: consts.EnvDTIDSeedNamespace, Value: statefulSetBuilder.dynakube.Namespace},
-		{Name: consts.EnvDTIDSeedClusterID, Value: string(statefulSetBuilder.kubeUID)},
+		{Name: consts.EnvDTIDSeedClusterID, Value: statefulSetBuilder.kubeUID},
 		{Name: deploymentmetadata.EnvDTDeploymentMetadata, ValueFrom: &corev1.EnvVarSource{
 			ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
 				Name:     deploymentmetadata.GetDeploymentMetadataConfigMapName(statefulSetBuilder.dynakube.Name),

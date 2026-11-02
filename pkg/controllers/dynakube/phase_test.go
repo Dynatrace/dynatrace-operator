@@ -14,8 +14,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -369,7 +369,7 @@ func TestLogAgentPhaseChanges(t *testing.T) {
 			LogMonitoring: &logmonitoring.Spec{},
 			Templates: dynakube.TemplatesSpec{
 				LogMonitoring: &logmonitoring.TemplateSpec{
-					ImageRef: image.Ref{
+					ImageRef: types.ImageRef{
 						Repository: "test",
 						Tag:        "test-tag",
 					},
@@ -424,7 +424,7 @@ func TestKSPMPhaseChanges(t *testing.T) {
 			KSPM: &kspm.Spec{},
 			Templates: dynakube.TemplatesSpec{
 				KSPMNodeConfigurationCollector: kspm.NodeConfigurationCollectorSpec{
-					ImageRef: image.Ref{
+					ImageRef: types.ImageRef{
 						Repository: "test",
 						Tag:        "test-tag",
 					},

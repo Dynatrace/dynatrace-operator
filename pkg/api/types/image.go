@@ -1,13 +1,15 @@
 // Copyright Dynatrace LLC
 // SPDX-License-Identifier: Apache-2.0
 
-package image
+package types
 
-import corev1 "k8s.io/api/core/v1"
+import (
+	corev1 "k8s.io/api/core/v1"
+)
 
 // +kubebuilder:object:generate=true
 
-type Ref struct {
+type ImageRef struct {
 	// Custom image repository
 	// +kubebuilder:example:="docker.io/dynatrace/image-name"
 	Repository string `json:"repository,omitempty"`
@@ -29,7 +31,7 @@ type Ref struct {
 // StringWithDefaults will use the provided default values for fields that were not already set.
 // If a digest is present (either on the ref or via the default), the tag is omitted from the
 // rendered image reference.
-func (ref Ref) StringWithDefaults(repo, tag string) string {
+func (ref ImageRef) StringWithDefaults(repo, tag string) string {
 	if ref.Repository == "" {
 		ref.Repository = repo
 	}
@@ -44,7 +46,7 @@ func (ref Ref) StringWithDefaults(repo, tag string) string {
 // String renders the image reference. If a digest is set, the tag is omitted to avoid the
 // confusing case where the tag and digest disagree — the digest always wins.
 // Returns the empty string if repository and tag/digest are not set.
-func (ref Ref) String() string {
+func (ref ImageRef) String() string {
 	if ref.Repository != "" && (ref.Tag != "" || ref.Digest != "") {
 		if ref.Digest != "" {
 			return ref.Repository + "@" + ref.Digest

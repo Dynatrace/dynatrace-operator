@@ -11,13 +11,12 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	kubemonapi "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/customproperties"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
@@ -119,7 +118,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("inline value wins over ValueFrom when both are set", func(t *testing.T) {
 		dk := newTestDynaKube(func(dk *dynakube.DynaKube) {
-			dk.Spec.KubernetesMonitoring.CustomProperties = &value.Source{
+			dk.Spec.KubernetesMonitoring.CustomProperties = &types.ValueSource{
 				Value:     testInlineValue,
 				ValueFrom: testReferencedSecret,
 			}
@@ -243,13 +242,13 @@ func newTestDynaKube(mutators ...func(*dynakube.DynaKube)) *dynakube.DynaKube {
 
 func withInline(v string) func(*dynakube.DynaKube) {
 	return func(dk *dynakube.DynaKube) {
-		dk.Spec.KubernetesMonitoring.CustomProperties = &value.Source{Value: v}
+		dk.Spec.KubernetesMonitoring.CustomProperties = &types.ValueSource{Value: v}
 	}
 }
 
 func withValueFrom(name string) func(*dynakube.DynaKube) {
 	return func(dk *dynakube.DynaKube) {
-		dk.Spec.KubernetesMonitoring.CustomProperties = &value.Source{ValueFrom: name}
+		dk.Spec.KubernetesMonitoring.CustomProperties = &types.ValueSource{ValueFrom: name}
 	}
 }
 
@@ -273,7 +272,7 @@ func getCustomPropertiesSecret(t *testing.T, clt client.Client, dk *dynakube.Dyn
 	t.Helper()
 
 	secret := &corev1.Secret{}
-	require.NoError(t, clt.Get(t.Context(), types.NamespacedName{
+	require.NoError(t, clt.Get(t.Context(), client.ObjectKey{
 		Name:      dk.KubernetesMonitoring().GetCustomPropertiesSecretName(),
 		Namespace: dk.Namespace,
 	}, secret))
@@ -284,7 +283,7 @@ func getCustomPropertiesSecret(t *testing.T, clt client.Client, dk *dynakube.Dyn
 func assertSecretAbsent(t *testing.T, clt client.Client, dk *dynakube.DynaKube) {
 	t.Helper()
 
-	err := clt.Get(t.Context(), types.NamespacedName{
+	err := clt.Get(t.Context(), client.ObjectKey{
 		Name:      dk.KubernetesMonitoring().GetCustomPropertiesSecretName(),
 		Namespace: dk.Namespace,
 	}, &corev1.Secret{})

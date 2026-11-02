@@ -1,7 +1,7 @@
 // Copyright Dynatrace LLC
 // SPDX-License-Identifier: Apache-2.0
 
-package resourceattributes
+package types
 
 import (
 	"testing"
@@ -53,7 +53,7 @@ func TestMergeResourceAttributes(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.expected, Merge(tt.base, tt.override))
+			assert.Equal(t, tt.expected, MergeResourceAttributes(tt.base, tt.override))
 		})
 	}
 }
@@ -61,10 +61,36 @@ func TestMergeResourceAttributes(t *testing.T) {
 func TestMergeResourceAttributes_ReturnedMapIsCopy(t *testing.T) {
 	base := map[string]string{"a": "1"}
 	override := map[string]string{"b": "2"}
-	result := Merge(base, override)
+	result := MergeResourceAttributes(base, override)
 	require.NotNil(t, result)
 
 	result["new-key"] = "new-value"
 	assert.NotContains(t, base, "new-key")
 	assert.NotContains(t, override, "new-key")
+}
+
+func Test_SanitizeKey(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{input: "k8s.pod.name", expected: "k8s.pod.name"},
+		{input: "dt.application_container_hour", expected: "dt.application_container_hour"},
+		{input: "dt.security_context", expected: "dt.security_context"},
+		{input: "some/key", expected: "some_key"},
+		{input: "key with spaces", expected: "key_with_spaces"},
+		{input: "key@domain", expected: "key_domain"},
+		{input: "/leading-slash", expected: "leading-slash"},
+		{input: "...dots", expected: "dots"},
+		{input: "trailing-slash/", expected: "trailing-slash"},
+		{input: "dots...", expected: "dots"},
+		{input: "///", expected: ""},
+		{input: "", expected: ""},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			assert.Equal(t, tt.expected, SanitizeResourceAttributeKey(tt.input))
+		})
+	}
 }

@@ -1,29 +1,31 @@
 // Copyright Dynatrace LLC
 // SPDX-License-Identifier: Apache-2.0
 
-package volume
+package types
 
-import corev1 "k8s.io/api/core/v1"
+import (
+	corev1 "k8s.io/api/core/v1"
+)
 
 // +kubebuilder:object:generate=true
 
-type Spec struct {
-	Name          string `json:"name"`
-	AllowedSource `json:",inline"`
+type VolumeSpec struct {
+	Name                string `json:"name"`
+	AllowedVolumeSource `json:",inline"`
 }
 
-func (v Spec) AsCoreV1() corev1.Volume {
+func (v VolumeSpec) AsCoreV1() corev1.Volume {
 	return corev1.Volume{
 		Name:         v.Name,
-		VolumeSource: v.AllowedSource.AsCoreV1(),
+		VolumeSource: v.AllowedVolumeSource.AsCoreV1(),
 	}
 }
 
 // +kubebuilder:object:generate=true
 
-type Specs []Spec
+type VolumeSpecs []VolumeSpec
 
-func (v Specs) AsCoreV1() []corev1.Volume {
+func (v VolumeSpecs) AsCoreV1() []corev1.Volume {
 	volumes := make([]corev1.Volume, len(v))
 	for i, volume := range v {
 		volumes[i] = volume.AsCoreV1()
@@ -34,7 +36,7 @@ func (v Specs) AsCoreV1() []corev1.Volume {
 
 // +kubebuilder:object:generate=true
 
-type AllowedSource struct {
+type AllowedVolumeSource struct {
 	ConfigMap             *corev1.ConfigMapVolumeSource             `json:"configMap,omitempty"`
 	CSI                   *corev1.CSIVolumeSource                   `json:"csi,omitempty"`
 	DownwardAPI           *corev1.DownwardAPIVolumeSource           `json:"downwardAPI,omitempty"`
@@ -46,7 +48,7 @@ type AllowedSource struct {
 	Image                 *corev1.ImageVolumeSource                 `json:"image,omitempty"`
 }
 
-func (vs AllowedSource) AsCoreV1() corev1.VolumeSource {
+func (vs AllowedVolumeSource) AsCoreV1() corev1.VolumeSource {
 	return corev1.VolumeSource{
 		ConfigMap:             vs.ConfigMap,
 		CSI:                   vs.CSI,
