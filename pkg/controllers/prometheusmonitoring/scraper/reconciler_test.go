@@ -294,10 +294,10 @@ func TestMutateDeploymentIsIdempotent(t *testing.T) {
 	s.DynaKube.Spec.CustomPullSecret = "custom-pull-secret"
 
 	deploy := &appsv1.Deployment{}
-	mutateDeployment(deploy, s)
+	require.NoError(t, mutateDeployment(deploy, s))
 	first := deploy.DeepCopy()
 
-	mutateDeployment(deploy, s)
+	require.NoError(t, mutateDeployment(deploy, s))
 
 	assert.Equal(t, first, deploy)
 }
@@ -308,7 +308,7 @@ func TestImagePullSecrets(t *testing.T) {
 	t.Run("no pull secrets when the DynaKube has no custom pull secret", func(t *testing.T) {
 		deploy := &appsv1.Deployment{}
 
-		mutateDeployment(deploy, newTestScope(newTestPM("pm", "dynatrace")))
+		require.NoError(t, mutateDeployment(deploy, newTestScope(newTestPM("pm", "dynatrace"))))
 
 		assert.Empty(t, deploy.Spec.Template.Spec.ImagePullSecrets)
 	})
@@ -318,7 +318,7 @@ func TestImagePullSecrets(t *testing.T) {
 		dk.Spec.CustomPullSecret = "custom-pull-secret"
 		deploy := &appsv1.Deployment{}
 
-		mutateDeployment(deploy, newTestScopeWithDynaKube(newTestPM("pm", "dynatrace"), dk))
+		require.NoError(t, mutateDeployment(deploy, newTestScopeWithDynaKube(newTestPM("pm", "dynatrace"), dk)))
 
 		assert.Equal(t, []corev1.LocalObjectReference{{Name: dk.Spec.CustomPullSecret}}, deploy.Spec.Template.Spec.ImagePullSecrets)
 
