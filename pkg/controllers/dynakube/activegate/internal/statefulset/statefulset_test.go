@@ -13,6 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/volume"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
@@ -719,7 +720,7 @@ func TestBuildVolumes(t *testing.T) {
 		}
 
 		dk := getTestDynakube()
-		dk.Spec.ActiveGate.Volumes = []corev1.Volume{userVolume}
+		dk.Spec.ActiveGate.Volumes = volume.Specs{{Name: userVolume.Name, AllowedSource: volume.AllowedSource{EmptyDir: userVolume.EmptyDir}}}
 		multiCapability := capability.NewMultiCapability(dk)
 		statefulsetBuilder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dk, multiCapability)
 		sts := statefulsetBuilder.getBase()

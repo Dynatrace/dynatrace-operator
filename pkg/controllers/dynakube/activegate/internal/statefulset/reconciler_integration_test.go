@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/volume"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/authtoken"
 	"github.com/Dynatrace/dynatrace-operator/test/integrationtests"
@@ -88,7 +89,7 @@ func TestStatefulSet(t *testing.T) {
 			Name:      "my-user-volume",
 			MountPath: "/my/custom/path",
 		}
-		dk.Spec.ActiveGate.Volumes = []corev1.Volume{userVolume}
+		dk.Spec.ActiveGate.Volumes = volume.Specs{{Name: userVolume.Name, AllowedSource: volume.AllowedSource{EmptyDir: userVolume.EmptyDir}}}
 		dk.Spec.ActiveGate.VolumeMounts = []corev1.VolumeMount{userVolumeMount}
 
 		integrationtests.CreateNamespace(t, clt, ns)
@@ -134,7 +135,7 @@ func TestStatefulSet(t *testing.T) {
 			Name:      "my-user-volume",
 			MountPath: "/my/custom/path",
 		}
-		dk.Spec.ActiveGate.Volumes = []corev1.Volume{userVolume}
+		dk.Spec.ActiveGate.Volumes = volume.Specs{{Name: userVolume.Name, AllowedSource: volume.AllowedSource{EmptyDir: userVolume.EmptyDir}}}
 		dk.Spec.ActiveGate.VolumeMounts = []corev1.VolumeMount{userVolumeMount}
 
 		integrationtests.CreateNamespace(t, clt, ns)

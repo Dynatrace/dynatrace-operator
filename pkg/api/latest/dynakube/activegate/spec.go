@@ -5,6 +5,7 @@ package activegate
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/volume"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -190,7 +191,7 @@ type CapabilityProperties struct {
 
 	// Adds additional Volumes to the ActiveGate pods
 	// +kubebuilder:validation:Optional
-	Volumes []corev1.Volume `json:"volumes,omitempty"`
+	Volumes volume.Specs `json:"volumes,omitempty"`
 
 	// Adds additional VolumeMounts to the ActiveGate container
 	// +kubebuilder:validation:Optional

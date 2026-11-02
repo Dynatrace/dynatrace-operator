@@ -154,7 +154,7 @@ func (statefulSetBuilder Builder) buildTopologySpreadConstraints(capability capa
 }
 
 func (statefulSetBuilder Builder) buildVolumes() []corev1.Volume {
-	volumes := statefulSetBuilder.capability.Properties().Volumes
+	volumes := statefulSetBuilder.capability.Properties().Volumes.AsCoreV1()
 
 	if statefulSetBuilder.dynakube.Spec.ActiveGate.VolumeClaimTemplate == nil {
 		if !isDefaultPVCNeeded(statefulSetBuilder.dynakube) {
