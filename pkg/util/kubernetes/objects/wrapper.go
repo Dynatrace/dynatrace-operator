@@ -46,20 +46,20 @@ func RetryCreateOrUpdate(ctx context.Context, c client.Client, obj client.Object
 
 		logd.FromContext(ctx).Info("recreating "+kind, "reason", fnerr.Error())
 
-		if err := c.Delete(ctx, obj); client.IgnoreNotFound(err) != nil {
-			return fmt.Errorf("delete for recreate: %w", err)
+		if delerr := c.Delete(ctx, obj); client.IgnoreNotFound(delerr) != nil {
+			return fmt.Errorf("delete for recreate: %w", delerr)
 		}
 
 		// Wait for deletion, the client, on creation, may read from a cache that still contains the deleted object
-		if err := wait.PollUntilContextTimeout(ctx, 100*time.Millisecond, 5*time.Second, true, func(ctx context.Context) (bool, error) {
+		if waiterr := wait.PollUntilContextTimeout(ctx, 100*time.Millisecond, 5*time.Second, true, func(ctx context.Context) (bool, error) {
 			geterr := c.Get(ctx, client.ObjectKeyFromObject(obj), obj.DeepCopyObject().(client.Object))
 			if k8serrors.IsNotFound(geterr) {
 				return true, nil
 			}
 
 			return false, geterr
-		}); err != nil {
-			return fmt.Errorf("wait for deletion: %w", err)
+		}); waiterr != nil {
+			return fmt.Errorf("wait for deletion: %w", waiterr)
 		}
 
 		// Get does not reset obj on NotFound, but Create rejects a set resource version and keeps the managed fields
