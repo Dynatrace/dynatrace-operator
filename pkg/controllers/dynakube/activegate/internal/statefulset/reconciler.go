@@ -123,7 +123,7 @@ func (r *Reconciler) calculateActiveGateConfigurationHash(ctx context.Context, d
 		return "", err
 	}
 
-	return hasher.GenerateSecureHash(customPropertyData + authTokenData + deploymentPropertiesData + tlsData + trustedCAs)
+	return hasher.GenerateSecureHash([]string{customPropertyData, authTokenData, deploymentPropertiesData, tlsData, trustedCAs})
 }
 
 func (r *Reconciler) getTLSData(ctx context.Context, dk *dynakube.DynaKube) (string, error) {
