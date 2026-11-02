@@ -44,7 +44,6 @@ linters:
     - nolintlint
     - nosprintfhostport
     - perfsprint
-    - prealloc
     - predeclared
     - protogetter
     - reassign
@@ -126,6 +125,11 @@ linters:
         - fieldalignment
       disable:
         - copylocks
+    nolintlint:
+      # Newer revive/gosec versions made some existing nolint directives obsolete
+      allow-unused: true
+    perfsprint:
+      concat-loop: false
     misspell:
       locale: US
     mnd:
@@ -250,6 +254,17 @@ linters:
         - name: unchecked-type-assertion
           disabled: true
         - name: enforce-switch-style
+          disabled: true
+        # rules added to revive after v2.4.0, not enforced on this release branch
+        - name: package-directory-mismatch
+          disabled: true
+        - name: unsecure-url-scheme
+          disabled: true
+        - name: use-waitgroup-go
+          disabled: true
+        - name: unnecessary-if
+          disabled: true
+        - name: identical-ifelseif-branches
           disabled: true
     staticcheck:
       checks:
