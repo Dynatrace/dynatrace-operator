@@ -13,6 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/cloudnative/codemodules"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/csi/provisioner"
 	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sjob"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8snamespace"
@@ -52,7 +53,7 @@ func InstallWithCSI(t *testing.T) features.Feature {
 
 	builder.Assess("install sample app", sampleApp.Install())
 
-	builder.Assess("codemodules have been downloaded", codemodules.ImageHasBeenDownloaded(appMonDynakube))
+	builder.Assess("codemodules have been downloaded", provisioner.InstalledImage(appMonDynakube.Namespace, appMonDynakube.OneAgent().GetCustomCodeModulesImage()))
 	builder.Assess("volumes are mounted correctly", codemodules.VolumesAreMountedCorrectly(*sampleApp))
 
 	builder.Teardown(sampleApp.Uninstall())
