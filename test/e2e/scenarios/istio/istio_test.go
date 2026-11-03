@@ -7,6 +7,7 @@ package istio
 
 import (
 	"context"
+	"os"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/activegate"
@@ -57,7 +58,7 @@ func TestMain(m *testing.M) {
 
 		return ctx, nil
 	})
-	testEnv.Run(m)
+	os.Exit(testEnv.Run(m))
 }
 
 func TestIstio_cloudnative_csi_resilience(t *testing.T) {
