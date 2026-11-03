@@ -21,7 +21,7 @@ jobs:
       contents: read
       id-token: write
     name: Prepare properties
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -39,7 +39,7 @@ jobs:
   build-push:
     name: Build images
     environment: Release
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       id-token: write
     env:
@@ -106,7 +106,7 @@ jobs:
     permissions:
       contents: read
       actions: write
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -136,7 +136,7 @@ jobs:
     permissions:
       contents: read
       actions: write
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -167,7 +167,7 @@ jobs:
       id-token: write
       contents: read
       actions: write
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -195,7 +195,7 @@ jobs:
     permissions:
       contents: read
       actions: write
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -248,7 +248,7 @@ jobs:
     name: Sign the image index/manifests + Add SBOM
     environment: Release
     needs: [prepare, build-push, create-sbom, create-sbom-fips]
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       id-token: write
       attestations: write
@@ -347,7 +347,7 @@ jobs:
     name: Run preflight for rhcc
     environment: Release
     needs: [ prepare, build-push]
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     env:
       SCAN_REGISTRY: "quay.io"
     steps:
@@ -382,7 +382,7 @@ jobs:
       id-token: write
       attestations: write
       artifact-metadata: write
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
