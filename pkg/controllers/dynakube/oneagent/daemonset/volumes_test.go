@@ -10,7 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/stretchr/testify/assert"
@@ -51,7 +51,7 @@ func TestPrepareVolumes(t *testing.T) {
 		dk := &dynakube.DynaKube{}
 		dk.Spec =
 			dynakube.DynaKubeSpec{
-				Proxy: &value.Source{ValueFrom: proxy.BuildSecretName(dk.Name)},
+				Proxy: &types.ValueSource{ValueFrom: proxy.BuildSecretName(dk.Name)},
 			}
 
 		volumes := prepareVolumes(dk, "")
@@ -327,7 +327,7 @@ func TestPrepareVolumeMounts(t *testing.T) {
 				exp.OAProxyIgnoredKey: "true", //nolint:staticcheck
 			},
 			Spec: dynakube.DynaKubeSpec{
-				Proxy: &value.Source{ValueFrom: proxy.BuildSecretName("Dynakube")},
+				Proxy: &types.ValueSource{ValueFrom: proxy.BuildSecretName("Dynakube")},
 				OneAgent: oneagent.Spec{
 					HostMonitoring: &oneagent.HostInjectSpec{},
 				},

@@ -10,7 +10,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	operatorversion "github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -182,7 +182,7 @@ func Test_optionsFromDynakube(t *testing.T) {
 
 	t.Run("sets proxy when proxy is defined via inline value (value:)", func(t *testing.T) {
 		dk := getDynakube()
-		dk.Spec.Proxy = &value.Source{Value: testProxyURL}
+		dk.Spec.Proxy = &types.ValueSource{Value: testProxyURL}
 		dk.GetObjectMeta().SetAnnotations(map[string]string{
 			"feature.dynatrace.com/no-proxy": testNoProxy,
 		})
@@ -199,7 +199,7 @@ func Test_optionsFromDynakube(t *testing.T) {
 
 	t.Run("sets proxy when proxy is defined via secret reference (valueFrom:)", func(t *testing.T) {
 		dk := getDynakube()
-		dk.Spec.Proxy = &value.Source{ValueFrom: testProxySecret}
+		dk.Spec.Proxy = &types.ValueSource{ValueFrom: testProxySecret}
 		dk.GetObjectMeta().SetAnnotations(map[string]string{
 			"feature.dynatrace.com/no-proxy": testNoProxy,
 		})
@@ -223,7 +223,7 @@ func Test_optionsFromDynakube(t *testing.T) {
 			Namespace: testNamespace,
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testAPIURL,
-				Proxy:  &value.Source{ValueFrom: testProxySecret},
+				Proxy:  &types.ValueSource{ValueFrom: testProxySecret},
 			},
 		}
 		_, err := optionsFromDynakube(t.Context(), fake.NewClient(), dk, testAPIToken, "", testConnectionTimeout)

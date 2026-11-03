@@ -11,9 +11,8 @@ import (
 	dynakubelatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	kspmlatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
 	telemetryingestlatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/extensions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/kspm"
@@ -227,7 +226,7 @@ func TestConvertTo(t *testing.T) {
 
 	t.Run("default otelc image applied when only pull policy is set", func(t *testing.T) {
 		from := getOldDynakubeBase()
-		from.Spec.Templates.OpenTelemetryCollector.ImageRef = image.Ref{PullPolicy: "Always"}
+		from.Spec.Templates.OpenTelemetryCollector.ImageRef = types.ImageRef{PullPolicy: "Always"}
 
 		to := dynakubelatest.DynaKube{
 			Spec: dynakubelatest.DynaKubeSpec{
@@ -248,7 +247,7 @@ func TestConvertTo(t *testing.T) {
 
 	t.Run("default otelc image overwrites a partial repository-only ref", func(t *testing.T) {
 		from := getOldDynakubeBase()
-		from.Spec.Templates.OpenTelemetryCollector.ImageRef = image.Ref{Repository: "user-supplied-repo"}
+		from.Spec.Templates.OpenTelemetryCollector.ImageRef = types.ImageRef{Repository: "user-supplied-repo"}
 
 		to := dynakubelatest.DynaKube{
 			Spec: dynakubelatest.DynaKubeSpec{
@@ -268,7 +267,7 @@ func TestConvertTo(t *testing.T) {
 
 	t.Run("user-supplied complete otelc image is preserved", func(t *testing.T) {
 		from := getOldDynakubeBase()
-		from.Spec.Templates.OpenTelemetryCollector.ImageRef = image.Ref{Repository: "user-supplied-repo", Tag: "user-tag"}
+		from.Spec.Templates.OpenTelemetryCollector.ImageRef = types.ImageRef{Repository: "user-supplied-repo", Tag: "user-tag"}
 
 		to := dynakubelatest.DynaKube{
 			Spec: dynakubelatest.DynaKubeSpec{
@@ -303,7 +302,7 @@ func TestConvertTo(t *testing.T) {
 	t.Run("stale default otelc image marker is dropped when image is user-set and telemetry disabled", func(t *testing.T) {
 		from := getOldDynakubeBase()
 		from.Spec.TelemetryIngest = nil
-		from.Spec.Templates.OpenTelemetryCollector.ImageRef = image.Ref{Repository: "user-supplied-repo", Tag: "user-tag"}
+		from.Spec.Templates.OpenTelemetryCollector.ImageRef = types.ImageRef{Repository: "user-supplied-repo", Tag: "user-tag"}
 		// Simulate a stale marker left behind by a previous conversion (e.g. from the removed prometheus path).
 		from.Annotations[conversion.DefaultOTelColImageKey] = "true"
 
@@ -464,7 +463,7 @@ func getOldDynakubeBase() DynaKube {
 			CustomPullSecret: "pull-secret",
 			EnableIstio:      new(true),
 			SkipCertCheck:    new(true),
-			Proxy: &value.Source{
+			Proxy: &types.ValueSource{
 				Value:     "proxy-value",
 				ValueFrom: "proxy-from",
 			},
@@ -586,7 +585,7 @@ func getOldActiveGateSpec() activegate.Spec {
 		Image:    "activegate-image",
 		Replicas: new(int32(42)),
 		Group:    "activegate-group",
-		CustomProperties: &value.Source{
+		CustomProperties: &types.ValueSource{
 			Value:     "activegate-cp-value",
 			ValueFrom: "activegate-cp-value-from",
 		},
@@ -637,7 +636,7 @@ func getOldOpenTelemetryTemplateSpec() OpenTelemetryCollectorSpec {
 			"otelc-annotation-key2": "otelc-annotation-value2",
 		},
 		Replicas: new(int32(42)),
-		ImageRef: image.Ref{
+		ImageRef: types.ImageRef{
 			Repository: "image-repo.repohost.test/repo",
 			Tag:        "image-tag",
 		},
@@ -674,7 +673,7 @@ func getOldExtensionExecutionControllerSpec() extensions.ExecutionControllerSpec
 			"eec-annotation-key1": "eec-annotation-value1",
 			"eec-annotation-key2": "eec-annotation-value2",
 		},
-		ImageRef: image.Ref{
+		ImageRef: types.ImageRef{
 			Repository: "image-repo.repohost.test/repo",
 			Tag:        "image-tag",
 		},
@@ -717,7 +716,7 @@ func getOldLogMonitoringTemplateSpec() *logmonitoring.TemplateSpec {
 			"selector1": "node1",
 			"selector2": "node2",
 		},
-		ImageRef: image.Ref{
+		ImageRef: types.ImageRef{
 			Repository: "image-repo.repohost.test/repo",
 			Tag:        "image-tag",
 		},
@@ -770,7 +769,7 @@ func getOldNodeConfigurationCollectorTemplateSpec() kspm.NodeConfigurationCollec
 			"selector1": "node1",
 			"selector2": "node2",
 		},
-		ImageRef: image.Ref{
+		ImageRef: types.ImageRef{
 			Repository: "image-repo.repohost.test/repo",
 			Tag:        "image-tag",
 		},

@@ -4,7 +4,7 @@
 package dynakube
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/sanitize"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -25,7 +25,7 @@ type OpenTelemetryCollectorSpec struct {
 
 	// Overrides the default image
 	// +kubebuilder:validation:Optional
-	ImageRef image.Ref `json:"imageRef,omitzero"`
+	ImageRef types.ImageRef `json:"imageRef,omitzero"`
 
 	// +kubebuilder:validation:Optional
 	TLSRefName string `json:"tlsRefName,omitempty"`

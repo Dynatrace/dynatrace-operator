@@ -11,7 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -31,19 +31,19 @@ func TestExtensionExecutionControllerImage(t *testing.T) {
 				},
 				Templates: dynakube.TemplatesSpec{
 					ExtensionExecutionController: extensions.ExecutionControllerSpec{
-						ImageRef: image.Ref{
+						ImageRef: types.ImageRef{
 							Repository: "a",
 							Tag:        "b",
 						},
 					},
 					OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{
-						ImageRef: image.Ref{
+						ImageRef: types.ImageRef{
 							Repository: "a",
 							Tag:        "b",
 						},
 					},
 					SQLExtensionExecutor: extensions.DatabaseExecutorSpec{
-						ImageRef: image.Ref{
+						ImageRef: types.ImageRef{
 							Repository: "a",
 							Tag:        "b",
 						},
@@ -67,12 +67,12 @@ func TestExtensionExecutionControllerImage(t *testing.T) {
 					},
 					Templates: dynakube.TemplatesSpec{
 						ExtensionExecutionController: extensions.ExecutionControllerSpec{
-							ImageRef: image.Ref{
+							ImageRef: types.ImageRef{
 								Repository: "a",
 							},
 						},
 						SQLExtensionExecutor: extensions.DatabaseExecutorSpec{
-							ImageRef: image.Ref{
+							ImageRef: types.ImageRef{
 								Repository: "a",
 								Tag:        "b",
 							},
@@ -96,12 +96,12 @@ func TestExtensionExecutionControllerImage(t *testing.T) {
 					},
 					Templates: dynakube.TemplatesSpec{
 						ExtensionExecutionController: extensions.ExecutionControllerSpec{
-							ImageRef: image.Ref{
+							ImageRef: types.ImageRef{
 								Tag: "b",
 							},
 						},
 						SQLExtensionExecutor: extensions.DatabaseExecutorSpec{
-							ImageRef: image.Ref{
+							ImageRef: types.ImageRef{
 								Repository: "a",
 								Tag:        "b",
 							},
@@ -125,7 +125,7 @@ func TestExtensionExecutionControllerImage(t *testing.T) {
 					},
 					Templates: dynakube.TemplatesSpec{
 						SQLExtensionExecutor: extensions.DatabaseExecutorSpec{
-							ImageRef: image.Ref{
+							ImageRef: types.ImageRef{
 								Repository: "a",
 								Tag:        "b",
 							},
@@ -183,7 +183,7 @@ func TestExtensionExecutionControllerPVCSettings(t *testing.T) {
 				},
 				Templates: dynakube.TemplatesSpec{
 					ExtensionExecutionController: extensions.ExecutionControllerSpec{
-						ImageRef: image.Ref{
+						ImageRef: types.ImageRef{
 							Repository: "a",
 							Tag:        "b",
 						},
@@ -191,13 +191,13 @@ func TestExtensionExecutionControllerPVCSettings(t *testing.T) {
 						PersistentVolumeClaim: &corev1.PersistentVolumeClaimSpec{},
 					},
 					OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{
-						ImageRef: image.Ref{
+						ImageRef: types.ImageRef{
 							Repository: "a",
 							Tag:        "b",
 						},
 					},
 					SQLExtensionExecutor: extensions.DatabaseExecutorSpec{
-						ImageRef: image.Ref{
+						ImageRef: types.ImageRef{
 							Repository: "repo",
 							Tag:        "tag",
 						},
@@ -219,20 +219,20 @@ func TestExtensionExecutionControllerPVCSettings(t *testing.T) {
 				},
 				Templates: dynakube.TemplatesSpec{
 					ExtensionExecutionController: extensions.ExecutionControllerSpec{
-						ImageRef: image.Ref{
+						ImageRef: types.ImageRef{
 							Repository: "a",
 							Tag:        "b",
 						},
 						UseEphemeralVolume: new(true),
 					},
 					OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{
-						ImageRef: image.Ref{
+						ImageRef: types.ImageRef{
 							Repository: "a",
 							Tag:        "b",
 						},
 					},
 					SQLExtensionExecutor: extensions.DatabaseExecutorSpec{
-						ImageRef: image.Ref{
+						ImageRef: types.ImageRef{
 							Repository: "repo",
 							Tag:        "tag",
 						},
@@ -256,7 +256,7 @@ func TestExtensionExecutionControllerPVCSettings(t *testing.T) {
 					},
 					Templates: dynakube.TemplatesSpec{
 						ExtensionExecutionController: extensions.ExecutionControllerSpec{
-							ImageRef: image.Ref{
+							ImageRef: types.ImageRef{
 								Repository: "a",
 								Tag:        "b",
 							},
@@ -264,7 +264,7 @@ func TestExtensionExecutionControllerPVCSettings(t *testing.T) {
 							PersistentVolumeClaim: &corev1.PersistentVolumeClaimSpec{},
 						},
 						SQLExtensionExecutor: extensions.DatabaseExecutorSpec{
-							ImageRef: image.Ref{
+							ImageRef: types.ImageRef{
 								Repository: "repo",
 								Tag:        "tag",
 							},
@@ -276,7 +276,7 @@ func TestExtensionExecutionControllerPVCSettings(t *testing.T) {
 }
 
 func TestWarnIfmultipleDKwithExtensionsEnabled(t *testing.T) {
-	imgRef := image.Ref{
+	imgRef := types.ImageRef{
 		Repository: "a",
 		Tag:        "b",
 	}
@@ -300,13 +300,13 @@ func TestWarnIfmultipleDKwithExtensionsEnabled(t *testing.T) {
 					ImageRef: imgRef,
 				},
 				OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{
-					ImageRef: image.Ref{
+					ImageRef: types.ImageRef{
 						Repository: "otc/repo",
 						Tag:        "otc-tag",
 					},
 				},
 				SQLExtensionExecutor: extensions.DatabaseExecutorSpec{
-					ImageRef: image.Ref{
+					ImageRef: types.ImageRef{
 						Repository: "repo",
 						Tag:        "tag",
 					},

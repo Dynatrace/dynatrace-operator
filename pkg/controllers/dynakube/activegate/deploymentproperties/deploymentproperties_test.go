@@ -8,7 +8,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -60,7 +60,7 @@ func TestBuildContent(t *testing.T) {
 				exp.NoProxyKey: "1.2.3.4",
 			},
 			Spec: dynakube.DynaKubeSpec{
-				Proxy: &value.Source{
+				Proxy: &types.ValueSource{
 					Value: "1.1.1.1",
 				},
 			},
@@ -77,7 +77,7 @@ func TestBuildContent(t *testing.T) {
 				ResourceAttributes: map[string]string{
 					"foo": "bar",
 				},
-				Proxy: &value.Source{
+				Proxy: &types.ValueSource{
 					Value: "1.1.1.1",
 				},
 			},

@@ -17,7 +17,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -91,7 +91,7 @@ type DynaKubeSpec struct { //nolint:revive
 	// Note: Applies to Dynatrace Operator, ActiveGate, and OneAgents.
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Proxy",order=3,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
-	Proxy *value.Source `json:"proxy,omitempty"`
+	Proxy *types.ValueSource `json:"proxy,omitempty"`
 
 	// General configuration about the LogMonitoring feature.
 	// +kubebuilder:validation:Optional
@@ -246,7 +246,7 @@ type SelfMonitoringSpec struct {
 	// +kubebuilder:validation:Optional
 	PriorityClassName string `json:"priorityClassName,omitempty"`
 	// +kubebuilder:validation:Optional
-	Volumes []corev1.Volume `json:"volumes,omitempty"`
+	Volumes types.Volumes `json:"volumes,omitempty"`
 
 	// Container
 

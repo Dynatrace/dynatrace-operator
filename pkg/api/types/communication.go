@@ -1,7 +1,7 @@
 // Copyright Dynatrace LLC
 // SPDX-License-Identifier: Apache-2.0
 
-package communication
+package types
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

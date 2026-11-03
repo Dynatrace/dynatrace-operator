@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/activegate"
 	otelcConsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
@@ -90,7 +90,7 @@ func getEnvs(dk *dynakube.DynaKube, replicas int32) []corev1.EnvVar {
 	return envs
 }
 
-func getDynakubeProxyEnvValue(envVar string, src *value.Source) corev1.EnvVar {
+func getDynakubeProxyEnvValue(envVar string, src *types.ValueSource) corev1.EnvVar {
 	if src.ValueFrom != "" {
 		return corev1.EnvVar{
 			Name: envVar,

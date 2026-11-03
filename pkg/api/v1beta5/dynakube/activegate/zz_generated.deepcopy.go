@@ -8,7 +8,7 @@
 package activegate
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"k8s.io/api/core/v1"
 )
 
@@ -17,7 +17,7 @@ func (in *CapabilityProperties) DeepCopyInto(out *CapabilityProperties) {
 	*out = *in
 	if in.CustomProperties != nil {
 		in, out := &in.CustomProperties, &out.CustomProperties
-		*out = new(value.Source)
+		*out = new(types.ValueSource)
 		**out = **in
 	}
 	if in.NodeSelector != nil {

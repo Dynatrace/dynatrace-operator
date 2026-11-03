@@ -1,11 +1,11 @@
 // Copyright Dynatrace LLC
 // SPDX-License-Identifier: Apache-2.0
 
-package proxy
+package types
 
 // +kubebuilder:object:generate=true
 
-type Spec struct {
+type ProxySpec struct {
 	// Server address (hostname or IP address) of the proxy.
 	Host string `json:"host,omitempty"`
 

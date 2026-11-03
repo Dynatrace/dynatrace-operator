@@ -1,7 +1,7 @@
 // Copyright Dynatrace LLC
 // SPDX-License-Identifier: Apache-2.0
 
-package image
+package types
 
 import (
 	"testing"
@@ -9,31 +9,31 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestRef_String(t *testing.T) {
+func TestImageRef_String(t *testing.T) {
 	tests := []struct {
 		name     string
-		ref      Ref
+		ref      ImageRef
 		expected string
 	}{
 		{
 			"repository and tag",
-			Ref{Repository: "docker.io/dynatrace/image", Tag: "1.2.3"},
+			ImageRef{Repository: "docker.io/dynatrace/image", Tag: "1.2.3"},
 			"docker.io/dynatrace/image:1.2.3",
 		},
 		{
 			"digest wins over tag",
-			Ref{Repository: "docker.io/dynatrace/image", Tag: "1.2.3", Digest: "sha256:abc"},
+			ImageRef{Repository: "docker.io/dynatrace/image", Tag: "1.2.3", Digest: "sha256:abc"},
 			"docker.io/dynatrace/image@sha256:abc",
 		},
 		{
 			"digest without tag",
-			Ref{Repository: "docker.io/dynatrace/image", Digest: "sha256:abc"},
+			ImageRef{Repository: "docker.io/dynatrace/image", Digest: "sha256:abc"},
 			"docker.io/dynatrace/image@sha256:abc",
 		},
-		{"empty", Ref{}, ""},
-		{"only repository", Ref{Repository: "test"}, ""},
-		{"only tag", Ref{Tag: "test"}, ""},
-		{"only digest", Ref{Digest: "test"}, ""},
+		{"empty", ImageRef{}, ""},
+		{"only repository", ImageRef{Repository: "test"}, ""},
+		{"only tag", ImageRef{Tag: "test"}, ""},
+		{"only digest", ImageRef{Digest: "test"}, ""},
 	}
 
 	for _, tc := range tests {
@@ -43,14 +43,14 @@ func TestRef_String(t *testing.T) {
 	}
 }
 
-func TestRef_StringWithDefaults(t *testing.T) {
+func TestImageRef_StringWithDefaults(t *testing.T) {
 	t.Run("falls back to default repo and tag", func(t *testing.T) {
-		ref := Ref{}
+		ref := ImageRef{}
 		assert.Equal(t, "default-repo:default-tag", ref.StringWithDefaults("default-repo", "default-tag"))
 	})
 
 	t.Run("digest on ref ignores default tag", func(t *testing.T) {
-		ref := Ref{Digest: "sha256:abc"}
+		ref := ImageRef{Digest: "sha256:abc"}
 		assert.Equal(t, "default-repo@sha256:abc", ref.StringWithDefaults("default-repo", "default-tag"))
 	})
 }

@@ -13,7 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/databases"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -27,7 +27,7 @@ func TestMissingDatabaseExecutorImage(t *testing.T) {
 			APIURL: testAPIURL,
 			Templates: dynakube.TemplatesSpec{
 				ExtensionExecutionController: extensions.ExecutionControllerSpec{
-					ImageRef: image.Ref{
+					ImageRef: types.ImageRef{
 						Repository: "some-repo",
 						Tag:        "some-tag",
 					},
@@ -100,13 +100,13 @@ func TestConflictingOrInvalidVolumeMounts(t *testing.T) {
 			APIURL: testAPIURL,
 			Templates: dynakube.TemplatesSpec{
 				ExtensionExecutionController: extensions.ExecutionControllerSpec{
-					ImageRef: image.Ref{
+					ImageRef: types.ImageRef{
 						Repository: "some-repo",
 						Tag:        "some-tag",
 					},
 				},
 				SQLExtensionExecutor: extensions.DatabaseExecutorSpec{
-					ImageRef: image.Ref{
+					ImageRef: types.ImageRef{
 						Repository: "some-repo",
 						Tag:        "some-tag",
 					},
@@ -202,13 +202,13 @@ func TestUnusedVolumes(t *testing.T) {
 			APIURL: testAPIURL,
 			Templates: dynakube.TemplatesSpec{
 				ExtensionExecutionController: extensions.ExecutionControllerSpec{
-					ImageRef: image.Ref{
+					ImageRef: types.ImageRef{
 						Repository: "some-repo",
 						Tag:        "some-tag",
 					},
 				},
 				SQLExtensionExecutor: extensions.DatabaseExecutorSpec{
-					ImageRef: image.Ref{
+					ImageRef: types.ImageRef{
 						Repository: "some-repo",
 						Tag:        "some-tag",
 					},
@@ -265,13 +265,13 @@ func TestHostPathDatabaseVolume(t *testing.T) {
 				APIURL: testAPIURL,
 				Templates: dynakube.TemplatesSpec{
 					ExtensionExecutionController: extensions.ExecutionControllerSpec{
-						ImageRef: image.Ref{
+						ImageRef: types.ImageRef{
 							Repository: "some-repo",
 							Tag:        "some-tag",
 						},
 					},
 					SQLExtensionExecutor: extensions.DatabaseExecutorSpec{
-						ImageRef: image.Ref{
+						ImageRef: types.ImageRef{
 							Repository: "some-repo",
 							Tag:        "some-tag",
 						},

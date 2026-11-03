@@ -9,7 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	agconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
@@ -40,7 +40,7 @@ func TestTelemetryIngestProtocols(t *testing.T) {
 					},
 					Templates: dynakube.TemplatesSpec{
 						OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{
-							ImageRef: image.Ref{
+							ImageRef: types.ImageRef{
 								Repository: "test-repo",
 								Tag:        "test-tag",
 							},
@@ -61,7 +61,7 @@ func TestTelemetryIngestProtocols(t *testing.T) {
 					},
 					Templates: dynakube.TemplatesSpec{
 						OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{
-							ImageRef: image.Ref{
+							ImageRef: types.ImageRef{
 								Repository: "test-repo",
 								Tag:        "test-tag",
 							},
@@ -117,7 +117,7 @@ func TestTelemetryIngestProtocols(t *testing.T) {
 					TelemetryIngest: &telemetryingest.Spec{},
 					Templates: dynakube.TemplatesSpec{
 						OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{
-							ImageRef: image.Ref{
+							ImageRef: types.ImageRef{
 								Repository: "test-repo",
 								Tag:        "test-tag",
 							},
@@ -176,7 +176,7 @@ func TestConflictingServiceNames(t *testing.T) {
 					TelemetryIngest: &telemetryingest.Spec{},
 					Templates: dynakube.TemplatesSpec{
 						OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{
-							ImageRef: image.Ref{
+							ImageRef: types.ImageRef{
 								Repository: "test-repo",
 								Tag:        "test-tag",
 							},
@@ -334,7 +334,7 @@ func TestImages(t *testing.T) {
 					APIURL: testAPIURL,
 					Templates: dynakube.TemplatesSpec{
 						OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{
-							ImageRef: image.Ref{
+							ImageRef: types.ImageRef{
 								Repository: "test-repo",
 								Tag:        "test-tag",
 							},
@@ -354,7 +354,7 @@ func TestImages(t *testing.T) {
 					APIURL: testAPIURL,
 					Templates: dynakube.TemplatesSpec{
 						OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{
-							ImageRef: image.Ref{
+							ImageRef: types.ImageRef{
 								Repository: "",
 								Tag:        "",
 								PullPolicy: "IfNotPresent",
@@ -376,7 +376,7 @@ func TestImages(t *testing.T) {
 					TelemetryIngest: &telemetryingest.Spec{},
 					Templates: dynakube.TemplatesSpec{
 						OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{
-							ImageRef: image.Ref{
+							ImageRef: types.ImageRef{
 								Repository: "test-repo",
 								Tag:        "test-tag",
 							},
@@ -430,7 +430,7 @@ func TestImages(t *testing.T) {
 					TelemetryIngest: &telemetryingest.Spec{},
 					Templates: dynakube.TemplatesSpec{
 						OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{
-							ImageRef: image.Ref{
+							ImageRef: types.ImageRef{
 								Repository: "custom-repo",
 								Tag:        "custom-tag",
 							},

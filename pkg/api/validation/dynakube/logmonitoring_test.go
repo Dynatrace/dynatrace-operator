@@ -11,7 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/stretchr/testify/assert"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -70,7 +70,7 @@ func createStandaloneLogMonitoringDynakube(name, apiURL, nodeSelector string) *d
 			},
 			Templates: dynakube.TemplatesSpec{
 				LogMonitoring: &logmonitoring.TemplateSpec{
-					ImageRef: image.Ref{
+					ImageRef: types.ImageRef{
 						Repository: "repo/image",
 						Tag:        "version",
 					},
@@ -105,7 +105,7 @@ func TestMissingLogMonitoringImage(t *testing.T) {
 					},
 					Templates: dynakube.TemplatesSpec{
 						LogMonitoring: &logmonitoring.TemplateSpec{
-							ImageRef: image.Ref{
+							ImageRef: types.ImageRef{
 								Repository: "repo/image",
 								Tag:        "version",
 							},
@@ -137,7 +137,7 @@ func TestMissingLogMonitoringImage(t *testing.T) {
 					LogMonitoring: &logmonitoring.Spec{},
 					Templates: dynakube.TemplatesSpec{
 						LogMonitoring: &logmonitoring.TemplateSpec{
-							ImageRef: image.Ref{
+							ImageRef: types.ImageRef{
 								Repository: "repo/image",
 							},
 						},
@@ -156,7 +156,7 @@ func TestMissingLogMonitoringImage(t *testing.T) {
 					LogMonitoring: &logmonitoring.Spec{},
 					Templates: dynakube.TemplatesSpec{
 						LogMonitoring: &logmonitoring.TemplateSpec{
-							ImageRef: image.Ref{
+							ImageRef: types.ImageRef{
 								Tag: "version",
 							},
 						},
@@ -226,7 +226,7 @@ func TestInvalidLogmonArguments(t *testing.T) {
 			LogMonitoring: &logmonitoring.Spec{},
 			Templates: dynakube.TemplatesSpec{
 				LogMonitoring: &logmonitoring.TemplateSpec{
-					ImageRef: image.Ref{
+					ImageRef: types.ImageRef{
 						Repository: "repo/image",
 						Tag:        "version",
 					},

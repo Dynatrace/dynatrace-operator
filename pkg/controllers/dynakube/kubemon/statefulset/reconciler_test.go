@@ -14,7 +14,7 @@ import (
 	kspmapi "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
 	kubemonapi "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/version"
@@ -285,7 +285,7 @@ func TestReconcileBuildsStatefulSet(t *testing.T) {
 
 	t.Run("custom properties volume included and required when CustomProperties is set", func(t *testing.T) {
 		dk := newTestDynaKube()
-		dk.Spec.KubernetesMonitoring.CustomProperties = &value.Source{Value: "key=value"}
+		dk.Spec.KubernetesMonitoring.CustomProperties = &types.ValueSource{Value: "key=value"}
 		sts := reconcileAndGetSTS(t, dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t))
 
 		require.Len(t, sts.Spec.Template.Spec.Containers, 1)
@@ -750,7 +750,7 @@ func TestReconcileBuildsStatefulSetVolumes(t *testing.T) {
 
 	t.Run("proxy volume and mount are added when proxy is configured", func(t *testing.T) {
 		dk := newTestDynaKube()
-		dk.Spec.Proxy = &value.Source{Value: "http://proxy.example.com:8080"}
+		dk.Spec.Proxy = &types.ValueSource{Value: "http://proxy.example.com:8080"}
 		sts := reconcileAndGetSTS(t, dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t))
 
 		proxyVolume := k8svolume.FindByName(sts.Spec.Template.Spec.Volumes, agconsts.ProxySecretVolumeName)

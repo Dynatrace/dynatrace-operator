@@ -8,7 +8,7 @@ import (
 	"encoding/json"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/deploymentproperties"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/authtoken"
@@ -21,7 +21,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -79,7 +78,7 @@ func (r *Reconciler) manageStatefulSet(ctx context.Context, dk *dynakube.DynaKub
 }
 
 func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.DynaKube, agCapability capability.Capability) (*appsv1.StatefulSet, error) {
-	kubeUID := types.UID(dk.Status.KubeSystemUUID)
+	kubeUID := dk.Status.KubeSystemUUID
 
 	activeGateConfigurationHash, err := r.calculateActiveGateConfigurationHash(ctx, dk, agCapability)
 	if err != nil {
@@ -181,18 +180,18 @@ func (r *Reconciler) getAuthTokenValue(ctx context.Context, dk *dynakube.DynaKub
 	return authTokenData, nil
 }
 
-func (r *Reconciler) getDataFromCustomProperty(ctx context.Context, dk *dynakube.DynaKube, customProperties *value.Source) (string, error) {
+func (r *Reconciler) getDataFromCustomProperty(ctx context.Context, dk *dynakube.DynaKube, customProperties *types.ValueSource) (string, error) {
 	if customProperties.ValueFrom != "" {
-		return k8ssecret.GetDataFromSecretName(ctx, r.apiReader, types.NamespacedName{Namespace: dk.Namespace, Name: customProperties.ValueFrom}, customproperties.DataKey)
+		return k8ssecret.GetDataFromSecretName(ctx, r.apiReader, client.ObjectKey{Namespace: dk.Namespace, Name: customProperties.ValueFrom}, customproperties.DataKey)
 	}
 
 	return customProperties.Value, nil
 }
 
 func (r *Reconciler) getDataFromAuthTokenSecret(ctx context.Context, dk *dynakube.DynaKube) (string, error) {
-	return k8ssecret.GetDataFromSecretName(ctx, r.apiReader, types.NamespacedName{Namespace: dk.Namespace, Name: dk.ActiveGate().GetAuthTokenSecretName()}, authtoken.ActiveGateAuthTokenName)
+	return k8ssecret.GetDataFromSecretName(ctx, r.apiReader, client.ObjectKey{Namespace: dk.Namespace, Name: dk.ActiveGate().GetAuthTokenSecretName()}, authtoken.ActiveGateAuthTokenName)
 }
 
-func needsCustomPropertyHash(customProperties *value.Source) bool {
+func needsCustomPropertyHash(customProperties *types.ValueSource) bool {
 	return customProperties != nil && (customProperties.Value != "" || customProperties.ValueFrom != "")
 }

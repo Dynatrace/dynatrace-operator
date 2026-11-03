@@ -1,11 +1,11 @@
 // Copyright Dynatrace LLC
 // SPDX-License-Identifier: Apache-2.0
 
-package value
+package types
 
 // +kubebuilder:object:generate=true
 
-type Source struct {
+type ValueSource struct {
 	// Raw value for given property.
 	// +nullable
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="property value",order=32,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}

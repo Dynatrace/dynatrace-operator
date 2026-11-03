@@ -14,9 +14,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	dtimage "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	eecConsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
@@ -60,7 +59,7 @@ func getTestDynakube() *dynakube.DynaKube {
 			Extensions: &extensions.Spec{Databases: []extensions.DatabaseSpec{{ID: "test"}}},
 			Templates: dynakube.TemplatesSpec{
 				ExtensionExecutionController: extensions.ExecutionControllerSpec{
-					ImageRef: image.Ref{
+					ImageRef: types.ImageRef{
 						Repository: testEECImageRepository,
 						Tag:        testEECImageTag,
 					},
@@ -70,7 +69,7 @@ func getTestDynakube() *dynakube.DynaKube {
 
 		Status: dynakube.DynaKubeStatus{
 			ActiveGate: activegate.Status{
-				ConnectionInfo: communication.ConnectionInfo{
+				ConnectionInfo: types.ConnectionInfo{
 					TenantUUID: testTenantUUID,
 				},
 				VersionStatus: status.VersionStatus{},
@@ -1854,7 +1853,7 @@ func TestPublicRegistryImage(t *testing.T) {
 		templateImageURI := "my-custom-registry:5000/my-custom-repo:my-custom-tag"
 		dk := getTestDynakube()
 		dk.Annotations = map[string]string{exp.UsePublicRegistryKey: "true"}
-		dk.Spec.Templates.ExtensionExecutionController.ImageRef = image.Ref{Repository: "my-custom-registry:5000/my-custom-repo", Tag: "my-custom-tag"}
+		dk.Spec.Templates.ExtensionExecutionController.ImageRef = types.ImageRef{Repository: "my-custom-registry:5000/my-custom-repo", Tag: "my-custom-tag"}
 
 		mockK8sClient := fake.NewClient(dk)
 		mockK8sClient = mockTLSSecret(t, mockK8sClient, dk)

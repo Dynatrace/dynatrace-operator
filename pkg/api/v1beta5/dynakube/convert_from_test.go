@@ -17,10 +17,8 @@ import (
 	metadataenrichmentlatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
 	oneagentlatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	telemetryingestlatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/extensions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/kspm"
@@ -549,7 +547,7 @@ func getNewDynakubeBase() dynakubelatest.DynaKube {
 		},
 		Finalizers: []string{"finalizer1", "finalizer2"},
 		Spec: dynakubelatest.DynaKubeSpec{
-			Proxy: &value.Source{
+			Proxy: &types.ValueSource{
 				Value:     "proxy-value",
 				ValueFrom: "proxy-from",
 			},
@@ -671,7 +669,7 @@ func getNewActiveGateSpec() activegatelatest.Spec {
 		Image:    "activegate-image",
 		Replicas: new(int32(42)),
 		Group:    "activegate-group",
-		CustomProperties: &value.Source{
+		CustomProperties: &types.ValueSource{
 			Value:     "activegate-cp-value",
 			ValueFrom: "activegate-cp-value-from",
 		},
@@ -729,7 +727,7 @@ func getNewOpenTelemetryTemplateSpec() dynakubelatest.OpenTelemetryCollectorSpec
 			"otelc-annotation-key2": "otelc-annotation-value2",
 		},
 		Replicas: new(int32(42)),
-		ImageRef: image.Ref{
+		ImageRef: types.ImageRef{
 			Repository: "image-repo.repohost.test/repo",
 			Tag:        "image-tag",
 		},
@@ -766,7 +764,7 @@ func getNewExtensionExecutionControllerSpec() extensionslatest.ExecutionControll
 			"eec-annotation-key1": "eec-annotation-value1",
 			"eec-annotation-key2": "eec-annotation-value2",
 		},
-		ImageRef: image.Ref{
+		ImageRef: types.ImageRef{
 			Repository: "image-repo.repohost.test/repo",
 			Tag:        "image-tag",
 		},
@@ -840,7 +838,7 @@ func getNewLogMonitoringTemplateSpec() *logmonitoringlatest.TemplateSpec {
 			"selector1": "node1",
 			"selector2": "node2",
 		},
-		ImageRef: image.Ref{
+		ImageRef: types.ImageRef{
 			Repository: "image-repo.repohost.test/repo",
 			Tag:        "image-tag",
 		},
@@ -893,7 +891,7 @@ func getNewNodeConfigurationCollectorTemplateSpec() kspmlatest.NodeConfiguration
 			"selector1": "node1",
 			"selector2": "node2",
 		},
-		ImageRef: image.Ref{
+		ImageRef: types.ImageRef{
 			Repository: "image-repo.repohost.test/repo",
 			Tag:        "image-tag",
 		},
@@ -974,7 +972,7 @@ func getNewStatus() dynakubelatest.DynaKubeStatus {
 			Healthcheck: &registryv1.HealthConfig{
 				Test: []string{"oa-health-check-test"},
 			},
-			ConnectionInfo: communication.ConnectionInfo{
+			ConnectionInfo: types.ConnectionInfo{
 				LastRequest: testTime,
 				TenantUUID:  "oa-tenant-uuid",
 				Endpoints:   "oa-endpoints",

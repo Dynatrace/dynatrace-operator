@@ -3,9 +3,7 @@
 
 package otlp
 
-import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/resourceattributes"
-)
+import maputil "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 
 func NewExporterConfiguration(spec *ExporterConfigurationSpec, globalResourceAttributes map[string]string) *ExporterConfiguration {
 	return &ExporterConfiguration{
@@ -43,7 +41,7 @@ func (e *ExporterConfiguration) GetResourceAttributes() map[string]string {
 		return e.globalResourceAttributes
 	}
 
-	return resourceattributes.Merge(e.globalResourceAttributes, e.Spec.AdditionalResourceAttributes)
+	return maputil.MergeMap(e.globalResourceAttributes, e.Spec.AdditionalResourceAttributes)
 }
 
 func (e *ExporterConfiguration) HasAdditionalResourceAttributes() bool {

@@ -13,7 +13,7 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/prometheusmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
@@ -331,7 +331,7 @@ func buildEnv(s *reconcileScope) []corev1.EnvVar {
 	return envs
 }
 
-func proxyEnv(name string, src *value.Source) corev1.EnvVar {
+func proxyEnv(name string, src *types.ValueSource) corev1.EnvVar {
 	if src.ValueFrom != "" {
 		return corev1.EnvVar{
 			Name: name,

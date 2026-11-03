@@ -10,7 +10,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -29,7 +29,7 @@ func TestGenerateData(t *testing.T) {
 		},
 		Status: dynakube.DynaKubeStatus{
 			OneAgent: oneagent.Status{
-				ConnectionInfo: communication.ConnectionInfo{
+				ConnectionInfo: types.ConnectionInfo{
 					TenantUUID: testTenant,
 				},
 			},

@@ -8,7 +8,7 @@ import (
 	"errors"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	agclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
@@ -75,7 +75,7 @@ func (r *Reconciler) cleanup(ctx context.Context, dk *dynakube.DynaKube) error {
 		return err
 	}
 
-	dk.Status.KubernetesMonitoring.ConnectionInfo = communication.ConnectionInfo{}
+	dk.Status.KubernetesMonitoring.ConnectionInfo = types.ConnectionInfo{}
 
 	return nil
 }

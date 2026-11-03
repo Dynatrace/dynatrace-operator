@@ -16,8 +16,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/pkg/errors"
@@ -27,7 +26,6 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
@@ -105,7 +103,7 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, k8sconditions.SecretCreatedReason, condition.Reason)
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
 		dk.Spec.NetworkZone = "test-zone"
-		dk.Spec.Proxy = &value.Source{
+		dk.Spec.Proxy = &types.ValueSource{
 			Value: "test-proxy",
 		}
 		dk.Annotations = map[string]string{
@@ -130,7 +128,7 @@ func TestReconcile(t *testing.T) {
 		assert.Empty(t, *dk.Conditions())
 
 		var secretConfig corev1.Secret
-		err = mockK8sClient.Get(ctx, types.NamespacedName{
+		err = mockK8sClient.Get(ctx, client.ObjectKey{
 			Name:      GetSecretName(dk.Name),
 			Namespace: dk.Namespace,
 		}, &secretConfig)
@@ -208,7 +206,7 @@ func createDynakube(isLogMonitoringEnabled bool) *dynakube.DynaKube {
 		},
 		Status: dynakube.DynaKubeStatus{
 			OneAgent: oneagent.Status{
-				ConnectionInfo: communication.ConnectionInfo{
+				ConnectionInfo: types.ConnectionInfo{
 					TenantUUID: "test-uuid",
 					Endpoints:  "https://endpoint1.com;https://endpoint2.com",
 				},
@@ -279,7 +277,7 @@ func TestAddAnnotations(t *testing.T) {
 			dk: &dynakube.DynaKube{
 				Status: dynakube.DynaKubeStatus{
 					OneAgent: oneagent.Status{
-						ConnectionInfo: communication.ConnectionInfo{
+						ConnectionInfo: types.ConnectionInfo{
 							TenantTokenHash: "hash",
 						},
 					},
@@ -295,7 +293,7 @@ func TestAddAnnotations(t *testing.T) {
 			dk: &dynakube.DynaKube{
 				Status: dynakube.DynaKubeStatus{
 					OneAgent: oneagent.Status{
-						ConnectionInfo: communication.ConnectionInfo{
+						ConnectionInfo: types.ConnectionInfo{
 							TenantTokenHash: "hash",
 						},
 					},
@@ -317,7 +315,7 @@ func TestAddAnnotations(t *testing.T) {
 				},
 				Status: dynakube.DynaKubeStatus{
 					OneAgent: oneagent.Status{
-						ConnectionInfo: communication.ConnectionInfo{
+						ConnectionInfo: types.ConnectionInfo{
 							TenantTokenHash: "hash",
 						},
 					},
@@ -333,12 +331,12 @@ func TestAddAnnotations(t *testing.T) {
 			title: "proxy respected",
 			dk: &dynakube.DynaKube{
 				Spec: dynakube.DynaKubeSpec{
-					Proxy: &value.Source{Value: "doesn't matter"},
+					Proxy: &types.ValueSource{Value: "doesn't matter"},
 				},
 				Status: dynakube.DynaKubeStatus{
 					ProxyURLHash: "proxy-hash",
 					OneAgent: oneagent.Status{
-						ConnectionInfo: communication.ConnectionInfo{
+						ConnectionInfo: types.ConnectionInfo{
 							TenantTokenHash: "hash",
 						},
 					},
@@ -358,7 +356,7 @@ func TestAddAnnotations(t *testing.T) {
 				},
 				Status: dynakube.DynaKubeStatus{
 					OneAgent: oneagent.Status{
-						ConnectionInfo: communication.ConnectionInfo{
+						ConnectionInfo: types.ConnectionInfo{
 							TenantTokenHash: "hash",
 						},
 					},

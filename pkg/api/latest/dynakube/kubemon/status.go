@@ -4,7 +4,7 @@
 package kubemon
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 )
 
 // +kubebuilder:object:generate=true
@@ -16,5 +16,5 @@ type Status struct {
 
 	// Information about KubernetesMonitoring's connections.
 	// +kubebuilder:validation:Optional
-	ConnectionInfo communication.ConnectionInfo `json:"connectionInfo,omitzero"`
+	ConnectionInfo types.ConnectionInfo `json:"connectionInfo,omitzero"`
 }

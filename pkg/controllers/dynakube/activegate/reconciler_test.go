@@ -13,8 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	agclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
@@ -32,7 +31,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -50,7 +48,7 @@ var (
 	anyTokens                    = mock.MatchedBy(func(token.Tokens) bool { return true })
 	anyCapability                = mock.MatchedBy(func(capability.Capability) bool { return true })
 	anyCustomPropertiesOwnerName = mock.MatchedBy(func(string) bool { return true })
-	anyCustomPropertiesSource    = mock.MatchedBy(func(*value.Source) bool { return true })
+	anyCustomPropertiesSource    = mock.MatchedBy(func(*types.ValueSource) bool { return true })
 
 	testKubeSystemNamespace = &corev1.Namespace{
 		Name: "kube-system",
@@ -246,11 +244,11 @@ func TestReconciler_Reconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		var service corev1.Service
-		err = fakeClient.Get(t.Context(), types.NamespacedName{Name: testServiceName, Namespace: testNamespace}, &service)
+		err = fakeClient.Get(t.Context(), client.ObjectKey{Name: testServiceName, Namespace: testNamespace}, &service)
 		require.NoError(t, err)
 
 		var secret corev1.Secret
-		err = fakeClient.Get(t.Context(), types.NamespacedName{Name: dk.ActiveGate().GetTLSSecretName(), Namespace: testNamespace}, &secret)
+		err = fakeClient.Get(t.Context(), client.ObjectKey{Name: dk.ActiveGate().GetTLSSecretName(), Namespace: testNamespace}, &secret)
 		require.NoError(t, err)
 
 		// remove AG from spec
@@ -262,10 +260,10 @@ func TestReconciler_Reconcile(t *testing.T) {
 		err = r.Reconcile(t.Context(), dk, createMockDTClient(t, false), nil)
 		require.NoError(t, err)
 
-		err = fakeClient.Get(t.Context(), types.NamespacedName{Name: testServiceName, Namespace: testNamespace}, &service)
+		err = fakeClient.Get(t.Context(), client.ObjectKey{Name: testServiceName, Namespace: testNamespace}, &service)
 		assert.True(t, k8serrors.IsNotFound(err))
 
-		err = fakeClient.Get(t.Context(), types.NamespacedName{Name: dk.ActiveGate().GetTLSSecretName(), Namespace: testNamespace}, &secret)
+		err = fakeClient.Get(t.Context(), client.ObjectKey{Name: dk.ActiveGate().GetTLSSecretName(), Namespace: testNamespace}, &secret)
 		assert.True(t, k8serrors.IsNotFound(err))
 	})
 	t.Run("Reconcile DynaKube without Proxy after a DynaKube with proxy must not interfere with the second DKs Proxy Secret", func(t *testing.T) { // TODO: This is not a unit test, it tests the functionality of another package, it should use a mock for that
@@ -273,7 +271,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			Namespace: testNamespace,
 			Name:      "proxyDk",
 			Spec: dynakube.DynaKubeSpec{
-				Proxy:      &value.Source{Value: testProxyName},
+				Proxy:      &types.ValueSource{Value: testProxyName},
 				ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}},
 			},
 		}
@@ -409,11 +407,11 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 		require.NoError(t, err)
 
 		var service corev1.Service
-		err = fakeClient.Get(t.Context(), types.NamespacedName{Name: testServiceName, Namespace: testNamespace}, &service)
+		err = fakeClient.Get(t.Context(), client.ObjectKey{Name: testServiceName, Namespace: testNamespace}, &service)
 		assert.True(t, k8serrors.IsNotFound(err))
 
 		var statefulset appsv1.StatefulSet
-		err = fakeClient.Get(t.Context(), types.NamespacedName{Name: instance.Name + "-activegate", Namespace: testNamespace}, &statefulset)
+		err = fakeClient.Get(t.Context(), client.ObjectKey{Name: instance.Name + "-activegate", Namespace: testNamespace}, &statefulset)
 		assert.True(t, k8serrors.IsNotFound(err))
 	})
 	t.Run("activegate is created when extensions are enabled in dk, but no activegate is configured", func(t *testing.T) {
@@ -437,12 +435,12 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 		require.NoError(t, err)
 
 		var service corev1.Service
-		err = fakeClient.Get(t.Context(), types.NamespacedName{Name: testServiceName, Namespace: testNamespace}, &service)
+		err = fakeClient.Get(t.Context(), client.ObjectKey{Name: testServiceName, Namespace: testNamespace}, &service)
 		require.NoError(t, err)
 		require.Equal(t, testServiceName, service.Name)
 
 		var statefulset appsv1.StatefulSet
-		err = fakeClient.Get(t.Context(), types.NamespacedName{Name: instance.Name + "-activegate", Namespace: testNamespace}, &statefulset)
+		err = fakeClient.Get(t.Context(), client.ObjectKey{Name: instance.Name + "-activegate", Namespace: testNamespace}, &statefulset)
 		require.NoError(t, err)
 	})
 	t.Run("activegate is created when extensions are enabled in dk, but no activegate capability is configured", func(t *testing.T) {
@@ -467,12 +465,12 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 		require.NoError(t, err)
 
 		var service corev1.Service
-		err = fakeClient.Get(t.Context(), types.NamespacedName{Name: testServiceName, Namespace: testNamespace}, &service)
+		err = fakeClient.Get(t.Context(), client.ObjectKey{Name: testServiceName, Namespace: testNamespace}, &service)
 		require.NoError(t, err)
 		require.Equal(t, testServiceName, service.Name)
 
 		var statefulset appsv1.StatefulSet
-		err = fakeClient.Get(t.Context(), types.NamespacedName{Name: instance.Name + "-activegate", Namespace: testNamespace}, &statefulset)
+		err = fakeClient.Get(t.Context(), client.ObjectKey{Name: instance.Name + "-activegate", Namespace: testNamespace}, &statefulset)
 		require.NoError(t, err)
 	})
 	t.Run("activegate is created when extensions are enabled in dk, and activegate kubernetes is configured", func(t *testing.T) {
@@ -497,12 +495,12 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 		require.NoError(t, err)
 
 		var service corev1.Service
-		err = fakeClient.Get(t.Context(), types.NamespacedName{Name: testServiceName, Namespace: testNamespace}, &service)
+		err = fakeClient.Get(t.Context(), client.ObjectKey{Name: testServiceName, Namespace: testNamespace}, &service)
 		require.NoError(t, err)
 		require.Equal(t, testServiceName, service.Name)
 
 		var statefulset appsv1.StatefulSet
-		err = fakeClient.Get(t.Context(), types.NamespacedName{Name: instance.Name + "-activegate", Namespace: testNamespace}, &statefulset)
+		err = fakeClient.Get(t.Context(), client.ObjectKey{Name: instance.Name + "-activegate", Namespace: testNamespace}, &statefulset)
 		require.NoError(t, err)
 	})
 	t.Run("activegate is created when extensions are enabled in dk, but activegate capabilities are removed", func(t *testing.T) {
@@ -527,12 +525,12 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 		require.NoError(t, err)
 
 		var service corev1.Service
-		err = fakeClient.Get(t.Context(), types.NamespacedName{Name: testServiceName, Namespace: testNamespace}, &service)
+		err = fakeClient.Get(t.Context(), client.ObjectKey{Name: testServiceName, Namespace: testNamespace}, &service)
 		require.NoError(t, err)
 		require.Equal(t, testServiceName, service.Name)
 
 		var statefulset appsv1.StatefulSet
-		err = fakeClient.Get(t.Context(), types.NamespacedName{Name: instance.Name + "-activegate", Namespace: testNamespace}, &statefulset)
+		err = fakeClient.Get(t.Context(), client.ObjectKey{Name: instance.Name + "-activegate", Namespace: testNamespace}, &statefulset)
 		require.NoError(t, err)
 
 		// remove AG from spec
@@ -546,11 +544,11 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 		require.NoError(t, err)
 
 		var service1 corev1.Service
-		err = fakeClient.Get(t.Context(), types.NamespacedName{Name: testServiceName, Namespace: testNamespace}, &service1)
+		err = fakeClient.Get(t.Context(), client.ObjectKey{Name: testServiceName, Namespace: testNamespace}, &service1)
 		require.NoError(t, err)
 		require.Equal(t, testServiceName, service1.Name)
 
-		err = fakeClient.Get(t.Context(), types.NamespacedName{Name: instance.Name + "-activegate", Namespace: testNamespace}, &statefulset)
+		err = fakeClient.Get(t.Context(), client.ObjectKey{Name: instance.Name + "-activegate", Namespace: testNamespace}, &statefulset)
 		require.NoError(t, err)
 
 		// disable extensions
@@ -563,10 +561,10 @@ func TestExtensionControllerRequiresActiveGate(t *testing.T) {
 		err = r.Reconcile(t.Context(), instance, createMockDTClient(t, true), nil)
 		require.NoError(t, err)
 
-		err = fakeClient.Get(t.Context(), types.NamespacedName{Name: testServiceName, Namespace: testNamespace}, &service)
+		err = fakeClient.Get(t.Context(), client.ObjectKey{Name: testServiceName, Namespace: testNamespace}, &service)
 		assert.True(t, k8serrors.IsNotFound(err))
 
-		err = fakeClient.Get(t.Context(), types.NamespacedName{Name: instance.Name + "-activegate", Namespace: testNamespace}, &statefulset)
+		err = fakeClient.Get(t.Context(), client.ObjectKey{Name: instance.Name + "-activegate", Namespace: testNamespace}, &statefulset)
 		assert.True(t, k8serrors.IsNotFound(err))
 	})
 }
@@ -669,7 +667,7 @@ func TestReconcile_ActivegateConfigMap(t *testing.T) {
 		},
 		Status: dynakube.DynaKubeStatus{
 			ActiveGate: activegate.Status{
-				ConnectionInfo: communication.ConnectionInfo{
+				ConnectionInfo: types.ConnectionInfo{
 					TenantUUID: testTenantUUID,
 					Endpoints:  testTenantEndpoints,
 				},
@@ -773,7 +771,7 @@ func TestCreateDeploymentPropertiesConfigMap(t *testing.T) {
 			},
 			Spec: dynakube.DynaKubeSpec{
 				ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}},
-				Proxy: &value.Source{
+				Proxy: &types.ValueSource{
 					Value: "test",
 				},
 			},
