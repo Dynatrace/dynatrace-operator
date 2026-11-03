@@ -377,10 +377,6 @@ func (oa *OneAgent) GetHostPath() string {
 }
 
 func (oa *OneAgent) GetResourceAttributes() map[string]string {
-	if oa.Spec == nil {
-		return oa.globalResourceAttributes
-	}
-
 	return maputil.MergeMap(oa.globalResourceAttributes, oa.getAdditionalResourceAttributes())
 }
 

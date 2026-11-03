@@ -509,14 +509,14 @@ func TestOneAgent_GetResourceAttributes(t *testing.T) {
 		expected map[string]string
 	}{
 		{
-			name:     "nil spec - no global returns nil",
-			spec:     nil,
+			name:     "empty spec - no global returns empty",
+			spec:     &Spec{},
 			global:   nil,
-			expected: nil,
+			expected: map[string]string{},
 		},
 		{
-			name:     "nil spec with global returns global",
-			spec:     nil,
+			name:     "empty spec with global returns global",
+			spec:     &Spec{},
 			global:   map[string]string{"g": "1"},
 			expected: map[string]string{"g": "1"},
 		},
