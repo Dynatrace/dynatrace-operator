@@ -64,7 +64,7 @@ func TestCommandLineArgs(t *testing.T) {
 	}
 }
 
-func Test_SanitizeKey(t *testing.T) {
+func Test_ResourceAttributeKey(t *testing.T) {
 	tests := []struct {
 		input    string
 		expected string
