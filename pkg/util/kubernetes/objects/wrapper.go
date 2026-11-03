@@ -12,6 +12,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/util/retry"
@@ -31,8 +32,9 @@ func RetryCreateOrUpdate(ctx context.Context, c client.Client, obj client.Object
 		return err
 	}
 
-	kind := strings.ToLower(gvks[0].Kind)
-	group := strings.ToLower(gvks[0].Group)
+	gvk := gvks[0]
+	kind := strings.ToLower(gvk.Kind)
+	group := strings.ToLower(gvk.Group)
 
 	var result controllerutil.OperationResult
 
@@ -51,14 +53,7 @@ func RetryCreateOrUpdate(ctx context.Context, c client.Client, obj client.Object
 		}
 
 		// Wait for deletion, the client, on creation, may read from a cache that still contains the deleted object
-		if waiterr := wait.PollUntilContextTimeout(ctx, 100*time.Millisecond, 5*time.Second, true, func(ctx context.Context) (bool, error) {
-			geterr := c.Get(ctx, client.ObjectKeyFromObject(obj), obj.DeepCopyObject().(client.Object))
-			if k8serrors.IsNotFound(geterr) {
-				return true, nil
-			}
-
-			return false, geterr
-		}); waiterr != nil {
+		if waiterr := waitForDeletion(ctx, c, gvk, client.ObjectKeyFromObject(obj)); waiterr != nil {
 			return fmt.Errorf("wait for deletion: %w", waiterr)
 		}
 
@@ -103,4 +98,18 @@ func ApplyStatus(ctx context.Context, c client.Client, obj client.Object) error 
 
 	//nolint:staticcheck // client.Apply is deprecated, but our repo does not support generating ApplyConfiguration
 	return c.SubResource("status").Patch(ctx, obj, client.Apply, client.FieldOwner("dynatrace-operator"), client.ForceOwnership)
+}
+
+func waitForDeletion(ctx context.Context, c client.Client, gvk schema.GroupVersionKind, key client.ObjectKey) error {
+	return wait.PollUntilContextTimeout(ctx, 100*time.Millisecond, 5*time.Second, true, func(ctx context.Context) (bool, error) {
+		meta := &metav1.PartialObjectMetadata{}
+		meta.SetGroupVersionKind(gvk)
+
+		err := c.Get(ctx, key, meta)
+		if k8serrors.IsNotFound(err) {
+			return true, nil
+		}
+
+		return false, err
+	})
 }
