@@ -8,9 +8,9 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
+	maputil "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -377,18 +377,18 @@ func (oa *OneAgent) GetHostPath() string {
 }
 
 func (oa *OneAgent) GetResourceAttributes() map[string]string {
-	return types.MergeResourceAttributes(oa.globalResourceAttributes, oa.GetAdditionalResourceAttributes())
+	if oa.Spec == nil {
+		return oa.globalResourceAttributes
+	}
+
+	return maputil.MergeMap(oa.globalResourceAttributes, oa.getAdditionalResourceAttributes())
 }
 
 func (oa *OneAgent) HasAdditionalResourceAttributes() bool {
-	return len(oa.GetAdditionalResourceAttributes()) > 0
+	return len(oa.getAdditionalResourceAttributes()) > 0
 }
 
-func (oa *OneAgent) GetAdditionalResourceAttributes() map[string]string {
-	if oa.Spec == nil {
-		return nil
-	}
-
+func (oa *OneAgent) getAdditionalResourceAttributes() map[string]string {
 	switch {
 	case oa.IsCloudNativeFullstackMode():
 		return oa.CloudNativeFullStack.AdditionalResourceAttributes
