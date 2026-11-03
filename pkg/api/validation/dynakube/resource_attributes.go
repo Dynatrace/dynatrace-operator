@@ -11,7 +11,7 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/sanitize"
 	"k8s.io/apimachinery/pkg/api/validate/content"
 )
 
@@ -72,7 +72,7 @@ func checkResourceAttributeSanitization(attrs map[string]string) (warns, errs st
 
 	entries := make([]entry, 0, len(attrs))
 	for key := range attrs {
-		entries = append(entries, entry{original: key, sanitized: types.SanitizeResourceAttributeKey(key)})
+		entries = append(entries, entry{original: key, sanitized: sanitize.ResourceAttributeKey(key)})
 	}
 
 	slices.SortFunc(entries, func(a, b entry) int { return cmp.Compare(a.original, b.original) })
