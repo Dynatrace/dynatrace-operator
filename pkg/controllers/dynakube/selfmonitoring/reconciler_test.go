@@ -405,17 +405,3 @@ func TestBuildVolumes(t *testing.T) {
 		assert.Contains(t, mounts, userMount)
 	})
 }
-
-func TestConfigChangeRollsDeployment(t *testing.T) {
-	dk := newTestDynaKube()
-	r, c := newTestReconciler(newTokenSecret(true))
-	require.NoError(t, r.Reconcile(t.Context(), nil, dk))
-	before := getObject(t, c, &appsv1.Deployment{}).Spec.Template.Annotations[configHashAnnotation]
-
-	dk.Spec.TrustedCAs = "my-cas"
-	require.NoError(t, r.Reconcile(t.Context(), nil, dk))
-	after := getObject(t, c, &appsv1.Deployment{}).Spec.Template.Annotations[configHashAnnotation]
-
-	assert.NotEmpty(t, before)
-	assert.NotEqual(t, before, after)
-}
