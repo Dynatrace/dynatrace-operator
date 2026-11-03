@@ -8,7 +8,7 @@ jobs:
   check-comment:
     name: Check for trigger comment
     if: github.event.issue.pull_request
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     outputs:
       triggered: ${{ steps.check-comment.outputs.triggered }}
       detected-command: ${{ steps.check-comment.outputs.detected-command }}
@@ -29,7 +29,7 @@ jobs:
     name: Run E2E tests on kind
     needs: check-comment
     if: needs.check-comment.outputs.triggered == 'true' && needs.check-comment.outputs.detected-command == '/run-e2e-kind'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     environment: E2E
     permissions:
       contents: read
