@@ -625,7 +625,7 @@ func TestGenerateCorrectCertInitSecret(t *testing.T) {
 
 		assertSecretFound(t, clt, bootstrapperconfig.GetSourceCertsSecretName(dk.Name), dk.Namespace)
 
-		dk.Annotations[exp.AGAutomaticTLSCertificateKey] = "false"
+		dk.Annotations[exp.AGTLSCertificateTransferringToOneAgentKey] = "false"
 
 		err = r.generateInitSecret(ctx, dtClient, []corev1.Namespace{*namespaces[0], *namespaces[1]}, dk)
 		require.NoError(t, err)
@@ -707,7 +707,7 @@ func TestGenerateCorrectOTLPCertInitSecret(t *testing.T) {
 
 		assertSecretFound(t, clt, exporterconfig.GetSourceCertsSecretName(dk.Name), dk.Namespace)
 
-		dk.Annotations[exp.AGAutomaticTLSCertificateKey] = "false"
+		dk.Annotations[exp.AGTLSCertificateTransferringToOneAgentKey] = "false"
 
 		err = r.generateOTLPSecret(ctx, []corev1.Namespace{*namespaces[0], *namespaces[1]}, dk)
 		require.NoError(t, err)

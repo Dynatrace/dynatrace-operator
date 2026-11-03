@@ -118,7 +118,7 @@ func getTLSSecret(name string, namespace string, crt string, key string) *corev1
 }
 
 func disableAutomaticAGCertificate(dk *dynakube.DynaKube) {
-	dk.Annotations[exp.AGAutomaticTLSCertificateKey] = "false"
+	dk.Annotations[exp.AGTLSCertificateTransferringToOneAgentKey] = "false"
 }
 
 func enableLegacyVolumeMounts(dk *dynakube.DynaKube) {

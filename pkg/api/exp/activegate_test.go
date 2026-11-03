@@ -81,10 +81,10 @@ func TestIsActiveGateAutomaticTLSCertificate(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.title, func(t *testing.T) {
 			ff := FeatureFlags{annotations: map[string]string{
-				AGAutomaticTLSCertificateKey: c.in,
+				AGTLSCertificateTransferringToOneAgentKey: c.in,
 			}}
 
-			out := ff.IsActiveGateAutomaticTLSCertificate()
+			out := ff.IsActiveGateTLSCertificateTransferringToOneAgentEnabled()
 
 			assert.Equal(t, c.out, out)
 		})

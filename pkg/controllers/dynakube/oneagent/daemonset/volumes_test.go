@@ -99,7 +99,7 @@ func TestPrepareVolumes(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			Name: "dynakube",
 			Annotations: map[string]string{
-				exp.AGAutomaticTLSCertificateKey: "false",
+				exp.AGTLSCertificateTransferringToOneAgentKey: "false",
 			},
 			Spec: dynakube.DynaKubeSpec{
 				ActiveGate: activegate.Spec{
@@ -121,7 +121,7 @@ func TestPrepareVolumes(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			Name: "dynakube",
 			Annotations: map[string]string{
-				exp.AGAutomaticTLSCertificateKey: "false",
+				exp.AGTLSCertificateTransferringToOneAgentKey: "false",
 			},
 			Spec: dynakube.DynaKubeSpec{
 				ActiveGate: activegate.Spec{
@@ -332,7 +332,7 @@ func TestPrepareVolumeMounts(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			Name: "dynakube",
 			Annotations: map[string]string{
-				exp.AGAutomaticTLSCertificateKey: "false",
+				exp.AGTLSCertificateTransferringToOneAgentKey: "false",
 			},
 			Spec: dynakube.DynaKubeSpec{
 				OneAgent: oneagent.Spec{
@@ -358,7 +358,7 @@ func TestPrepareVolumeMounts(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			Name: "dynakube",
 			Annotations: map[string]string{
-				exp.AGAutomaticTLSCertificateKey: "false",
+				exp.AGTLSCertificateTransferringToOneAgentKey: "false",
 			},
 			Spec: dynakube.DynaKubeSpec{
 				OneAgent: oneagent.Spec{

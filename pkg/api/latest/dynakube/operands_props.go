@@ -21,7 +21,7 @@ func (dk *DynaKube) ActiveGate() *activegate.ActiveGate {
 	// registry host on purpose (see DynaKube.APIURLHost).
 	dk.Spec.ActiveGate.SetAPIURL(dk.Spec.APIURL)
 	dk.Spec.ActiveGate.SetName(dk.Name)
-	dk.Spec.ActiveGate.SetAutomaticTLSCertificate(dk.FF().IsActiveGateAutomaticTLSCertificate())
+	dk.Spec.ActiveGate.SetTLSCertificateTransferringToOneAgent(dk.FF().IsActiveGateTLSCertificateTransferringToOneAgentEnabled())
 	dk.Spec.ActiveGate.SetExtensionsDependency(dk.Extensions().IsAnyEnabled())
 
 	return &activegate.ActiveGate{

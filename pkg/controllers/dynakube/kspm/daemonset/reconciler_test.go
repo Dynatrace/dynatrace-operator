@@ -388,7 +388,7 @@ func TestTlsSecretHashAnnotationHandling(t *testing.T) {
 	t.Run("AG TLS secret not transferred to OA", func(t *testing.T) {
 		dk := createDynakube(true)
 		dk.Annotations = map[string]string{
-			exp.AGAutomaticTLSCertificateKey: "false",
+			exp.AGTLSCertificateTransferringToOneAgentKey: "false",
 		}
 
 		kubeClient := fake.NewClient()

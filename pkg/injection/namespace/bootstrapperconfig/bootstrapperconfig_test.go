@@ -228,8 +228,8 @@ func TestGenerateForDynakube(t *testing.T) {
 			Name:      testDynakube,
 			Namespace: testNamespaceDynatrace,
 			Annotations: map[string]string{
-				exp.OAInitialConnectRetryKey:     "6500",
-				exp.AGAutomaticTLSCertificateKey: "false",
+				exp.OAInitialConnectRetryKey:                  "6500",
+				exp.AGTLSCertificateTransferringToOneAgentKey: "false",
 			},
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testAPIurl,
@@ -488,8 +488,8 @@ func TestGenerateForDynakubeWithAutomaticAGTLSCertificateDisabled(t *testing.T) 
 			Name:      testDynakube,
 			Namespace: testNamespaceDynatrace,
 			Annotations: map[string]string{
-				exp.OAInitialConnectRetryKey:     "6500",
-				exp.AGAutomaticTLSCertificateKey: "false",
+				exp.OAInitialConnectRetryKey:                  "6500",
+				exp.AGTLSCertificateTransferringToOneAgentKey: "false",
 			},
 			Spec: dynakube.DynaKubeSpec{
 				APIURL:     testAPIurl,

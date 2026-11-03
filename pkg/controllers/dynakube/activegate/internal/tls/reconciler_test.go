@@ -77,7 +77,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			Namespace: testNamespace,
 			Name:      testDynakubeName,
 			Annotations: map[string]string{
-				exp.AGAutomaticTLSCertificateKey: "false",
+				exp.AGTLSCertificateTransferringToOneAgentKey: "false",
 			},
 			Spec: dynakube.DynaKubeSpec{
 				ActiveGate: activegate.Spec{
@@ -154,7 +154,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		dk.Annotations = make(map[string]string)
-		dk.Annotations[exp.AGAutomaticTLSCertificateKey] = "false"
+		dk.Annotations[exp.AGTLSCertificateTransferringToOneAgentKey] = "false"
 
 		err = r.Reconcile(t.Context(), dk)
 		require.NoError(t, err)

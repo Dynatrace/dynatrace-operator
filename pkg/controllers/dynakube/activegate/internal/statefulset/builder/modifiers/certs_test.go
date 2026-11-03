@@ -23,7 +23,7 @@ func setCertUsage(dk *dynakube.DynaKube, isUsed bool) {
 }
 
 func disableAutomaticAGCertificate(dk *dynakube.DynaKube) {
-	dk.Annotations[exp.AGAutomaticTLSCertificateKey] = "false"
+	dk.Annotations[exp.AGTLSCertificateTransferringToOneAgentKey] = "false"
 }
 
 func TestCertEnabled(t *testing.T) {
