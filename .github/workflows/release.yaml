@@ -21,7 +21,7 @@ jobs:
       contents: read
       id-token: write
     name: Prepare properties
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - name: Checkout
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -39,7 +39,7 @@ jobs:
   build-push:
     name: Build images
     environment: Release
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       id-token: write
     env:
@@ -103,7 +103,7 @@ jobs:
     name: Sign the image index/manifests + Add SBOM
     environment: Release
     needs: [prepare, build-push]
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       id-token: write
       attestations: write
@@ -212,7 +212,7 @@ jobs:
     name: Run preflight for rhcc
     environment: Release
     needs: [ prepare, build-push]
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     env:
       SCAN_REGISTRY: "quay.io"
     steps:
@@ -247,7 +247,7 @@ jobs:
       id-token: write
       attestations: write
       artifact-metadata: write
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - name: Checkout code
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
