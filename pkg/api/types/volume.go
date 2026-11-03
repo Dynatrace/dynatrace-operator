@@ -8,7 +8,7 @@ import (
 )
 
 // +kubebuilder:object:generate=true
-
+// +kubebuilder:validation:ExactlyOneOf=configMap;csi;downwardAPI;emptyDir;ephemeral;persistentVolumeClaim;projected;secret;image
 type Volume struct {
 	Name                string `json:"name"`
 	AllowedVolumeSource `json:",inline"`

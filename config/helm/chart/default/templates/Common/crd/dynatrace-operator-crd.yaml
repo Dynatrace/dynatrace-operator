@@ -2895,6 +2895,12 @@ spec:
                       required:
                       - name
                       type: object
+                      x-kubernetes-validations:
+                      - message: exactly one of the fields in [configMap csi downwardAPI
+                          emptyDir ephemeral persistentVolumeClaim projected secret
+                          image] must be set
+                        rule: (has(self.configMap)?1:0)+(has(self.csi)?1:0)+(has(self.downwardAPI)?1:0)+(has(self.emptyDir)?1:0)+(has(self.ephemeral)?1:0)+(has(self.persistentVolumeClaim)?1:0)+(has(self.projected)?1:0)+(has(self.secret)?1:0)+(has(self.image)?1:0)
+                          == 1
                     type: array
                 type: object
               apiUrl:
@@ -6544,6 +6550,12 @@ spec:
                       required:
                       - name
                       type: object
+                      x-kubernetes-validations:
+                      - message: exactly one of the fields in [configMap csi downwardAPI
+                          emptyDir ephemeral persistentVolumeClaim projected secret
+                          image] must be set
+                        rule: (has(self.configMap)?1:0)+(has(self.csi)?1:0)+(has(self.downwardAPI)?1:0)+(has(self.emptyDir)?1:0)+(has(self.ephemeral)?1:0)+(has(self.persistentVolumeClaim)?1:0)+(has(self.projected)?1:0)+(has(self.secret)?1:0)+(has(self.image)?1:0)
+                          == 1
                     type: array
                 type: object
               skipCertCheck:
