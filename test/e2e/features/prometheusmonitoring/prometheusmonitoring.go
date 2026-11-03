@@ -42,6 +42,7 @@ func Feature(t *testing.T) features.Feature {
 
 	dk := dynakube.New(
 		dynakube.WithAPIURL(secretConfig.APIURL),
+		dynakube.WithSelfMonitoringImage(dynakube.GetLatestOTelCollectorImageTagURI(t)),
 	)
 
 	pm := &pmapi.PrometheusMonitoring{
@@ -68,6 +69,8 @@ func Feature(t *testing.T) features.Feature {
 	builder.Assess("gateway is ready", k8sobject.Expect(pm.Gateway().GetStatefulSetName(), pm.Namespace, k8sstatefulset.IsRolloutComplete))
 	builder.Assess("scraper is ready", k8sobject.Expect(pm.Scraper().GetDeploymentName(), pm.Namespace, k8sdeployment.IsRolloutComplete))
 	builder.Assess("target allocator is ready", k8sobject.Expect(pm.TargetAllocator().GetDeploymentName(), pm.Namespace, k8sdeployment.IsRolloutComplete))
+
+	builder.Assess("self-monitoring collector is ready", k8sobject.Expect(dk.SelfMonitoringName(), dk.Namespace, k8sdeployment.IsRolloutComplete))
 
 	var previousTargetAllocatorImage, previousScraperImage, previousGatewayImage string
 
@@ -117,6 +120,7 @@ func PublicRegistry(t *testing.T) features.Feature {
 
 	dk := dynakube.New(
 		dynakube.WithAPIURL(secretConfig.APIURL),
+		dynakube.WithSelfMonitoring(),
 		dynakube.WithCustomPullSecret(consts.DevRegistryPullSecretName),
 	)
 
@@ -135,6 +139,8 @@ func PublicRegistry(t *testing.T) features.Feature {
 	builder.Assess("gateway is ready", k8sobject.Expect(pm.Gateway().GetStatefulSetName(), pm.Namespace, k8sstatefulset.IsRolloutComplete))
 	builder.Assess("scraper is ready", k8sobject.Expect(pm.Scraper().GetDeploymentName(), pm.Namespace, k8sdeployment.IsRolloutComplete))
 	builder.Assess("target allocator is ready", k8sobject.Expect(pm.TargetAllocator().GetDeploymentName(), pm.Namespace, k8sdeployment.IsRolloutComplete))
+
+	builder.Assess("self-monitoring collector is ready", k8sobject.Expect(dk.SelfMonitoringName(), dk.Namespace, k8sdeployment.IsRolloutComplete))
 
 	builder.Teardown(k8sobject.Delete(pm))
 
