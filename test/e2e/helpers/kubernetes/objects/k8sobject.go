@@ -27,10 +27,7 @@ const DefaultWaitTimeout = 5 * time.Minute
 
 var WaitTimeout = DefaultWaitTimeout
 
-var (
-	SecretExists    = exists[*corev1.Secret]
-	ConfigMapExists = exists[*corev1.ConfigMap]
-)
+var SecretExists = exists[*corev1.Secret]
 
 func exists[T client.Object](T) bool { return true }
 

@@ -389,7 +389,7 @@ func (controller *Controller) setupTokensAndClient(ctx context.Context, dk *dyna
 	return dtClient, nil
 }
 
-func (controller *Controller) reconcileComponents(ctx context.Context, dtClient *dynatrace.Client, dk *dynakube.DynaKube) error { //nolint:revive // function-length: one block per component
+func (controller *Controller) reconcileComponents(ctx context.Context, dtClient *dynatrace.Client, dk *dynakube.DynaKube) error { //nolint:revive
 	log := logd.FromContext(ctx)
 
 	var componentErrors []error
