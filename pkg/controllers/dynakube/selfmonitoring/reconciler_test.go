@@ -343,6 +343,18 @@ func TestBuildEnv(t *testing.T) {
 
 		assert.Equal(t, "status.podIP", byName["MY_POD_IP"].ValueFrom.FieldRef.FieldPath)
 		assert.Equal(t, testName, byName["K8S_CLUSTER_NAME"].Value)
+
+		for name, fieldPath := range map[string]string{
+			"K8S_NODE_NAME":      "spec.nodeName",
+			"K8S_POD_NAME":       "metadata.name",
+			"K8S_NAMESPACE_NAME": "metadata.namespace",
+			"K8S_POD_UID":        "metadata.uid",
+		} {
+			require.Contains(t, byName, name)
+			require.NotNil(t, byName[name].ValueFrom)
+			assert.Equal(t, fieldPath, byName[name].ValueFrom.FieldRef.FieldPath, name)
+			assert.Equal(t, "v1", byName[name].ValueFrom.FieldRef.APIVersion, name)
+		}
 		// 90% of the 500Mi limit
 		assert.Equal(t, "471859200", byName["GOMEMLIMIT"].Value)
 		assert.NotContains(t, byName, "HTTPS_PROXY")

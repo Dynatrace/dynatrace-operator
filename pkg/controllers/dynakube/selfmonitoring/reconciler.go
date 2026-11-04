@@ -371,6 +371,10 @@ func buildEnv(s *reconcileScope) []corev1.EnvVar {
 			},
 		},
 		{Name: "K8S_CLUSTER_NAME", Value: dk.Name},
+		fieldRefEnv("K8S_NODE_NAME", "spec.nodeName"),
+		fieldRefEnv("K8S_POD_NAME", "metadata.name"),
+		fieldRefEnv("K8S_NAMESPACE_NAME", "metadata.namespace"),
+		fieldRefEnv("K8S_POD_UID", "metadata.uid"),
 	}, s.Spec.Resources)
 
 	if dk.HasProxy() {
@@ -384,6 +388,17 @@ func buildEnv(s *reconcileScope) []corev1.EnvVar {
 	}
 
 	return envs
+}
+
+// fieldRefEnv builds an env var sourced from the pod's field path.
+// APIVersion is set explicitly to avoid a reconcile diff, as the API server defaults it to "v1".
+func fieldRefEnv(name, fieldPath string) corev1.EnvVar {
+	return corev1.EnvVar{
+		Name: name,
+		ValueFrom: &corev1.EnvVarSource{
+			FieldRef: &corev1.ObjectFieldSelector{APIVersion: "v1", FieldPath: fieldPath},
+		},
+	}
 }
 
 func proxyEnv(name string, src *value.Source) corev1.EnvVar {
