@@ -11,8 +11,8 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/prometheusmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/test/integrationtests"
 	"github.com/stretchr/testify/require"
@@ -240,7 +240,7 @@ func TestSetupWithManager(t *testing.T) {
 		integrationtests.CreateDynakube(t, clt, dk)
 
 		assertReconcileTriggered(t, key, func() {
-			dk.Spec.Proxy = &value.Source{Value: "test"}
+			dk.Spec.Proxy = &types.ValueSource{Value: "test"}
 			require.NoError(t, clt.Update(t.Context(), dk))
 		})
 	})

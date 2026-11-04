@@ -14,7 +14,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
@@ -131,7 +131,7 @@ func (in *DynaKubeSpec) DeepCopyInto(out *DynaKubeSpec) {
 	in.MetadataEnrichment.DeepCopyInto(&out.MetadataEnrichment)
 	if in.Proxy != nil {
 		in, out := &in.Proxy, &out.Proxy
-		*out = new(value.Source)
+		*out = new(types.ValueSource)
 		**out = **in
 	}
 	if in.LogMonitoring != nil {
@@ -350,7 +350,7 @@ func (in *SelfMonitoringSpec) DeepCopyInto(out *SelfMonitoringSpec) {
 	}
 	if in.Volumes != nil {
 		in, out := &in.Volumes, &out.Volumes
-		*out = make([]corev1.Volume, len(*in))
+		*out = make(types.Volumes, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}

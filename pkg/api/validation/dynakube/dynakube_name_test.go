@@ -14,7 +14,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/util/validation"
@@ -66,23 +66,23 @@ func TestNameTooLong(t *testing.T) {
 			dk.Spec.APIURL = "https://tenantid.doma.in/api"
 			if dk.Spec.Extensions != nil {
 				dk.Spec.Templates.ExtensionExecutionController = extensions.ExecutionControllerSpec{
-					ImageRef: image.Ref{Repository: "eec/image", Tag: "latest"},
+					ImageRef: types.ImageRef{Repository: "eec/image", Tag: "latest"},
 				}
 				dk.Spec.Templates.SQLExtensionExecutor = extensions.DatabaseExecutorSpec{
-					ImageRef: image.Ref{Repository: "sqlexec/image", Tag: "latest"},
+					ImageRef: types.ImageRef{Repository: "sqlexec/image", Tag: "latest"},
 				}
 				dk.Spec.Templates.OpenTelemetryCollector = dynakube.OpenTelemetryCollectorSpec{
-					ImageRef: image.Ref{Repository: "otelc/image", Tag: "latest"},
+					ImageRef: types.ImageRef{Repository: "otelc/image", Tag: "latest"},
 				}
 			}
 			if dk.Spec.TelemetryIngest != nil {
 				dk.Spec.Templates.OpenTelemetryCollector = dynakube.OpenTelemetryCollectorSpec{
-					ImageRef: image.Ref{Repository: "otelc/image", Tag: "latest"},
+					ImageRef: types.ImageRef{Repository: "otelc/image", Tag: "latest"},
 				}
 			}
 			if dk.Spec.KSPM != nil {
 				dk.Spec.Templates.KSPMNodeConfigurationCollector = kspm.NodeConfigurationCollectorSpec{
-					ImageRef: image.Ref{Repository: "otelc/image", Tag: "latest"},
+					ImageRef: types.ImageRef{Repository: "otelc/image", Tag: "latest"},
 				}
 				dk.Spec.ActiveGate.Capabilities = []activegate.CapabilityDisplayName{
 					activegate.KubeMonCapability.DisplayName,

@@ -4,7 +4,7 @@
 package activegate
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -70,7 +70,7 @@ type CapabilityProperties struct {
 	// Add a custom properties file by providing it as a value or reference it from a secret
 	// +kubebuilder:validation:Optional
 	// If referenced from a secret, make sure the key is called 'customProperties'
-	CustomProperties *value.Source `json:"customProperties,omitempty"`
+	CustomProperties *types.ValueSource `json:"customProperties,omitempty"`
 
 	// Node selector to control the selection of nodes
 	// +kubebuilder:validation:Optional

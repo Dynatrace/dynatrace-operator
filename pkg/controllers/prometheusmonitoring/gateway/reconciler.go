@@ -13,7 +13,7 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/prometheusmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
@@ -195,18 +195,20 @@ func (r *Reconciler) reconcileStatefulset(ctx context.Context, s *reconcileScope
 func mutateStatefulSet(sts *appsv1.StatefulSet, s *reconcileScope) {
 	s.AppLabels.MergeInto(sts)
 
-	sts.Spec.Template.Labels = maps.Clone(s.Spec.Labels)
 	if sts.Spec.Template.Labels == nil {
 		sts.Spec.Template.Labels = make(map[string]string)
 	}
 
+	// merge instead of replace to keep metadata applied by users or kubectl (e.g. restartedAt)
+	maps.Copy(sts.Spec.Template.Labels, s.Spec.Labels)
 	maps.Copy(sts.Spec.Template.Labels, s.AppLabels.AsSelector())
 
-	sts.Spec.Template.Annotations = maps.Clone(s.Spec.Annotations)
 	if sts.Spec.Template.Annotations == nil {
 		sts.Spec.Template.Annotations = make(map[string]string)
 	}
 
+	// merge instead of replace to keep metadata applied by users or kubectl (e.g. restartedAt)
+	maps.Copy(sts.Spec.Template.Annotations, s.Spec.Annotations)
 	sts.Spec.Template.Annotations[configHashAnnotation] = s.ConfigMapHash
 
 	if s.Spec.Replicas != nil {
@@ -331,7 +333,7 @@ func buildEnv(s *reconcileScope) []corev1.EnvVar {
 	return envs
 }
 
-func proxyEnv(name string, src *value.Source) corev1.EnvVar {
+func proxyEnv(name string, src *types.ValueSource) corev1.EnvVar {
 	if src.ValueFrom != "" {
 		return corev1.EnvVar{
 			Name: name,

@@ -9,7 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -32,7 +32,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			Namespace: testNamespace}
 
 		r := NewReconciler(nil, nil)
-		err := r.Reconcile(t.Context(), dk, "", &value.Source{})
+		err := r.Reconcile(t.Context(), dk, "", &types.ValueSource{})
 		require.NoError(t, err)
 	})
 
@@ -41,7 +41,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			Name:      testName,
 			Namespace: testNamespace,
 			Spec: dynakube.DynaKubeSpec{
-				Proxy: &value.Source{
+				Proxy: &types.ValueSource{
 					Value: "test",
 				},
 			}}
@@ -63,12 +63,12 @@ func TestReconciler_Reconcile(t *testing.T) {
 	})
 
 	t.Run("Create custom properties secret without no-proxy value", func(t *testing.T) {
-		valueSource := value.Source{Value: testValue}
+		valueSource := types.ValueSource{Value: testValue}
 		dk := &dynakube.DynaKube{
 			Name:      testName,
 			Namespace: testNamespace,
 			Spec: dynakube.DynaKubeSpec{
-				Proxy: &value.Source{
+				Proxy: &types.ValueSource{
 					Value: "test",
 				},
 			}}
@@ -96,7 +96,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 	})
 
 	t.Run("Always copy custom properties to secret", func(t *testing.T) {
-		valueSource := value.Source{ValueFrom: testKey}
+		valueSource := types.ValueSource{ValueFrom: testKey}
 		dk := &dynakube.DynaKube{
 			Name:      testName,
 			Namespace: testNamespace,
@@ -125,7 +125,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 	})
 
 	t.Run("Create creates custom properties secret", func(t *testing.T) {
-		valueSource := value.Source{Value: testValue}
+		valueSource := types.ValueSource{Value: testValue}
 		dk := &dynakube.DynaKube{
 			Name:      testName,
 			Namespace: testNamespace}
@@ -145,7 +145,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		assert.Equal(t, customPropertiesSecret.Data[DataKey], []byte(testValue))
 	})
 	t.Run("Create updates custom properties only if data changed", func(t *testing.T) {
-		valueSource := value.Source{Value: testValue}
+		valueSource := types.ValueSource{Value: testValue}
 		dk := &dynakube.DynaKube{
 			Name:      testName,
 			Namespace: testNamespace}
@@ -176,7 +176,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		assert.Contains(t, customPropertiesSecret.Data, DataKey)
 		assert.Equal(t, customPropertiesSecret.Data[DataKey], []byte(testValue))
 
-		newValueSource := value.Source{Value: testKey}
+		newValueSource := types.ValueSource{Value: testKey}
 		err = r.Reconcile(t.Context(), dk, testOwner, &newValueSource)
 
 		require.NoError(t, err)

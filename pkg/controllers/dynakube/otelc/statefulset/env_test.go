@@ -12,7 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	otelcConsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/stretchr/testify/assert"
@@ -119,7 +119,7 @@ func TestProxyEnvsProxySecret(t *testing.T) {
 		extensions      *extensions.Spec
 		telemetryIngest *telemetryingest.Spec
 		activeGate      *activegate.Spec
-		proxy           *value.Source
+		proxy           *types.ValueSource
 
 		expectedNoProxy string
 	}{
@@ -127,7 +127,7 @@ func TestProxyEnvsProxySecret(t *testing.T) {
 			name:            "telemetryIngest, public AG, with proxy secret",
 			telemetryIngest: &telemetryingest.Spec{},
 			activeGate:      nil,
-			proxy: &value.Source{
+			proxy: &types.ValueSource{
 				ValueFrom: testProxySecretName,
 			},
 			expectedNoProxy: "$(KUBERNETES_SERVICE_HOST),kubernetes.default",
@@ -136,7 +136,7 @@ func TestProxyEnvsProxySecret(t *testing.T) {
 			name:            "telemetryIngest, local AG, with proxy secret",
 			telemetryIngest: &telemetryingest.Spec{},
 			activeGate:      getProxyTestActiveGate(),
-			proxy: &value.Source{
+			proxy: &types.ValueSource{
 				ValueFrom: testProxySecretName,
 			},
 			expectedNoProxy: "$(KUBERNETES_SERVICE_HOST),kubernetes.default,dynakube-activegate.dynatrace",
@@ -187,7 +187,7 @@ func TestProxyEnvsProxyValue(t *testing.T) {
 		extensions      *extensions.Spec
 		telemetryIngest *telemetryingest.Spec
 		activeGate      *activegate.Spec
-		proxy           *value.Source
+		proxy           *types.ValueSource
 
 		expectedNoProxy string
 	}{
@@ -195,7 +195,7 @@ func TestProxyEnvsProxyValue(t *testing.T) {
 			name:            "telemetryIngest, public AG, with proxy value",
 			telemetryIngest: &telemetryingest.Spec{},
 			activeGate:      nil,
-			proxy: &value.Source{
+			proxy: &types.ValueSource{
 				Value: testProxyValue,
 			},
 			expectedNoProxy: "$(KUBERNETES_SERVICE_HOST),kubernetes.default",
@@ -204,7 +204,7 @@ func TestProxyEnvsProxyValue(t *testing.T) {
 			name:            "telemetryIngest, local AG, with proxy value",
 			telemetryIngest: &telemetryingest.Spec{},
 			activeGate:      getProxyTestActiveGate(),
-			proxy: &value.Source{
+			proxy: &types.ValueSource{
 				Value: testProxyValue,
 			},
 			expectedNoProxy: "$(KUBERNETES_SERVICE_HOST),kubernetes.default,dynakube-activegate.dynatrace",

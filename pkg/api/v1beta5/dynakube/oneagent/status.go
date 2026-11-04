@@ -4,8 +4,8 @@
 package oneagent
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	containerv1 "github.com/google/go-containerregistry/pkg/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -45,7 +45,7 @@ type Instance struct {
 
 type ConnectionInfoStatus struct {
 	// Information for communicating with the tenant
-	communication.ConnectionInfo `json:",inline"`
+	types.ConnectionInfo `json:",inline"`
 
 	// List of communication hosts
 	CommunicationHosts []CommunicationHostStatus `json:"communicationHosts,omitempty"`

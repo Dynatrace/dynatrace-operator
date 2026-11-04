@@ -11,7 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	oaclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
@@ -35,7 +35,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -75,7 +74,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		dsActual := &appsv1.DaemonSet{}
-		err = fakeClient.Get(ctx, types.NamespacedName{Name: dk.OneAgent().GetDaemonsetName(), Namespace: namespace}, dsActual)
+		err = fakeClient.Get(ctx, client.ObjectKey{Name: dk.OneAgent().GetDaemonsetName(), Namespace: namespace}, dsActual)
 		require.NoError(t, err, "failed to get DaemonSet")
 		assert.Equal(t, namespace, dsActual.Namespace, "wrong namespace")
 		assert.Equal(t, dk.OneAgent().GetDaemonsetName(), dsActual.GetObjectMeta().GetName(), "wrong name")
@@ -101,7 +100,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		dsActual := &appsv1.DaemonSet{}
-		err = fakeClient.Get(ctx, types.NamespacedName{Name: dk.OneAgent().GetDaemonsetName(), Namespace: namespace}, dsActual)
+		err = fakeClient.Get(ctx, client.ObjectKey{Name: dk.OneAgent().GetDaemonsetName(), Namespace: namespace}, dsActual)
 		require.Error(t, err)
 		assert.True(t, k8serrors.IsNotFound(err))
 
@@ -225,7 +224,7 @@ func TestReconcileOneAgent_ReconcileOnEmptyEnvironmentAndDNSPolicy(t *testing.T)
 	require.NoError(t, err)
 
 	dsActual := &appsv1.DaemonSet{}
-	err = fakeClient.Get(ctx, types.NamespacedName{Name: dk.OneAgent().GetDaemonsetName(), Namespace: namespace}, dsActual)
+	err = fakeClient.Get(ctx, client.ObjectKey{Name: dk.OneAgent().GetDaemonsetName(), Namespace: namespace}, dsActual)
 	require.NoError(t, err, "failed to get DaemonSet")
 	assert.Equal(t, namespace, dsActual.Namespace, "wrong namespace")
 	assert.Equal(t, dk.OneAgent().GetDaemonsetName(), dsActual.GetObjectMeta().GetName(), "wrong name")
@@ -710,7 +709,7 @@ func TestReconcile_OneAgentConfigMap(t *testing.T) {
 	dk := newDynaKube()
 	dk.Status = dynakube.DynaKubeStatus{
 		OneAgent: oneagent.Status{
-			ConnectionInfo: communication.ConnectionInfo{
+			ConnectionInfo: types.ConnectionInfo{
 				TenantUUID: testTenantUUID,
 				Endpoints:  testTenantEndpoints,
 			},

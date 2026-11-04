@@ -11,7 +11,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	agconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
@@ -171,7 +171,7 @@ func missingOTelCollectorImage(_ context.Context, _ *Validator, dk *dynakube.Dyn
 }
 
 func ignoredOTelCollectorTemplate(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
-	if !dk.TelemetryIngest().IsEnabled() && dk.Spec.Templates.OpenTelemetryCollector.ImageRef != (image.Ref{}) {
+	if !dk.TelemetryIngest().IsEnabled() && dk.Spec.Templates.OpenTelemetryCollector.ImageRef != (types.ImageRef{}) {
 		return warningOTelCollectorIgnoredTemplate
 	}
 

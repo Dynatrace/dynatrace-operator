@@ -11,7 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -140,7 +140,7 @@ func TestArguments(t *testing.T) {
 		builder := builder{
 			dk: &dynakube.DynaKube{
 				Spec: dynakube.DynaKubeSpec{
-					Proxy: &value.Source{Value: "something"},
+					Proxy: &types.ValueSource{Value: "something"},
 				},
 				Status: dynakube.DynaKubeStatus{
 					OneAgent: oneagent.Status{
@@ -163,7 +163,7 @@ func TestArguments(t *testing.T) {
 		builder := builder{
 			dk: &dynakube.DynaKube{
 				Spec: dynakube.DynaKubeSpec{
-					Proxy: &value.Source{Value: "something"},
+					Proxy: &types.ValueSource{Value: "something"},
 				},
 				Name:      "dynakube",
 				Namespace: "dynatrace",
@@ -191,7 +191,7 @@ func TestArguments(t *testing.T) {
 				Annotations: map[string]string{
 					"feature.dynatrace.com/oneagent-ignore-proxy": "true",
 				},
-				Spec: dynakube.DynaKubeSpec{Proxy: &value.Source{Value: testValue}},
+				Spec: dynakube.DynaKubeSpec{Proxy: &types.ValueSource{Value: testValue}},
 			},
 		}
 		arguments, _ := builder.arguments()
@@ -243,7 +243,7 @@ func TestArguments(t *testing.T) {
 				Name:      "dynakube",
 				Namespace: "dynatrace",
 				Spec: dynakube.DynaKubeSpec{
-					Proxy: &value.Source{Value: testValue},
+					Proxy: &types.ValueSource{Value: testValue},
 					OneAgent: oneagent.Spec{
 						CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
 					},
@@ -267,7 +267,7 @@ func TestArguments(t *testing.T) {
 				Name:      "dynakube",
 				Namespace: "dynatrace",
 				Spec: dynakube.DynaKubeSpec{
-					Proxy: &value.Source{Value: testValue},
+					Proxy: &types.ValueSource{Value: testValue},
 					OneAgent: oneagent.Spec{
 						CloudNativeFullStack: &oneagent.CloudNativeFullStackSpec{},
 					},
@@ -323,7 +323,7 @@ func TestArguments(t *testing.T) {
 					exp.NoProxyKey: "4\x00qux",
 				},
 				Spec: dynakube.DynaKubeSpec{
-					Proxy: &value.Source{Value: "test"},
+					Proxy: &types.ValueSource{Value: "test"},
 					OneAgent: oneagent.Spec{
 						ClassicFullStack: &oneagent.HostInjectSpec{},
 						HostGroup:        "2\tbar",
@@ -385,7 +385,7 @@ func TestPodSpec_Arguments(t *testing.T) {
 	// deprecated
 	t.Run("has proxy arg", func(t *testing.T) {
 		dk.Status.OneAgent.Version = "1.272.0.0-0"
-		dk.Spec.Proxy = &value.Source{Value: testValue}
+		dk.Spec.Proxy = &types.ValueSource{Value: testValue}
 		podSpecs, _ = dsBuilder.podSpec(t.Context())
 		assert.Contains(t, podSpecs.Containers[0].Args, "--set-proxy=$(https_proxy)")
 
@@ -396,7 +396,7 @@ func TestPodSpec_Arguments(t *testing.T) {
 	})
 	// deprecated
 	t.Run("has proxy arg but feature flag to ignore is enabled", func(t *testing.T) {
-		dk.Spec.Proxy = &value.Source{Value: testValue}
+		dk.Spec.Proxy = &types.ValueSource{Value: testValue}
 		dk.Annotations[exp.OAProxyIgnoredKey] = "true" //nolint:staticcheck
 		podSpecs, _ = dsBuilder.podSpec(t.Context())
 		assert.NotContains(t, podSpecs.Containers[0].Args, "--set-proxy=$(https_proxy)")

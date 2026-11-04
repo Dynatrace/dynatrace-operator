@@ -12,7 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -32,7 +32,7 @@ func TestTooManyKubernetesMonitoringReplicas(t *testing.T) {
 					},
 					Templates: dynakube.TemplatesSpec{
 						KSPMNodeConfigurationCollector: kspm.NodeConfigurationCollectorSpec{
-							ImageRef: image.Ref{
+							ImageRef: types.ImageRef{
 								Repository: "repo/image",
 								Tag:        "version",
 							},
@@ -52,7 +52,7 @@ func TestTooManyKubernetesMonitoringReplicas(t *testing.T) {
 					KubernetesMonitoring: &kubemon.Spec{Registration: &kubemon.Registration{}},
 					Templates: dynakube.TemplatesSpec{
 						KSPMNodeConfigurationCollector: kspm.NodeConfigurationCollectorSpec{
-							ImageRef: image.Ref{
+							ImageRef: types.ImageRef{
 								Repository: "repo/image",
 								Tag:        "version",
 							},
@@ -78,7 +78,7 @@ func TestTooManyKubernetesMonitoringReplicas(t *testing.T) {
 					},
 					Templates: dynakube.TemplatesSpec{
 						KSPMNodeConfigurationCollector: kspm.NodeConfigurationCollectorSpec{
-							ImageRef: image.Ref{
+							ImageRef: types.ImageRef{
 								Repository: "repo/image",
 								Tag:        "version",
 							},
@@ -105,7 +105,7 @@ func TestTooManyKubernetesMonitoringReplicas(t *testing.T) {
 					ActiveGate: activeGate,
 					Templates: dynakube.TemplatesSpec{
 						KSPMNodeConfigurationCollector: kspm.NodeConfigurationCollectorSpec{
-							ImageRef: image.Ref{
+							ImageRef: types.ImageRef{
 								Repository: "repo/image",
 								Tag:        "version",
 							},
@@ -129,7 +129,7 @@ func TestTooManyKubernetesMonitoringReplicas(t *testing.T) {
 					},
 					Templates: dynakube.TemplatesSpec{
 						KSPMNodeConfigurationCollector: kspm.NodeConfigurationCollectorSpec{
-							ImageRef: image.Ref{
+							ImageRef: types.ImageRef{
 								Repository: "repo/image",
 								Tag:        "version",
 							},
@@ -150,7 +150,7 @@ func TestMissingKSPMDependency(t *testing.T) {
 				KubernetesMonitoring: &kubemon.Spec{Registration: &kubemon.Registration{}},
 				Templates: dynakube.TemplatesSpec{
 					KSPMNodeConfigurationCollector: kspm.NodeConfigurationCollectorSpec{
-						ImageRef: image.Ref{Repository: "repo/image", Tag: "version"},
+						ImageRef: types.ImageRef{Repository: "repo/image", Tag: "version"},
 					},
 				},
 			},
@@ -168,7 +168,7 @@ func TestMissingKSPMDependency(t *testing.T) {
 				},
 				Templates: dynakube.TemplatesSpec{
 					KSPMNodeConfigurationCollector: kspm.NodeConfigurationCollectorSpec{
-						ImageRef: image.Ref{Repository: "repo/image", Tag: "version"},
+						ImageRef: types.ImageRef{Repository: "repo/image", Tag: "version"},
 					},
 				},
 			},
@@ -183,7 +183,7 @@ func TestMissingKSPMDependency(t *testing.T) {
 				KSPM:   &kspm.Spec{MappedHostPaths: []string{"/"}},
 				Templates: dynakube.TemplatesSpec{
 					KSPMNodeConfigurationCollector: kspm.NodeConfigurationCollectorSpec{
-						ImageRef: image.Ref{Repository: "repo/image", Tag: "version"},
+						ImageRef: types.ImageRef{Repository: "repo/image", Tag: "version"},
 					},
 				},
 			},
@@ -201,7 +201,7 @@ func TestKSPMWithoutKubernetesMonitoringRegistration(t *testing.T) {
 				KubernetesMonitoring: &kubemon.Spec{Registration: &kubemon.Registration{}},
 				Templates: dynakube.TemplatesSpec{
 					KSPMNodeConfigurationCollector: kspm.NodeConfigurationCollectorSpec{
-						ImageRef: image.Ref{Repository: "repo/image", Tag: "version"},
+						ImageRef: types.ImageRef{Repository: "repo/image", Tag: "version"},
 					},
 				},
 			},
@@ -217,7 +217,7 @@ func TestKSPMWithoutKubernetesMonitoringRegistration(t *testing.T) {
 				KubernetesMonitoring: &kubemon.Spec{},
 				Templates: dynakube.TemplatesSpec{
 					KSPMNodeConfigurationCollector: kspm.NodeConfigurationCollectorSpec{
-						ImageRef: image.Ref{Repository: "repo/image", Tag: "version"},
+						ImageRef: types.ImageRef{Repository: "repo/image", Tag: "version"},
 					},
 				},
 			},
@@ -235,7 +235,7 @@ func TestKSPMWithoutKubernetesMonitoringRegistration(t *testing.T) {
 				},
 				Templates: dynakube.TemplatesSpec{
 					KSPMNodeConfigurationCollector: kspm.NodeConfigurationCollectorSpec{
-						ImageRef: image.Ref{Repository: "repo/image", Tag: "version"},
+						ImageRef: types.ImageRef{Repository: "repo/image", Tag: "version"},
 					},
 				},
 			},
@@ -265,7 +265,7 @@ func TestKSPMWithoutAutomaticK8sAPIMonitoring(t *testing.T) {
 				},
 				Templates: dynakube.TemplatesSpec{
 					KSPMNodeConfigurationCollector: kspm.NodeConfigurationCollectorSpec{
-						ImageRef: image.Ref{Repository: "repo/image", Tag: "version"},
+						ImageRef: types.ImageRef{Repository: "repo/image", Tag: "version"},
 					},
 				},
 			},
@@ -287,7 +287,7 @@ func TestKSPMWithoutAutomaticK8sAPIMonitoring(t *testing.T) {
 				},
 				Templates: dynakube.TemplatesSpec{
 					KSPMNodeConfigurationCollector: kspm.NodeConfigurationCollectorSpec{
-						ImageRef: image.Ref{Repository: "repo/image", Tag: "version"},
+						ImageRef: types.ImageRef{Repository: "repo/image", Tag: "version"},
 					},
 				},
 			},
@@ -307,7 +307,7 @@ func TestKSPMWithoutAutomaticK8sAPIMonitoring(t *testing.T) {
 				KubernetesMonitoring: &kubemon.Spec{Registration: &kubemon.Registration{}},
 				Templates: dynakube.TemplatesSpec{
 					KSPMNodeConfigurationCollector: kspm.NodeConfigurationCollectorSpec{
-						ImageRef: image.Ref{Repository: "repo/image", Tag: "version"},
+						ImageRef: types.ImageRef{Repository: "repo/image", Tag: "version"},
 					},
 				},
 			},
@@ -346,7 +346,7 @@ func TestMissingKSPMImage(t *testing.T) {
 					},
 					Templates: dynakube.TemplatesSpec{
 						KSPMNodeConfigurationCollector: kspm.NodeConfigurationCollectorSpec{
-							ImageRef: image.Ref{
+							ImageRef: types.ImageRef{
 								Repository: "repo/image",
 								Tag:        "version",
 							},
@@ -388,7 +388,7 @@ func TestMissingKSPMImage(t *testing.T) {
 					},
 					Templates: dynakube.TemplatesSpec{
 						KSPMNodeConfigurationCollector: kspm.NodeConfigurationCollectorSpec{
-							ImageRef: image.Ref{
+							ImageRef: types.ImageRef{
 								Repository: "repo/image",
 							},
 						},
@@ -412,7 +412,7 @@ func TestMissingKSPMImage(t *testing.T) {
 					},
 					Templates: dynakube.TemplatesSpec{
 						KSPMNodeConfigurationCollector: kspm.NodeConfigurationCollectorSpec{
-							ImageRef: image.Ref{
+							ImageRef: types.ImageRef{
 								Tag: "version",
 							},
 						},
@@ -468,7 +468,7 @@ func TestMissingKSPMImage(t *testing.T) {
 					},
 					Templates: dynakube.TemplatesSpec{
 						KSPMNodeConfigurationCollector: kspm.NodeConfigurationCollectorSpec{
-							ImageRef: image.Ref{
+							ImageRef: types.ImageRef{
 								Repository: "repo/image",
 								Tag:        "version",
 							},
@@ -504,7 +504,7 @@ func TestMappedHostPath(t *testing.T) {
 				},
 				Templates: dynakube.TemplatesSpec{
 					KSPMNodeConfigurationCollector: kspm.NodeConfigurationCollectorSpec{
-						ImageRef: image.Ref{
+						ImageRef: types.ImageRef{
 							Repository: "repo/image",
 							Tag:        "version",
 						},

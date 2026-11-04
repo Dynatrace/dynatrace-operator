@@ -4,8 +4,8 @@
 package activegate
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 )
 
 // +kubebuilder:object:generate=true
@@ -14,7 +14,7 @@ type Status struct {
 	status.VersionStatus `json:",inline"`
 
 	// Information about Active Gate's connections
-	ConnectionInfo communication.ConnectionInfo `json:"connectionInfoStatus,omitempty"`
+	ConnectionInfo types.ConnectionInfo `json:"connectionInfoStatus,omitempty"`
 
 	// The ClusterIPs set by Kubernetes on the ActiveGate Service created by the Operator
 	ServiceIPs []string `json:"serviceIPs,omitempty"`

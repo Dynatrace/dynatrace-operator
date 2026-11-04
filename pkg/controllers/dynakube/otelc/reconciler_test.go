@@ -11,10 +11,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
-	sharedimage "github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/endpoint"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/statefulset"
@@ -26,7 +24,6 @@ import (
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -86,13 +83,13 @@ func createDynaKube(activeGateEnabled bool) *dynakube.DynaKube {
 		Namespace: "test-namespace",
 		Spec: dynakube.DynaKubeSpec{
 			APIURL: testAPIURL,
-			Proxy: &value.Source{
+			Proxy: &types.ValueSource{
 				Value: "http://test-proxy:8080",
 			},
 			TelemetryIngest: &telemetryingest.Spec{},
 			Templates: dynakube.TemplatesSpec{
 				OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{
-					ImageRef: sharedimage.Ref{
+					ImageRef: types.ImageRef{
 						Repository: "test-repo/otelc",
 						Tag:        "latest",
 					},
@@ -101,7 +98,7 @@ func createDynaKube(activeGateEnabled bool) *dynakube.DynaKube {
 		},
 		Status: dynakube.DynaKubeStatus{
 			ActiveGate: activegate.Status{
-				ConnectionInfo: communication.ConnectionInfo{
+				ConnectionInfo: types.ConnectionInfo{
 					TenantUUID: testTenantUUID,
 				},
 				VersionStatus: status.VersionStatus{},
@@ -129,7 +126,7 @@ func reconcile(t *testing.T, ctx context.Context, clt client.WithWatch, dk *dyna
 	require.NoError(t, err)
 
 	var apiEndpointConfigMap corev1.ConfigMap
-	err = clt.Get(ctx, types.NamespacedName{Name: consts.OTLPAPIEndpointConfigMapName, Namespace: dk.Namespace}, &apiEndpointConfigMap)
+	err = clt.Get(ctx, client.ObjectKey{Name: consts.OTLPAPIEndpointConfigMapName, Namespace: dk.Namespace}, &apiEndpointConfigMap)
 	require.NoError(t, err)
 	var ok bool
 	dtEndpoint, ok = apiEndpointConfigMap.Data["DT_ENDPOINT"]
@@ -140,7 +137,7 @@ func reconcile(t *testing.T, ctx context.Context, clt client.WithWatch, dk *dyna
 	require.NoError(t, err)
 
 	var otelcSts appsv1.StatefulSet
-	err = clt.Get(ctx, types.NamespacedName{Name: dk.OTelCollectorStatefulsetName(), Namespace: dk.Namespace}, &otelcSts)
+	err = clt.Get(ctx, client.ObjectKey{Name: dk.OTelCollectorStatefulsetName(), Namespace: dk.Namespace}, &otelcSts)
 	require.NoError(t, err)
 	require.NotEmpty(t, otelcSts.Spec.Template.Spec.Containers)
 

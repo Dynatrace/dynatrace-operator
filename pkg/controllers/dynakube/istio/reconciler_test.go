@@ -12,7 +12,7 @@ import (
 	kubemonapi "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -455,7 +455,7 @@ func TestReconcileActiveGateCommunicationHosts(t *testing.T) {
 		dk.Spec.KubernetesMonitoring = &kubemonapi.Spec{}
 		dk.Status.ActiveGate.ConnectionInfo.Endpoints = ""
 		dk.Status.KubernetesMonitoring = kubemonapi.Status{
-			ConnectionInfo: communication.ConnectionInfo{
+			ConnectionInfo: types.ConnectionInfo{
 				Endpoints: "https://kubemon.some.endpoint.com:443",
 			},
 		}
@@ -528,12 +528,12 @@ func createTestDynaKube() *dynakube.DynaKube {
 		},
 		Status: dynakube.DynaKubeStatus{
 			OneAgent: oneagent.Status{
-				ConnectionInfo: communication.ConnectionInfo{
+				ConnectionInfo: types.ConnectionInfo{
 					Endpoints: fqdnHost.String() + ";" + ipHost.String(),
 				},
 			},
 			ActiveGate: activegate.Status{
-				ConnectionInfo: communication.ConnectionInfo{
+				ConnectionInfo: types.ConnectionInfo{
 					TenantUUID: "test-tenant",
 					Endpoints:  endpoints,
 				},

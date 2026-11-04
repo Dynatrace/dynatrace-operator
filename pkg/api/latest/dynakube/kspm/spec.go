@@ -4,7 +4,7 @@
 package kspm
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -61,7 +61,7 @@ type NodeConfigurationCollectorSpec struct {
 
 	// Overrides the default image
 	// +kubebuilder:validation:Optional
-	ImageRef image.Ref `json:"imageRef,omitzero"`
+	ImageRef types.ImageRef `json:"imageRef,omitzero"`
 
 	// If specified, indicates the pod's priority. Name must be defined by creating a PriorityClass object with that
 	// name. If not specified the setting will be removed from the DaemonSet.

@@ -12,9 +12,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/authtoken"
@@ -108,7 +107,7 @@ func TestReconcile(t *testing.T) {
 
 		_ = getStatefulSet(t, clt, dk)
 
-		dk.Spec.Proxy = &value.Source{Value: testValue}
+		dk.Spec.Proxy = &types.ValueSource{Value: testValue}
 		require.NoError(t, r.Reconcile(t.Context(), dk, agCapability))
 
 		statefulSet := getStatefulSet(t, clt, dk)
@@ -147,12 +146,12 @@ func TestReconcile_GetCustomPropertyHash(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotEmpty(t, hash)
 
-	dk.Spec.ActiveGate.CustomProperties = &value.Source{Value: testValue}
+	dk.Spec.ActiveGate.CustomProperties = &types.ValueSource{Value: testValue}
 	hash, err = r.calculateActiveGateConfigurationHash(ctx, dk, agCapability)
 	require.NoError(t, err)
 	assert.NotEmpty(t, hash)
 
-	dk.Spec.ActiveGate.CustomProperties = &value.Source{ValueFrom: testName}
+	dk.Spec.ActiveGate.CustomProperties = &types.ValueSource{ValueFrom: testName}
 	hash, err = r.calculateActiveGateConfigurationHash(ctx, dk, agCapability)
 	require.Error(t, err)
 	assert.Empty(t, hash)
@@ -472,7 +471,7 @@ func TestStatefulSetUpdateWeakness(t *testing.T) {
 		Name:      testName,
 		Status: dynakube.DynaKubeStatus{
 			ActiveGate: activegate.Status{
-				ConnectionInfo: communication.ConnectionInfo{
+				ConnectionInfo: types.ConnectionInfo{
 					TenantUUID: testTenantUUID,
 				},
 				VersionStatus: status.VersionStatus{},

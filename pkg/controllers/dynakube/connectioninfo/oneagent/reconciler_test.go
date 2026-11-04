@@ -11,7 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	oneagentclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
@@ -56,7 +56,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("cleanup when oneagent is not needed", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Status.OneAgent.ConnectionInfo = communication.ConnectionInfo{
+		dk.Status.OneAgent.ConnectionInfo = types.ConnectionInfo{
 			TenantUUID: testOutdated,
 			Endpoints:  testOutdated,
 		}
@@ -83,7 +83,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("does not cleanup when only host oneagent is needed", func(t *testing.T) {
 		dk := getTestDynakube()
-		dk.Status.OneAgent.ConnectionInfo = communication.ConnectionInfo{
+		dk.Status.OneAgent.ConnectionInfo = types.ConnectionInfo{
 			TenantUUID: testOutdated,
 			Endpoints:  testOutdated,
 		}
@@ -176,7 +176,7 @@ func TestReconcile(t *testing.T) {
 		dtClient := oneagentclientmock.NewClient(t)
 		dtClient.EXPECT().GetConnectionInfo(anyCtx, mock.Anything).Return(getTestOneAgentConnectionInfo(), nil).Once()
 
-		dk.Status.OneAgent.ConnectionInfo = communication.ConnectionInfo{
+		dk.Status.OneAgent.ConnectionInfo = types.ConnectionInfo{
 			TenantUUID: testOutdated,
 			Endpoints:  testOutdated,
 		}
@@ -202,7 +202,7 @@ func TestReconcile(t *testing.T) {
 		dtClient := oneagentclientmock.NewClient(t)
 		dtClient.EXPECT().GetConnectionInfo(anyCtx, mock.Anything).Return(getTestOneAgentConnectionInfo(), nil).Once()
 
-		dk.Status.OneAgent.ConnectionInfo = communication.ConnectionInfo{
+		dk.Status.OneAgent.ConnectionInfo = types.ConnectionInfo{
 			TenantUUID: testOutdated,
 			Endpoints:  testOutdated,
 		}
@@ -241,7 +241,7 @@ func TestReconcile_StaleNetworkZoneEndpoints(t *testing.T) {
 			Capabilities: []activegate.CapabilityDisplayName{activegate.RoutingCapability.DisplayName},
 		}
 		dk.Status.ActiveGate.ServiceIPs = []string{currentServiceIP}
-		dk.Status.OneAgent.ConnectionInfo = communication.ConnectionInfo{
+		dk.Status.OneAgent.ConnectionInfo = types.ConnectionInfo{
 			TenantUUID: testTenantUUID,
 			Endpoints:  staleClusterEndpoints,
 		}

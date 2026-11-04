@@ -10,7 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
@@ -230,7 +230,7 @@ func TestNoProxyInjector_Inject(t *testing.T) {
 		}
 
 		if hasProxy {
-			dk.Spec.Proxy = &value.Source{Value: "proxy"}
+			dk.Spec.Proxy = &types.ValueSource{Value: "proxy"}
 		}
 
 		return dk
