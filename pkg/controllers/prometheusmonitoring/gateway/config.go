@@ -14,7 +14,6 @@ import (
 	"go.opentelemetry.io/collector/pipeline"
 	"go.opentelemetry.io/collector/service/extensions"
 	"go.opentelemetry.io/collector/service/pipelines"
-	"gopkg.in/yaml.v3"
 )
 
 // Component and pipeline IDs are typed constants so that MustNewID/MustNewIDWithName
@@ -302,42 +301,4 @@ func buildResourceAttributeStatements(attrs map[string]string) []string {
 	}
 
 	return statements
-}
-
-// addSelfMonitoringTelemetry sets service::telemetry::metrics on the rendered relay config so the
-// gateway pushes its own metrics via OTLP/HTTP (delta) to the self-monitoring collector.
-// TODO: temporary, remove.
-func addSelfMonitoringTelemetry(relay []byte, endpoint string) ([]byte, error) {
-	var cfg map[string]any
-	if err := yaml.Unmarshal(relay, &cfg); err != nil {
-		return nil, err
-	}
-
-	svc, _ := cfg["service"].(map[string]any)
-	if svc == nil {
-		svc = map[string]any{}
-		cfg["service"] = svc
-	}
-
-	svc["telemetry"] = map[string]any{
-		"metrics": map[string]any{
-			"level": "normal",
-			"readers": []any{
-				map[string]any{
-					"periodic": map[string]any{
-						"exporter": map[string]any{
-							// otelconf v0.3.0 schema (used by the collector): "otlp" + protocol, not "otlp_http".
-							"otlp": map[string]any{
-								"protocol":               "http/protobuf",
-								"endpoint":               endpoint,
-								"temporality_preference": "delta",
-							},
-						},
-					},
-				},
-			},
-		},
-	}
-
-	return yaml.Marshal(cfg)
 }
