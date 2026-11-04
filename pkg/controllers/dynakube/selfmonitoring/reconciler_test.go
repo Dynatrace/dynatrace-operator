@@ -10,8 +10,8 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	dtimage "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
@@ -362,7 +362,7 @@ func TestBuildEnv(t *testing.T) {
 
 	t.Run("proxy from secret", func(t *testing.T) {
 		dk := newTestDynaKube()
-		dk.Spec.Proxy = &value.Source{ValueFrom: "proxy-secret"}
+		dk.Spec.Proxy = &types.ValueSource{ValueFrom: "proxy-secret"}
 
 		envs := buildEnv(newTestScope(dk))
 
@@ -404,7 +404,7 @@ func TestBuildVolumes(t *testing.T) {
 		dk.Spec.TrustedCAs = "my-cas"
 		userVolume := corev1.Volume{Name: "override", EmptyDir: &corev1.EmptyDirVolumeSource{}}
 		userMount := corev1.VolumeMount{Name: "override", MountPath: "/custom"}
-		dk.Spec.SelfMonitoring.Volumes = []corev1.Volume{userVolume}
+		dk.Spec.SelfMonitoring.Volumes = types.Volumes{{Name: userVolume.Name, EmptyDir: userVolume.EmptyDir}}
 		dk.Spec.SelfMonitoring.VolumeMounts = []corev1.VolumeMount{userMount}
 		s := newTestScope(dk)
 

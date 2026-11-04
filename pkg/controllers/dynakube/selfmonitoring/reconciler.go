@@ -14,8 +14,8 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
@@ -401,7 +401,7 @@ func fieldRefEnv(name, fieldPath string) corev1.EnvVar {
 	}
 }
 
-func proxyEnv(name string, src *value.Source) corev1.EnvVar {
+func proxyEnv(name string, src *types.ValueSource) corev1.EnvVar {
 	if src.ValueFrom != "" {
 		return corev1.EnvVar{
 			Name: name,
@@ -462,7 +462,7 @@ func buildVolumes(s *reconcileScope) []corev1.Volume {
 		})
 	}
 
-	return append(volumes, s.Spec.Volumes...)
+	return append(volumes, s.Spec.Volumes.AsCoreV1()...)
 }
 
 func buildVolumeMounts(s *reconcileScope) []corev1.VolumeMount {
