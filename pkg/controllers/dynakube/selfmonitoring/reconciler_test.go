@@ -294,13 +294,13 @@ func TestReconcileDeployment(t *testing.T) {
 		assert.Equal(t, sm.PriorityClassName, podSpec.PriorityClassName)
 		assert.Equal(t, sm.Tolerations, podSpec.Tolerations)
 		assert.Nil(t, podSpec.Affinity)
-		assert.Equal(t, int64(10001), *podSpec.SecurityContext.FSGroup)
+		assert.Equal(t, int64(otelCollectorNonRootUser), *podSpec.SecurityContext.FSGroup)
 
 		require.Len(t, podSpec.Containers, 1)
 		container := podSpec.Containers[0]
 		assert.Equal(t, testImage, container.Image)
 		assert.Equal(t, corev1.PullAlways, container.ImagePullPolicy)
-		assert.Equal(t, int64(10001), *container.SecurityContext.RunAsUser)
+		assert.Equal(t, int64(otelCollectorNonRootUser), *container.SecurityContext.RunAsUser)
 		assert.True(t, *container.SecurityContext.ReadOnlyRootFilesystem)
 		assert.False(t, *container.SecurityContext.AllowPrivilegeEscalation)
 		assert.Equal(t, []corev1.Capability{"ALL"}, container.SecurityContext.Capabilities.Drop)

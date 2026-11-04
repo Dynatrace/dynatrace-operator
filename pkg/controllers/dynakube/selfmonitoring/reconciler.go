@@ -63,9 +63,8 @@ const (
 	// serviceAccountName and its RBAC are shipped with the Helm chart / manifests.
 	serviceAccountName = "dynatrace-self-monitoring"
 
-	// otelCollectorNonRootUser is the non-root UID/GID of the otel-collector image,
-	// the same image and user as the Prometheus gateway and the DynaKube OTel collector.
-	otelCollectorNonRootUser = 10001
+	// otelCollectorNonRootUser is the "nonroot" UID/GID the collector runs as.
+	otelCollectorNonRootUser = 65532
 
 	cacertsVolumeName = "cacerts"
 
