@@ -12,7 +12,7 @@ jobs:
   check-comment:
     name: Check for trigger comment
     if: github.event.issue.pull_request
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       contents: read
       pull-requests: read
@@ -39,7 +39,7 @@ jobs:
       !cancelled() &&
       ((needs.check-comment.outputs.triggered == 'true' && needs.check-comment.outputs.detected-command == '/run-e2e-kind') ||
        github.event_name == 'merge_group')
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       pull-requests: write
     steps:
@@ -77,7 +77,7 @@ jobs:
     name: Run ${{ matrix.suite }} E2E tests
     needs: [check-comment, prepare]
     if: ${{ !cancelled() && needs.prepare.result == 'success' }}
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     environment: E2E
     permissions:
       contents: read
@@ -176,7 +176,7 @@ jobs:
     name: Report E2E test results
     needs: [prepare, test]
     if: ${{ !cancelled() && needs.prepare.result != 'skipped' }}
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       pull-requests: write
     steps:
