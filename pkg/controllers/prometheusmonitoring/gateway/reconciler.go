@@ -149,6 +149,8 @@ type gatewayConfigData struct {
 	Endpoint           string
 	CustomCAPath       string
 	ResourceAttributes map[string]string
+	// TODO: temporary, remove. Empty disables pushing the gateway's own telemetry.
+	SelfMonitoringEndpoint string
 }
 
 // buildGatewayConfigData resolves the DynaKube-derived inputs to the relay.yaml template.
@@ -156,6 +158,10 @@ func buildGatewayConfigData(dk *dynakube.DynaKube) gatewayConfigData {
 	data := gatewayConfigData{
 		Endpoint:           dk.APIURL() + "/v2/otlp",
 		ResourceAttributes: dk.GetResourceAttributes(),
+	}
+
+	if dk.IsSelfMonitoringEnabled() {
+		data.SelfMonitoringEndpoint = fmt.Sprintf("http://%s.%s:4318", dk.SelfMonitoringName(), dk.Namespace)
 	}
 
 	if dk.Spec.TrustedCAs != "" {
@@ -167,8 +173,19 @@ func buildGatewayConfigData(dk *dynakube.DynaKube) gatewayConfigData {
 
 func renderGatewayConfig(data gatewayConfigData) (string, error) {
 	b, err := buildGatewayOTelConfig(data).Marshal()
+	if err != nil {
+		return "", err
+	}
 
-	return string(b), err
+	// TODO: temporary, remove. Push the gateway's own metrics to the self-monitoring collector.
+	if data.SelfMonitoringEndpoint != "" {
+		b, err = addSelfMonitoringTelemetry(b, data.SelfMonitoringEndpoint)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	return string(b), nil
 }
 
 func (r *Reconciler) reconcileStatefulset(ctx context.Context, s *reconcileScope) error {
