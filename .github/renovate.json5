@@ -285,6 +285,18 @@
       ],
       enabled: false,
     },
+    {
+      // kustomize > v5.8.2 requires Go 1.27, these branches build with Go 1.26
+      // remove once the branches move to Go 1.27 or are retired
+      matchBaseBranches: [
+        'release-1.9',
+        'release-1.10',
+      ],
+      matchPackageNames: [
+        'sigs.k8s.io/kustomize/kustomize/v5',
+      ],
+      allowedVersions: '<=5.8.2',
+    },
   ],
   platformAutomerge: true,
 }
