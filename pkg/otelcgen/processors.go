@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"go.opentelemetry.io/collector/component"
-	"go.opentelemetry.io/collector/pipeline"
 )
 
 // https://github.com/open-telemetry/opentelemetry-collector/blob/v0.157.0/processor/batchprocessor/config.go#L16
@@ -105,7 +104,7 @@ func PodAssociation() []map[string]any {
 // overwrites a value already claimed by K8sAttributesAnnotationsID (per-pod annotations must win), while still being
 // able to claim a key before K8sAttributesFactsID runs (so the static DynaKube default wins over the built-in fact).
 // See buildPipelineProcessors.
-func StaticResourceAttributes(resourceAttributes map[string]string) map[string]any {
+func staticResourceAttributes(resourceAttributes map[string]string) map[string]any {
 	keys := make([]string, 0, len(resourceAttributes))
 	for k := range resourceAttributes {
 		keys = append(keys, k)
@@ -127,13 +126,6 @@ func StaticResourceAttributes(resourceAttributes map[string]string) map[string]a
 	}
 }
 
-func buildTransform() map[string]any {
-	return Transform(
-		[]pipeline.Signal{pipeline.SignalTraces, pipeline.SignalMetrics, pipeline.SignalLogs},
-		dynatraceTransformations()...,
-	)
-}
-
 func buildTransformPodIP() map[string]any {
 	return map[string]any{
 		"error_mode": "ignore",
@@ -144,18 +136,4 @@ func buildTransformPodIP() map[string]any {
 			},
 		},
 	}
-}
-
-// dynatraceTransformations enriches the resource attributes of all signals: the workload is derived from the
-// facts about the owners of the pod, which are deleted afterward, and the cluster attributes are set if enabled.
-func dynatraceTransformations() []map[string]any {
-	groups := [][]string{
-		MergeDynatraceAnnotations(),
-		WorkloadFromOwners(false),
-		// TODO: decide whether we should keep these here
-		clusterAttributeStatements(),
-		DeleteOwnerFacts(false),
-	}
-
-	return []map[string]any{ResourceStatements(groups...)}
 }

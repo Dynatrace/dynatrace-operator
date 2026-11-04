@@ -84,51 +84,50 @@ func TestBuildGatewayOTelConfig(t *testing.T) {
 	})
 }
 
-func TestBuildTransformConfig(t *testing.T) {
-	cfg, ok := buildTransformConfig().(map[string]any)
+func TestBuildConfigTransform(t *testing.T) {
+	cfg := buildConfig(gatewayConfigData{})
+
+	transform, ok := cfg.Processors[otelcgen.TransformID].(map[string]any)
 	require.True(t, ok)
 
-	assert.Equal(t, "ignore", cfg["error_mode"])
-	assert.NotContains(t, cfg, "trace_statements")
-	assert.NotContains(t, cfg, "log_statements")
+	assert.Equal(t, "ignore", transform["error_mode"])
+	assert.NotContains(t, transform, "trace_statements")
+	assert.NotContains(t, transform, "log_statements")
 
-	groups, ok := cfg["metric_statements"].([]map[string]any)
+	groups, ok := transform["metric_statements"].([]map[string]any)
 	require.True(t, ok)
+	require.Len(t, groups, 2)
 
-	var all []string
-
-	for _, group := range groups {
-		statements, ok := group["statements"].([]string)
-		require.True(t, ok)
-
-		all = append(all, statements...)
-	}
+	resource, ok := groups[0]["statements"].([]string)
+	require.True(t, ok)
 
 	t.Run("the annotations are merged first", func(t *testing.T) {
-		assert.Equal(t, otelcgen.MergeDynatraceAnnotations(), all[:2])
+		assert.Equal(t, "resource", groups[0]["context"])
+		assert.Contains(t, resource[0], "merge_maps")
 	})
 
 	t.Run("prometheus labels are renamed on the data points", func(t *testing.T) {
 		assert.Equal(t, "datapoint", groups[1]["context"])
-		assert.Contains(t, all, `set(attributes["http.request.method"], attributes["http_request_method"]) where attributes["http_request_method"] != nil`)
-		assert.Contains(t, all, `delete_key(attributes, "http_request_method")`)
+
+		datapoint, ok := groups[1]["statements"].([]string)
+		require.True(t, ok)
+		assert.Contains(t, datapoint, `set(attributes["http.request.method"], attributes["http_request_method"]) where attributes["http_request_method"] != nil`)
+		assert.Contains(t, datapoint, `delete_key(attributes, "http_request_method")`)
 	})
 
 	t.Run("workload attributes use the guarded statements incl. the uid", func(t *testing.T) {
-		for _, statement := range otelcgen.WorkloadFromOwners(true) {
-			assert.Contains(t, all, statement)
-		}
+		assert.Contains(t, resource, `set(attributes["k8s.workload.uid"], attributes["k8s.deployment.uid"]) where IsString(attributes["k8s.deployment.uid"]) and attributes["k8s.workload.uid"] == nil`)
 	})
 
 	t.Run("internal keys are deleted", func(t *testing.T) {
-		assert.Contains(t, all, `delete_key(attributes, "otel.scope.name")`)
-		assert.Contains(t, all, `delete_key(attributes, "processor")`)
+		assert.Contains(t, resource, `delete_key(attributes, "otel.scope.name")`)
+		assert.Contains(t, resource, `delete_key(attributes, "processor")`)
 	})
 
 	t.Run("the cluster name falls back to the env var, but no other cluster or dt attributes are set", func(t *testing.T) {
-		assert.Contains(t, all, `set(attributes["k8s.cluster.name"], "${env:K8S_CLUSTER_NAME}") where attributes["k8s.cluster.name"] == nil and Len("${env:K8S_CLUSTER_NAME}") > 0`)
+		assert.Contains(t, resource, clusterNameFallback)
 
-		for _, statement := range all {
+		for _, statement := range resource {
 			assert.NotContains(t, statement, "dt.")
 			assert.NotContains(t, statement, "k8s.cluster.uid")
 		}

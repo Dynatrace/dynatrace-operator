@@ -72,14 +72,6 @@ func (b *Builder) Extension(id component.ID, cfg component.Config) *Builder {
 	return b
 }
 
-func (b *Builder) StaticResourceAttributes(attrs map[string]string) *Builder {
-	if len(attrs) > 0 {
-		return b.Processor(StaticResourceAttrsID, StaticResourceAttributes(attrs))
-	}
-
-	return b
-}
-
 func (b *Builder) MemoryLimiter(opts MemoryLimiterOpts) *Builder {
 	return b.Processor(MemoryLimiterID, MemoryLimiter(opts))
 }

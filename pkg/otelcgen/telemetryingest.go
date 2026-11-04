@@ -55,10 +55,11 @@ func (b *Builder) telemetryIngestProcessors(spec TelemetryIngestSpec) *Builder {
 	return b.
 		MemoryLimiter(MemoryLimiterOpts{LimitPercentage: 70, SpikePercentage: 30}).
 		Processor(transformPodIP, buildTransformPodIP()).
-		Processor(K8sAttributesAnnotationsID, K8sAttributes(K8sAttributesOpts{Metadata: []string{}, Annotations: true})).
-		StaticResourceAttributes(spec.ResourceAttributes).
-		Processor(K8sAttributesFactsID, K8sAttributes(K8sAttributesOpts{Metadata: K8sFactsMetadata(false)})).
-		Processor(TransformID, buildTransform()).
+		K8sEnrichment(K8sEnrichmentOpts{
+			ResourceAttributes: spec.ResourceAttributes,
+			// TODO: decide whether we should keep these here
+			ResourceStatements: clusterAttributeStatements(),
+		}).
 		Processor(CumulativeToDeltaID, Empty, pipeline.SignalMetrics).
 		Processor(batchTraces, &batchProcessorConfig{
 			SendBatchSize:    5000,

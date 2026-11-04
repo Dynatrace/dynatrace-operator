@@ -12,7 +12,7 @@ import (
 )
 
 func TestMergeDynatraceAnnotations(t *testing.T) {
-	statements := MergeDynatraceAnnotations()
+	statements := mergeDynatraceAnnotations()
 
 	require.Len(t, statements, 2)
 	assert.Contains(t, statements[0], `merge_maps(attributes, ParseJSON(attributes["metadata.dynatrace.com"]), "upsert")`)
@@ -20,8 +20,8 @@ func TestMergeDynatraceAnnotations(t *testing.T) {
 }
 
 func TestWorkloadFromOwners(t *testing.T) {
-	without := WorkloadFromOwners(false)
-	with := WorkloadFromOwners(true)
+	without := workloadFromOwners(false)
+	with := workloadFromOwners(true)
 
 	t.Run("name and kind are derived for every owner, highest in the chain first", func(t *testing.T) {
 		require.Len(t, without, 12)
@@ -51,21 +51,21 @@ func TestWorkloadFromOwners(t *testing.T) {
 }
 
 func TestDeleteOwnerFacts(t *testing.T) {
-	assert.Len(t, DeleteOwnerFacts(false), 6)
-	assert.Contains(t, DeleteOwnerFacts(false), `delete_key(attributes, "k8s.deployment.name")`)
-	assert.NotContains(t, DeleteOwnerFacts(false), `delete_key(attributes, "k8s.deployment.uid")`)
+	assert.Len(t, deleteOwnerFacts(false), 6)
+	assert.Contains(t, deleteOwnerFacts(false), `delete_key(attributes, "k8s.deployment.name")`)
+	assert.NotContains(t, deleteOwnerFacts(false), `delete_key(attributes, "k8s.deployment.uid")`)
 
-	assert.Len(t, DeleteOwnerFacts(true), 12)
-	assert.Contains(t, DeleteOwnerFacts(true), `delete_key(attributes, "k8s.deployment.uid")`)
+	assert.Len(t, deleteOwnerFacts(true), 12)
+	assert.Contains(t, deleteOwnerFacts(true), `delete_key(attributes, "k8s.deployment.uid")`)
 }
 
 func TestTransform(t *testing.T) {
-	group := ResourceStatements([]string{"a"}, []string{"b"})
+	group := resourceStatements([]string{"a"}, []string{"b"})
 
 	assert.Equal(t, map[string]any{"context": "resource", "statements": []string{"a", "b"}}, group)
 
 	t.Run("only the requested signals have statements", func(t *testing.T) {
-		cfg := Transform([]pipeline.Signal{pipeline.SignalMetrics}, group)
+		cfg := newTransform([]pipeline.Signal{pipeline.SignalMetrics}, group)
 
 		assert.Equal(t, map[string]any{
 			"error_mode":        "ignore",
@@ -74,7 +74,7 @@ func TestTransform(t *testing.T) {
 	})
 
 	t.Run("all signals", func(t *testing.T) {
-		cfg := Transform([]pipeline.Signal{pipeline.SignalTraces, pipeline.SignalMetrics, pipeline.SignalLogs}, group)
+		cfg := newTransform([]pipeline.Signal{pipeline.SignalTraces, pipeline.SignalMetrics, pipeline.SignalLogs}, group)
 
 		assert.Contains(t, cfg, "trace_statements")
 		assert.Contains(t, cfg, "metric_statements")

@@ -4,8 +4,6 @@
 package gateway
 
 import (
-	"fmt"
-
 	"github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/pipeline"
@@ -49,18 +47,18 @@ func buildConfig(data gatewayConfigData) *otelcgen.Config {
 			"initial_value": "drop",
 			"max_staleness": "10m",
 		}).
-		// The annotations are extracted before the static resource attributes and the facts after them, so that
-		// the precedence is: annotations > static resource attributes > facts. See otelcgen.K8sAttributesAnnotationsID.
-		Processor(otelcgen.K8sAttributesAnnotationsID, otelcgen.K8sAttributes(otelcgen.K8sAttributesOpts{
-			Metadata:    []string{},
-			Annotations: true,
-		})).
-		StaticResourceAttributes(data.ResourceAttributes).
-		Processor(otelcgen.K8sAttributesFactsID, otelcgen.K8sAttributes(otelcgen.K8sAttributesOpts{
+		K8sEnrichment(otelcgen.K8sEnrichmentOpts{
+			ResourceAttributes: data.ResourceAttributes,
+			WorkloadUIDs:       true,
 			// k8s.container.name is only extracted by the gateway.
-			Metadata: append(otelcgen.K8sFactsMetadata(true), "k8s.container.name"),
-		})).
-		Processor(otelcgen.TransformID, buildTransformConfig()).
+			ExtraFactsMetadata: []string{"k8s.container.name"},
+			Signals:            []pipeline.Signal{pipeline.SignalMetrics},
+			ResourceStatements: append(scrubOTelScope(), clusterNameFallback),
+			Groups: []map[string]any{{
+				"context":    "datapoint",
+				"statements": prometheusLabelsToSemconv(),
+			}},
+		}).
 		OTLPHTTPExporter(data.Endpoint, otelcgen.ExporterOpts{
 			CAFile:          data.CustomCAPath,
 			BearerTokenAuth: true,
@@ -70,35 +68,16 @@ func buildConfig(data gatewayConfigData) *otelcgen.Config {
 		Build(pipeline.SignalMetrics)
 }
 
-// buildTransformConfig assembles the transform processor config. The metadata.dynatrace.com merge comes first
-// and overwrites existing attributes, everything after it only fills gaps, so the annotations always take precedence.
-func buildTransformConfig() component.Config {
-	return otelcgen.Transform(
-		[]pipeline.Signal{pipeline.SignalMetrics},
-		otelcgen.ResourceStatements(otelcgen.MergeDynatraceAnnotations()),
-		map[string]any{
-			"context":    "datapoint",
-			"statements": prometheusLabelsToSemconv(),
-		},
-		otelcgen.ResourceStatements(otelcgen.WorkloadFromOwners(true), otelcgen.DeleteOwnerFacts(true)),
-		otelcgen.ResourceStatements(scrubOTelScope()),
-		otelcgen.ResourceStatements([]string{
-			`set(attributes["k8s.cluster.name"], "${env:K8S_CLUSTER_NAME}") where attributes["k8s.cluster.name"] == nil and Len("${env:K8S_CLUSTER_NAME}") > 0`,
-		}),
-	)
-}
+// clusterNameFallback sets the cluster name from the environment for telemetry that does not carry it.
+var clusterNameFallback = otelcgen.SetAttributeFromEnv("k8s.cluster.name", "K8S_CLUSTER_NAME")
 
 // prometheusLabelsToSemconv renames the attributes that Prometheus exposes with underscores to the names of the
 // semantic conventions. These only exist on scraped metrics.
 func prometheusLabelsToSemconv() []string {
-	statements := make([]string, 0, len(prometheusLabelRenames))
+	statements := make([]string, 0, len(prometheusLabelRenames)*2) //nolint:mnd // OTTL rename is 2 statements per entry
 
 	for _, rename := range prometheusLabelRenames {
-		statements = append(
-			statements,
-			fmt.Sprintf(`set(attributes[%q], attributes[%q]) where attributes[%q] != nil`, rename.semconv, rename.prometheus, rename.prometheus),
-			fmt.Sprintf(`delete_key(attributes, %q)`, rename.prometheus),
-		)
+		statements = append(statements, otelcgen.RenameAttr(rename.semconv, rename.prometheus)...)
 	}
 
 	return statements
@@ -107,12 +86,5 @@ func prometheusLabelsToSemconv() []string {
 // scrubOTelScope deletes the attributes that describe how the metrics were scraped, which are of no use downstream.
 // They must not be deleted for telemetry that is sent to the collector directly, as it can legitimately carry them.
 func scrubOTelScope() []string {
-	keys := []string{"processor", "otel.signal", "otel.scope.name", "otel.scope.version"}
-	statements := make([]string, 0, len(keys))
-
-	for _, key := range keys {
-		statements = append(statements, fmt.Sprintf(`delete_key(attributes, %q)`, key))
-	}
-
-	return statements
+	return otelcgen.DeleteKeys("processor", "otel.signal", "otel.scope.name", "otel.scope.version")
 }

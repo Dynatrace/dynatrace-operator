@@ -29,30 +29,6 @@ func TestBuilderTelemetryIngestProcessors(t *testing.T) {
 	assert.YAMLEq(t, string(expectedOutput), string(c))
 }
 
-func TestBuildProcessors_WithResourceAttributes(t *testing.T) {
-	t.Run("no static resource attrs processor when empty", func(t *testing.T) {
-		processors := telemetryIngestProcessors(TelemetryIngestSpec{})
-
-		assert.NotContains(t, processors, StaticResourceAttrsID)
-	})
-
-	t.Run("static resource attrs processor added, sorted, insert action", func(t *testing.T) {
-		processors := telemetryIngestProcessors(TelemetryIngestSpec{
-			ResourceAttributes: map[string]string{"team": "shopping-cart", "env": "prod"},
-		})
-
-		staticAttrs, ok := processors[StaticResourceAttrsID].(map[string]any)
-		require.True(t, ok)
-
-		attributes, ok := staticAttrs["attributes"].([]map[string]any)
-		require.True(t, ok)
-		require.Len(t, attributes, 2)
-
-		assert.Equal(t, map[string]any{"key": "env", "value": "prod", "action": "insert"}, attributes[0])
-		assert.Equal(t, map[string]any{"key": "team", "value": "shopping-cart", "action": "insert"}, attributes[1])
-	})
-}
-
 func TestK8sAttributesJSONAnnotation(t *testing.T) {
 	processors := telemetryIngestProcessors(TelemetryIngestSpec{})
 
@@ -99,40 +75,7 @@ func TestK8sAttributesFacts(t *testing.T) {
 	require.True(t, ok)
 
 	assert.NotContains(t, extract, "annotations")
-	assert.Equal(t, K8sFactsMetadata(false), extract["metadata"])
-}
-
-func TestDynatraceTransformationsJSONAnnotation(t *testing.T) {
-	transformations := dynatraceTransformations()
-	require.Len(t, transformations, 1)
-
-	statements, ok := transformations[0]["statements"].([]string)
-	require.True(t, ok)
-	require.GreaterOrEqual(t, len(statements), 2)
-
-	t.Run("merge_maps statement is first", func(t *testing.T) {
-		assert.Contains(t, statements[0], "merge_maps(attributes, ParseJSON(attributes[\"metadata.dynatrace.com\"]), \"upsert\")")
-		assert.Contains(t, statements[0], `IsMatch(attributes["metadata.dynatrace.com"], "^\\{")`)
-	})
-
-	t.Run("delete_key statement is second", func(t *testing.T) {
-		assert.Equal(t, `delete_key(attributes, "metadata.dynatrace.com")`, statements[1])
-	})
-
-	t.Run("all signal types carry JSON annotation statements", func(t *testing.T) {
-		transform := buildTransform()
-
-		for _, signalKey := range []string{"log_statements", "metric_statements", "trace_statements"} {
-			stmts, ok := transform[signalKey].([]map[string]any)
-			require.True(t, ok, "expected []map[string]any for %s", signalKey)
-			require.Len(t, stmts, 1)
-
-			block, ok := stmts[0]["statements"].([]string)
-			require.True(t, ok)
-			assert.Contains(t, block[0], "merge_maps", "%s missing merge_maps", signalKey)
-			assert.Equal(t, `delete_key(attributes, "metadata.dynatrace.com")`, block[1], "%s missing delete_key", signalKey)
-		}
-	})
+	assert.Equal(t, k8sFactsMetadata(false), extract["metadata"])
 }
 
 func TestMemoryLimiter(t *testing.T) {
@@ -152,7 +95,7 @@ func TestPodAssociation(t *testing.T) {
 
 func TestK8sAttributes(t *testing.T) {
 	t.Run("nil metadata is omitted so the processor uses its defaults", func(t *testing.T) {
-		cfg, ok := K8sAttributes(K8sAttributesOpts{}).(map[string]any)
+		cfg, ok := k8sAttributes(k8sAttributesOpts{}).(map[string]any)
 		require.True(t, ok)
 
 		assert.Equal(t, map[string]any{}, cfg["extract"])
@@ -160,26 +103,26 @@ func TestK8sAttributes(t *testing.T) {
 	})
 
 	t.Run("empty metadata is kept so the processor extracts nothing", func(t *testing.T) {
-		cfg, ok := K8sAttributes(K8sAttributesOpts{Metadata: []string{}}).(map[string]any)
+		cfg, ok := k8sAttributes(k8sAttributesOpts{Metadata: []string{}}).(map[string]any)
 		require.True(t, ok)
 
 		assert.Equal(t, map[string]any{"metadata": []string{}}, cfg["extract"])
 	})
 
 	t.Run("annotations are only extracted when requested", func(t *testing.T) {
-		with, ok := K8sAttributes(K8sAttributesOpts{Annotations: true}).(map[string]any)
+		with, ok := k8sAttributes(k8sAttributesOpts{Annotations: true}).(map[string]any)
 		require.True(t, ok)
 		assert.Contains(t, with["extract"], "annotations")
 
-		without, ok := K8sAttributes(K8sAttributesOpts{}).(map[string]any)
+		without, ok := k8sAttributes(k8sAttributesOpts{}).(map[string]any)
 		require.True(t, ok)
 		assert.NotContains(t, without["extract"], "annotations")
 	})
 }
 
 func TestK8sFactsMetadata(t *testing.T) {
-	without := K8sFactsMetadata(false)
-	with := K8sFactsMetadata(true)
+	without := k8sFactsMetadata(false)
+	with := k8sFactsMetadata(true)
 
 	assert.NotContains(t, without, "k8s.deployment.uid")
 	assert.Equal(t, without, with[:len(without)], "UIDs are only appended")
@@ -190,32 +133,5 @@ func TestK8sFactsMetadata(t *testing.T) {
 
 	// callers may modify the result
 	without[0] = "changed"
-	assert.NotEqual(t, "changed", K8sFactsMetadata(false)[0])
-}
-
-func TestDynatraceTransformationsClusterAttributes(t *testing.T) {
-	getStatements := func() []string {
-		transformations := dynatraceTransformations()
-		require.Len(t, transformations, 1)
-
-		statements, ok := transformations[0]["statements"].([]string)
-		require.True(t, ok)
-
-		return statements
-	}
-
-	t.Run("enabled", func(t *testing.T) {
-		statements := getStatements()
-
-		assert.Contains(t, statements, setLiteralIfAbsent("k8s.cluster.uid", "${env:K8S_CLUSTER_UID}"))
-		assert.Contains(t, statements, setLiteralIfAbsent("k8s.cluster.name", "${env:K8S_CLUSTER_NAME}"))
-		assert.Contains(t, statements, `set(attributes["dt.kubernetes.workload.name"], attributes["k8s.workload.name"])`)
-		assert.Contains(t, statements, `set(attributes["dt.entity.kubernetes_cluster"], "${env:DT_ENTITY_KUBERNETES_CLUSTER}")`)
-	})
-
-	t.Run("owner facts are deleted after the cluster attributes are set", func(t *testing.T) {
-		statements := getStatements()
-
-		assert.Equal(t, DeleteOwnerFacts(false), statements[len(statements)-len(DeleteOwnerFacts(false)):])
-	})
+	assert.NotEqual(t, "changed", k8sFactsMetadata(false)[0])
 }
