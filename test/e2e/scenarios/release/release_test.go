@@ -7,6 +7,7 @@ package release
 
 import (
 	"context"
+	"os"
 	"testing"
 
 	tokenupgrade "github.com/Dynatrace/dynatrace-operator/test/e2e/features/token/upgrade"
@@ -56,7 +57,7 @@ func TestMain(m *testing.M) {
 		return ctx, nil
 	})
 
-	testEnv.Run(m)
+	os.Exit(testEnv.Run(m))
 }
 
 func TestRelease_operator_upgrade_110(t *testing.T) {

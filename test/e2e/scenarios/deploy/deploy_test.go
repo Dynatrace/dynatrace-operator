@@ -8,6 +8,7 @@ package deploy
 import (
 	"context"
 	"log"
+	"os"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/deploy/manifest"
@@ -44,7 +45,7 @@ func TestMain(m *testing.M) {
 		return ctx, nil
 	})
 
-	testEnv.Run(m)
+	os.Exit(testEnv.Run(m))
 }
 
 func TestDeploy_permissions_deployer_escalate_no_csi(t *testing.T) {
