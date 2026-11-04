@@ -196,18 +196,20 @@ func (r *Reconciler) reconcileDeployment(ctx context.Context, s *reconcileScope)
 func mutateDeployment(deploy *appsv1.Deployment, s *reconcileScope) {
 	s.AppLabels.MergeInto(deploy)
 
-	deploy.Spec.Template.Labels = maps.Clone(s.Spec.Labels)
 	if deploy.Spec.Template.Labels == nil {
 		deploy.Spec.Template.Labels = make(map[string]string)
 	}
 
+	// merge instead of replace to keep metadata applied by users or kubectl (e.g. restartedAt)
+	maps.Copy(deploy.Spec.Template.Labels, s.Spec.Labels)
 	maps.Copy(deploy.Spec.Template.Labels, s.AppLabels.AsSelector())
 
-	deploy.Spec.Template.Annotations = maps.Clone(s.Spec.Annotations)
 	if deploy.Spec.Template.Annotations == nil {
 		deploy.Spec.Template.Annotations = make(map[string]string)
 	}
 
+	// merge instead of replace to keep metadata applied by users or kubectl (e.g. restartedAt)
+	maps.Copy(deploy.Spec.Template.Annotations, s.Spec.Annotations)
 	deploy.Spec.Template.Annotations[configHashAnnotation] = s.ConfigMapHash
 
 	if s.Spec.Replicas != nil {
