@@ -54,7 +54,7 @@ func MigrateToImage(t *testing.T) features.Feature {
 
 	dynakubeComponents.Update(builder, appDynakube)
 
-	builder.Assess("codemodules have been downloaded", provisioner.InstalledImage(appDynakube.Namespace, appDynakube.OneAgent().GetCustomCodeModulesImage()))
+	builder.Assess("codemodules have been downloaded", provisioner.InstalledImage(appDynakube, appDynakube.OneAgent().GetCustomCodeModulesImage(), provisioner.ImageInstaller))
 
 	builder.Assess("restart sample app", sampleApp.Restart())
 	cloudnative.AssessSampleInitContainers(builder, sampleApp)
@@ -103,7 +103,7 @@ func MigrateToNodeImagePull(t *testing.T) features.Feature {
 
 	dynakubeComponents.Update(builder, appDynakube)
 
-	builder.Assess("codemodules have been downloaded", provisioner.InstalledImage(appDynakube.Namespace, appDynakube.OneAgent().GetCustomCodeModulesImage()))
+	builder.Assess("codemodules have been downloaded", provisioner.InstalledImage(appDynakube, appDynakube.OneAgent().GetCustomCodeModulesImage(), provisioner.JobInstaller))
 
 	builder.Assess("restart sample app", sampleApp.Restart())
 	cloudnative.AssessSampleInitContainers(builder, sampleApp)

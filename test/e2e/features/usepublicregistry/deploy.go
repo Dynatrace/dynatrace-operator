@@ -597,6 +597,6 @@ func provisionerInstalledStatusImage(dk *dynakube.DynaKube) features.Func {
 		imageID := current.Status.CodeModules.ImageID
 		require.NotEmpty(t, imageID)
 
-		return provisioner.InstalledImage(dk.Namespace, imageID)(ctx, t, envConfig)
+		return provisioner.InstalledImage(dk, imageID, provisioner.ImageInstaller)(ctx, t, envConfig)
 	}
 }

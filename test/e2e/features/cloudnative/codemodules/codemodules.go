@@ -50,8 +50,7 @@ import (
 const (
 	diskUsageKiBDelta = 1000000
 
-	dataPath                 = "/data/"
-	provisionerContainerName = "provisioner"
+	dataPath = "/data/"
 
 	agSecretName                    = "ag-ca"
 	configMapName                   = "proxy-ca"
@@ -103,7 +102,7 @@ func InstallFromImage(t *testing.T) features.Feature {
 	// Register actual test
 	cloudnative.AssessSampleInitContainers(builder, sampleApp)
 
-	builder.Assess("codemodules have been downloaded", provisioner.InstalledImage(cloudNativeDynakube.Namespace, cloudNativeDynakube.OneAgent().GetCustomCodeModulesImage()))
+	builder.Assess("codemodules have been downloaded", provisioner.InstalledImage(cloudNativeDynakube, cloudNativeDynakube.OneAgent().GetCustomCodeModulesImage(), provisioner.ImageInstaller))
 	builder.Assess("checking storage used", measureDiskUsage(appDynakube.Namespace, storageMap))
 	dynakubeComponents.Install(builder, secretConfigs[1], appDynakube)
 	builder.Assess("storage size has not increased", diskUsageDoesNotIncrease(appDynakube.Namespace, storageMap))
@@ -168,7 +167,7 @@ func WithProxy(t *testing.T, proxySpec *value.Source) features.Feature {
 	// Register actual test
 	cloudnative.AssessSampleInitContainers(builder, sampleApp)
 	istio.AssessIstio(builder, cloudNativeDynakube, *sampleApp)
-	builder.Assess("codemodules have been downloaded", provisioner.InstalledImage(cloudNativeDynakube.Namespace, cloudNativeDynakube.OneAgent().GetCustomCodeModulesImage()))
+	builder.Assess("codemodules have been downloaded", provisioner.InstalledImage(cloudNativeDynakube, cloudNativeDynakube.OneAgent().GetCustomCodeModulesImage(), provisioner.ImageInstaller))
 
 	builder.Assess("check env variables of oneagent pods", checkOneAgentEnvVars(cloudNativeDynakube))
 	builder.Assess("check proxy settings in ruxitagentproc.conf", proxy.CheckRuxitAgentProcFileHasProxySetting(*sampleApp, proxySpec))
@@ -245,7 +244,7 @@ func WithProxyAndAGCert(t *testing.T, proxySpec *value.Source) features.Feature 
 	cloudnative.AssessSampleInitContainers(builder, sampleApp)
 	istio.AssessIstio(builder, cloudNativeDynakube, *sampleApp)
 
-	builder.Assess("codemodules have been downloaded", provisioner.InstalledImage(cloudNativeDynakube.Namespace, cloudNativeDynakube.OneAgent().GetCustomCodeModulesImage()))
+	builder.Assess("codemodules have been downloaded", provisioner.InstalledImage(cloudNativeDynakube, cloudNativeDynakube.OneAgent().GetCustomCodeModulesImage(), provisioner.ImageInstaller))
 
 	cloudnative.AssessSampleContainer(builder, sampleApp, func() []byte { return agCrt }, nil)
 	cloudnative.AssessOneAgentContainer(builder, func() []byte { return agCrt }, nil)
@@ -295,7 +294,7 @@ func WithProxyAndAutomaticAGCert(t *testing.T, proxySpec *value.Source) features
 	// Register actual test
 	cloudnative.AssessSampleInitContainers(builder, sampleApp)
 	istio.AssessIstio(builder, cloudNativeDynakube, *sampleApp)
-	builder.Assess("codemodules have been downloaded", provisioner.InstalledImage(cloudNativeDynakube.Namespace, cloudNativeDynakube.OneAgent().GetCustomCodeModulesImage()))
+	builder.Assess("codemodules have been downloaded", provisioner.InstalledImage(cloudNativeDynakube, cloudNativeDynakube.OneAgent().GetCustomCodeModulesImage(), provisioner.ImageInstaller))
 
 	builder.Assess("check env variables of oneagent pods", checkOneAgentEnvVars(cloudNativeDynakube))
 	builder.Assess("check proxy settings in ruxitagentproc.conf", proxy.CheckRuxitAgentProcFileHasProxySetting(*sampleApp, proxySpec))
@@ -376,7 +375,7 @@ func WithProxyCAAndAGCert(t *testing.T, proxySpec *value.Source) features.Featur
 	cloudnative.AssessSampleInitContainers(builder, sampleApp)
 	istio.AssessIstio(builder, cloudNativeDynakube, *sampleApp)
 
-	builder.Assess("codemodules have been downloaded", provisioner.InstalledImage(cloudNativeDynakube.Namespace, cloudNativeDynakube.OneAgent().GetCustomCodeModulesImage()))
+	builder.Assess("codemodules have been downloaded", provisioner.InstalledImage(cloudNativeDynakube, cloudNativeDynakube.OneAgent().GetCustomCodeModulesImage(), provisioner.ImageInstaller))
 
 	cloudnative.AssessSampleContainer(builder, sampleApp, func() []byte { return agCrt }, trustedCa)
 	cloudnative.AssessOneAgentContainer(builder, func() []byte { return agCrt }, trustedCa)
@@ -438,7 +437,7 @@ func WithProxyCAAndAutomaticAGCert(t *testing.T, proxySpec *value.Source) featur
 	cloudnative.AssessSampleInitContainers(builder, sampleApp)
 	istio.AssessIstio(builder, cloudNativeDynakube, *sampleApp)
 
-	builder.Assess("codemodules have been downloaded", provisioner.InstalledImage(cloudNativeDynakube.Namespace, cloudNativeDynakube.OneAgent().GetCustomCodeModulesImage()))
+	builder.Assess("codemodules have been downloaded", provisioner.InstalledImage(cloudNativeDynakube, cloudNativeDynakube.OneAgent().GetCustomCodeModulesImage(), provisioner.ImageInstaller))
 
 	agTLSSecret := corev1.Secret{
 		Name:      cloudNativeDynakube.ActiveGate().GetTLSSecretName(),
@@ -478,7 +477,7 @@ func measureDiskUsage(namespace string, storageMap map[string]int) features.Func
 			Name:      csi.DaemonSetName,
 			Namespace: namespace,
 		}).ForEachPod(func(pod *corev1.Pod) {
-			diskUsage := getDiskUsage(ctx, t, envConfig.Client().Resources(), pod, provisionerContainerName, dataPath)
+			diskUsage := getDiskUsage(ctx, t, envConfig.Client().Resources(), pod, csi.ProvisionerContainerName, dataPath)
 			storageMap[pod.Name] = diskUsage
 		})
 		require.NoError(t, err)
@@ -494,7 +493,7 @@ func diskUsageDoesNotIncrease(namespace string, storageMap map[string]int) featu
 			Name:      csi.DaemonSetName,
 			Namespace: namespace,
 		}).ForEachPod(func(pod *corev1.Pod) {
-			diskUsage := getDiskUsage(ctx, t, envConfig.Client().Resources(), pod, provisionerContainerName, dataPath)
+			diskUsage := getDiskUsage(ctx, t, envConfig.Client().Resources(), pod, csi.ProvisionerContainerName, dataPath)
 			assert.InDelta(t, storageMap[pod.Name], diskUsage, diskUsageKiBDelta)
 		})
 		require.NoError(t, err)

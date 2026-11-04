@@ -53,7 +53,7 @@ func InstallWithCSI(t *testing.T) features.Feature {
 
 	builder.Assess("install sample app", sampleApp.Install())
 
-	builder.Assess("codemodules have been downloaded", provisioner.InstalledImage(appMonDynakube.Namespace, appMonDynakube.OneAgent().GetCustomCodeModulesImage()))
+	builder.Assess("codemodules have been downloaded", provisioner.InstalledImage(appMonDynakube, appMonDynakube.OneAgent().GetCustomCodeModulesImage(), provisioner.JobInstaller))
 	builder.Assess("volumes are mounted correctly", codemodules.VolumesAreMountedCorrectly(*sampleApp))
 
 	builder.Teardown(sampleApp.Uninstall())

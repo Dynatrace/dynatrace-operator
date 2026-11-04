@@ -14,12 +14,14 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sdeployment"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
@@ -52,6 +54,11 @@ func WriteOperatorLogToFile(ctx context.Context, envConfig *envconf.Config, t *t
 }
 
 func ReadLog(ctx context.Context, t *testing.T, envConfig *envconf.Config, namespace, podName, containerName string) string { //nolint:revive
+	return ReadLogSince(ctx, t, envConfig, namespace, podName, containerName, time.Time{})
+}
+
+// ReadLogSince is like ReadLog, but only returns the lines logged at or after since. A zero since returns the whole log.
+func ReadLogSince(ctx context.Context, t *testing.T, envConfig *envconf.Config, namespace, podName, containerName string, since time.Time) string { //nolint:revive
 	resources := envConfig.Client().Resources()
 
 	var pod corev1.Pod
@@ -65,6 +72,7 @@ func ReadLog(ctx context.Context, t *testing.T, envConfig *envconf.Config, names
 		namespace:     namespace,
 		podName:       podName,
 		containerName: containerName,
+		since:         since,
 	})
 	require.NoError(t, err)
 
@@ -105,12 +113,18 @@ type logParams struct {
 	namespace     string
 	podName       string
 	containerName string
+	since         time.Time
 }
 
 func copyLogStream(ctx context.Context, clientset kubernetes.Interface, w io.Writer, params logParams) (err error) {
-	logStream, err := clientset.CoreV1().Pods(params.namespace).GetLogs(params.podName, &corev1.PodLogOptions{
+	options := &corev1.PodLogOptions{
 		Container: params.containerName,
-	}).Stream(ctx)
+	}
+	if !params.since.IsZero() {
+		options.SinceTime = &metav1.Time{Time: params.since}
+	}
+
+	logStream, err := clientset.CoreV1().Pods(params.namespace).GetLogs(params.podName, options).Stream(ctx)
 	if err != nil {
 		return err
 	}
