@@ -57,7 +57,7 @@ func RetryCreateOrUpdate(ctx context.Context, c client.Client, obj client.Object
 			return fmt.Errorf("wait for deletion: %w", waiterr)
 		}
 
-		// Get does not reset obj on NotFound, but Create rejects a set resource version and keeps the managed fields
+		// Create rejects a set resource version and would persist stale managed fields
 		obj.SetResourceVersion("")
 		obj.SetManagedFields(nil)
 
