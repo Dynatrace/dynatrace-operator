@@ -4,6 +4,7 @@
 package dynakube_test
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -13,6 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 const (
@@ -28,6 +30,49 @@ func TestCerts(t *testing.T) {
 	t.Run("get trusted certificate authorities", trustedCAsTester)
 	t.Run("get no tls certificates", activeGateTLSNoCertificateTester)
 	activeGateTLSCertificate(t)
+	t.Run("get activegate tls data", activeGateTLSDataTester)
+}
+
+func activeGateTLSDataTester(t *testing.T) {
+	data := map[string][]byte{
+		consts.TLSCrtDataName: []byte(testSecretValue),
+		"tls.key":             []byte(testSecretValueNew),
+	}
+	dk := dynakube.DynaKube{
+		Spec: dynakube.DynaKubeSpec{
+			ActiveGate: activegate.Spec{
+				Capabilities:  []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName},
+				TLSSecretName: testSecretName,
+			},
+		},
+	}
+
+	t.Run("returns whole secret data", func(t *testing.T) {
+		kubeReader := fake.NewClient(&corev1.Secret{Name: testSecretName, Data: data})
+
+		tlsData, err := dk.ActiveGateTLSData(t.Context(), kubeReader)
+
+		require.NoError(t, err)
+
+		expected, err := json.Marshal(data)
+		require.NoError(t, err)
+		assert.Equal(t, expected, tlsData)
+	})
+	t.Run("missing secret returns not found error", func(t *testing.T) {
+		tlsData, err := dk.ActiveGateTLSData(t.Context(), fake.NewClient())
+
+		require.Error(t, err)
+		assert.True(t, k8serrors.IsNotFound(err))
+		assert.Empty(t, tlsData)
+	})
+	t.Run("no tls configured returns empty data", func(t *testing.T) {
+		emptyDK := dynakube.DynaKube{}
+
+		tlsData, err := emptyDK.ActiveGateTLSData(t.Context(), fake.NewClient())
+
+		require.NoError(t, err)
+		assert.Empty(t, tlsData)
+	})
 }
 
 func trustedCAsTester(t *testing.T) {
