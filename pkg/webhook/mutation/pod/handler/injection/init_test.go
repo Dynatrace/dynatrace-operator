@@ -16,6 +16,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8smount"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8ssecuritycontext"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8svolume"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
 	oacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/oneagent"
@@ -119,8 +120,8 @@ func TestCreateInitContainerBase(t *testing.T) {
 		pod := getTestPod()
 		pod.Spec.Containers[0].SecurityContext = nil
 		pod.Spec.SecurityContext = &corev1.PodSecurityContext{}
-		pod.Spec.SecurityContext.RunAsUser = new(RootUser)
-		pod.Spec.SecurityContext.RunAsGroup = new(RootGroup)
+		pod.Spec.SecurityContext.RunAsUser = new(k8ssecuritycontext.RootUser)
+		pod.Spec.SecurityContext.RunAsGroup = new(k8ssecuritycontext.RootGroup)
 
 		initContainer := wh.createInitContainerBase(t.Context(), pod, dk)
 
@@ -128,10 +129,10 @@ func TestCreateInitContainerBase(t *testing.T) {
 		assert.False(t, *initContainer.SecurityContext.RunAsNonRoot)
 
 		require.NotNil(t, *initContainer.SecurityContext.RunAsUser)
-		assert.Equal(t, RootUser, *initContainer.SecurityContext.RunAsUser)
+		assert.Equal(t, k8ssecuritycontext.RootUser, *initContainer.SecurityContext.RunAsUser)
 
 		require.NotNil(t, *initContainer.SecurityContext.RunAsGroup)
-		assert.Equal(t, RootGroup, *initContainer.SecurityContext.RunAsGroup)
+		assert.Equal(t, k8ssecuritycontext.RootGroup, *initContainer.SecurityContext.RunAsGroup)
 	})
 	t.Run("should set seccomp profile if feature flag is enabled", func(t *testing.T) {
 		dk := getTestDynakube()
@@ -712,61 +713,6 @@ func Test_securityContextForInitContainer(t *testing.T) {
 			assert.Equal(t, c.expectedOut, *out)
 		})
 	}
-}
-
-func Test_isNonRoot(t *testing.T) {
-	t.Run("root user", func(t *testing.T) {
-		sc := &corev1.SecurityContext{
-			RunAsUser:  new(int64(0)),
-			RunAsGroup: new(int64(0)),
-		}
-		assert.False(t, isNonRoot(sc))
-	})
-	t.Run("non-root user", func(t *testing.T) {
-		sc := &corev1.SecurityContext{
-			RunAsUser:  new(int64(1000)),
-			RunAsGroup: new(int64(1000)),
-		}
-		assert.True(t, isNonRoot(sc))
-	})
-	t.Run("root user and nil group (OCP case)", func(t *testing.T) {
-		sc := &corev1.SecurityContext{
-			RunAsUser:  new(int64(0)),
-			RunAsGroup: nil,
-		}
-		assert.False(t, isNonRoot(sc))
-	})
-	t.Run("root user and non-root group", func(t *testing.T) {
-		sc := &corev1.SecurityContext{
-			RunAsUser:  new(int64(0)),
-			RunAsGroup: new(int64(1000)),
-		}
-		assert.False(t, isNonRoot(sc))
-	})
-	t.Run("non-root user and nil group (OCP case)", func(t *testing.T) {
-		sc := &corev1.SecurityContext{
-			RunAsUser:  new(int64(1000)),
-			RunAsGroup: nil,
-		}
-		assert.True(t, isNonRoot(sc))
-	})
-	t.Run("nil user and root group (edge case)", func(t *testing.T) {
-		sc := &corev1.SecurityContext{
-			RunAsUser:  nil,
-			RunAsGroup: new(int64(0)),
-		}
-		assert.False(t, isNonRoot(sc))
-	})
-	t.Run("nil user and non-root group (edge case)", func(t *testing.T) {
-		sc := &corev1.SecurityContext{
-			RunAsUser:  nil,
-			RunAsGroup: new(int64(1000)),
-		}
-		assert.True(t, isNonRoot(sc))
-	})
-	t.Run("nil context", func(t *testing.T) {
-		assert.True(t, isNonRoot(nil))
-	})
 }
 
 func getTestDynakube() *dynakube.DynaKube {

@@ -4,6 +4,7 @@
 package injection
 
 import (
+	"cmp"
 	"context"
 
 	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit"
@@ -138,7 +139,9 @@ func combineSecurityContexts(ctx context.Context, baseSecurityCtx corev1.Securit
 		baseSecurityCtx.RunAsGroup = group
 	}
 
-	baseSecurityCtx.RunAsNonRoot = new(isNonRoot(&baseSecurityCtx))
+	// if neither user nor group is set, the init container defaults to running as non-root.
+	// Kubernetes's default behavior for runAsNonRoot: nil == runAsNonRoot: false. (it will just not do the root check)
+	baseSecurityCtx.RunAsNonRoot = cmp.Or(k8ssecuritycontext.IsNonRoot(baseSecurityCtx.RunAsUser, baseSecurityCtx.RunAsGroup), new(true))
 
 	return &baseSecurityCtx
 }
@@ -163,16 +166,4 @@ func hasPodUserSet(psc *corev1.PodSecurityContext) bool {
 
 func hasPodGroupSet(psc *corev1.PodSecurityContext) bool {
 	return psc != nil && psc.RunAsGroup != nil
-}
-
-func isNonRoot(sc *corev1.SecurityContext) bool {
-	if sc == nil {
-		return true
-	}
-
-	if sc.RunAsUser != nil { // user takes precedence over group
-		return *sc.RunAsUser != RootUser
-	}
-
-	return sc.RunAsGroup == nil || *sc.RunAsGroup != RootGroup // if group is root, but no user is set, we are still "running as root"
 }

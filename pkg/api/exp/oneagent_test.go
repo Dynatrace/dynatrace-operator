@@ -142,7 +142,7 @@ func TestGetClassicOneAgentNonRoot(t *testing.T) {
 		{title: "missing group is ignored", set: true, in: "123:", enabled: false},
 		{title: "negative is ignored", set: true, in: "-1:1", enabled: false},
 		{title: "root user is ignored", set: true, in: "0:1", enabled: false},
-		{title: "root group is ignored", set: true, in: "1:0", enabled: false},
+		{title: "root group with non-root user is accepted", set: true, in: "1:0", user: 1, group: 0, enabled: true},
 		{title: "out of int32 range is ignored", set: true, in: "1:2147483648", enabled: false},
 	}
 

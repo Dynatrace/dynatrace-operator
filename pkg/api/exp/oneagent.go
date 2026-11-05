@@ -67,8 +67,8 @@ func (ff *FeatureFlags) IsOneAgentPrivileged() bool {
 // GetClassicOneAgentNonRoot returns the user and group the classic OneAgent should run as, and whether non-root is enabled at all.
 //
 // The feature flag is disabled when not set. When set, the value is either empty, which selects
-// DefaultOAClassicNonRootID for both user and group, or "<uid>:<gid>" with positive IDs.
-// A value in any other format (including root IDs, 0) is invalid; it is logged and the flag is ignored (enabled == false).
+// DefaultOAClassicNonRootID for both user and group, or "<uid>:<gid>" with a non-root (non-zero) user ID.
+// A value in any other format, or one resulting in a root user, is invalid; it is logged and the flag is ignored (enabled == false).
 func (ff *FeatureFlags) GetClassicOneAgentNonRoot(ctx context.Context) (user, group int64, enabled bool) {
 	_, log := logd.NewFromContext(ctx, "exp")
 
@@ -99,8 +99,8 @@ func (ff *FeatureFlags) GetClassicOneAgentNonRoot(ctx context.Context) (user, gr
 		return 0, 0, false
 	}
 
-	if *parsedUser == 0 || *parsedGroup == 0 {
-		log.Info("oneagent-nonroot FF present, but user or group is root (0), ignoring flag", "parsedUser", *parsedUser, "parsedGroup", *parsedGroup)
+	if !*k8ssecuritycontext.IsNonRoot(parsedUser, parsedGroup) {
+		log.Info("oneagent-nonroot FF present, but user is root (0), ignoring flag", "parsedUser", *parsedUser, "parsedGroup", *parsedGroup)
 
 		return 0, 0, false
 	}

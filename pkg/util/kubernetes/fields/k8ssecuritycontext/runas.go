@@ -10,6 +10,11 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 )
 
+const (
+	RootUser  int64 = 0
+	RootGroup int64 = 0
+)
+
 // GetValidatedRunAsID will parse the provided string as valid user/group ID between 0 and `math.MaxInt32`.
 // Returns `*int64` for compatibility with `corev1.SecurityContext`
 func GetValidatedRunAsID(ctx context.Context, value string) *int64 {
@@ -26,4 +31,19 @@ func GetValidatedRunAsID(ctx context.Context, value string) *int64 {
 	}
 
 	return new(int64(parsed))
+}
+
+// IsNonRoot reports whether the provided user and group IDs result in a non-root process.
+// The user takes precedence over the group; if neither is set, nil is returned as it can't be determined.
+// Returns `*bool` for compatibility with `corev1.SecurityContext`
+func IsNonRoot(user, group *int64) *bool {
+	if user != nil { // user takes precedence over group
+		return new(*user != RootUser)
+	}
+
+	if group != nil { // if group is root, but no user is set, we are still "running as root"
+		return new(*group != RootGroup)
+	}
+
+	return nil
 }
