@@ -556,7 +556,7 @@ jobs:
     name: Notify test results in Slack
     environment: E2E
     needs: [ "run-in-k8s", "run-in-k8s-platform-token", "run-in-k8s-phase3", "run-in-ocp", "run-in-ocp-platform-token", "run-in-ocp-fips", "run-in-ocp-olm", "run-in-ocp-olm-platform-token"]
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     if: ${{ always() }}
     steps:
       - name: Checkout

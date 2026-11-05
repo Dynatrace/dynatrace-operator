@@ -17,7 +17,7 @@ jobs:
     permissions:
       contents: read
     name: Prepare properties
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -35,7 +35,7 @@ jobs:
     if: github.repository_owner == 'Dynatrace'
     name: Build images
     needs: [prepare]
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       packages: write
     steps:
@@ -62,7 +62,7 @@ jobs:
     if: github.repository_owner == 'Dynatrace'
     name: Build FIPS image
     needs: [prepare]
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       packages: write
     steps:
@@ -96,7 +96,7 @@ jobs:
       contents: read
       actions: write
       packages: read
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -120,7 +120,7 @@ jobs:
       contents: read
       actions: write
       packages: read
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -160,7 +160,7 @@ jobs:
     name: Sign the image index/manifests + Add SBOM
     environment: Release
     needs: [prepare, build-push, build-push-fips, create-sbom, create-sbom-fips]
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       id-token: write
       packages: write
@@ -232,7 +232,7 @@ jobs:
       packages: write
       attestations: write
       artifact-metadata: write
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     env:
       HELM_PACKAGE_VERSION: 0.0.0-${{ needs.prepare.outputs.version_without_prefix }}
     steps:
