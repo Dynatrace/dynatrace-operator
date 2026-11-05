@@ -5,7 +5,6 @@ package dynakube
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
@@ -59,7 +58,7 @@ func (dk *DynaKube) ActiveGateTLSCert(ctx context.Context, kubeReader client.Rea
 	return nil, nil
 }
 
-func (dk *DynaKube) ActiveGateTLSData(ctx context.Context, kubeReader client.Reader) ([]byte, error) {
+func (dk *DynaKube) ActiveGateTLSData(ctx context.Context, kubeReader client.Reader) (map[string][]byte, error) {
 	if dk.ActiveGate().HasCaCert() {
 		secretName := dk.ActiveGate().GetTLSSecretName()
 
@@ -70,13 +69,8 @@ func (dk *DynaKube) ActiveGateTLSData(ctx context.Context, kubeReader client.Rea
 			return nil, errors.WithMessage(err, fmt.Sprintf("failed to get activeGate tls data from %s secret", secretName))
 		}
 
-		data, err := json.Marshal(tlsSecret.Data)
-		if err != nil {
-			return nil, errors.WithStack(err)
-		}
-
-		return data, nil
+		return tlsSecret.Data, nil
 	}
 
-	return nil, nil
+	return nil, nil //nolint:nilnil
 }
