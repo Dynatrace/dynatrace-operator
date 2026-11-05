@@ -218,7 +218,7 @@ func readLatestCodeModule(ctx context.Context, resource *resources.Resources, po
 	latestLink := path.Join(dataPath, dtcsi.SharedDynaKubesDir, dynakubeName, "latest-codemodule")
 	command := shell.ReadLink(latestLink)
 
-	result, err := k8spod.Exec(ctx, resource, pod, provisionerContainerName, command...)
+	result, err := k8spod.Exec(ctx, resource, pod, csi.ProvisionerContainerName, command...)
 	if err != nil {
 		return "", err
 	}
@@ -248,7 +248,7 @@ func csiPodOnNode(ctx context.Context, t *testing.T, resource *resources.Resourc
 func listCodeModules(ctx context.Context, resource *resources.Resources, pod *corev1.Pod) ([]string, error) {
 	listCommand := shell.ListDirectory(dataPath + dtcsi.SharedAgentBinDir)
 
-	result, err := k8spod.Exec(ctx, resource, pod, provisionerContainerName, listCommand...)
+	result, err := k8spod.Exec(ctx, resource, pod, csi.ProvisionerContainerName, listCommand...)
 	if err != nil {
 		return nil, err
 	}
@@ -317,7 +317,7 @@ func waitForCleanupRun(dk dynakube.DynaKube, snapshot *codeModulesSnapshot) feat
 
 func countCleanupRuns(ctx context.Context, clientset *kubernetes.Clientset, pod *corev1.Pod) (int, error) {
 	logStream, err := clientset.CoreV1().Pods(pod.Namespace).GetLogs(pod.Name, &corev1.PodLogOptions{
-		Container: provisionerContainerName,
+		Container: csi.ProvisionerContainerName,
 	}).Stream(ctx)
 	if err != nil {
 		return 0, err

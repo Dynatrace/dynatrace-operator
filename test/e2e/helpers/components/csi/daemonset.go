@@ -21,6 +21,8 @@ import (
 
 const (
 	DaemonSetName = "dynatrace-oneagent-csi-driver"
+
+	ProvisionerContainerName = "provisioner"
 )
 
 func CleanUpEachPod(namespace string) env.Func {
