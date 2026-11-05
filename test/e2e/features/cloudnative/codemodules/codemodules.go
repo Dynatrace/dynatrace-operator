@@ -141,7 +141,7 @@ func WithProxy(t *testing.T, proxySpec *types.ValueSource) features.Feature {
 		dynakubeComponents.WithIstioIntegration(),
 		dynakubeComponents.WithProxy(proxySpec),
 		dynakubeComponents.WithAnnotations(map[string]string{
-			exp.AGAutomaticTLSCertificateKey: "false",
+			exp.AGTLSCertificateTransferringToOneAgentKey: "false",
 		}),
 	)
 

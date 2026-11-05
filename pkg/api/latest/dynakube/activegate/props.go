@@ -29,8 +29,8 @@ func (ag *Spec) SetName(name string) {
 	ag.name = name
 }
 
-func (ag *Spec) SetAutomaticTLSCertificate(enabled bool) {
-	ag.automaticTLSCertificateEnabled = enabled
+func (ag *Spec) SetTLSCertificateTransferringToOneAgent(enabled bool) {
+	ag.tlsCertificateTransferToOneAgentEnabled = enabled
 }
 func (ag *Spec) SetExtensionsDependency(isEnabled bool) {
 	ag.enabledDependencies.extensions = isEnabled
@@ -91,12 +91,16 @@ func (ag *Spec) IsMetricsIngestEnabled() bool {
 	return ag.IsMode(MetricsIngestCapability.DisplayName)
 }
 
-func (ag *Spec) IsAutomaticTLSSecretEnabled() bool {
-	return ag.automaticTLSCertificateEnabled
+func (ag *Spec) IsTLSCertificateTransferringToOneAgentEnabled() bool {
+	return ag.tlsCertificateTransferToOneAgentEnabled
 }
 
 func (ag *Spec) HasCaCert() bool {
-	return ag.IsEnabled() && (ag.TLSSecretName != "" || ag.IsAutomaticTLSSecretEnabled())
+	return ag.IsEnabled()
+}
+
+func (ag *Spec) HasCaCertForOA() bool {
+	return ag.IsEnabled() && ag.IsRoutingEnabled() && ag.IsTLSCertificateTransferringToOneAgentEnabled()
 }
 
 // GetTenantSecretName returns the name of the secret containing tenant UUID, token and communication endpoints for ActiveGate.
@@ -115,11 +119,7 @@ func (ag *Spec) GetTLSSecretName() string {
 		return ag.TLSSecretName
 	}
 
-	if ag.IsAutomaticTLSSecretEnabled() {
-		return ag.GetAutoTLSSecretName()
-	}
-
-	return ""
+	return ag.GetAutoTLSSecretName()
 }
 
 // GetAutoTLSSecretName returns the name of the automatically created AG TLS secret.

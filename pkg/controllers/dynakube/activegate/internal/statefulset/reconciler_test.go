@@ -242,7 +242,7 @@ func TestReconcile_GetTLSSecretHash(t *testing.T) {
 
 	t.Run("missing TLS secret does not change the hash", func(t *testing.T) {
 		r, _, dk := createDefaultReconciler(t)
-		dk.Annotations[exp.AGAutomaticTLSCertificateKey] = "false"
+		dk.Annotations[exp.AGTLSCertificateTransferringToOneAgentKey] = "false"
 		agCapability := capability.NewMultiCapability(dk)
 
 		hashWithoutTLS, err := r.calculateActiveGateConfigurationHash(ctx, dk, agCapability)

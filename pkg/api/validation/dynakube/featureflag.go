@@ -44,7 +44,7 @@ var (
 		exp.AGAppArmorKey,
 		exp.AGAutomaticK8sAPIMonitoringKey,
 		exp.AGAutomaticK8sAPIMonitoringClusterNameKey,
-		exp.AGAutomaticTLSCertificateKey,
+		exp.AGTLSCertificateTransferringToOneAgentKey,
 		// csi.go
 		exp.CSIMaxFailedMountAttemptsKey,
 		exp.CSIMaxMountTimeoutKey,
