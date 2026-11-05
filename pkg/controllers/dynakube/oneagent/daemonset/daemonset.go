@@ -246,7 +246,7 @@ func (b *builder) podSpec(ctx context.Context) (corev1.PodSpec, error) {
 		HostNetwork:                   true,
 		HostPID:                       true,
 		HostIPC:                       false,
-		SecurityContext:               buildPodSecurityContext(),
+		SecurityContext:               b.podSecurityContext(),
 		NodeSelector:                  b.nodeSelector(),
 		PriorityClassName:             b.priorityClassName(),
 		ServiceAccountName:            serviceAccountName,
@@ -369,11 +369,11 @@ func (b *builder) securityContext(ctx context.Context) *corev1.SecurityContext {
 	}
 
 	if b.dk.OneAgent().IsReadOnlyFSSupported() {
-		setNonRoot(securityContext)
+		setNonRoot(securityContext, userGroupID, userGroupID)
 		securityContext.ReadOnlyRootFilesystem = new(b.isRootFsReadonly(ctx))
 	} else {
-		if b.dk.FF().IsClassicOneAgentNonRoot() {
-			setNonRoot(securityContext)
+		if user, group, enabled := b.dk.FF().GetClassicOneAgentNonRoot(); enabled {
+			setNonRoot(securityContext, user, group)
 		}
 
 		securityContext.ReadOnlyRootFilesystem = new(false)
@@ -398,10 +398,10 @@ func (b *builder) securityContext(ctx context.Context) *corev1.SecurityContext {
 	return securityContext
 }
 
-func setNonRoot(sc *corev1.SecurityContext) {
+func setNonRoot(sc *corev1.SecurityContext, user, group int64) {
 	sc.RunAsNonRoot = new(true)
-	sc.RunAsUser = new(userGroupID)
-	sc.RunAsGroup = new(userGroupID)
+	sc.RunAsUser = new(user)
+	sc.RunAsGroup = new(group)
 }
 
 func defaultSecurityContextCapabilities() *corev1.Capabilities {
@@ -475,8 +475,16 @@ func (b *builder) isRootFsReadonly(ctx context.Context) bool {
 	return true
 }
 
-func buildPodSecurityContext() *corev1.PodSecurityContext {
+func (b *builder) podSecurityContext() *corev1.PodSecurityContext {
+	fsGroup := userGroupID
+
+	if b.dk != nil && b.dk.OneAgent().IsClassicFullStackMode() {
+		if _, group, enabled := b.dk.FF().GetClassicOneAgentNonRoot(); enabled {
+			fsGroup = group
+		}
+	}
+
 	return &corev1.PodSecurityContext{
-		FSGroup: new(userGroupID),
+		FSGroup: new(fsGroup),
 	}
 }

@@ -123,101 +123,36 @@ func TestGetOneAgentMaxUnavailable(t *testing.T) {
 	}
 }
 
-func TestOneAgentIgnoresProxyProxy(t *testing.T) {
-	type testCase struct {
-		title string
-		in    string
-		out   bool
-	}
-
-	cases := []testCase{
-		{
-			title: "default",
-			in:    "",
-			out:   false,
-		},
-		{
-			title: "overrule",
-			in:    "true",
-			out:   true,
-		},
+func TestGetClassicOneAgentNonRoot(t *testing.T) {
+	cases := []struct {
+		title   string
+		set     bool
+		in      string
+		user    int64
+		group   int64
+		enabled bool
+	}{
+		{title: "not set", enabled: false},
+		{title: "empty uses defaults", set: true, in: "", user: 1000, group: 1000, enabled: true},
+		{title: "custom ids", set: true, in: "123:456", user: 123, group: 456, enabled: true},
+		{title: "invalid falls back to defaults", set: true, in: "abc:1", user: 1000, group: 1000, enabled: true},
+		{title: "negative falls back to defaults", set: true, in: "-1:1", user: 1000, group: 1000, enabled: true},
 	}
 
 	for _, c := range cases {
 		t.Run(c.title, func(t *testing.T) {
-			ff := FeatureFlags{annotations: map[string]string{
-				OAProxyIgnoredKey: c.in,
-			}}
+			annotations := map[string]string{}
+			if c.set {
+				annotations[OAClassicNonRootKey] = c.in
+			}
 
-			out := ff.OneAgentIgnoresProxy()
+			ff := FeatureFlags{annotations: annotations}
 
-			assert.Equal(t, c.out, out)
-		})
-	}
-}
+			user, group, enabled := ff.GetClassicOneAgentNonRoot()
 
-func TestIsOneAgentPrivileged(t *testing.T) {
-	type testCase struct {
-		title string
-		in    string
-		out   bool
-	}
-
-	cases := []testCase{
-		{
-			title: "default",
-			in:    "",
-			out:   false,
-		},
-		{
-			title: "overrule",
-			in:    "true",
-			out:   true,
-		},
-	}
-
-	for _, c := range cases {
-		t.Run(c.title, func(t *testing.T) {
-			ff := FeatureFlags{annotations: map[string]string{
-				OAPrivilegedKey: c.in,
-			}}
-
-			out := ff.IsOneAgentPrivileged()
-
-			assert.Equal(t, c.out, out)
-		})
-	}
-}
-
-func TestIsClassicOneAgentNonroot(t *testing.T) {
-	type testCase struct {
-		title string
-		in    string
-		out   bool
-	}
-
-	cases := []testCase{
-		{
-			title: "default",
-			in:    "",
-			out:   false,
-		},
-		{
-			title: "overrule",
-			in:    "true",
-			out:   true,
-		},
-	}
-
-	for _, c := range cases {
-		t.Run(c.title, func(t *testing.T) {
-			ff := FeatureFlags{annotations: map[string]string{
-				OAClassicNonRootKey: c.in,
-			}}
-
-			out := ff.IsClassicOneAgentNonRoot()
-
-			assert.Equal(t, c.out, out)
+			assert.Equal(t, c.enabled, enabled)
+			assert.Equal(t, c.user, user)
+			assert.Equal(t, c.group, group)
 		})
 	}
 }

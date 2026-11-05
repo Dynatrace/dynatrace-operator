@@ -3,6 +3,11 @@
 
 package exp
 
+import (
+	"strconv"
+	"strings"
+)
+
 const (
 	// Deprecated: OAProxyIgnoredKey use NoProxy annotation instead.
 	OAProxyIgnoredKey = FFPrefix + "oneagent-ignore-proxy"
@@ -22,6 +27,9 @@ const (
 
 const (
 	DefaultOAIstioInitialConnectRetry = 6000
+
+	// DefaultOAClassicNonRootID is the user and group ID used for classic OneAgent when no explicit IDs are configured.
+	DefaultOAClassicNonRootID int64 = 1000
 )
 
 // Deprecated: Use rollingUpdate configuration for OneAgent in the DynaKube spec instead.
@@ -53,8 +61,31 @@ func (ff *FeatureFlags) IsOneAgentPrivileged() bool {
 	return ff.getBoolWithDefault(OAPrivilegedKey, false)
 }
 
-func (ff *FeatureFlags) IsClassicOneAgentNonRoot() bool {
-	return ff.getBoolWithDefault(OAClassicNonRootKey, false)
+// GetClassicOneAgentNonRoot returns the user and group the classic OneAgent should run as, and whether non-root is enabled at all.
+//
+// The feature flag is disabled when not set. When set, the value is "<uid>:<gid>";
+// an empty value or invalid value selects DefaultOAClassicNonRootID for both.
+func (ff *FeatureFlags) GetClassicOneAgentNonRoot() (user, group int64, enabled bool) {
+	if !ff.IsSet(OAClassicNonRootKey) {
+		return 0, 0, false
+	}
+
+	raw := strings.TrimSpace(ff.getRaw(OAClassicNonRootKey))
+	user, group = DefaultOAClassicNonRootID, DefaultOAClassicNonRootID
+
+	userRaw, groupRaw, found := strings.Cut(raw, ":")
+	if !found {
+		return user, group, true
+	}
+
+	parsedUser, userErr := strconv.ParseInt(strings.TrimSpace(userRaw), 10, 64)
+	parsedGroup, groupErr := strconv.ParseInt(strings.TrimSpace(groupRaw), 10, 64)
+
+	if userErr != nil || groupErr != nil || parsedUser < 0 || parsedGroup < 0 {
+		return user, group, true
+	}
+
+	return parsedUser, parsedGroup, true
 }
 
 func (ff *FeatureFlags) SkipOneAgentLivenessProbe() bool {
