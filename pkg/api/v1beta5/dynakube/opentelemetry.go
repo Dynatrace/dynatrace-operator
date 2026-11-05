@@ -26,6 +26,7 @@ type OpenTelemetryCollectorSpec struct {
 	// +kubebuilder:validation:Optional
 	ImageRef types.ImageRef `json:"imageRef"`
 
+	// Deprecated: This field has no effect and will be removed in a future API version.
 	// +kubebuilder:validation:Optional
 	TLSRefName string `json:"tlsRefName,omitempty"`
 

@@ -165,7 +165,7 @@ func toOpenTelemetryCollectorTemplate(dk *dynakubelatest.DynaKube, src OpenTelem
 		dk.RemovedFields().DefaultOTelColImage.Set(nil)
 	}
 
-	dst.TLSRefName = src.TLSRefName
+	dst.TLSRefName = src.TLSRefName //nolint:staticcheck // SA1019: deprecated field still converted to avoid data loss
 	dst.Resources = src.Resources
 	dst.Tolerations = src.Tolerations
 	dst.TopologySpreadConstraints = src.TopologySpreadConstraints

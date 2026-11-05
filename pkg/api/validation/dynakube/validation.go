@@ -95,6 +95,7 @@ var (
 		deprecatedFeatureFlag,
 		unknownFeatureFlag,
 		ignoredOTelCollectorTemplate,
+		deprecatedOTelCollectorTLSRefName,
 		ignoredLogMonitoringTemplate,
 		conflictingAPIURLForExtensions,
 		noMappedHostPaths,

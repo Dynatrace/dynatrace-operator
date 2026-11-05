@@ -472,7 +472,7 @@ func compareOpenTelemetryTemplateSpec(t *testing.T, oldSpec OpenTelemetryCollect
 	assert.Equal(t, oldSpec.Annotations, newSpec.Annotations)
 	assert.Equal(t, *oldSpec.Replicas, *newSpec.Replicas)
 	assert.Equal(t, oldSpec.ImageRef, newSpec.ImageRef)
-	assert.Equal(t, oldSpec.TLSRefName, newSpec.TLSRefName)
+	assert.Equal(t, oldSpec.TLSRefName, newSpec.TLSRefName) //nolint:staticcheck // SA1019: deprecated field
 	assert.Equal(t, oldSpec.Resources, newSpec.Resources)
 	assert.Equal(t, oldSpec.Tolerations, newSpec.Tolerations)
 	assert.Equal(t, oldSpec.TopologySpreadConstraints, newSpec.TopologySpreadConstraints)
@@ -731,7 +731,7 @@ func getNewOpenTelemetryTemplateSpec() dynakubelatest.OpenTelemetryCollectorSpec
 			Repository: "image-repo.repohost.test/repo",
 			Tag:        "image-tag",
 		},
-		TLSRefName: "tls-ref-name",
+		TLSRefName: "tls-ref-name", //nolint:staticcheck // SA1019: deprecated field
 		Resources: corev1.ResourceRequirements{
 			Limits: corev1.ResourceList{
 				corev1.ResourceCPU: *resource.NewScaledQuantity(3, 1),
