@@ -25,6 +25,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -145,15 +146,20 @@ func (r *Reconciler) buildTemplateAnnotations(ctx context.Context, dk *dynakube.
 		return nil, err
 	}
 
+	agTLSData, err := dk.ActiveGateTLSData(ctx, r.apiReader)
+	if err != nil && !k8serrors.IsNotFound(err) {
+		return nil, err
+	}
+
 	templateAnnotations := make(map[string]string)
 	maps.Copy(templateAnnotations, k8ssecuritycontext.RemoveAppArmorAnnotation(dk.Spec.Templates.ExtensionExecutionController.Annotations, containerName))
 
-	tlsSecretHash, err := hasher.GenerateHash(tlsSecret.Data)
+	tlsHash, err := hasher.GenerateSecureHash([]any{tlsSecret.Data, agTLSData})
 	if err != nil {
 		return nil, err
 	}
 
-	templateAnnotations[api.AnnotationExtensionsSecretHash] = tlsSecretHash
+	templateAnnotations[api.AnnotationExtensionsConfigurationHash] = tlsHash
 
 	return templateAnnotations, nil
 }
