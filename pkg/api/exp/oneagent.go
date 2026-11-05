@@ -4,8 +4,11 @@
 package exp
 
 import (
-	"strconv"
+	"context"
 	"strings"
+
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8ssecuritycontext"
 )
 
 const (
@@ -63,29 +66,46 @@ func (ff *FeatureFlags) IsOneAgentPrivileged() bool {
 
 // GetClassicOneAgentNonRoot returns the user and group the classic OneAgent should run as, and whether non-root is enabled at all.
 //
-// The feature flag is disabled when not set. When set, the value is "<uid>:<gid>";
-// an empty value or invalid value selects DefaultOAClassicNonRootID for both.
-func (ff *FeatureFlags) GetClassicOneAgentNonRoot() (user, group int64, enabled bool) {
+// The feature flag is disabled when not set. When set, the value is either empty, which selects
+// DefaultOAClassicNonRootID for both user and group, or "<uid>:<gid>" with positive IDs.
+// A value in any other format (including root IDs, 0) is invalid; it is logged and the flag is ignored (enabled == false).
+func (ff *FeatureFlags) GetClassicOneAgentNonRoot(ctx context.Context) (user, group int64, enabled bool) {
+	_, log := logd.NewFromContext(ctx, "exp")
+
 	if !ff.IsSet(OAClassicNonRootKey) {
 		return 0, 0, false
 	}
 
-	raw := strings.TrimSpace(ff.getRaw(OAClassicNonRootKey))
-	user, group = DefaultOAClassicNonRootID, DefaultOAClassicNonRootID
+	raw := ff.getRaw(OAClassicNonRootKey)
+	if len(raw) == 0 {
+		log.Debug("oneagent-nonroot FF present and empty, using default nonroot user/group.", "defaultID", DefaultOAClassicNonRootID)
 
-	userRaw, groupRaw, found := strings.Cut(raw, ":")
+		return DefaultOAClassicNonRootID, DefaultOAClassicNonRootID, true
+	}
+
+	userRaw, groupRaw, found := strings.Cut(strings.TrimSpace(raw), ":")
 	if !found {
-		return user, group, true
+		log.Info("oneagent-nonroot FF present, but has unexpected format, ignoring flag, expected format \"\" or \"userID:groupID\"", "value", raw)
+
+		return 0, 0, false
 	}
 
-	parsedUser, userErr := strconv.ParseInt(strings.TrimSpace(userRaw), 10, 64)
-	parsedGroup, groupErr := strconv.ParseInt(strings.TrimSpace(groupRaw), 10, 64)
+	parsedUser := k8ssecuritycontext.GetValidatedRunAsID(ctx, strings.TrimSpace(userRaw))
+	parsedGroup := k8ssecuritycontext.GetValidatedRunAsID(ctx, strings.TrimSpace(groupRaw))
 
-	if userErr != nil || groupErr != nil || parsedUser < 0 || parsedGroup < 0 {
-		return user, group, true
+	if parsedUser == nil || parsedGroup == nil {
+		log.Info("oneagent-nonroot FF present, but failed to parse, ignoring flag", "userRaw", userRaw, "groupRaw", groupRaw)
+
+		return 0, 0, false
 	}
 
-	return parsedUser, parsedGroup, true
+	if *parsedUser == 0 || *parsedGroup == 0 {
+		log.Info("oneagent-nonroot FF present, but user or group is root (0), ignoring flag", "parsedUser", *parsedUser, "parsedGroup", *parsedGroup)
+
+		return 0, 0, false
+	}
+
+	return *parsedUser, *parsedGroup, true
 }
 
 func (ff *FeatureFlags) SkipOneAgentLivenessProbe() bool {

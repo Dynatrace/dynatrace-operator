@@ -231,7 +231,7 @@ func (b *builder) podSpec(ctx context.Context) (corev1.PodSpec, error) {
 	affinity := b.affinity()
 
 	podSpec := corev1.PodSpec{
-		InitContainers: []corev1.Container{b.initContainerSpec()},
+		InitContainers: []corev1.Container{b.initContainerSpec(ctx)},
 		Containers: []corev1.Container{{
 			Args:            arguments,
 			Env:             environmentVariables,
@@ -246,7 +246,7 @@ func (b *builder) podSpec(ctx context.Context) (corev1.PodSpec, error) {
 		HostNetwork:                   true,
 		HostPID:                       true,
 		HostIPC:                       false,
-		SecurityContext:               b.podSecurityContext(),
+		SecurityContext:               b.podSecurityContext(ctx),
 		NodeSelector:                  b.nodeSelector(),
 		PriorityClassName:             b.priorityClassName(),
 		ServiceAccountName:            serviceAccountName,
@@ -363,29 +363,32 @@ func (b *builder) imagePullSecrets() []corev1.LocalObjectReference {
 }
 
 func (b *builder) securityContext(ctx context.Context) *corev1.SecurityContext {
-	securityContext := &corev1.SecurityContext{}
+	sc := &corev1.SecurityContext{}
 	if b.dk == nil || b.hostInjectSpec == nil {
-		return securityContext
+		return sc
+	}
+
+	user, group, nonRoot := b.runAsIDs(ctx)
+
+	if nonRoot {
+		sc.RunAsNonRoot = new(true)
+		sc.RunAsUser = new(user)
+		sc.RunAsGroup = new(group)
 	}
 
 	if b.dk.OneAgent().IsReadOnlyFSSupported() {
-		setNonRoot(securityContext, userGroupID, userGroupID)
-		securityContext.ReadOnlyRootFilesystem = new(b.isRootFsReadonly(ctx))
+		sc.ReadOnlyRootFilesystem = new(b.isRootFsReadonly(ctx))
 	} else {
-		if user, group, enabled := b.dk.FF().GetClassicOneAgentNonRoot(); enabled {
-			setNonRoot(securityContext, user, group)
-		}
-
-		securityContext.ReadOnlyRootFilesystem = new(false)
+		sc.ReadOnlyRootFilesystem = new(false)
 	}
 
 	if b.dk.OneAgent().IsPrivilegedNeeded() {
-		securityContext.Privileged = new(true)
+		sc.Privileged = new(true)
 	} else {
-		securityContext.Capabilities = defaultSecurityContextCapabilities()
+		sc.Capabilities = defaultSecurityContextCapabilities()
 
 		if secompName := b.dk.OneAgent().GetSecCompProfile(); secompName != "" {
-			securityContext.SeccompProfile = &corev1.SeccompProfile{
+			sc.SeccompProfile = &corev1.SeccompProfile{
 				Type:             corev1.SeccompProfileTypeLocalhost,
 				LocalhostProfile: &secompName,
 			}
@@ -393,15 +396,9 @@ func (b *builder) securityContext(ctx context.Context) *corev1.SecurityContext {
 	}
 
 	annotations := maputils.MergeMap(map[string]string{appArmorAnnotation: appArmorUnconfined}, b.hostInjectSpec.Annotations)
-	securityContext.AppArmorProfile = k8ssecuritycontext.GetAppArmorProfile(annotations, containerName)
+	sc.AppArmorProfile = k8ssecuritycontext.GetAppArmorProfile(annotations, containerName)
 
-	return securityContext
-}
-
-func setNonRoot(sc *corev1.SecurityContext, user, group int64) {
-	sc.RunAsNonRoot = new(true)
-	sc.RunAsUser = new(user)
-	sc.RunAsGroup = new(group)
+	return sc
 }
 
 func defaultSecurityContextCapabilities() *corev1.Capabilities {
@@ -475,16 +472,28 @@ func (b *builder) isRootFsReadonly(ctx context.Context) bool {
 	return true
 }
 
-func (b *builder) podSecurityContext() *corev1.PodSecurityContext {
-	fsGroup := userGroupID
-
-	if b.dk != nil && b.dk.OneAgent().IsClassicFullStackMode() {
-		if _, group, enabled := b.dk.FF().GetClassicOneAgentNonRoot(); enabled {
-			fsGroup = group
-		}
-	}
+func (b *builder) podSecurityContext(ctx context.Context) *corev1.PodSecurityContext {
+	_, group, _ := b.runAsIDs(ctx)
 
 	return &corev1.PodSecurityContext{
-		FSGroup: new(fsGroup),
+		FSGroup: new(group),
 	}
+}
+
+// runAsIDs returns the user and group the OneAgent pod runs as, and whether the OneAgent container runs as non-root.
+// The IDs are the default, unless the classic non-root feature flag configures custom IDs for classic full stack.
+func (b *builder) runAsIDs(ctx context.Context) (user, group int64, nonRoot bool) {
+	if b.dk == nil {
+		return userGroupID, userGroupID, false
+	}
+
+	if b.dk.OneAgent().IsReadOnlyFSSupported() {
+		return userGroupID, userGroupID, true
+	}
+
+	if u, g, enabled := b.dk.FF().GetClassicOneAgentNonRoot(ctx); enabled && b.dk.OneAgent().IsClassicFullStackMode() {
+		return u, g, true
+	}
+
+	return userGroupID, userGroupID, false
 }

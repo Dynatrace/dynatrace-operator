@@ -4,6 +4,7 @@
 package daemonset
 
 import (
+	"context"
 	"maps"
 	"os"
 	"slices"
@@ -18,7 +19,7 @@ const (
 	initContainerName = "dynatrace-operator"
 )
 
-func (b *builder) initContainerSpec() corev1.Container {
+func (b *builder) initContainerSpec(ctx context.Context) corev1.Container {
 	return corev1.Container{
 		Image:           os.Getenv(k8senv.DTOperatorImageEnvName),
 		ImagePullPolicy: b.dk.OneAgent().GetImagePullPolicy(),
@@ -26,7 +27,7 @@ func (b *builder) initContainerSpec() corev1.Container {
 		Env:             b.initContainerEnvVars(),
 		Args:            b.initContainerArguments(),
 		VolumeMounts:    b.initContainerVolumeMounts(),
-		SecurityContext: b.initContainerSecurityContext(),
+		SecurityContext: b.initContainerSecurityContext(ctx),
 		Resources:       b.resources(),
 	}
 }
@@ -81,13 +82,15 @@ func (b *builder) initContainerVolumeMounts() []corev1.VolumeMount {
 	}
 }
 
-func (b *builder) initContainerSecurityContext() *corev1.SecurityContext {
+func (b *builder) initContainerSecurityContext(ctx context.Context) *corev1.SecurityContext {
+	user, group, _ := b.runAsIDs(ctx)
+
 	return &corev1.SecurityContext{
 		Privileged:               new(false),
 		AllowPrivilegeEscalation: new(false),
 		RunAsNonRoot:             new(true),
-		RunAsUser:                new(userGroupID),
-		RunAsGroup:               new(userGroupID),
+		RunAsUser:                new(user),
+		RunAsGroup:               new(group),
 		Capabilities: &corev1.Capabilities{
 			Drop: []corev1.Capability{
 				"ALL",

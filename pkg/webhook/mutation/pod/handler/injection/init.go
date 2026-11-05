@@ -5,15 +5,14 @@ package injection
 
 import (
 	"context"
-	"strconv"
 
 	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit"
 	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit/configure"
 	"github.com/Dynatrace/dynatrace-operator/cmd/bootstrapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/bootstrapperconfig"
-	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sresource"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8ssecuritycontext"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/arg"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
@@ -131,35 +130,17 @@ func combineSecurityContexts(ctx context.Context, baseSecurityCtx corev1.Securit
 		baseSecurityCtx.RunAsGroup = containerSecurityCtx.RunAsGroup
 	}
 
-	if user := getValidatedID(ctx, pod.Annotations[dtwebhook.AnnotationInitContainerRunAsUser]); user != nil {
+	if user := k8ssecuritycontext.GetValidatedRunAsID(ctx, pod.Annotations[dtwebhook.AnnotationInitContainerRunAsUser]); user != nil {
 		baseSecurityCtx.RunAsUser = user
 	}
 
-	if group := getValidatedID(ctx, pod.Annotations[dtwebhook.AnnotationInitContainerRunAsGroup]); group != nil {
+	if group := k8ssecuritycontext.GetValidatedRunAsID(ctx, pod.Annotations[dtwebhook.AnnotationInitContainerRunAsGroup]); group != nil {
 		baseSecurityCtx.RunAsGroup = group
 	}
 
 	baseSecurityCtx.RunAsNonRoot = new(isNonRoot(&baseSecurityCtx))
 
 	return &baseSecurityCtx
-}
-
-// getValidatedID will parse the provided annotation as valid user/group ID between 0 and math.MaxInt32.
-// Returns *int64 for compatibility with corev1.SecurityContext
-func getValidatedID(ctx context.Context, value string) *int64 {
-	if value == "" {
-		return nil
-	}
-
-	// uint31 == positive int32 range
-	parsed, err := strconv.ParseUint(value, 10, 31)
-	if err != nil {
-		logd.FromContext(ctx).Error(err, "failed to parse annotation value, must be a positive int32", "value", value)
-
-		return nil
-	}
-
-	return new(int64(parsed))
 }
 
 func addSeccompProfile(ctx *corev1.SecurityContext, dk *dynakube.DynaKube) {

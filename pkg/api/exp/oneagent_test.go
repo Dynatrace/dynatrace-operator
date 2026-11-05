@@ -135,8 +135,15 @@ func TestGetClassicOneAgentNonRoot(t *testing.T) {
 		{title: "not set", enabled: false},
 		{title: "empty uses defaults", set: true, in: "", user: 1000, group: 1000, enabled: true},
 		{title: "custom ids", set: true, in: "123:456", user: 123, group: 456, enabled: true},
-		{title: "invalid falls back to defaults", set: true, in: "abc:1", user: 1000, group: 1000, enabled: true},
-		{title: "negative falls back to defaults", set: true, in: "-1:1", user: 1000, group: 1000, enabled: true},
+		{title: "custom ids with whitespace", set: true, in: " 123 : 456 ", user: 123, group: 456, enabled: true},
+		{title: "legacy true is ignored", set: true, in: "true", enabled: false},
+		{title: "missing separator is ignored", set: true, in: "123", enabled: false},
+		{title: "non-numeric is ignored", set: true, in: "abc:1", enabled: false},
+		{title: "missing group is ignored", set: true, in: "123:", enabled: false},
+		{title: "negative is ignored", set: true, in: "-1:1", enabled: false},
+		{title: "root user is ignored", set: true, in: "0:1", enabled: false},
+		{title: "root group is ignored", set: true, in: "1:0", enabled: false},
+		{title: "out of int32 range is ignored", set: true, in: "1:2147483648", enabled: false},
 	}
 
 	for _, c := range cases {
@@ -148,7 +155,7 @@ func TestGetClassicOneAgentNonRoot(t *testing.T) {
 
 			ff := FeatureFlags{annotations: annotations}
 
-			user, group, enabled := ff.GetClassicOneAgentNonRoot()
+			user, group, enabled := ff.GetClassicOneAgentNonRoot(t.Context())
 
 			assert.Equal(t, c.enabled, enabled)
 			assert.Equal(t, c.user, user)
