@@ -273,12 +273,18 @@ func TestSecretHashAnnotation(t *testing.T) {
 
 		assert.NotEqual(t, originalHash, statefulSet.Spec.Template.Annotations[api.AnnotationExtensionsConfigurationHash])
 	})
-	t.Run("missing ActiveGate TLS Secret does not fail reconcile", func(t *testing.T) {
-		dk := getTestDynakube()
-		dk.Spec.ActiveGate.TLSSecretName = "ag-tls-missing"
-		statefulSet := getStatefulset(t, dk)
+	t.Run("missing ActiveGate TLS Secret does not change the annotation", func(t *testing.T) {
+		dkWithoutTLS := getTestDynakube()
+		dkWithoutTLS.Annotations[exp.AGAutomaticTLSCertificateKey] = "false"
+		hashWithoutTLS := getStatefulset(t, dkWithoutTLS).Spec.Template.Annotations[api.AnnotationExtensionsConfigurationHash]
 
-		assert.NotEmpty(t, statefulSet.Spec.Template.Annotations[api.AnnotationExtensionsConfigurationHash])
+		dkWithMissingSecret := getTestDynakube()
+		dkWithMissingSecret.Annotations[exp.AGAutomaticTLSCertificateKey] = "false"
+		dkWithMissingSecret.Spec.ActiveGate.TLSSecretName = "ag-tls-missing"
+		hashWithMissingSecret := getStatefulset(t, dkWithMissingSecret).Spec.Template.Annotations[api.AnnotationExtensionsConfigurationHash]
+
+		require.NotEmpty(t, hashWithoutTLS)
+		assert.Equal(t, hashWithoutTLS, hashWithMissingSecret)
 	})
 }
 
