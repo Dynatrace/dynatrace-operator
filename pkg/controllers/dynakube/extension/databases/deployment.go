@@ -9,6 +9,7 @@ import (
 	"maps"
 	"slices"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
@@ -80,6 +81,18 @@ func buildAllLabels(dk *dynakube.DynaKube, dbSpec extensions.DatabaseSpec) (map[
 
 	// Reuse pod labels for deployment
 	return deploymentLabels, matchLabels, podLabels
+}
+
+func buildTemplateAnnotations(dbSpec extensions.DatabaseSpec, configurationHash string) map[string]string {
+	// Remove the deprecated app armor annotation
+	annotations := maps.Clone(k8ssecuritycontext.RemoveAppArmorAnnotation(dbSpec.Annotations, containerName))
+	if annotations == nil {
+		annotations = map[string]string{}
+	}
+
+	annotations[api.AnnotationExtensionsConfigurationHash] = configurationHash
+
+	return annotations
 }
 
 func buildServiceAccountName(dbSpec extensions.DatabaseSpec) string {
