@@ -11,6 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/cloudnative"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/csi/provisioner"
 	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8snamespace"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/sample"
@@ -53,7 +54,7 @@ func MigrateToImage(t *testing.T) features.Feature {
 
 	dynakubeComponents.Update(builder, appDynakube)
 
-	builder.Assess("codemodules have been downloaded", ImageHasBeenDownloaded(appDynakube))
+	builder.Assess("codemodules have been downloaded", provisioner.InstalledImage(appDynakube, appDynakube.OneAgent().GetCustomCodeModulesImage(), provisioner.ImageInstaller))
 
 	builder.Assess("restart sample app", sampleApp.Restart())
 	cloudnative.AssessSampleInitContainers(builder, sampleApp)
@@ -102,7 +103,7 @@ func MigrateToNodeImagePull(t *testing.T) features.Feature {
 
 	dynakubeComponents.Update(builder, appDynakube)
 
-	builder.Assess("codemodules have been downloaded", ImageHasBeenDownloaded(appDynakube))
+	builder.Assess("codemodules have been downloaded", provisioner.InstalledImage(appDynakube, appDynakube.OneAgent().GetCustomCodeModulesImage(), provisioner.JobInstaller))
 
 	builder.Assess("restart sample app", sampleApp.Restart())
 	cloudnative.AssessSampleInitContainers(builder, sampleApp)
