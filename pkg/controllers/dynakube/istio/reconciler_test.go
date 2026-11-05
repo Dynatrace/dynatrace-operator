@@ -220,6 +220,48 @@ func TestReconcileAPIUrl(t *testing.T) {
 		require.NoError(t, err)
 		assert.NotNil(t, expectedVirtualService)
 	})
+	t.Run("remove and cleanup if istio is disabled", func(t *testing.T) {
+		ctx := t.Context()
+		dk := createTestDynaKube()
+		fakeClient := fake.NewClientWithIndex()
+		reconciler := NewReconciler(fakeClient, fakeClient)
+
+		err := reconciler.ReconcileAPIURL(ctx, dk)
+		require.NoError(t, err)
+
+		expectedServiceEntry := &istiov1beta1.ServiceEntry{
+			Name:      BuildNameForFQDNServiceEntry(dk.GetName(), OperatorComponent),
+			Namespace: dk.GetNamespace(),
+		}
+		expectedVirtualService := &istiov1beta1.VirtualService{
+			Name:      BuildNameForFQDNServiceEntry(dk.GetName(), OperatorComponent),
+			Namespace: dk.GetNamespace(),
+		}
+
+		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedServiceEntry), expectedServiceEntry)
+		require.NoError(t, err)
+
+		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedVirtualService), expectedVirtualService)
+		require.NoError(t, err)
+
+		statusCondition := meta.FindStatusCondition(*dk.Conditions(), "IstioForOperator")
+		require.NotNil(t, statusCondition)
+		require.Equal(t, "IstioForOperatorChanged", statusCondition.Reason)
+
+		dk.Spec.EnableIstio = new(false)
+
+		err = reconciler.ReconcileAPIURL(ctx, dk)
+		require.NoError(t, err)
+
+		statusCondition = meta.FindStatusCondition(*dk.Conditions(), "IstioForOperator")
+		require.Nil(t, statusCondition)
+
+		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedServiceEntry), expectedServiceEntry)
+		require.True(t, k8serrors.IsNotFound(err))
+
+		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedVirtualService), expectedVirtualService)
+		require.True(t, k8serrors.IsNotFound(err))
+	})
 	t.Run("unknown k8s client error => error", func(t *testing.T) {
 		ctx := t.Context()
 		dk := createTestDynaKube()
