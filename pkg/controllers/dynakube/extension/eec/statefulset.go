@@ -146,7 +146,7 @@ func (r *Reconciler) buildTemplateAnnotations(ctx context.Context, dk *dynakube.
 		return nil, err
 	}
 
-	agTLSData, err := dk.ActiveGateTLSData(ctx, r.apiReader)
+	agTLSCert, err := dk.ActiveGateTLSCert(ctx, r.apiReader)
 	if err != nil && !k8serrors.IsNotFound(err) {
 		return nil, err
 	}
@@ -154,7 +154,7 @@ func (r *Reconciler) buildTemplateAnnotations(ctx context.Context, dk *dynakube.
 	templateAnnotations := make(map[string]string)
 	maps.Copy(templateAnnotations, k8ssecuritycontext.RemoveAppArmorAnnotation(dk.Spec.Templates.ExtensionExecutionController.Annotations, containerName))
 
-	tlsHash, err := hasher.GenerateSecureHash([]any{tlsSecret.Data, agTLSData})
+	tlsHash, err := hasher.GenerateSecureHash([]any{tlsSecret.Data, agTLSCert})
 	if err != nil {
 		return nil, err
 	}
