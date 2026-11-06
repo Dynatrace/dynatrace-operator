@@ -54,8 +54,9 @@ func New( //nolint:revive
 func (h *Handler) Handle(mutationRequest *dtwebhook.MutationRequest) error {
 	ctx, log := logd.NewFromContext(mutationRequest.Context, "injection")
 	mutationRequest.Context = ctx
+	dk := mutationRequest.DynaKube
 
-	if (!mutationRequest.DynaKube.OneAgent().IsAppInjectionNeeded() && !mutationRequest.DynaKube.MetadataEnrichment().IsEnabled()) ||
+	if (!dk.OneAgent().IsAppInjectionNeeded() && !dk.MetadataEnrichment().IsEnabled()) ||
 		(!h.metaMutator.IsEnabled(ctx, mutationRequest.BaseRequest) && !h.oaMutator.IsEnabled(ctx, mutationRequest.BaseRequest)) {
 		log.Debug("bootstrapper injection disabled", "podName", mutationRequest.PodName(), "namespace", mutationRequest.Namespace.Name)
 
@@ -69,12 +70,12 @@ func (h *Handler) Handle(mutationRequest *dtwebhook.MutationRequest) error {
 		return nil
 	}
 
-	if !h.isInputSecretPresent(mutationRequest, bootstrapperconfig.GetSourceConfigSecretName(mutationRequest.DynaKube.Name), consts.BootstrapperInitSecretName) {
+	if !h.isInputSecretPresent(mutationRequest, bootstrapperconfig.GetSourceConfigSecretName(dk.Name), consts.BootstrapperInitSecretName) {
 		return nil
 	}
 
-	if h.oaMutator.IsEnabled(ctx, mutationRequest.BaseRequest) && (mutationRequest.DynaKube.IsAGCertificateNeeded() || mutationRequest.DynaKube.Spec.TrustedCAs != "") {
-		if !h.isInputSecretPresent(mutationRequest, bootstrapperconfig.GetSourceCertsSecretName(mutationRequest.DynaKube.Name), consts.BootstrapperInitCertsSecretName) {
+	if h.oaMutator.IsEnabled(ctx, mutationRequest.BaseRequest) && (dk.ActiveGate().HasCaCertForOA() || dk.Spec.TrustedCAs != "") {
+		if !h.isInputSecretPresent(mutationRequest, bootstrapperconfig.GetSourceCertsSecretName(dk.Name), consts.BootstrapperInitCertsSecretName) {
 			return nil
 		}
 	}
