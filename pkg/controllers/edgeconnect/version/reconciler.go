@@ -10,7 +10,6 @@ import (
 	dtimage "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/oci/registry"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -30,19 +29,17 @@ type ImageClientProvider func(ctx context.Context) (dtimage.Client, error)
 type RegistryClientProvider func(ctx context.Context) (registry.ImageGetter, error)
 
 type Reconciler struct {
-	edgeConnect  *edgeconnect.EdgeConnect
-	timeProvider *timeprovider.Provider
+	edgeConnect *edgeconnect.EdgeConnect
 
 	apiReader              client.Reader
 	imageClientProvider    ImageClientProvider
 	registryClientProvider RegistryClientProvider
 }
 
-func NewReconciler(apiReader client.Reader, imageClientProvider ImageClientProvider, registryClientProvider RegistryClientProvider, timeProvider *timeprovider.Provider, ec *edgeconnect.EdgeConnect) *Reconciler {
+func NewReconciler(apiReader client.Reader, imageClientProvider ImageClientProvider, registryClientProvider RegistryClientProvider, ec *edgeconnect.EdgeConnect) *Reconciler {
 	return &Reconciler{
 		edgeConnect:            ec,
 		apiReader:              apiReader,
-		timeProvider:           timeProvider,
 		imageClientProvider:    imageClientProvider,
 		registryClientProvider: registryClientProvider,
 	}
@@ -52,7 +49,7 @@ func (reconciler *Reconciler) Reconcile(ctx context.Context) error {
 	ctx, log := logd.NewFromContext(ctx, "version")
 
 	updaters := []versionStatusUpdater{
-		newUpdater(reconciler.apiReader, reconciler.timeProvider, reconciler.imageClientProvider, reconciler.registryClientProvider, reconciler.edgeConnect),
+		newUpdater(reconciler.apiReader, reconciler.imageClientProvider, reconciler.registryClientProvider, reconciler.edgeConnect),
 	}
 
 	for _, updater := range updaters {

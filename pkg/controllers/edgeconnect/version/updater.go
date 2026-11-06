@@ -13,10 +13,10 @@ import (
 	dtimage "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/oci/registry"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/opencontainers/go-digest"
 	"github.com/pkg/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -25,24 +25,16 @@ const minRequestThreshold = 15 * time.Minute
 type updater struct {
 	edgeConnect            *edgeconnect.EdgeConnect
 	apiReader              client.Reader
-	timeProvider           *timeprovider.Provider
 	imageClientProvider    ImageClientProvider
 	registryClientProvider RegistryClientProvider
 }
 
 var _ versionStatusUpdater = updater{}
 
-func newUpdater(
-	apiReader client.Reader,
-	timeprovider *timeprovider.Provider,
-	imageClientProvider ImageClientProvider,
-	registryClientProvider RegistryClientProvider,
-	ec *edgeconnect.EdgeConnect,
-) *updater {
+func newUpdater(apiReader client.Reader, imageClientProvider ImageClientProvider, registryClientProvider RegistryClientProvider, ec *edgeconnect.EdgeConnect) *updater {
 	return &updater{
 		edgeConnect:            ec,
 		apiReader:              apiReader,
-		timeProvider:           timeprovider,
 		imageClientProvider:    imageClientProvider,
 		registryClientProvider: registryClientProvider,
 	}
@@ -85,7 +77,9 @@ func (u updater) RequiresReconcile() bool {
 		return true
 	}
 
-	return u.timeProvider.IsOutdated(version.LastProbeTimestamp, minRequestThreshold) && u.IsAutoUpdateEnabled()
+	outdated := version.LastProbeTimestamp == nil || time.Since(version.LastProbeTimestamp.Time) >= minRequestThreshold
+
+	return outdated && u.IsAutoUpdateEnabled()
 }
 
 // hasPublicRegistryChanged reports whether the override registry changed between reconciles. Adding
@@ -109,7 +103,7 @@ func (u updater) Update(ctx context.Context) error {
 	defer func() {
 		if err == nil {
 			u.Target().Source = currentSource
-			u.Target().LastProbeTimestamp = u.timeProvider.Now()
+			u.Target().LastProbeTimestamp = new(metav1.Now())
 		}
 	}()
 
