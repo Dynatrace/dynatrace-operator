@@ -65,11 +65,16 @@ func TestReconcileErrors(t *testing.T) {
 
 	t.Run("failed create", func(t *testing.T) {
 		dk := getTestDynakube()
+		deploymentName := dk.Extensions().GetDatabaseDatasourceName(dk.Spec.Extensions.Databases[0].ID)
 
 		builder := fake.NewClientBuilder().
 			WithInterceptorFuncs(interceptor.Funcs{
-				Create: func(context.Context, client.WithWatch, client.Object, ...client.CreateOption) error {
-					return k8serrors.NewInternalError(errors.New("bad"))
+				Create: func(ctx context.Context, clt client.WithWatch, obj client.Object, opts ...client.CreateOption) error {
+					if _, ok := obj.(*appsv1.Deployment); ok && obj.GetName() == deploymentName {
+						return k8serrors.NewInternalError(errors.New("bad"))
+					}
+
+					return clt.Create(ctx, obj, opts...)
 				},
 			})
 
@@ -79,11 +84,16 @@ func TestReconcileErrors(t *testing.T) {
 	t.Run("failed replica lookup", func(t *testing.T) {
 		dk := getTestDynakube()
 		dk.Spec.Extensions.Databases[0].Replicas = nil
+		deploymentName := dk.Extensions().GetDatabaseDatasourceName(dk.Spec.Extensions.Databases[0].ID)
 
 		builder := fake.NewClientBuilder().
 			WithInterceptorFuncs(interceptor.Funcs{
-				Get: func(context.Context, client.WithWatch, client.ObjectKey, client.Object, ...client.GetOption) error {
-					return k8serrors.NewInternalError(errors.New("bad"))
+				Get: func(ctx context.Context, clt client.WithWatch, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
+					if _, ok := obj.(*appsv1.Deployment); ok && key.Name == deploymentName {
+						return k8serrors.NewInternalError(errors.New("bad"))
+					}
+
+					return clt.Get(ctx, key, obj, opts...)
 				},
 			})
 
@@ -208,6 +218,114 @@ func TestReconcileSpec(t *testing.T) {
 		deploy := getReconciledDeployment(t, fakeClient(), dk)
 		assert.Len(t, deploy.Spec.Template.Spec.Volumes, 5)
 		assert.Len(t, deploy.Spec.Template.Spec.Containers[0].VolumeMounts, 5)
+	})
+}
+
+func TestConfigurationHashAnnotation(t *testing.T) {
+	getTLSSecret := func(dk *dynakube.DynaKube) *corev1.Secret {
+		return &corev1.Secret{
+			Name:      dk.Extensions().GetTLSSecretName(),
+			Namespace: dk.Namespace,
+			Data:      map[string][]byte{consts.TLSCrtDataName: []byte("crt"), consts.TLSKeyDataName: []byte("key")},
+		}
+	}
+
+	getTrustedCAs := func(dk *dynakube.DynaKube) *corev1.ConfigMap {
+		return &corev1.ConfigMap{
+			Name:      testTrustedCAs,
+			Namespace: dk.Namespace,
+			Data:      map[string]string{dynakube.TrustedCAKey: "ca"},
+		}
+	}
+
+	getHash := func(t *testing.T, clt client.Client, dk *dynakube.DynaKube) string {
+		t.Helper()
+
+		return getReconciledDeployment(t, clt, dk).Spec.Template.Annotations[annotationConfigurationHash]
+	}
+
+	t.Run("annotation is set and stable when neither tls secret nor trustedCAs exist yet", func(t *testing.T) {
+		dk := getTestDynakube()
+		clt := fakeClient()
+
+		originalHash := getHash(t, clt, dk)
+		require.NotEmpty(t, originalHash)
+
+		assert.Equal(t, originalHash, getHash(t, clt, dk))
+	})
+
+	t.Run("annotation changes when tls secret is created", func(t *testing.T) {
+		dk := getTestDynakube()
+		clt := fakeClient()
+
+		originalHash := getHash(t, clt, dk)
+
+		require.NoError(t, clt.Create(t.Context(), getTLSSecret(dk)))
+
+		assert.NotEqual(t, originalHash, getHash(t, clt, dk))
+	})
+
+	t.Run("annotation is set when only tls secret exists", func(t *testing.T) {
+		dk := getTestDynakube()
+		clt := fakeClient()
+		require.NoError(t, clt.Create(t.Context(), getTLSSecret(dk)))
+
+		assert.NotEmpty(t, getHash(t, clt, dk))
+	})
+
+	t.Run("annotation is set when only trustedCAs exist", func(t *testing.T) {
+		dk := getTestDynakube()
+		clt := fakeClient()
+		require.NoError(t, clt.Create(t.Context(), getTrustedCAs(dk)))
+
+		assert.NotEmpty(t, getHash(t, clt, dk))
+	})
+
+	t.Run("annotation changes when tls secret content changes", func(t *testing.T) {
+		dk := getTestDynakube()
+		clt := fakeClient()
+		tlsSecret := getTLSSecret(dk)
+		require.NoError(t, clt.Create(t.Context(), tlsSecret))
+		require.NoError(t, clt.Create(t.Context(), getTrustedCAs(dk)))
+
+		originalHash := getHash(t, clt, dk)
+		require.NotEmpty(t, originalHash)
+
+		assert.Equal(t, originalHash, getHash(t, clt, dk))
+
+		tlsSecret.Data[consts.TLSCrtDataName] = []byte("rotated-crt")
+		require.NoError(t, clt.Update(t.Context(), tlsSecret))
+
+		assert.NotEqual(t, originalHash, getHash(t, clt, dk))
+	})
+
+	t.Run("annotation changes when trustedCAs content changes", func(t *testing.T) {
+		dk := getTestDynakube()
+		clt := fakeClient()
+		trustedCAs := getTrustedCAs(dk)
+		require.NoError(t, clt.Create(t.Context(), getTLSSecret(dk)))
+		require.NoError(t, clt.Create(t.Context(), trustedCAs))
+
+		originalHash := getHash(t, clt, dk)
+		require.NotEmpty(t, originalHash)
+
+		trustedCAs.Data[dynakube.TrustedCAKey] = "rotated-ca"
+		require.NoError(t, clt.Update(t.Context(), trustedCAs))
+
+		assert.NotEqual(t, originalHash, getHash(t, clt, dk))
+	})
+
+	t.Run("custom annotations are kept and not modified", func(t *testing.T) {
+		dk := getTestDynakube()
+		dk.Spec.Extensions.Databases[0].Annotations = map[string]string{"foo": "bar"}
+		clt := fakeClient()
+		require.NoError(t, clt.Create(t.Context(), getTLSSecret(dk)))
+
+		deploy := getReconciledDeployment(t, clt, dk)
+
+		assert.Equal(t, "bar", deploy.Spec.Template.Annotations["foo"])
+		assert.NotEmpty(t, deploy.Spec.Template.Annotations[annotationConfigurationHash])
+		assert.Equal(t, map[string]string{"foo": "bar"}, dk.Spec.Extensions.Databases[0].Annotations)
 	})
 }
 
