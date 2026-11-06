@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
@@ -242,7 +241,7 @@ func TestConfigurationHashAnnotation(t *testing.T) {
 	getHash := func(t *testing.T, clt client.Client, dk *dynakube.DynaKube) string {
 		t.Helper()
 
-		return getReconciledDeployment(t, clt, dk).Spec.Template.Annotations[api.AnnotationExtensionsConfigurationHash]
+		return getReconciledDeployment(t, clt, dk).Spec.Template.Annotations[annotationConfigurationHash]
 	}
 
 	t.Run("annotation is set and stable when neither tls secret nor trustedCAs exist yet", func(t *testing.T) {
@@ -325,7 +324,7 @@ func TestConfigurationHashAnnotation(t *testing.T) {
 		deploy := getReconciledDeployment(t, clt, dk)
 
 		assert.Equal(t, "bar", deploy.Spec.Template.Annotations["foo"])
-		assert.NotEmpty(t, deploy.Spec.Template.Annotations[api.AnnotationExtensionsConfigurationHash])
+		assert.NotEmpty(t, deploy.Spec.Template.Annotations[annotationConfigurationHash])
 		assert.Equal(t, map[string]string{"foo": "bar"}, dk.Spec.Extensions.Databases[0].Annotations)
 	})
 }
