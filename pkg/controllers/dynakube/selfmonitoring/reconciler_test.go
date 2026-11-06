@@ -317,6 +317,23 @@ func TestReconcileDeployment(t *testing.T) {
 
 		assert.Equal(t, first, deploy)
 	})
+
+	t.Run("keeps existing template metadata", func(t *testing.T) {
+		deploy := &appsv1.Deployment{}
+		deploy.Spec.Template.Annotations = map[string]string{"kubectl.kubernetes.io/restartedAt": "now"}
+		deploy.Spec.Template.Labels = map[string]string{"user": "label"}
+
+		s := newTestScope(newTestDynaKube())
+		s.Spec.Annotations = map[string]string{"from": "spec"}
+		s.Spec.Labels = map[string]string{"spec": "label"}
+
+		mutateDeployment(deploy, s)
+
+		assert.Equal(t, "now", deploy.Spec.Template.Annotations["kubectl.kubernetes.io/restartedAt"])
+		assert.Equal(t, "spec", deploy.Spec.Template.Annotations["from"])
+		assert.Equal(t, "label", deploy.Spec.Template.Labels["user"])
+		assert.Equal(t, "label", deploy.Spec.Template.Labels["spec"])
+	})
 }
 
 func TestBuildArgs(t *testing.T) {
