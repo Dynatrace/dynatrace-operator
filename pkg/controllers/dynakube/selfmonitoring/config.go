@@ -148,7 +148,10 @@ func buildOTLPHTTPExporter(data selfMonitoringConfigData) component.Config {
 	}
 
 	if data.CustomCAPath != "" {
-		exp["tls"] = map[string]any{"ca_file": data.CustomCAPath}
+		exp["tls"] = map[string]any{
+			"ca_file":                      data.CustomCAPath,
+			"include_system_ca_certs_pool": true,
+		}
 	}
 
 	return exp

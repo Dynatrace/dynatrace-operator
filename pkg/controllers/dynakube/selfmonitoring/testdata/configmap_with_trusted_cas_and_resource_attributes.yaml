@@ -14,6 +14,7 @@ data:
                     min_size: 500
             tls:
                 ca_file: /tls/custom/cacerts/rootca.pem
+                include_system_ca_certs_pool: true
     extensions:
         bearertokenauth:
             filename: /var/lib/dynatrace/secrets/tokens/data-ingest-token
