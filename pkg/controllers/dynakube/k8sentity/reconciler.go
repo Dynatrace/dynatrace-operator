@@ -104,7 +104,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtClient settings.Client, dk
 // the API call is skipped.
 func (r *Reconciler) reconcileMEID(ctx context.Context, dtClient settings.Client, dk *dynakube.DynaKube) error {
 	log := logd.FromContext(ctx)
-	if !k8sconditions.IsOutdated(r.timeProvider, dk, meIDConditionType) {
+	if !k8sconditions.IsOutdated(dk, meIDConditionType) {
 		log.Info("kubernetesClusterMEID not outdated, skipping reconciliation")
 
 		return nil
