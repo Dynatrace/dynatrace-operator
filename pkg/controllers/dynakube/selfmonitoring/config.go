@@ -270,23 +270,23 @@ func buildTransformProcessor() component.Config {
 			{
 				"context": "resource",
 				"statements": []string{
-					`delete_key(resource.attributes, "processor")`,
-					`delete_key(resource.attributes, "otel.signal")`,
-					`delete_key(resource.attributes, "otel.scope.name")`,
-					`delete_key(resource.attributes, "otel.scope.version")`,
+					`delete_key(attributes, "processor")`,
+					`delete_key(attributes, "otel.signal")`,
+					`delete_key(attributes, "otel.scope.name")`,
+					`delete_key(attributes, "otel.scope.version")`,
 				},
 			},
 			{
 				"context": "resource",
 				"statements": []string{
-					`set(resource.attributes["k8s.cluster.name"], "${env:K8S_CLUSTER_NAME}") where resource.attributes["k8s.cluster.name"] == nil and Len("${env:K8S_CLUSTER_NAME}") > 0`,
+					`set(attributes["k8s.cluster.name"], "${env:K8S_CLUSTER_NAME}") where attributes["k8s.cluster.name"] == nil and Len("${env:K8S_CLUSTER_NAME}") > 0`,
 				},
 			},
 			{
 				"context": "resource",
 				"statements": []string{
-					`merge_maps(resource.attributes, ParseJSON(resource.attributes["metadata.dynatrace.com"]), "upsert") where IsMatch(resource.attributes["metadata.dynatrace.com"], "^\\{")`,
-					`delete_key(resource.attributes, "metadata.dynatrace.com")`,
+					`merge_maps(attributes, ParseJSON(attributes["metadata.dynatrace.com"]), "upsert") where IsMatch(attributes["metadata.dynatrace.com"], "^\\{")`,
+					`delete_key(attributes, "metadata.dynatrace.com")`,
 				},
 			},
 		},
