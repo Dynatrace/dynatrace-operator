@@ -370,7 +370,7 @@ func buildEnv(s *reconcileScope) []corev1.EnvVar {
 				FieldRef: &corev1.ObjectFieldSelector{APIVersion: "v1", FieldPath: "status.podIP"},
 			},
 		},
-		{Name: "K8S_CLUSTER_NAME", Value: dk.Name},
+		{Name: "K8S_CLUSTER_NAME", Value: dk.Status.KubernetesClusterName},
 		fieldRefEnv("K8S_NODE_NAME", "spec.nodeName"),
 		fieldRefEnv("K8S_POD_NAME", "metadata.name"),
 		fieldRefEnv("K8S_NAMESPACE_NAME", "metadata.namespace"),

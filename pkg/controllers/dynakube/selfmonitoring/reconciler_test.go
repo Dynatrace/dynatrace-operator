@@ -334,7 +334,10 @@ func TestBuildArgs(t *testing.T) {
 
 func TestBuildEnv(t *testing.T) {
 	t.Run("pod ip, cluster name and go memory limit", func(t *testing.T) {
-		envs := buildEnv(newTestScope(newTestDynaKube()))
+		dk := newTestDynaKube()
+		dk.Status.KubernetesClusterName = "my-k8s-cluster"
+
+		envs := buildEnv(newTestScope(dk))
 
 		byName := map[string]corev1.EnvVar{}
 		for _, e := range envs {
@@ -342,7 +345,7 @@ func TestBuildEnv(t *testing.T) {
 		}
 
 		assert.Equal(t, "status.podIP", byName["MY_POD_IP"].ValueFrom.FieldRef.FieldPath)
-		assert.Equal(t, testName, byName["K8S_CLUSTER_NAME"].Value)
+		assert.Equal(t, "my-k8s-cluster", byName["K8S_CLUSTER_NAME"].Value)
 
 		for name, fieldPath := range map[string]string{
 			"K8S_NODE_NAME":      "spec.nodeName",

@@ -394,16 +394,17 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dtClient 
 
 	var componentErrors []error
 
-	// Other components push their self-monitoring data to this collector, so it goes first.
+	if err := controller.k8sEntityReconciler.Reconcile(ctx, dtClient.Settings, dk); err != nil {
+		componentErrors = append(componentErrors, err)
+	}
+
+	// Other components push their self-monitoring data to this collector, so it goes before them.
+	// It runs after the k8sEntityReconciler, as it needs .status.kubernetesClusterName.
 	log.Info("start reconciling self-monitoring")
 
 	if err := controller.selfMonitoringReconciler.Reconcile(ctx, dtClient.Images, dk); err != nil {
 		log.Info("could not reconcile self-monitoring")
 
-		componentErrors = append(componentErrors, err)
-	}
-
-	if err := controller.k8sEntityReconciler.Reconcile(ctx, dtClient.Settings, dk); err != nil {
 		componentErrors = append(componentErrors, err)
 	}
 
