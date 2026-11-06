@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"testing"
+	"testing/synctest"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
@@ -17,7 +18,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	dtimage "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/oci/registry"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	registrymock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/util/oci/registry"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -30,9 +30,8 @@ import (
 // parameter. The OCI registry fallback is mocked, because it talks to a container registry through
 // go containerregistry rather than through the Dynatrace API client.
 //
-// Time is driven by a frozen timeprovider.Provider, because
-// minRequestThreshold is the throttle under test: reconciling twice without advancing the provider
-// has to hit the throttle, advancing past it has to release it.
+// Time is driven by the synctest bubble clock, because minRequestThreshold is the throttle under test:
+// reconciling twice without sleeping has to hit the throttle, sleeping past it has to release it.
 
 const (
 	firstImageURI   = "docker.io/dynatrace/edgeconnect:1.2.3@sha256:7173b809ca12ec5dee4506cd86be934c4596dd234ee82c0662eac04a8c2c71dc"
@@ -51,9 +50,8 @@ func TestAutoUpdateVersionReconciler(t *testing.T) {
 			recorder := newResponseRecorder(containerImagesBody(firstImageURI))
 			s := httptest.NewTestServer(t, recorder)
 			ec := newAutoUpdateEdgeConnect(t, true)
-			now := timeprovider.New().Freeze()
 
-			require.NoError(t, reconcile(t, ec, s.Client().Transport, now, nil))
+			require.NoError(t, reconcile(t, ec, s.Client().Transport, nil))
 
 			assert.Equal(t, firstImageURI, ec.Status.Version.ImageID)
 			assert.Equal(t, "1.2.3", ec.Status.Version.Version)
@@ -65,30 +63,31 @@ func TestAutoUpdateVersionReconciler(t *testing.T) {
 			recorder := newResponseRecorder(containerImagesBody(firstImageURI), containerImagesBody(updatedImageURI))
 			s := httptest.NewTestServer(t, recorder)
 			ec := newAutoUpdateEdgeConnect(t, true)
-			now := timeprovider.New().Freeze()
 
-			require.NoError(t, reconcile(t, ec, s.Client().Transport, now, nil))
-			require.NoError(t, reconcile(t, ec, s.Client().Transport, now, nil))
+			require.NoError(t, reconcile(t, ec, s.Client().Transport, nil))
+			require.NoError(t, reconcile(t, ec, s.Client().Transport, nil))
 
 			assert.Equal(t, firstImageURI, ec.Status.Version.ImageID)
 			assert.Len(t, recorder.requests, 1, "second reconcile must be throttled by minRequestThreshold")
 		})
 
 		t.Run("probes again once the threshold expired", func(t *testing.T) {
-			recorder := newResponseRecorder(containerImagesBody(firstImageURI), containerImagesBody(updatedImageURI))
-			s := httptest.NewTestServer(t, recorder)
-			ec := newAutoUpdateEdgeConnect(t, true)
-			now := timeprovider.New().Freeze()
+			synctest.Test(t, func(t *testing.T) {
+				recorder := newResponseRecorder(containerImagesBody(firstImageURI), containerImagesBody(updatedImageURI))
+				s := httptest.NewTestServer(t, recorder)
+				ec := newAutoUpdateEdgeConnect(t, true)
 
-			require.NoError(t, reconcile(t, ec, s.Client().Transport, now, nil))
-			require.Equal(t, firstImageURI, ec.Status.Version.ImageID)
+				require.NoError(t, reconcile(t, ec, s.Client().Transport, nil))
+				require.Equal(t, firstImageURI, ec.Status.Version.ImageID)
 
-			now.Set(now.Now().Add(minRequestThreshold + time.Second))
-			require.NoError(t, reconcile(t, ec, s.Client().Transport, now, nil))
+				synctest.Sleep(minRequestThreshold + time.Second)
 
-			assert.Equal(t, updatedImageURI, ec.Status.Version.ImageID)
-			assert.Equal(t, "1.2.4", ec.Status.Version.Version)
-			assert.Len(t, recorder.requests, 2)
+				require.NoError(t, reconcile(t, ec, s.Client().Transport, nil))
+
+				assert.Equal(t, updatedImageURI, ec.Status.Version.ImageID)
+				assert.Equal(t, "1.2.4", ec.Status.Version.Version)
+				assert.Len(t, recorder.requests, 2)
+			})
 		})
 	})
 
@@ -97,27 +96,28 @@ func TestAutoUpdateVersionReconciler(t *testing.T) {
 			recorder := newResponseRecorder(containerImagesBody(firstImageURI))
 			s := httptest.NewTestServer(t, recorder)
 			ec := newAutoUpdateEdgeConnect(t, false)
-			now := timeprovider.New().Freeze()
 
-			require.NoError(t, reconcile(t, ec, s.Client().Transport, now, nil))
+			require.NoError(t, reconcile(t, ec, s.Client().Transport, nil))
 
 			assert.Equal(t, firstImageURI, ec.Status.Version.ImageID)
 			assert.Len(t, recorder.requests, 1, "an EdgeConnect without an image has to resolve one regardless of auto update")
 		})
 
 		t.Run("does not probe again once the threshold expired", func(t *testing.T) {
-			recorder := newResponseRecorder(containerImagesBody(firstImageURI), containerImagesBody(updatedImageURI))
-			s := httptest.NewTestServer(t, recorder)
-			ec := newAutoUpdateEdgeConnect(t, false)
-			now := timeprovider.New().Freeze()
+			synctest.Test(t, func(t *testing.T) {
+				recorder := newResponseRecorder(containerImagesBody(firstImageURI), containerImagesBody(updatedImageURI))
+				s := httptest.NewTestServer(t, recorder)
+				ec := newAutoUpdateEdgeConnect(t, false)
 
-			require.NoError(t, reconcile(t, ec, s.Client().Transport, now, nil))
+				require.NoError(t, reconcile(t, ec, s.Client().Transport, nil))
 
-			now.Set(now.Now().Add(minRequestThreshold + time.Second))
-			require.NoError(t, reconcile(t, ec, s.Client().Transport, now, nil))
+				synctest.Sleep(minRequestThreshold + time.Second)
 
-			assert.Equal(t, firstImageURI, ec.Status.Version.ImageID)
-			assert.Len(t, recorder.requests, 1, "auto update is disabled, so an expired threshold must not trigger a probe")
+				require.NoError(t, reconcile(t, ec, s.Client().Transport, nil))
+
+				assert.Equal(t, firstImageURI, ec.Status.Version.ImageID)
+				assert.Len(t, recorder.requests, 1, "auto update is disabled, so an expired threshold must not trigger a probe")
+			})
 		})
 	})
 
@@ -129,9 +129,8 @@ func TestAutoUpdateVersionReconciler(t *testing.T) {
 			s := httptest.NewTestServer(t, recorder)
 			ec := newAutoUpdateEdgeConnect(t, false)
 			ec.Spec.PublicRegistryOverride = overrideRegistry
-			now := timeprovider.New().Freeze()
 
-			require.NoError(t, reconcile(t, ec, s.Client().Transport, now, nil))
+			require.NoError(t, reconcile(t, ec, s.Client().Transport, nil))
 
 			assert.Equal(t, overrideImageURI, ec.Status.Version.ImageID)
 			assert.Equal(t, status.PublicRegistryWithOverrideVersionSource, ec.Status.Version.Source)
@@ -142,13 +141,12 @@ func TestAutoUpdateVersionReconciler(t *testing.T) {
 			recorder := newResponseRecorder(containerImagesBody(firstImageURI), containerImagesBody(overrideImageURI))
 			s := httptest.NewTestServer(t, recorder)
 			ec := newAutoUpdateEdgeConnect(t, false)
-			now := timeprovider.New().Freeze()
 
-			require.NoError(t, reconcile(t, ec, s.Client().Transport, now, nil))
+			require.NoError(t, reconcile(t, ec, s.Client().Transport, nil))
 			require.Equal(t, firstImageURI, ec.Status.Version.ImageID)
 
 			ec.Spec.PublicRegistryOverride = overrideRegistry
-			require.NoError(t, reconcile(t, ec, s.Client().Transport, now, nil))
+			require.NoError(t, reconcile(t, ec, s.Client().Transport, nil))
 
 			assert.Equal(t, overrideImageURI, ec.Status.Version.ImageID)
 			assert.Equal(t, overrideRegistry, recorder.queryParam(t, 1, "registry"))
@@ -160,13 +158,12 @@ func TestAutoUpdateVersionReconciler(t *testing.T) {
 			s := httptest.NewTestServer(t, recorder)
 			ec := newAutoUpdateEdgeConnect(t, false)
 			ec.Spec.PublicRegistryOverride = overrideRegistry
-			now := timeprovider.New().Freeze()
 
-			require.NoError(t, reconcile(t, ec, s.Client().Transport, now, nil))
+			require.NoError(t, reconcile(t, ec, s.Client().Transport, nil))
 			require.Equal(t, overrideImageURI, ec.Status.Version.ImageID)
 
 			ec.Spec.PublicRegistryOverride = ""
-			require.NoError(t, reconcile(t, ec, s.Client().Transport, now, nil))
+			require.NoError(t, reconcile(t, ec, s.Client().Transport, nil))
 
 			assert.Equal(t, firstImageURI, ec.Status.Version.ImageID)
 			assert.Equal(t, status.PublicRegistryVersionSource, ec.Status.Version.Source)
@@ -179,13 +176,12 @@ func TestAutoUpdateVersionReconciler(t *testing.T) {
 			s := httptest.NewTestServer(t, recorder)
 			ec := newAutoUpdateEdgeConnect(t, false)
 			ec.Spec.PublicRegistryOverride = overrideRegistry
-			now := timeprovider.New().Freeze()
 
-			require.NoError(t, reconcile(t, ec, s.Client().Transport, now, nil))
+			require.NoError(t, reconcile(t, ec, s.Client().Transport, nil))
 			require.Equal(t, overrideImageURI, ec.Status.Version.ImageID)
 
 			ec.Spec.PublicRegistryOverride = otherRegistry
-			require.NoError(t, reconcile(t, ec, s.Client().Transport, now, nil))
+			require.NoError(t, reconcile(t, ec, s.Client().Transport, nil))
 
 			assert.Equal(t, otherImageURI, ec.Status.Version.ImageID)
 			assert.Equal(t, otherRegistry, recorder.queryParam(t, 1, "registry"))
@@ -197,10 +193,9 @@ func TestAutoUpdateVersionReconciler(t *testing.T) {
 			s := httptest.NewTestServer(t, recorder)
 			ec := newAutoUpdateEdgeConnect(t, false)
 			ec.Spec.PublicRegistryOverride = overrideRegistry
-			now := timeprovider.New().Freeze()
 
-			require.NoError(t, reconcile(t, ec, s.Client().Transport, now, nil))
-			require.NoError(t, reconcile(t, ec, s.Client().Transport, now, nil))
+			require.NoError(t, reconcile(t, ec, s.Client().Transport, nil))
+			require.NoError(t, reconcile(t, ec, s.Client().Transport, nil))
 
 			assert.Equal(t, overrideImageURI, ec.Status.Version.ImageID)
 			assert.Len(t, recorder.requests, 1, "an unchanged override must not force a probe")
@@ -212,12 +207,11 @@ func TestAutoUpdateVersionReconciler(t *testing.T) {
 			recorder := newResponseRecorder(serverErrorBody())
 			s := httptest.NewTestServer(t, recorder)
 			ec := newAutoUpdateEdgeConnect(t, true)
-			now := timeprovider.New().Freeze()
 
 			fakeRegistry := registrymock.NewImageGetter(t)
 			fakeRegistry.EXPECT().GetImageVersion(anyCtx, ec.Image()).Return(fakeRegistryImageVersion(), nil)
 
-			require.NoError(t, reconcile(t, ec, s.Client().Transport, now, fakeRegistry))
+			require.NoError(t, reconcile(t, ec, s.Client().Transport, fakeRegistry))
 
 			assert.Equal(t, fakeImageURI, ec.Status.Version.ImageID)
 			assert.Equal(t, fakeImageVersion, ec.Status.Version.Version)
@@ -229,13 +223,12 @@ func TestAutoUpdateVersionReconciler(t *testing.T) {
 			recorder := newResponseRecorder(serverErrorBody())
 			s := httptest.NewTestServer(t, recorder)
 			ec := newAutoUpdateEdgeConnect(t, true)
-			now := timeprovider.New().Freeze()
 
 			fakeRegistry := registrymock.NewImageGetter(t)
 			fakeRegistry.EXPECT().GetImageVersion(anyCtx, ec.Image()).
 				Return(registry.ImageVersion{}, assert.AnError)
 
-			require.Error(t, reconcile(t, ec, s.Client().Transport, now, fakeRegistry))
+			require.Error(t, reconcile(t, ec, s.Client().Transport, fakeRegistry))
 			assert.Empty(t, ec.Status.Version.ImageID)
 		})
 	})
@@ -246,9 +239,8 @@ func TestAutoUpdateVersionReconciler(t *testing.T) {
 		ec := newAutoUpdateEdgeConnect(t, true)
 		ec.Spec.ImageRef.Repository = "my.registry.io/custom/edgeconnect"
 		ec.Spec.ImageRef.Tag = "4.5.6"
-		now := timeprovider.New().Freeze()
 
-		require.NoError(t, reconcile(t, ec, s.Client().Transport, now, nil))
+		require.NoError(t, reconcile(t, ec, s.Client().Transport, nil))
 
 		assert.Equal(t, "my.registry.io/custom/edgeconnect:4.5.6", ec.Status.Version.ImageID)
 		assert.Equal(t, status.CustomImageVersionSource, ec.Status.Version.Source)
@@ -260,7 +252,7 @@ func TestAutoUpdateVersionReconciler(t *testing.T) {
 
 // reconcile runs one full version reconcile the way the controller does, building a new Reconciler
 // each time. registryClient may be nil when the OCI registry fallback is not expected to be used.
-func reconcile(t *testing.T, ec *edgeconnect.EdgeConnect, transport http.RoundTripper, now *timeprovider.Provider, registryClient *registrymock.ImageGetter) error {
+func reconcile(t *testing.T, ec *edgeconnect.EdgeConnect, transport http.RoundTripper, registryClient *registrymock.ImageGetter) error {
 	t.Helper()
 
 	registryClientProvider := failingRegistryClientProvider(t)
@@ -268,13 +260,7 @@ func reconcile(t *testing.T, ec *edgeconnect.EdgeConnect, transport http.RoundTr
 		registryClientProvider = staticRegistryClientProvider(registryClient)
 	}
 
-	reconciler := NewReconciler(
-		fake.NewClient(),
-		staticImageClientProvider(newImageClient(t, transport)),
-		registryClientProvider,
-		now,
-		ec,
-	)
+	reconciler := NewReconciler(fake.NewClient(), staticImageClientProvider(newImageClient(t, transport)), registryClientProvider, ec)
 
 	return reconciler.Reconcile(t.Context())
 }
