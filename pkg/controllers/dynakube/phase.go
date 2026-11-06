@@ -11,6 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/databases"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sdeployment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
 	appsv1 "k8s.io/api/apps/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -27,6 +28,7 @@ func (controller *Controller) determineDynaKubePhase(ctx context.Context, dk *dy
 		controller.determineLogAgentPhase,
 		controller.determineKSPMPhase,
 		controller.determineOTelCollectorPhase,
+		controller.determineSelfMonitoringPhase,
 	}
 	for _, component := range components {
 		if phase := component(ctx, dk); phase != status.Running {
@@ -83,6 +85,37 @@ func (controller *Controller) determineExtensionsExecutionControllerPhase(ctx co
 func (controller *Controller) determineOTelCollectorPhase(ctx context.Context, dk *dynakube.DynaKube) status.DeploymentPhase {
 	if dk.TelemetryIngest().IsEnabled() {
 		return controller.determineStatefulSetPhase(ctx, dk, dk.OTelCollectorStatefulsetName())
+	}
+
+	return status.Running
+}
+
+func (controller *Controller) determineSelfMonitoringPhase(ctx context.Context, dk *dynakube.DynaKube) status.DeploymentPhase {
+	if !dk.IsSelfMonitoringEnabled() {
+		return status.Running
+	}
+
+	log := logd.FromContext(ctx)
+
+	deployment := &appsv1.Deployment{}
+
+	err := controller.client.Get(ctx, types.NamespacedName{Name: dk.SelfMonitoringName(), Namespace: dk.Namespace}, deployment)
+	if k8serrors.IsNotFound(err) {
+		log.Info("self-monitoring deployment to be deployed", "deployment", dk.SelfMonitoringName())
+
+		return status.Deploying
+	}
+
+	if err != nil {
+		log.Error(err, "self-monitoring deployment could not be accessed", "deployment", dk.SelfMonitoringName())
+
+		return status.Error
+	}
+
+	if !k8sdeployment.IsRolloutComplete(deployment) {
+		log.Info("self-monitoring deployment is still deploying", "deployment", dk.SelfMonitoringName())
+
+		return status.Deploying
 	}
 
 	return status.Running

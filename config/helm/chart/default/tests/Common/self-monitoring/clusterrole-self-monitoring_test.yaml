@@ -31,6 +31,36 @@ tests:
                 - get
                 - list
                 - watch
+  - it: should have OpenShift SCC permission on openshift platform
+    documentIndex: 0
+    set:
+      platform: openshift
+    asserts:
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - security.openshift.io
+            resourceNames:
+              - nonroot-v2
+            resources:
+              - securitycontextconstraints
+            verbs:
+              - use
+  - it: shouldn't have OpenShift SCC permission on default platform
+    documentIndex: 0
+    asserts:
+      - notContains:
+          path: rules
+          content:
+            apiGroups:
+              - security.openshift.io
+            resourceNames:
+              - nonroot-v2
+            resources:
+              - securitycontextconstraints
+            verbs:
+              - use
   - it: ClusterRoleBinding binds the service account
     documentIndex: 1
     asserts:

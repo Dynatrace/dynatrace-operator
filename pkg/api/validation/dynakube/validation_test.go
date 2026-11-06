@@ -252,6 +252,8 @@ func runValidators(t *testing.T, dk *dynakube.DynaKube, other ...client.Object) 
 		modules:   installconfig.GetModules(),
 	}
 
+	withSelfMonitoring(dk)
+
 	return validator.ValidateCreate(t.Context(), dk)
 }
 
@@ -265,6 +267,8 @@ func runValidatorsWithInterceptor(t *testing.T, dk *dynakube.DynaKube, funcs int
 		apiReader: clt,
 		modules:   installconfig.GetModules(),
 	}
+
+	withSelfMonitoring(dk)
 
 	return validator.ValidateCreate(t.Context(), dk)
 }
@@ -280,7 +284,17 @@ func runUpdateValidators(t *testing.T, oldDK *dynakube.DynaKube, newDK *dynakube
 		modules:   installconfig.GetModules(),
 	}
 
+	withSelfMonitoring(newDK)
+
 	return validator.ValidateUpdate(t.Context(), oldDK, newDK)
+}
+
+// withSelfMonitoring opts the DynaKube into self-monitoring unless the test configured it, so the
+// opt-out warning does not show up in every test that counts warnings. See TestSelfMonitoringDisabled.
+func withSelfMonitoring(dk *dynakube.DynaKube) {
+	if dk.Spec.SelfMonitoring == nil {
+		dk.Spec.SelfMonitoring = &dynakube.SelfMonitoringSpec{}
+	}
 }
 
 func assertSanitizeArg(t *testing.T, baseDK *dynakube.DynaKube, modify func(*dynakube.DynaKube, string), expectError string) {
