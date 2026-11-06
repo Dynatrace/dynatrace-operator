@@ -21,7 +21,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/nodes/cache"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	hostclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/hostevent"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -553,7 +552,6 @@ func createDefaultReconciler(t *testing.T, fakeClient client.Client, dtClient *d
 		dtClientFactory: newClientFactory(dtClient),
 		podNamespace:    testNamespace,
 		runLocal:        true,
-		timeProvider:    timeprovider.New().Freeze(),
 	}
 }
 
