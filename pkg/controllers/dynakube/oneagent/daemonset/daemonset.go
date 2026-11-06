@@ -212,6 +212,7 @@ func (b *builder) BuildDaemonSet(ctx context.Context) (*appsv1.DaemonSet, error)
 }
 
 func (b *builder) podSpec(ctx context.Context) (corev1.PodSpec, error) {
+	ids := b.runAsIDs(ctx)
 	resources := b.resources()
 	dnsPolicy := b.dnsPolicy()
 
@@ -231,7 +232,7 @@ func (b *builder) podSpec(ctx context.Context) (corev1.PodSpec, error) {
 	affinity := b.affinity()
 
 	podSpec := corev1.PodSpec{
-		InitContainers: []corev1.Container{b.initContainerSpec(ctx)},
+		InitContainers: []corev1.Container{b.initContainerSpec(ids)},
 		Containers: []corev1.Container{{
 			Args:            arguments,
 			Env:             environmentVariables,
@@ -239,14 +240,14 @@ func (b *builder) podSpec(ctx context.Context) (corev1.PodSpec, error) {
 			ImagePullPolicy: b.dk.OneAgent().GetImagePullPolicy(),
 			Name:            containerName,
 			Resources:       resources,
-			SecurityContext: b.securityContext(ctx),
+			SecurityContext: b.securityContext(ctx, ids),
 			VolumeMounts:    volumeMounts,
 		}},
 		ImagePullSecrets:              imagePullSecrets,
 		HostNetwork:                   true,
 		HostPID:                       true,
 		HostIPC:                       false,
-		SecurityContext:               b.podSecurityContext(ctx),
+		SecurityContext:               b.podSecurityContext(ids),
 		NodeSelector:                  b.nodeSelector(),
 		PriorityClassName:             b.priorityClassName(),
 		ServiceAccountName:            serviceAccountName,
@@ -362,18 +363,16 @@ func (b *builder) imagePullSecrets() []corev1.LocalObjectReference {
 	return b.dk.ImagePullSecretReferences()
 }
 
-func (b *builder) securityContext(ctx context.Context) *corev1.SecurityContext {
+func (b *builder) securityContext(ctx context.Context, ids runAs) *corev1.SecurityContext {
 	sc := &corev1.SecurityContext{}
 	if b.dk == nil || b.hostInjectSpec == nil {
 		return sc
 	}
 
-	user, group, nonRoot := b.runAsIDs(ctx)
-
-	if nonRoot {
+	if ids.nonRoot {
 		sc.RunAsNonRoot = new(true)
-		sc.RunAsUser = new(user)
-		sc.RunAsGroup = new(group)
+		sc.RunAsUser = ids.user
+		sc.RunAsGroup = ids.group
 	}
 
 	if b.dk.OneAgent().IsReadOnlyFSSupported() {
@@ -472,28 +471,33 @@ func (b *builder) isRootFsReadonly(ctx context.Context) bool {
 	return true
 }
 
-func (b *builder) podSecurityContext(ctx context.Context) *corev1.PodSecurityContext {
-	_, group, _ := b.runAsIDs(ctx)
-
+func (b *builder) podSecurityContext(ids runAs) *corev1.PodSecurityContext {
 	return &corev1.PodSecurityContext{
-		FSGroup: new(group),
+		FSGroup: ids.group,
 	}
 }
 
-// runAsIDs returns the user and group the OneAgent pod runs as, and whether the OneAgent container runs as non-root.
+// runAs holds the user and group the OneAgent pod runs as, and whether the OneAgent container runs as non-root.
+type runAs struct {
+	user    *int64
+	group   *int64
+	nonRoot bool
+}
+
+// runAsIDs returns the IDs the OneAgent pod runs as.
 // The IDs are the default, unless the classic non-root feature flag configures custom IDs for classic full stack.
-func (b *builder) runAsIDs(ctx context.Context) (user, group int64, nonRoot bool) {
+func (b *builder) runAsIDs(ctx context.Context) runAs {
 	if b.dk == nil {
-		return userGroupID, userGroupID, false
+		return runAs{}
 	}
 
 	if b.dk.OneAgent().IsReadOnlyFSSupported() {
-		return userGroupID, userGroupID, true
+		return runAs{user: new(userGroupID), group: new(userGroupID), nonRoot: true}
 	}
 
 	if u, g, enabled := b.dk.FF().GetClassicOneAgentNonRoot(ctx); enabled && b.dk.OneAgent().IsClassicFullStackMode() {
-		return u, g, true
+		return runAs{user: new(u), group: new(g), nonRoot: true}
 	}
 
-	return userGroupID, userGroupID, false
+	return runAs{user: new(userGroupID), group: new(userGroupID)}
 }

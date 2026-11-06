@@ -260,7 +260,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 
 	t.Run("returns empty context if dk or hostInjectSpec is nil", func(t *testing.T) {
 		dsBuilder := builder{}
-		securityContext := dsBuilder.securityContext(t.Context())
+		securityContext := dsBuilder.securityContext(t.Context(), dsBuilder.runAsIDs(t.Context()))
 
 		assert.Nil(t, securityContext.Capabilities)
 		assert.Nil(t, securityContext.Privileged)
