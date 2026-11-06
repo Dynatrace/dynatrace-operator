@@ -73,8 +73,54 @@ func TestHandleImpl(t *testing.T) {
 		assert.Equal(t, NoBootstrapperConfigReason, request.Pod.Annotations[dtwebhook.AnnotationDynatraceReason])
 	})
 
+	t.Run("non-routing ActiveGate => certs secret not required => inject", func(t *testing.T) {
+		dk := getTestDynakube()
+		dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
+		dk.Spec.ActiveGate = activegate.Spec{
+			Capabilities: []activegate.CapabilityDisplayName{
+				activegate.KubeMonCapability.DisplayName,
+			},
+		}
+		request := createTestMutationRequest(t, dk)
+
+		source := &corev1.Secret{
+			Name:      bootstrapperconfig.GetSourceConfigSecretName(request.DynaKube.Name),
+			Namespace: request.DynaKube.Namespace,
+			Data:      map[string][]byte{"data": []byte("beep")},
+		}
+
+		oaMutator := webhookmock.NewMutator(t)
+		oaMutator.EXPECT().IsEnabled(anyCtx, mock.Anything).Return(true).Twice()
+		oaMutator.EXPECT().Mutate(mock.Anything).Return(nil).Once()
+
+		metaMutator := webhookmock.NewMutator(t)
+		metaMutator.EXPECT().IsEnabled(anyCtx, mock.Anything).Return(true).Once()
+		metaMutator.EXPECT().Mutate(mock.Anything).Return(nil).Once()
+
+		wh := createTestHandler(oaMutator, metaMutator, source)
+
+		err := wh.Handle(request)
+		require.NoError(t, err)
+
+		var replicatedCerts corev1.Secret
+
+		err = wh.apiReader.Get(t.Context(), client.ObjectKey{Name: consts.BootstrapperInitCertsSecretName, Namespace: request.Namespace.Name}, &replicatedCerts)
+		require.Error(t, err)
+
+		assert.Equal(t, "true", request.Pod.Annotations[dtwebhook.AnnotationDynatraceInjected])
+		assert.NotContains(t, request.Pod.Annotations, dtwebhook.AnnotationDynatraceReason)
+	})
+
 	t.Run("no init secret and no certs + source (both) => replicate (both) + inject", func(t *testing.T) {
-		request := createTestMutationRequest(t, getTestDynakubeWithAGCerts())
+		dk := getTestDynakube()
+		dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
+		dk.Spec.ActiveGate = activegate.Spec{
+			Capabilities: []activegate.CapabilityDisplayName{
+				activegate.RoutingCapability.DisplayName,
+			},
+			TLSSecretName: "ag-certs",
+		}
+		request := createTestMutationRequest(t, dk)
 
 		source := &corev1.Secret{
 			Name:      bootstrapperconfig.GetSourceConfigSecretName(request.DynaKube.Name),
@@ -247,19 +293,6 @@ func TestHandleImpl(t *testing.T) {
 		err := h.Handle(request)
 		require.NoError(t, err)
 	})
-}
-
-func getTestDynakubeWithAGCerts() *dynakube.DynaKube {
-	dk := getTestDynakube()
-	dk.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
-	dk.Spec.ActiveGate = activegate.Spec{
-		Capabilities: []activegate.CapabilityDisplayName{
-			activegate.DynatraceAPICapability.DisplayName,
-		},
-		TLSSecretName: "ag-certs",
-	}
-
-	return dk
 }
 
 func createTestMutationRequestWithInjectedPod(t *testing.T, dk *dynakube.DynaKube) *dtwebhook.MutationRequest {
