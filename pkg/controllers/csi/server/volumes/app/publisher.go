@@ -14,7 +14,6 @@ import (
 	csivolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/server/volumes"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/symlink"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/pkg/errors"
 	"google.golang.org/grpc/codes"
@@ -26,13 +25,11 @@ func NewPublisher(mounter mount.Interface, path metadata.PathResolver) csivolume
 	return &Publisher{
 		mounter: mounter,
 		path:    path,
-		time:    timeprovider.New(),
 	}
 }
 
 type Publisher struct {
 	mounter mount.Interface
-	time    *timeprovider.Provider
 	path    metadata.PathResolver
 }
 
@@ -103,10 +100,11 @@ func (pub *Publisher) hasRetryLimitReached(ctx context.Context, volumeCfg *csivo
 		return true
 	}
 
+	now := time.Now()
 	limit := stat.ModTime().Add(volumeCfg.RetryTimeout)
-	log.Info("not first attempt, time remaining before skipping injection", "remaining time", time.Until(limit).String())
+	log.Info("not first attempt, time remaining before skipping injection", "remaining time", limit.Sub(now).String())
 
-	return pub.time.Now().After(limit)
+	return now.After(limit)
 }
 
 // isCodeModuleAvailable checks if the LatestAgentBinaryForDynaKube folder exists or not
