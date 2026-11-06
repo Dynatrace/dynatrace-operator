@@ -4,46 +4,38 @@
 package selfmonitoring
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/component"
+	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/yaml"
 )
 
-func TestBuildConfigData(t *testing.T) {
-	t.Run("exports to the tenant", func(t *testing.T) {
-		dk := &dynakube.DynaKube{Namespace: "dynatrace", Spec: dynakube.DynaKubeSpec{APIURL: "https://tenant.live.dynatrace.com/api"}}
+const testEndpoint = "https://tenant.live.dynatrace.com/api/v2/otlp"
 
-		data := buildConfigData(dk)
+// goldenConfig reads a golden ConfigMap fixture and returns its collector config data key,
+// so config-rendering tests can compare directly against the same fixtures used
+// by the reconciler tests instead of duplicating expected output.
+func goldenConfig(t *testing.T, name string) string {
+	t.Helper()
 
-		assert.Equal(t, "https://tenant.live.dynatrace.com/api/v2/otlp", data.Endpoint)
-		assert.Equal(t, "dynatrace", data.Namespace)
-		assert.Empty(t, data.CustomCAPath)
-		assert.Empty(t, data.ResourceAttributes)
-	})
+	b, err := os.ReadFile(filepath.Join("testdata", name))
+	require.NoError(t, err)
 
-	t.Run("resource attributes", func(t *testing.T) {
-		attrs := map[string]string{"cost-center": "42"}
-		dk := &dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{ResourceAttributes: attrs}}
+	cm := &corev1.ConfigMap{}
+	require.NoError(t, yaml.Unmarshal(b, cm))
 
-		assert.Equal(t, attrs, buildConfigData(dk).ResourceAttributes)
-	})
-
-	t.Run("trusted CAs", func(t *testing.T) {
-		dk := &dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{TrustedCAs: "my-cas"}}
-
-		assert.Equal(t, "/tls/custom/cacerts/rootca.pem", buildConfigData(dk).CustomCAPath)
-	})
+	return cm.Data[configKey]
 }
 
 func TestBuildSelfMonitoringOTelConfig(t *testing.T) {
-	data := selfMonitoringConfigData{Endpoint: "https://tenant/api/v2/otlp", Namespace: "dynatrace"}
-	cfg := buildSelfMonitoringOTelConfig(data)
-
 	t.Run("every pipeline component is defined", func(t *testing.T) {
+		cfg := buildSelfMonitoringOTelConfig(selfMonitoringConfigData{ResourceAttributes: map[string]string{"a": "1"}})
+
 		pipeline := cfg.Service.Pipelines[metricsSignalID]
 		require.NotNil(t, pipeline)
 
@@ -60,62 +52,24 @@ func TestBuildSelfMonitoringOTelConfig(t *testing.T) {
 			assert.Contains(t, cfg.Extensions, id)
 		}
 	})
+}
 
-	t.Run("exporter authenticates with the mounted data ingest token", func(t *testing.T) {
-		exporter := cfg.Exporters[otlpHTTPID].(map[string]any)
-		assert.Equal(t, data.Endpoint, exporter["endpoint"])
-		assert.Equal(t, bearerAuthID.String(), exporter["auth"].(map[string]any)["authenticator"])
-		assert.NotContains(t, exporter, "tls")
-
-		auth := cfg.Extensions[bearerAuthID].(map[string]any)
-		assert.Equal(t, "/var/lib/dynatrace/secrets/tokens/data-ingest-token", auth["filename"])
-		assert.Equal(t, "Api-Token", auth["scheme"])
+func TestRenderConfig(t *testing.T) {
+	t.Run("default config matches golden configmap", func(t *testing.T) {
+		rendered, err := renderConfig(selfMonitoringConfigData{Endpoint: testEndpoint, Namespace: testNamespace})
+		require.NoError(t, err)
+		assert.YAMLEq(t, goldenConfig(t, "configmap.yaml"), rendered)
 	})
 
-	t.Run("custom CA is passed to the exporter", func(t *testing.T) {
-		exporter := buildOTLPHTTPExporter(selfMonitoringConfigData{CustomCAPath: "/ca.pem"}).(map[string]any)
-		assert.Equal(t, map[string]any{"ca_file": "/ca.pem"}, exporter["tls"])
-	})
-
-	t.Run("k8s attributes are restricted to the DynaKube namespace", func(t *testing.T) {
-		processor := cfg.Processors[k8sAttributesID].(map[string]any)
-		assert.Equal(t, map[string]any{"namespace": "dynatrace"}, processor["filter"])
-	})
-
-	t.Run("receiver only serves OTLP/HTTP", func(t *testing.T) {
-		protocols := cfg.Receivers[otlpID].(map[string]any)["protocols"].(map[string]any)
-		assert.Equal(t, map[string]any{"http": map[string]any{"endpoint": "${env:MY_POD_IP}:4318"}}, protocols)
-	})
-
-	t.Run("does not convert to delta", func(t *testing.T) {
+	t.Run("custom CA and sorted resource attributes match golden configmap", func(t *testing.T) {
+		data := selfMonitoringConfigData{
+			Endpoint:           testEndpoint,
+			Namespace:          testNamespace,
+			CustomCAPath:       "/tls/custom/cacerts/rootca.pem",
+			ResourceAttributes: map[string]string{"team": "platform", "cost-center": "42"},
+		}
 		rendered, err := renderConfig(data)
 		require.NoError(t, err)
-		assert.NotContains(t, rendered, "cumulative_to_delta")
-	})
-
-	t.Run("no resource attributes processor without resource attributes", func(t *testing.T) {
-		assert.NotContains(t, cfg.Processors, resourceAttrsID)
-		assert.NotContains(t, cfg.Service.Pipelines[metricsSignalID].Processors, resourceAttrsID)
-	})
-
-	t.Run("resource attributes are inserted last without overwriting", func(t *testing.T) {
-		cfg := buildSelfMonitoringOTelConfig(selfMonitoringConfigData{ResourceAttributes: map[string]string{"b": "2", "a": "1"}})
-
-		processors := cfg.Service.Pipelines[metricsSignalID].Processors
-		assert.Equal(t, resourceAttrsID, processors[len(processors)-1])
-		assert.Equal(t, map[string]any{"attributes": []map[string]any{
-			{"key": "a", "value": "1", "action": "insert"},
-			{"key": "b", "value": "2", "action": "insert"},
-		}}, cfg.Processors[resourceAttrsID])
-	})
-
-	t.Run("marshals to valid yaml", func(t *testing.T) {
-		rendered, err := renderConfig(data)
-		require.NoError(t, err)
-
-		var parsed map[string]any
-		require.NoError(t, yaml.Unmarshal([]byte(rendered), &parsed))
-		assert.Contains(t, parsed, "service")
-		assert.Contains(t, rendered, "transform/selfmon_rename")
+		assert.YAMLEq(t, goldenConfig(t, "configmap_with_trusted_cas_and_resource_attributes.yaml"), rendered)
 	})
 }

@@ -5,6 +5,8 @@ package selfmonitoring
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"testing"
 
@@ -15,6 +17,7 @@ import (
 	dtimage "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	imagemock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/image"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -122,14 +125,12 @@ func TestReconcile(t *testing.T) {
 		deploy := getObject(t, c, &appsv1.Deployment{})
 		svc := getObject(t, c, &corev1.Service{})
 
+		require.NotEmpty(t, svc.Spec.Selector)
+
 		podLabels := deploy.Spec.Template.Labels
 		for k, v := range svc.Spec.Selector {
 			assert.Equal(t, v, podLabels[k], "service selector %s", k)
 		}
-
-		assert.Equal(t, corev1.ServiceTypeClusterIP, svc.Spec.Type)
-		require.Len(t, svc.Spec.Ports, 1)
-		assert.Equal(t, int32(otlpHTTPPort), svc.Spec.Ports[0].Port)
 	})
 
 	t.Run("missing data ingest token surfaces token condition and deploys nothing", func(t *testing.T) {
@@ -264,6 +265,43 @@ func TestCleanup(t *testing.T) {
 	})
 }
 
+func TestReconcileConfigMap(t *testing.T) {
+	t.Run("default config", func(t *testing.T) {
+		s := newTestScope(newTestDynaKube())
+		r, c := newTestReconciler()
+
+		require.NoError(t, r.reconcileConfigMap(t.Context(), s))
+
+		cm := getObject(t, c, &corev1.ConfigMap{})
+		helpers.AssertGolden(t, "testdata/configmap.yaml", cm)
+
+		sum := sha256.Sum256([]byte(cm.Data[configKey]))
+		assert.Equal(t, hex.EncodeToString(sum[:]), s.ConfigMapHash)
+	})
+
+	t.Run("trusted CAs and resource attributes", func(t *testing.T) {
+		dk := newTestDynaKube()
+		dk.Spec.TrustedCAs = "my-cas"
+		dk.Spec.ResourceAttributes = map[string]string{"team": "platform", "cost-center": "42"}
+		s := newTestScope(dk)
+		r, c := newTestReconciler()
+
+		require.NoError(t, r.reconcileConfigMap(t.Context(), s))
+
+		helpers.AssertGolden(t, "testdata/configmap_with_trusted_cas_and_resource_attributes.yaml", getObject(t, c, &corev1.ConfigMap{}))
+	})
+}
+
+func TestReconcileService(t *testing.T) {
+	t.Run("applies the spec", func(t *testing.T) {
+		r, c := newTestReconciler()
+
+		require.NoError(t, r.reconcileService(t.Context(), newTestScope(newTestDynaKube())))
+
+		helpers.AssertGolden(t, "testdata/service.yaml", getObject(t, c, &corev1.Service{}))
+	})
+}
+
 func TestReconcileDeployment(t *testing.T) {
 	t.Run("applies the spec", func(t *testing.T) {
 		dk := newTestDynaKube()
@@ -276,34 +314,15 @@ func TestReconcileDeployment(t *testing.T) {
 		sm.Annotations = map[string]string{"custom": "annotation"}
 		sm.Labels = map[string]string{"custom": "label"}
 		sm.Strategy = appsv1.DeploymentStrategy{Type: appsv1.RecreateDeploymentStrategyType}
+		sm.Args = []string{"--feature-gates=foo"}
+		dk.Status.KubernetesClusterName = "my-k8s-cluster"
 		s := newTestScope(dk)
 		s.ConfigMapHash = "deadbeef"
 		r, c := newTestReconciler()
 
 		require.NoError(t, r.reconcileDeployment(t.Context(), s))
 
-		deploy := getObject(t, c, &appsv1.Deployment{})
-		podSpec := deploy.Spec.Template.Spec
-		assert.Equal(t, int32(2), *deploy.Spec.Replicas)
-		assert.Equal(t, appsv1.RecreateDeploymentStrategyType, deploy.Spec.Strategy.Type)
-		assert.Equal(t, "deadbeef", deploy.Spec.Template.Annotations[configHashAnnotation])
-		assert.Equal(t, "annotation", deploy.Spec.Template.Annotations["custom"])
-		assert.Equal(t, "label", deploy.Spec.Template.Labels["custom"])
-		assert.Equal(t, serviceAccountName, podSpec.ServiceAccountName)
-		assert.Equal(t, sm.NodeSelector, podSpec.NodeSelector)
-		assert.Equal(t, sm.PriorityClassName, podSpec.PriorityClassName)
-		assert.Equal(t, sm.Tolerations, podSpec.Tolerations)
-		assert.Nil(t, podSpec.Affinity)
-		assert.Equal(t, int64(otelCollectorNonRootUser), *podSpec.SecurityContext.FSGroup)
-
-		require.Len(t, podSpec.Containers, 1)
-		container := podSpec.Containers[0]
-		assert.Equal(t, testImage, container.Image)
-		assert.Equal(t, corev1.PullAlways, container.ImagePullPolicy)
-		assert.Equal(t, int64(otelCollectorNonRootUser), *container.SecurityContext.RunAsUser)
-		assert.True(t, *container.SecurityContext.ReadOnlyRootFilesystem)
-		assert.False(t, *container.SecurityContext.AllowPrivilegeEscalation)
-		assert.Equal(t, []corev1.Capability{"ALL"}, container.SecurityContext.Capabilities.Drop)
+		helpers.AssertGolden(t, "testdata/deployment.yaml", getObject(t, c, &appsv1.Deployment{}))
 	})
 
 	t.Run("is idempotent", func(t *testing.T) {

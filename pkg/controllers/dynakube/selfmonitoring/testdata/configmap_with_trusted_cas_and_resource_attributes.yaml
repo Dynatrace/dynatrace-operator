@@ -1,0 +1,174 @@
+apiVersion: v1
+data:
+  self-monitoring: |
+    connectors: {}
+    exporters:
+        otlp_http:
+            auth:
+                authenticator: bearertokenauth
+            endpoint: https://tenant.live.dynatrace.com/api/v2/otlp
+            sending_queue:
+                batch:
+                    flush_timeout: 10s
+                    max_size: 5000
+                    min_size: 500
+            tls:
+                ca_file: /tls/custom/cacerts/rootca.pem
+    extensions:
+        bearertokenauth:
+            filename: /var/lib/dynatrace/secrets/tokens/data-ingest-token
+            scheme: Api-Token
+        health_check:
+            endpoint: ${env:MY_POD_IP}:13133
+    processors:
+        k8s_attributes:
+            extract:
+                annotations:
+                    - from: pod
+                      key_regex: metadata.dynatrace.com/(.*)
+                      tag_name: $$1
+                    - from: pod
+                      key: metadata.dynatrace.com
+                      tag_name: metadata.dynatrace.com
+                metadata:
+                    - k8s.pod.name
+                    - k8s.pod.uid
+                    - k8s.pod.ip
+                    - k8s.deployment.name
+                    - k8s.replicaset.name
+                    - k8s.statefulset.name
+                    - k8s.daemonset.name
+                    - k8s.job.name
+                    - k8s.cronjob.name
+                    - k8s.namespace.name
+                    - k8s.node.name
+                    - k8s.cluster.uid
+                    - k8s.container.name
+                    - k8s.deployment.uid
+                    - k8s.replicaset.uid
+                    - k8s.statefulset.uid
+                    - k8s.daemonset.uid
+                    - k8s.job.uid
+                    - k8s.cronjob.uid
+            filter:
+                namespace: dynatrace
+            passthrough: false
+            pod_association:
+                - sources:
+                    - from: resource_attribute
+                      name: k8s.pod.name
+                    - from: resource_attribute
+                      name: k8s.namespace.name
+                - sources:
+                    - from: resource_attribute
+                      name: k8s.pod.ip
+                - sources:
+                    - from: resource_attribute
+                      name: k8s.pod.uid
+                - sources:
+                    - from: connection
+        memory_limiter:
+            check_interval: 1s
+            limit_percentage: 80
+            spike_limit_percentage: 20
+        resource/dynakube:
+            attributes:
+                - action: insert
+                  key: cost-center
+                  value: "42"
+                - action: insert
+                  key: team
+                  value: platform
+        transform:
+            metric_statements:
+                - context: datapoint
+                  statements:
+                    - set(resource.attributes["k8s.pod.name"], attributes["k8s_pod_name"]) where attributes["k8s_pod_name"] != nil
+                    - set(resource.attributes["k8s.namespace.name"], attributes["k8s_namespace_name"]) where attributes["k8s_namespace_name"] != nil
+                    - set(resource.attributes["k8s.pod.ip"], attributes["k8s_pod_ip"]) where attributes["k8s_pod_ip"] != nil
+                - context: resource
+                  statements:
+                    - set(attributes["k8s.workload.name"], attributes["k8s.replicaset.name"]) where IsString(attributes["k8s.replicaset.name"])
+                    - set(attributes["k8s.workload.name"], attributes["k8s.statefulset.name"]) where IsString(attributes["k8s.statefulset.name"])
+                    - set(attributes["k8s.workload.name"], attributes["k8s.job.name"]) where IsString(attributes["k8s.job.name"])
+                    - set(attributes["k8s.workload.name"], attributes["k8s.deployment.name"]) where IsString(attributes["k8s.deployment.name"])
+                    - set(attributes["k8s.workload.name"], attributes["k8s.daemonset.name"]) where IsString(attributes["k8s.daemonset.name"])
+                    - set(attributes["k8s.workload.name"], attributes["k8s.cronjob.name"]) where IsString(attributes["k8s.cronjob.name"])
+                    - set(attributes["k8s.workload.kind"], "replicaset") where IsString(attributes["k8s.replicaset.name"])
+                    - set(attributes["k8s.workload.kind"], "statefulset") where IsString(attributes["k8s.statefulset.name"])
+                    - set(attributes["k8s.workload.kind"], "job") where IsString(attributes["k8s.job.name"])
+                    - set(attributes["k8s.workload.kind"], "deployment") where IsString(attributes["k8s.deployment.name"])
+                    - set(attributes["k8s.workload.kind"], "daemonset") where IsString(attributes["k8s.daemonset.name"])
+                    - set(attributes["k8s.workload.kind"], "cronjob") where IsString(attributes["k8s.cronjob.name"])
+                    - set(attributes["k8s.workload.uid"], attributes["k8s.replicaset.uid"]) where IsString(attributes["k8s.replicaset.uid"])
+                    - set(attributes["k8s.workload.uid"], attributes["k8s.statefulset.uid"]) where IsString(attributes["k8s.statefulset.uid"])
+                    - set(attributes["k8s.workload.uid"], attributes["k8s.job.uid"]) where IsString(attributes["k8s.job.uid"])
+                    - set(attributes["k8s.workload.uid"], attributes["k8s.deployment.uid"]) where IsString(attributes["k8s.deployment.uid"])
+                    - set(attributes["k8s.workload.uid"], attributes["k8s.daemonset.uid"]) where IsString(attributes["k8s.daemonset.uid"])
+                    - set(attributes["k8s.workload.uid"], attributes["k8s.cronjob.uid"]) where IsString(attributes["k8s.cronjob.uid"])
+                    - delete_key(attributes, "k8s.statefulset.name")
+                    - delete_key(attributes, "k8s.replicaset.name")
+                    - delete_key(attributes, "k8s.job.name")
+                    - delete_key(attributes, "k8s.deployment.name")
+                    - delete_key(attributes, "k8s.daemonset.name")
+                    - delete_key(attributes, "k8s.cronjob.name")
+                    - delete_key(attributes, "k8s.statefulset.uid")
+                    - delete_key(attributes, "k8s.replicaset.uid")
+                    - delete_key(attributes, "k8s.deployment.uid")
+                    - delete_key(attributes, "k8s.daemonset.uid")
+                    - delete_key(attributes, "k8s.job.uid")
+                    - delete_key(attributes, "k8s.cronjob.uid")
+                - context: resource
+                  statements:
+                    - delete_key(resource.attributes, "processor")
+                    - delete_key(resource.attributes, "otel.signal")
+                    - delete_key(resource.attributes, "otel.scope.name")
+                    - delete_key(resource.attributes, "otel.scope.version")
+                - context: resource
+                  statements:
+                    - set(resource.attributes["k8s.cluster.name"], "${env:K8S_CLUSTER_NAME}") where resource.attributes["k8s.cluster.name"] == nil and Len("${env:K8S_CLUSTER_NAME}") > 0
+                - context: resource
+                  statements:
+                    - merge_maps(resource.attributes, ParseJSON(resource.attributes["metadata.dynatrace.com"]), "upsert") where IsMatch(resource.attributes["metadata.dynatrace.com"], "^\\{")
+                    - delete_key(resource.attributes, "metadata.dynatrace.com")
+        transform/selfmon_rename:
+            metric_statements:
+                - statements:
+                    - replace_all_patterns(resource.attributes, "key", "_", ".")
+    receivers:
+        otlp:
+            protocols:
+                http:
+                    endpoint: ${env:MY_POD_IP}:4318
+    service:
+        extensions:
+            - health_check
+            - bearertokenauth
+        pipelines:
+            metrics:
+                exporters:
+                    - otlp_http
+                processors:
+                    - memory_limiter
+                    - transform/selfmon_rename
+                    - k8s_attributes
+                    - transform
+                    - resource/dynakube
+                receivers:
+                    - otlp
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/instance: dk
+    app.kubernetes.io/managed-by: dynatrace-operator
+    app.kubernetes.io/name: dk-self-monitoring
+    internal.dynatrace.com/operator-version: snapshot
+  name: dk-self-monitoring
+  namespace: dynatrace
+  ownerReferences:
+  - apiVersion: dynatrace.com/v1beta6
+    blockOwnerDeletion: true
+    controller: true
+    kind: DynaKube
+    name: dk
+    uid: dk-uid
