@@ -160,7 +160,7 @@ jobs:
     name: Notify test results in Slack
     environment: E2E
     needs: [run-matrix]
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     if: ${{ always() }}
     steps:
       - name: Checkout
