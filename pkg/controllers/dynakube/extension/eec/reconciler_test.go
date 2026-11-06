@@ -275,11 +275,11 @@ func TestSecretHashAnnotation(t *testing.T) {
 	})
 	t.Run("missing ActiveGate TLS Secret does not change the annotation", func(t *testing.T) {
 		dkWithoutTLS := getTestDynakube()
-		dkWithoutTLS.Annotations[exp.AGAutomaticTLSCertificateKey] = "false"
+		dkWithoutTLS.Annotations[exp.AGTLSCertificateTransferringToOneAgentKey] = "false"
 		hashWithoutTLS := getStatefulset(t, dkWithoutTLS).Spec.Template.Annotations[api.AnnotationExtensionsConfigurationHash]
 
 		dkWithMissingSecret := getTestDynakube()
-		dkWithMissingSecret.Annotations[exp.AGAutomaticTLSCertificateKey] = "false"
+		dkWithMissingSecret.Annotations[exp.AGTLSCertificateTransferringToOneAgentKey] = "false"
 		dkWithMissingSecret.Spec.ActiveGate.TLSSecretName = "ag-tls-missing"
 		hashWithMissingSecret := getStatefulset(t, dkWithMissingSecret).Spec.Template.Annotations[api.AnnotationExtensionsConfigurationHash]
 
