@@ -14,20 +14,16 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/tenant/optionalscope"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/utils/ptr"
 )
 
 type Reconciler struct {
-	timeProvider *timeprovider.Provider
 }
 
 func NewReconciler() *Reconciler {
-	return &Reconciler{
-		timeProvider: timeprovider.New(),
-	}
+	return &Reconciler{}
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, dtClient dtsettings.Client, dk *dynakube.DynaKube) error {
@@ -39,7 +35,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dtClient dtsettings.Client, 
 		return nil
 	}
 
-	if !k8sconditions.IsOutdated(r.timeProvider, dk, conditionType) {
+	if !k8sconditions.IsOutdated(dk, conditionType) {
 		return nil
 	}
 

@@ -101,7 +101,7 @@ func (s *SecretGenerator) getCachedPMC(ctx context.Context, dk *dynakube.DynaKub
 
 	var pmConfig *oneagentclient.ProcessModuleConfig
 
-	if !k8sconditions.IsOutdated(s.timeProvider, dk, ConfigConditionType) {
+	if !k8sconditions.IsOutdated(dk, ConfigConditionType) {
 		log.Info("skipping Dynatrace API call, trying to get ruxitagentproc content from source secret")
 
 		sourceKey := client.ObjectKey{
