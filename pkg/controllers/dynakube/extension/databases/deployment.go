@@ -36,6 +36,8 @@ const (
 
 	containerName = "sql-executor"
 
+	annotationConfigurationHash = api.InternalFlagPrefix + "sql-executor-configuration-hash"
+
 	tmpVolumeName         = "tmp-data"
 	tmpMountPath          = "/tmp"
 	tokenVolumeName       = "auth-token"
@@ -90,7 +92,7 @@ func buildTemplateAnnotations(dbSpec extensions.DatabaseSpec, configurationHash 
 		annotations = map[string]string{}
 	}
 
-	annotations[api.AnnotationExtensionsConfigurationHash] = configurationHash
+	annotations[annotationConfigurationHash] = configurationHash
 
 	return annotations
 }
