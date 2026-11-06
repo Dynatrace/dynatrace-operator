@@ -451,3 +451,50 @@ func TestImages(t *testing.T) {
 			})
 	})
 }
+
+func TestDeprecatedOTelCollectorTLSRefName(t *testing.T) {
+	t.Run("warn when otelCollector tlsRefName is set", func(t *testing.T) {
+		warnings, err := assertAllowed(t,
+			&dynakube.DynaKube{
+				ObjectMeta: defaultDynakubeObjectMeta,
+				Spec: dynakube.DynaKubeSpec{
+					APIURL:          testAPIURL,
+					TelemetryIngest: &telemetryingest.Spec{},
+					Templates: dynakube.TemplatesSpec{
+						OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{
+							ImageRef: types.ImageRef{
+								Repository: "test-repo",
+								Tag:        "test-tag",
+							},
+							TLSRefName: "some-secret", //nolint:staticcheck // SA1019: testing deprecated field
+						},
+					},
+				},
+			})
+		require.NoError(t, err)
+		assert.Contains(t, warnings, warningOTelCollectorDeprecatedTLSRefName)
+	})
+
+	t.Run("no warning when otelCollector tlsRefName is not set", func(t *testing.T) {
+		warnings, err := assertAllowed(t,
+			&dynakube.DynaKube{
+				ObjectMeta: defaultDynakubeObjectMeta,
+				Spec: dynakube.DynaKubeSpec{
+					APIURL: testAPIURL,
+					TelemetryIngest: &telemetryingest.Spec{
+						TLSRefName: "some-secret",
+					},
+					Templates: dynakube.TemplatesSpec{
+						OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{
+							ImageRef: types.ImageRef{
+								Repository: "test-repo",
+								Tag:        "test-tag",
+							},
+						},
+					},
+				},
+			})
+		require.NoError(t, err)
+		assert.NotContains(t, warnings, warningOTelCollectorDeprecatedTLSRefName)
+	})
+}

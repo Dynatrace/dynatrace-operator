@@ -30,6 +30,7 @@ const (
 	errorTelemetryIngestForbiddenServiceName = `The DynaKube's specification enables the TelemetryIngest feature, the telemetry service name is incorrect because of forbidden suffix.`
 	errorOTelCollectorMissingImage           = `The Dynakube's specification specifies the OTel Collector, but no image repository/tag is configured.`
 	warningOTelCollectorIgnoredTemplate      = "The Dynakube's `spec.templates.otelCollector` section is skipped as the `spec.telemetryIngest` section is not configured. Consider either removing `spec.templates.otelCollector.imageRef` or enabling `spec.telemetryIngest`."
+	warningOTelCollectorDeprecatedTLSRefName = "The DynaKube's `spec.templates.otelCollector.tlsRefName` field is deprecated and has no effect. Use `spec.telemetryIngest.tlsRefName` to configure TLS for the OTel Collector."
 )
 
 func emptyTelemetryIngestProtocolsList(ctx context.Context, _ *Validator, dk *dynakube.DynaKube) string {
@@ -173,6 +174,14 @@ func missingOTelCollectorImage(_ context.Context, _ *Validator, dk *dynakube.Dyn
 func ignoredOTelCollectorTemplate(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
 	if !dk.TelemetryIngest().IsEnabled() && dk.Spec.Templates.OpenTelemetryCollector.ImageRef != (types.ImageRef{}) {
 		return warningOTelCollectorIgnoredTemplate
+	}
+
+	return ""
+}
+
+func deprecatedOTelCollectorTLSRefName(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
+	if dk.Spec.Templates.OpenTelemetryCollector.TLSRefName != "" { //nolint:staticcheck // SA1019: intentionally reading deprecated field to warn about it
+		return warningOTelCollectorDeprecatedTLSRefName
 	}
 
 	return ""

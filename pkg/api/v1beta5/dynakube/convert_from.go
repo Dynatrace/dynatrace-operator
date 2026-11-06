@@ -163,7 +163,7 @@ func fromOpenTelemetryCollectorTemplate(dk *dynakubelatest.DynaKube, src dynakub
 		dst.ImageRef.Tag = ""
 	}
 
-	dst.TLSRefName = src.TLSRefName
+	dst.TLSRefName = src.TLSRefName //nolint:staticcheck // SA1019: deprecated field still converted to avoid data loss
 	dst.Resources = src.Resources
 	dst.Tolerations = src.Tolerations
 	dst.TopologySpreadConstraints = src.TopologySpreadConstraints
