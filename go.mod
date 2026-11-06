@@ -21,6 +21,7 @@ require (
 	go.opentelemetry.io/collector/confmap v1.70.0
 	go.opentelemetry.io/collector/pipeline v1.70.0
 	go.opentelemetry.io/collector/service v0.164.0
+	go.opentelemetry.io/contrib/otelconf v0.25.0
 	go.uber.org/zap v1.28.0
 	golang.org/x/mod v0.42.0
 	golang.org/x/net v0.62.0
@@ -145,7 +146,6 @@ require (
 	go.opentelemetry.io/contrib/detectors/azure/azurevm v0.17.0 // indirect
 	go.opentelemetry.io/contrib/detectors/gcp v1.45.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.71.0 // indirect
-	go.opentelemetry.io/contrib/otelconf v0.25.0 // indirect
 	go.opentelemetry.io/contrib/propagators/autoprop v0.70.0 // indirect
 	go.opentelemetry.io/contrib/propagators/aws v1.45.0 // indirect
 	go.opentelemetry.io/contrib/propagators/b3 v1.45.0 // indirect

@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -95,5 +96,32 @@ func TestRenderGatewayConfig_ResourceAttributes(t *testing.T) {
 		rendered, err := renderGatewayConfig(data)
 		require.NoError(t, err)
 		assert.YAMLEq(t, goldenRelay(t, "configmap_with_resource_attributes.yaml"), rendered)
+	})
+}
+
+func TestSelfMonitoringTelemetry(t *testing.T) {
+	const endpoint = "http://dk-self-monitoring:4318"
+
+	t.Run("not set without self-monitoring", func(t *testing.T) {
+		assert.Empty(t, buildGatewayConfigData(&dynakube.DynaKube{Name: "dk"}).SelfMonitoringEndpoint)
+
+		rendered, err := renderGatewayConfig(gatewayConfigData{})
+		require.NoError(t, err)
+		assert.NotContains(t, rendered, "telemetry:")
+	})
+
+	t.Run("endpoint derived from dynakube with self-monitoring", func(t *testing.T) {
+		dk := &dynakube.DynaKube{Name: "dk", Spec: dynakube.DynaKubeSpec{SelfMonitoring: &dynakube.SelfMonitoringSpec{}}}
+
+		assert.Equal(t, endpoint, buildGatewayConfigData(dk).SelfMonitoringEndpoint)
+	})
+
+	t.Run("rendered into service telemetry", func(t *testing.T) {
+		rendered, err := renderGatewayConfig(gatewayConfigData{SelfMonitoringEndpoint: endpoint})
+		require.NoError(t, err)
+
+		assert.Contains(t, rendered, "telemetry:")
+		assert.Contains(t, rendered, "endpoint: "+endpoint)
+		assert.Contains(t, rendered, "temporality_preference: delta")
 	})
 }

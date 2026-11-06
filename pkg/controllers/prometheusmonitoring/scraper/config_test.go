@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/component"
@@ -81,5 +82,39 @@ func TestBuildScraperOTelConfig(t *testing.T) {
 		assert.Contains(t, rendered, data.TargetAllocatorEndpoint)
 		assert.Contains(t, rendered, "load_balancing:")
 		assert.Contains(t, rendered, data.GatewayService)
+	})
+}
+
+func TestSelfMonitoringTelemetry(t *testing.T) {
+	const endpoint = "http://dk-self-monitoring:4318"
+
+	t.Run("not set without self-monitoring", func(t *testing.T) {
+		data := buildScraperConfigData(newTestScope(newTestPM("pm", "dynatrace")))
+
+		assert.Empty(t, data.SelfMonitoringEndpoint)
+	})
+
+	t.Run("endpoint derived from dynakube with self-monitoring", func(t *testing.T) {
+		dk := newTestDynaKube()
+		dk.Spec.SelfMonitoring = &dynakube.SelfMonitoringSpec{}
+
+		data := buildScraperConfigData(newTestScopeWithDynaKube(newTestPM("pm", "dynatrace"), dk))
+
+		assert.Equal(t, endpoint, data.SelfMonitoringEndpoint)
+	})
+
+	t.Run("rendered into service telemetry", func(t *testing.T) {
+		cfg, err := buildScraperOTelConfig(scraperConfigData{SelfMonitoringEndpoint: endpoint}).Marshal()
+		require.NoError(t, err)
+
+		assert.Contains(t, string(cfg), "endpoint: "+endpoint)
+		assert.Contains(t, string(cfg), "temporality_preference: delta")
+	})
+
+	t.Run("omitted from rendered config when disabled", func(t *testing.T) {
+		cfg, err := buildScraperOTelConfig(scraperConfigData{}).Marshal()
+		require.NoError(t, err)
+
+		assert.NotContains(t, string(cfg), "telemetry:")
 	})
 }

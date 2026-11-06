@@ -58,6 +58,7 @@ type Config struct {
 	FilterStrategy     string                `json:"filter_strategy"`
 	HTTPS              *HTTPSConfig          `json:"https,omitempty"`
 	PrometheusCR       ScrapeConfig          `json:"prometheus_cr"`
+	Telemetry          *TelemetryConfig      `json:"telemetry,omitempty"`
 }
 
 type HTTPSConfig struct {
@@ -79,6 +80,57 @@ type ScrapeConfig struct {
 	ScrapeConfigNamespaceSelector   *metav1.LabelSelector `json:"scrape_config_namespace_selector,omitempty"`
 	ProbeSelector                   *metav1.LabelSelector `json:"probe_selector,omitempty"`
 	ProbeNamespaceSelector          *metav1.LabelSelector `json:"probe_namespace_selector,omitempty"`
+}
+
+// TelemetryConfig configures the target allocator's own telemetry (OpenTelemetry SDK declarative configuration).
+type TelemetryConfig struct {
+	Metrics MetricsTelemetryConfig `json:"metrics"`
+}
+
+type MetricsTelemetryConfig struct {
+	Level   string                `json:"level"`
+	Readers []MetricsReaderConfig `json:"readers"`
+}
+
+type MetricsReaderConfig struct {
+	Periodic PeriodicReaderConfig `json:"periodic"`
+}
+
+type PeriodicReaderConfig struct {
+	Exporter MetricsExporterConfig `json:"exporter"`
+}
+
+type MetricsExporterConfig struct {
+	OTLPHTTP OTLPHTTPExporterConfig `json:"otlp_http"`
+}
+
+type OTLPHTTPExporterConfig struct {
+	Endpoint              string `json:"endpoint"`
+	TemporalityPreference string `json:"temporality_preference"`
+}
+
+// buildTelemetry exports the target allocator's metrics to the self-monitoring collector of the DynaKube.
+// It returns nil if self-monitoring is not enabled.
+func buildTelemetry(dk *dynakube.DynaKube) *TelemetryConfig {
+	if !dk.IsSelfMonitoringEnabled() {
+		return nil
+	}
+
+	return &TelemetryConfig{
+		Metrics: MetricsTelemetryConfig{
+			Level: "normal",
+			Readers: []MetricsReaderConfig{{
+				Periodic: PeriodicReaderConfig{
+					Exporter: MetricsExporterConfig{
+						OTLPHTTP: OTLPHTTPExporterConfig{
+							Endpoint:              dk.SelfMonitoringOTLPEndpoint(),
+							TemporalityPreference: "delta",
+						},
+					},
+				},
+			}},
+		},
+	}
 }
 
 type reconcileScope struct {
@@ -150,6 +202,7 @@ func (r *Reconciler) reconcileConfigMap(ctx context.Context, s *reconcileScope) 
 			ProbeSelector:                   s.Spec.CustomResourceSelector,
 			ProbeNamespaceSelector:          s.Spec.CustomResourceNamespaceSelector,
 		},
+		Telemetry: buildTelemetry(s.DynaKube),
 	}
 
 	data, err := yaml.Marshal(cfg)
