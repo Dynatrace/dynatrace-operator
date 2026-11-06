@@ -287,6 +287,44 @@ func TestOTelCollectorPhaseChanges(t *testing.T) {
 	})
 }
 
+func createSelfMonDeployment(namespace, name string, replicas, readyReplicas, generation int32) *appsv1.Deployment {
+	return &appsv1.Deployment{
+		Name:       name,
+		Namespace:  namespace,
+		Generation: int64(generation),
+		Spec:       appsv1.DeploymentSpec{Replicas: &replicas},
+		Status:     appsv1.DeploymentStatus{ReadyReplicas: readyReplicas, ObservedGeneration: 1},
+	}
+}
+
+func TestSelfMonitoringPhaseChanges(t *testing.T) {
+	dk := &dynakube.DynaKube{
+		Name:      testName,
+		Namespace: testNamespace,
+		Spec:      dynakube.DynaKubeSpec{SelfMonitoring: &dynakube.SelfMonitoringSpec{}},
+	}
+
+	tests := []struct {
+		name     string
+		client   client.Client
+		dk       *dynakube.DynaKube
+		expected status.DeploymentPhase
+	}{
+		{"not enabled -> running", fake.NewClient(), &dynakube.DynaKube{Name: testName, Namespace: testNamespace}, status.Running},
+		{"no deployment -> deploying", fake.NewClient(), dk, status.Deploying},
+		{"api error -> error", errorClient{}, dk, status.Error},
+		{"pods not ready -> deploying", fake.NewClient(createSelfMonDeployment(testNamespace, dk.SelfMonitoringName(), 1, 0, 1)), dk, status.Deploying},
+		{"generation outdated -> deploying", fake.NewClient(createSelfMonDeployment(testNamespace, dk.SelfMonitoringName(), 1, 1, 2)), dk, status.Deploying},
+		{"ready -> running", fake.NewClient(createSelfMonDeployment(testNamespace, dk.SelfMonitoringName(), 1, 1, 1)), dk, status.Running},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			controller := &Controller{client: tt.client, apiReader: tt.client}
+			assert.Equal(t, tt.expected, controller.determineSelfMonitoringPhase(t.Context(), tt.dk))
+		})
+	}
+}
+
 func TestExtensionsDatabasesPhaseChanges(t *testing.T) {
 	dk := &dynakube.DynaKube{
 		Name:      testName,
