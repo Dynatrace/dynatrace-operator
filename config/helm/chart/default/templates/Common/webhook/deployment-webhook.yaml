@@ -40,6 +40,9 @@ spec:
         {{- toYaml .Values.webhook.labels | nindent 8 }}
         {{- end }}
     spec:
+      {{- with .Values.webhook.priorityClassName }}
+      priorityClassName: {{ . | quote }}
+      {{- end }}
       {{- include "dynatrace-operator.webhook.topologySpreadConstraints" . | nindent 6 }}
       volumes:
       - emptyDir:
