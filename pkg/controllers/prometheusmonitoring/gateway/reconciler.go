@@ -29,6 +29,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
@@ -179,7 +180,9 @@ func (r *Reconciler) reconcileStatefulset(ctx context.Context, s *reconcileScope
 	sts := &appsv1.StatefulSet{Name: s.Spec.GetStatefulSetName(), Namespace: s.Owner.Namespace}
 
 	err := k8sobject.RetryCreateOrUpdate(ctx, r, sts, func() error {
-		mutateStatefulSet(sts, s)
+		if err := mutateStatefulSet(sts, s); err != nil {
+			return err
+		}
 
 		return controllerutil.SetControllerReference(s.Owner, sts, r.Scheme())
 	})
@@ -192,7 +195,7 @@ func (r *Reconciler) reconcileStatefulset(ctx context.Context, s *reconcileScope
 	return nil
 }
 
-func mutateStatefulSet(sts *appsv1.StatefulSet, s *reconcileScope) {
+func mutateStatefulSet(sts *appsv1.StatefulSet, s *reconcileScope) error {
 	s.AppLabels.MergeInto(sts)
 
 	if sts.Spec.Template.Labels == nil {
@@ -221,7 +224,12 @@ func mutateStatefulSet(sts *appsv1.StatefulSet, s *reconcileScope) {
 
 	sts.Spec.PodManagementPolicy = appsv1.ParallelPodManagement
 
-	sts.Spec.Selector = &metav1.LabelSelector{MatchLabels: s.AppLabels.AsSelector()}
+	selector := &metav1.LabelSelector{MatchLabels: s.AppLabels.AsSelector()}
+	if sts.ResourceVersion != "" && !equality.Semantic.DeepEqual(sts.Spec.Selector, selector) {
+		return fmt.Errorf("statefulset selector changed: %w", k8sobject.ErrRecreate)
+	}
+
+	sts.Spec.Selector = selector
 	sts.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 	sts.Spec.Template.Spec.AutomountServiceAccountToken = new(true)
 	// fsGroup lets the container (RunAsGroup nonRootUser) read the token volume via the group
@@ -239,6 +247,8 @@ func mutateStatefulSet(sts *appsv1.StatefulSet, s *reconcileScope) {
 	sts.Spec.Template.Spec.Containers = []corev1.Container{
 		buildContainer(s, k8scontainer.GetFirstInPodSpec(&sts.Spec.Template.Spec)),
 	}
+
+	return nil
 }
 
 func buildContainer(s *reconcileScope, current corev1.Container) corev1.Container {

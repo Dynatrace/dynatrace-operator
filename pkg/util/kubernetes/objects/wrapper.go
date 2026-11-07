@@ -5,16 +5,26 @@ package k8sobject
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
+// ErrRecreate signal that an immutable field of the existing object has to change, so the object must be deleted and created again.
+var ErrRecreate = errors.New("object has to be recreated")
+
 // RetryCreateOrUpdate is a thin wrapper around [controllerutil.CreateOrUpdate] that retries on conflict errors to prevent redoing a whole reconcile.
+// If the mutate function returns [ErrRecreate], the existing object is deleted and created again on the next retry.
 // Prefer this for external resources, i.e. ones that are not managed by the Dynatrace Operator.
 func RetryCreateOrUpdate(ctx context.Context, c client.Client, obj client.Object, f controllerutil.MutateFn) error {
 	gvks, _, err := c.Scheme().ObjectKinds(obj)
@@ -22,16 +32,37 @@ func RetryCreateOrUpdate(ctx context.Context, c client.Client, obj client.Object
 		return err
 	}
 
-	kind := strings.ToLower(gvks[0].Kind)
+	gvk := gvks[0]
+	kind := strings.ToLower(gvk.Kind)
+	group := strings.ToLower(gvk.Group)
 
 	var result controllerutil.OperationResult
 
-	_ = retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		result, err = controllerutil.CreateOrUpdate(ctx, c, obj, f)
+	err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		var fnerr error
 
-		return err
+		result, fnerr = controllerutil.CreateOrUpdate(ctx, c, obj, f)
+		if !errors.Is(fnerr, ErrRecreate) {
+			return fnerr
+		}
+
+		logd.FromContext(ctx).Info("recreating "+kind, "reason", fnerr.Error())
+
+		if delerr := c.Delete(ctx, obj); client.IgnoreNotFound(delerr) != nil {
+			return fmt.Errorf("delete for recreate: %w", delerr)
+		}
+
+		// Wait for deletion, the client, on creation, may read from a cache that still contains the deleted object
+		if waiterr := waitForDeletion(ctx, c, gvk, client.ObjectKeyFromObject(obj)); waiterr != nil {
+			return fmt.Errorf("wait for deletion: %w", waiterr)
+		}
+
+		// Create rejects a set resource version and would persist stale managed fields
+		obj.SetResourceVersion("")
+		obj.SetManagedFields(nil)
+
+		return k8serrors.NewConflict(schema.GroupResource{Group: group, Resource: kind}, obj.GetName(), fnerr)
 	})
-
 	if err != nil {
 		return fmt.Errorf("create or update %s: %w", kind, err)
 	}
@@ -67,4 +98,18 @@ func ApplyStatus(ctx context.Context, c client.Client, obj client.Object) error 
 
 	//nolint:staticcheck // client.Apply is deprecated, but our repo does not support generating ApplyConfiguration
 	return c.SubResource("status").Patch(ctx, obj, client.Apply, client.FieldOwner("dynatrace-operator"), client.ForceOwnership)
+}
+
+func waitForDeletion(ctx context.Context, c client.Client, gvk schema.GroupVersionKind, key client.ObjectKey) error {
+	return wait.PollUntilContextTimeout(ctx, 100*time.Millisecond, 5*time.Second, true, func(ctx context.Context) (bool, error) {
+		meta := &metav1.PartialObjectMetadata{}
+		meta.SetGroupVersionKind(gvk)
+
+		err := c.Get(ctx, key, meta)
+		if k8serrors.IsNotFound(err) {
+			return true, nil
+		}
+
+		return false, err
+	})
 }
