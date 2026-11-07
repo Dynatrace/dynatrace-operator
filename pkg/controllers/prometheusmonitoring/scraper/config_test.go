@@ -7,9 +7,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/component"
+	"go.opentelemetry.io/collector/pipeline"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -24,7 +26,7 @@ func TestBuildScraperConfigData(t *testing.T) {
 	assert.Equal(t, "1m30s", data.TargetsPollInterval)
 }
 
-func TestBuildScraperOTelConfig(t *testing.T) {
+func Test_buildConfig(t *testing.T) {
 	data := scraperConfigData{
 		TargetAllocatorEndpoint: "http://ta.dynatrace:8080",
 		GatewayService:          "gw.dynatrace",
@@ -32,17 +34,19 @@ func TestBuildScraperOTelConfig(t *testing.T) {
 	}
 
 	t.Run("wires a single metrics pipeline", func(t *testing.T) {
-		cfg := buildScraperOTelConfig(data)
+		cfg := buildConfig(data)
 
-		pipeline := cfg.Service.Pipelines[metricsSignalID]
-		require.NotNil(t, pipeline)
-		assert.Equal(t, []component.ID{prometheusID}, pipeline.Receivers)
-		assert.Equal(t, []component.ID{memoryLimiterID}, pipeline.Processors)
-		assert.Equal(t, []component.ID{loadBalancingID}, pipeline.Exporters)
+		p := cfg.Service.Pipelines[pipeline.NewID(pipeline.SignalMetrics)]
+		require.NotNil(t, p)
+		assert.Equal(t, []component.ID{prometheusID}, p.Receivers)
+		assert.Equal(t, []component.ID{otelcgen.MemoryLimiterID}, p.Processors)
+		assert.Equal(t, []component.ID{loadBalancingID}, p.Exporters)
 	})
 
 	t.Run("receiver polls the target allocator", func(t *testing.T) {
-		receiver, ok := buildScraperOTelConfig(data).Receivers[prometheusID].(map[string]any)
+		cfg := buildConfig(data)
+
+		receiver, ok := cfg.Receivers[prometheusID].(map[string]any)
 		require.True(t, ok)
 
 		ta, ok := receiver["target_allocator"].(map[string]any)
@@ -54,7 +58,9 @@ func TestBuildScraperOTelConfig(t *testing.T) {
 	})
 
 	t.Run("load-balancing exporter uses k8s resolver on the gateway service without TLS", func(t *testing.T) {
-		exporter, ok := buildScraperOTelConfig(data).Exporters[loadBalancingID].(map[string]any)
+		cfg := buildConfig(data)
+
+		exporter, ok := cfg.Exporters[loadBalancingID].(map[string]any)
 		require.True(t, ok)
 
 		resolver, ok := exporter["resolver"].(map[string]any)
@@ -63,7 +69,7 @@ func TestBuildScraperOTelConfig(t *testing.T) {
 		k8s, ok := resolver["k8s"].(map[string]any)
 		require.True(t, ok)
 		assert.Equal(t, data.GatewayService, k8s["service"])
-		assert.Equal(t, []int{gatewayOTLPPort}, k8s["ports"])
+		assert.Equal(t, []int{otelcgen.OTLPReceiverGRPCPort}, k8s["ports"])
 
 		protocol, ok := exporter["protocol"].(map[string]any)
 		require.True(t, ok)

@@ -20,21 +20,21 @@ import (
 
 const (
 	zipkinPortName              = "zipkin"
-	zipkinPort                  = 9411
+	zipkinPort                  = otelcgen.ZipkinReceiverPort
 	otlpGRPCPortName            = "otlp-grpc"
-	otlpGRPCPort                = 4317
+	otlpGRPCPort                = otelcgen.OTLPReceiverGRPCPort
 	otlpHTTPPortName            = "otlp-http"
-	otlpHTTPPort                = 4318
+	otlpHTTPPort                = otelcgen.OTLPReceiverHTTPPort
 	jaegerGRPCPortName          = "jaeger-grpc"
-	jaegerGRPCPort              = 14250
+	jaegerGRPCPort              = otelcgen.JaegerReceiverGRPCPort
 	jaegerThriftBinaryPortName  = "jaeger-thrift-binary"
-	jaegerThriftBinaryPort      = 6832
+	jaegerThriftBinaryPort      = otelcgen.JaegerReceiverThriftBinaryPort
 	jaegerThriftCompactPortName = "jaeger-thrift-compact"
-	jaegerThriftCompactPort     = 6831
+	jaegerThriftCompactPort     = otelcgen.JaegerReceiverThriftCompactPort
 	jaegerThriftHTTPPortName    = "jaeger-thrift-http"
-	jaegerThriftHTTPPort        = 14268
+	jaegerThriftHTTPPort        = otelcgen.JaegerReceiverThriftHTTPPort
 	statsdPortName              = "statsd"
-	statsdPort                  = 8125
+	statsdPort                  = otelcgen.StatsdReceiverPort
 	appProtocolHTTP             = "http"
 	appProtocolGRPC             = "grpc"
 

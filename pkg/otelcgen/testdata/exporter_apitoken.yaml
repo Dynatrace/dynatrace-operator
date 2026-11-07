@@ -1,15 +1,13 @@
-connectors: {}
 exporters:
-  otlphttp:
+  otlp_http:
     endpoint: "test"
     tls:
       ca_file: "/run/opensignals/cacerts/certs"
-
+      include_system_ca_certs_pool: true
     headers:
       Authorization: "Api-Token test-token"
 extensions: {}
 processors: {}
 receivers: {}
 service:
-  extensions: []
   pipelines: {}

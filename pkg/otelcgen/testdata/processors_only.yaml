@@ -1,9 +1,8 @@
-connectors: {}
 exporters: {}
 extensions: {}
 processors:
-  cumulativetodelta: {}
-  k8sattributes/annotations:
+  cumulative_to_delta: {}
+  k8s_attributes/annotations:
     extract:
       metadata: []
       annotations:
@@ -27,7 +26,7 @@ processors:
             name: k8s.pod.uid
       - sources:
           - from: connection
-  k8sattributes/facts:
+  k8s_attributes/facts:
     extract:
       metadata:
         - k8s.cluster.uid
@@ -151,20 +150,19 @@ processors:
   batch/traces:
     send_batch_size: 5000
     send_batch_max_size: 5000
-    timeout: 60s
+    timeout: 1m0s
   batch/metrics:
     send_batch_size: 3000
     send_batch_max_size: 3000
-    timeout: 60s
+    timeout: 1m0s
   batch/logs:
     send_batch_size: 1800
     send_batch_max_size: 2000
-    timeout: 60s
+    timeout: 1m0s
   memory_limiter:
     check_interval: 1s
     limit_percentage: 70
     spike_limit_percentage: 30
 receivers: {}
 service:
-  extensions: []
   pipelines: {}

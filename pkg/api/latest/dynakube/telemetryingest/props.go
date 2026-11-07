@@ -13,9 +13,9 @@ const (
 	ServiceNameSuffix = "-telemetry-ingest"
 )
 
-func (spec *Spec) GetProtocols() otelcgen.Protocols {
+func (spec *Spec) GetProtocols() []otelcgen.Protocol {
 	if spec == nil {
-		return otelcgen.Protocols{}
+		return []otelcgen.Protocol{}
 	}
 
 	if len(spec.Protocols) == 0 {

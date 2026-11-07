@@ -1,13 +1,11 @@
-connectors: {}
 exporters: {}
 extensions: {}
 processors: {}
 receivers:
     zipkin:
-        endpoint: test:9411
+        endpoint: ${env:MY_POD_IP}:9411
         tls:
             cert_file: /run/opensignals/tls/tls.crt
             key_file: /run/opensignals/tls/tls.key
 service:
-    extensions: []
     pipelines: {}

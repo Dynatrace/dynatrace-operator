@@ -1,4 +1,3 @@
-connectors: {}
 exporters: {}
 extensions: {}
 processors: {}
@@ -9,14 +8,14 @@ service:
   pipelines:
     metrics:
       exporters:
-        - otlphttp
+        - otlp_http
       receivers:
         - statsd
       processors:
         - memory_limiter
         - transform/add-pod-ip
-        - k8sattributes/annotations
-        - k8sattributes/facts
+        - k8s_attributes/annotations
+        - k8s_attributes/facts
         - transform
-        - cumulativetodelta
+        - cumulative_to_delta
         - batch/metrics
