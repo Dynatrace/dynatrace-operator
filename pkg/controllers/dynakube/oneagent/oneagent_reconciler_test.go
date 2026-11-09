@@ -980,14 +980,14 @@ func TestBuildDesiredDaemonSet_CertHashes(t *testing.T) {
 		assert.NotContains(t, ds.Spec.Template.Annotations, daemonset.AnnotationTrustedCAHash)
 	})
 
-	t.Run("daemonset hash changes when server.crt changes even if tls.crt is set", func(t *testing.T) {
-		build := func(serverCrt string) string {
+	t.Run("activegate cert annotation only follows server.crt", func(t *testing.T) {
+		build := func(serverCrt, tlsCrt string) string {
 			dk := newDK()
 			secret := &corev1.Secret{
 				Name:      dk.ActiveGate().GetTLSSecretName(),
 				Namespace: dk.Namespace,
 				Data: map[string][]byte{
-					consts.TLSCrtDataName:       []byte("tls-cert"),
+					consts.TLSCrtDataName:       []byte(tlsCrt),
 					consts.TLSServerCrtDataName: []byte(serverCrt),
 				},
 			}
@@ -999,8 +999,11 @@ func TestBuildDesiredDaemonSet_CertHashes(t *testing.T) {
 			return ds.Spec.Template.Annotations[daemonset.AnnotationActiveGateTLSCertHash]
 		}
 
-		assert.NotEmpty(t, build("server-cert-1"))
-		assert.NotEqual(t, build("server-cert-1"), build("server-cert-2"))
+		base := build("server-cert-1", "tls-cert-1")
+		require.NotEmpty(t, base)
+
+		assert.NotEqual(t, base, build("server-cert-2", "tls-cert-1"))
+		assert.Equal(t, base, build("server-cert-1", "tls-cert-2"))
 	})
 }
 
