@@ -20,21 +20,13 @@ import (
 
 const (
 	zipkinPortName              = "zipkin"
-	zipkinPort                  = otelcgen.ZipkinReceiverPort
 	otlpGRPCPortName            = "otlp-grpc"
-	otlpGRPCPort                = otelcgen.OTLPReceiverGRPCPort
 	otlpHTTPPortName            = "otlp-http"
-	otlpHTTPPort                = otelcgen.OTLPReceiverHTTPPort
 	jaegerGRPCPortName          = "jaeger-grpc"
-	jaegerGRPCPort              = otelcgen.JaegerReceiverGRPCPort
 	jaegerThriftBinaryPortName  = "jaeger-thrift-binary"
-	jaegerThriftBinaryPort      = otelcgen.JaegerReceiverThriftBinaryPort
 	jaegerThriftCompactPortName = "jaeger-thrift-compact"
-	jaegerThriftCompactPort     = otelcgen.JaegerReceiverThriftCompactPort
 	jaegerThriftHTTPPortName    = "jaeger-thrift-http"
-	jaegerThriftHTTPPort        = otelcgen.JaegerReceiverThriftHTTPPort
 	statsdPortName              = "statsd"
-	statsdPort                  = otelcgen.StatsdReceiverPort
 	appProtocolHTTP             = "http"
 	appProtocolGRPC             = "grpc"
 
@@ -152,60 +144,60 @@ func buildServicePortList(ctx context.Context, protocols []otelcgen.Protocol) []
 		case otelcgen.ZipkinProtocol:
 			svcPorts = append(svcPorts, corev1.ServicePort{
 				Name:       zipkinPortName,
-				Port:       zipkinPort,
+				Port:       otelcgen.ZipkinReceiverPort,
 				Protocol:   corev1.ProtocolTCP,
-				TargetPort: intstr.FromInt32(zipkinPort),
+				TargetPort: intstr.FromInt32(otelcgen.ZipkinReceiverPort),
 			})
 		case otelcgen.OTLPProtocol:
 			svcPorts = append(svcPorts,
 				corev1.ServicePort{
 					Name:        otlpGRPCPortName,
-					Port:        otlpGRPCPort,
+					Port:        otelcgen.OTLPReceiverGRPCPort,
 					Protocol:    corev1.ProtocolTCP,
 					AppProtocol: new(appProtocolGRPC),
-					TargetPort:  intstr.FromInt32(otlpGRPCPort),
+					TargetPort:  intstr.FromInt32(otelcgen.OTLPReceiverGRPCPort),
 				},
 				corev1.ServicePort{
 					Name:        otlpHTTPPortName,
-					Port:        otlpHTTPPort,
+					Port:        otelcgen.OTLPReceiverHTTPPort,
 					Protocol:    corev1.ProtocolTCP,
 					AppProtocol: new(appProtocolHTTP),
-					TargetPort:  intstr.FromInt32(otlpHTTPPort),
+					TargetPort:  intstr.FromInt32(otelcgen.OTLPReceiverHTTPPort),
 				})
 		case otelcgen.JaegerProtocol:
 			svcPorts = append(svcPorts,
 				corev1.ServicePort{
 					Name:        jaegerGRPCPortName,
-					Port:        jaegerGRPCPort,
+					Port:        otelcgen.JaegerReceiverGRPCPort,
 					Protocol:    corev1.ProtocolTCP,
 					AppProtocol: new(appProtocolGRPC),
-					TargetPort:  intstr.FromInt32(jaegerGRPCPort),
+					TargetPort:  intstr.FromInt32(otelcgen.JaegerReceiverGRPCPort),
 				},
 				corev1.ServicePort{
 					Name:       jaegerThriftBinaryPortName,
-					Port:       jaegerThriftBinaryPort,
+					Port:       otelcgen.JaegerReceiverThriftBinaryPort,
 					Protocol:   corev1.ProtocolUDP,
-					TargetPort: intstr.FromInt32(jaegerThriftBinaryPort),
+					TargetPort: intstr.FromInt32(otelcgen.JaegerReceiverThriftBinaryPort),
 				},
 				corev1.ServicePort{
 					Name:       jaegerThriftCompactPortName,
-					Port:       jaegerThriftCompactPort,
+					Port:       otelcgen.JaegerReceiverThriftCompactPort,
 					Protocol:   corev1.ProtocolUDP,
-					TargetPort: intstr.FromInt32(jaegerThriftCompactPort),
+					TargetPort: intstr.FromInt32(otelcgen.JaegerReceiverThriftCompactPort),
 				},
 				corev1.ServicePort{
 					Name:       jaegerThriftHTTPPortName,
-					Port:       jaegerThriftHTTPPort,
+					Port:       otelcgen.JaegerReceiverThriftHTTPPort,
 					Protocol:   corev1.ProtocolTCP,
-					TargetPort: intstr.FromInt32(jaegerThriftHTTPPort),
+					TargetPort: intstr.FromInt32(otelcgen.JaegerReceiverThriftHTTPPort),
 				})
 		case otelcgen.StatsdProtocol:
 			svcPorts = append(svcPorts,
 				corev1.ServicePort{
 					Name:       statsdPortName,
-					Port:       statsdPort,
+					Port:       otelcgen.StatsdReceiverPort,
 					Protocol:   corev1.ProtocolUDP,
-					TargetPort: intstr.FromInt32(statsdPort),
+					TargetPort: intstr.FromInt32(otelcgen.StatsdReceiverPort),
 				})
 		default:
 			log := logd.FromContext(ctx)
