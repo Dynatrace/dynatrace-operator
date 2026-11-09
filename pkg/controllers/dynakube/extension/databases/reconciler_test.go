@@ -265,20 +265,15 @@ func TestConfigurationHashAnnotation(t *testing.T) {
 		assert.NotEqual(t, originalHash, getHash(t, clt, dk))
 	})
 
-	t.Run("annotation is set when only tls secret exists", func(t *testing.T) {
+	t.Run("annotation changes when trustedCAs configmap is created", func(t *testing.T) {
 		dk := getTestDynakube()
 		clt := fakeClient()
-		require.NoError(t, clt.Create(t.Context(), getTLSSecret(dk)))
 
-		assert.NotEmpty(t, getHash(t, clt, dk))
-	})
+		originalHash := getHash(t, clt, dk)
 
-	t.Run("annotation is set when only trustedCAs exist", func(t *testing.T) {
-		dk := getTestDynakube()
-		clt := fakeClient()
 		require.NoError(t, clt.Create(t.Context(), getTrustedCAs(dk)))
 
-		assert.NotEmpty(t, getHash(t, clt, dk))
+		assert.NotEqual(t, originalHash, getHash(t, clt, dk))
 	})
 
 	t.Run("annotation changes when tls secret content changes", func(t *testing.T) {
