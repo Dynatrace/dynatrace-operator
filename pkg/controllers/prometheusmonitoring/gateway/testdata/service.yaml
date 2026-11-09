@@ -6,7 +6,7 @@ metadata:
   labels:
     app.kubernetes.io/instance: pm
     app.kubernetes.io/managed-by: dynatrace-operator
-    app.kubernetes.io/name: opentelemetry-gateway
+    app.kubernetes.io/name: dynatrace-gateway
     internal.dynatrace.com/operator-version: snapshot
   ownerReferences:
   - apiVersion: dynatrace.com/v1alpha1
@@ -25,6 +25,6 @@ spec:
   selector:
     app.kubernetes.io/instance: pm
     app.kubernetes.io/managed-by: dynatrace-operator
-    app.kubernetes.io/name: opentelemetry-gateway
+    app.kubernetes.io/name: dynatrace-gateway
 status:
   loadBalancer: {}

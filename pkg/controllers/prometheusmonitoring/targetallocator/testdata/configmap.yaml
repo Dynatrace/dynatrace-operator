@@ -6,7 +6,7 @@ metadata:
   labels:
     app.kubernetes.io/instance: pm
     app.kubernetes.io/managed-by: dynatrace-operator
-    app.kubernetes.io/name: opentelemetry-target-allocator
+    app.kubernetes.io/name: dynatrace-target-allocator
     internal.dynatrace.com/operator-version: snapshot
   ownerReferences:
   - apiVersion: dynatrace.com/v1alpha1
@@ -23,7 +23,7 @@ data:
       matchLabels:
         app.kubernetes.io/instance: pm
         app.kubernetes.io/managed-by: dynatrace-operator
-        app.kubernetes.io/name: opentelemetry-collector
+        app.kubernetes.io/name: dynatrace-collector
     filter_strategy: relabel-config
     https:
       ca_file_path: ""

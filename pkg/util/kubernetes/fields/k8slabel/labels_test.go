@@ -10,7 +10,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/util/validation"
 )
 
 const (
@@ -233,48 +232,5 @@ func TestMergeInto(t *testing.T) {
 		labels.MergeInto(cm)
 
 		assert.Equal(t, testAppName, cm.Labels[AppNameLabel])
-	})
-}
-
-func TestNewWithShortenedInstance(t *testing.T) {
-	t.Run("short instance names are used as is", func(t *testing.T) {
-		labels := NewWithShortenedInstance(testName, "short-instance", testAppVersion)
-
-		assert.Equal(t, testName, labels.Name)
-		assert.Equal(t, "short-instance", labels.Instance)
-		assert.Equal(t, testAppVersion, labels.Version)
-	})
-
-	t.Run("different instances result in different selectors", func(t *testing.T) {
-		first := NewWithShortenedInstance(testName, "instance-1", "").AsSelector()
-		second := NewWithShortenedInstance(testName, "instance-2", "").AsSelector()
-
-		assert.NotEqual(t, first, second)
-		assert.Equal(t, first, NewWithShortenedInstance(testName, "instance-1", "").AsSelector())
-	})
-
-	t.Run("long instance names are shortened to a valid label value, the app name is untouched", func(t *testing.T) {
-		labels := NewWithShortenedInstance(testName, strings.Repeat("a", 100), "")
-
-		assert.Equal(t, testName, labels.Name)
-		assert.Empty(t, validation.IsValidLabelValue(labels.Instance))
-		assert.LessOrEqual(t, len(labels.Instance), validation.LabelValueMaxLength)
-	})
-
-	t.Run("long instance names stay unique", func(t *testing.T) {
-		base := strings.Repeat("a", 100)
-		first := NewWithShortenedInstance(testName, base+"-1", "")
-		second := NewWithShortenedInstance(testName, base+"-2", "")
-
-		assert.NotEqual(t, first.Instance, second.Instance)
-		assert.NotEqual(t, first.AsSelector(), second.AsSelector())
-	})
-
-	t.Run("truncation never leaves a trailing separator", func(t *testing.T) {
-		name := strings.Repeat("a", 53) + "-" + strings.Repeat("b", 50)
-
-		labels := NewWithShortenedInstance(testName, name, "")
-
-		assert.Empty(t, validation.IsValidLabelValue(labels.Instance))
 	})
 }

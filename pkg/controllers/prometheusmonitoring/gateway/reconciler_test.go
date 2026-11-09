@@ -41,7 +41,7 @@ func newTestScopeWithDynaKube(pm *prometheusmonitoring.PrometheusMonitoring, dk 
 		Owner:     pm,
 		DynaKube:  dk,
 		Spec:      pm.Gateway(),
-		AppLabels: k8slabel.NewWithShortenedInstance(k8slabel.OTelGatewayAppName, pm.Name, ""),
+		AppLabels: k8slabel.New(k8slabel.OTelGatewayAppName, pm.Name, ""),
 	}
 }
 

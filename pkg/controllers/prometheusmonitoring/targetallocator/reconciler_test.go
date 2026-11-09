@@ -58,7 +58,7 @@ func newTestScope(pm *prometheusmonitoring.PrometheusMonitoring) *reconcileScope
 		Owner:     pm,
 		DynaKube:  &dynakube.DynaKube{Name: "dk", Namespace: "dynatrace"},
 		Spec:      pm.TargetAllocator(),
-		AppLabels: k8slabel.NewWithShortenedInstance(k8slabel.OTelTargetAllocatorAppName, pm.Name, ""),
+		AppLabels: k8slabel.New(k8slabel.OTelTargetAllocatorAppName, pm.Name, ""),
 	}
 }
 
@@ -139,7 +139,7 @@ func TestReconcileConfigMap(t *testing.T) {
 		cm := &corev1.ConfigMap{}
 		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetDeploymentName(), Namespace: pm.Namespace}, cm))
 		assert.Equal(t, "value", cm.Labels["custom"])
-		assert.Equal(t, k8slabel.NewWithShortenedInstance(k8slabel.OTelTargetAllocatorAppName, pm.Name, "").Instance, cm.Labels[k8slabel.AppInstanceLabel])
+		assert.Equal(t, k8slabel.New(k8slabel.OTelTargetAllocatorAppName, pm.Name, "").Instance, cm.Labels[k8slabel.AppInstanceLabel])
 	})
 
 	t.Run("propagate error", func(t *testing.T) {
@@ -294,7 +294,7 @@ func TestReconcileService(t *testing.T) {
 		svc := &corev1.Service{}
 		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetDeploymentName(), Namespace: pm.Namespace}, svc))
 		assert.Equal(t, "value", svc.Labels["custom"])
-		assert.Equal(t, k8slabel.NewWithShortenedInstance(k8slabel.OTelTargetAllocatorAppName, pm.Name, "").Instance, svc.Labels[k8slabel.AppInstanceLabel])
+		assert.Equal(t, k8slabel.New(k8slabel.OTelTargetAllocatorAppName, pm.Name, "").Instance, svc.Labels[k8slabel.AppInstanceLabel])
 	})
 
 	t.Run("propagate error", func(t *testing.T) {
