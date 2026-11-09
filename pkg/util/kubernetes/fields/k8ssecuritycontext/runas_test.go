@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestGetValidatedRunAsID(t *testing.T) {
@@ -28,7 +29,14 @@ func TestGetValidatedRunAsID(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.expected, GetValidatedRunAsID(t.Context(), tt.value))
+			got, err := GetValidatedRunAsID(tt.value)
+			assert.Equal(t, tt.expected, got)
+
+			if tt.value == "" {
+				require.NoError(t, err)
+			} else {
+				assert.Equal(t, tt.expected == nil, err != nil)
+			}
 		})
 	}
 }

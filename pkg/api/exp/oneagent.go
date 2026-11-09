@@ -5,6 +5,7 @@ package exp
 
 import (
 	"context"
+	"errors"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
@@ -90,8 +91,14 @@ func (ff *FeatureFlags) GetClassicOneAgentNonRoot(ctx context.Context) (user, gr
 		return 0, 0, false
 	}
 
-	parsedUser := k8ssecuritycontext.GetValidatedRunAsID(ctx, strings.TrimSpace(userRaw))
-	parsedGroup := k8ssecuritycontext.GetValidatedRunAsID(ctx, strings.TrimSpace(groupRaw))
+	parsedUser, userErr := k8ssecuritycontext.GetValidatedRunAsID(strings.TrimSpace(userRaw))
+	parsedGroup, groupErr := k8ssecuritycontext.GetValidatedRunAsID(strings.TrimSpace(groupRaw))
+
+	if err := errors.Join(userErr, groupErr); err != nil {
+		log.Error(err, "oneagent-nonroot FF present, but failed to parse, ignoring flag", "userRaw", userRaw, "groupRaw", groupRaw)
+
+		return 0, 0, false
+	}
 
 	if parsedUser == nil || parsedGroup == nil {
 		log.Info("oneagent-nonroot FF present, but failed to parse, ignoring flag", "userRaw", userRaw, "groupRaw", groupRaw)

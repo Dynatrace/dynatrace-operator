@@ -12,6 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/cmd/bootstrapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/bootstrapperconfig"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sresource"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8ssecuritycontext"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
@@ -131,11 +132,17 @@ func combineSecurityContexts(ctx context.Context, baseSecurityCtx corev1.Securit
 		baseSecurityCtx.RunAsGroup = containerSecurityCtx.RunAsGroup
 	}
 
-	if user := k8ssecuritycontext.GetValidatedRunAsID(ctx, pod.Annotations[dtwebhook.AnnotationInitContainerRunAsUser]); user != nil {
+	user, err := k8ssecuritycontext.GetValidatedRunAsID(pod.Annotations[dtwebhook.AnnotationInitContainerRunAsUser])
+	if err != nil {
+		logd.FromContext(ctx).Error(err, "invalid init container runAsUser annotation, ignoring", "annotation", dtwebhook.AnnotationInitContainerRunAsUser)
+	} else if user != nil {
 		baseSecurityCtx.RunAsUser = user
 	}
 
-	if group := k8ssecuritycontext.GetValidatedRunAsID(ctx, pod.Annotations[dtwebhook.AnnotationInitContainerRunAsGroup]); group != nil {
+	group, err := k8ssecuritycontext.GetValidatedRunAsID(pod.Annotations[dtwebhook.AnnotationInitContainerRunAsGroup])
+	if err != nil {
+		logd.FromContext(ctx).Error(err, "invalid init container runAsGroup annotation, ignoring", "annotation", dtwebhook.AnnotationInitContainerRunAsGroup)
+	} else if group != nil {
 		baseSecurityCtx.RunAsGroup = group
 	}
 
