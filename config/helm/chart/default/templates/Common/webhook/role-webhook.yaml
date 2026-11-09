@@ -28,6 +28,7 @@ rules:
       - dynatrace.com
     resources:
       - dynakubes
+      - prometheusmonitorings
     verbs:
       - get
       - list
