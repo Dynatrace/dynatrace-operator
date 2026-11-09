@@ -245,12 +245,47 @@ func TestSecretHashAnnotation(t *testing.T) {
 		// original hash and resulting hash should be different, value got updated on reconcile
 		assert.NotEqual(t, originalSecretHash, resultingSecretHash)
 	})
-	t.Run("annotation is updated when ActiveGate TLS Secret gets updated", func(t *testing.T) {
+	t.Run("annotation is updated when ActiveGate server.crt gets updated", func(t *testing.T) {
 		statefulSet := &appsv1.StatefulSet{}
 		dk := getTestDynakube()
 		dk.Spec.ActiveGate.TLSSecretName = "ag-tls"
 
-		mockK8sClient := fake.NewClient(dk, getTLSSecret(dk.ActiveGate().GetTLSSecretName(), dk.Namespace, "ag-cert", "ag-key"))
+		agTLSSecret := getTLSSecret(dk.ActiveGate().GetTLSSecretName(), dk.Namespace, "ag-cert", "ag-key")
+		agTLSSecret.Data[consts.TLSServerCrtDataName] = []byte("ag-server-cert")
+
+		mockK8sClient := fake.NewClient(dk, agTLSSecret)
+		mockK8sClient = mockTLSSecret(t, mockK8sClient, dk)
+
+		reconciler := NewReconciler(mockK8sClient, mockK8sClient)
+		err := reconciler.Reconcile(t.Context(), nil, dk)
+		require.NoError(t, err)
+
+		err = mockK8sClient.Get(t.Context(), client.ObjectKey{Name: dk.Extensions().GetExecutionControllerStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
+		require.NoError(t, err)
+
+		originalHash := statefulSet.Spec.Template.Annotations[api.AnnotationExtensionsConfigurationHash]
+
+		updatedAGTLSSecret := getTLSSecret(dk.ActiveGate().GetTLSSecretName(), dk.Namespace, "ag-cert", "ag-key")
+		updatedAGTLSSecret.Data[consts.TLSServerCrtDataName] = []byte("updated-ag-server-cert")
+		err = mockK8sClient.Update(t.Context(), updatedAGTLSSecret)
+		require.NoError(t, err)
+
+		err = reconciler.Reconcile(t.Context(), nil, dk)
+		require.NoError(t, err)
+		err = mockK8sClient.Get(t.Context(), client.ObjectKey{Name: dk.Extensions().GetExecutionControllerStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
+		require.NoError(t, err)
+
+		assert.NotEqual(t, originalHash, statefulSet.Spec.Template.Annotations[api.AnnotationExtensionsConfigurationHash])
+	})
+	t.Run("annotation is not updated when only unmounted ActiveGate TLS keys get updated", func(t *testing.T) {
+		statefulSet := &appsv1.StatefulSet{}
+		dk := getTestDynakube()
+		dk.Spec.ActiveGate.TLSSecretName = "ag-tls"
+
+		agTLSSecret := getTLSSecret(dk.ActiveGate().GetTLSSecretName(), dk.Namespace, "ag-cert", "ag-key")
+		agTLSSecret.Data[consts.TLSServerCrtDataName] = []byte("ag-server-cert")
+
+		mockK8sClient := fake.NewClient(dk, agTLSSecret)
 		mockK8sClient = mockTLSSecret(t, mockK8sClient, dk)
 
 		reconciler := NewReconciler(mockK8sClient, mockK8sClient)
@@ -263,6 +298,7 @@ func TestSecretHashAnnotation(t *testing.T) {
 		originalHash := statefulSet.Spec.Template.Annotations[api.AnnotationExtensionsConfigurationHash]
 
 		updatedAGTLSSecret := getTLSSecret(dk.ActiveGate().GetTLSSecretName(), dk.Namespace, "updated-ag-cert", "updated-ag-key")
+		updatedAGTLSSecret.Data[consts.TLSServerCrtDataName] = []byte("ag-server-cert")
 		err = mockK8sClient.Update(t.Context(), updatedAGTLSSecret)
 		require.NoError(t, err)
 
@@ -271,7 +307,7 @@ func TestSecretHashAnnotation(t *testing.T) {
 		err = mockK8sClient.Get(t.Context(), client.ObjectKey{Name: dk.Extensions().GetExecutionControllerStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
 		require.NoError(t, err)
 
-		assert.NotEqual(t, originalHash, statefulSet.Spec.Template.Annotations[api.AnnotationExtensionsConfigurationHash])
+		assert.Equal(t, originalHash, statefulSet.Spec.Template.Annotations[api.AnnotationExtensionsConfigurationHash])
 	})
 	t.Run("missing ActiveGate TLS Secret does not change the annotation", func(t *testing.T) {
 		dkWithoutTLS := getTestDynakube()
