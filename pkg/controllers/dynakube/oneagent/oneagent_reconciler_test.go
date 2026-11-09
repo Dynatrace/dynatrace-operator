@@ -864,6 +864,20 @@ func TestGetActiveGateTLSCertHash(t *testing.T) {
 		require.NoError(t, err)
 		assert.Empty(t, hash)
 	})
+
+	t.Run("routing disabled returns empty hash", func(t *testing.T) {
+		kubeMonDK := &dynakube.DynaKube{
+			Name: testDynakubeName, Namespace: testNamespace,
+			Spec: dynakube.DynaKubeSpec{
+				ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}},
+			},
+		}
+		r := &Reconciler{apiReader: fake.NewClient(newSecret(map[string][]byte{consts.TLSServerCrtDataName: []byte("cert")}))}
+
+		hash, err := r.getActiveGateTLSCertHash(t.Context(), kubeMonDK)
+		require.NoError(t, err)
+		assert.Empty(t, hash)
+	})
 }
 
 func TestGetTrustedCAsHash(t *testing.T) {

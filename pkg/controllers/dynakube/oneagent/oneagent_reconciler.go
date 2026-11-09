@@ -410,12 +410,17 @@ func (r *Reconciler) getProcessGroupConfigHash(ctx context.Context, dk *dynakube
 }
 
 func (r *Reconciler) getActiveGateTLSCertHash(ctx context.Context, dk *dynakube.DynaKube) (string, error) {
+	// the cert is only mounted into the OneAgent when it is transferred
+	if !dk.ActiveGate().HasCaCertForOA() {
+		return "", nil
+	}
+
 	tlsData, err := dk.ActiveGateTLSData(ctx, r.apiReader)
 	if err != nil && !k8serrors.IsNotFound(err) {
 		return "", err
 	}
 
-	// the OneAgent only mounts server.crt
+	// only server.crt is mounted from the ActiveGate TLS secret
 	certData := tlsData[consts.TLSServerCrtDataName]
 	if len(certData) == 0 {
 		return "", nil
