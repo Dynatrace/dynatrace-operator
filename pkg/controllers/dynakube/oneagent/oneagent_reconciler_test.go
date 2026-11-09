@@ -615,16 +615,14 @@ func TestInstanceStatus(t *testing.T) {
 		},
 	}
 
+	// use the same labels getOneagentPods selects on, so the pod is guaranteed to be found
+	podLabels := k8slabel.NewAppLabels(k8slabel.OneAgentComponentLabel, dk.Name,
+		deploymentmetadata.GetOneAgentDeploymentType(dk), dk.OneAgent().GetVersion())
+
 	pod := &corev1.Pod{
 		Name:      "test-pod-1",
 		Namespace: namespace,
-		Labels: map[string]string{
-			"app.kubernetes.io/name":          "dynatrace-operator",
-			"app.kubernetes.io/component":     "oneagent",
-			"app.kubernetes.io/created-by":    dkName,
-			"app.kubernetes.io/version":       "snapshot",
-			"component.dynatrace.com/feature": deploymentmetadata.HostMonitoringDeploymentType,
-		},
+		Labels:    podLabels.BuildLabels(),
 		Spec: corev1.PodSpec{
 			NodeName: "node-1",
 		},
@@ -646,7 +644,7 @@ func TestInstanceStatus(t *testing.T) {
 
 	err := reconciler.reconcileInstanceStatuses(t.Context(), dk)
 	require.NoError(t, err)
-	assert.NotEmpty(t, t, dk.Status.OneAgent.Instances)
+	assert.NotEmpty(t, dk.Status.OneAgent.Instances)
 	instances := dk.Status.OneAgent.Instances
 
 	err = reconciler.reconcileInstanceStatuses(t.Context(), dk)
