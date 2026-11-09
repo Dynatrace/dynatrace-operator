@@ -123,6 +123,72 @@ func TestGetOneAgentMaxUnavailable(t *testing.T) {
 	}
 }
 
+func TestOneAgentIgnoresProxyProxy(t *testing.T) {
+	type testCase struct {
+		title string
+		in    string
+		out   bool
+	}
+
+	cases := []testCase{
+		{
+			title: "default",
+			in:    "",
+			out:   false,
+		},
+		{
+			title: "overrule",
+			in:    "true",
+			out:   true,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.title, func(t *testing.T) {
+			ff := FeatureFlags{annotations: map[string]string{
+				OAProxyIgnoredKey: c.in,
+			}}
+
+			out := ff.OneAgentIgnoresProxy()
+
+			assert.Equal(t, c.out, out)
+		})
+	}
+}
+
+func TestIsOneAgentPrivileged(t *testing.T) {
+	type testCase struct {
+		title string
+		in    string
+		out   bool
+	}
+
+	cases := []testCase{
+		{
+			title: "default",
+			in:    "",
+			out:   false,
+		},
+		{
+			title: "overrule",
+			in:    "true",
+			out:   true,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.title, func(t *testing.T) {
+			ff := FeatureFlags{annotations: map[string]string{
+				OAPrivilegedKey: c.in,
+			}}
+
+			out := ff.IsOneAgentPrivileged()
+
+			assert.Equal(t, c.out, out)
+		})
+	}
+}
+
 func TestGetClassicOneAgentNonRoot(t *testing.T) {
 	cases := []struct {
 		title   string
