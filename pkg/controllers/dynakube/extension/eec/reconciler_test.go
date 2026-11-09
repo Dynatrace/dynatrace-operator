@@ -309,18 +309,35 @@ func TestSecretHashAnnotation(t *testing.T) {
 
 		assert.Equal(t, originalHash, statefulSet.Spec.Template.Annotations[api.AnnotationExtensionsConfigurationHash])
 	})
-	t.Run("missing ActiveGate TLS Secret does not change the annotation", func(t *testing.T) {
-		dkWithoutTLS := getTestDynakube()
-		dkWithoutTLS.Annotations[exp.AGTLSCertificateTransferringToOneAgentKey] = "false"
-		hashWithoutTLS := getStatefulset(t, dkWithoutTLS).Spec.Template.Annotations[api.AnnotationExtensionsConfigurationHash]
+	t.Run("missing ActiveGate TLS Secret is tolerated and annotation is updated once it is created", func(t *testing.T) {
+		statefulSet := &appsv1.StatefulSet{}
+		dk := getTestDynakube()
+		dk.Spec.ActiveGate.TLSSecretName = "ag-tls"
 
-		dkWithMissingSecret := getTestDynakube()
-		dkWithMissingSecret.Annotations[exp.AGTLSCertificateTransferringToOneAgentKey] = "false"
-		dkWithMissingSecret.Spec.ActiveGate.TLSSecretName = "ag-tls-missing"
-		hashWithMissingSecret := getStatefulset(t, dkWithMissingSecret).Spec.Template.Annotations[api.AnnotationExtensionsConfigurationHash]
+		mockK8sClient := fake.NewClient(dk)
+		mockK8sClient = mockTLSSecret(t, mockK8sClient, dk)
 
-		require.NotEmpty(t, hashWithoutTLS)
-		assert.Equal(t, hashWithoutTLS, hashWithMissingSecret)
+		reconciler := NewReconciler(mockK8sClient, mockK8sClient)
+		err := reconciler.Reconcile(t.Context(), nil, dk)
+		require.NoError(t, err)
+
+		err = mockK8sClient.Get(t.Context(), client.ObjectKey{Name: dk.Extensions().GetExecutionControllerStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
+		require.NoError(t, err)
+
+		originalHash := statefulSet.Spec.Template.Annotations[api.AnnotationExtensionsConfigurationHash]
+		require.NotEmpty(t, originalHash)
+
+		agTLSSecret := getTLSSecret(dk.ActiveGate().GetTLSSecretName(), dk.Namespace, "ag-cert", "ag-key")
+		agTLSSecret.Data[consts.TLSServerCrtDataName] = []byte("ag-server-cert")
+		err = mockK8sClient.Create(t.Context(), agTLSSecret)
+		require.NoError(t, err)
+
+		err = reconciler.Reconcile(t.Context(), nil, dk)
+		require.NoError(t, err)
+		err = mockK8sClient.Get(t.Context(), client.ObjectKey{Name: dk.Extensions().GetExecutionControllerStatefulsetName(), Namespace: dk.Namespace}, statefulSet)
+		require.NoError(t, err)
+
+		assert.NotEqual(t, originalHash, statefulSet.Spec.Template.Annotations[api.AnnotationExtensionsConfigurationHash])
 	})
 }
 
