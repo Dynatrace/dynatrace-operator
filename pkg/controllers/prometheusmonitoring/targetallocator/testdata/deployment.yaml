@@ -4,7 +4,7 @@ metadata:
   name: pm-allocator
   namespace: dynatrace
   labels:
-    app.kubernetes.io/instance: otel-allocator
+    app.kubernetes.io/instance: pm
     app.kubernetes.io/managed-by: dynatrace-operator
     app.kubernetes.io/name: opentelemetry-target-allocator
     internal.dynatrace.com/operator-version: snapshot
@@ -19,7 +19,7 @@ spec:
   replicas: 3
   selector:
     matchLabels:
-      app.kubernetes.io/instance: otel-allocator
+      app.kubernetes.io/instance: pm
       app.kubernetes.io/managed-by: dynatrace-operator
       app.kubernetes.io/name: opentelemetry-target-allocator
   strategy:
@@ -31,7 +31,7 @@ spec:
         internal.operator.dynatrace.com/allocator-config-hash: deadbeef
         custom: annotation
       labels:
-        app.kubernetes.io/instance: otel-allocator
+        app.kubernetes.io/instance: pm
         app.kubernetes.io/managed-by: dynatrace-operator
         app.kubernetes.io/name: opentelemetry-target-allocator
         custom: label

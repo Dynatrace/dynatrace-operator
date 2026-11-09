@@ -4,6 +4,8 @@
 package k8slabel
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"maps"
 	"strings"
 
@@ -39,15 +41,13 @@ const (
 	DatabaseSQLExecutorLabel    = "dynatrace-sql-extension-executor"
 	NodeControllerLabel         = "node-controller"
 	OperatorComponentLabel      = "operator"
+
+	OTelTargetAllocatorAppName = "dynatrace-target-allocator"
+	OTelScraperAppName         = "dynatrace-collector"
+	OTelGatewayAppName         = "dynatrace-gateway"
+
+	instanceHashLength = 8
 )
-
-func OTelTargetAllocator() *Labels {
-	return New("opentelemetry-target-allocator", "otel-allocator", "")
-}
-
-func OTelScraper() *Labels {
-	return New("opentelemetry-collector", "otel-scraper", "")
-}
 
 type AppMatchLabels struct {
 	Name      string
@@ -91,6 +91,25 @@ func New(appName, instanceName, appVersion string) *Labels {
 		Version:         sanitizeVersion(appVersion),
 		OperatorVersion: truncateVersion(version.Version),
 	}
+}
+
+// NewWithShortenedInstance is like New, but makes sure the instance label value is valid even if instanceName is longer than 63 characters.
+// This is needed if the instance is derived from a resource name, as those can be up to 253 characters long.
+// Longer names are truncated and suffixed with a hash of the full name, so they stay unique.
+func NewWithShortenedInstance(appName, instanceName, appVersion string) *Labels {
+	return New(appName, shortenLabelValue(instanceName), appVersion)
+}
+
+func shortenLabelValue(value string) string {
+	if len(value) <= validation.LabelValueMaxLength {
+		return value
+	}
+
+	sum := sha256.Sum256([]byte(value))
+	suffix := hex.EncodeToString(sum[:])[:instanceHashLength]
+	prefix := strings.TrimRight(value[:validation.LabelValueMaxLength-instanceHashLength-1], "-._")
+
+	return prefix + "-" + suffix
 }
 
 // NewAppLabels abstracts labels that are specific to an application managed by the operator
