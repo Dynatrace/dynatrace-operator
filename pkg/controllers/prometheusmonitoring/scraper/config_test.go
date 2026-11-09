@@ -85,7 +85,7 @@ func TestBuildScraperOTelConfig(t *testing.T) {
 	})
 }
 
-func TestSelfMonitoringTelemetry(t *testing.T) {
+func TestBuildScraperConfigDataSelfMonitoring(t *testing.T) {
 	const endpoint = "http://dk-self-monitoring:4318"
 
 	t.Run("not set without self-monitoring", func(t *testing.T) {
@@ -101,20 +101,5 @@ func TestSelfMonitoringTelemetry(t *testing.T) {
 		data := buildScraperConfigData(newTestScopeWithDynaKube(newTestPM("pm", "dynatrace"), dk))
 
 		assert.Equal(t, endpoint, data.SelfMonitoringEndpoint)
-	})
-
-	t.Run("rendered into service telemetry", func(t *testing.T) {
-		cfg, err := buildScraperOTelConfig(scraperConfigData{SelfMonitoringEndpoint: endpoint}).Marshal()
-		require.NoError(t, err)
-
-		assert.Contains(t, string(cfg), "endpoint: "+endpoint)
-		assert.Contains(t, string(cfg), "temporality_preference: delta")
-	})
-
-	t.Run("omitted from rendered config when disabled", func(t *testing.T) {
-		cfg, err := buildScraperOTelConfig(scraperConfigData{}).Marshal()
-		require.NoError(t, err)
-
-		assert.NotContains(t, string(cfg), "telemetry:")
 	})
 }

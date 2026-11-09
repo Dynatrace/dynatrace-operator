@@ -131,6 +131,22 @@ func TestReconcileConfigMap(t *testing.T) {
 		assert.Equal(t, hex.EncodeToString(sum[:]), s.ConfigMapHash)
 	})
 
+	t.Run("self-monitoring telemetry is rendered into the configmap", func(t *testing.T) {
+		pm := newTestPM("pm", "dynatrace")
+		dk := newTestDynaKube()
+		dk.Spec.SelfMonitoring = &dynakube.SelfMonitoringSpec{}
+		s := newTestScopeWithDynaKube(pm, dk)
+		c := fake.NewClient()
+		r := &Reconciler{Client: c}
+
+		require.NoError(t, r.reconcileConfigMap(t.Context(), s))
+
+		cm := &corev1.ConfigMap{}
+		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetDeploymentName(), Namespace: pm.Namespace}, cm))
+
+		helpers.AssertGolden(t, "testdata/configmap_with_self_monitoring.yaml", cm)
+	})
+
 	t.Run("merge labels", func(t *testing.T) {
 		pm := newTestPM("pm", "dynatrace")
 		s := newTestScope(pm)
