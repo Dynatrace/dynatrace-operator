@@ -299,6 +299,21 @@ func TestConfigurationHashAnnotation(t *testing.T) {
 		assert.NotEqual(t, originalHash, getHash(t, clt, dk))
 	})
 
+	t.Run("annotation does not change when only tls.key changes", func(t *testing.T) {
+		dk := getTestDynakube()
+		clt := fakeClient()
+		tlsSecret := getTLSSecret(dk)
+		require.NoError(t, clt.Create(t.Context(), tlsSecret))
+
+		originalHash := getHash(t, clt, dk)
+		require.NotEmpty(t, originalHash)
+
+		tlsSecret.Data[consts.TLSKeyDataName] = []byte("rotated-key")
+		require.NoError(t, clt.Update(t.Context(), tlsSecret))
+
+		assert.Equal(t, originalHash, getHash(t, clt, dk))
+	})
+
 	t.Run("annotation changes when trustedCAs content changes", func(t *testing.T) {
 		dk := getTestDynakube()
 		clt := fakeClient()

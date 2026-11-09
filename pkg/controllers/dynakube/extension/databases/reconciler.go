@@ -8,6 +8,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	dtimage "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
@@ -129,7 +130,8 @@ func (r *Reconciler) calculateConfigurationHash(ctx context.Context, dk *dynakub
 		return "", err
 	}
 
-	return hasher.GenerateSecureHash([]any{tlsSecret.Data, trustedCAs})
+	// only tls.crt is mounted from the EEC TLS secret
+	return hasher.GenerateSecureHash([]any{tlsSecret.Data[consts.TLSCrtDataName], trustedCAs})
 }
 
 type imageResolver struct{ *dynakube.DynaKube }
