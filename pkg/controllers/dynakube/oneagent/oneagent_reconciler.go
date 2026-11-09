@@ -415,7 +415,7 @@ func (r *Reconciler) getActiveGateTLSCertHash(ctx context.Context, dk *dynakube.
 		return "", err
 	}
 
-	// the OneAgent only mounts server.crt, so only that key should trigger a restart
+	// the OneAgent only mounts server.crt
 	certData := tlsData[consts.TLSServerCrtDataName]
 	if len(certData) == 0 {
 		return "", nil
