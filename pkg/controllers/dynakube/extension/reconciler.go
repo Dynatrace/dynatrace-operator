@@ -13,7 +13,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/tls"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -33,7 +32,6 @@ type imageAwareSubReconciler interface {
 type Reconciler struct {
 	client              client.Client
 	apiReader           client.Reader
-	timeProvider        *timeprovider.Provider
 	secrets             k8ssecret.QueryObject
 	tlsReconciler       subReconciler
 	eecReconciler       imageAwareSubReconciler
@@ -44,7 +42,6 @@ func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 	return &Reconciler{
 		client:              clt,
 		apiReader:           apiReader,
-		timeProvider:        timeprovider.New(),
 		secrets:             k8ssecret.Query(clt, apiReader),
 		tlsReconciler:       tls.NewReconciler(clt, apiReader),
 		eecReconciler:       eec.NewReconciler(clt, apiReader),
