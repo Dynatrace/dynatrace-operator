@@ -25,23 +25,20 @@ func RenameAttr(target, source string) []string {
 	}
 }
 
-// SetAttributeFromEnv emits OTTL that copies the value from the env to the attribute key
+// SetAttrFromEnv emits OTTL that copies the value from the env to the attribute key
 // if the env is defined and the key is not set.
-func SetAttributeFromEnv(attrKey, envName string) string {
+func SetAttrFromEnv(attrKey, envName string) string {
 	return fmt.Sprintf(`set(%[1]s, %[2]q) where %[1]s == nil and Len(%[2]q) > 0`,
 		attrRef(attrKey), fmt.Sprintf("${env:%s}", envName))
 }
 
+// SetAttrIfAbsent emits OTTL that copies the value from one attribute to another if the target is not defined.
+func SetAttrIfAbsent(target, source string) string {
+	return fmt.Sprintf("set(%[1]s, %[2]s) where %[1]s == nil", attrRef(target), attrRef(source))
+}
+
 func attrRef(key string) string {
 	return fmt.Sprintf("attributes[%q]", key)
-}
-
-func setIfAbsent(target, valueExpr string) string {
-	return fmt.Sprintf("set(%[1]s, %[2]s) where %[1]s == nil", attrRef(target), valueExpr)
-}
-
-func setLiteralIfAbsent(target, literal string) string {
-	return setIfAbsent(target, fmt.Sprintf("%q", literal))
 }
 
 func setLiteralIfPresentAndAbsent(target, literal, presenceKey string) string {

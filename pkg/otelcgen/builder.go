@@ -72,10 +72,6 @@ func (b *Builder) Extension(id component.ID, cfg component.Config) *Builder {
 	return b
 }
 
-func (b *Builder) MemoryLimiter(opts MemoryLimiterOpts) *Builder {
-	return b.Processor(MemoryLimiterID, MemoryLimiter(opts))
-}
-
 // Build generates a Config for the given signals from the working set of the builder.
 func (b *Builder) Build(signals ...pipeline.Signal) *Config {
 	buildCfg := &Config{

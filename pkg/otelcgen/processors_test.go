@@ -4,8 +4,6 @@
 package otelcgen
 
 import (
-	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -13,24 +11,13 @@ import (
 	"go.opentelemetry.io/collector/component"
 )
 
-// telemetryIngestProcessors returns the processors that are registered for telemetryIngest.
-func telemetryIngestProcessors(spec TelemetryIngestSpec) map[component.ID]component.Config {
-	return NewBuilder().telemetryIngestProcessors(spec).Build().Processors
-}
-
-func TestBuilderTelemetryIngestProcessors(t *testing.T) {
-	cfg := NewBuilder().telemetryIngestProcessors(TelemetryIngestSpec{}).Build()
-	c, err := cfg.Marshal()
-	require.NoError(t, err)
-
-	expectedOutput, err := os.ReadFile(filepath.Join("testdata", "processors_only.yaml"))
-	require.NoError(t, err)
-
-	assert.YAMLEq(t, string(expectedOutput), string(c))
+// enrichmentProcessors returns the processors that are registered by K8sEnrichment.
+func enrichmentProcessors() map[component.ID]component.Config {
+	return NewBuilder().K8sEnrichment(K8sEnrichmentOpts{}).Build().Processors
 }
 
 func TestK8sAttributesJSONAnnotation(t *testing.T) {
-	processors := telemetryIngestProcessors(TelemetryIngestSpec{})
+	processors := enrichmentProcessors()
 
 	k8sAttr, ok := processors[K8sAttributesAnnotationsID].(map[string]any)
 	require.True(t, ok)
@@ -66,7 +53,7 @@ func TestK8sAttributesJSONAnnotation(t *testing.T) {
 }
 
 func TestK8sAttributesFacts(t *testing.T) {
-	processors := telemetryIngestProcessors(TelemetryIngestSpec{})
+	processors := enrichmentProcessors()
 
 	k8sAttr, ok := processors[K8sAttributesFactsID].(map[string]any)
 	require.True(t, ok)

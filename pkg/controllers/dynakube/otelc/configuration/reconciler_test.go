@@ -8,8 +8,10 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -27,6 +29,7 @@ func getTestDynakube(telemetryIngestSpec *telemetryingest.Spec) *dynakube.DynaKu
 	return &dynakube.DynaKube{
 		Name:      testDynakubeName,
 		Namespace: testNamespaceName,
+		UID:       "dk-uid",
 		Spec: dynakube.DynaKubeSpec{
 			TelemetryIngest: telemetryIngestSpec,
 		},
@@ -34,43 +37,64 @@ func getTestDynakube(telemetryIngestSpec *telemetryingest.Spec) *dynakube.DynaKu
 	}
 }
 
-func TestConfigurationConfigMap(t *testing.T) {
-	t.Run("create configmap if it does not exist", func(t *testing.T) {
-		mockK8sClient := fake.NewFakeClient()
-		dk := getTestDynakube(&telemetryingest.Spec{})
-		err := NewReconciler(mockK8sClient, mockK8sClient).Reconcile(t.Context(), dk)
-		require.NoError(t, err)
-
-		configMap := &corev1.ConfigMap{}
-		err = mockK8sClient.Get(t.Context(), client.ObjectKey{Name: GetConfigMapName(dk.Name), Namespace: dk.Namespace}, configMap)
-		require.NoError(t, err)
-
-		_, ok := configMap.Data[consts.ConfigFieldName]
-		assert.True(t, ok)
-		assert.NotContains(t, configMap.Data[consts.ConfigFieldName], "resource/staticAttrs")
-
+func TestReconcile(t *testing.T) {
+	assertCondition := func(t *testing.T, dk *dynakube.DynaKube) {
 		require.Len(t, dk.Status.Conditions, 1)
 		assert.Equal(t, conditionType, dk.Status.Conditions[0].Type)
 		assert.Equal(t, k8sconditions.ConfigMapCreatedOrUpdatedReason, dk.Status.Conditions[0].Reason)
 		assert.Equal(t, metav1.ConditionTrue, dk.Status.Conditions[0].Status)
+	}
+
+	// the hash changes with every change of the config, which the golden already covers
+	removeHash := func(cm *corev1.ConfigMap) {
+		delete(cm.Annotations, hasher.AnnotationHash)
+	}
+
+	t.Run("without resource attributes", func(t *testing.T) {
+		k8sClient := fake.NewFakeClient()
+		dk := getTestDynakube(&telemetryingest.Spec{})
+		err := NewReconciler(k8sClient, k8sClient).Reconcile(t.Context(), dk)
+		require.NoError(t, err)
+
+		assertCondition(t, dk)
+
+		cm := &corev1.ConfigMap{}
+		err = k8sClient.Get(t.Context(), client.ObjectKey{Name: GetConfigMapName(dk.Name), Namespace: dk.Namespace}, cm)
+		require.NoError(t, err)
+
+		helpers.AssertGolden(t, "testdata/configmap.yaml", cm, removeHash)
 	})
 
-	t.Run("configmap contains static resource attributes processor when spec.resourceAttributes is set", func(t *testing.T) {
-		mockK8sClient := fake.NewFakeClient()
+	t.Run("with resource attributes", func(t *testing.T) {
+		k8sClient := fake.NewFakeClient()
 		dk := getTestDynakube(&telemetryingest.Spec{})
 		dk.Spec.ResourceAttributes = map[string]string{"team": "shopping-cart"}
-
-		err := NewReconciler(mockK8sClient, mockK8sClient).Reconcile(t.Context(), dk)
+		err := NewReconciler(k8sClient, k8sClient).Reconcile(t.Context(), dk)
 		require.NoError(t, err)
 
-		configMap := &corev1.ConfigMap{}
-		err = mockK8sClient.Get(t.Context(), client.ObjectKey{Name: GetConfigMapName(dk.Name), Namespace: dk.Namespace}, configMap)
+		assertCondition(t, dk)
+
+		cm := &corev1.ConfigMap{}
+		err = k8sClient.Get(t.Context(), client.ObjectKey{Name: GetConfigMapName(dk.Name), Namespace: dk.Namespace}, cm)
 		require.NoError(t, err)
 
-		configData := configMap.Data[consts.ConfigFieldName]
-		assert.Contains(t, configData, "resource/staticAttrs")
-		assert.Contains(t, configData, "key: team")
-		assert.Contains(t, configData, "value: shopping-cart")
-		assert.Contains(t, configData, "action: insert")
+		helpers.AssertGolden(t, "testdata/configmap_with_resource_attributes.yaml", cm, removeHash)
 	})
+
+	for _, protocol := range otelcgen.RegisteredProtocols {
+		t.Run("only protocol "+string(protocol), func(t *testing.T) {
+			k8sClient := fake.NewFakeClient()
+			dk := getTestDynakube(&telemetryingest.Spec{Protocols: []otelcgen.Protocol{protocol}})
+			err := NewReconciler(k8sClient, k8sClient).Reconcile(t.Context(), dk)
+			require.NoError(t, err)
+
+			assertCondition(t, dk)
+
+			cm := &corev1.ConfigMap{}
+			err = k8sClient.Get(t.Context(), client.ObjectKey{Name: GetConfigMapName(dk.Name), Namespace: dk.Namespace}, cm)
+			require.NoError(t, err)
+
+			helpers.AssertGolden(t, "testdata/configmap_protocol_"+string(protocol)+".yaml", cm, removeHash)
+		})
+	}
 }

@@ -26,18 +26,18 @@ func TestRenameAttr(t *testing.T) {
 }
 
 func TestSetAttributeFromEnv(t *testing.T) {
-	assert.Equal(t, `set(attributes["a"], "${env:b}") where attributes["a"] == nil and Len("${env:b}") > 0`, SetAttributeFromEnv("a", "b"))
+	assert.Equal(t, `set(attributes["a"], "${env:b}") where attributes["a"] == nil and Len("${env:b}") > 0`, SetAttrFromEnv("a", "b"))
 }
 
 func TestAttrRef(t *testing.T) {
 	assert.Equal(t, `attributes["k8s.pod.name"]`, attrRef("k8s.pod.name"))
 }
 
-func TestSetIfAbsent(t *testing.T) {
+func TestSetAttrIfAbsent(t *testing.T) {
 	assert.Equal(
 		t,
 		`set(attributes["k8s.cluster.uid"], attributes["a"]) where attributes["k8s.cluster.uid"] == nil`,
-		setIfAbsent("k8s.cluster.uid", attrRef("a")),
+		SetAttrIfAbsent("k8s.cluster.uid", "a"),
 	)
 }
 
@@ -46,14 +46,6 @@ func TestSetValueIfPresentAndAbsent(t *testing.T) {
 		t,
 		`set(attributes["k8s.workload.name"], attributes["k8s.statefulset.name"]) where IsString(attributes["k8s.statefulset.name"]) and attributes["k8s.workload.name"] == nil`,
 		setValueIfPresentAndAbsent("k8s.workload.name", "k8s.statefulset.name"),
-	)
-}
-
-func TestSetLiteralIfAbsent(t *testing.T) {
-	assert.Equal(
-		t,
-		`set(attributes["k8s.cluster.uid"], "${env:K8S_CLUSTER_UID}") where attributes["k8s.cluster.uid"] == nil`,
-		setLiteralIfAbsent("k8s.cluster.uid", "${env:K8S_CLUSTER_UID}"),
 	)
 }
 

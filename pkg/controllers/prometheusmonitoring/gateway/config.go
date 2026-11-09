@@ -69,7 +69,7 @@ func buildConfig(data gatewayConfigData) *otelcgen.Config {
 }
 
 // clusterNameFallback sets the cluster name from the environment for telemetry that does not carry it.
-var clusterNameFallback = otelcgen.SetAttributeFromEnv("k8s.cluster.name", "K8S_CLUSTER_NAME")
+var clusterNameFallback = otelcgen.SetAttrFromEnv("k8s.cluster.name", "K8S_CLUSTER_NAME")
 
 // prometheusLabelsToSemconv renames the attributes that Prometheus exposes with underscores to the names of the
 // semantic conventions. These only exist on scraped metrics.

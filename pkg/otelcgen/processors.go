@@ -5,27 +5,9 @@ package otelcgen
 
 import (
 	"slices"
-	"time"
 
 	"go.opentelemetry.io/collector/component"
 )
-
-// https://github.com/open-telemetry/opentelemetry-collector/blob/v0.157.0/processor/batchprocessor/config.go#L16
-type batchProcessorConfig struct {
-	// Timeout sets the time after which a batch will be sent regardless of size.
-	// When this is set to zero, batched data will be sent immediately.
-	Timeout time.Duration `mapstructure:"timeout"`
-
-	// SendBatchSize is the size of a batch which after hit, will trigger it to be sent.
-	// When this is set to zero, the batch size is ignored and data will be sent immediately
-	// subject to only send_batch_max_size.
-	SendBatchSize uint32 `mapstructure:"send_batch_size"`
-
-	// SendBatchMaxSize is the maximum size of a batch. It must be larger than SendBatchSize.
-	// Larger batches are split into smaller units.
-	// Default value is 0, that means no maximum size.
-	SendBatchMaxSize uint32 `mapstructure:"send_batch_max_size"`
-}
 
 // https://github.com/open-telemetry/opentelemetry-collector/blob/v0.157.0/internal/memorylimiter/config.go#L29
 type MemoryLimiterOpts struct {
@@ -49,6 +31,10 @@ func MemoryLimiter(opts MemoryLimiterOpts) component.Config {
 	}
 }
 
+func (b *Builder) MemoryLimiter(opts MemoryLimiterOpts) *Builder {
+	return b.Processor(MemoryLimiterID, MemoryLimiter(opts))
+}
+
 // More details, about how to configure `processors,` can be found
 // https://github.com/open-telemetry/opentelemetry-collector/blob/main/processor/batchprocessor/README.md
 var (
@@ -62,12 +48,7 @@ var (
 	K8sAttributesAnnotationsID = component.MustNewIDWithName("k8s_attributes", "annotations")
 	K8sAttributesFactsID       = component.MustNewIDWithName("k8s_attributes", "facts")
 	TransformID                = component.MustNewID("transform")
-	transformPodIP             = component.MustNewIDWithName("transform", "add-pod-ip")
 	StaticResourceAttrsID      = component.MustNewIDWithName("resource", "staticAttrs")
-	batch                      = component.MustNewType("batch")
-	batchTraces                = component.NewIDWithName(batch, "traces")
-	batchMetrics               = component.NewIDWithName(batch, "metrics")
-	batchLogs                  = component.NewIDWithName(batch, "logs")
 	MemoryLimiterID            = component.MustNewID("memory_limiter")
 	CumulativeToDeltaID        = component.MustNewID("cumulative_to_delta")
 )
@@ -123,17 +104,5 @@ func staticResourceAttributes(resourceAttributes map[string]string) map[string]a
 
 	return map[string]any{
 		"attributes": attributes,
-	}
-}
-
-func buildTransformPodIP() map[string]any {
-	return map[string]any{
-		"error_mode": "ignore",
-		"trace_statements": []map[string]any{
-			{
-				"context":    "resource",
-				"statements": []string{"set(attributes[\"k8s.pod.ip\"], attributes[\"ip\"]) where attributes[\"k8s.pod.ip\"] == nil"},
-			},
-		},
 	}
 }

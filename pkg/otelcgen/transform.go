@@ -94,15 +94,3 @@ func newTransform(signals []pipeline.Signal, groups ...map[string]any) map[strin
 
 	return cfg
 }
-
-// clusterAttributeStatements returns the statements that set the cluster identity and the dt.*
-// attributes. They are only added if the config is built with the cluster attributes enabled.
-func clusterAttributeStatements() []string {
-	return []string{
-		setLiteralIfAbsent("k8s.cluster.uid", "${env:K8S_CLUSTER_UID}"),
-		setLiteralIfAbsent("k8s.cluster.name", "${env:K8S_CLUSTER_NAME}"),
-		`set(attributes["dt.kubernetes.workload.name"], attributes["k8s.workload.name"])`,
-		`set(attributes["dt.kubernetes.workload.kind"], attributes["k8s.workload.kind"])`,
-		`set(attributes["dt.entity.kubernetes_cluster"], "${env:DT_ENTITY_KUBERNETES_CLUSTER}")`,
-	}
-}
