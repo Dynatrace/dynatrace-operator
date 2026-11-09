@@ -15,7 +15,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/tenant/optionalscope"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	"k8s.io/client-go/util/retry"
 )
@@ -28,14 +27,10 @@ var (
 // meIDConditionType is the condition type used to cache the Kubernetes Cluster Monitored Entity ID in the DynaKube status.
 const meIDConditionType = "MonitoredEntity"
 
-type Reconciler struct {
-	timeProvider *timeprovider.Provider
-}
+type Reconciler struct{}
 
 func NewReconciler() *Reconciler {
-	return &Reconciler{
-		timeProvider: timeprovider.New(),
-	}
+	return &Reconciler{}
 }
 
 // Reconcile first looks up the Kubernetes Cluster Monitored Entity ID (MEID), then creates the

@@ -16,7 +16,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
 	dtimage "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/oci/registry"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	imagemock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/image"
 	registrymock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/util/oci/registry"
 	"github.com/opencontainers/go-digest"
@@ -230,7 +229,7 @@ func Test_updater_Update(t *testing.T) {
 }
 
 func Test_updater_RequiresReconcile(t *testing.T) {
-	currentTime := timeprovider.New().Freeze()
+	currentTime := time.Now()
 
 	t.Run("initial reconcile always required", func(t *testing.T) {
 		ec := createBasicEdgeConnect(t)
@@ -255,7 +254,7 @@ func Test_updater_RequiresReconcile(t *testing.T) {
 		ec := createBasicEdgeConnect(t)
 		updater := newUpdater(fake.NewClient(), failingImageClientProvider(t), failingRegistryClientProvider(t), ec)
 
-		ec.Status.Version.LastProbeTimestamp = new(metav1.NewTime(currentTime.Now().Add(-time.Hour)))
+		ec.Status.Version.LastProbeTimestamp = new(metav1.NewTime(currentTime.Add(-time.Hour)))
 		ec.Spec.AutoUpdate = new(true)
 		ec.Status.Version.ImageID = fakeImageURI
 		ec.Status.Version.Source = status.PublicRegistryVersionSource
@@ -267,7 +266,7 @@ func Test_updater_RequiresReconcile(t *testing.T) {
 		ec := createBasicEdgeConnect(t)
 		updater := newUpdater(fake.NewClient(), failingImageClientProvider(t), failingRegistryClientProvider(t), ec)
 
-		ec.Status.Version.LastProbeTimestamp = new(metav1.NewTime(currentTime.Now().Add(-time.Hour)))
+		ec.Status.Version.LastProbeTimestamp = new(metav1.NewTime(currentTime.Add(-time.Hour)))
 		ec.Spec.AutoUpdate = new(false)
 		ec.Status.Version.ImageID = fakeImageURI
 		ec.Status.Version.Source = status.PublicRegistryVersionSource
@@ -281,7 +280,7 @@ func Test_updater_RequiresReconcile(t *testing.T) {
 
 		ec.Spec.ImageRef = types.ImageRef{Repository: "my.registry.io/custom/edgeconnect", Tag: "1.2.3"}
 		ec.Spec.AutoUpdate = new(true)
-		ec.Status.Version.LastProbeTimestamp = new(metav1.NewTime(currentTime.Now().Add(-time.Hour)))
+		ec.Status.Version.LastProbeTimestamp = new(metav1.NewTime(currentTime.Add(-time.Hour)))
 		ec.Status.Version.ImageID = ec.Image()
 		ec.Status.Version.Source = status.CustomImageVersionSource
 
