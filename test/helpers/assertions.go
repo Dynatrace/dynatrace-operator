@@ -30,5 +30,5 @@ func AssertGolden(t *testing.T, expectedPath string, obj client.Object) {
 
 	want, err := os.ReadFile(expectedPath)
 	require.NoError(t, err)
-	assert.YAMLEq(t, string(want), string(got))
+	assert.YAMLEqf(t, string(want), string(got), "EXPECT:\n%s\nACTUAL:\n%s", string(want), string(got))
 }
