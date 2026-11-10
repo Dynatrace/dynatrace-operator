@@ -72,5 +72,5 @@ func (dk *DynaKube) ActiveGateTLSData(ctx context.Context, kubeReader client.Rea
 		return tlsSecret.Data, nil
 	}
 
-	return nil, nil //nolint:nilnil
+	return map[string][]byte{}, nil
 }
