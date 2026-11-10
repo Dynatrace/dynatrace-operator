@@ -1,0 +1,147 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/instance: dk
+    app.kubernetes.io/managed-by: dynatrace-operator
+    app.kubernetes.io/name: dk-self-monitoring
+    internal.dynatrace.com/operator-version: snapshot
+  name: dk-self-monitoring
+  namespace: dynatrace
+  ownerReferences:
+  - apiVersion: dynatrace.com/v1beta6
+    blockOwnerDeletion: true
+    controller: true
+    kind: DynaKube
+    name: dk
+    uid: dk-uid
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: dk
+      app.kubernetes.io/managed-by: dynatrace-operator
+      app.kubernetes.io/name: dk-self-monitoring
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        custom: annotation
+        internal.operator.dynatrace.com/self-monitoring-config-hash: deadbeef
+      labels:
+        app.kubernetes.io/instance: dk
+        app.kubernetes.io/managed-by: dynatrace-operator
+        app.kubernetes.io/name: dk-self-monitoring
+        custom: label
+    spec:
+      automountServiceAccountToken: true
+      containers:
+      - args:
+        - --config=/conf/self-monitoring.yaml
+        - --feature-gates=foo
+        command:
+        - /dynatrace-otel-collector
+        env:
+        - name: MY_POD_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.podIP
+        - name: K8S_CLUSTER_NAME
+          value: my-k8s-cluster
+        - name: K8S_NODE_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
+        - name: K8S_POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: K8S_NAMESPACE_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        - name: K8S_POD_UID
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.uid
+        - name: GOMEMLIMIT
+          value: "471859200"
+        image: registry.example.com/otel-collector:1.2.3
+        imagePullPolicy: Always
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 13133
+            scheme: HTTP
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        name: self-monitoring
+        ports:
+        - containerPort: 4318
+          name: otlp-http
+          protocol: TCP
+        - containerPort: 13133
+          name: health
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 13133
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        resources:
+          limits:
+            memory: 500Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          privileged: false
+          readOnlyRootFilesystem: true
+          runAsGroup: 65532
+          runAsNonRoot: true
+          runAsUser: 65532
+          seccompProfile:
+            type: RuntimeDefault
+        volumeMounts:
+        - mountPath: /conf
+          name: opentelemetry-collector-configmap
+          readOnly: true
+        - mountPath: /var/lib/dynatrace/secrets/tokens
+          name: dt-token
+          readOnly: true
+      nodeSelector:
+        disk: ssd
+      priorityClassName: high-priority
+      securityContext:
+        fsGroup: 65532
+      serviceAccountName: dynatrace-self-monitoring
+      tolerations:
+      - key: k
+        operator: Exists
+      volumes:
+      - configMap:
+          defaultMode: 420
+          items:
+          - key: self-monitoring
+            path: self-monitoring.yaml
+          name: dk-self-monitoring
+        name: opentelemetry-collector-configmap
+      - name: dt-token
+        projected:
+          defaultMode: 288
+          sources:
+          - secret:
+              items:
+              - key: dataIngestToken
+                path: data-ingest-token
+              name: dk
+status: {}

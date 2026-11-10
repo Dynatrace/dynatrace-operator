@@ -31,6 +31,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/selfmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
@@ -103,6 +104,7 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, ev
 		kubemonReconciler:            kubemon.NewReconciler(kubeClient),
 		k8sEntityReconciler:          k8sentity.NewReconciler(),
 		oTelColReconciler:            otelc.NewReconciler(kubeClient, apiReader),
+		selfMonitoringReconciler:     selfmonitoring.NewReconciler(kubeClient, apiReader),
 		proxyReconciler:              proxy.NewReconciler(kubeClient, apiReader),
 		deploymentMetadataReconciler: deploymentmetadata.NewReconciler(kubeClient, apiReader, clusterID),
 		istioReconciler:              istio.NewReconciler(kubeClient, apiReader),
@@ -191,6 +193,7 @@ type Controller struct {
 	kspmReconciler               kspmReconciler
 	kubemonReconciler            kubemonReconciler
 	oTelColReconciler            oTelColReconciler
+	selfMonitoringReconciler     oTelColReconciler
 	proxyReconciler              dynakubeReconciler
 	deploymentMetadataReconciler dynakubeReconciler
 	istioReconciler              istioReconciler
@@ -386,12 +389,22 @@ func (controller *Controller) setupTokensAndClient(ctx context.Context, dk *dyna
 	return dtClient, nil
 }
 
-func (controller *Controller) reconcileComponents(ctx context.Context, dtClient *dynatrace.Client, dk *dynakube.DynaKube) error {
+func (controller *Controller) reconcileComponents(ctx context.Context, dtClient *dynatrace.Client, dk *dynakube.DynaKube) error { //nolint:revive
 	log := logd.FromContext(ctx)
 
 	var componentErrors []error
 
 	if err := controller.k8sEntityReconciler.Reconcile(ctx, dtClient.Settings, dk); err != nil {
+		componentErrors = append(componentErrors, err)
+	}
+
+	// Other components push their self-monitoring data to this collector, so it goes before them.
+	// It runs after the k8sEntityReconciler, as it needs .status.kubernetesClusterName.
+	log.Info("start reconciling self-monitoring")
+
+	if err := controller.selfMonitoringReconciler.Reconcile(ctx, dtClient.Images, dk); err != nil {
+		log.Info("could not reconcile self-monitoring")
+
 		componentErrors = append(componentErrors, err)
 	}
 

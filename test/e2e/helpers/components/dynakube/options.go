@@ -466,6 +466,20 @@ func WithExtensionsDBExecutorImageRef(t *testing.T, imageURI string) Option {
 	}
 }
 
+func WithSelfMonitoring() Option {
+	return func(dk *dynakube.DynaKube) {
+		dk.Spec.SelfMonitoring = &dynakube.SelfMonitoringSpec{}
+	}
+}
+
+func WithSelfMonitoringImage(imageURI string) Option {
+	return func(dk *dynakube.DynaKube) {
+		dk.Spec.SelfMonitoring = &dynakube.SelfMonitoringSpec{
+			Image: imageURI,
+		}
+	}
+}
+
 func applyImageRef(t *testing.T, dk *dynakube.DynaKube, imageRef *types.ImageRef, imageURI, defaultRepo string) {
 	t.Helper()
 

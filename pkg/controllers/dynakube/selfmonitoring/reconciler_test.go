@@ -1,0 +1,458 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
+package selfmonitoring
+
+import (
+	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"errors"
+	"testing"
+
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
+	dtimage "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers"
+	imagemock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/image"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
+)
+
+const (
+	testName      = "dk"
+	testNamespace = "dynatrace"
+	testImage     = "registry.example.com/otel-collector:1.2.3"
+	testObjName   = testName + "-self-monitoring"
+)
+
+func newTestDynaKube() *dynakube.DynaKube {
+	return &dynakube.DynaKube{
+		Name: testName, Namespace: testNamespace, UID: "dk-uid",
+		Spec: dynakube.DynaKubeSpec{
+			APIURL: "https://tenant.live.dynatrace.com/api",
+			SelfMonitoring: &dynakube.SelfMonitoringSpec{
+				Image: testImage,
+				Resources: corev1.ResourceRequirements{
+					Limits: corev1.ResourceList{corev1.ResourceMemory: resource.MustParse("500Mi")},
+				},
+			},
+		},
+	}
+}
+
+func newTokenSecret(withDataIngest bool) *corev1.Secret {
+	secret := &corev1.Secret{
+		Name:      testName,
+		Namespace: testNamespace,
+		Data:      map[string][]byte{token.APIKey: []byte("api-token")},
+	}
+	if withDataIngest {
+		secret.Data[token.DataIngestKey] = []byte("data-ingest-token")
+	}
+
+	return secret
+}
+
+func newTestReconciler(objs ...client.Object) (*Reconciler, client.Client) {
+	c := fake.NewClient(objs...)
+
+	return NewReconciler(c, c), c
+}
+
+func newTestScope(dk *dynakube.DynaKube) *reconcileScope {
+	return &reconcileScope{
+		DynaKube:  dk,
+		Spec:      dk.Spec.SelfMonitoring,
+		AppLabels: newAppLabels(dk),
+	}
+}
+
+func getObject[T client.Object](t *testing.T, c client.Client, obj T) T {
+	t.Helper()
+	require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: testObjName, Namespace: testNamespace}, obj))
+
+	return obj
+}
+
+func assertNotFound(t *testing.T, c client.Client, obj client.Object) {
+	t.Helper()
+
+	err := c.Get(t.Context(), client.ObjectKey{Name: testObjName, Namespace: testNamespace}, obj)
+	assert.True(t, k8serrors.IsNotFound(err), "expected %T to be absent, got %v", obj, err)
+}
+
+func TestReconcile(t *testing.T) {
+	t.Run("creates all managed objects owned by the DynaKube", func(t *testing.T) {
+		dk := newTestDynaKube()
+		r, c := newTestReconciler(newTokenSecret(true))
+
+		require.NoError(t, r.Reconcile(t.Context(), nil, dk))
+
+		for _, obj := range []client.Object{&appsv1.Deployment{}, &corev1.Service{}, &corev1.ConfigMap{}} {
+			obj = getObject(t, c, obj)
+			require.Len(t, obj.GetOwnerReferences(), 1, "%T", obj)
+			assert.Equal(t, dk.UID, obj.GetOwnerReferences()[0].UID, "%T", obj)
+		}
+
+		assert.Equal(t, testImage, dk.Status.SelfMonitoring.Image)
+
+		condition := meta.FindStatusCondition(dk.Status.Conditions, dynakube.SelfMonitoringAvailable)
+		require.NotNil(t, condition)
+		assert.Equal(t, metav1.ConditionFalse, condition.Status)
+		assert.Equal(t, status.ReasonReconciling, condition.Reason)
+	})
+
+	t.Run("service selects the collector pods", func(t *testing.T) {
+		dk := newTestDynaKube()
+		r, c := newTestReconciler(newTokenSecret(true))
+
+		require.NoError(t, r.Reconcile(t.Context(), nil, dk))
+
+		deploy := getObject(t, c, &appsv1.Deployment{})
+		svc := getObject(t, c, &corev1.Service{})
+
+		require.NotEmpty(t, svc.Spec.Selector)
+
+		podLabels := deploy.Spec.Template.Labels
+		for k, v := range svc.Spec.Selector {
+			assert.Equal(t, v, podLabels[k], "service selector %s", k)
+		}
+	})
+
+	t.Run("missing data ingest token surfaces token condition and deploys nothing", func(t *testing.T) {
+		dk := newTestDynaKube()
+		r, c := newTestReconciler(newTokenSecret(false))
+
+		require.NoError(t, r.Reconcile(t.Context(), nil, dk))
+
+		tokenCondition := meta.FindStatusCondition(dk.Status.Conditions, dynakube.TokenConditionType)
+		require.NotNil(t, tokenCondition)
+		assert.Equal(t, metav1.ConditionFalse, tokenCondition.Status)
+		assert.Equal(t, k8sconditions.DataIngestTokenMissing, tokenCondition.Reason)
+		assert.Equal(t, dataIngestTokenMissingMessage, tokenCondition.Message)
+
+		condition := meta.FindStatusCondition(dk.Status.Conditions, dynakube.SelfMonitoringAvailable)
+		require.NotNil(t, condition)
+		assert.Equal(t, status.ReasonError, condition.Reason)
+
+		assertNotFound(t, c, &appsv1.Deployment{})
+	})
+
+	t.Run("missing token secret is an error", func(t *testing.T) {
+		dk := newTestDynaKube()
+		r, _ := newTestReconciler()
+
+		require.Error(t, r.Reconcile(t.Context(), nil, dk))
+
+		condition := meta.FindStatusCondition(dk.Status.Conditions, dynakube.SelfMonitoringAvailable)
+		require.NotNil(t, condition)
+		assert.Equal(t, status.ReasonError, condition.Reason)
+	})
+
+	t.Run("resolves image from the registry when not set in the spec", func(t *testing.T) {
+		resolvedImage := "resolved:1.0"
+		dk := newTestDynaKube()
+		dk.Spec.SelfMonitoring.Image = ""
+		imgClient := imagemock.NewClient(t)
+		imgClient.EXPECT().GetComponentLatestInfo(mock.Anything, dtimage.OTelCollector, mock.Anything).Return(&dtimage.Info{URI: resolvedImage}, nil)
+		r, c := newTestReconciler(newTokenSecret(true))
+
+		require.NoError(t, r.Reconcile(t.Context(), imgClient, dk))
+
+		assert.Equal(t, resolvedImage, dk.Status.SelfMonitoring.Image)
+		assert.Equal(t, resolvedImage, getObject(t, c, &appsv1.Deployment{}).Spec.Template.Spec.Containers[0].Image)
+	})
+
+	t.Run("kube API error is propagated to the condition", func(t *testing.T) {
+		dk := newTestDynaKube()
+		boom := errors.New("boom")
+		c := fake.NewClientWithInterceptors(interceptor.Funcs{
+			Create: func(context.Context, client.WithWatch, client.Object, ...client.CreateOption) error { return boom },
+		}, newTokenSecret(true))
+
+		require.ErrorIs(t, NewReconciler(c, c).Reconcile(t.Context(), nil, dk), boom)
+
+		condition := meta.FindStatusCondition(dk.Status.Conditions, dynakube.SelfMonitoringAvailable)
+		require.NotNil(t, condition)
+		assert.Equal(t, status.ReasonError, condition.Reason)
+	})
+}
+
+func TestCleanup(t *testing.T) {
+	assertOff := func(t *testing.T, dk *dynakube.DynaKube) {
+		t.Helper()
+
+		cond := meta.FindStatusCondition(dk.Status.Conditions, dynakube.SelfMonitoringAvailable)
+		require.NotNil(t, cond)
+		assert.Equal(t, metav1.ConditionFalse, cond.Status)
+		assert.Equal(t, status.ReasonOff, cond.Reason)
+		assert.Equal(t, selfMonitoringOffMessage, cond.Message)
+	}
+
+	t.Run("only sets the off condition when never deployed", func(t *testing.T) {
+		dk := newTestDynaKube()
+		dk.Spec.SelfMonitoring = nil
+		c := fake.NewClientWithInterceptors(interceptor.Funcs{
+			Delete: func(context.Context, client.WithWatch, client.Object, ...client.DeleteOption) error {
+				t.Fatal("no delete expected")
+
+				return nil
+			},
+		})
+
+		require.NoError(t, NewReconciler(c, c).Reconcile(t.Context(), nil, dk))
+		assertOff(t, dk)
+	})
+
+	t.Run("no-op when already cleaned up", func(t *testing.T) {
+		dk := newTestDynaKube()
+		dk.Spec.SelfMonitoring = nil
+		setOffCondition(dk)
+		c := fake.NewClientWithInterceptors(interceptor.Funcs{
+			Delete: func(context.Context, client.WithWatch, client.Object, ...client.DeleteOption) error {
+				t.Fatal("no delete expected")
+
+				return nil
+			},
+		})
+
+		require.NoError(t, NewReconciler(c, c).Reconcile(t.Context(), nil, dk))
+		assertOff(t, dk)
+	})
+
+	t.Run("removes all managed objects and the status once disabled", func(t *testing.T) {
+		dk := newTestDynaKube()
+		r, c := newTestReconciler(newTokenSecret(true))
+		require.NoError(t, r.Reconcile(t.Context(), nil, dk))
+		require.NotNil(t, meta.FindStatusCondition(dk.Status.Conditions, dynakube.SelfMonitoringAvailable))
+
+		dk.Spec.SelfMonitoring = nil
+		require.NoError(t, r.Reconcile(t.Context(), nil, dk))
+
+		for _, obj := range []client.Object{&appsv1.Deployment{}, &corev1.Service{}, &corev1.ConfigMap{}} {
+			assertNotFound(t, c, obj)
+		}
+
+		assertOff(t, dk)
+		assert.Empty(t, dk.Status.SelfMonitoring.Image)
+	})
+
+	t.Run("keeps the condition when deletion fails so cleanup is retried", func(t *testing.T) {
+		dk := newTestDynaKube()
+		dk.Spec.SelfMonitoring = nil
+		meta.SetStatusCondition(&dk.Status.Conditions, metav1.Condition{Type: dynakube.SelfMonitoringAvailable, Status: metav1.ConditionTrue, Reason: status.ReasonAvailable})
+		boom := errors.New("boom")
+		c := fake.NewClientWithInterceptors(interceptor.Funcs{
+			Delete: func(context.Context, client.WithWatch, client.Object, ...client.DeleteOption) error { return boom },
+		})
+
+		require.ErrorIs(t, NewReconciler(c, c).Reconcile(t.Context(), nil, dk), boom)
+		assert.True(t, meta.IsStatusConditionTrue(dk.Status.Conditions, dynakube.SelfMonitoringAvailable))
+	})
+}
+
+func TestReconcileConfigMap(t *testing.T) {
+	t.Run("default config", func(t *testing.T) {
+		s := newTestScope(newTestDynaKube())
+		r, c := newTestReconciler()
+
+		require.NoError(t, r.reconcileConfigMap(t.Context(), s))
+
+		cm := getObject(t, c, &corev1.ConfigMap{})
+		helpers.AssertGolden(t, "testdata/configmap.yaml", cm)
+
+		sum := sha256.Sum256([]byte(cm.Data[configKey]))
+		assert.Equal(t, hex.EncodeToString(sum[:]), s.ConfigMapHash)
+	})
+
+	t.Run("trusted CAs and resource attributes", func(t *testing.T) {
+		dk := newTestDynaKube()
+		dk.Spec.TrustedCAs = "my-cas"
+		dk.Spec.ResourceAttributes = map[string]string{"team": "platform", "cost-center": "42"}
+		s := newTestScope(dk)
+		r, c := newTestReconciler()
+
+		require.NoError(t, r.reconcileConfigMap(t.Context(), s))
+
+		helpers.AssertGolden(t, "testdata/configmap_with_trusted_cas_and_resource_attributes.yaml", getObject(t, c, &corev1.ConfigMap{}))
+	})
+}
+
+func TestReconcileService(t *testing.T) {
+	t.Run("applies the spec", func(t *testing.T) {
+		r, c := newTestReconciler()
+
+		require.NoError(t, r.reconcileService(t.Context(), newTestScope(newTestDynaKube())))
+
+		helpers.AssertGolden(t, "testdata/service.yaml", getObject(t, c, &corev1.Service{}))
+	})
+}
+
+func TestReconcileDeployment(t *testing.T) {
+	t.Run("applies the spec", func(t *testing.T) {
+		dk := newTestDynaKube()
+		sm := dk.Spec.SelfMonitoring
+		sm.ImagePullPolicy = corev1.PullAlways
+		sm.Replicas = new(int32(2))
+		sm.NodeSelector = map[string]string{"disk": "ssd"}
+		sm.PriorityClassName = "high-priority"
+		sm.Tolerations = []corev1.Toleration{{Key: "k", Operator: corev1.TolerationOpExists}}
+		sm.Annotations = map[string]string{"custom": "annotation"}
+		sm.Labels = map[string]string{"custom": "label"}
+		sm.Strategy = appsv1.DeploymentStrategy{Type: appsv1.RecreateDeploymentStrategyType}
+		sm.Args = []string{"--feature-gates=foo"}
+		dk.Status.KubernetesClusterName = "my-k8s-cluster"
+		s := newTestScope(dk)
+		s.ConfigMapHash = "deadbeef"
+		r, c := newTestReconciler()
+
+		require.NoError(t, r.reconcileDeployment(t.Context(), s))
+
+		helpers.AssertGolden(t, "testdata/deployment.yaml", getObject(t, c, &appsv1.Deployment{}))
+	})
+
+	t.Run("is idempotent", func(t *testing.T) {
+		s := newTestScope(newTestDynaKube())
+		s.DynaKube.Status.SelfMonitoring.Image = testImage
+		deploy := &appsv1.Deployment{}
+
+		mutateDeployment(deploy, s)
+		first := deploy.DeepCopy()
+		mutateDeployment(deploy, s)
+
+		assert.Equal(t, first, deploy)
+	})
+
+	t.Run("keeps existing template metadata", func(t *testing.T) {
+		deploy := &appsv1.Deployment{}
+		deploy.Spec.Template.Annotations = map[string]string{"kubectl.kubernetes.io/restartedAt": "now"}
+		deploy.Spec.Template.Labels = map[string]string{"user": "label"}
+
+		s := newTestScope(newTestDynaKube())
+		s.Spec.Annotations = map[string]string{"from": "spec"}
+		s.Spec.Labels = map[string]string{"spec": "label"}
+
+		mutateDeployment(deploy, s)
+
+		assert.Equal(t, "now", deploy.Spec.Template.Annotations["kubectl.kubernetes.io/restartedAt"])
+		assert.Equal(t, "spec", deploy.Spec.Template.Annotations["from"])
+		assert.Equal(t, "label", deploy.Spec.Template.Labels["user"])
+		assert.Equal(t, "label", deploy.Spec.Template.Labels["spec"])
+	})
+}
+
+func TestBuildArgs(t *testing.T) {
+	t.Run("config flag only when no user args", func(t *testing.T) {
+		assert.Equal(t, []string{"--config=/conf/self-monitoring.yaml"}, buildArgs(newTestScope(newTestDynaKube())))
+	})
+
+	t.Run("user args are appended after the config flag", func(t *testing.T) {
+		dk := newTestDynaKube()
+		dk.Spec.SelfMonitoring.Args = []string{"--config=/custom/override.yaml"}
+
+		assert.Equal(t, []string{"--config=/conf/self-monitoring.yaml", "--config=/custom/override.yaml"}, buildArgs(newTestScope(dk)))
+	})
+}
+
+func TestBuildEnv(t *testing.T) {
+	t.Run("pod ip, cluster name and go memory limit", func(t *testing.T) {
+		dk := newTestDynaKube()
+		dk.Status.KubernetesClusterName = "my-k8s-cluster"
+
+		envs := buildEnv(newTestScope(dk))
+
+		byName := map[string]corev1.EnvVar{}
+		for _, e := range envs {
+			byName[e.Name] = e
+		}
+
+		assert.Equal(t, "status.podIP", byName["MY_POD_IP"].ValueFrom.FieldRef.FieldPath)
+		assert.Equal(t, "my-k8s-cluster", byName["K8S_CLUSTER_NAME"].Value)
+
+		for name, fieldPath := range map[string]string{
+			"K8S_NODE_NAME":      "spec.nodeName",
+			"K8S_POD_NAME":       "metadata.name",
+			"K8S_NAMESPACE_NAME": "metadata.namespace",
+			"K8S_POD_UID":        "metadata.uid",
+		} {
+			require.Contains(t, byName, name)
+			require.NotNil(t, byName[name].ValueFrom)
+			assert.Equal(t, fieldPath, byName[name].ValueFrom.FieldRef.FieldPath, name)
+			assert.Equal(t, "v1", byName[name].ValueFrom.FieldRef.APIVersion, name)
+		}
+		// 90% of the 500Mi limit
+		assert.Equal(t, "471859200", byName["GOMEMLIMIT"].Value)
+		assert.NotContains(t, byName, "HTTPS_PROXY")
+	})
+
+	t.Run("proxy from secret", func(t *testing.T) {
+		dk := newTestDynaKube()
+		dk.Spec.Proxy = &types.ValueSource{ValueFrom: "proxy-secret"}
+
+		envs := buildEnv(newTestScope(dk))
+
+		byName := map[string]corev1.EnvVar{}
+		for _, e := range envs {
+			byName[e.Name] = e
+		}
+
+		require.Contains(t, byName, "HTTPS_PROXY")
+		assert.Equal(t, "proxy-secret", byName["HTTPS_PROXY"].ValueFrom.SecretKeyRef.Name)
+		assert.Contains(t, byName["NO_PROXY"].Value, "$(KUBERNETES_SERVICE_HOST)")
+	})
+}
+
+func TestBuildVolumes(t *testing.T) {
+	t.Run("token is mounted as a directory, not via subPath", func(t *testing.T) {
+		s := newTestScope(newTestDynaKube())
+
+		volumes := buildVolumes(s)
+		mounts := buildVolumeMounts(s)
+
+		require.Len(t, volumes, 2)
+		tokenVolume := volumes[1]
+		assert.Equal(t, tokenVolumeName, tokenVolume.Name)
+		require.NotNil(t, tokenVolume.Projected)
+		assert.Equal(t, int32(288), *tokenVolume.Projected.DefaultMode)
+		assert.Equal(t, testName, tokenVolume.Projected.Sources[0].Secret.Name)
+		assert.Equal(t, []corev1.KeyToPath{{Key: token.DataIngestKey, Path: tokenFileName}}, tokenVolume.Projected.Sources[0].Secret.Items)
+
+		for _, m := range mounts {
+			assert.Empty(t, m.SubPath, m.Name)
+		}
+
+		assert.Contains(t, mounts, corev1.VolumeMount{Name: tokenVolumeName, MountPath: tokenMountPath, ReadOnly: true})
+	})
+
+	t.Run("trusted CAs and user volumes are added", func(t *testing.T) {
+		dk := newTestDynaKube()
+		dk.Spec.TrustedCAs = "my-cas"
+		userVolume := corev1.Volume{Name: "override", EmptyDir: &corev1.EmptyDirVolumeSource{}}
+		userMount := corev1.VolumeMount{Name: "override", MountPath: "/custom"}
+		dk.Spec.SelfMonitoring.Volumes = types.Volumes{{Name: userVolume.Name, EmptyDir: userVolume.EmptyDir}}
+		dk.Spec.SelfMonitoring.VolumeMounts = []corev1.VolumeMount{userMount}
+		s := newTestScope(dk)
+
+		volumes := buildVolumes(s)
+		mounts := buildVolumeMounts(s)
+
+		require.Len(t, volumes, 4)
+		assert.Equal(t, cacertsVolumeName, volumes[2].Name)
+		assert.Equal(t, userVolume, volumes[3])
+		assert.Contains(t, mounts, userMount)
+	})
+}
