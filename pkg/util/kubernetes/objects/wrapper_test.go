@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/equality"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -21,7 +22,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
 
-func TestRetryCreateOrUpate(t *testing.T) {
+func TestRetryCreateOrUpdate(t *testing.T) { //nolint:revive // cognitive-complexity
 	t.Run("create", func(t *testing.T) {
 		obj := &corev1.ConfigMap{Name: "test", Data: map[string]string{"foo": "bar"}}
 		var calls int
@@ -89,6 +90,55 @@ func TestRetryCreateOrUpate(t *testing.T) {
 
 		require.ErrorIs(t, err, expectErr)
 		require.Equal(t, 1, calls)
+	})
+
+	t.Run("recreate", func(t *testing.T) {
+		existing := &appsv1.Deployment{
+			Name: "test",
+			Spec: appsv1.DeploymentSpec{Selector: &metav1.LabelSelector{MatchLabels: map[string]string{"app": "old"}}},
+		}
+		var deletes int
+		c := fake.NewClientWithInterceptors(interceptor.Funcs{
+			Delete: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.DeleteOption) error {
+				deletes++
+
+				return client.Delete(ctx, obj, opts...)
+			},
+		}, existing)
+
+		selector := &metav1.LabelSelector{MatchLabels: map[string]string{"app": "new"}}
+		obj := &appsv1.Deployment{Name: "test"}
+		err := RetryCreateOrUpdate(t.Context(), c, obj, func() error {
+			if obj.ResourceVersion != "" && !equality.Semantic.DeepEqual(obj.Spec.Selector, selector) {
+				return ErrRecreate
+			}
+
+			obj.Spec.Selector = selector
+
+			return nil
+		})
+
+		require.NoError(t, err)
+		require.Equal(t, 1, deletes)
+
+		got := &appsv1.Deployment{}
+		require.NoError(t, c.Get(t.Context(), client.ObjectKeyFromObject(obj), got))
+		require.Equal(t, selector, got.Spec.Selector)
+	})
+
+	t.Run("recreate delete error", func(t *testing.T) {
+		existing := &appsv1.Deployment{Name: "test"}
+		expectErr := errors.New("boom")
+		c := fake.NewClientWithInterceptors(interceptor.Funcs{
+			Delete: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.DeleteOption) error {
+				return expectErr
+			},
+		}, existing)
+
+		obj := &appsv1.Deployment{Name: "test"}
+		err := RetryCreateOrUpdate(t.Context(), c, obj, func() error { return ErrRecreate })
+
+		require.ErrorIs(t, err, expectErr)
 	})
 
 	t.Run("missing scheme", func(t *testing.T) {
