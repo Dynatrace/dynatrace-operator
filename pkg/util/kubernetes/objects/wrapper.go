@@ -57,9 +57,9 @@ func RetryCreateOrUpdate(ctx context.Context, c client.Client, obj client.Object
 			return fmt.Errorf("wait for deletion: %w", waiterr)
 		}
 
-		// Create rejects a set resource version and would persist stale managed fields
+		// Create rejects a set resource version. Without clearing it the retry fails and the whole reconcile has to run again,
+		// which would also fix the recreate, but it is better to handle it in one go.
 		obj.SetResourceVersion("")
-		obj.SetManagedFields(nil)
 
 		return k8serrors.NewConflict(schema.GroupResource{Group: group, Resource: kind}, obj.GetName(), fnerr)
 	})
