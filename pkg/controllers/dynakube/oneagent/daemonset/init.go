@@ -18,7 +18,7 @@ const (
 	initContainerName = "dynatrace-operator"
 )
 
-func (b *builder) initContainerSpec() corev1.Container {
+func (b *builder) initContainerSpec(ids runAs) corev1.Container {
 	return corev1.Container{
 		Image:           os.Getenv(k8senv.DTOperatorImageEnvName),
 		ImagePullPolicy: b.dk.OneAgent().GetImagePullPolicy(),
@@ -26,7 +26,7 @@ func (b *builder) initContainerSpec() corev1.Container {
 		Env:             b.initContainerEnvVars(),
 		Args:            b.initContainerArguments(),
 		VolumeMounts:    b.initContainerVolumeMounts(),
-		SecurityContext: b.initContainerSecurityContext(),
+		SecurityContext: b.initContainerSecurityContext(ids),
 		Resources:       b.resources(),
 	}
 }
@@ -81,13 +81,13 @@ func (b *builder) initContainerVolumeMounts() []corev1.VolumeMount {
 	}
 }
 
-func (b *builder) initContainerSecurityContext() *corev1.SecurityContext {
+func (b *builder) initContainerSecurityContext(ids runAs) *corev1.SecurityContext {
 	return &corev1.SecurityContext{
 		Privileged:               new(false),
 		AllowPrivilegeEscalation: new(false),
 		RunAsNonRoot:             new(true),
-		RunAsUser:                new(userGroupID),
-		RunAsGroup:               new(userGroupID),
+		RunAsUser:                ids.user,
+		RunAsGroup:               ids.group,
 		Capabilities: &corev1.Capabilities{
 			Drop: []corev1.Capability{
 				"ALL",
