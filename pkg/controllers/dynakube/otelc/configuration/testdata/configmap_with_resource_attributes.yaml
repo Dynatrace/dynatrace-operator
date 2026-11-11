@@ -122,6 +122,9 @@ data:
                     - set(attributes["k8s.workload.kind"], "job") where IsString(attributes["k8s.job.name"]) and attributes["k8s.workload.kind"] == nil
                     - set(attributes["k8s.cluster.uid"], "${env:K8S_CLUSTER_UID}") where attributes["k8s.cluster.uid"] == nil and Len("${env:K8S_CLUSTER_UID}") > 0
                     - set(attributes["k8s.cluster.name"], "${env:K8S_CLUSTER_NAME}") where attributes["k8s.cluster.name"] == nil and Len("${env:K8S_CLUSTER_NAME}") > 0
+                    - set(attributes["dt.kubernetes.workload.name"], attributes["k8s.workload.name"])
+                    - set(attributes["dt.kubernetes.workload.kind"], attributes["k8s.workload.kind"])
+                    - set(attributes["dt.entity.kubernetes_cluster"], "${env:DT_ENTITY_KUBERNETES_CLUSTER}")
                     - delete_key(attributes, "k8s.daemonset.name")
                     - delete_key(attributes, "k8s.statefulset.name")
                     - delete_key(attributes, "k8s.deployment.name")
@@ -147,6 +150,9 @@ data:
                     - set(attributes["k8s.workload.kind"], "job") where IsString(attributes["k8s.job.name"]) and attributes["k8s.workload.kind"] == nil
                     - set(attributes["k8s.cluster.uid"], "${env:K8S_CLUSTER_UID}") where attributes["k8s.cluster.uid"] == nil and Len("${env:K8S_CLUSTER_UID}") > 0
                     - set(attributes["k8s.cluster.name"], "${env:K8S_CLUSTER_NAME}") where attributes["k8s.cluster.name"] == nil and Len("${env:K8S_CLUSTER_NAME}") > 0
+                    - set(attributes["dt.kubernetes.workload.name"], attributes["k8s.workload.name"])
+                    - set(attributes["dt.kubernetes.workload.kind"], attributes["k8s.workload.kind"])
+                    - set(attributes["dt.entity.kubernetes_cluster"], "${env:DT_ENTITY_KUBERNETES_CLUSTER}")
                     - delete_key(attributes, "k8s.daemonset.name")
                     - delete_key(attributes, "k8s.statefulset.name")
                     - delete_key(attributes, "k8s.deployment.name")
@@ -172,6 +178,9 @@ data:
                     - set(attributes["k8s.workload.kind"], "job") where IsString(attributes["k8s.job.name"]) and attributes["k8s.workload.kind"] == nil
                     - set(attributes["k8s.cluster.uid"], "${env:K8S_CLUSTER_UID}") where attributes["k8s.cluster.uid"] == nil and Len("${env:K8S_CLUSTER_UID}") > 0
                     - set(attributes["k8s.cluster.name"], "${env:K8S_CLUSTER_NAME}") where attributes["k8s.cluster.name"] == nil and Len("${env:K8S_CLUSTER_NAME}") > 0
+                    - set(attributes["dt.kubernetes.workload.name"], attributes["k8s.workload.name"])
+                    - set(attributes["dt.kubernetes.workload.kind"], attributes["k8s.workload.kind"])
+                    - set(attributes["dt.entity.kubernetes_cluster"], "${env:DT_ENTITY_KUBERNETES_CLUSTER}")
                     - delete_key(attributes, "k8s.daemonset.name")
                     - delete_key(attributes, "k8s.statefulset.name")
                     - delete_key(attributes, "k8s.deployment.name")

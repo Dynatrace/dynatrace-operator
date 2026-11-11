@@ -169,6 +169,10 @@ func (r *Reconciler) getData(dk *dynakube.DynaKube) (map[string]string, error) {
 			ResourceStatements: []string{
 				otelcgen.SetAttrFromEnv("k8s.cluster.uid", "K8S_CLUSTER_UID"),
 				otelcgen.SetAttrFromEnv("k8s.cluster.name", "K8S_CLUSTER_NAME"),
+				// TODO: decide if these should be removed
+				`set(attributes["dt.kubernetes.workload.name"], attributes["k8s.workload.name"])`,
+				`set(attributes["dt.kubernetes.workload.kind"], attributes["k8s.workload.kind"])`,
+				`set(attributes["dt.entity.kubernetes_cluster"], "${env:DT_ENTITY_KUBERNETES_CLUSTER}")`,
 			},
 		}).
 		Processor(otelcgen.CumulativeToDeltaID, otelcgen.Empty, pipeline.SignalMetrics).
