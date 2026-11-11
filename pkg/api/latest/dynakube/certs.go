@@ -5,7 +5,6 @@ package dynakube
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/pkg/errors"
@@ -24,7 +23,7 @@ func (dk *DynaKube) TrustedCAs(ctx context.Context, kubeReader client.Reader) ([
 
 		err := kubeReader.Get(ctx, client.ObjectKey{Name: configName, Namespace: dk.Namespace}, &caConfigMap)
 		if err != nil {
-			return nil, errors.WithMessage(err, fmt.Sprintf("failed to get trustedCa from %s configmap", configName))
+			return nil, errors.WithMessagef(err, "failed to get trustedCa from %s configmap", configName)
 		}
 
 		return []byte(caConfigMap.Data[TrustedCAKey]), nil
@@ -34,25 +33,20 @@ func (dk *DynaKube) TrustedCAs(ctx context.Context, kubeReader client.Reader) ([
 }
 
 func (dk *DynaKube) ActiveGateTLSCert(ctx context.Context, kubeReader client.Reader) ([]byte, error) {
-	if dk.ActiveGate().HasCaCert() {
-		secretName := dk.Spec.ActiveGate.GetTLSSecretName()
+	tlsSecretData, err := dk.ActiveGateTLSData(ctx, kubeReader)
 
-		var tlsSecret corev1.Secret
+	if err != nil {
+		return nil, err
+	}
 
-		err := kubeReader.Get(ctx, client.ObjectKey{Name: secretName, Namespace: dk.Namespace}, &tlsSecret)
-		if err != nil {
-			return nil, errors.WithMessage(err, fmt.Sprintf("failed to get activeGate tlsCert from %s secret", secretName))
-		}
+	// first check if the tls.crt key is available
+	if tlsCertKey, ok := tlsSecretData[consts.TLSCrtDataName]; ok {
+		return tlsCertKey, nil
+	}
 
-		// first check if the tls.crt key is available
-		if tlsCertKey, ok := tlsSecret.Data[consts.TLSCrtDataName]; ok {
-			return tlsCertKey, nil
-		}
-
-		// use server.crt as fallback for older secrets
-		if tlsCertKey, ok := tlsSecret.Data[consts.TLSServerCrtDataName]; ok {
-			return tlsCertKey, nil
-		}
+	// use server.crt as fallback for older secrets
+	if tlsCertKey, ok := tlsSecretData[consts.TLSServerCrtDataName]; ok {
+		return tlsCertKey, nil
 	}
 
 	return nil, nil
@@ -66,7 +60,7 @@ func (dk *DynaKube) ActiveGateTLSData(ctx context.Context, kubeReader client.Rea
 
 		err := kubeReader.Get(ctx, client.ObjectKey{Name: secretName, Namespace: dk.Namespace}, &tlsSecret)
 		if err != nil {
-			return nil, errors.WithMessage(err, fmt.Sprintf("failed to get activeGate tls data from %s secret", secretName))
+			return nil, errors.WithMessagef(err, "failed to get activeGate tls data from %s secret", secretName)
 		}
 
 		return tlsSecret.Data, nil
