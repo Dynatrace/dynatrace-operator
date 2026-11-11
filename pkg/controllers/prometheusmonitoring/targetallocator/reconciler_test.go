@@ -110,6 +110,7 @@ func TestReconcileConfigMap(t *testing.T) {
 		pm.Spec.TargetAllocator.CustomResourceNamespaceSelector = &metav1.LabelSelector{MatchLabels: map[string]string{"bar": "foo"}}
 		pm.Spec.TargetAllocator.CustomResourceSelector = &metav1.LabelSelector{MatchLabels: map[string]string{"foo": "bar"}}
 		s := newTestScope(pm)
+		s.DynaKube.Spec.SelfMonitoring = &dynakube.SelfMonitoringSpec{}
 		c := fake.NewClient()
 		r := &Reconciler{Client: c}
 
@@ -147,43 +148,6 @@ func TestReconcileConfigMap(t *testing.T) {
 		err := (&Reconciler{Client: createErrorClient(expectErr)}).reconcileConfigMap(t.Context(), newTestScope(newTestPM("pm", "dynatrace")))
 		require.ErrorIs(t, err, expectErr)
 	})
-}
-
-func TestBuildTelemetry(t *testing.T) {
-	t.Run("self-monitoring disabled", func(t *testing.T) {
-		assert.Nil(t, buildTelemetry(&dynakube.DynaKube{Name: "dk"}))
-	})
-
-	t.Run("self-monitoring enabled", func(t *testing.T) {
-		dk := &dynakube.DynaKube{
-			Name: "dk",
-			Spec: dynakube.DynaKubeSpec{SelfMonitoring: &dynakube.SelfMonitoringSpec{}},
-		}
-
-		tel := buildTelemetry(dk)
-
-		require.NotNil(t, tel)
-		assert.Equal(t, "normal", tel.Metrics.Level)
-		require.Len(t, tel.Metrics.Readers, 1)
-
-		otlp := tel.Metrics.Readers[0].Periodic.Exporter.OTLPHTTP
-		assert.Equal(t, "http://dk-self-monitoring:4318", otlp.Endpoint)
-		assert.Equal(t, "delta", otlp.TemporalityPreference)
-	})
-}
-
-func TestReconcileConfigMapTelemetry(t *testing.T) {
-	pm := newTestPM("pm", "dynatrace")
-	s := newTestScope(pm)
-	s.DynaKube.Spec.SelfMonitoring = &dynakube.SelfMonitoringSpec{}
-	c := fake.NewClient()
-
-	require.NoError(t, (&Reconciler{Client: c}).reconcileConfigMap(t.Context(), s))
-
-	cm := &corev1.ConfigMap{}
-	require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetDeploymentName(), Namespace: pm.Namespace}, cm))
-	assert.Contains(t, cm.Data[configFile], "endpoint: http://dk-self-monitoring:4318")
-	assert.Contains(t, cm.Data[configFile], "otlp_http:")
 }
 
 func TestReconcileDeployment(t *testing.T) {
