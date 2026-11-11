@@ -153,6 +153,10 @@ func buildScraperConfigData(s *reconcileScope) scraperConfigData {
 		GatewayService: s.Owner.Gateway().GetStatefulSetName() + "." + namespace,
 	}
 
+	if s.DynaKube.IsSelfMonitoringEnabled() {
+		data.SelfMonitoringEndpoint = s.DynaKube.SelfMonitoringOTLPEndpoint()
+	}
+
 	if interval := s.Spec.TargetsPollInterval; interval != nil && interval.Duration > 0 {
 		data.TargetsPollInterval = s.Spec.TargetsPollInterval.Duration.String()
 	}

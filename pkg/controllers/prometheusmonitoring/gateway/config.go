@@ -36,7 +36,7 @@ var (
 func buildGatewayOTelConfig(data gatewayConfigData) *otelcgen.Config {
 	processors, processorIDs := buildProcessorMap(data)
 
-	return &otelcgen.Config{
+	cfg := &otelcgen.Config{
 		Receivers: map[component.ID]component.Config{
 			otlpID: map[string]any{
 				"protocols": map[string]any{
@@ -71,6 +71,12 @@ func buildGatewayOTelConfig(data gatewayConfigData) *otelcgen.Config {
 			},
 		},
 	}
+
+	if data.SelfMonitoringEndpoint != "" {
+		cfg.Service.Telemetry = otelcgen.NewMetricsTelemetry(data.SelfMonitoringEndpoint)
+	}
+
+	return cfg
 }
 
 func buildProcessorMap(data gatewayConfigData) (map[component.ID]component.Config, []component.ID) {

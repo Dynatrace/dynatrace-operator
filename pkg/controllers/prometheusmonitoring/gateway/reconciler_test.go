@@ -145,6 +145,22 @@ func TestReconcileConfigMap(t *testing.T) {
 		helpers.AssertGolden(t, filepath.Join("testdata", "configmap_with_resource_attributes.yaml"), cm)
 	})
 
+	t.Run("self-monitoring telemetry is rendered into the configmap", func(t *testing.T) {
+		pm := newTestPM("pm", "dynatrace")
+		dk := &dynakube.DynaKube{Name: "dk"}
+		dk.Spec.APIURL = "https://abc12345.live.dynatrace.com/api"
+		dk.Spec.SelfMonitoring = &dynakube.SelfMonitoringSpec{}
+		s := newTestScopeWithDynaKube(pm, dk)
+		c := fake.NewClient()
+		r := &Reconciler{Client: c}
+
+		require.NoError(t, r.reconcileConfigMap(t.Context(), s))
+
+		cm := &corev1.ConfigMap{}
+		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetStatefulSetName(), Namespace: pm.Namespace}, cm))
+		helpers.AssertGolden(t, filepath.Join("testdata", "configmap_with_self_monitoring.yaml"), cm)
+	})
+
 	t.Run("changing resource attributes changes the config hash, triggering a rollout", func(t *testing.T) {
 		pm := newTestPM("pm", "dynatrace")
 		dk := &dynakube.DynaKube{}

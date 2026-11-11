@@ -195,6 +195,40 @@ func TestPublishVolume(t *testing.T) {
 	})
 }
 
+func TestAddPodInfoSymlink(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("creates symlink", func(t *testing.T) {
+		path := metadata.PathResolver{RootDir: t.TempDir()}
+		volumeCfg := getTestVolumeConfig(t)
+		pub := Publisher{path: path}
+
+		require.NoError(t, pub.addPodInfoSymlink(ctx, &volumeCfg))
+
+		podInfoDir := path.AppMountPodInfoDir(volumeCfg.DynakubeName, volumeCfg.PodNamespace, volumeCfg.PodName)
+		target, err := os.Readlink(podInfoDir)
+		require.NoError(t, err)
+		assert.Equal(t, path.AppMountForID(volumeCfg.VolumeID), target)
+	})
+
+	t.Run("replaces existing symlink (static pod name, e.g. StatefulSet)", func(t *testing.T) {
+		path := metadata.PathResolver{RootDir: t.TempDir()}
+		volumeCfg := getTestVolumeConfig(t)
+		pub := Publisher{path: path}
+
+		require.NoError(t, pub.addPodInfoSymlink(ctx, &volumeCfg))
+
+		// same pod name, new volume
+		volumeCfg.VolumeID += "-new"
+		require.NoError(t, pub.addPodInfoSymlink(ctx, &volumeCfg))
+
+		podInfoDir := path.AppMountPodInfoDir(volumeCfg.DynakubeName, volumeCfg.PodNamespace, volumeCfg.PodName)
+		target, err := os.Readlink(podInfoDir)
+		require.NoError(t, err)
+		assert.Equal(t, path.AppMountForID(volumeCfg.VolumeID), target)
+	})
+}
+
 func getTestVolumeConfig(t *testing.T) csivolumes.VolumeConfig {
 	t.Helper()
 
