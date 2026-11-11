@@ -110,6 +110,7 @@ func TestReconcileConfigMap(t *testing.T) {
 		pm.Spec.TargetAllocator.CustomResourceNamespaceSelector = &metav1.LabelSelector{MatchLabels: map[string]string{"bar": "foo"}}
 		pm.Spec.TargetAllocator.CustomResourceSelector = &metav1.LabelSelector{MatchLabels: map[string]string{"foo": "bar"}}
 		s := newTestScope(pm)
+		s.DynaKube.Spec.SelfMonitoring = &dynakube.SelfMonitoringSpec{}
 		c := fake.NewClient()
 		r := &Reconciler{Client: c}
 

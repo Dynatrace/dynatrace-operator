@@ -35,12 +35,15 @@ type scraperConfigData struct {
 
 	// TargetsPollInterval is how often the receiver re-polls the target allocator.
 	TargetsPollInterval string
+
+	// SelfMonitoringEndpoint is the OTLP/HTTP base URL the collector exports its own metrics to. Empty disables it.
+	SelfMonitoringEndpoint string
 }
 
 // buildScraperOTelConfig assembles the scraper's OTel Collector config as an
 // otelcgen.Config. The caller marshals it to YAML via cfg.Marshal().
 func buildScraperOTelConfig(data scraperConfigData) *otelcgen.Config {
-	return &otelcgen.Config{
+	cfg := &otelcgen.Config{
 		Receivers: map[component.ID]component.Config{
 			prometheusID: buildPrometheusReceiver(data),
 		},
@@ -102,6 +105,12 @@ func buildScraperOTelConfig(data scraperConfigData) *otelcgen.Config {
 			},
 		},
 	}
+
+	if data.SelfMonitoringEndpoint != "" {
+		cfg.Service.Telemetry = otelcgen.NewMetricsTelemetry(data.SelfMonitoringEndpoint)
+	}
+
+	return cfg
 }
 
 // buildPrometheusReceiver configures the Prometheus receiver in target-allocator mode:

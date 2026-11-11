@@ -150,6 +150,9 @@ type gatewayConfigData struct {
 	Endpoint           string
 	CustomCAPath       string
 	ResourceAttributes map[string]string
+
+	// SelfMonitoringEndpoint is the OTLP/HTTP base URL the collector exports its own metrics to. Empty disables it.
+	SelfMonitoringEndpoint string
 }
 
 // buildGatewayConfigData resolves the DynaKube-derived inputs to the relay.yaml template.
@@ -157,6 +160,10 @@ func buildGatewayConfigData(dk *dynakube.DynaKube) gatewayConfigData {
 	data := gatewayConfigData{
 		Endpoint:           dk.APIURL() + "/v2/otlp",
 		ResourceAttributes: dk.GetResourceAttributes(),
+	}
+
+	if dk.IsSelfMonitoringEnabled() {
+		data.SelfMonitoringEndpoint = dk.SelfMonitoringOTLPEndpoint()
 	}
 
 	if dk.Spec.TrustedCAs != "" {

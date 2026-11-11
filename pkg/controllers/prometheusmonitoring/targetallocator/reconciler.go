@@ -48,40 +48,6 @@ type Reconciler struct {
 	client.Client
 }
 
-// Config is the subset of configurations that can be configured by the operator.
-//
-// https://github.com/open-telemetry/opentelemetry-operator/blob/v0.157.0/cmd/otel-allocator/internal/config/config.go
-type Config struct {
-	ListenAddr         string                `json:"listen_addr"`
-	AllocationStrategy string                `json:"allocation_strategy"`
-	CollectorNamespace string                `json:"collector_namespace"`
-	CollectorSelector  *metav1.LabelSelector `json:"collector_selector,omitempty"`
-	FilterStrategy     string                `json:"filter_strategy"`
-	HTTPS              *HTTPSConfig          `json:"https,omitempty"`
-	PrometheusCR       ScrapeConfig          `json:"prometheus_cr"`
-}
-
-type HTTPSConfig struct {
-	Enabled         bool   `json:"enabled"`
-	ListenAddr      string `json:"listen_addr"`
-	TLSCertFilePath string `json:"tls_cert_file_path"`
-	TLSKeyFilePath  string `json:"tls_key_file_path"`
-	CAFilePath      string `json:"ca_file_path"`
-}
-
-type ScrapeConfig struct {
-	Enabled                         bool                  `json:"enabled"`
-	ScrapeInterval                  *metav1.Duration      `json:"scrape_interval"`
-	PodMonitorSelector              *metav1.LabelSelector `json:"pod_monitor_selector,omitempty"`
-	PodMonitorNamespaceSelector     *metav1.LabelSelector `json:"pod_monitor_namespace_selector,omitempty"`
-	ServiceMonitorSelector          *metav1.LabelSelector `json:"service_monitor_selector,omitempty"`
-	ServiceMonitorNamespaceSelector *metav1.LabelSelector `json:"service_monitor_namespace_selector,omitempty"`
-	ScrapeConfigSelector            *metav1.LabelSelector `json:"scrape_config_selector,omitempty"`
-	ScrapeConfigNamespaceSelector   *metav1.LabelSelector `json:"scrape_config_namespace_selector,omitempty"`
-	ProbeSelector                   *metav1.LabelSelector `json:"probe_selector,omitempty"`
-	ProbeNamespaceSelector          *metav1.LabelSelector `json:"probe_namespace_selector,omitempty"`
-}
-
 type reconcileScope struct {
 	// Required for reconcile
 	Owner         *prometheusmonitoring.PrometheusMonitoring
@@ -151,6 +117,7 @@ func (r *Reconciler) reconcileConfigMap(ctx context.Context, s *reconcileScope) 
 			ProbeSelector:                   s.Spec.CustomResourceSelector,
 			ProbeNamespaceSelector:          s.Spec.CustomResourceNamespaceSelector,
 		},
+		Telemetry: buildTelemetry(s.DynaKube),
 	}
 
 	data, err := yaml.Marshal(cfg)
