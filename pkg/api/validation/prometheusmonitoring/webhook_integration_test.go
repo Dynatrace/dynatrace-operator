@@ -5,6 +5,7 @@ package validation_test
 
 import (
 	"context"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -15,6 +16,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
+	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -92,6 +94,94 @@ func TestWebhook(t *testing.T) {
 		require.NoError(t, clt.Update(t.Context(), pm))
 		assert.Empty(t, recorder.get())
 	})
+
+	t.Run("multiple PrometheusMonitorings in one namespace", func(t *testing.T) {
+		// Prometheus CRDs were installed by the previous subtest.
+		t.Run("distinct selectors do not warn", func(t *testing.T) {
+			ns := newTestNamespace(t, clt, "distinct-selectors")
+
+			for _, name := range []string{"pm-one", "pm-two"} {
+				selector := &metav1.LabelSelector{MatchLabels: map[string]string{"pm": name}}
+
+				recorder.reset()
+				integrationtests.CreateKubernetesObject(t, clt, newTestPrometheusMonitoringInNamespace(name, ns, selector))
+				assert.Empty(t, recorder.get())
+			}
+		})
+
+		t.Run("same selector warns about overlap", func(t *testing.T) {
+			ns := newTestNamespace(t, clt, "same-selector")
+			selector := &metav1.LabelSelector{MatchLabels: map[string]string{"team": "shared"}}
+
+			recorder.reset()
+			integrationtests.CreateKubernetesObject(t, clt, newTestPrometheusMonitoringInNamespace("pm-one", ns, selector))
+			assert.Empty(t, recorder.get())
+
+			recorder.reset()
+			integrationtests.CreateKubernetesObject(t, clt, newTestPrometheusMonitoringInNamespace("pm-two", ns, selector.DeepCopy()))
+
+			warnings := recorder.get()
+			require.Len(t, warnings, 1)
+			assert.Contains(t, warnings[0], "pm-one")
+			assert.Contains(t, warnings[0], "customResourceSelector")
+		})
+
+		t.Run("same selector in different namespaces does not warn", func(t *testing.T) {
+			selector := &metav1.LabelSelector{MatchLabels: map[string]string{"team": "shared"}}
+
+			for _, nsName := range []string{"other-ns-a", "other-ns-b"} {
+				ns := newTestNamespace(t, clt, nsName)
+
+				recorder.reset()
+				integrationtests.CreateKubernetesObject(t, clt, newTestPrometheusMonitoringInNamespace("pm", ns, selector.DeepCopy()))
+				assert.Empty(t, recorder.get())
+			}
+		})
+	})
+
+	t.Run("invalid names are rejected", func(t *testing.T) {
+		ns := newTestNamespace(t, clt, "invalid-names")
+
+		tests := []struct {
+			name    string
+			pmName  string
+			message string
+		}{
+			{name: "too long", pmName: "a" + strings.Repeat("b", 44), message: "length limit"},
+			{name: "starts with digit", pmName: "1-starts-with-digit", message: "DNS-1035"},
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				pm := newTestPrometheusMonitoringInNamespace(tt.pmName, ns, nil)
+
+				err := clt.Create(t.Context(), pm)
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), tt.message)
+			})
+		}
+
+		t.Run("max length is accepted", func(t *testing.T) {
+			recorder.reset()
+			integrationtests.CreateKubernetesObject(t, clt, newTestPrometheusMonitoringInNamespace("a"+strings.Repeat("b", 43), ns, nil))
+		})
+	})
+}
+
+func newTestNamespace(t *testing.T, clt client.Client, name string) string {
+	t.Helper()
+
+	integrationtests.CreateKubernetesObject(t, clt, &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: name}})
+
+	return name
+}
+
+func newTestPrometheusMonitoringInNamespace(name, namespace string, selector *metav1.LabelSelector) *prometheusmonitoring.PrometheusMonitoring {
+	pm := newTestPrometheusMonitoring(name)
+	pm.Namespace = namespace
+	pm.Spec.TargetAllocator.CustomResourceSelector = selector
+
+	return pm
 }
 
 func newTestPrometheusMonitoring(name string) *prometheusmonitoring.PrometheusMonitoring {
