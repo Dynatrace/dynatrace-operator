@@ -7,6 +7,7 @@ package standard
 
 import (
 	"context"
+	"os"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/bootstrapper"
@@ -56,7 +57,7 @@ func TestMain(m *testing.M) {
 		return ctx, nil
 	})
 
-	testEnv.Run(m)
+	os.Exit(testEnv.Run(m))
 }
 
 func TestStandard_cloudnative(t *testing.T) {

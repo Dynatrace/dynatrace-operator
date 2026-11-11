@@ -11,8 +11,8 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/prometheusmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
@@ -114,7 +114,7 @@ func TestReconcile(t *testing.T) {
 		c := fake.NewClient(pm, dk, secret)
 		r := NewReconciler(c)
 		expectErr := errors.New("boom")
-		r.newDynatraceClient = func(context.Context, client.Reader, *dynakube.DynaKube, string, string, string, time.Duration) (*dynatrace.Client, error) {
+		r.newDynatraceClient = func(context.Context, client.Reader, *dynakube.DynaKube, string, string, time.Duration) (*dynatrace.Client, error) {
 			return nil, expectErr
 		}
 
@@ -137,7 +137,7 @@ func TestReconcile(t *testing.T) {
 		m.EXPECT().Reconcile(t.Context(), pm, dk, image.Client(nil)).Return(expectErr).Once()
 		c := fake.NewClient(pm, dk, secret)
 		r := NewReconciler(c)
-		r.newDynatraceClient = func(context.Context, client.Reader, *dynakube.DynaKube, string, string, string, time.Duration) (*dynatrace.Client, error) {
+		r.newDynatraceClient = func(context.Context, client.Reader, *dynakube.DynaKube, string, string, time.Duration) (*dynatrace.Client, error) {
 			return &dynatrace.Client{}, nil
 		}
 		r.gateway = gm
@@ -164,7 +164,7 @@ func TestReconcile(t *testing.T) {
 		sm.EXPECT().Reconcile(t.Context(), pm, dk, image.Client(nil)).Return(expectErr).Once()
 		c := fake.NewClient(pm, dk, secret)
 		r := NewReconciler(c)
-		r.newDynatraceClient = func(context.Context, client.Reader, *dynakube.DynaKube, string, string, string, time.Duration) (*dynatrace.Client, error) {
+		r.newDynatraceClient = func(context.Context, client.Reader, *dynakube.DynaKube, string, string, time.Duration) (*dynatrace.Client, error) {
 			return &dynatrace.Client{}, nil
 		}
 		r.gateway = gm
@@ -226,18 +226,18 @@ func Test_setPhase(t *testing.T) {
 func Test_dynaKubeProxyChanged(t *testing.T) {
 	tests := []struct {
 		name     string
-		oldProxy *value.Source
-		newProxy *value.Source
+		oldProxy *types.ValueSource
+		newProxy *types.ValueSource
 		expect   bool
 	}{
 		{"both nil", nil, nil, false},
-		{"old nil", nil, &value.Source{Value: "test"}, true},
-		{"new nil", &value.Source{Value: "test"}, nil, true},
-		{"value equal", &value.Source{Value: "test"}, &value.Source{Value: "test"}, false},
-		{"value diff", &value.Source{Value: "foo"}, &value.Source{Value: "bar"}, true},
-		{"valueFrom equal", &value.Source{ValueFrom: "test"}, &value.Source{ValueFrom: "test"}, false},
-		{"valueFrom diff", &value.Source{ValueFrom: "foo"}, &value.Source{ValueFrom: "bar"}, true},
-		{"field diff", &value.Source{Value: "test"}, &value.Source{ValueFrom: "test"}, true},
+		{"old nil", nil, &types.ValueSource{Value: "test"}, true},
+		{"new nil", &types.ValueSource{Value: "test"}, nil, true},
+		{"value equal", &types.ValueSource{Value: "test"}, &types.ValueSource{Value: "test"}, false},
+		{"value diff", &types.ValueSource{Value: "foo"}, &types.ValueSource{Value: "bar"}, true},
+		{"valueFrom equal", &types.ValueSource{ValueFrom: "test"}, &types.ValueSource{ValueFrom: "test"}, false},
+		{"valueFrom diff", &types.ValueSource{ValueFrom: "foo"}, &types.ValueSource{ValueFrom: "bar"}, true},
+		{"field diff", &types.ValueSource{Value: "test"}, &types.ValueSource{ValueFrom: "test"}, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

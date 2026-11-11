@@ -420,7 +420,7 @@ func (r *Reconciler) delete(ctx context.Context, dk *dynakube.DynaKube) error {
 	return r.sts.Delete(ctx, statefulSet)
 }
 
-func (r *Reconciler) resolveImage(ctx context.Context, dk *dynakube.DynaKube, imageClient image.Client, versionClient version.Client) (string, error) {
+func (r *Reconciler) resolveImage(ctx context.Context, dk *dynakube.DynaKube, imageClient image.Client, versionClient version.Client) error {
 	var (
 		imageURI string
 		err      error
@@ -434,7 +434,7 @@ func (r *Reconciler) resolveImage(ctx context.Context, dk *dynakube.DynaKube, im
 
 		imageInfo, err = imageClient.GetComponentLatestInfo(ctx, image.ActiveGate, dk.PublicRegistryOverride())
 		if err != nil {
-			return "", err
+			return err
 		}
 
 		imageURI = imageInfo.URI
@@ -443,7 +443,7 @@ func (r *Reconciler) resolveImage(ctx context.Context, dk *dynakube.DynaKube, im
 
 		latestVersion, err = versionClient.GetLatestActiveGateVersion(ctx, installer.OSUnix)
 		if err != nil {
-			return "", err
+			return err
 		}
 
 		imageURI = dk.KubernetesMonitoring().GetDefaultImage(latestVersion)
@@ -451,11 +451,11 @@ func (r *Reconciler) resolveImage(ctx context.Context, dk *dynakube.DynaKube, im
 
 	dk.KubernetesMonitoring().ResolvedImage = imageURI
 
-	return imageURI, nil
+	return nil
 }
 
 func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.DynaKube, imageClient image.Client, versionClient version.Client) (*appsv1.StatefulSet, error) {
-	imageURI, err := r.resolveImage(ctx, dk, imageClient, versionClient)
+	err := r.resolveImage(ctx, dk, imageClient, versionClient)
 	if err != nil {
 		return nil, err
 	}
@@ -500,7 +500,7 @@ func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.D
 
 	initContainer := corev1.Container{
 		Name:            agconsts.InitContainerName,
-		Image:           imageURI,
+		Image:           dk.KubernetesMonitoring().ResolvedImage,
 		ImagePullPolicy: dk.KubernetesMonitoring().ImagePullPolicy,
 		WorkingDir:      agconsts.InitCertLoaderWorkDirMountPath,
 		Command:         []string{"/bin/bash"},
@@ -512,7 +512,7 @@ func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.D
 
 	container := corev1.Container{
 		Name:            ContainerName,
-		Image:           imageURI,
+		Image:           dk.KubernetesMonitoring().ResolvedImage,
 		ImagePullPolicy: dk.KubernetesMonitoring().ImagePullPolicy,
 		Resources:       dk.KubernetesMonitoring().Resources,
 		Env:             buildEnvs(dk),

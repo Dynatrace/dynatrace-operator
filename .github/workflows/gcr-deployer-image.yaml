@@ -16,7 +16,7 @@ jobs:
   prepare:
     if: github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'csv-') && startsWith(github.event.pull_request.base.ref, 'release-')
     name: Prepare properties
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -35,7 +35,7 @@ jobs:
       if: github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'csv-') && startsWith(github.event.pull_request.base.ref, 'release-')
       name: Build GCR deployer image
       environment: Release
-      runs-on: ubuntu-24.04
+      runs-on: ubuntu-26.04
       needs: [ prepare ]
       env:
         IMAGE: gcr.io/${{ secrets.GCR_REPOSITORY_DEPLOYER }}:${{ needs.prepare.outputs.version }}
@@ -46,7 +46,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Login to Docker Hub
-        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
         with:
           registry: gcr.io
           username: ${{ secrets.GCR_USERNAME }}

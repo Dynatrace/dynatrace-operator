@@ -9,7 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -24,7 +24,7 @@ func TestGetContainer(t *testing.T) {
 
 	t.Run("get main container", func(t *testing.T) {
 		dk := &dynakube.DynaKube{}
-		mainContainer := getContainer(dk, tenantUUID, "")
+		mainContainer := getContainer(dk, tenantUUID, "image")
 
 		require.NotEmpty(t, mainContainer)
 
@@ -44,7 +44,7 @@ func TestGetContainer(t *testing.T) {
 		expectedTag := "my-test-tag"
 		dk := &dynakube.DynaKube{}
 		dk.Spec.Templates.LogMonitoring = &logmonitoring.TemplateSpec{
-			ImageRef: image.Ref{
+			ImageRef: types.ImageRef{
 				Repository: expectedRepo,
 				Tag:        expectedTag,
 			},
@@ -91,7 +91,7 @@ func TestGetInitContainer(t *testing.T) {
 		dk.Status.KubernetesClusterMEID = "test-me-id"
 		dk.Status.KubernetesClusterName = "test-cluster-name"
 
-		initContainer := getInitContainer(dk, tenantUUID, "")
+		initContainer := getInitContainer(dk, tenantUUID, "image")
 
 		require.NotEmpty(t, initContainer)
 
@@ -113,7 +113,7 @@ func TestGetInitContainer(t *testing.T) {
 		expectedTag := "my-test-tag"
 		dk := &dynakube.DynaKube{}
 		dk.Spec.Templates.LogMonitoring = &logmonitoring.TemplateSpec{
-			ImageRef: image.Ref{
+			ImageRef: types.ImageRef{
 				Repository: expectedRepo,
 				Tag:        expectedTag,
 			},

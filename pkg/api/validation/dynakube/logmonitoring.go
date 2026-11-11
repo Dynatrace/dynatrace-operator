@@ -38,7 +38,7 @@ func missingLogMonitoringImage(ctx context.Context, dv *Validator, dk *dynakube.
 		return ""
 	}
 
-	if dk.LogMonitoring().TemplateSpec == nil || !dk.LogMonitoring().ImageRef.HasImage() {
+	if dk.LogMonitoring().TemplateSpec == nil || dk.LogMonitoring().ImageRef.String() == "" {
 		return errorLogMonitoringMissingImage
 	}
 

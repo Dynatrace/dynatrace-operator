@@ -5,10 +5,8 @@ package databases
 
 import (
 	"context"
-	"errors"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	dtimage "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
@@ -58,19 +56,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, imageClient dtimage.Client, 
 		return nil
 	}
 
-	// templates section takes precedence over public registry
-	var imageURI string
-
-	templateImageRef := dk.Spec.Templates.SQLExtensionExecutor.ImageRef
-	if templateImageRef.HasImage() {
-		imageURI = templateImageRef.String()
-	} else {
-		var err error
-
-		imageURI, err = resolveImageURI(ctx, imageClient, dk)
-		if err != nil {
-			return err
-		}
+	if err := registry.ResolveImage(ctx, imageResolver{dk}, imageClient, dtimage.DBExecutor, dtimage.DBExecutorOldName); err != nil {
+		return err
 	}
 
 	query := k8sdeployment.Query(r.client, r.apiReader)
@@ -95,7 +82,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, imageClient dtimage.Client, 
 			k8sdeployment.SetImagePullSecrets(dk.CustomPullSecretReferences()),
 			k8sdeployment.SetServiceAccount(buildServiceAccountName(dbSpec)),
 			k8sdeployment.SetSecurityContext(buildPodSecurityContext()),
-			k8sdeployment.SetContainer(buildContainer(dk, dbSpec, imageURI)),
+			k8sdeployment.SetContainer(buildContainer(dk, dbSpec, dk.Status.SQLExtensionExecutor.ResolvedImage)),
 			k8sdeployment.SetVolumes(buildVolumes(dk, dbSpec)),
 		)
 		if err != nil {
@@ -122,20 +109,12 @@ func (r *Reconciler) Reconcile(ctx context.Context, imageClient dtimage.Client, 
 	return nil
 }
 
-func resolveImageURI(ctx context.Context, imageClient dtimage.Client, dk *dynakube.DynaKube) (string, error) {
-	ctx, log := logd.NewFromContext(ctx, "resolveImageURI")
-	imageURI, err := registry.ResolveImage(ctx, imageClient, dk.PublicRegistryOverride(), dtimage.DBExecutor)
+type imageResolver struct{ *dynakube.DynaKube }
 
-	// fallback to old image name for backward compatibility if we can't resolve the image URI by new component name.
-	// TODO: remove this fallback in a future release
-	if apiErr := new(core.HTTPError); err != nil && !errors.As(err, &apiErr) {
-		imageURI, err = registry.ResolveImage(ctx, imageClient, dk.PublicRegistryOverride(), dtimage.DBExecutorOldName)
-		if err != nil {
-			return "", err
-		}
+func (r imageResolver) GetImage() string {
+	return r.Spec.Templates.SQLExtensionExecutor.ImageRef.String()
+}
 
-		log.Debug("using old image name for backward compatibility", "imageURI", imageURI)
-	}
-
-	return imageURI, err
+func (r imageResolver) SetImage(imageURI string) {
+	r.Status.SQLExtensionExecutor.ResolvedImage = imageURI
 }

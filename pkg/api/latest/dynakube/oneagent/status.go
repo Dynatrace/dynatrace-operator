@@ -4,8 +4,8 @@
 package oneagent
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	containerv1 "github.com/google/go-containerregistry/pkg/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -29,7 +29,7 @@ type Status struct {
 
 	// Information about OneAgent's connections
 	// +kubebuilder:validation:Optional
-	ConnectionInfo communication.ConnectionInfo `json:"connectionInfoStatus,omitzero"` // Left the "Status" suffix for compatibility
+	ConnectionInfo types.ConnectionInfo `json:"connectionInfoStatus,omitzero"` // Left the "Status" suffix for compatibility
 }
 
 // IsZero reports whether every field is zero. It is required for the `omitzero`
@@ -41,7 +41,7 @@ func (s *Status) IsZero() bool {
 		len(s.Instances) == 0 &&
 		s.LastInstanceStatusUpdate == nil &&
 		s.Healthcheck == nil &&
-		s.ConnectionInfo == communication.ConnectionInfo{}
+		s.ConnectionInfo == types.ConnectionInfo{}
 }
 
 // +kubebuilder:object:generate=true

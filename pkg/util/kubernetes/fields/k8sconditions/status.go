@@ -11,6 +11,9 @@ import (
 const (
 	StatusUpdatedReason  = "StatusUpdated"
 	StatusOutdatedReason = "StatusOutdated"
+
+	// MissingMEIDMessage is used by conditions that can't proceed without a Kubernetes cluster MEID.
+	MissingMEIDMessage = "no KubernetesMEID found"
 )
 
 func SetStatusUpdated(conditions *[]metav1.Condition, conditionType, msg string) {

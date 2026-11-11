@@ -25,7 +25,6 @@ import (
 )
 
 const (
-	testPaasToken     = "test-paas-token"
 	testAPIToken      = "test-api-token"
 	testPlatformToken = dttoken.PlatformPrefix + "test-platform-token"
 	testName          = "test-name"

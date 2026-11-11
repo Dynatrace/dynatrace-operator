@@ -14,7 +14,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sdeployment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/consts"
-	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/operator"
 	k8sobject "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects"
@@ -22,7 +21,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
 	appsv1 "k8s.io/api/apps/v1"
 	"sigs.k8s.io/e2e-framework/pkg/features"
-	"sigs.k8s.io/e2e-framework/third_party/helm"
 )
 
 const (
@@ -33,14 +31,18 @@ const (
 
 func Feature(t *testing.T) features.Feature {
 	builder := features.New("lifecycle")
-	if os.Getenv("OLM") == "true" {
-		t.Skip("Skipping Prometheus tests with OLM installation")
+
+	// skipping if deployed via manifests due to --set prometheus.installCRDs=true
+	// which can break if ran againsts OCP, as OCP has those CRDs builtin
+	if os.Getenv("MANIFESTS") == "true" {
+		t.Skip("Skipping Prometheus tests with manifests installation, helm options are not supported")
 	}
 
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
 	dk := dynakube.New(
 		dynakube.WithAPIURL(secretConfig.APIURL),
+		dynakube.WithSelfMonitoringImage(dynakube.GetLatestOTelCollectorImageTagURI(t)),
 	)
 
 	pm := &pmapi.PrometheusMonitoring{
@@ -60,8 +62,6 @@ func Feature(t *testing.T) features.Feature {
 		},
 	}
 
-	enablePrometheus(builder)
-
 	dynakube.Install(builder, secretConfig, dk)
 
 	builder.Assess("created PrometheusMonitoring", k8sobject.Create(pm))
@@ -69,6 +69,8 @@ func Feature(t *testing.T) features.Feature {
 	builder.Assess("gateway is ready", k8sobject.Expect(pm.Gateway().GetStatefulSetName(), pm.Namespace, k8sstatefulset.IsRolloutComplete))
 	builder.Assess("scraper is ready", k8sobject.Expect(pm.Scraper().GetDeploymentName(), pm.Namespace, k8sdeployment.IsRolloutComplete))
 	builder.Assess("target allocator is ready", k8sobject.Expect(pm.TargetAllocator().GetDeploymentName(), pm.Namespace, k8sdeployment.IsRolloutComplete))
+
+	builder.Assess("self-monitoring collector is ready", k8sobject.Expect(dk.SelfMonitoringName(), dk.Namespace, k8sdeployment.IsRolloutComplete))
 
 	var previousTargetAllocatorImage, previousScraperImage, previousGatewayImage string
 
@@ -101,15 +103,16 @@ func Feature(t *testing.T) features.Feature {
 	// Ensure the object gets cleaned up even if a previous step failed
 	builder.Teardown(k8sobject.Delete(pm))
 
-	disablePrometheus(builder)
-
 	return builder.Feature()
 }
 
 func PublicRegistry(t *testing.T) features.Feature {
 	builder := features.New("public-registry")
-	if os.Getenv("OLM") == "true" {
-		t.Skip("Skipping Prometheus tests with OLM installation")
+
+	// skipping if deployed via manifests due to --set prometheus.installCRDs=true
+	// which can break if ran againsts OCP, as OCP has those CRDs builtin
+	if os.Getenv("MANIFESTS") == "true" {
+		t.Skip("Skipping Prometheus tests with manifests installation, helm options are not supported")
 	}
 	builder.Assess("devregistry pull secret exists", k8sobject.Expect(consts.DevRegistryPullSecretName, operator.DefaultNamespace, k8sobject.SecretExists))
 
@@ -117,6 +120,7 @@ func PublicRegistry(t *testing.T) features.Feature {
 
 	dk := dynakube.New(
 		dynakube.WithAPIURL(secretConfig.APIURL),
+		dynakube.WithSelfMonitoring(),
 		dynakube.WithCustomPullSecret(consts.DevRegistryPullSecretName),
 	)
 
@@ -128,8 +132,6 @@ func PublicRegistry(t *testing.T) features.Feature {
 		},
 	}
 
-	enablePrometheus(builder)
-
 	dynakube.Install(builder, secretConfig, dk)
 
 	builder.Assess("created PrometheusMonitoring", k8sobject.Create(pm))
@@ -138,9 +140,9 @@ func PublicRegistry(t *testing.T) features.Feature {
 	builder.Assess("scraper is ready", k8sobject.Expect(pm.Scraper().GetDeploymentName(), pm.Namespace, k8sdeployment.IsRolloutComplete))
 	builder.Assess("target allocator is ready", k8sobject.Expect(pm.TargetAllocator().GetDeploymentName(), pm.Namespace, k8sdeployment.IsRolloutComplete))
 
-	builder.Teardown(k8sobject.Delete(pm))
+	builder.Assess("self-monitoring collector is ready", k8sobject.Expect(dk.SelfMonitoringName(), dk.Namespace, k8sdeployment.IsRolloutComplete))
 
-	disablePrometheus(builder)
+	builder.Teardown(k8sobject.Delete(pm))
 
 	return builder.Feature()
 }
@@ -161,23 +163,4 @@ func waitForPhase(pm *pmapi.PrometheusMonitoring, expectedPhase status.Deploymen
 	return k8sobject.Eventually(pm.Name, pm.Namespace, func(pm *pmapi.PrometheusMonitoring) bool {
 		return pm.Status.Phase == expectedPhase
 	})
-}
-
-// TODO: remove this when prometheus is no longer experimental
-func enablePrometheus(builder *features.FeatureBuilder) {
-	builder.WithSetup("enable prometheus feature", helpers.ToFeatureFunc(operator.InstallLocal(false, helm.WithArgs(
-		"--set", "experimental.enablePrometheus=true",
-		"--set", "prometheus.installCRDs=true",
-		// Enable helm to overwrite pre-installed CRDs
-		"--take-ownership",
-		"--force-conflicts",
-	)), true))
-}
-
-// TODO: remove this when prometheus is no longer experimental
-func disablePrometheus(builder *features.FeatureBuilder) {
-	builder.WithTeardown("disable prometheus feature", helpers.ToFeatureFunc(operator.InstallLocal(false, helm.WithArgs(
-		"--set", "experimental.enablePrometheus=false",
-		"--set", "prometheus.installCRDs=false",
-	)), true))
 }

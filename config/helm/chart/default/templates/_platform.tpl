@@ -35,8 +35,15 @@ Override with .Values.rbac.kubeletFineGrainedAuthz: true/false
         {{- if .Values.rbac.kubeletFineGrainedAuthz -}}
             {{- "true" -}}
         {{- end -}}
-    {{- else if semverCompare ">=1.36.0" .Capabilities.KubeVersion.Version -}}
-        {{- "true" -}}
+    {{- else -}}
+        {{- $kubeVersion := semver .Capabilities.KubeVersion.Version -}}
+        {{- /* Only accept release versions (e.g. v1.36.0) or GKE versions (e.g. v1.36.1-gke.1495002) */ -}}
+        {{- if or (not $kubeVersion.Prerelease) (hasPrefix "gke." $kubeVersion.Prerelease) -}}
+            {{- $coreVersion := printf "%d.%d.%d" $kubeVersion.Major $kubeVersion.Minor $kubeVersion.Patch -}}
+            {{- if semverCompare ">=1.36.0" $coreVersion -}}
+                {{- "true" -}}
+            {{- end -}}
+        {{- end -}}
     {{- end -}}
 {{- end -}}
 

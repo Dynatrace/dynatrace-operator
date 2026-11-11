@@ -9,7 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	agconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
@@ -40,7 +40,7 @@ func TestTelemetryIngestProtocols(t *testing.T) {
 					},
 					Templates: dynakube.TemplatesSpec{
 						OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{
-							ImageRef: image.Ref{
+							ImageRef: types.ImageRef{
 								Repository: "test-repo",
 								Tag:        "test-tag",
 							},
@@ -61,7 +61,7 @@ func TestTelemetryIngestProtocols(t *testing.T) {
 					},
 					Templates: dynakube.TemplatesSpec{
 						OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{
-							ImageRef: image.Ref{
+							ImageRef: types.ImageRef{
 								Repository: "test-repo",
 								Tag:        "test-tag",
 							},
@@ -117,7 +117,7 @@ func TestTelemetryIngestProtocols(t *testing.T) {
 					TelemetryIngest: &telemetryingest.Spec{},
 					Templates: dynakube.TemplatesSpec{
 						OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{
-							ImageRef: image.Ref{
+							ImageRef: types.ImageRef{
 								Repository: "test-repo",
 								Tag:        "test-tag",
 							},
@@ -176,7 +176,7 @@ func TestConflictingServiceNames(t *testing.T) {
 					TelemetryIngest: &telemetryingest.Spec{},
 					Templates: dynakube.TemplatesSpec{
 						OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{
-							ImageRef: image.Ref{
+							ImageRef: types.ImageRef{
 								Repository: "test-repo",
 								Tag:        "test-tag",
 							},
@@ -334,7 +334,7 @@ func TestImages(t *testing.T) {
 					APIURL: testAPIURL,
 					Templates: dynakube.TemplatesSpec{
 						OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{
-							ImageRef: image.Ref{
+							ImageRef: types.ImageRef{
 								Repository: "test-repo",
 								Tag:        "test-tag",
 							},
@@ -354,7 +354,7 @@ func TestImages(t *testing.T) {
 					APIURL: testAPIURL,
 					Templates: dynakube.TemplatesSpec{
 						OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{
-							ImageRef: image.Ref{
+							ImageRef: types.ImageRef{
 								Repository: "",
 								Tag:        "",
 								PullPolicy: "IfNotPresent",
@@ -376,7 +376,7 @@ func TestImages(t *testing.T) {
 					TelemetryIngest: &telemetryingest.Spec{},
 					Templates: dynakube.TemplatesSpec{
 						OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{
-							ImageRef: image.Ref{
+							ImageRef: types.ImageRef{
 								Repository: "test-repo",
 								Tag:        "test-tag",
 							},
@@ -430,7 +430,7 @@ func TestImages(t *testing.T) {
 					TelemetryIngest: &telemetryingest.Spec{},
 					Templates: dynakube.TemplatesSpec{
 						OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{
-							ImageRef: image.Ref{
+							ImageRef: types.ImageRef{
 								Repository: "custom-repo",
 								Tag:        "custom-tag",
 							},
@@ -449,5 +449,52 @@ func TestImages(t *testing.T) {
 					TelemetryIngest: &telemetryingest.Spec{},
 				},
 			})
+	})
+}
+
+func TestDeprecatedOTelCollectorTLSRefName(t *testing.T) {
+	t.Run("warn when otelCollector tlsRefName is set", func(t *testing.T) {
+		warnings, err := assertAllowed(t,
+			&dynakube.DynaKube{
+				ObjectMeta: defaultDynakubeObjectMeta,
+				Spec: dynakube.DynaKubeSpec{
+					APIURL:          testAPIURL,
+					TelemetryIngest: &telemetryingest.Spec{},
+					Templates: dynakube.TemplatesSpec{
+						OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{
+							ImageRef: types.ImageRef{
+								Repository: "test-repo",
+								Tag:        "test-tag",
+							},
+							TLSRefName: "some-secret", //nolint:staticcheck // SA1019: testing deprecated field
+						},
+					},
+				},
+			})
+		require.NoError(t, err)
+		assert.Contains(t, warnings, warningOTelCollectorDeprecatedTLSRefName)
+	})
+
+	t.Run("no warning when otelCollector tlsRefName is not set", func(t *testing.T) {
+		warnings, err := assertAllowed(t,
+			&dynakube.DynaKube{
+				ObjectMeta: defaultDynakubeObjectMeta,
+				Spec: dynakube.DynaKubeSpec{
+					APIURL: testAPIURL,
+					TelemetryIngest: &telemetryingest.Spec{
+						TLSRefName: "some-secret",
+					},
+					Templates: dynakube.TemplatesSpec{
+						OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{
+							ImageRef: types.ImageRef{
+								Repository: "test-repo",
+								Tag:        "test-tag",
+							},
+						},
+					},
+				},
+			})
+		require.NoError(t, err)
+		assert.NotContains(t, warnings, warningOTelCollectorDeprecatedTLSRefName)
 	})
 }

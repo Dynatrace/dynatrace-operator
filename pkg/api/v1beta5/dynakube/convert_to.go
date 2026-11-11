@@ -154,7 +154,7 @@ func toOpenTelemetryCollectorTemplate(dk *dynakubelatest.DynaKube, src OpenTelem
 	dst.Replicas = src.Replicas
 	dst.ImageRef = src.ImageRef
 
-	if !dst.ImageRef.HasImage() && dk.TelemetryIngest().IsEnabled() {
+	if dst.ImageRef.String() == "" && dk.TelemetryIngest().IsEnabled() {
 		dst.ImageRef.Repository = "public.ecr.aws/dynatrace/dynatrace-otel-collector"
 		dst.ImageRef.Tag = "latest"
 
@@ -165,7 +165,7 @@ func toOpenTelemetryCollectorTemplate(dk *dynakubelatest.DynaKube, src OpenTelem
 		dk.RemovedFields().DefaultOTelColImage.Set(nil)
 	}
 
-	dst.TLSRefName = src.TLSRefName
+	dst.TLSRefName = src.TLSRefName //nolint:staticcheck // SA1019: deprecated field still converted to avoid data loss
 	dst.Resources = src.Resources
 	dst.Tolerations = src.Tolerations
 	dst.TopologySpreadConstraints = src.TopologySpreadConstraints

@@ -189,35 +189,43 @@ func TestIsOneAgentPrivileged(t *testing.T) {
 	}
 }
 
-func TestIsClassicOneAgentNonroot(t *testing.T) {
-	type testCase struct {
-		title string
-		in    string
-		out   bool
-	}
-
-	cases := []testCase{
-		{
-			title: "default",
-			in:    "",
-			out:   false,
-		},
-		{
-			title: "overrule",
-			in:    "true",
-			out:   true,
-		},
+func TestGetClassicOneAgentNonRoot(t *testing.T) {
+	cases := []struct {
+		title   string
+		set     bool
+		in      string
+		user    int64
+		group   int64
+		enabled bool
+	}{
+		{title: "not set", enabled: false},
+		{title: "empty uses defaults", set: true, in: "", user: 1000, group: 1000, enabled: true},
+		{title: "custom ids", set: true, in: "123:456", user: 123, group: 456, enabled: true},
+		{title: "custom ids with whitespace", set: true, in: " 123 : 456 ", user: 123, group: 456, enabled: true},
+		{title: "legacy true is ignored", set: true, in: "true", enabled: false},
+		{title: "missing separator is ignored", set: true, in: "123", enabled: false},
+		{title: "non-numeric is ignored", set: true, in: "abc:1", enabled: false},
+		{title: "missing group is ignored", set: true, in: "123:", enabled: false},
+		{title: "negative is ignored", set: true, in: "-1:1", enabled: false},
+		{title: "root user is ignored", set: true, in: "0:1", enabled: false},
+		{title: "root group with non-root user is accepted", set: true, in: "1:0", user: 1, group: 0, enabled: true},
+		{title: "out of int32 range is ignored", set: true, in: "1:2147483648", enabled: false},
 	}
 
 	for _, c := range cases {
 		t.Run(c.title, func(t *testing.T) {
-			ff := FeatureFlags{annotations: map[string]string{
-				OAClassicNonRootKey: c.in,
-			}}
+			annotations := map[string]string{}
+			if c.set {
+				annotations[OAClassicNonRootKey] = c.in
+			}
 
-			out := ff.IsClassicOneAgentNonRoot()
+			ff := FeatureFlags{annotations: annotations}
 
-			assert.Equal(t, c.out, out)
+			user, group, enabled := ff.GetClassicOneAgentNonRoot(t.Context())
+
+			assert.Equal(t, c.enabled, enabled)
+			assert.Equal(t, c.user, user)
+			assert.Equal(t, c.group, group)
 		})
 	}
 }

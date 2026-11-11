@@ -15,8 +15,8 @@ const (
 	AGAutomaticK8sAPIMonitoringKey            = FFPrefix + "automatic-kubernetes-api-monitoring"
 	AGAutomaticK8sAPIMonitoringClusterNameKey = FFPrefix + "automatic-kubernetes-api-monitoring-cluster-name"
 	// Deprecated: The builtin:app-transition.kubernetes schema is no longer available on the "Latest Dynatrace" environments. Remove this annotation if you are on a "Latest Dynatrace" environment.
-	AGK8sAppEnabledKey           = FFPrefix + "k8s-app-enabled"
-	AGAutomaticTLSCertificateKey = FFPrefix + "automatic-tls-certificate"
+	AGK8sAppEnabledKey                        = FFPrefix + "k8s-app-enabled"
+	AGTLSCertificateTransferringToOneAgentKey = FFPrefix + "automatic-tls-certificate"
 )
 
 // IsActiveGateUpdatesDisabled is a feature flag to disable ActiveGate updates.
@@ -24,9 +24,9 @@ func (ff *FeatureFlags) IsActiveGateUpdatesDisabled() bool {
 	return ff.getDisableFlagWithDeprecatedAnnotation(AGUpdatesKey, AGDisableUpdatesKey)
 }
 
-// IsActiveGateAutomaticTLSCertificate is a feature flag to disable automatic creation of ActiveGate TLS certificate.
-func (ff *FeatureFlags) IsActiveGateAutomaticTLSCertificate() bool {
-	return ff.getBoolWithDefault(AGAutomaticTLSCertificateKey, true)
+// IsActiveGateTLSCertificateTransferringToOneAgentEnabled is a feature flag to disable AG certificate transferring to OneAgent.
+func (ff *FeatureFlags) IsActiveGateTLSCertificateTransferringToOneAgentEnabled() bool {
+	return ff.getBoolWithDefault(AGTLSCertificateTransferringToOneAgentKey, true)
 }
 
 // IsAutomaticK8sAPIMonitoring is a feature flag to enable automatic kubernetes api monitoring,

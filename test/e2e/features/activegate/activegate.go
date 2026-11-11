@@ -13,7 +13,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/activegate"
 	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
@@ -59,7 +59,7 @@ var (
 // capabilities are enabled in Dynakube. The test checks if ActiveGate is able to
 // communicate over a http proxy, related *Gateway* modules are active and that
 // the *Gateway* process is reachable via *Gateway service*.
-func Feature(t *testing.T, proxySpec *value.Source) features.Feature {
+func Feature(t *testing.T, proxySpec *types.ValueSource) features.Feature {
 	secretConfig := tenant.GetSingleTenantSecret(t)
 	testDynakube := dynakubeComponents.New(
 		dynakubeComponents.WithActiveGate(),

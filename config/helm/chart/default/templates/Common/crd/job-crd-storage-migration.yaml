@@ -18,6 +18,7 @@ spec:
       labels:
         {{- include "dynatrace-operator.crdStorageMigrationLabels" . | nindent 8 }}
       annotations:
+        dynatrace.com/inject: "false"
       {{- if and (.Values.operator.apparmor) (not (include "kubernetes.appArmorSecurityContextSupported" .)) }}
         container.apparmor.security.beta.kubernetes.io/crd-storage-migration: runtime/default
       {{- end }}

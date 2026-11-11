@@ -23,6 +23,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sdeployment"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
@@ -64,8 +65,8 @@ type HTTPSConfig struct {
 	Enabled         bool   `json:"enabled"`
 	ListenAddr      string `json:"listen_addr"`
 	TLSCertFilePath string `json:"tls_cert_file_path"`
-	TLSKeyFilePath  string `json:"tls_keyt_file_path"`
-	CAFilePath      string `json:"ca_cert_file_path"`
+	TLSKeyFilePath  string `json:"tls_key_file_path"`
+	CAFilePath      string `json:"ca_file_path"`
 }
 
 type ScrapeConfig struct {
@@ -176,35 +177,28 @@ func (r *Reconciler) reconcileConfigMap(ctx context.Context, s *reconcileScope) 
 	return nil
 }
 
-func (r *Reconciler) resolveImage(ctx context.Context, s *reconcileScope) error {
-	if s.Spec.Image != "" {
-		s.Owner.Status.TargetAllocator.ResolvedImage = s.Spec.Image
-
-		return nil
-	}
-
-	imageURI, err := registry.ResolveImage(ctx, s.ImageClient, s.Owner.Spec.PublicRegistryOverride, image.TargetAllocator)
-	if err != nil {
-		return err
-	}
-
-	s.Owner.Status.TargetAllocator.ResolvedImage = imageURI
-
-	return nil
+type imageResolver struct {
+	*prometheusmonitoring.PrometheusMonitoring
 }
+
+func (r imageResolver) GetImage() string               { return r.Spec.TargetAllocator.Image }
+func (r imageResolver) SetImage(imageURI string)       { r.Status.TargetAllocator.ResolvedImage = imageURI }
+func (r imageResolver) PublicRegistryOverride() string { return r.Spec.PublicRegistryOverride }
 
 func (r *Reconciler) reconcileDeployment(ctx context.Context, s *reconcileScope) error {
 	log := logd.FromContext(ctx)
 	log.Debug("reconciling deployment")
 
-	if err := r.resolveImage(ctx, s); err != nil {
+	if err := registry.ResolveImage(ctx, imageResolver{s.Owner}, s.ImageClient, image.TargetAllocator); err != nil {
 		return fmt.Errorf("resolve image: %w", err)
 	}
 
 	deploy := &appsv1.Deployment{Name: s.Spec.GetDeploymentName(), Namespace: s.Owner.Namespace}
 
 	err := k8sobject.RetryCreateOrUpdate(ctx, r, deploy, func() error {
-		mutateDeployment(deploy, s)
+		if err := mutateDeployment(deploy, s); err != nil {
+			return err
+		}
 
 		return controllerutil.SetControllerReference(s.Owner, deploy, r.Scheme())
 	})
@@ -246,21 +240,23 @@ func (r *Reconciler) reconcileService(ctx context.Context, s *reconcileScope) er
 	})
 }
 
-func mutateDeployment(deploy *appsv1.Deployment, s *reconcileScope) {
+func mutateDeployment(deploy *appsv1.Deployment, s *reconcileScope) error {
 	s.Labels.MergeInto(deploy)
 
-	deploy.Spec.Template.Labels = maps.Clone(s.Spec.Labels)
-	if s.Spec.Labels == nil {
+	if deploy.Spec.Template.Labels == nil {
 		deploy.Spec.Template.Labels = make(map[string]string)
 	}
 
+	// merge instead of replace to keep metadata applied by users or kubectl (e.g. restartedAt)
+	maps.Copy(deploy.Spec.Template.Labels, s.Spec.Labels)
 	maps.Copy(deploy.Spec.Template.Labels, s.Labels.AsSelector())
 
-	deploy.Spec.Template.Annotations = maps.Clone(s.Spec.Annotations)
 	if deploy.Spec.Template.Annotations == nil {
 		deploy.Spec.Template.Annotations = make(map[string]string)
 	}
 
+	// merge instead of replace to keep metadata applied by users or kubectl (e.g. restartedAt)
+	maps.Copy(deploy.Spec.Template.Annotations, s.Spec.Annotations)
 	deploy.Spec.Template.Annotations[configHashAnnotation] = s.ConfigMapHash
 
 	if s.Spec.Replicas != nil {
@@ -269,7 +265,12 @@ func mutateDeployment(deploy *appsv1.Deployment, s *reconcileScope) {
 
 	deploy.Spec.Strategy = k8sdeployment.MergeStrategy(deploy.Spec.Strategy, s.Spec.Strategy)
 
-	deploy.Spec.Selector = &metav1.LabelSelector{MatchLabels: s.Labels.AsSelector()}
+	selector := &metav1.LabelSelector{MatchLabels: s.Labels.AsSelector()}
+	if deploy.ResourceVersion != "" && !equality.Semantic.DeepEqual(deploy.Spec.Selector, selector) {
+		return fmt.Errorf("deployment selector changed: %w", k8sobject.ErrRecreate)
+	}
+
+	deploy.Spec.Selector = selector
 	deploy.Spec.Template.Spec.ServiceAccountName = serviceAccount
 	deploy.Spec.Template.Spec.AutomountServiceAccountToken = new(true)
 	deploy.Spec.Template.Spec.Affinity = s.Spec.Affinity
@@ -282,6 +283,8 @@ func mutateDeployment(deploy *appsv1.Deployment, s *reconcileScope) {
 	deploy.Spec.Template.Spec.Containers = []corev1.Container{
 		buildContainer(s.Spec, s.Owner.Status.TargetAllocator.ResolvedImage, s.Owner.Namespace, k8scontainer.GetFirstInPodSpec(&deploy.Spec.Template.Spec)),
 	}
+
+	return nil
 }
 
 // Build the container for the target allocator. The created container should only cause an update if a mandated value changed.

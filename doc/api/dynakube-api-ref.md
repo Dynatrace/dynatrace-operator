@@ -65,6 +65,24 @@
 |:-|:-|:-|:-|
 |`ingestRuleMatchers`||-|array|
 
+### .spec.selfMonitoring
+
+|Parameter|Description|Default value|Data type|
+|:-|:-|:-|:-|
+|`annotations`||-|object|
+|`args`||-|array|
+|`image`||-|string|
+|`imagePullPolicy`||-|string|
+|`labels`||-|object|
+|`nodeSelector`||-|object|
+|`priorityClassName`||-|string|
+|`replicas`||-|integer|
+|`resources`||-|object|
+|`tolerations`||-|array|
+|`topologySpreadConstraints`||-|array|
+|`volumeMounts`||-|array|
+|`volumes`||-|array|
+
 ### .spec.telemetryIngest
 
 |Parameter|Description|Default value|Data type|
@@ -100,6 +118,12 @@
 |`storageHostPath`||-|string|
 |`tolerations`||-|array|
 |`version`||-|string|
+
+### .spec.selfMonitoring.strategy
+
+|Parameter|Description|Default value|Data type|
+|:-|:-|:-|:-|
+|`type`||-|string|
 
 ### .spec.templates.logMonitoring
 
@@ -244,7 +268,28 @@
 |`metrics`||-|object|
 |`traces`||-|object|
 
+### .spec.selfMonitoring.affinity.podAffinity
+
+|Parameter|Description|Default value|Data type|
+|:-|:-|:-|:-|
+|`preferredDuringSchedulingIgnoredDuringExecution`||-|array|
+|`requiredDuringSchedulingIgnoredDuringExecution`||-|array|
+
+### .spec.selfMonitoring.affinity.nodeAffinity
+
+|Parameter|Description|Default value|Data type|
+|:-|:-|:-|:-|
+|`preferredDuringSchedulingIgnoredDuringExecution`||-|array|
+|`requiredDuringSchedulingIgnoredDuringExecution`||-|object|
+
 ### .spec.oneAgent.hostMonitoring.rollingUpdate
+
+|Parameter|Description|Default value|Data type|
+|:-|:-|:-|:-|
+|`maxSurge`||-|integer or string|
+|`maxUnavailable`||-|integer or string|
+
+### .spec.selfMonitoring.strategy.rollingUpdate
 
 |Parameter|Description|Default value|Data type|
 |:-|:-|:-|:-|
@@ -278,6 +323,13 @@
 |:-|:-|:-|:-|
 |`maxSurge`||-|integer or string|
 |`maxUnavailable`||-|integer or string|
+
+### .spec.selfMonitoring.affinity.podAntiAffinity
+
+|Parameter|Description|Default value|Data type|
+|:-|:-|:-|:-|
+|`preferredDuringSchedulingIgnoredDuringExecution`||-|array|
+|`requiredDuringSchedulingIgnoredDuringExecution`||-|array|
 
 ### .spec.templates.sqlExtensionExecutor.imageRef
 

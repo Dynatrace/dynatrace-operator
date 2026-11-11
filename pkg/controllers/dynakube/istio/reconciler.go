@@ -55,7 +55,7 @@ func (r *Reconciler) ReconcileAPIURL(ctx context.Context, dk *dynakube.DynaKube)
 	}
 
 	if !ptr.Deref(dk.Spec.EnableIstio, false) {
-		if isIstioConfigured(dk, OperatorComponent) {
+		if isIstioConfigured(dk, operatorConditionName) {
 			err := r.cleanupIstio(ctx, dk, OperatorComponent)
 			if err != nil {
 				// We don't error out here to avoid stuck reconciliations in case cleanup fails

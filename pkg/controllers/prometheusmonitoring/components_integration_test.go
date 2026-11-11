@@ -301,7 +301,7 @@ func newReconcilerWithImages(t *testing.T, clt client.Client, images map[image.C
 		}).Maybe()
 
 	r := NewReconciler(clt)
-	r.newDynatraceClient = func(context.Context, client.Reader, *dynakube.DynaKube, string, string, string, time.Duration) (*dynatrace.Client, error) {
+	r.newDynatraceClient = func(context.Context, client.Reader, *dynakube.DynaKube, string, string, time.Duration) (*dynatrace.Client, error) {
 		return &dynatrace.Client{Images: imageClient}, nil
 	}
 

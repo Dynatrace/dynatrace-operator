@@ -14,8 +14,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-bootstrapper/pkg/configure/oneagent/pmc"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/proxy"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/certificates"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
@@ -58,13 +57,13 @@ var (
 	proxyNamespaceWithCustomCADeploymentPath = filepath.Join(project.TestDataDir(), "network/proxy-ssl-namespace.yaml")
 	proxySCCPath                             = filepath.Join(project.TestDataDir(), "network/proxy-scc.yaml")
 
-	ProxySpec = &value.Source{
+	ProxySpec = &types.ValueSource{
 		Value: "http://squid.proxy.svc.cluster.local:3128",
 	}
-	HTTPSProxySpec = &value.Source{
+	HTTPSProxySpec = &types.ValueSource{
 		Value: "https://squid.proxy.svc.cluster.local:3128",
 	}
-	EdgeConnectProxySpec = &proxy.Spec{
+	EdgeConnectProxySpec = &types.ProxySpec{
 		Host: "squid.proxy",
 		Port: 3128,
 	}
@@ -113,7 +112,7 @@ func checkProxyReady() features.Func {
 	}
 }
 
-func CutOffDynatraceNamespace(builder *features.FeatureBuilder, proxySpec *value.Source) {
+func CutOffDynatraceNamespace(builder *features.FeatureBuilder, proxySpec *types.ValueSource) {
 	if proxySpec != nil {
 		builder.Assess("cut off dynatrace namespace", helpers.ToFeatureFunc(manifests.InstallFromFile(dynatraceNetworkPolicy), true))
 		builder.Teardown(helpers.ToFeatureFunc(manifests.UninstallFromFile(dynatraceNetworkPolicy), false))
@@ -135,7 +134,7 @@ func isNetworkTrafficCutOff(builder *features.FeatureBuilder, directionName, pod
 	builder.Teardown(curl.DeleteCutOffCurlPod(podName, podNamespaceName, targetURL))
 }
 
-func CheckRuxitAgentProcFileHasProxySetting(sampleApp sample.App, proxySpec *value.Source) features.Func {
+func CheckRuxitAgentProcFileHasProxySetting(sampleApp sample.App, proxySpec *types.ValueSource) features.Func {
 	return func(ctx context.Context, t *testing.T, e *envconf.Config) context.Context {
 		resources := e.Client().Resources()
 

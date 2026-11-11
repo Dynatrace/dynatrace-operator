@@ -69,6 +69,7 @@ rules:
     resources:
       - dynakubes
       - edgeconnects
+      - prometheusmonitorings
     verbs:
       - list
       - watch

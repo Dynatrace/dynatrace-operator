@@ -7,6 +7,7 @@ package nocsi
 
 import (
 	"context"
+	"os"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/activegate"
@@ -60,7 +61,7 @@ func TestMain(m *testing.M) {
 
 		return ctx, nil
 	})
-	testEnv.Run(m)
+	os.Exit(testEnv.Run(m))
 }
 
 func TestNoCSI_activegate(t *testing.T) {

@@ -6,105 +6,38 @@
 package manifest
 
 import (
-	"context"
+	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/operator"
-	"sigs.k8s.io/e2e-framework/pkg/envconf"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/platform"
+	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-const (
-	withCSI    = true
-	withoutCSI = false
-	k8s        = "kubernetes"
-	ocp        = "openshift"
-)
-
-func KubernetesNoCSI() features.Feature { //nolint:dupl
-	builder := features.New("deploy-manifest-k8s")
-
-	builder.Setup(helpers.ToFeatureFunc(func(ctx context.Context, c *envconf.Config) (context.Context, error) {
-		return ctx, operator.InstallViaManifests(k8s, withoutCSI)
-	}, true))
-
-	builder.Assess("operator installed", helpers.ToFeatureFunc(func(ctx context.Context, c *envconf.Config) (context.Context, error) {
-		return operator.VerifyInstall(ctx, c, withoutCSI)
-	}, true))
-
-	builder.Teardown(helpers.ToFeatureFunc(func(ctx context.Context, c *envconf.Config) (context.Context, error) {
-		if c.FailFast() {
-			return ctx, nil
-		}
-
-		return ctx, operator.UninstallViaManifests(k8s, withoutCSI)
-	}, true))
-
-	return builder.Feature()
+func NoCSI(t *testing.T) features.Feature {
+	return deployFeature(t, false)
 }
 
-func KubernetesCSI() features.Feature { //nolint:dupl
-	builder := features.New("deploy-manifest-k8s-csi")
-
-	builder.Setup(helpers.ToFeatureFunc(func(ctx context.Context, c *envconf.Config) (context.Context, error) {
-		return ctx, operator.InstallViaManifests(k8s, withCSI)
-	}, true))
-
-	builder.Assess("operator installed", helpers.ToFeatureFunc(func(ctx context.Context, c *envconf.Config) (context.Context, error) {
-		return operator.VerifyInstall(ctx, c, withCSI)
-	}, true))
-
-	builder.Teardown(helpers.ToFeatureFunc(func(ctx context.Context, c *envconf.Config) (context.Context, error) {
-		if c.FailFast() {
-			return ctx, nil
-		}
-
-		return ctx, operator.UninstallViaManifests(k8s, withCSI)
-	}, true))
-
-	return builder.Feature()
+func CSI(t *testing.T) features.Feature {
+	return deployFeature(t, true)
 }
 
-func OpenshiftNoCSI() features.Feature { //nolint:dupl
-	builder := features.New("deploy-manifest-ocp")
+func deployFeature(t *testing.T, withCSI bool) features.Feature {
+	p, err := platform.NewResolver().GetPlatform()
+	require.NoError(t, err)
 
-	builder.Setup(helpers.ToFeatureFunc(func(ctx context.Context, c *envconf.Config) (context.Context, error) {
-		return ctx, operator.InstallViaManifests(ocp, withoutCSI)
-	}, true))
+	name := "deploy-manifest-" + p
+	if withCSI {
+		name += "-csi"
+	}
 
-	builder.Assess("operator installed", helpers.ToFeatureFunc(func(ctx context.Context, c *envconf.Config) (context.Context, error) {
-		return operator.VerifyInstall(ctx, c, withoutCSI)
-	}, true))
+	builder := features.New(name)
 
-	builder.Teardown(helpers.ToFeatureFunc(func(ctx context.Context, c *envconf.Config) (context.Context, error) {
-		if c.FailFast() {
-			return ctx, nil
-		}
+	// InstallLocal also verifies the installation
+	builder.Setup(helpers.ToFeatureFunc(operator.InstallLocal(withCSI), true))
 
-		return ctx, operator.UninstallViaManifests(ocp, withoutCSI)
-	}, true))
-
-	return builder.Feature()
-}
-
-func OpenshiftCSI() features.Feature { //nolint:dupl
-	builder := features.New("deploy-manifest-ocp-csi")
-
-	builder.Setup(helpers.ToFeatureFunc(func(ctx context.Context, c *envconf.Config) (context.Context, error) {
-		return ctx, operator.InstallViaManifests(ocp, withCSI)
-	}, true))
-
-	builder.Assess("operator installed", helpers.ToFeatureFunc(func(ctx context.Context, c *envconf.Config) (context.Context, error) {
-		return operator.VerifyInstall(ctx, c, withCSI)
-	}, true))
-
-	builder.Teardown(helpers.ToFeatureFunc(func(ctx context.Context, c *envconf.Config) (context.Context, error) {
-		if c.FailFast() {
-			return ctx, nil
-		}
-
-		return ctx, operator.UninstallViaManifests(ocp, withCSI)
-	}, true))
+	builder.Teardown(helpers.SkipOnFailFast(helpers.ToFeatureFunc(operator.Uninstall(withCSI), true)))
 
 	return builder.Feature()
 }

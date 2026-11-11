@@ -42,7 +42,6 @@ func Test_GetConnectionInfo(t *testing.T) {
 
 	setupMockedClient := func(t *testing.T, params map[string]string, networkZone string, response *connectionInfoResponse, err error) *ClientImpl {
 		req := coremock.NewRequest(t)
-		req.EXPECT().WithPaasToken().Return(req).Once()
 		req.EXPECT().WithQueryParams(params).Return(req).Once()
 		req.EXPECT().
 			Execute(&connectionInfoResponse{requiredHosts: response.requiredHosts}).

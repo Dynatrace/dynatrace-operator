@@ -11,8 +11,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
@@ -22,15 +24,18 @@ import (
 	oaclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/settings"
 	tokenclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/k8sentity"
 	kubemonconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8scrd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/tenant/optionalscope"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
+	settingsmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/settings"
 	tokenclientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/token"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -349,22 +354,24 @@ func TestReconcileComponents(t *testing.T) {
 		mockKSPMReconciler := newMockKspmReconciler(t)
 		mockK8sEntityReconciler := newMockDtSettingReconciler(t)
 		mockOTelColReconciler := newMockOTelColReconciler(t)
+		mockSelfMonitoringReconciler := newMockOTelColReconciler(t)
 		mockIstioReconciler := newMockIstioReconciler(t)
 
 		controller := &Controller{
 			client:    fakeClient,
 			apiReader: fakeClient,
 
-			logMonitoringReconciler: mockLogMonitoringReconciler,
-			extensionReconciler:     mockExtensionReconciler,
-			istioReconciler:         mockIstioReconciler,
-			oTelColReconciler:       mockOTelColReconciler,
-			kspmReconciler:          mockKSPMReconciler,
-			k8sEntityReconciler:     mockK8sEntityReconciler,
-			oneAgentReconciler:      mockOneAgentReconciler,
-			activeGateReconciler:    mockActiveGateReconciler,
-			kubemonReconciler:       mockKubemonReconciler,
-			injectionReconciler:     mockInjectionReconciler,
+			logMonitoringReconciler:  mockLogMonitoringReconciler,
+			extensionReconciler:      mockExtensionReconciler,
+			istioReconciler:          mockIstioReconciler,
+			oTelColReconciler:        mockOTelColReconciler,
+			selfMonitoringReconciler: mockSelfMonitoringReconciler,
+			kspmReconciler:           mockKSPMReconciler,
+			k8sEntityReconciler:      mockK8sEntityReconciler,
+			oneAgentReconciler:       mockOneAgentReconciler,
+			activeGateReconciler:     mockActiveGateReconciler,
+			kubemonReconciler:        mockKubemonReconciler,
+			injectionReconciler:      mockInjectionReconciler,
 		}
 		dtClient := &dynatrace.Client{Images: image.NewClient(nil), Settings: settings.NewClient(nil)}
 
@@ -377,6 +384,7 @@ func TestReconcileComponents(t *testing.T) {
 		expectReconcileError(t, mockLogMonitoringReconciler, &err, dtClient, dk)
 		expectReconcileError(t, mockExtensionReconciler, &err, dtClient.Images, dk)
 		expectReconcileError(t, mockOTelColReconciler, &err, dtClient.Images, dk)
+		expectReconcileError(t, mockSelfMonitoringReconciler, &err, dtClient.Images, dk)
 		expectReconcileError(t, mockKSPMReconciler, &err, dtClient, dk)
 		expectReconcileError(t, mockK8sEntityReconciler, &err, dtClient.Settings, dk)
 
@@ -392,6 +400,7 @@ func TestReconcileComponents(t *testing.T) {
 		mockExtensionReconciler := newMockExtensionReconciler(t)
 		mockKubemonReconciler := newMockKubemonReconciler(t)
 		mockOTelColReconciler := newMockOTelColReconciler(t)
+		mockSelfMonitoringReconciler := newMockOTelColReconciler(t)
 		k8sEntityReconciler := newMockDtSettingReconciler(t)
 		mockIstioReconciler := newMockIstioReconciler(t)
 		mockKSPMReconciler := newMockKspmReconciler(t)
@@ -402,16 +411,17 @@ func TestReconcileComponents(t *testing.T) {
 		mockLogMonitoringReconciler.EXPECT().Reconcile(anyCtx, dtClient, mock.Anything).Return(oaclient.NoCommunicationEndpointsError).Once()
 
 		controller := &Controller{
-			client:                  fakeClient,
-			apiReader:               fakeClient,
-			activeGateReconciler:    mockActiveGateReconciler,
-			kubemonReconciler:       mockKubemonReconciler,
-			logMonitoringReconciler: mockLogMonitoringReconciler,
-			extensionReconciler:     mockExtensionReconciler,
-			oTelColReconciler:       mockOTelColReconciler,
-			k8sEntityReconciler:     k8sEntityReconciler,
-			istioReconciler:         mockIstioReconciler,
-			kspmReconciler:          mockKSPMReconciler,
+			client:                   fakeClient,
+			apiReader:                fakeClient,
+			activeGateReconciler:     mockActiveGateReconciler,
+			kubemonReconciler:        mockKubemonReconciler,
+			logMonitoringReconciler:  mockLogMonitoringReconciler,
+			extensionReconciler:      mockExtensionReconciler,
+			oTelColReconciler:        mockOTelColReconciler,
+			selfMonitoringReconciler: mockSelfMonitoringReconciler,
+			k8sEntityReconciler:      k8sEntityReconciler,
+			istioReconciler:          mockIstioReconciler,
+			kspmReconciler:           mockKSPMReconciler,
 		}
 
 		var err error
@@ -419,6 +429,7 @@ func TestReconcileComponents(t *testing.T) {
 		expectReconcileError(t, mockKubemonReconciler, &err, dk, dtClient, token.Tokens(nil))
 		expectReconcileError(t, mockExtensionReconciler, &err, dtClient.Images, dk)
 		expectReconcileError(t, mockOTelColReconciler, &err, dtClient.Images, dk)
+		expectReconcileError(t, mockSelfMonitoringReconciler, &err, dtClient.Images, dk)
 		expectReconcileError(t, k8sEntityReconciler, &err, dtClient.Settings, dk)
 		expectReconcileError(t, mockKSPMReconciler, &err, dtClient, dk)
 
@@ -439,20 +450,22 @@ func TestReconcileComponents(t *testing.T) {
 		mockKSPMReconciler := newMockKspmReconciler(t)
 		mockK8sEntityReconciler := newMockDtSettingReconciler(t)
 		mockOTelColReconciler := newMockOTelColReconciler(t)
+		mockSelfMonitoringReconciler := newMockOTelColReconciler(t)
 
 		controller := &Controller{
 			client:    fakeClient,
 			apiReader: fakeClient,
 
-			logMonitoringReconciler: mockLogMonitoringReconciler,
-			extensionReconciler:     mockExtensionReconciler,
-			oTelColReconciler:       mockOTelColReconciler,
-			kspmReconciler:          mockKSPMReconciler,
-			k8sEntityReconciler:     mockK8sEntityReconciler,
-			oneAgentReconciler:      mockOneAgentReconciler,
-			activeGateReconciler:    mockActiveGateReconciler,
-			kubemonReconciler:       mockKubemonReconciler,
-			injectionReconciler:     mockInjectionReconciler,
+			logMonitoringReconciler:  mockLogMonitoringReconciler,
+			extensionReconciler:      mockExtensionReconciler,
+			oTelColReconciler:        mockOTelColReconciler,
+			selfMonitoringReconciler: mockSelfMonitoringReconciler,
+			kspmReconciler:           mockKSPMReconciler,
+			k8sEntityReconciler:      mockK8sEntityReconciler,
+			oneAgentReconciler:       mockOneAgentReconciler,
+			activeGateReconciler:     mockActiveGateReconciler,
+			kubemonReconciler:        mockKubemonReconciler,
+			injectionReconciler:      mockInjectionReconciler,
 
 			requeueAfter: 10 * time.Minute,
 		}
@@ -463,6 +476,7 @@ func TestReconcileComponents(t *testing.T) {
 		mockKubemonReconciler.EXPECT().Reconcile(anyCtx, dk, dtClient, token.Tokens(nil)).Return(k8sstatefulset.ErrRolloutInProgress).Once()
 		mockExtensionReconciler.EXPECT().Reconcile(anyCtx, dtClient.Images, dk).Return(nil).Once()
 		mockOTelColReconciler.EXPECT().Reconcile(anyCtx, dtClient.Images, dk).Return(nil).Once()
+		mockSelfMonitoringReconciler.EXPECT().Reconcile(anyCtx, dtClient.Images, dk).Return(nil).Once()
 		mockKSPMReconciler.EXPECT().Reconcile(anyCtx, dtClient, dk).Return(nil).Once()
 		mockLogMonitoringReconciler.EXPECT().Reconcile(anyCtx, dtClient, dk).Return(nil).Once()
 		mockInjectionReconciler.EXPECT().Reconcile(anyCtx, dtClient, dk).Return(nil).Once()
@@ -486,20 +500,22 @@ func TestReconcileComponents(t *testing.T) {
 		mockKSPMReconciler := newMockKspmReconciler(t)
 		mockK8sEntityReconciler := newMockDtSettingReconciler(t)
 		mockOTelColReconciler := newMockOTelColReconciler(t)
+		mockSelfMonitoringReconciler := newMockOTelColReconciler(t)
 
 		controller := &Controller{
 			client:    fakeClient,
 			apiReader: fakeClient,
 
-			logMonitoringReconciler: mockLogMonitoringReconciler,
-			extensionReconciler:     mockExtensionReconciler,
-			oTelColReconciler:       mockOTelColReconciler,
-			kspmReconciler:          mockKSPMReconciler,
-			k8sEntityReconciler:     mockK8sEntityReconciler,
-			oneAgentReconciler:      mockOneAgentReconciler,
-			activeGateReconciler:    mockActiveGateReconciler,
-			kubemonReconciler:       mockKubemonReconciler,
-			injectionReconciler:     mockInjectionReconciler,
+			logMonitoringReconciler:  mockLogMonitoringReconciler,
+			extensionReconciler:      mockExtensionReconciler,
+			oTelColReconciler:        mockOTelColReconciler,
+			selfMonitoringReconciler: mockSelfMonitoringReconciler,
+			kspmReconciler:           mockKSPMReconciler,
+			k8sEntityReconciler:      mockK8sEntityReconciler,
+			oneAgentReconciler:       mockOneAgentReconciler,
+			activeGateReconciler:     mockActiveGateReconciler,
+			kubemonReconciler:        mockKubemonReconciler,
+			injectionReconciler:      mockInjectionReconciler,
 
 			requeueAfter: 10 * time.Minute,
 		}
@@ -510,6 +526,7 @@ func TestReconcileComponents(t *testing.T) {
 		mockKubemonReconciler.EXPECT().Reconcile(anyCtx, dk, dtClient, token.Tokens(nil)).Return(kubemonconnectioninfo.ErrConnectionInfoNotReady).Once()
 		mockExtensionReconciler.EXPECT().Reconcile(anyCtx, dtClient.Images, dk).Return(nil).Once()
 		mockOTelColReconciler.EXPECT().Reconcile(anyCtx, dtClient.Images, dk).Return(nil).Once()
+		mockSelfMonitoringReconciler.EXPECT().Reconcile(anyCtx, dtClient.Images, dk).Return(nil).Once()
 		mockKSPMReconciler.EXPECT().Reconcile(anyCtx, dtClient, dk).Return(nil).Once()
 		mockLogMonitoringReconciler.EXPECT().Reconcile(anyCtx, dtClient, dk).Return(nil).Once()
 		mockInjectionReconciler.EXPECT().Reconcile(anyCtx, dtClient, dk).Return(nil).Once()
@@ -569,6 +586,9 @@ func TestReconcileDynaKube(t *testing.T) {
 	mockOTelColReconciler := newMockOTelColReconciler(t)
 	mockOTelColReconciler.EXPECT().Reconcile(anyCtx, dtClient.Images, anyDynaKube).Return(nil)
 
+	mockSelfMonitoringReconciler := newMockOTelColReconciler(t)
+	mockSelfMonitoringReconciler.EXPECT().Reconcile(anyCtx, dtClient.Images, anyDynaKube).Return(nil)
+
 	mockIstioReconciler := newMockIstioReconciler(t)
 	mockIstioReconciler.EXPECT().ReconcileAPIURL(anyCtx, anyDynaKube).Return(nil)
 
@@ -591,6 +611,7 @@ func TestReconcileDynaKube(t *testing.T) {
 		istioReconciler:              mockIstioReconciler,
 		logMonitoringReconciler:      mockLogMonitoringReconciler,
 		oTelColReconciler:            mockOTelColReconciler,
+		selfMonitoringReconciler:     mockSelfMonitoringReconciler,
 		proxyReconciler:              mockProxyReconciler,
 		kspmReconciler:               mockKSPMReconciler,
 		kubemonReconciler:            mockKubemonReconciler,
@@ -827,9 +848,6 @@ func TestTokenConditions(t *testing.T) {
 			Status: dynakube.DynaKubeStatus{
 				Conditions: []metav1.Condition{
 					{
-						Type: dynakube.PaaSTokenConditionType,
-					},
-					{
 						Type: dynakube.APITokenConditionType,
 					},
 					{
@@ -1042,6 +1060,65 @@ func TestTokenConditionsOptionalScopes(t *testing.T) {
 	})
 }
 
+func TestTokenConditionsOptionalScopesWithRegistrationDisabled(t *testing.T) {
+	const kubeSystemUUID = "kube-system-uuid"
+
+	requiredScopes := []string{
+		tokenclient.ScopeDataExport,
+		tokenclient.ScopeInstallerDownload,
+		tokenclient.ScopeActiveGateTokenCreate,
+	}
+	allScopes := []string{
+		tokenclient.ScopeDataExport,
+		tokenclient.ScopeInstallerDownload,
+		tokenclient.ScopeActiveGateTokenCreate,
+		tokenclient.ScopeSettingsRead,
+		tokenclient.ScopeSettingsWrite,
+	}
+
+	t.Run("kubemon without registration", func(t *testing.T) {
+		dk := newRegistrationDisabledDynaKube(kubeSystemUUID)
+		dk.Spec.KubernetesMonitoring = &kubemon.Spec{}
+
+		settingsClient := settingsmock.NewClient(t)
+		settingsClient.EXPECT().GetK8sClusterME(anyCtx, kubeSystemUUID).Return(settings.K8sClusterME{}, nil).Once()
+
+		reconcileTokensAndK8sEntity(t, dk, allScopes, settingsClient)
+
+		assertOptionalScopesAvailable(t, dk)
+		assertMEIDConditionNotScopeMissing(t, dk)
+	})
+
+	t.Run("kubernetes-monitoring with automatic-kubernetes-api-monitoring disabled", func(t *testing.T) {
+		dk := newRegistrationDisabledDynaKube(kubeSystemUUID)
+		dk.Annotations = map[string]string{exp.AGAutomaticK8sAPIMonitoringKey: "false"}
+		dk.Spec.ActiveGate.Capabilities = []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}
+
+		settingsClient := settingsmock.NewClient(t)
+		settingsClient.EXPECT().GetK8sClusterME(anyCtx, kubeSystemUUID).Return(settings.K8sClusterME{}, nil).Once()
+
+		reconcileTokensAndK8sEntity(t, dk, allScopes, settingsClient)
+
+		assertOptionalScopesAvailable(t, dk)
+		assertMEIDConditionNotScopeMissing(t, dk)
+	})
+
+	t.Run("token without settings scopes still reports ScopeMissing", func(t *testing.T) {
+		dk := newRegistrationDisabledDynaKube(kubeSystemUUID)
+		dk.Spec.KubernetesMonitoring = &kubemon.Spec{}
+
+		reconcileTokensAndK8sEntity(t, dk, requiredScopes, settingsmock.NewClient(t))
+
+		assert.False(t, ptr.Deref(dk.Status.APIToken.AvailableOptionalScopes.SettingsRead, true))
+		assert.False(t, ptr.Deref(dk.Status.APIToken.AvailableOptionalScopes.SettingsWrite, true))
+		assert.Nil(t, meta.FindStatusCondition(*dk.Conditions(), conditionTypeAPITokenOptionalScopes))
+
+		condition := meta.FindStatusCondition(*dk.Conditions(), "MonitoredEntity")
+		require.NotNil(t, condition)
+		assert.Equal(t, k8sconditions.OptionalScopeMissingReason, condition.Reason)
+	})
+}
+
 func TestSetupTokensAndClientForPlatformToken(t *testing.T) {
 	fakeClient := fake.NewClient(&corev1.Secret{
 		Name:      testName,
@@ -1163,10 +1240,10 @@ func TestSetupTokensAndClientForConnectionTimeout(t *testing.T) {
 }
 
 func testDTClientBuilder(t *testing.T, timeout time.Duration) dynatrace.ClientFactory {
-	return func(ctx context.Context, apiReader client.Reader, dk *dynakube.DynaKube, apiToken, paasToken, userAgentSuffix string, clientConnectionTimeout time.Duration) (*dynatrace.Client, error) {
+	return func(ctx context.Context, apiReader client.Reader, dk *dynakube.DynaKube, apiToken, userAgentSuffix string, clientConnectionTimeout time.Duration) (*dynatrace.Client, error) {
 		assert.Equal(t, timeout, clientConnectionTimeout)
 
-		return dynatrace.NewClientFromDynakube(ctx, apiReader, dk, apiToken, paasToken, userAgentSuffix, clientConnectionTimeout)
+		return dynatrace.NewClientFromDynakube(ctx, apiReader, dk, apiToken, userAgentSuffix, clientConnectionTimeout)
 	}
 }
 
@@ -1245,13 +1322,63 @@ func createCRD(t *testing.T) *apiextensionsv1.CustomResourceDefinition {
 }
 
 func newClientFactory(dtClient *dynatrace.Client) dynatrace.ClientFactory {
-	return func(_ context.Context, _ client.Reader, _ *dynakube.DynaKube, _, _, _ string, _ time.Duration) (*dynatrace.Client, error) {
+	return func(_ context.Context, _ client.Reader, _ *dynakube.DynaKube, _, _ string, _ time.Duration) (*dynatrace.Client, error) {
 		return dtClient, nil
 	}
 }
 
 func newErrorClientFactory(err error) dynatrace.ClientFactory {
-	return func(_ context.Context, _ client.Reader, _ *dynakube.DynaKube, _, _, _ string, _ time.Duration) (*dynatrace.Client, error) {
+	return func(_ context.Context, _ client.Reader, _ *dynakube.DynaKube, _, _ string, _ time.Duration) (*dynatrace.Client, error) {
 		return nil, err
 	}
+}
+
+func newRegistrationDisabledDynaKube(kubeSystemUUID string) *dynakube.DynaKube {
+	dk := &dynakube.DynaKube{
+		Name:      testName,
+		Namespace: testNamespace,
+		Spec: dynakube.DynaKubeSpec{
+			APIURL: testAPIURL,
+		},
+	}
+	dk.Status.KubeSystemUUID = kubeSystemUUID
+
+	return dk
+}
+
+func reconcileTokensAndK8sEntity(t *testing.T, dk *dynakube.DynaKube, tokenScopes []string, settingsClient *settingsmock.Client) {
+	t.Helper()
+
+	tokenClient := tokenclientmock.NewClient(t)
+	tokenClient.EXPECT().GetScopes(anyCtx, testAPIToken).Return(tokenScopes, nil)
+
+	fakeClient := fake.NewClient(createAPISecret())
+	controller := &Controller{
+		client:              fakeClient,
+		apiReader:           fakeClient,
+		dtClientFactory:     newClientFactory(&dynatrace.Client{Token: tokenClient, Settings: settingsClient}),
+		k8sEntityReconciler: k8sentity.NewReconciler(),
+	}
+
+	dtClient, err := controller.setupTokensAndClient(t.Context(), dk)
+	require.NoError(t, err)
+
+	err = controller.k8sEntityReconciler.Reconcile(t.Context(), dtClient.Settings, dk)
+	require.NoError(t, err)
+}
+
+func assertOptionalScopesAvailable(t *testing.T, dk *dynakube.DynaKube) {
+	t.Helper()
+
+	assert.True(t, ptr.Deref(dk.Status.APIToken.AvailableOptionalScopes.SettingsRead, false))
+	assert.True(t, ptr.Deref(dk.Status.APIToken.AvailableOptionalScopes.SettingsWrite, false))
+}
+
+func assertMEIDConditionNotScopeMissing(t *testing.T, dk *dynakube.DynaKube) {
+	t.Helper()
+
+	condition := meta.FindStatusCondition(*dk.Conditions(), "MonitoredEntity")
+	require.NotNil(t, condition)
+	assert.NotEqual(t, k8sconditions.OptionalScopeMissingReason, condition.Reason)
+	assert.Empty(t, dk.Status.KubernetesClusterMEID)
 }

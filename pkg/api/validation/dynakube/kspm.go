@@ -46,7 +46,7 @@ func missingKSPMImage(_ context.Context, _ *Validator, dk *dynakube.DynaKube) st
 		return ""
 	}
 
-	if dk.KSPM().ImageRef.HasImage() {
+	if dk.KSPM().ImageRef.String() != "" {
 		return ""
 	}
 

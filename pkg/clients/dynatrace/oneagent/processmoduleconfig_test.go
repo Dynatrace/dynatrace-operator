@@ -43,9 +43,6 @@ func TestGetProcessModuleConfig(t *testing.T) {
 			Return(req).
 			Once()
 		req.EXPECT().
-			WithPaasToken().
-			Return(req).Once()
-		req.EXPECT().
 			Execute(&ProcessModuleConfig{}).
 			Run(func(model any) {
 				resp := model.(*ProcessModuleConfig)

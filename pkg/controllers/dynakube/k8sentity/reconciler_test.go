@@ -317,6 +317,10 @@ func TestReconcileMEID(t *testing.T) {
 		r := NewReconciler()
 		err := r.reconcileMEID(t.Context(), dtClient, dk)
 		require.NoError(t, err)
+
+		condition := meta.FindStatusCondition(*dk.Conditions(), meIDConditionType)
+		require.NotNil(t, condition)
+		assert.Equal(t, k8sconditions.MissingMEIDMessage, condition.Message)
 	})
 }
 

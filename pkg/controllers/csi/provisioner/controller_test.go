@@ -528,9 +528,9 @@ func TestBuildDtcForConnectionTimeout(t *testing.T) {
 }
 
 func testDTClientBuilder(t *testing.T, timeout time.Duration) dynatrace.ClientFactory {
-	return func(ctx context.Context, apiReader client.Reader, dk *dynakube.DynaKube, apiToken, paasToken, userAgentSuffix string, clientConnectionTimeout time.Duration) (*dynatrace.Client, error) {
+	return func(ctx context.Context, apiReader client.Reader, dk *dynakube.DynaKube, apiToken, userAgentSuffix string, clientConnectionTimeout time.Duration) (*dynatrace.Client, error) {
 		assert.Equal(t, timeout, clientConnectionTimeout)
 
-		return dynatrace.NewClientFromDynakube(ctx, apiReader, dk, apiToken, paasToken, userAgentSuffix, clientConnectionTimeout)
+		return dynatrace.NewClientFromDynakube(ctx, apiReader, dk, apiToken, userAgentSuffix, clientConnectionTimeout)
 	}
 }

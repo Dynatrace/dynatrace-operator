@@ -13,7 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
 	dtimage "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
@@ -399,6 +399,8 @@ func TestPublicRegistryImage(t *testing.T) {
 			require.NoError(t, clt.List(t.Context(), deployments))
 			require.Len(t, deployments.Items, 1)
 
+			assert.Equal(t, expectedImageURI, dk.Status.SQLExtensionExecutor.ResolvedImage)
+
 			return &deployments.Items[0]
 		}
 
@@ -425,6 +427,8 @@ func TestPublicRegistryImage(t *testing.T) {
 			deployments := &appsv1.DeploymentList{}
 			require.NoError(t, clt.List(t.Context(), deployments))
 			require.Len(t, deployments.Items, 1)
+
+			assert.Equal(t, expectedImageURI, dk.Status.SQLExtensionExecutor.ResolvedImage)
 
 			return &deployments.Items[0]
 		}
@@ -465,7 +469,7 @@ func TestPublicRegistryImage(t *testing.T) {
 		tempateTag := "my-custom-template-tag"
 		dk := getTestDynakube()
 		dk.Annotations = map[string]string{exp.UsePublicRegistryKey: "true"}
-		dk.Spec.Templates.SQLExtensionExecutor.ImageRef = image.Ref{Repository: templateImage, Tag: tempateTag}
+		dk.Spec.Templates.SQLExtensionExecutor.ImageRef = types.ImageRef{Repository: templateImage, Tag: tempateTag}
 		clt := fakeClient()
 
 		imageClient := imageclientmock.NewClient(t)
@@ -475,6 +479,7 @@ func TestPublicRegistryImage(t *testing.T) {
 		require.NoError(t, clt.List(t.Context(), deployments))
 		require.Len(t, deployments.Items, 1)
 		require.Equal(t, fmt.Sprintf("%s:%s", templateImage, tempateTag), deployments.Items[0].Spec.Template.Spec.Containers[0].Image)
+		assert.Equal(t, fmt.Sprintf("%s:%s", templateImage, tempateTag), dk.Status.SQLExtensionExecutor.ResolvedImage)
 	})
 }
 
@@ -533,7 +538,7 @@ func getTestDynakube() *dynakube.DynaKube {
 			},
 			Templates: dynakube.TemplatesSpec{
 				SQLExtensionExecutor: extensions.DatabaseExecutorSpec{
-					ImageRef: image.Ref{
+					ImageRef: types.ImageRef{
 						Repository: testExecutorImageRepository,
 						Tag:        testExecutorImageTag,
 						PullPolicy: "IfNotPresent",

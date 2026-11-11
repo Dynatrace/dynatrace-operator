@@ -7,24 +7,23 @@ package codemodules
 
 import (
 	"context"
-	"encoding/base64"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	opconsts "github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	oacommon "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/cloudnative"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/csi"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/csi/provisioner"
 	dynakubeComponents "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/istio"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sconfigmap"
@@ -44,7 +43,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
-	"sigs.k8s.io/e2e-framework/klient/wait"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
@@ -52,8 +50,7 @@ import (
 const (
 	diskUsageKiBDelta = 1000000
 
-	dataPath                 = "/data/"
-	provisionerContainerName = "provisioner"
+	dataPath = "/data/"
 
 	agSecretName                    = "ag-ca"
 	configMapName                   = "proxy-ca"
@@ -105,7 +102,7 @@ func InstallFromImage(t *testing.T) features.Feature {
 	// Register actual test
 	cloudnative.AssessSampleInitContainers(builder, sampleApp)
 
-	builder.Assess("codemodules have been downloaded", ImageHasBeenDownloaded(cloudNativeDynakube))
+	builder.Assess("codemodules have been downloaded", provisioner.InstalledImage(cloudNativeDynakube, cloudNativeDynakube.OneAgent().GetCustomCodeModulesImage(), provisioner.ImageInstaller))
 	builder.Assess("checking storage used", measureDiskUsage(appDynakube.Namespace, storageMap))
 	dynakubeComponents.Install(builder, secretConfigs[1], appDynakube)
 	builder.Assess("storage size has not increased", diskUsageDoesNotIncrease(appDynakube.Namespace, storageMap))
@@ -131,7 +128,7 @@ const (
 // Connectivity in the dynatrace namespace and sample application namespace is restricted to
 // the local cluster. Sample application is installed. The test checks if DT_PROXY environment
 // variable is defined in the *dynakubeComponents-oneagent* container and the *application container*.
-func WithProxy(t *testing.T, proxySpec *value.Source) features.Feature {
+func WithProxy(t *testing.T, proxySpec *types.ValueSource) features.Feature {
 	builder := features.New("codemodules-with-proxy-no-certs")
 	secretConfigs := tenant.GetMultiTenantSecret(t)
 	require.Len(t, secretConfigs, 2)
@@ -144,7 +141,7 @@ func WithProxy(t *testing.T, proxySpec *value.Source) features.Feature {
 		dynakubeComponents.WithIstioIntegration(),
 		dynakubeComponents.WithProxy(proxySpec),
 		dynakubeComponents.WithAnnotations(map[string]string{
-			exp.AGAutomaticTLSCertificateKey: "false",
+			exp.AGTLSCertificateTransferringToOneAgentKey: "false",
 		}),
 	)
 
@@ -170,7 +167,7 @@ func WithProxy(t *testing.T, proxySpec *value.Source) features.Feature {
 	// Register actual test
 	cloudnative.AssessSampleInitContainers(builder, sampleApp)
 	istio.AssessIstio(builder, cloudNativeDynakube, *sampleApp)
-	builder.Assess("codemodules have been downloaded", ImageHasBeenDownloaded(cloudNativeDynakube))
+	builder.Assess("codemodules have been downloaded", provisioner.InstalledImage(cloudNativeDynakube, cloudNativeDynakube.OneAgent().GetCustomCodeModulesImage(), provisioner.ImageInstaller))
 
 	builder.Assess("check env variables of oneagent pods", checkOneAgentEnvVars(cloudNativeDynakube))
 	builder.Assess("check proxy settings in ruxitagentproc.conf", proxy.CheckRuxitAgentProcFileHasProxySetting(*sampleApp, proxySpec))
@@ -197,7 +194,7 @@ func getAgTLSSecret(secret *corev1.Secret) features.Func {
 	}
 }
 
-func WithProxyAndAGCert(t *testing.T, proxySpec *value.Source) features.Feature {
+func WithProxyAndAGCert(t *testing.T, proxySpec *types.ValueSource) features.Feature {
 	builder := features.New("codemodules-with-proxy-and-ag-cert")
 	secretConfigs := tenant.GetMultiTenantSecret(t)
 	require.Len(t, secretConfigs, 2)
@@ -247,7 +244,7 @@ func WithProxyAndAGCert(t *testing.T, proxySpec *value.Source) features.Feature 
 	cloudnative.AssessSampleInitContainers(builder, sampleApp)
 	istio.AssessIstio(builder, cloudNativeDynakube, *sampleApp)
 
-	builder.Assess("codemodules have been downloaded", ImageHasBeenDownloaded(cloudNativeDynakube))
+	builder.Assess("codemodules have been downloaded", provisioner.InstalledImage(cloudNativeDynakube, cloudNativeDynakube.OneAgent().GetCustomCodeModulesImage(), provisioner.ImageInstaller))
 
 	cloudnative.AssessSampleContainer(builder, sampleApp, func() []byte { return agCrt }, nil)
 	cloudnative.AssessOneAgentContainer(builder, func() []byte { return agCrt }, nil)
@@ -261,7 +258,7 @@ func WithProxyAndAGCert(t *testing.T, proxySpec *value.Source) features.Feature 
 	return builder.Feature()
 }
 
-func WithProxyAndAutomaticAGCert(t *testing.T, proxySpec *value.Source) features.Feature {
+func WithProxyAndAutomaticAGCert(t *testing.T, proxySpec *types.ValueSource) features.Feature {
 	builder := features.New("codemodules-with-proxy-and-auto-ag-cert")
 	secretConfigs := tenant.GetMultiTenantSecret(t)
 	require.Len(t, secretConfigs, 2)
@@ -297,7 +294,7 @@ func WithProxyAndAutomaticAGCert(t *testing.T, proxySpec *value.Source) features
 	// Register actual test
 	cloudnative.AssessSampleInitContainers(builder, sampleApp)
 	istio.AssessIstio(builder, cloudNativeDynakube, *sampleApp)
-	builder.Assess("codemodules have been downloaded", ImageHasBeenDownloaded(cloudNativeDynakube))
+	builder.Assess("codemodules have been downloaded", provisioner.InstalledImage(cloudNativeDynakube, cloudNativeDynakube.OneAgent().GetCustomCodeModulesImage(), provisioner.ImageInstaller))
 
 	builder.Assess("check env variables of oneagent pods", checkOneAgentEnvVars(cloudNativeDynakube))
 	builder.Assess("check proxy settings in ruxitagentproc.conf", proxy.CheckRuxitAgentProcFileHasProxySetting(*sampleApp, proxySpec))
@@ -318,7 +315,7 @@ func WithProxyAndAutomaticAGCert(t *testing.T, proxySpec *value.Source) features
 	return builder.Feature()
 }
 
-func WithProxyCAAndAGCert(t *testing.T, proxySpec *value.Source) features.Feature {
+func WithProxyCAAndAGCert(t *testing.T, proxySpec *types.ValueSource) features.Feature {
 	builder := features.New("codemodules-with-proxy-custom-ca-ag-cert")
 	secretConfigs := tenant.GetMultiTenantSecret(t)
 	require.Len(t, secretConfigs, 2)
@@ -378,7 +375,7 @@ func WithProxyCAAndAGCert(t *testing.T, proxySpec *value.Source) features.Featur
 	cloudnative.AssessSampleInitContainers(builder, sampleApp)
 	istio.AssessIstio(builder, cloudNativeDynakube, *sampleApp)
 
-	builder.Assess("codemodules have been downloaded", ImageHasBeenDownloaded(cloudNativeDynakube))
+	builder.Assess("codemodules have been downloaded", provisioner.InstalledImage(cloudNativeDynakube, cloudNativeDynakube.OneAgent().GetCustomCodeModulesImage(), provisioner.ImageInstaller))
 
 	cloudnative.AssessSampleContainer(builder, sampleApp, func() []byte { return agCrt }, trustedCa)
 	cloudnative.AssessOneAgentContainer(builder, func() []byte { return agCrt }, trustedCa)
@@ -393,7 +390,7 @@ func WithProxyCAAndAGCert(t *testing.T, proxySpec *value.Source) features.Featur
 	return builder.Feature()
 }
 
-func WithProxyCAAndAutomaticAGCert(t *testing.T, proxySpec *value.Source) features.Feature {
+func WithProxyCAAndAutomaticAGCert(t *testing.T, proxySpec *types.ValueSource) features.Feature {
 	builder := features.New("codemodules-with-proxy-custom-ca-auto-ag-cert")
 	secretConfigs := tenant.GetMultiTenantSecret(t)
 	require.Len(t, secretConfigs, 2)
@@ -440,7 +437,7 @@ func WithProxyCAAndAutomaticAGCert(t *testing.T, proxySpec *value.Source) featur
 	cloudnative.AssessSampleInitContainers(builder, sampleApp)
 	istio.AssessIstio(builder, cloudNativeDynakube, *sampleApp)
 
-	builder.Assess("codemodules have been downloaded", ImageHasBeenDownloaded(cloudNativeDynakube))
+	builder.Assess("codemodules have been downloaded", provisioner.InstalledImage(cloudNativeDynakube, cloudNativeDynakube.OneAgent().GetCustomCodeModulesImage(), provisioner.ImageInstaller))
 
 	agTLSSecret := corev1.Secret{
 		Name:      cloudNativeDynakube.ActiveGate().GetTLSSecretName(),
@@ -473,48 +470,6 @@ func codeModulesAppInjectSpec(t *testing.T) *oneagent.AppInjectionSpec {
 	}
 }
 
-func ImageHasBeenDownloaded(dk *dynakube.DynaKube) features.Func {
-	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		resource := envConfig.Client().Resources()
-
-		customImage := dk.OneAgent().GetCustomCodeModulesImage()
-		require.NotEmpty(t, customImage)
-
-		err := k8sdaemonset.NewQuery(ctx, resource, client.ObjectKey{
-			Name:      csi.DaemonSetName,
-			Namespace: dk.Namespace,
-		}).ForEachPod(func(pod *corev1.Pod) {
-			err := wait.For(func(ctx context.Context) (done bool, err error) {
-				latest, readErr := readLatestCodeModule(ctx, resource, pod, dk.Name)
-				if readErr != nil {
-					t.Logf("failed to read the latest codemodule link on %s, retrying: %v", pod.Name, readErr)
-
-					return false, nil
-				}
-				expectedDirName := base64.StdEncoding.EncodeToString([]byte(customImage))
-				if !strings.Contains(latest, expectedDirName) {
-					t.Logf("latest codemodule link on %s is %s, waiting for it to contain %s", pod.Name, latest, expectedDirName)
-
-					return false, nil
-				}
-
-				return true, nil
-			}, wait.WithTimeout(time.Minute*5))
-			require.NoError(t, err)
-
-			listCommand := shell.ListDirectory(dataPath)
-			result, err := k8spod.Exec(ctx, resource, pod, provisionerContainerName, listCommand...)
-
-			require.NoError(t, err)
-			assert.Contains(t, result.StdOut.String(), dtcsi.SharedAgentBinDir)
-		})
-
-		require.NoError(t, err)
-
-		return ctx
-	}
-}
-
 func measureDiskUsage(namespace string, storageMap map[string]int) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resource := envConfig.Client().Resources()
@@ -522,7 +477,7 @@ func measureDiskUsage(namespace string, storageMap map[string]int) features.Func
 			Name:      csi.DaemonSetName,
 			Namespace: namespace,
 		}).ForEachPod(func(pod *corev1.Pod) {
-			diskUsage := getDiskUsage(ctx, t, envConfig.Client().Resources(), pod, provisionerContainerName, dataPath)
+			diskUsage := getDiskUsage(ctx, t, envConfig.Client().Resources(), pod, csi.ProvisionerContainerName, dataPath)
 			storageMap[pod.Name] = diskUsage
 		})
 		require.NoError(t, err)
@@ -538,7 +493,7 @@ func diskUsageDoesNotIncrease(namespace string, storageMap map[string]int) featu
 			Name:      csi.DaemonSetName,
 			Namespace: namespace,
 		}).ForEachPod(func(pod *corev1.Pod) {
-			diskUsage := getDiskUsage(ctx, t, envConfig.Client().Resources(), pod, provisionerContainerName, dataPath)
+			diskUsage := getDiskUsage(ctx, t, envConfig.Client().Resources(), pod, csi.ProvisionerContainerName, dataPath)
 			assert.InDelta(t, storageMap[pod.Name], diskUsage, diskUsageKiBDelta)
 		})
 		require.NoError(t, err)

@@ -5,22 +5,22 @@ package statefulset
 
 import (
 	"context"
-	"hash/fnv"
-	"strconv"
+	"encoding/json"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/deploymentproperties"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/authtoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
-	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
-	"k8s.io/apimachinery/pkg/types"
+	corev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -78,7 +78,7 @@ func (r *Reconciler) manageStatefulSet(ctx context.Context, dk *dynakube.DynaKub
 }
 
 func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.DynaKube, agCapability capability.Capability) (*appsv1.StatefulSet, error) {
-	kubeUID := types.UID(dk.Status.KubeSystemUUID)
+	kubeUID := dk.Status.KubeSystemUUID
 
 	activeGateConfigurationHash, err := r.calculateActiveGateConfigurationHash(ctx, dk, agCapability)
 	if err != nil {
@@ -112,12 +112,46 @@ func (r *Reconciler) calculateActiveGateConfigurationHash(ctx context.Context, d
 
 	deploymentPropertiesData := deploymentproperties.BuildContent(dk)
 
-	hash := fnv.New32()
-	if _, err := hash.Write([]byte(customPropertyData + authTokenData + deploymentPropertiesData)); err != nil {
-		return "", errors.WithStack(err)
+	tlsData, err := r.getTLSData(ctx, dk)
+	if err != nil {
+		return "", err
 	}
 
-	return strconv.FormatUint(uint64(hash.Sum32()), 10), nil
+	trustedCAs, err := r.getTrustedCAs(ctx, dk)
+	if err != nil {
+		return "", err
+	}
+
+	return hasher.GenerateSecureHash([]string{customPropertyData, authTokenData, deploymentPropertiesData, tlsData, trustedCAs})
+}
+
+func (r *Reconciler) getTLSData(ctx context.Context, dk *dynakube.DynaKube) (string, error) {
+	tlsSecretName := dk.ActiveGate().GetTLSSecretName()
+	if tlsSecretName == "" {
+		return "", nil
+	}
+
+	var secret corev1.Secret
+
+	err := r.apiReader.Get(ctx, client.ObjectKey{Name: tlsSecretName, Namespace: dk.Namespace}, &secret)
+	if k8serrors.IsNotFound(err) {
+		return "", nil
+	} else if err != nil {
+		return "", err
+	}
+
+	data, err := json.Marshal(secret.Data)
+
+	return string(data), err
+}
+
+func (r *Reconciler) getTrustedCAs(ctx context.Context, dk *dynakube.DynaKube) (string, error) {
+	trustedCAs, err := dk.TrustedCAs(ctx, r.apiReader)
+	if k8serrors.IsNotFound(err) {
+		return "", nil
+	}
+
+	return string(trustedCAs), err
 }
 
 func (r *Reconciler) getCustomPropertyValue(ctx context.Context, dk *dynakube.DynaKube, agCapability capability.Capability) (string, error) {
@@ -146,18 +180,18 @@ func (r *Reconciler) getAuthTokenValue(ctx context.Context, dk *dynakube.DynaKub
 	return authTokenData, nil
 }
 
-func (r *Reconciler) getDataFromCustomProperty(ctx context.Context, dk *dynakube.DynaKube, customProperties *value.Source) (string, error) {
+func (r *Reconciler) getDataFromCustomProperty(ctx context.Context, dk *dynakube.DynaKube, customProperties *types.ValueSource) (string, error) {
 	if customProperties.ValueFrom != "" {
-		return k8ssecret.GetDataFromSecretName(ctx, r.apiReader, types.NamespacedName{Namespace: dk.Namespace, Name: customProperties.ValueFrom}, customproperties.DataKey)
+		return k8ssecret.GetDataFromSecretName(ctx, r.apiReader, client.ObjectKey{Namespace: dk.Namespace, Name: customProperties.ValueFrom}, customproperties.DataKey)
 	}
 
 	return customProperties.Value, nil
 }
 
 func (r *Reconciler) getDataFromAuthTokenSecret(ctx context.Context, dk *dynakube.DynaKube) (string, error) {
-	return k8ssecret.GetDataFromSecretName(ctx, r.apiReader, types.NamespacedName{Namespace: dk.Namespace, Name: dk.ActiveGate().GetAuthTokenSecretName()}, authtoken.ActiveGateAuthTokenName)
+	return k8ssecret.GetDataFromSecretName(ctx, r.apiReader, client.ObjectKey{Namespace: dk.Namespace, Name: dk.ActiveGate().GetAuthTokenSecretName()}, authtoken.ActiveGateAuthTokenName)
 }
 
-func needsCustomPropertyHash(customProperties *value.Source) bool {
+func needsCustomPropertyHash(customProperties *types.ValueSource) bool {
 	return customProperties != nil && (customProperties.Value != "" || customProperties.ValueFrom != "")
 }

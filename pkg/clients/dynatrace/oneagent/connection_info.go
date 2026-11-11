@@ -118,7 +118,6 @@ func (c *ClientImpl) GetConnectionInfo(ctx context.Context, requiredHosts []stri
 	}
 
 	err := c.apiClient.GET(ctx, connectionInfoPath).
-		WithPaasToken().
 		WithQueryParams(params).
 		Execute(&resp)
 

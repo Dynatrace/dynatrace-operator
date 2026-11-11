@@ -17,6 +17,7 @@ go/lint: prerequisites/go-linting go/golangci go/deadcode
 ## Runs all go unit and integration tests and writes the coverprofile to coverage.txt
 go/test: prerequisites/setup-envtest go/check-version
 	go test ./... -coverprofile=coverage.txt -covermode=atomic -coverpkg=./...
+	go test ./test/e2e/helpers/... -coverprofile=coverage-e2e.txt -covermode=atomic -coverpkg=./test/e2e/helpers/... -tags=e2e
 
 ## Runs all go unit tests and opens coverage report in a browser
 go/coverage: go/test

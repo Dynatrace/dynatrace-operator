@@ -10,7 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	agclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
@@ -97,7 +97,7 @@ func TestReconcile(t *testing.T) {
 		dtClient.EXPECT().GetConnectionInfo(anyCtx).Return(getTestActiveGateConnectionInfo(), nil).Once()
 
 		fakeClient := fake.NewClient(dk, buildActiveGateSecret(dk, testTenantUUID))
-		dk.Status.ActiveGate.ConnectionInfo = communication.ConnectionInfo{
+		dk.Status.ActiveGate.ConnectionInfo = types.ConnectionInfo{
 			TenantUUID: testOutdated,
 			Endpoints:  testOutdated,
 		}
@@ -110,7 +110,7 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, metav1.ConditionTrue, condition.Status)
 		assert.Equal(t, k8sconditions.SecretCreatedReason, condition.Reason)
 
-		tenantTokenHash, err := hasher.GenerateHash(testTenantToken)
+		tenantTokenHash, err := hasher.GenerateSecureHash(testTenantToken)
 
 		require.NoError(t, err)
 		assert.Equal(t, testTenantUUID, dk.Status.ActiveGate.ConnectionInfo.TenantUUID)

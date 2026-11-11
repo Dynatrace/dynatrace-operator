@@ -12,14 +12,13 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	kubemonapi "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	agconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/deploymentproperties"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
@@ -282,7 +281,7 @@ func withoutKubernetesMonitoring() func(*dynakube.DynaKube) {
 
 func withNoProxy(noProxy string) func(*dynakube.DynaKube) {
 	return func(dk *dynakube.DynaKube) {
-		dk.Spec.Proxy = &value.Source{Value: "http://proxy:8080"}
+		dk.Spec.Proxy = &types.ValueSource{Value: "http://proxy:8080"}
 
 		if dk.Annotations == nil {
 			dk.Annotations = make(map[string]string)
@@ -296,7 +295,7 @@ func getDeploymentPropertiesSecret(t *testing.T, clt client.Client, dk *dynakube
 	t.Helper()
 
 	secret := &corev1.Secret{}
-	require.NoError(t, clt.Get(t.Context(), types.NamespacedName{
+	require.NoError(t, clt.Get(t.Context(), client.ObjectKey{
 		Name:      dk.KubernetesMonitoring().GetDeploymentPropertiesSecretName(),
 		Namespace: dk.Namespace,
 	}, secret))
@@ -307,7 +306,7 @@ func getDeploymentPropertiesSecret(t *testing.T, clt client.Client, dk *dynakube
 func assertDeploymentPropertiesSecretAbsent(t *testing.T, clt client.Client, dk *dynakube.DynaKube) {
 	t.Helper()
 
-	err := clt.Get(t.Context(), types.NamespacedName{
+	err := clt.Get(t.Context(), client.ObjectKey{
 		Name:      dk.KubernetesMonitoring().GetDeploymentPropertiesSecretName(),
 		Namespace: dk.Namespace,
 	}, &corev1.Secret{})

@@ -9,6 +9,75 @@ spec:
   # Required: Dynatrace apiUrl including the `/api` path at the end.
   apiUrl: https://ENVIRONMENTID.live.dynatrace.com/api
 
+  # Optional: Enable self-monitoring. Deploy an OTEL collector that is configured for ingesting Dynatrace Operator component metrics.
+  selfMonitoring: {}
+    # Optional: Set the Deployment replicas. Leave this empty to allow external controllers like HPA to manage replicas. If unset, uses Kubernetes default.
+    #
+    # replicas: 1
+
+    # Optional: Set custom Deployment rollout strategy. If unset, uses Kubernetes default.
+    #
+    # strategy:
+    #   rollingUpdate:
+    #     maxSurge: 25%
+    #     maxUnavailable: 25%
+    #   type: RollingUpdate
+    #
+    # Optional: Set additional pod labels.
+    #
+    # labels: {}
+
+    # Optional: Set additional pod annotations.
+    #
+    # annotations: {}
+
+    # Optional: Define a node selector.
+    #
+    # nodeSelector: {}
+
+    # Optional: Define pod affinity.
+    #
+    # affinity: {}
+
+    # Optional: Define pod tolerations.
+    #
+    # tolerations: []
+
+    # Optional: Define pod topology spread constraints.
+    #
+    # topologySpreadConstraints: []
+
+    # Optional: Set a pod priority class.
+    #
+    # priorityClassName: high-priority
+
+    # Optional: Define pod volumes. Only allows volumes of type emptyDir, configMap, secret or projected.
+    #
+    # volumes: []
+
+    # Optional: Specify an image for the OTEL collector. If unset, the image will be fetched using the fleet management API.
+    #
+    # image: public.ecr.aws/dynatrace/dynatrace-otel-collector:<tag>
+
+    # Optional: Set an image pull policy. If unset, uses Kubernetes default.
+    #
+    # imagePullPolicy: IfNotPresent
+
+    # Optional: Set additional command-line arguments for the OTEL collector container.
+    #
+    # args: []
+
+    # Optional: Override default container resources.
+    #
+    # resources:
+    #   requests:
+    #     cpu: 100m
+    #     memory: 256Mi
+
+    # Optional: Define container volume mounts. Must match provides pod volume names.
+    #
+    # volumeMounts: []
+
   # Optional: Name of the secret holding the tokens used for connecting to Dynatrace.
   #
   # tokens: ""

@@ -4,7 +4,7 @@
 package extensions
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -30,7 +30,6 @@ type Spec struct {
 // +kubebuilder:object:generate=true
 
 type ExecutionControllerSpec struct {
-
 	// Defines storage device
 	// +kubebuilder:validation:Optional
 	PersistentVolumeClaim *corev1.PersistentVolumeClaimSpec `json:"persistentVolumeClaim,omitempty"`
@@ -44,7 +43,7 @@ type ExecutionControllerSpec struct {
 
 	// Overrides the default image
 	// +kubebuilder:validation:Optional
-	ImageRef image.Ref `json:"imageRef,omitzero"`
+	ImageRef types.ImageRef `json:"imageRef,omitzero"`
 
 	// +kubebuilder:validation:Optional
 	TLSRefName string `json:"tlsRefName,omitempty"`
@@ -115,8 +114,9 @@ type DatabaseSpec struct {
 // +kubebuilder:object:generate=true
 
 type DatabaseExecutorSpec struct {
-	// +kubebuilder:validation:Required
-	ImageRef image.Ref `json:"imageRef"`
+	// Overrides the default image
+	// +kubebuilder:validation:Optional
+	ImageRef types.ImageRef `json:"imageRef,omitzero"`
 
 	// +kubebuilder:validation:Optional
 	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`

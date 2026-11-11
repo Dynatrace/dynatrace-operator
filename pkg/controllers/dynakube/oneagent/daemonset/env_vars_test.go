@@ -9,8 +9,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	logmonitoringds "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring/daemonset"
@@ -36,7 +36,7 @@ func TestEnvironmentVariables(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			Name: "test",
 			Spec: dynakube.DynaKubeSpec{
-				Proxy: &value.Source{
+				Proxy: &types.ValueSource{
 					Value: "test",
 				},
 				OneAgent: oneagent.Spec{
@@ -199,7 +199,7 @@ func TestAddProxyEnvs(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			Name: "test",
 			Spec: dynakube.DynaKubeSpec{
-				Proxy: &value.Source{
+				Proxy: &types.ValueSource{
 					Value: "test",
 				},
 			},
@@ -217,7 +217,7 @@ func TestAddProxyEnvs(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			Name: "test",
 			Spec: dynakube.DynaKubeSpec{
-				Proxy: &value.Source{
+				Proxy: &types.ValueSource{
 					ValueFrom: "test",
 				},
 			},

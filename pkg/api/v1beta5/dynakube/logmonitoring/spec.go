@@ -4,7 +4,7 @@
 package logmonitoring
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -31,7 +31,7 @@ type TemplateSpec struct {
 
 	// Overrides the default image for the LogMonitoring pods
 	// +kubebuilder:validation:Optional
-	ImageRef image.Ref `json:"imageRef,omitempty"`
+	ImageRef types.ImageRef `json:"imageRef,omitempty"`
 
 	// Sets DNS Policy for the LogMonitoring pods
 	// +kubebuilder:validation:Optional

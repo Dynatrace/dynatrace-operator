@@ -9,7 +9,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"path"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/metadataenrichment"
@@ -35,8 +34,6 @@ const (
 
 var (
 	errMissingKubeSystemUUID = errors.New("no kube-system namespace UUID given")
-	errDeleteSettings        = errors.New("delete monitored entity settings failed")
-	errNoSettingsIDProvided  = errors.New("no settings ID provided")
 )
 
 type Client interface {
@@ -64,18 +61,6 @@ type Client interface {
 	GetKSPMSettings(ctx context.Context, monitoredEntity string) (KSPMSettingsResponse, error)
 	// CreateKSPMSetting returns the object ID of the created kspm settings.
 	CreateKSPMSetting(ctx context.Context, monitoredEntity string, datasetPipelineEnabled bool) (string, error)
-	// GetEnrichmentRuleObjects returns the list of enrichment rule settings objects (with objectIds) for the given scope.
-	// Only intended for e2e tests, where the number of rules is small. Does not handle pagination.
-	GetEnrichmentRuleObjects(ctx context.Context, scope string) ([]EnrichmentRuleObject, error)
-	// GetLegacyEnrichmentRuleObjects returns enrichment rule settings objects for the legacy schema (builtin:kubernetes.generic.metadata.enrichment).
-	// Only intended for e2e tests, where the number of rules is small. Does not handle pagination.
-	GetLegacyEnrichmentRuleObjects(ctx context.Context, scope string) ([]EnrichmentRuleObject, error)
-	// CreateEnrichmentRuleObject creates a settings object for the builtin:ingest.enrichment.config schema.
-	CreateEnrichmentRuleObject(ctx context.Context, scope string, rules ...metadataenrichment.Rule) ([]string, error)
-	// CreateLegacyEnrichmentRuleObject creates a settings object for the builtin:kubernetes.generic.metadata.enrichment schema.
-	CreateLegacyEnrichmentRuleObject(ctx context.Context, scope string, rules ...metadataenrichment.Rule) ([]string, error)
-	// DeleteSettings deletes the settings for a monitored entity.
-	DeleteSettings(ctx context.Context, settingsID string) error
 }
 
 // K8sClusterME is representing the relevant info for a Kubernetes Cluster Monitored Entity
@@ -222,19 +207,4 @@ func (c *ClientImpl) GetSettingsForMonitoredEntity(ctx context.Context, monitore
 	}
 
 	return response, nil
-}
-
-// DeleteSettings deletes the settings using the settings object ID.
-func (c *ClientImpl) DeleteSettings(ctx context.Context, objectID string) error {
-	if objectID == "" {
-		return errNoSettingsIDProvided
-	}
-
-	err := c.apiClient.DELETE(ctx, path.Join(ObjectsPath, objectID)).
-		Execute(nil)
-	if err != nil {
-		return fmt.Errorf("%w: %w", errDeleteSettings, err)
-	}
-
-	return nil
 }

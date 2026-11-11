@@ -11,8 +11,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
 	schemeFake "github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
@@ -21,7 +21,6 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -51,7 +50,7 @@ func TestConfigMapCreation(t *testing.T) {
 		require.NoError(t, err)
 
 		var apiEndpointConfigMap corev1.ConfigMap
-		err = clt.Get(ctx, types.NamespacedName{Name: consts.OTLPAPIEndpointConfigMapName, Namespace: dk.Namespace}, &apiEndpointConfigMap)
+		err = clt.Get(ctx, client.ObjectKey{Name: consts.OTLPAPIEndpointConfigMapName, Namespace: dk.Namespace}, &apiEndpointConfigMap)
 		require.NoError(t, err)
 		assert.NotEmpty(t, apiEndpointConfigMap)
 		require.NotNil(t, meta.FindStatusCondition(*dk.Conditions(), configMapConditionType))
@@ -76,7 +75,7 @@ func TestConfigMapCreation(t *testing.T) {
 		require.NoError(t, err)
 
 		var apiEndpointConfigmap corev1.ConfigMap
-		err = clt.Get(ctx, types.NamespacedName{Name: consts.OTLPAPIEndpointConfigMapName, Namespace: dk.Namespace}, &apiEndpointConfigmap)
+		err = clt.Get(ctx, client.ObjectKey{Name: consts.OTLPAPIEndpointConfigMapName, Namespace: dk.Namespace}, &apiEndpointConfigmap)
 
 		require.Error(t, err)
 		assert.Empty(t, apiEndpointConfigmap)
@@ -151,7 +150,7 @@ func createDynaKube(telemetryIngestEnabled bool) *dynakube.DynaKube {
 		Spec:      dynakube.DynaKubeSpec{},
 		Status: dynakube.DynaKubeStatus{
 			ActiveGate: activegate.Status{
-				ConnectionInfo: communication.ConnectionInfo{
+				ConnectionInfo: types.ConnectionInfo{
 					TenantUUID: testTenantUUID,
 				},
 				VersionStatus: status.VersionStatus{},

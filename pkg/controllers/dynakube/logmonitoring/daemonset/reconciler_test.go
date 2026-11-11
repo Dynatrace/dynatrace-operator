@@ -13,9 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/logmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/logmonitoring/configsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
@@ -30,7 +28,6 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
@@ -61,7 +58,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		var daemonset appsv1.DaemonSet
-		err = mockK8sClient.Get(ctx, types.NamespacedName{
+		err = mockK8sClient.Get(ctx, client.ObjectKey{
 			Name:      dk.LogMonitoring().GetDaemonSetName(),
 			Namespace: dk.Namespace,
 		}, &daemonset)
@@ -92,7 +89,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		var daemonset appsv1.DaemonSet
-		err = mockK8sClient.Get(ctx, types.NamespacedName{
+		err = mockK8sClient.Get(ctx, client.ObjectKey{
 			Name:      dk.LogMonitoring().GetDaemonSetName(),
 			Namespace: dk.Namespace,
 		}, &daemonset)
@@ -124,7 +121,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		var daemonset appsv1.DaemonSet
-		err = mockK8sClient.Get(ctx, types.NamespacedName{
+		err = mockK8sClient.Get(ctx, client.ObjectKey{
 			Name:      dk.LogMonitoring().GetDaemonSetName(),
 			Namespace: dk.Namespace,
 		}, &daemonset)
@@ -149,7 +146,7 @@ func TestReconcile(t *testing.T) {
 		assert.Empty(t, *dk.Conditions())
 
 		var daemonset appsv1.DaemonSet
-		err = mockK8sClient.Get(ctx, types.NamespacedName{
+		err = mockK8sClient.Get(ctx, client.ObjectKey{
 			Name:      dk.LogMonitoring().GetDaemonSetName(),
 			Namespace: dk.Namespace,
 		}, &daemonset)
@@ -179,7 +176,7 @@ func TestReconcile(t *testing.T) {
 		dk := createDynakube(true)
 		dk.Annotations = map[string]string{exp.UsePublicRegistryKey: "true"}
 		dk.Spec.Templates.LogMonitoring = &logmonitoring.TemplateSpec{
-			ImageRef: image.Ref{Repository: "my-custom-registry:5000/my-custom-repo", Tag: "my-custom-tag"},
+			ImageRef: types.ImageRef{Repository: "my-custom-registry:5000/my-custom-repo", Tag: "my-custom-tag"},
 		}
 
 		mockK8sClient := fake.NewClient()
@@ -189,13 +186,15 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		var daemonset appsv1.DaemonSet
-		err = mockK8sClient.Get(ctx, types.NamespacedName{
+		err = mockK8sClient.Get(ctx, client.ObjectKey{
 			Name:      dk.LogMonitoring().GetDaemonSetName(),
 			Namespace: dk.Namespace,
 		}, &daemonset)
 		require.NoError(t, err)
 		assert.Equal(t, templateImageURI, daemonset.Spec.Template.Spec.Containers[0].Image)
 		assert.Equal(t, templateImageURI, daemonset.Spec.Template.Spec.InitContainers[0].Image)
+
+		assert.Equal(t, templateImageURI, dk.Status.LogMonitoring.ResolvedImage)
 	})
 }
 
@@ -338,7 +337,7 @@ func TestGenerateDaemonSet(t *testing.T) {
 
 	t.Run("proxy is in the template annotations, so if config changes, redeploy happens", func(t *testing.T) {
 		dk := createDynakube(true)
-		dk.Spec.Proxy = &value.Source{Value: "unknown"}
+		dk.Spec.Proxy = &types.ValueSource{Value: "unknown"}
 		dk.Status.ProxyURLHash = "proxy-hash"
 
 		reconciler := NewReconciler(nil, fake.NewClient())
@@ -503,13 +502,13 @@ func createDynakube(isEnabled bool) *dynakube.DynaKube {
 			LogMonitoring: logMonitoring,
 			Templates: dynakube.TemplatesSpec{
 				LogMonitoring: &logmonitoring.TemplateSpec{
-					ImageRef: image.Ref{Repository: "some-registry/dynatrace/logmonitoring", Tag: "1.0.0"},
+					ImageRef: types.ImageRef{Repository: "some-registry/dynatrace/logmonitoring", Tag: "1.0.0"},
 				},
 			},
 		},
 		Status: dynakube.DynaKubeStatus{
 			OneAgent: oneagent.Status{
-				ConnectionInfo: communication.ConnectionInfo{
+				ConnectionInfo: types.ConnectionInfo{
 					TenantUUID:      "test-uuid",
 					TenantTokenHash: "somehash",
 				},

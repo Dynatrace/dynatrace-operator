@@ -48,7 +48,7 @@ func (c *ClientImpl) ListEnvironmentSettings(ctx context.Context) ([]Environment
 
 	var response environmentSettingsResponse
 
-	err := c.apiClient.GET(ctx, settingsObjectsPath).WithoutToken().WithQueryParams(qp).Execute(&response)
+	err := c.apiClient.GET(ctx, settingsObjectsPath).WithQueryParams(qp).Execute(&response)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get settings objects")
 	}
@@ -58,7 +58,7 @@ func (c *ClientImpl) ListEnvironmentSettings(ctx context.Context) ([]Environment
 
 // CreateEnvironmentSetting create environment setting
 func (c *ClientImpl) CreateEnvironmentSetting(ctx context.Context, es EnvironmentSetting) error {
-	err := c.apiClient.POST(ctx, settingsObjectsPath).WithoutToken().WithJSONBody([]EnvironmentSetting{es}).Execute(nil)
+	err := c.apiClient.POST(ctx, settingsObjectsPath).WithJSONBody([]EnvironmentSetting{es}).Execute(nil)
 	if err != nil {
 		return errors.Wrap(err, "failed to create environment setting")
 	}
@@ -72,7 +72,7 @@ func (c *ClientImpl) UpdateEnvironmentSetting(ctx context.Context, es Environmen
 		return errNoEnvSettingObjectID
 	}
 
-	err := c.apiClient.PUT(ctx, settingsObjectsPath).WithPath(es.ObjectID).WithoutToken().WithJSONBody(es).Execute(nil)
+	err := c.apiClient.PUT(ctx, settingsObjectsPath).WithPath(es.ObjectID).WithJSONBody(es).Execute(nil)
 	if err != nil {
 		return errors.Wrap(err, "failed to update environment setting")
 	}
@@ -86,7 +86,7 @@ func (c *ClientImpl) DeleteEnvironmentSetting(ctx context.Context, objectID stri
 		return errNoEnvSettingObjectID
 	}
 
-	err := c.apiClient.DELETE(ctx, settingsObjectsPath).WithPath(objectID).WithoutToken().Execute(nil)
+	err := c.apiClient.DELETE(ctx, settingsObjectsPath).WithPath(objectID).Execute(nil)
 	if err != nil {
 		return errors.Wrap(err, "failed to delete environment setting")
 	}

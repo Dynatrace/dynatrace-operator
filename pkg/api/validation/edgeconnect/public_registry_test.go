@@ -6,7 +6,7 @@ package validation
 import (
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
 	"github.com/stretchr/testify/require"
 )
@@ -29,7 +29,7 @@ func Test_publicRegistryOverrideWithCustomImage(t *testing.T) {
 	t.Run("accept when only custom imageRef is set", func(t *testing.T) {
 		ec := &edgeconnect.EdgeConnect{
 			Spec: edgeconnect.EdgeConnectSpec{
-				ImageRef: image.Ref{
+				ImageRef: types.ImageRef{
 					Repository: "my.registry.example.com/edgeconnect",
 				},
 			},
@@ -40,7 +40,7 @@ func Test_publicRegistryOverrideWithCustomImage(t *testing.T) {
 		ec := &edgeconnect.EdgeConnect{
 			Spec: edgeconnect.EdgeConnectSpec{
 				PublicRegistryOverride: "my.registry.example.com",
-				ImageRef: image.Ref{
+				ImageRef: types.ImageRef{
 					Repository: "my.registry.example.com/edgeconnect",
 				},
 			},

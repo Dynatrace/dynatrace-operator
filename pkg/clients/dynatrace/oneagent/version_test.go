@@ -43,7 +43,6 @@ func TestGetLatest(t *testing.T) {
 
 		req := coremock.NewRequest(t)
 		req.EXPECT().WithPath([]string{args.OS, args.InstallerType, "latest"}).Return(req).Once()
-		req.EXPECT().WithPaasToken().Return(req).Once()
 		req.EXPECT().WithQueryParams(mock.Anything).Return(req).Once()
 		req.EXPECT().WithRawQueryParams(mock.Anything).Return(req).Once()
 		req.EXPECT().WithHeader("Accept", "application/octet-stream").Return(req).Once()
@@ -100,7 +99,6 @@ func TestGet(t *testing.T) {
 
 		req := coremock.NewRequest(t)
 		req.EXPECT().WithPath([]string{args.OS, args.InstallerType, "version", args.Version}).Return(req).Once()
-		req.EXPECT().WithPaasToken().Return(req).Once()
 		req.EXPECT().WithQueryParams(mock.Anything).Return(req).Once()
 		req.EXPECT().WithRawQueryParams(mock.Anything).Return(req).Once()
 		req.EXPECT().WithHeader(mock.Anything, mock.Anything).Return(req).Once()
@@ -152,7 +150,6 @@ func TestGetVersions(t *testing.T) {
 		req := coremock.NewRequest(t)
 		req.EXPECT().WithPath([]string{"versions", args.OS, args.InstallerType}).Return(req).Once()
 		req.EXPECT().WithQueryParams(mock.Anything).Return(req).Once()
-		req.EXPECT().WithPaasToken().Return(req).Once()
 		req.EXPECT().Execute(&resp).Run(func(model any) {
 			if execErr == nil {
 				resp := model.(*versionsResponse)

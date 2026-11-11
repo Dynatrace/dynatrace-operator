@@ -8,7 +8,7 @@
 package dynakube
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/extensions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube/kspm"
@@ -26,14 +26,11 @@ const (
 	// APITokenConditionType identifies the API Token validity condition.
 	APITokenConditionType string = "APIToken"
 
-	// PaaSTokenConditionType identifies the PaaS Token validity condition.
-	PaaSTokenConditionType string = "PaaSToken"
-
 	// DataIngestTokenConditionType identifies the DataIngest Token validity condition.
 	DataIngestTokenConditionType string = "DataIngestToken"
 )
 
-// Possible reasons for APIToken and PaaSToken conditions.
+// Possible reasons for APIToken conditions.
 const (
 	// ReasonTokenReady is set when a token has passed verifications.
 	ReasonTokenReady string = "TokenReady"
@@ -78,7 +75,7 @@ type DynaKubeSpec struct { //nolint:revive
 	// Note: Applies to Dynatrace Operator, ActiveGate, and OneAgents.
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Proxy",order=3,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
-	Proxy *value.Source `json:"proxy,omitempty"`
+	Proxy *types.ValueSource `json:"proxy,omitempty"`
 
 	// General configuration about the LogMonitoring feature.
 	// +kubebuilder:validation:Optional

@@ -10,7 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -23,7 +23,6 @@ const (
 	testDynatraceSecret       = testDynakube
 	testOtherDynatraceSecret  = "otherDynatraceSecret"
 	testAPIToken              = "apiTokenValue"
-	testPaasToken             = "passTokenValue"
 	testSecretName            = "customSecret"
 	testCustomPullSecretToken = "secretTokenValue"
 )
@@ -115,7 +114,7 @@ func TestDynatraceSecret(t *testing.T) {
 			WithObjects(
 				dk,
 				testBuildNamespace(testNamespace),
-				testNewSecretBuilder(testNamespace, testDynatraceSecret).dataAppend("apiToken", testAPIToken).dataAppend("paasToken", testPaasToken).build(),
+				testNewSecretBuilder(testNamespace, testDynatraceSecret).dataAppend("apiToken", testAPIToken).build(),
 			).
 			Build()
 
@@ -129,7 +128,7 @@ func TestDynatraceSecret(t *testing.T) {
 			WithObjects(
 				dk,
 				testBuildNamespace(testNamespace),
-				testNewSecretBuilder(testNamespace, testDynatraceSecret).dataAppend("paasToken", testPaasToken).build(),
+				testNewSecretBuilder(testNamespace, testDynatraceSecret).build(),
 			).
 			Build()
 
@@ -257,7 +256,7 @@ func (builder *testDynaKubeBuilder) withCustomPullSecret(secretName string) *tes
 }
 
 func (builder *testDynaKubeBuilder) withProxy(proxyURL string) *testDynaKubeBuilder {
-	builder.dynakube.Spec.Proxy = &value.Source{
+	builder.dynakube.Spec.Proxy = &types.ValueSource{
 		Value: proxyURL,
 	}
 
@@ -265,7 +264,7 @@ func (builder *testDynaKubeBuilder) withProxy(proxyURL string) *testDynaKubeBuil
 }
 
 func (builder *testDynaKubeBuilder) withProxySecret(secretName string) *testDynaKubeBuilder {
-	builder.dynakube.Spec.Proxy = &value.Source{
+	builder.dynakube.Spec.Proxy = &types.ValueSource{
 		ValueFrom: secretName,
 	}
 

@@ -12,7 +12,7 @@ import (
 	kubemonapi "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -219,6 +219,48 @@ func TestReconcileAPIUrl(t *testing.T) {
 		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedVirtualService), expectedVirtualService)
 		require.NoError(t, err)
 		assert.NotNil(t, expectedVirtualService)
+	})
+	t.Run("remove and cleanup if istio is disabled", func(t *testing.T) {
+		ctx := t.Context()
+		dk := createTestDynaKube()
+		fakeClient := fake.NewClientWithIndex()
+		reconciler := NewReconciler(fakeClient, fakeClient)
+
+		err := reconciler.ReconcileAPIURL(ctx, dk)
+		require.NoError(t, err)
+
+		expectedServiceEntry := &istiov1beta1.ServiceEntry{
+			Name:      BuildNameForFQDNServiceEntry(dk.GetName(), OperatorComponent),
+			Namespace: dk.GetNamespace(),
+		}
+		expectedVirtualService := &istiov1beta1.VirtualService{
+			Name:      BuildNameForFQDNServiceEntry(dk.GetName(), OperatorComponent),
+			Namespace: dk.GetNamespace(),
+		}
+
+		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedServiceEntry), expectedServiceEntry)
+		require.NoError(t, err)
+
+		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedVirtualService), expectedVirtualService)
+		require.NoError(t, err)
+
+		statusCondition := meta.FindStatusCondition(*dk.Conditions(), "IstioForOperator")
+		require.NotNil(t, statusCondition)
+		require.Equal(t, "IstioForOperatorChanged", statusCondition.Reason)
+
+		dk.Spec.EnableIstio = new(false)
+
+		err = reconciler.ReconcileAPIURL(ctx, dk)
+		require.NoError(t, err)
+
+		statusCondition = meta.FindStatusCondition(*dk.Conditions(), "IstioForOperator")
+		require.Nil(t, statusCondition)
+
+		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedServiceEntry), expectedServiceEntry)
+		require.True(t, k8serrors.IsNotFound(err))
+
+		err = fakeClient.Get(ctx, client.ObjectKeyFromObject(expectedVirtualService), expectedVirtualService)
+		require.True(t, k8serrors.IsNotFound(err))
 	})
 	t.Run("unknown k8s client error => error", func(t *testing.T) {
 		ctx := t.Context()
@@ -455,7 +497,7 @@ func TestReconcileActiveGateCommunicationHosts(t *testing.T) {
 		dk.Spec.KubernetesMonitoring = &kubemonapi.Spec{}
 		dk.Status.ActiveGate.ConnectionInfo.Endpoints = ""
 		dk.Status.KubernetesMonitoring = kubemonapi.Status{
-			ConnectionInfo: communication.ConnectionInfo{
+			ConnectionInfo: types.ConnectionInfo{
 				Endpoints: "https://kubemon.some.endpoint.com:443",
 			},
 		}
@@ -528,12 +570,12 @@ func createTestDynaKube() *dynakube.DynaKube {
 		},
 		Status: dynakube.DynaKubeStatus{
 			OneAgent: oneagent.Status{
-				ConnectionInfo: communication.ConnectionInfo{
+				ConnectionInfo: types.ConnectionInfo{
 					Endpoints: fqdnHost.String() + ";" + ipHost.String(),
 				},
 			},
 			ActiveGate: activegate.Status{
-				ConnectionInfo: communication.ConnectionInfo{
+				ConnectionInfo: types.ConnectionInfo{
 					TenantUUID: "test-tenant",
 					Endpoints:  endpoints,
 				},

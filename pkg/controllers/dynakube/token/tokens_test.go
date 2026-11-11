@@ -30,11 +30,6 @@ func getAllScopesForAPIToken() []string {
 		tokenclient.ScopeSettingsRead,
 		tokenclient.ScopeSettingsWrite,
 		tokenclient.ScopeActiveGateTokenCreate,
-	}
-}
-
-func getAllScopesForPaaSToken() []string {
-	return []string{
 		tokenclient.ScopeInstallerDownload,
 	}
 }
@@ -63,23 +58,19 @@ func getAllScopesForOTLPExporter() []string {
 
 func TestTokens(t *testing.T) {
 	const (
-		fakeTokenNoPermissions                       = "no-permissions"
-		fakeTokenAllAPITokenPermissions              = "all-permissions"
-		fakeTokenAllAPITokenPermissionsIncludingPaaS = "all-permissions-including-paas"
-		fakeTokenPaas                                = "paas-token"
-		fakeTokenAllDataIngestPermissions            = "all-data-ingest-permissions"
-		fakeTokenAllOTLPExporterPermissions          = "all-otlp-exporter-permissions"
-		fakeTokenAllTelemetryIngestPermissions       = "all-telemetry-ingest-permissions"
+		fakeTokenNoPermissions                 = "no-permissions"
+		fakeTokenAllAPITokenPermissions        = "all-permissions"
+		fakeTokenAllDataIngestPermissions      = "all-data-ingest-permissions"
+		fakeTokenAllOTLPExporterPermissions    = "all-otlp-exporter-permissions"
+		fakeTokenAllTelemetryIngestPermissions = "all-telemetry-ingest-permissions"
 	)
 
 	scopesByToken := map[string][]string{
-		fakeTokenNoPermissions:                       {},
-		fakeTokenAllAPITokenPermissions:              getAllScopesForAPIToken(),
-		fakeTokenAllAPITokenPermissionsIncludingPaaS: append(getAllScopesForAPIToken(), getAllScopesForPaaSToken()...),
-		fakeTokenPaas:                                getAllScopesForPaaSToken(),
-		fakeTokenAllDataIngestPermissions:            getAllScopesForDataIngest(),
-		fakeTokenAllOTLPExporterPermissions:          getAllScopesForOTLPExporter(),
-		fakeTokenAllTelemetryIngestPermissions:       getAllScopesForTelemetryIngest(),
+		fakeTokenNoPermissions:                 {},
+		fakeTokenAllAPITokenPermissions:        getAllScopesForAPIToken(),
+		fakeTokenAllDataIngestPermissions:      getAllScopesForDataIngest(),
+		fakeTokenAllOTLPExporterPermissions:    getAllScopesForOTLPExporter(),
+		fakeTokenAllTelemetryIngestPermissions: getAllScopesForTelemetryIngest(),
 	}
 
 	// createFakeClient provisions GetScopes only for the tokens the test case actually verifies,
@@ -104,7 +95,7 @@ func TestTokens(t *testing.T) {
 		return dk
 	}
 
-	t.Run("empty dynakube, all permissions in api token, but paas => should fail", func(t *testing.T) {
+	t.Run("empty dynakube, all permissions in api token => should work", func(t *testing.T) {
 		tokens := Tokens{
 			APIKey: new(newToken(APIKey, fakeTokenAllAPITokenPermissions)),
 		}
@@ -112,34 +103,6 @@ func TestTokens(t *testing.T) {
 		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t, fakeTokenAllAPITokenPermissions), &dynakube.DynaKube{})
 
 		assert.Len(t, tokens.APIToken().Features, 9)
-		assert.Empty(t, tokens.PaasToken().Features)
-		assert.Empty(t, tokens.DataIngestToken().Features)
-
-		assert.Equal(t, []string{"InstallerDownload"}, GetMissingScopes(err))
-		assert.EqualError(t, err, "token 'apiToken' has scope errors: [feature 'Download Installer' is missing scope 'InstallerDownload']")
-	})
-	t.Run("empty dynakube, all permissions in api token, but paas + paas token => should work", func(t *testing.T) {
-		tokens := Tokens{
-			APIKey:  new(newToken(APIKey, fakeTokenAllAPITokenPermissions)),
-			PaaSKey: new(newToken(PaaSKey, fakeTokenPaas)),
-		}
-		tokens = tokens.AddFeatureScopesToTokens()
-		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t, fakeTokenAllAPITokenPermissions, fakeTokenPaas), &dynakube.DynaKube{})
-
-		assert.Len(t, tokens.APIToken().Features, 9)
-		assert.Len(t, tokens.PaasToken().Features, 1)
-		assert.Empty(t, tokens.DataIngestToken().Features)
-		assert.NoError(t, err)
-	})
-	t.Run("empty dynakube, all permissions in api token => should work", func(t *testing.T) {
-		tokens := Tokens{
-			APIKey: new(newToken(APIKey, fakeTokenAllAPITokenPermissionsIncludingPaaS)),
-		}
-		tokens = tokens.AddFeatureScopesToTokens()
-		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t, fakeTokenAllAPITokenPermissionsIncludingPaaS), &dynakube.DynaKube{})
-
-		assert.Len(t, tokens.APIToken().Features, 9)
-		assert.Empty(t, tokens.PaasToken().Features)
 		assert.Empty(t, tokens.DataIngestToken().Features)
 		assert.NoError(t, err)
 	})
@@ -156,7 +119,6 @@ func TestTokens(t *testing.T) {
 		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t, fakeTokenNoPermissions), dk)
 
 		assert.Len(t, tokens.APIToken().Features, 9)
-		assert.Empty(t, tokens.PaasToken().Features)
 		assert.Empty(t, tokens.DataIngestToken().Features)
 		assert.Equal(t, []string{"DataExport", "InstallerDownload", "activeGateTokenManagement.create"}, GetMissingScopes(err))
 		assert.EqualError(t, err, "token 'apiToken' has scope errors: [feature 'Access problem and event feed, metrics, and topology' is missing scope 'DataExport' feature 'Automatic ActiveGate Token Creation' is missing scope 'activeGateTokenManagement.create' feature 'Download Installer' is missing scope 'InstallerDownload']")
@@ -166,28 +128,26 @@ func TestTokens(t *testing.T) {
 		enableKubernetesMonitoringAndMetricsIngest(dk)
 
 		tokens := Tokens{
-			APIKey:        new(newToken(APIKey, fakeTokenAllAPITokenPermissionsIncludingPaaS)),
+			APIKey:        new(newToken(APIKey, fakeTokenAllAPITokenPermissions)),
 			DataIngestKey: new(newToken(DataIngestKey, fakeTokenNoPermissions)),
 		}
 		tokens = tokens.AddFeatureScopesToTokens()
-		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t, fakeTokenAllAPITokenPermissionsIncludingPaaS, fakeTokenNoPermissions), dk)
+		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t, fakeTokenAllAPITokenPermissions, fakeTokenNoPermissions), dk)
 
 		assert.Len(t, tokens.APIToken().Features, 9)
-		assert.Empty(t, tokens.PaasToken().Features)
 		assert.Len(t, tokens.DataIngestToken().Features, 8)
 		assert.Equal(t, []string{"metrics.ingest"}, GetMissingScopes(err))
 		assert.EqualError(t, err, "token 'dataIngestToken' has scope errors: [feature 'Data Ingest' is missing scope 'metrics.ingest']")
 	})
 	t.Run("data ingest enabled => dataingest token has rights => success", func(t *testing.T) {
 		tokens := Tokens{
-			APIKey:        new(newToken(APIKey, fakeTokenAllAPITokenPermissionsIncludingPaaS)),
+			APIKey:        new(newToken(APIKey, fakeTokenAllAPITokenPermissions)),
 			DataIngestKey: new(newToken(DataIngestKey, fakeTokenAllDataIngestPermissions)),
 		}
 		tokens = tokens.AddFeatureScopesToTokens()
-		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t, fakeTokenAllAPITokenPermissionsIncludingPaaS, fakeTokenAllDataIngestPermissions), &dynakube.DynaKube{})
+		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t, fakeTokenAllAPITokenPermissions, fakeTokenAllDataIngestPermissions), &dynakube.DynaKube{})
 
 		assert.Len(t, tokens.APIToken().Features, 9)
-		assert.Empty(t, tokens.PaasToken().Features)
 		assert.Len(t, tokens.DataIngestToken().Features, 8)
 		assert.NoError(t, err)
 	})
@@ -205,14 +165,13 @@ func TestTokens(t *testing.T) {
 		}
 
 		tokens := Tokens{
-			APIKey:        new(newToken(APIKey, fakeTokenAllAPITokenPermissionsIncludingPaaS)),
+			APIKey:        new(newToken(APIKey, fakeTokenAllAPITokenPermissions)),
 			DataIngestKey: new(newToken(DataIngestKey, fakeTokenNoPermissions)),
 		}
 		tokens = tokens.AddFeatureScopesToTokens()
-		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t, fakeTokenAllAPITokenPermissionsIncludingPaaS, fakeTokenNoPermissions), dk)
+		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t, fakeTokenAllAPITokenPermissions, fakeTokenNoPermissions), dk)
 
 		assert.Len(t, tokens.APIToken().Features, 9)
-		assert.Empty(t, tokens.PaasToken().Features)
 		assert.Len(t, tokens.DataIngestToken().Features, 8)
 		assert.Equal(t, []string{"logs.ingest", "metrics.ingest", "openTelemetryTrace.ingest"}, GetMissingScopes(err))
 		assert.EqualError(t, err, "token 'dataIngestToken' has scope errors: [feature 'OTLP trace exporter configuration' is missing scope 'openTelemetryTrace.ingest' feature 'OTLP logs exporter configuration' is missing scope 'logs.ingest' feature 'OTLP metrics exporter configuration' is missing scope 'metrics.ingest']")
@@ -231,14 +190,13 @@ func TestTokens(t *testing.T) {
 		}
 
 		tokens := Tokens{
-			APIKey:        new(newToken(APIKey, fakeTokenAllAPITokenPermissionsIncludingPaaS)),
+			APIKey:        new(newToken(APIKey, fakeTokenAllAPITokenPermissions)),
 			DataIngestKey: new(newToken(DataIngestKey, fakeTokenAllOTLPExporterPermissions)),
 		}
 		tokens = tokens.AddFeatureScopesToTokens()
-		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t, fakeTokenAllAPITokenPermissionsIncludingPaaS, fakeTokenAllOTLPExporterPermissions), dk)
+		_, err := tokens.VerifyScopes(t.Context(), createFakeClient(t, fakeTokenAllAPITokenPermissions, fakeTokenAllOTLPExporterPermissions), dk)
 
 		assert.Len(t, tokens.APIToken().Features, 9)
-		assert.Empty(t, tokens.PaasToken().Features)
 		assert.Len(t, tokens.DataIngestToken().Features, 8)
 		assert.NoError(t, err)
 	})
@@ -249,7 +207,7 @@ func TestTokens_VerifyScopes(t *testing.T) {
 		title            string
 		dk               *dynakube.DynaKube
 		availableScopes  []string
-		expectedOptional map[string]bool
+		expectedOptional map[string]OptionalScope
 		shouldError      bool
 	}
 
@@ -275,9 +233,9 @@ func TestTokens_VerifyScopes(t *testing.T) {
 				tokenclient.ScopeInstallerDownload, // TODO: is this really necessary? I think this is only needed in case of appmon (when we download the zip)
 				tokenclient.ScopeActiveGateTokenCreate,
 			},
-			expectedOptional: map[string]bool{
-				tokenclient.ScopeSettingsRead:  true,
-				tokenclient.ScopeSettingsWrite: true,
+			expectedOptional: map[string]OptionalScope{
+				tokenclient.ScopeSettingsRead:  {Available: true, Requested: true},
+				tokenclient.ScopeSettingsWrite: {Available: true, Requested: true},
 			},
 			shouldError: false,
 		},
@@ -301,9 +259,9 @@ func TestTokens_VerifyScopes(t *testing.T) {
 				tokenclient.ScopeSettingsWrite,
 				tokenclient.ScopeInstallerDownload, // TODO: is this really necessary? I think this is only needed in case of appmon (when we download the zip)
 			},
-			expectedOptional: map[string]bool{
-				tokenclient.ScopeSettingsRead:  true,
-				tokenclient.ScopeSettingsWrite: true,
+			expectedOptional: map[string]OptionalScope{
+				tokenclient.ScopeSettingsRead:  {Available: true, Requested: true},
+				tokenclient.ScopeSettingsWrite: {Available: true, Requested: true},
 			},
 			shouldError: true,
 		},
@@ -326,9 +284,9 @@ func TestTokens_VerifyScopes(t *testing.T) {
 				tokenclient.ScopeActiveGateTokenCreate,
 				tokenclient.ScopeInstallerDownload, // TODO: is this really necessary? I think this is only needed in case of appmon (when we download the zip)
 			},
-			expectedOptional: map[string]bool{
-				tokenclient.ScopeSettingsRead:  false,
-				tokenclient.ScopeSettingsWrite: false,
+			expectedOptional: map[string]OptionalScope{
+				tokenclient.ScopeSettingsRead:  {Available: false, Requested: true},
+				tokenclient.ScopeSettingsWrite: {Available: false, Requested: true},
 			},
 			shouldError: false,
 		},
@@ -347,9 +305,9 @@ func TestTokens_VerifyScopes(t *testing.T) {
 				tokenclient.ScopeSettingsWrite,
 				tokenclient.ScopeInstallerDownload,
 			},
-			expectedOptional: map[string]bool{
-				tokenclient.ScopeSettingsRead:  true,
-				tokenclient.ScopeSettingsWrite: true,
+			expectedOptional: map[string]OptionalScope{
+				tokenclient.ScopeSettingsRead:  {Available: true, Requested: true},
+				tokenclient.ScopeSettingsWrite: {Available: true, Requested: true},
 			},
 			shouldError: false,
 		},
@@ -364,8 +322,30 @@ func TestTokens_VerifyScopes(t *testing.T) {
 				tokenclient.ScopeDataExport,
 				tokenclient.ScopeInstallerDownload,
 			},
-			expectedOptional: map[string]bool{},
-			shouldError:      false,
+			expectedOptional: map[string]OptionalScope{
+				tokenclient.ScopeSettingsRead:  {Available: false, Requested: false},
+				tokenclient.ScopeSettingsWrite: {Available: false, Requested: false},
+			},
+			shouldError: false,
+		},
+		{
+			title: "kubernetesMonitoring operand without registration, optional scopes present",
+			dk: &dynakube.DynaKube{
+				Spec: dynakube.DynaKubeSpec{
+					KubernetesMonitoring: &kubemon.Spec{},
+				},
+			},
+			availableScopes: []string{
+				tokenclient.ScopeDataExport,
+				tokenclient.ScopeSettingsRead,
+				tokenclient.ScopeSettingsWrite,
+				tokenclient.ScopeInstallerDownload,
+			},
+			expectedOptional: map[string]OptionalScope{
+				tokenclient.ScopeSettingsRead:  {Available: true, Requested: false},
+				tokenclient.ScopeSettingsWrite: {Available: true, Requested: false},
+			},
+			shouldError: false,
 		},
 		{
 			title: "metadataEnrichment - all scopes present",
@@ -381,8 +361,9 @@ func TestTokens_VerifyScopes(t *testing.T) {
 				tokenclient.ScopeSettingsRead,
 				tokenclient.ScopeInstallerDownload, // TODO: is this really necessary? I think this is only needed in case of appmon (when we download the zip)
 			},
-			expectedOptional: map[string]bool{
-				tokenclient.ScopeSettingsRead: true,
+			expectedOptional: map[string]OptionalScope{
+				tokenclient.ScopeSettingsRead:  {Available: true, Requested: true},
+				tokenclient.ScopeSettingsWrite: {Available: false, Requested: false},
 			},
 			shouldError: false,
 		},
@@ -399,8 +380,9 @@ func TestTokens_VerifyScopes(t *testing.T) {
 				tokenclient.ScopeDataExport,
 				tokenclient.ScopeSettingsRead,
 			},
-			expectedOptional: map[string]bool{
-				tokenclient.ScopeSettingsRead: true,
+			expectedOptional: map[string]OptionalScope{
+				tokenclient.ScopeSettingsRead:  {Available: true, Requested: true},
+				tokenclient.ScopeSettingsWrite: {Available: false, Requested: false},
 			},
 			shouldError: true,
 		},
@@ -417,8 +399,9 @@ func TestTokens_VerifyScopes(t *testing.T) {
 				tokenclient.ScopeDataExport,
 				tokenclient.ScopeInstallerDownload, // TODO: is this really necessary? I think this is only needed in case of appmon (when we download the zip)
 			},
-			expectedOptional: map[string]bool{
-				tokenclient.ScopeSettingsRead: false,
+			expectedOptional: map[string]OptionalScope{
+				tokenclient.ScopeSettingsRead:  {Available: false, Requested: true},
+				tokenclient.ScopeSettingsWrite: {Available: false, Requested: false},
 			},
 			shouldError: false,
 		},
@@ -435,9 +418,9 @@ func TestTokens_VerifyScopes(t *testing.T) {
 				tokenclient.ScopeSettingsWrite,
 				tokenclient.ScopeInstallerDownload, // TODO: is this really necessary? I think this is only needed in case of appmon (when we download the zip)
 			},
-			expectedOptional: map[string]bool{
-				tokenclient.ScopeSettingsRead:  true,
-				tokenclient.ScopeSettingsWrite: true,
+			expectedOptional: map[string]OptionalScope{
+				tokenclient.ScopeSettingsRead:  {Available: true, Requested: true},
+				tokenclient.ScopeSettingsWrite: {Available: true, Requested: true},
 			},
 			shouldError: false,
 		},
@@ -452,9 +435,9 @@ func TestTokens_VerifyScopes(t *testing.T) {
 				tokenclient.ScopeDataExport,
 				tokenclient.ScopeInstallerDownload, // TODO: is this really necessary? I think this is only needed in case of appmon (when we download the zip)
 			},
-			expectedOptional: map[string]bool{
-				tokenclient.ScopeSettingsRead:  false,
-				tokenclient.ScopeSettingsWrite: false,
+			expectedOptional: map[string]OptionalScope{
+				tokenclient.ScopeSettingsRead:  {Available: false, Requested: true},
+				tokenclient.ScopeSettingsWrite: {Available: false, Requested: true},
 			},
 			shouldError: false,
 		},
@@ -582,20 +565,6 @@ func TestGetMissingScopes(t *testing.T) {
 			name: "non-ScopeError returns nil",
 			err:  errors.New("some error"),
 			want: nil,
-		},
-		{
-			name: "joined ScopeErrors returns all missing scopes",
-			err: errors.Join(
-				ScopeError{
-					Token:         APIKey,
-					MissingScopes: []string{"DataExport"},
-				},
-				ScopeError{
-					Token:         PaaSKey,
-					MissingScopes: []string{"InstallerDownload"},
-				},
-			),
-			want: []string{"DataExport", "InstallerDownload"},
 		},
 		{
 			name: "missing scopes are only reported once, even across ScopeErrors",

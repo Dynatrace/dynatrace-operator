@@ -30,7 +30,7 @@ func extensionControllerImage(ctx context.Context, dv *Validator, dk *dynakube.D
 		return ""
 	}
 
-	if !dk.Spec.Templates.ExtensionExecutionController.ImageRef.HasImage() {
+	if dk.Spec.Templates.ExtensionExecutionController.ImageRef.String() == "" {
 		log.Info("requested dynakube doesn't specify the ExtensionExecutionController image.")
 
 		return errorExtensionExecutionControllerImageNotSpecified

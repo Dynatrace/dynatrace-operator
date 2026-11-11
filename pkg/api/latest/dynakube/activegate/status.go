@@ -4,8 +4,8 @@
 package activegate
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 )
 
 // +kubebuilder:object:generate=true
@@ -15,7 +15,7 @@ type Status struct {
 
 	// Information about Active Gate's connections
 	// +kubebuilder:validation:Optional
-	ConnectionInfo communication.ConnectionInfo `json:"connectionInfoStatus,omitzero"`
+	ConnectionInfo types.ConnectionInfo `json:"connectionInfoStatus,omitzero"`
 
 	// The ClusterIPs set by Kubernetes on the ActiveGate Service created by the Operator
 	ServiceIPs []string `json:"serviceIPs,omitempty"`
@@ -27,7 +27,7 @@ type Status struct {
 // connection info) whenever the version happens to be unset.
 func (ag *Status) IsZero() bool {
 	return ag.VersionStatus.IsZero() &&
-		ag.ConnectionInfo == communication.ConnectionInfo{} &&
+		ag.ConnectionInfo == types.ConnectionInfo{} &&
 		len(ag.ServiceIPs) == 0
 }
 

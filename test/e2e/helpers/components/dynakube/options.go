@@ -19,8 +19,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/consts"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/operator"
@@ -267,7 +266,7 @@ func WithOneAgentNamespaceSelector(selector metav1.LabelSelector) Option {
 	}
 }
 
-func WithProxy(proxy *value.Source) Option {
+func WithProxy(proxy *types.ValueSource) Option {
 	return func(dk *dynakube.DynaKube) {
 		dk.Spec.Proxy = proxy
 	}
@@ -390,7 +389,7 @@ func WithLogMonitoringTagAndDigestRef(t *testing.T, tagURI, digestURI string) Op
 		dk.Spec.Templates.LogMonitoring = &logmonitoring.TemplateSpec{}
 		repo, tag, _ := registry.ParseImageURI(tagURI)
 		_, _, digest := registry.ParseImageURI(digestURI)
-		dk.Spec.Templates.LogMonitoring.ImageRef = image.Ref{
+		dk.Spec.Templates.LogMonitoring.ImageRef = types.ImageRef{
 			Repository: repo,
 			Tag:        tag,
 			Digest:     digest,
@@ -467,7 +466,21 @@ func WithExtensionsDBExecutorImageRef(t *testing.T, imageURI string) Option {
 	}
 }
 
-func applyImageRef(t *testing.T, dk *dynakube.DynaKube, imageRef *image.Ref, imageURI, defaultRepo string) {
+func WithSelfMonitoring() Option {
+	return func(dk *dynakube.DynaKube) {
+		dk.Spec.SelfMonitoring = &dynakube.SelfMonitoringSpec{}
+	}
+}
+
+func WithSelfMonitoringImage(imageURI string) Option {
+	return func(dk *dynakube.DynaKube) {
+		dk.Spec.SelfMonitoring = &dynakube.SelfMonitoringSpec{
+			Image: imageURI,
+		}
+	}
+}
+
+func applyImageRef(t *testing.T, dk *dynakube.DynaKube, imageRef *types.ImageRef, imageURI, defaultRepo string) {
 	t.Helper()
 
 	imageRef.Repository, imageRef.Tag, imageRef.Digest = registry.ParseImageURI(imageURI)

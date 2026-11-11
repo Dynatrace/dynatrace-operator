@@ -10,11 +10,13 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
+	dynakubeapi "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/cloudnative"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/activegate"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
+	k8sobject "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sdaemonset"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sdeployment"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8snamespace"
@@ -143,6 +145,14 @@ func feature(t *testing.T, featureName, sampleNS string, imageOpts []dynakube.Op
 			return ctx
 		})
 
+	builder.Assess("EEC resolved image", k8sobject.Expect(testDynakube.Name, testDynakube.Namespace, func(dk *dynakubeapi.DynaKube) bool {
+		return dk.Status.Extensions.ResolvedImage == dk.Spec.Templates.ExtensionExecutionController.ImageRef.String()
+	}))
+
+	builder.Assess("DB executor resolved image", k8sobject.Expect(testDynakube.Name, testDynakube.Namespace, func(dk *dynakubeapi.DynaKube) bool {
+		return dk.Status.SQLExtensionExecutor.ResolvedImage == dk.Spec.Templates.SQLExtensionExecutor.ImageRef.String()
+	}))
+
 	builder.Teardown(sampleApp.Uninstall())
 
 	return builder.Feature()
@@ -191,6 +201,10 @@ func featureLogMonitoring(t *testing.T, featureName, imageURI string) features.F
 	builder.Assess("LogMonitoring DaemonSet uses expected image",
 		k8sdaemonset.VerifyUsesImage(testDynakube.LogMonitoring().GetDaemonSetName(), testDynakube.Namespace, imageURI))
 
+	builder.Assess("LogMonitoring resolved image", k8sobject.Expect(testDynakube.Name, testDynakube.Namespace, func(dk *dynakubeapi.DynaKube) bool {
+		return dk.Status.LogMonitoring.ResolvedImage == dk.Spec.Templates.LogMonitoring.ImageRef.String()
+	}))
+
 	return builder.Feature()
 }
 
@@ -238,6 +252,10 @@ func featureTagAndDigest(t *testing.T, featureName, tagURI, digestURI, expectedT
 
 			return ctx
 		})
+
+	builder.Assess("LogMonitoring resolved image", k8sobject.Expect(testDynakube.Name, testDynakube.Namespace, func(dk *dynakubeapi.DynaKube) bool {
+		return dk.Status.LogMonitoring.ResolvedImage == dk.Spec.Templates.LogMonitoring.ImageRef.String()
+	}))
 
 	return builder.Feature()
 }

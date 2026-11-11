@@ -221,10 +221,10 @@ func TestExporterConfiguration_GetResourceAttributes(t *testing.T) {
 			expected: map[string]string{"a": "1", "b": "2", "shared": "additional"},
 		},
 		{
-			name:     "both nil/empty returns nil",
+			name:     "both nil/empty returns empty",
 			spec:     &ExporterConfigurationSpec{},
 			global:   nil,
-			expected: nil,
+			expected: map[string]string{},
 		},
 	}
 

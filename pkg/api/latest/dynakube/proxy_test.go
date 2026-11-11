@@ -8,7 +8,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -27,7 +27,7 @@ func TestProxy(t *testing.T) {
 func proxyValueTester(t *testing.T) {
 	dk := dynakube.DynaKube{
 		Spec: dynakube.DynaKubeSpec{
-			Proxy: &value.Source{Value: testProxyData},
+			Proxy: &types.ValueSource{Value: testProxyData},
 		},
 	}
 	proxy, err := dk.Proxy(t.Context(), nil)
@@ -48,7 +48,7 @@ func proxyValueFromTester(t *testing.T) {
 		}})
 	dk := dynakube.DynaKube{
 		Spec: dynakube.DynaKubeSpec{
-			Proxy: &value.Source{ValueFrom: testProxyName},
+			Proxy: &types.ValueSource{ValueFrom: testProxyName},
 		},
 	}
 	proxy, err := dk.Proxy(t.Context(), kubeReader)

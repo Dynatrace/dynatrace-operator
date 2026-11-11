@@ -108,42 +108,6 @@ func TestGetSettingsForMonitoredEntity(t *testing.T) {
 	})
 }
 
-func TestDeleteSettings(t *testing.T) {
-	ctx := t.Context()
-	objectID := "settings-object-123"
-
-	t.Run("success", func(t *testing.T) {
-		apiClient := coremock.NewClient(t)
-		request := coremock.NewRequest(t)
-		request.EXPECT().Execute(nil).Return(nil).Once()
-		apiClient.EXPECT().DELETE(ctx, "/v2/settings/objects/"+objectID).Return(request).Once()
-
-		client := NewClient(apiClient)
-		err := client.DeleteSettings(ctx, objectID)
-		require.NoError(t, err)
-	})
-
-	t.Run("error from API", func(t *testing.T) {
-		apiClient := coremock.NewClient(t)
-		request := coremock.NewRequest(t)
-		request.EXPECT().Execute(nil).Return(errors.New("api error")).Once()
-		apiClient.EXPECT().DELETE(ctx, "/v2/settings/objects/"+objectID).Return(request).Once()
-
-		client := NewClient(apiClient)
-		err := client.DeleteSettings(ctx, objectID)
-		require.Error(t, err)
-		assert.ErrorIs(t, err, errDeleteSettings)
-	})
-
-	t.Run("empty objectID", func(t *testing.T) {
-		apiClient := coremock.NewClient(t)
-		client := NewClient(apiClient)
-		err := client.DeleteSettings(ctx, "")
-		require.Error(t, err)
-		assert.ErrorIs(t, err, errNoSettingsIDProvided)
-	})
-}
-
 func injectResponse[T any](resp T) func(any) {
 	return func(arg any) {
 		if target, ok := arg.(*T); ok {

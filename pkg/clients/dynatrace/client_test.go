@@ -6,12 +6,10 @@ package dynatrace
 import (
 	"crypto/tls"
 	"net/http"
-	"net/http/httptest"
 	"net/url"
 	"testing"
 	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
 	operatorversion "github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -19,15 +17,12 @@ import (
 )
 
 const (
-	testPaasToken      = "test-paas-token"
-	testAPIToken       = "test-api-token"
-	testPlatformToken  = dttoken.PlatformPrefix + ".test-api-token"
-	testConnectionInfo = `{"tenantUUID":"test-tenant","tenantToken":"test-tenant-token","communicationEndpoints":""}`
+	testAPIToken = "test-api-token"
 )
 
 func TestNewClient(t *testing.T) {
 	t.Run("creates client with all sub-clients initialized", func(t *testing.T) {
-		client, err := NewClient(WithBaseURL("https://aabb.test.com/api"), WithAPIToken("foo"), WithPaasToken("bar"))
+		client, err := NewClient(WithBaseURL("https://aabb.test.com/api"), WithAPIToken("foo"))
 		require.NoError(t, err)
 		require.NotNil(t, client)
 		assert.NotNil(t, client.Settings)
@@ -69,12 +64,6 @@ func TestWithAPIToken(t *testing.T) {
 	cfg := &Config{}
 	require.NoError(t, WithAPIToken("token")(cfg))
 	assert.Equal(t, "token", cfg.APIToken)
-}
-
-func TestWithPaasToken(t *testing.T) {
-	cfg := &Config{}
-	require.NoError(t, WithPaasToken("paas")(cfg))
-	assert.Equal(t, "paas", cfg.PaasToken)
 }
 
 func TestWithNetworkZone(t *testing.T) {
@@ -207,7 +196,6 @@ func TestGetClientAndConfig(t *testing.T) {
 	t.Run("with different options", func(t *testing.T) {
 		_, config, err := getClientAndConfig(
 			WithAPIToken("apitoken"),
-			WithPaasToken("paastoken"),
 			WithNetworkZone("network"),
 			WithHostGroup("hostgroup"),
 			WithBaseURL("https://aabb.test.com"),
@@ -217,7 +205,6 @@ func TestGetClientAndConfig(t *testing.T) {
 
 		require.NoError(t, err)
 		assert.Equal(t, "apitoken", config.APIToken)
-		assert.Equal(t, "paastoken", config.PaasToken)
 		assert.Equal(t, "network", config.NetworkZone)
 		assert.Equal(t, "hostgroup", config.HostGroup)
 		assert.False(t, config.DisableKeepAlives)
@@ -343,48 +330,3 @@ zWDF6rXZJXT6MJUcf740v4MOLlIWcrNj/igI9VQP9cBrhvJzthHJ0gMEjNqKJPgk
 APj12zaRa05OBW3H3Ng+1MmdtrU4gAu+xwLAOz1cxT6q8LUGBGDCBYVcFXvomhKL
 kHUfKUp2W9zOWWDlwSB65QuJ3wAQSCVs4g==
 -----END CERTIFICATE-----`
-
-func TestNewClientPaasToken(t *testing.T) {
-	handlerFunc := func(token string) http.HandlerFunc {
-		return func(w http.ResponseWriter, r *http.Request) {
-			authToken := r.Header.Get("Authorization")
-			assert.Equal(t, "Api-Token "+token, authToken)
-
-			w.Header().Set("Content-Type", "application/json")
-			_, _ = w.Write([]byte(testConnectionInfo))
-		}
-	}
-
-	t.Run("gen2 apiToken, no paasToken", func(t *testing.T) {
-		srv := httptest.NewServer(handlerFunc(testAPIToken))
-		defer srv.Close()
-
-		clt, err := NewClient(WithBaseURL(srv.URL), WithAPIToken(testAPIToken))
-		require.NoError(t, err)
-		connectionInfo, err := clt.ActiveGate.GetConnectionInfo(t.Context())
-		require.NoError(t, err)
-		assert.NotNil(t, connectionInfo)
-	})
-
-	t.Run("gen2 apiToken and paasToken", func(t *testing.T) {
-		srv := httptest.NewServer(handlerFunc(testPaasToken))
-		defer srv.Close()
-
-		clt, err := NewClient(WithBaseURL(srv.URL), WithAPIToken(testAPIToken), WithPaasToken(testPaasToken))
-		require.NoError(t, err)
-		connectionInfo, err := clt.ActiveGate.GetConnectionInfo(t.Context())
-		require.NoError(t, err)
-		assert.NotNil(t, connectionInfo)
-	})
-
-	t.Run("platform token and paasToken", func(t *testing.T) {
-		srv := httptest.NewServer(handlerFunc(testPlatformToken))
-		defer srv.Close()
-
-		clt, err := NewClient(WithBaseURL(srv.URL), WithAPIToken(testPlatformToken), WithPaasToken(testPaasToken))
-		require.NoError(t, err)
-		connectionInfo, err := clt.ActiveGate.GetConnectionInfo(t.Context())
-		require.NoError(t, err)
-		assert.NotNil(t, connectionInfo)
-	})
-}

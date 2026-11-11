@@ -8,7 +8,7 @@
 package edgeconnect
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/proxy"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
@@ -109,7 +109,7 @@ func (in *EdgeConnectSpec) DeepCopyInto(out *EdgeConnectSpec) {
 	}
 	if in.Proxy != nil {
 		in, out := &in.Proxy, &out.Proxy
-		*out = new(proxy.Spec)
+		*out = new(types.ProxySpec)
 		**out = **in
 	}
 	if in.ServiceAccountName != nil {

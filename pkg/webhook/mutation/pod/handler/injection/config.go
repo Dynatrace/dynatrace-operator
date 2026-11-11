@@ -10,7 +10,4 @@ const (
 
 	NoBootstrapperConfigReason = "NoBootstrapperConfig"
 	NoMutationNeededReason     = "NoMutationNeeded"
-
-	RootUser  int64 = 0
-	RootGroup int64 = 0
 )

@@ -13,8 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kubemon"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
-	sharedimage "github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	dtimage "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
@@ -30,7 +29,6 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
@@ -69,7 +67,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		var daemonset appsv1.DaemonSet
-		err = mockK8sClient.Get(ctx, types.NamespacedName{
+		err = mockK8sClient.Get(ctx, client.ObjectKey{
 			Name:      dk.KSPM().GetDaemonSetName(),
 			Namespace: dk.Namespace,
 		}, &daemonset)
@@ -94,7 +92,7 @@ func TestReconcile(t *testing.T) {
 		assert.Empty(t, *dk.Conditions())
 
 		var daemonset appsv1.DaemonSet
-		err = mockK8sClient.Get(ctx, types.NamespacedName{
+		err = mockK8sClient.Get(ctx, client.ObjectKey{
 			Name:      dk.KSPM().GetDaemonSetName(),
 			Namespace: dk.Namespace,
 		}, &daemonset)
@@ -136,7 +134,7 @@ func TestImageResolution(t *testing.T) {
 
 		daemonset := &appsv1.DaemonSet{}
 
-		err = mockK8sClient.Get(ctx, types.NamespacedName{Name: dk.KSPM().GetDaemonSetName(), Namespace: dk.Namespace}, daemonset)
+		err = mockK8sClient.Get(ctx, client.ObjectKey{Name: dk.KSPM().GetDaemonSetName(), Namespace: dk.Namespace}, daemonset)
 		require.NoError(t, err)
 
 		return daemonset, nil
@@ -155,7 +153,7 @@ func TestImageResolution(t *testing.T) {
 
 	t.Run("no image-ref takes the image from fleet management using the default registry", func(t *testing.T) {
 		dk := createDynakube(true)
-		dk.Spec.Templates.KSPMNodeConfigurationCollector.ImageRef = sharedimage.Ref{}
+		dk.Spec.Templates.KSPMNodeConfigurationCollector.ImageRef = types.ImageRef{}
 
 		imageClient := imageclientmock.NewClient(t)
 		imageClient.EXPECT().GetComponentLatestInfo(anyCtx, dtimage.NCC, "").
@@ -170,7 +168,7 @@ func TestImageResolution(t *testing.T) {
 
 	t.Run("no image-ref takes the image from fleet management using the override registry", func(t *testing.T) {
 		dk := createDynakube(true)
-		dk.Spec.Templates.KSPMNodeConfigurationCollector.ImageRef = sharedimage.Ref{}
+		dk.Spec.Templates.KSPMNodeConfigurationCollector.ImageRef = types.ImageRef{}
 		dk.Spec.PublicRegistryOverride = testRegistryOverride
 
 		imageClient := imageclientmock.NewClient(t)
@@ -185,7 +183,7 @@ func TestImageResolution(t *testing.T) {
 
 	t.Run("failing image resolution is propagated and leaves the status empty", func(t *testing.T) {
 		dk := createDynakube(true)
-		dk.Spec.Templates.KSPMNodeConfigurationCollector.ImageRef = sharedimage.Ref{}
+		dk.Spec.Templates.KSPMNodeConfigurationCollector.ImageRef = types.ImageRef{}
 
 		expectedErr := errors.New("fleet management is unreachable")
 
@@ -387,21 +385,13 @@ func TestAppArmorAnnotationHandling(t *testing.T) {
 }
 
 func TestTlsSecretHashAnnotationHandling(t *testing.T) {
-	t.Run("no AG TLS secret", func(t *testing.T) {
+	t.Run("AG TLS secret not transferred to OA", func(t *testing.T) {
 		dk := createDynakube(true)
 		dk.Annotations = map[string]string{
-			exp.AGAutomaticTLSCertificateKey: "false",
+			exp.AGTLSCertificateTransferringToOneAgentKey: "false",
 		}
 
-		kubeClient := fake.NewClientWithInterceptors(interceptor.Funcs{
-			Get: func(ctx context.Context, c client.WithWatch, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
-				if _, ok := obj.(*corev1.Secret); ok {
-					return errors.New("secret should not be read")
-				}
-
-				return c.Get(ctx, key, obj, opts...)
-			},
-		})
+		kubeClient := fake.NewClient()
 
 		reconciler := NewReconciler(kubeClient, nil)
 		hash, err := reconciler.getTLSSecretHash(t.Context(), dk)
@@ -482,13 +472,13 @@ func createDynakube(isEnabled bool) *dynakube.DynaKube {
 			},
 			Templates: dynakube.TemplatesSpec{
 				KSPMNodeConfigurationCollector: kspm.NodeConfigurationCollectorSpec{
-					ImageRef: sharedimage.Ref{Repository: testImageRepo, Tag: testImageTag},
+					ImageRef: types.ImageRef{Repository: testImageRepo, Tag: testImageTag},
 				},
 			},
 		},
 		Status: dynakube.DynaKubeStatus{
 			ActiveGate: activegate.Status{
-				ConnectionInfo: communication.ConnectionInfo{
+				ConnectionInfo: types.ConnectionInfo{
 					TenantUUID: "test-tenant",
 				},
 			},

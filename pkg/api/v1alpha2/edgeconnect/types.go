@@ -9,8 +9,7 @@
 package edgeconnect
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/proxy"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -39,7 +38,7 @@ type EdgeConnectSpec struct { //nolint:revive
 
 	// General configurations for proxy settings.
 	// +kubebuilder:validation:Optional
-	Proxy *proxy.Spec `json:"proxy,omitempty"`
+	Proxy *types.ProxySpec `json:"proxy,omitempty"`
 
 	// ServiceAccountName that allows EdgeConnect to access the Kubernetes API
 	ServiceAccountName *string `json:"serviceAccountName,omitempty"`
@@ -53,7 +52,7 @@ type EdgeConnectSpec struct { //nolint:revive
 
 	// Overrides the default image
 	// +kubebuilder:validation:Optional
-	ImageRef image.Ref `json:"imageRef,omitzero"`
+	ImageRef types.ImageRef `json:"imageRef,omitzero"`
 
 	// Location of the Dynatrace API to connect to, including your specific environment UUID
 	// +kubebuilder:validation:Required

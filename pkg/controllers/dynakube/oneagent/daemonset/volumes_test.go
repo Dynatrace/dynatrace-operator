@@ -10,7 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/installconfig"
 	"github.com/stretchr/testify/assert"
@@ -51,7 +51,7 @@ func TestPrepareVolumes(t *testing.T) {
 		dk := &dynakube.DynaKube{}
 		dk.Spec =
 			dynakube.DynaKubeSpec{
-				Proxy: &value.Source{ValueFrom: proxy.BuildSecretName(dk.Name)},
+				Proxy: &types.ValueSource{ValueFrom: proxy.BuildSecretName(dk.Name)},
 			}
 
 		volumes := prepareVolumes(dk, "")
@@ -65,7 +65,7 @@ func TestPrepareVolumes(t *testing.T) {
 				TrustedCAs: testName,
 				ActiveGate: activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{
-						activegate.KubeMonCapability.DisplayName,
+						activegate.RoutingCapability.DisplayName,
 					},
 					TLSSecretName: "testing",
 				},
@@ -83,7 +83,7 @@ func TestPrepareVolumes(t *testing.T) {
 			Spec: dynakube.DynaKubeSpec{
 				ActiveGate: activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{
-						activegate.KubeMonCapability.DisplayName,
+						activegate.RoutingCapability.DisplayName,
 					},
 				},
 				TrustedCAs: testName,
@@ -94,6 +94,49 @@ func TestPrepareVolumes(t *testing.T) {
 		}
 		volumes := prepareVolumes(dk, "")
 		assert.Contains(t, volumes, getActiveGateCaCertVolume(dk))
+	})
+	t.Run("does not have tls volume if FF is used", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			Name: "dynakube",
+			Annotations: map[string]string{
+				exp.AGTLSCertificateTransferringToOneAgentKey: "false",
+			},
+			Spec: dynakube.DynaKubeSpec{
+				ActiveGate: activegate.Spec{
+					Capabilities: []activegate.CapabilityDisplayName{
+						activegate.RoutingCapability.DisplayName,
+					},
+					TLSSecretName: "testing",
+				},
+				TrustedCAs: testName,
+				OneAgent: oneagent.Spec{
+					HostMonitoring: &oneagent.HostInjectSpec{},
+				},
+			},
+		}
+		volumes := prepareVolumes(dk, "")
+		assert.NotContains(t, volumes, getActiveGateCaCertVolume(dk))
+	})
+	t.Run("does not have automatically created AG tls volume if FF is used", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			Name: "dynakube",
+			Annotations: map[string]string{
+				exp.AGTLSCertificateTransferringToOneAgentKey: "false",
+			},
+			Spec: dynakube.DynaKubeSpec{
+				ActiveGate: activegate.Spec{
+					Capabilities: []activegate.CapabilityDisplayName{
+						activegate.RoutingCapability.DisplayName,
+					},
+				},
+				TrustedCAs: testName,
+				OneAgent: oneagent.Spec{
+					HostMonitoring: &oneagent.HostInjectSpec{},
+				},
+			},
+		}
+		volumes := prepareVolumes(dk, "")
+		assert.NotContains(t, volumes, getActiveGateCaCertVolume(dk))
 	})
 	t.Run("csi volume not supported on classicFullStack", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
@@ -128,7 +171,7 @@ func TestPrepareVolumes(t *testing.T) {
 		volumes := prepareVolumes(dk, "")
 		assert.NotContains(t, volumes, getPGCSecretVolume(dk))
 	})
-	t.Run("has all volumes", func(t *testing.T) {
+	t.Run("has all volumes but AG cert", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				TrustedCAs: testName,
@@ -138,6 +181,38 @@ func TestPrepareVolumes(t *testing.T) {
 				ActiveGate: activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{
 						activegate.KubeMonCapability.DisplayName,
+					},
+					TLSSecretName: "testing",
+				},
+			},
+		}
+		dsBuilder := hostMonitoring{
+			builder{
+				dk:             dk,
+				hostInjectSpec: dk.Spec.OneAgent.HostMonitoring,
+				clusterID:      "",
+			},
+		}
+		ds, err := dsBuilder.BuildDaemonSet(t.Context())
+		require.NoError(t, err)
+
+		volumes := ds.Spec.Template.Spec.Volumes
+
+		assert.Contains(t, volumes, getRootVolume())
+		assert.Contains(t, volumes, getCertificateVolume(dk))
+		assert.NotContains(t, volumes, getActiveGateCaCertVolume(dk))
+		assert.Contains(t, volumes, getCSIStorageVolume(dk))
+	})
+	t.Run("has all volumes", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			Spec: dynakube.DynaKubeSpec{
+				TrustedCAs: testName,
+				OneAgent: oneagent.Spec{
+					HostMonitoring: &oneagent.HostInjectSpec{},
+				},
+				ActiveGate: activegate.Spec{
+					Capabilities: []activegate.CapabilityDisplayName{
+						activegate.RoutingCapability.DisplayName,
 					},
 					TLSSecretName: "testing",
 				},
@@ -218,7 +293,7 @@ func TestPrepareVolumeMounts(t *testing.T) {
 				},
 				ActiveGate: activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{
-						activegate.KubeMonCapability.DisplayName,
+						activegate.RoutingCapability.DisplayName,
 					},
 					TLSSecretName: "testing",
 				},
@@ -241,7 +316,7 @@ func TestPrepareVolumeMounts(t *testing.T) {
 				TrustedCAs: testName,
 				ActiveGate: activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{
-						activegate.KubeMonCapability.DisplayName,
+						activegate.RoutingCapability.DisplayName,
 					},
 				},
 			},
@@ -252,6 +327,57 @@ func TestPrepareVolumeMounts(t *testing.T) {
 		assert.Contains(t, volumeMounts, getReadOnlyRootMount())
 		assert.Contains(t, volumeMounts, getClusterCaCertVolumeMount())
 		assert.Contains(t, volumeMounts, getActiveGateCaCertVolumeMount())
+	})
+	t.Run("does not have tls volume mount if FF is used", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			Name: "dynakube",
+			Annotations: map[string]string{
+				exp.AGTLSCertificateTransferringToOneAgentKey: "false",
+			},
+			Spec: dynakube.DynaKubeSpec{
+				OneAgent: oneagent.Spec{
+					HostMonitoring: &oneagent.HostInjectSpec{},
+				},
+				TrustedCAs: testName,
+				ActiveGate: activegate.Spec{
+					Capabilities: []activegate.CapabilityDisplayName{
+						activegate.KubeMonCapability.DisplayName,
+					},
+					TLSSecretName: "testing",
+				},
+			},
+		}
+
+		volumeMounts := prepareVolumeMounts(dk, "")
+
+		assert.Contains(t, volumeMounts, getReadOnlyRootMount())
+		assert.Contains(t, volumeMounts, getClusterCaCertVolumeMount())
+		assert.NotContains(t, volumeMounts, getActiveGateCaCertVolumeMount())
+	})
+	t.Run("does not have automatically created ActiveGate CA volume mount if FF is used", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			Name: "dynakube",
+			Annotations: map[string]string{
+				exp.AGTLSCertificateTransferringToOneAgentKey: "false",
+			},
+			Spec: dynakube.DynaKubeSpec{
+				OneAgent: oneagent.Spec{
+					HostMonitoring: &oneagent.HostInjectSpec{},
+				},
+				TrustedCAs: testName,
+				ActiveGate: activegate.Spec{
+					Capabilities: []activegate.CapabilityDisplayName{
+						activegate.RoutingCapability.DisplayName,
+					},
+				},
+			},
+		}
+
+		volumeMounts := prepareVolumeMounts(dk, "")
+
+		assert.Contains(t, volumeMounts, getReadOnlyRootMount())
+		assert.Contains(t, volumeMounts, getClusterCaCertVolumeMount())
+		assert.NotContains(t, volumeMounts, getActiveGateCaCertVolumeMount())
 	})
 	t.Run("readonly volume not supported on classicFullStack", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
@@ -288,7 +414,7 @@ func TestPrepareVolumeMounts(t *testing.T) {
 		volumeMounts := prepareVolumeMounts(dk, "")
 		assert.NotContains(t, volumeMounts, getPGCSecretFileMount())
 	})
-	t.Run("has all volume mounts", func(t *testing.T) {
+	t.Run("has all volume mounts but AG cert", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				TrustedCAs: testName,
@@ -298,6 +424,37 @@ func TestPrepareVolumeMounts(t *testing.T) {
 				ActiveGate: activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{
 						activegate.KubeMonCapability.DisplayName,
+					},
+					TLSSecretName: "testing",
+				},
+			},
+		}
+		dsBuilder := hostMonitoring{
+			builder{
+				dk:             dk,
+				hostInjectSpec: dk.Spec.OneAgent.HostMonitoring,
+				clusterID:      "",
+			},
+		}
+
+		podSpec, _ := dsBuilder.podSpec(t.Context())
+		volumeMounts := podSpec.Containers[0].VolumeMounts
+
+		assert.Contains(t, volumeMounts, getReadOnlyRootMount())
+		assert.NotContains(t, volumeMounts, getActiveGateCaCertVolumeMount())
+		assert.Contains(t, volumeMounts, getClusterCaCertVolumeMount())
+		assert.Contains(t, volumeMounts, getCSIStorageMount())
+	})
+	t.Run("has all volume mounts", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			Spec: dynakube.DynaKubeSpec{
+				TrustedCAs: testName,
+				OneAgent: oneagent.Spec{
+					HostMonitoring: &oneagent.HostInjectSpec{},
+				},
+				ActiveGate: activegate.Spec{
+					Capabilities: []activegate.CapabilityDisplayName{
+						activegate.RoutingCapability.DisplayName,
 					},
 					TLSSecretName: "testing",
 				},
@@ -327,7 +484,7 @@ func TestPrepareVolumeMounts(t *testing.T) {
 				exp.OAProxyIgnoredKey: "true", //nolint:staticcheck
 			},
 			Spec: dynakube.DynaKubeSpec{
-				Proxy: &value.Source{ValueFrom: proxy.BuildSecretName("Dynakube")},
+				Proxy: &types.ValueSource{ValueFrom: proxy.BuildSecretName("Dynakube")},
 				OneAgent: oneagent.Spec{
 					HostMonitoring: &oneagent.HostInjectSpec{},
 				},

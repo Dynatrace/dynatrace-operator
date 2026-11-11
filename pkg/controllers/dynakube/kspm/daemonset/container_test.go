@@ -8,7 +8,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/kspm"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -51,7 +51,7 @@ func TestGetContainer(t *testing.T) {
 				KSPM: &kspm.Spec{},
 			},
 		}
-		dk.KSPM().ImageRef = image.Ref{
+		dk.KSPM().ImageRef = types.ImageRef{
 			Repository: "my-test-repo",
 			Tag:        "my-test-tag",
 			PullPolicy: corev1.PullAlways,

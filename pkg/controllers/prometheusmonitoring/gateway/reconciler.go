@@ -13,7 +13,7 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/prometheusmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
@@ -29,6 +29,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
@@ -111,24 +112,13 @@ func (r *Reconciler) Reconcile(ctx context.Context, pm *prometheusmonitoring.Pro
 	return err
 }
 
-// resolveImage uses the explicit image from .spec.gateway.image when set, otherwise resolves
-// the latest gateway image from the fleet management API.
-func (r *Reconciler) resolveImage(ctx context.Context, s *reconcileScope) error {
-	if s.Spec.Image != "" {
-		s.Owner.Status.Gateway.ResolvedImage = s.Spec.Image
-
-		return nil
-	}
-
-	imageURI, err := registry.ResolveImage(ctx, s.ImageClient, s.Owner.Spec.PublicRegistryOverride, image.Gateway)
-	if err != nil {
-		return err
-	}
-
-	s.Owner.Status.Gateway.ResolvedImage = imageURI
-
-	return nil
+type imageResolver struct {
+	*prometheusmonitoring.PrometheusMonitoring
 }
+
+func (r imageResolver) GetImage() string               { return r.Spec.Gateway.Image }
+func (r imageResolver) SetImage(imageURI string)       { r.Status.Gateway.ResolvedImage = imageURI }
+func (r imageResolver) PublicRegistryOverride() string { return r.Spec.PublicRegistryOverride }
 
 func (r *Reconciler) reconcileConfigMap(ctx context.Context, s *reconcileScope) error {
 	name := s.Spec.GetStatefulSetName()
@@ -183,14 +173,16 @@ func renderGatewayConfig(data gatewayConfigData) (string, error) {
 }
 
 func (r *Reconciler) reconcileStatefulset(ctx context.Context, s *reconcileScope) error {
-	if err := r.resolveImage(ctx, s); err != nil {
+	if err := registry.ResolveImage(ctx, imageResolver{s.Owner}, s.ImageClient, image.Gateway); err != nil {
 		return fmt.Errorf("resolve image: %w", err)
 	}
 
 	sts := &appsv1.StatefulSet{Name: s.Spec.GetStatefulSetName(), Namespace: s.Owner.Namespace}
 
 	err := k8sobject.RetryCreateOrUpdate(ctx, r, sts, func() error {
-		mutateStatefulSet(sts, s)
+		if err := mutateStatefulSet(sts, s); err != nil {
+			return err
+		}
 
 		return controllerutil.SetControllerReference(s.Owner, sts, r.Scheme())
 	})
@@ -203,21 +195,23 @@ func (r *Reconciler) reconcileStatefulset(ctx context.Context, s *reconcileScope
 	return nil
 }
 
-func mutateStatefulSet(sts *appsv1.StatefulSet, s *reconcileScope) {
+func mutateStatefulSet(sts *appsv1.StatefulSet, s *reconcileScope) error {
 	s.Labels.MergeInto(sts)
 
-	sts.Spec.Template.Labels = maps.Clone(s.Spec.Labels)
 	if sts.Spec.Template.Labels == nil {
 		sts.Spec.Template.Labels = make(map[string]string)
 	}
 
+	// merge instead of replace to keep metadata applied by users or kubectl (e.g. restartedAt)
+	maps.Copy(sts.Spec.Template.Labels, s.Spec.Labels)
 	maps.Copy(sts.Spec.Template.Labels, s.Labels.AsSelector())
 
-	sts.Spec.Template.Annotations = maps.Clone(s.Spec.Annotations)
 	if sts.Spec.Template.Annotations == nil {
 		sts.Spec.Template.Annotations = make(map[string]string)
 	}
 
+	// merge instead of replace to keep metadata applied by users or kubectl (e.g. restartedAt)
+	maps.Copy(sts.Spec.Template.Annotations, s.Spec.Annotations)
 	sts.Spec.Template.Annotations[configHashAnnotation] = s.ConfigMapHash
 
 	if s.Spec.Replicas != nil {
@@ -230,7 +224,12 @@ func mutateStatefulSet(sts *appsv1.StatefulSet, s *reconcileScope) {
 
 	sts.Spec.PodManagementPolicy = appsv1.ParallelPodManagement
 
-	sts.Spec.Selector = &metav1.LabelSelector{MatchLabels: s.Labels.AsSelector()}
+	selector := &metav1.LabelSelector{MatchLabels: s.Labels.AsSelector()}
+	if sts.ResourceVersion != "" && !equality.Semantic.DeepEqual(sts.Spec.Selector, selector) {
+		return fmt.Errorf("statefulset selector changed: %w", k8sobject.ErrRecreate)
+	}
+
+	sts.Spec.Selector = selector
 	sts.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 	sts.Spec.Template.Spec.AutomountServiceAccountToken = new(true)
 	// fsGroup lets the container (RunAsGroup nonRootUser) read the token volume via the group
@@ -248,6 +247,8 @@ func mutateStatefulSet(sts *appsv1.StatefulSet, s *reconcileScope) {
 	sts.Spec.Template.Spec.Containers = []corev1.Container{
 		buildContainer(s, k8scontainer.GetFirstInPodSpec(&sts.Spec.Template.Spec)),
 	}
+
+	return nil
 }
 
 func buildContainer(s *reconcileScope, current corev1.Container) corev1.Container {
@@ -342,7 +343,7 @@ func buildEnv(s *reconcileScope) []corev1.EnvVar {
 	return envs
 }
 
-func proxyEnv(name string, src *value.Source) corev1.EnvVar {
+func proxyEnv(name string, src *types.ValueSource) corev1.EnvVar {
 	if src.ValueFrom != "" {
 		return corev1.EnvVar{
 			Name: name,

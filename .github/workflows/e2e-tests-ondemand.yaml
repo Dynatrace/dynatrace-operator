@@ -152,7 +152,7 @@ jobs:
           if [[ "$CLUSTER_STATUS" == "skipped" ]]; then
             exit 1
           fi
-      - uses: hoverkraft-tech/ci-github-common/actions/set-matrix-output@3a27d31e9ccefbe9609cc9165017ed100ff34a22 # 0.38.0
+      - uses: hoverkraft-tech/ci-github-common/actions/set-matrix-output@4a6ed33ba735d57ebbcd89fe8ed35134de599a67 # 0.39.2
         if: always()
         with:
           value: ${{ steps.prepare_outputs.outputs.matrix }}
@@ -161,14 +161,14 @@ jobs:
     name: Notify test results in Slack
     environment: E2E
     needs: [run-matrix]
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     if: ${{ always() }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: hoverkraft-tech/ci-github-common/actions/get-matrix-outputs@3a27d31e9ccefbe9609cc9165017ed100ff34a22 # 0.38.0
+      - uses: hoverkraft-tech/ci-github-common/actions/get-matrix-outputs@4a6ed33ba735d57ebbcd89fe8ed35134de599a67 # 0.39.2
         id: get-matrix-outputs
         with:
           artifact-name: run-matrix-artifact

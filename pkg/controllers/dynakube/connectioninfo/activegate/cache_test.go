@@ -91,7 +91,7 @@ func newConnectionInfoAGClient(t *testing.T, transport http.RoundTripper, ttl ti
 		BaseURL:    u,
 		HTTPClient: &http.Client{Transport: middleware.NewCacheRoundTripper(transport, ttl)},
 		// Set to t.Name() so each subtest has an isolated namespace in the global cache.
-		PaasToken: t.Name(),
+		APIToken: t.Name(),
 	}))
 }
 

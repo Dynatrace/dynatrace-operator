@@ -163,7 +163,6 @@ func newTestSetup(t *testing.T) (*coremock.Client, *coremock.Request, *ClientImp
 
 func expectGET(t *testing.T, apiClient *coremock.Client, request *coremock.Request, path, id string) {
 	t.Helper()
-	request.EXPECT().WithoutToken().Return(request).Once()
 	if id != "" {
 		request.EXPECT().WithPath([]string{id}).Return(request).Once()
 	}
@@ -172,23 +171,20 @@ func expectGET(t *testing.T, apiClient *coremock.Client, request *coremock.Reque
 
 func expectPOST(t *testing.T, apiClient *coremock.Client, request *coremock.Request, path string, body any) {
 	t.Helper()
-	request.EXPECT().WithoutToken().Return(request).Once()
 	request.EXPECT().WithJSONBody(body).Return(request).Once()
 	apiClient.EXPECT().POST(t.Context(), path).Return(request).Once()
 }
 
 func expectPUT(t *testing.T, apiClient *coremock.Client, request *coremock.Request, path, id string, body any) {
 	t.Helper()
-	request.EXPECT().WithoutToken().Return(request).Once()
 	request.EXPECT().WithJSONBody(body).Return(request).Once()
 	request.EXPECT().WithPath([]string{id}).Return(request).Once()
 	apiClient.EXPECT().PUT(t.Context(), path).Return(request).Once()
 }
 
-// expectDELETE sets up WithoutToken and DELETE mock expectations for the given path.
+// expectDELETE sets up DELETE mock expectations for the given path.
 func expectDELETE(t *testing.T, apiClient *coremock.Client, request *coremock.Request, path, id string) {
 	t.Helper()
-	request.EXPECT().WithoutToken().Return(request).Once()
 	request.EXPECT().WithPath([]string{id}).Return(request).Once()
 	apiClient.EXPECT().DELETE(t.Context(), path).Return(request).Once()
 }

@@ -78,7 +78,7 @@ func (r *Reconciler) checkKSPMSettings(ctx context.Context, dtClient dtsettings.
 	log.Info("start reconciling kspm settings")
 
 	if dk.Status.KubernetesClusterMEID == "" {
-		msg := "kubernetesClusterMEID is not available, which is needed for kspm settings creation, will skip it for now"
+		msg := k8sconditions.MissingMEIDMessage
 		log.Info(msg)
 
 		setSkippedCondition(dk.Conditions(), msg)

@@ -15,7 +15,6 @@ import (
 )
 
 const (
-	PaaSKey       = "paasToken"
 	APIKey        = "apiToken"
 	DataIngestKey = "dataIngestToken"
 )
@@ -24,10 +23,6 @@ type Tokens map[string]*Token
 
 func (tokens Tokens) APIToken() *Token {
 	return tokens.getToken(APIKey)
-}
-
-func (tokens Tokens) PaasToken() *Token {
-	return tokens.getToken(PaaSKey)
 }
 
 func (tokens Tokens) DataIngestToken() *Token {
@@ -44,14 +39,10 @@ func (tokens Tokens) getToken(tokenName string) *Token {
 }
 
 func (tokens Tokens) AddFeatureScopesToTokens() Tokens {
-	_, hasPaasToken := tokens[PaaSKey]
-
 	for _, token := range tokens {
 		switch token.Type {
 		case APIKey:
-			token.addFeatures(getFeaturesForAPIToken(hasPaasToken))
-		case PaaSKey:
-			token.addFeatures(getFeaturesForPaaSToken())
+			token.addFeatures(getFeaturesForAPIToken())
 		case DataIngestKey:
 			token.addFeatures(getFeaturesForDataIngest())
 		}
@@ -60,21 +51,21 @@ func (tokens Tokens) AddFeatureScopesToTokens() Tokens {
 	return tokens
 }
 
-func (tokens Tokens) VerifyScopes(ctx context.Context, dtClient token.Client, dk *dynakube.DynaKube) (map[string]bool, error) {
+func (tokens Tokens) VerifyScopes(ctx context.Context, dtClient token.Client, dk *dynakube.DynaKube) (map[string]OptionalScope, error) {
 	var err error
 
-	collectedMissingOptionalScopes := map[string]bool{}
+	collectedOptionalScopes := map[string]OptionalScope{}
 
-	for _, token := range tokens {
-		missingOptionalScopes, scopeError := token.verifyScopes(ctx, dtClient, dk)
+	for _, t := range tokens {
+		optionalScopes, scopeError := t.verifyScopes(ctx, dtClient, dk)
 		if scopeError != nil {
 			err = errors.Join(err, scopeError)
 		}
 
-		maps.Insert(collectedMissingOptionalScopes, maps.All(missingOptionalScopes))
+		maps.Insert(collectedOptionalScopes, maps.All(optionalScopes))
 	}
 
-	return collectedMissingOptionalScopes, err
+	return collectedOptionalScopes, err
 }
 
 func (tokens Tokens) VerifyValues() (err error) {

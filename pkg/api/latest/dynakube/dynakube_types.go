@@ -17,7 +17,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -32,14 +34,11 @@ const (
 	// APITokenConditionType identifies the API Token validity condition.
 	APITokenConditionType string = "APIToken"
 
-	// PaaSTokenConditionType identifies the PaaS Token validity condition.
-	PaaSTokenConditionType string = "PaaSToken"
-
 	// DataIngestTokenConditionType identifies the DataIngest Token validity condition.
 	DataIngestTokenConditionType string = "DataIngestToken"
 )
 
-// Possible reasons for APIToken and PaaSToken conditions.
+// Possible reasons for APIToken conditions.
 const (
 	// ReasonTokenReady is set when a token has passed verifications.
 	ReasonTokenReady string = "TokenReady"
@@ -92,7 +91,7 @@ type DynaKubeSpec struct { //nolint:revive
 	// Note: Applies to Dynatrace Operator, ActiveGate, and OneAgents.
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Proxy",order=3,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
-	Proxy *value.Source `json:"proxy,omitempty"`
+	Proxy *types.ValueSource `json:"proxy,omitempty"`
 
 	// General configuration about the LogMonitoring feature.
 	// +kubebuilder:validation:Optional
@@ -175,6 +174,10 @@ type DynaKubeSpec struct { //nolint:revive
 	// +kubebuilder:validation:Optional
 	KubernetesMonitoring *kubemon.Spec `json:"kubernetesMonitoring,omitempty"`
 
+	// Configure self-monitoring.
+	// +kubebuilder:validation:Optional
+	SelfMonitoring *SelfMonitoringSpec `json:"selfMonitoring,omitempty"`
+
 	// Disable certificate check for the connection between Dynatrace Operator and the Dynatrace Cluster.
 	// Set to true if you want to skip certification validation checks.
 	// +kubebuilder:validation:Optional
@@ -216,4 +219,46 @@ type DynaKubeList struct { //nolint:revive
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitzero"`
 	Items           []DynaKube `json:"items"`
+}
+
+type SelfMonitoringSpec struct {
+	// Deployment
+
+	// +kubebuilder:validation:Optional
+	Replicas *int32 `json:"replicas,omitempty"`
+	// +kubebuilder:validation:Optional
+	Strategy appsv1.DeploymentStrategy `json:"strategy,omitzero"`
+
+	// Pod
+
+	// +kubebuilder:validation:Optional
+	Labels map[string]string `json:"labels,omitempty"`
+	// +kubebuilder:validation:Optional
+	Annotations map[string]string `json:"annotations,omitempty"`
+	// +kubebuilder:validation:Optional
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+	// +kubebuilder:validation:Optional
+	Affinity corev1.Affinity `json:"affinity,omitzero"`
+	// +kubebuilder:validation:Optional
+	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
+	// +kubebuilder:validation:Optional
+	TopologySpreadConstraints []corev1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
+	// +kubebuilder:validation:Optional
+	PriorityClassName string `json:"priorityClassName,omitempty"`
+	// +kubebuilder:validation:Optional
+	Volumes types.Volumes `json:"volumes,omitempty"`
+
+	// Container
+
+	// +kubebuilder:validation:Optional
+	Image string `json:"image,omitempty"`
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Enum=IfNotPresent;Always;Never
+	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
+	// +kubebuilder:validation:Optional
+	Args []string `json:"args,omitempty"`
+	// +kubebuilder:validation:Optional
+	Resources corev1.ResourceRequirements `json:"resources,omitzero"`
+	// +kubebuilder:validation:Optional
+	VolumeMounts []corev1.VolumeMount `json:"volumeMounts,omitempty"`
 }

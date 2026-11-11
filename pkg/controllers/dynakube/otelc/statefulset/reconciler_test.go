@@ -10,7 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	sharedimage "github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	dtimage "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	otelcconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/consts"
@@ -33,7 +33,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -81,7 +80,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		var sts appsv1.StatefulSet
-		err = mockK8sClient.Get(ctx, types.NamespacedName{
+		err = mockK8sClient.Get(ctx, client.ObjectKey{
 			Name:      dk.OTelCollectorStatefulsetName(),
 			Namespace: dk.Namespace,
 		}, &sts)
@@ -107,7 +106,7 @@ func TestReconcile(t *testing.T) {
 		assert.Empty(t, *dk.Conditions())
 
 		var sts appsv1.StatefulSet
-		err = mockK8sClient.Get(ctx, types.NamespacedName{
+		err = mockK8sClient.Get(ctx, client.ObjectKey{
 			Name:      dk.OTelCollectorStatefulsetName(),
 			Namespace: dk.Namespace,
 		}, &sts)
@@ -139,7 +138,7 @@ func TestImageResolution(t *testing.T) {
 		{
 			name: "no imageRef, public registry enabled — image from fleet management (default registry)",
 			setupDynakube: func(dk *dynakube.DynaKube) {
-				dk.Spec.Templates.OpenTelemetryCollector.ImageRef = sharedimage.Ref{}
+				dk.Spec.Templates.OpenTelemetryCollector.ImageRef = types.ImageRef{}
 				dk.Annotations = map[string]string{exp.UsePublicRegistryKey: "true"}
 			},
 			setupImageClient: func(ic *imageclientmock.Client) {
@@ -151,7 +150,7 @@ func TestImageResolution(t *testing.T) {
 		{
 			name: "no imageRef, public registry enabled with override — image from fleet management (override registry)",
 			setupDynakube: func(dk *dynakube.DynaKube) {
-				dk.Spec.Templates.OpenTelemetryCollector.ImageRef = sharedimage.Ref{}
+				dk.Spec.Templates.OpenTelemetryCollector.ImageRef = types.ImageRef{}
 				dk.Annotations = map[string]string{exp.UsePublicRegistryKey: "true"}
 				dk.Spec.PublicRegistryOverride = "my.registry.example.com"
 			},
@@ -181,7 +180,7 @@ func TestImageResolution(t *testing.T) {
 			require.NoError(t, err)
 
 			var sts appsv1.StatefulSet
-			err = mockK8sClient.Get(ctx, types.NamespacedName{Name: dk.OTelCollectorStatefulsetName(), Namespace: dk.Namespace}, &sts)
+			err = mockK8sClient.Get(ctx, client.ObjectKey{Name: dk.OTelCollectorStatefulsetName(), Namespace: dk.Namespace}, &sts)
 			require.NoError(t, err)
 			assert.Equal(t, tc.expectedImage, sts.Spec.Template.Spec.Containers[0].Image)
 			assert.Equal(t, tc.expectedImage, dk.Status.OTelCollector.ResolvedImage)
@@ -647,7 +646,7 @@ func getTestDynakube() *dynakube.DynaKube {
 		Spec: dynakube.DynaKubeSpec{
 			Templates: dynakube.TemplatesSpec{
 				OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{
-					ImageRef: sharedimage.Ref{
+					ImageRef: types.ImageRef{
 						Repository: testOTelCImageRepository,
 						Tag:        testOTelCImageTag,
 					},

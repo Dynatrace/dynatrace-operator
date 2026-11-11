@@ -289,7 +289,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 
 	t.Run("returns empty context if dk or hostInjectSpec is nil", func(t *testing.T) {
 		dsBuilder := builder{}
-		securityContext := dsBuilder.securityContext(t.Context())
+		securityContext := dsBuilder.securityContext(t.Context(), dsBuilder.runAsIDs(t.Context()))
 
 		assert.Nil(t, securityContext.Capabilities)
 		assert.Nil(t, securityContext.Privileged)
@@ -408,7 +408,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 	t.Run("nonroot security context when classic nonroot feature flag is enabled", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			Annotations: map[string]string{
-				exp.OAClassicNonRootKey: "true",
+				exp.OAClassicNonRootKey: "",
 			},
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testURL,
@@ -430,6 +430,63 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 		require.NotNil(t, securityContext.ReadOnlyRootFilesystem)
 		assert.False(t, *securityContext.ReadOnlyRootFilesystem)
 		assert.Nil(t, securityContext.Privileged)
+	})
+
+	t.Run("nonroot security context with custom user and group from classic nonroot feature flag", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			Annotations: map[string]string{
+				exp.OAClassicNonRootKey: "123:456",
+			},
+			Spec: dynakube.DynaKubeSpec{
+				APIURL: testURL,
+				OneAgent: oneagent.Spec{
+					ClassicFullStack: &oneagent.HostInjectSpec{},
+				},
+			},
+		}
+		dsBuilder := NewClassicFullStack(dk, testClusterID)
+		ds, err := dsBuilder.BuildDaemonSet(t.Context())
+		require.NoError(t, err)
+
+		securityContext := ds.Spec.Template.Spec.Containers[0].SecurityContext
+
+		require.NotNil(t, securityContext)
+		assert.Equal(t, new(true), securityContext.RunAsNonRoot)
+		assert.Equal(t, new(int64(123)), securityContext.RunAsUser)
+		assert.Equal(t, new(int64(456)), securityContext.RunAsGroup)
+		require.NotNil(t, ds.Spec.Template.Spec.SecurityContext)
+		assert.Equal(t, new(int64(456)), ds.Spec.Template.Spec.SecurityContext.FSGroup)
+
+		require.Len(t, ds.Spec.Template.Spec.InitContainers, 1)
+		initSecurityContext := ds.Spec.Template.Spec.InitContainers[0].SecurityContext
+		require.NotNil(t, initSecurityContext)
+		assert.Equal(t, new(int64(123)), initSecurityContext.RunAsUser)
+		assert.Equal(t, new(int64(456)), initSecurityContext.RunAsGroup)
+	})
+
+	t.Run("invalid classic nonroot feature flag is ignored and keeps default root security context", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			Annotations: map[string]string{
+				exp.OAClassicNonRootKey: "true",
+			},
+			Spec: dynakube.DynaKubeSpec{
+				APIURL: testURL,
+				OneAgent: oneagent.Spec{
+					ClassicFullStack: &oneagent.HostInjectSpec{},
+				},
+			},
+		}
+		dsBuilder := NewClassicFullStack(dk, testClusterID)
+		ds, err := dsBuilder.BuildDaemonSet(t.Context())
+		require.NoError(t, err)
+
+		securityContext := ds.Spec.Template.Spec.Containers[0].SecurityContext
+
+		require.NotNil(t, securityContext)
+		assert.Nil(t, securityContext.RunAsNonRoot)
+		assert.Nil(t, securityContext.RunAsUser)
+		assert.Nil(t, securityContext.RunAsGroup)
+		assert.Equal(t, new(userGroupID), ds.Spec.Template.Spec.SecurityContext.FSGroup)
 	})
 
 	t.Run("privileged security context when feature flag is enabled for classic fullstack", func(t *testing.T) {

@@ -64,6 +64,7 @@ anaconda-mode/
 # Output of the go coverage tool
 deadcode.out
 coverage.txt
+coverage-e2e.txt
 ### Vim ###
 # swap
 .sw[a-p]

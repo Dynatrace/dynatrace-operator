@@ -8,7 +8,7 @@
 package kubemon
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -19,7 +19,7 @@ func (in *Spec) DeepCopyInto(out *Spec) {
 	in.StatefulSetProperties.DeepCopyInto(&out.StatefulSetProperties)
 	if in.CustomProperties != nil {
 		in, out := &in.CustomProperties, &out.CustomProperties
-		*out = new(value.Source)
+		*out = new(types.ValueSource)
 		**out = **in
 	}
 	if in.TLSCertsRef != nil {

@@ -79,7 +79,6 @@ func TestReconcileSecretReplicationLifecycle(t *testing.T) {
 		Name: dk.Tokens(), Namespace: dk.Namespace,
 		Data: map[string][]byte{
 			token.APIKey:        []byte("test-api-token"),
-			token.PaaSKey:       []byte("test-paas-token"),
 			token.DataIngestKey: []byte("test-ingest-token"),
 		},
 	})

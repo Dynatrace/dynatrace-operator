@@ -1,0 +1,41 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
+package k8ssecret
+
+import (
+	"context"
+	"strings"
+
+	"github.com/pkg/errors"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+)
+
+func ExtractKey(secret *corev1.Secret, key string) (string, error) {
+	value, hasKey := secret.Data[key]
+	if !hasKey {
+		err := errors.Errorf("missing key %s", key)
+
+		return "", err
+	}
+
+	return strings.TrimSpace(string(value)), nil
+}
+
+func GetDataFromSecretName(ctx context.Context, apiReader client.Reader, namespacedName types.NamespacedName, dataKey string) (string, error) {
+	query := Query(nil, apiReader)
+
+	secret, err := query.Get(ctx, namespacedName)
+	if err != nil {
+		return "", err
+	}
+
+	value, err := ExtractKey(secret, dataKey)
+	if err != nil {
+		return "", err
+	}
+
+	return value, nil
+}

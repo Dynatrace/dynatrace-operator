@@ -15,6 +15,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	prevDynakube "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube"
 	e2econst "github.com/Dynatrace/dynatrace-operator/test/e2e/features/consts"
+	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
 	"github.com/stretchr/testify/require"
@@ -37,9 +38,15 @@ const (
 func install(builder *features.FeatureBuilder, t tenant.Tokens, dk *dynakube.DynaKube) {
 	Create(builder, features.LevelAssess, t, dk)
 	VerifyStartup(builder, features.LevelAssess, dk)
-	// The secret is required for correct cleanup, so always delete it last
+	Cleanup(builder, dk)
+}
+
+// Cleanup registers the teardown of the DynaKube and its tenant secret, so the operator can be removed afterward.
+// The teardown is skipped on fail-fast (aka.: /debug) to keep the failure investigable.
+func Cleanup(builder *features.FeatureBuilder, dk *dynakube.DynaKube) {
 	Delete(builder, features.LevelTeardown, dk)
-	builder.WithTeardown("deleted tenant secret", tenant.DeleteTenantSecret(dk.Name, dk.Namespace))
+	// The secret is required for correct cleanup, so always delete it last
+	builder.WithTeardown("deleted tenant secret", helpers.SkipOnFailFast(tenant.DeleteTenantSecret(dk.Name, dk.Namespace)))
 }
 
 func Install(builder *features.FeatureBuilder, secretConfig tenant.Secret, dk *dynakube.DynaKube) {
@@ -89,10 +96,12 @@ func VerifyStartupPreviousVersion(builder *features.FeatureBuilder, level featur
 		WaitForPhasePreviousVersion(prevDK, status.Running))
 }
 
+// Delete removes the DynaKube and waits for its components to stop.
+// Steps at LevelTeardown are skipped on fail-fast, steps on other levels are part of the test and always run.
 func Delete(builder *features.FeatureBuilder, level features.Level, dk *dynakube.DynaKube) {
-	builder.WithStep("dynakube deleted", level, remove(dk))
+	builder.WithStep("dynakube deleted", level, helpers.GuardTeardown(level, remove(dk)))
 	if dk.OneAgent().IsDaemonsetRequired() {
-		builder.WithStep("oneagent pods stopped", level, oneagent.WaitForDaemonSetPodsDeletion(dk.OneAgent().GetDaemonsetName(), dk.Namespace))
+		builder.WithStep("oneagent pods stopped", level, helpers.GuardTeardown(level, oneagent.WaitForDaemonSetPodsDeletion(dk.OneAgent().GetDaemonsetName(), dk.Namespace)))
 	}
 	if dk.OneAgent().IsClassicFullStackMode() {
 		oneagent.RunClassicUninstall(builder, level, dk)

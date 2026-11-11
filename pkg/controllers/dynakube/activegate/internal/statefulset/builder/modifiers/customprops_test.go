@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/value"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -17,7 +17,7 @@ const testCustomPropertyValue = "testing-property"
 
 func setCustomPropertyUsage(capability capability.Capability, isUsed bool) {
 	if isUsed {
-		capability.Properties().CustomProperties = &value.Source{
+		capability.Properties().CustomProperties = &types.ValueSource{
 			Value: testCustomPropertyValue,
 		}
 	} else {
@@ -39,7 +39,7 @@ func TestCustomPropertyEnabled(t *testing.T) {
 
 	t.Run("false with NeedsCustomNoProxy", func(t *testing.T) {
 		dk := getBaseDynakube()
-		dk.Spec.Proxy = &value.Source{
+		dk.Spec.Proxy = &types.ValueSource{
 			Value: "test",
 		}
 		dk.Annotations = map[string]string{

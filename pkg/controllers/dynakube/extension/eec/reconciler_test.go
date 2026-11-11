@@ -14,9 +14,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/communication"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/shared/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	dtimage "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	eecConsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/extension/consts"
@@ -61,7 +60,7 @@ func getTestDynakube() *dynakube.DynaKube {
 			Extensions: &extensions.Spec{Databases: []extensions.DatabaseSpec{{ID: "test"}}},
 			Templates: dynakube.TemplatesSpec{
 				ExtensionExecutionController: extensions.ExecutionControllerSpec{
-					ImageRef: image.Ref{
+					ImageRef: types.ImageRef{
 						Repository: testEECImageRepository,
 						Tag:        testEECImageTag,
 					},
@@ -71,7 +70,7 @@ func getTestDynakube() *dynakube.DynaKube {
 
 		Status: dynakube.DynaKubeStatus{
 			ActiveGate: activegate.Status{
-				ConnectionInfo: communication.ConnectionInfo{
+				ConnectionInfo: types.ConnectionInfo{
 					TenantUUID: testTenantUUID,
 				},
 				VersionStatus: status.VersionStatus{},
@@ -120,7 +119,7 @@ func getTLSSecret(name string, namespace string, crt string, key string) *corev1
 }
 
 func disableAutomaticAGCertificate(dk *dynakube.DynaKube) {
-	dk.Annotations[exp.AGAutomaticTLSCertificateKey] = "false"
+	dk.Annotations[exp.AGTLSCertificateTransferringToOneAgentKey] = "false"
 }
 
 func enableLegacyVolumeMounts(dk *dynakube.DynaKube) {
@@ -398,6 +397,11 @@ func TestLegacyVolumeMounts(t *testing.T) {
 				MountPath: runtimeMountPath + httpsCertMountPath,
 				ReadOnly:  true,
 			},
+			{
+				Name:      activeGateTrustedCertVolumeName,
+				MountPath: runtimeMountPath + activeGateTrustedCertMountPath,
+				ReadOnly:  true,
+			},
 		}
 		assert.Equal(t, expectedVolumeMounts, statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts)
 	})
@@ -477,6 +481,11 @@ func TestLegacyVolumeMounts(t *testing.T) {
 				MountPath: runtimeMountPath + httpsCertMountPath,
 				ReadOnly:  true,
 			},
+			{
+				Name:      activeGateTrustedCertVolumeName,
+				MountPath: runtimeMountPath + activeGateTrustedCertMountPath,
+				ReadOnly:  true,
+			},
 		}
 		assert.Equal(t, expectedVolumeMounts, statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts)
 	})
@@ -539,6 +548,11 @@ func TestLegacyVolumeMounts(t *testing.T) {
 			{
 				Name:      customConfigVolumeName,
 				MountPath: runtimeMountPath + customConfigMountPath,
+				ReadOnly:  true,
+			},
+			{
+				Name:      activeGateTrustedCertVolumeName,
+				MountPath: runtimeMountPath + activeGateTrustedCertMountPath,
 				ReadOnly:  true,
 			},
 		}
@@ -612,6 +626,11 @@ func TestVolumeMounts(t *testing.T) {
 				MountPath: httpsCertMountPath,
 				ReadOnly:  true,
 			},
+			{
+				Name:      activeGateTrustedCertVolumeName,
+				MountPath: activeGateTrustedCertMountPath,
+				ReadOnly:  true,
+			},
 		}
 		assert.Equal(t, expectedVolumeMounts, statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts)
 	})
@@ -674,6 +693,11 @@ func TestVolumeMounts(t *testing.T) {
 				MountPath: httpsCertMountPath,
 				ReadOnly:  true,
 			},
+			{
+				Name:      activeGateTrustedCertVolumeName,
+				MountPath: activeGateTrustedCertMountPath,
+				ReadOnly:  true,
+			},
 		}
 		assert.Equal(t, expectedVolumeMounts, statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts)
 	})
@@ -730,6 +754,11 @@ func TestVolumeMounts(t *testing.T) {
 			{
 				Name:      customConfigVolumeName,
 				MountPath: customConfigMountPath,
+				ReadOnly:  true,
+			},
+			{
+				Name:      activeGateTrustedCertVolumeName,
+				MountPath: activeGateTrustedCertMountPath,
 				ReadOnly:  true,
 			},
 		}
@@ -1125,6 +1154,19 @@ func TestLegacyVolumes(t *testing.T) {
 				Name:     runtimeVolumeName,
 				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
+			{
+				Name: activeGateTrustedCertVolumeName,
+				Secret: &corev1.SecretVolumeSource{
+					DefaultMode: &mode,
+					SecretName:  dk.ActiveGate().GetTLSSecretName(),
+					Items: []corev1.KeyToPath{
+						{
+							Key:  consts.TLSServerCrtDataName,
+							Path: consts.TLSServerCrtDataName,
+						},
+					},
+				},
+			},
 		}
 
 		assert.Equal(t, expectedVolumes, statefulSet.Spec.Template.Spec.Volumes)
@@ -1219,6 +1261,19 @@ func TestLegacyVolumes(t *testing.T) {
 				Secret: &corev1.SecretVolumeSource{
 					SecretName:  dk.Extensions().GetTLSSecretName(),
 					DefaultMode: &mode,
+				},
+			},
+			{
+				Name: activeGateTrustedCertVolumeName,
+				Secret: &corev1.SecretVolumeSource{
+					DefaultMode: &mode,
+					SecretName:  dk.ActiveGate().GetTLSSecretName(),
+					Items: []corev1.KeyToPath{
+						{
+							Key:  consts.TLSServerCrtDataName,
+							Path: consts.TLSServerCrtDataName,
+						},
+					},
 				},
 			},
 		}
@@ -1322,6 +1377,19 @@ func TestLegacyVolumes(t *testing.T) {
 				Name: customConfigVolumeName,
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					Name: testCustomConfigConfigMapName,
+				},
+			},
+			{
+				Name: activeGateTrustedCertVolumeName,
+				Secret: &corev1.SecretVolumeSource{
+					DefaultMode: &mode,
+					SecretName:  dk.ActiveGate().GetTLSSecretName(),
+					Items: []corev1.KeyToPath{
+						{
+							Key:  consts.TLSServerCrtDataName,
+							Path: consts.TLSServerCrtDataName,
+						},
+					},
 				},
 			},
 		}
@@ -1418,6 +1486,19 @@ func TestVolumes(t *testing.T) {
 				Name:     runtimeVolumeName,
 				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
+			{
+				Name: activeGateTrustedCertVolumeName,
+				Secret: &corev1.SecretVolumeSource{
+					DefaultMode: &mode,
+					SecretName:  dk.ActiveGate().GetTLSSecretName(),
+					Items: []corev1.KeyToPath{
+						{
+							Key:  consts.TLSServerCrtDataName,
+							Path: consts.TLSServerCrtDataName,
+						},
+					},
+				},
+			},
 		}
 
 		assert.Equal(t, expectedVolumes, statefulSet.Spec.Template.Spec.Volumes)
@@ -1494,6 +1575,19 @@ func TestVolumes(t *testing.T) {
 				Secret: &corev1.SecretVolumeSource{
 					SecretName:  dk.Extensions().GetTLSSecretName(),
 					DefaultMode: &mode,
+				},
+			},
+			{
+				Name: activeGateTrustedCertVolumeName,
+				Secret: &corev1.SecretVolumeSource{
+					DefaultMode: &mode,
+					SecretName:  dk.ActiveGate().GetTLSSecretName(),
+					Items: []corev1.KeyToPath{
+						{
+							Key:  consts.TLSServerCrtDataName,
+							Path: consts.TLSServerCrtDataName,
+						},
+					},
 				},
 			},
 		}
@@ -1579,6 +1673,19 @@ func TestVolumes(t *testing.T) {
 				Name: customConfigVolumeName,
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					Name: testCustomConfigConfigMapName,
+				},
+			},
+			{
+				Name: activeGateTrustedCertVolumeName,
+				Secret: &corev1.SecretVolumeSource{
+					DefaultMode: &mode,
+					SecretName:  dk.ActiveGate().GetTLSSecretName(),
+					Items: []corev1.KeyToPath{
+						{
+							Key:  consts.TLSServerCrtDataName,
+							Path: consts.TLSServerCrtDataName,
+						},
+					},
 				},
 			},
 		}
@@ -1748,9 +1855,9 @@ func TestActiveGateVolumes(t *testing.T) {
 		require.NotEmpty(t, statefulSet.Spec.Template.Spec.Containers)
 		require.NotEmpty(t, statefulSet.Spec.Template.Spec.Volumes)
 
-		require.NotContains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, expectedEnvVar)
-		require.NotContains(t, statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts, expectedVolumeMount)
-		require.NotContains(t, statefulSet.Spec.Template.Spec.Volumes, expectedVolume)
+		require.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, expectedEnvVar)
+		require.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts, expectedVolumeMount)
+		require.Contains(t, statefulSet.Spec.Template.Spec.Volumes, expectedAutoAgCertVolume)
 	})
 
 	t.Run("volumes with TrustedCAs certificates, AG cert disabled", func(t *testing.T) {
@@ -1762,9 +1869,9 @@ func TestActiveGateVolumes(t *testing.T) {
 		require.NotEmpty(t, statefulSet.Spec.Template.Spec.Containers)
 		require.NotEmpty(t, statefulSet.Spec.Template.Spec.Volumes)
 
-		require.NotContains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, expectedEnvVar)
-		require.NotContains(t, statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts, expectedVolumeMount)
-		require.NotContains(t, statefulSet.Spec.Template.Spec.Volumes, expectedVolume)
+		require.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, expectedEnvVar)
+		require.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts, expectedVolumeMount)
+		require.Contains(t, statefulSet.Spec.Template.Spec.Volumes, expectedAutoAgCertVolume)
 	})
 
 	t.Run("volumes with TrustedCAs certificates and automatically created ActiveGate tls certificate", func(t *testing.T) {
@@ -1848,13 +1955,14 @@ func TestPublicRegistryImage(t *testing.T) {
 	sts := getStatefulset(t, dk)
 
 	require.Equal(t, expectedImageURI, sts.Spec.Template.Spec.Containers[0].Image)
+	assert.Equal(t, expectedImageURI, dk.Status.Extensions.ResolvedImage)
 
 	t.Run("template image takes precedence over public registry", func(t *testing.T) {
 		t.Cleanup(version.DisableCacheForTest(123))
 		templateImageURI := "my-custom-registry:5000/my-custom-repo:my-custom-tag"
 		dk := getTestDynakube()
 		dk.Annotations = map[string]string{exp.UsePublicRegistryKey: "true"}
-		dk.Spec.Templates.ExtensionExecutionController.ImageRef = image.Ref{Repository: "my-custom-registry:5000/my-custom-repo", Tag: "my-custom-tag"}
+		dk.Spec.Templates.ExtensionExecutionController.ImageRef = types.ImageRef{Repository: "my-custom-registry:5000/my-custom-repo", Tag: "my-custom-tag"}
 
 		mockK8sClient := fake.NewClient(dk)
 		mockK8sClient = mockTLSSecret(t, mockK8sClient, dk)
@@ -1869,5 +1977,6 @@ func TestPublicRegistryImage(t *testing.T) {
 		require.NoError(t, err)
 
 		require.Equal(t, templateImageURI, statefulSet.Spec.Template.Spec.Containers[0].Image)
+		assert.Equal(t, templateImageURI, dk.Status.Extensions.ResolvedImage)
 	})
 }
