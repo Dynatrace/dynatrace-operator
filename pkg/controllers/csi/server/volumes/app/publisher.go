@@ -183,13 +183,13 @@ func (pub *Publisher) mountCodeModule(ctx context.Context, volumeCfg *csivolumes
 func (pub *Publisher) addPodInfoSymlink(ctx context.Context, volumeCfg *csivolumes.VolumeConfig) error {
 	appMountPodInfoDir := pub.path.AppMountPodInfoDir(volumeCfg.DynakubeName, volumeCfg.PodNamespace, volumeCfg.PodName)
 
-	// Try to remove the link first, just in case the pod-name would be static, which could cause error.
-	// Static pod names used for to `StatefulSet` or "raw" `Pod`.
-	if err := symlink.Remove(ctx, appMountPodInfoDir); err != nil {
+	if err := os.MkdirAll(filepath.Dir(appMountPodInfoDir), os.ModePerm); err != nil {
 		return err
 	}
 
-	if err := os.MkdirAll(filepath.Dir(appMountPodInfoDir), os.ModePerm); err != nil {
+	// Try to remove the link first, just in case the pod-name would be static, which could cause error.
+	// Static pod names used for to `StatefulSet` or "raw" `Pod`.
+	if err := symlink.Remove(ctx, appMountPodInfoDir); err != nil {
 		return err
 	}
 
