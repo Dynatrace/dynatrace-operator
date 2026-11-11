@@ -4138,6 +4138,17 @@ spec:
         required:
         - spec
         type: object
+        x-kubernetes-validations:
+        - message: 'The name of a PrometheusMonitoring must not be longer than 44
+            characters, because it is the base for the names of related resources
+            (example: <name>-gateway) which are used as label values (limit of 63
+            characters).'
+          rule: size(self.metadata.name) <= 44
+        - message: The PrometheusMonitoring name violates DNS-1035, it must consist
+            of lower case alphanumeric characters or '-', start with an alphabetic
+            character, and end with an alphanumeric character (regex used for validation
+            is '[a-z]([-a-z0-9]*[a-z0-9])?').
+          rule: self.metadata.name.matches('^[a-z]([-a-z0-9]*[a-z0-9])?$')
     served: true
     storage: true
     subresources:

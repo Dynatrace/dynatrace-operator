@@ -147,7 +147,7 @@ func TestWebhook(t *testing.T) {
 			pmName  string
 			message string
 		}{
-			{name: "too long", pmName: "a" + strings.Repeat("b", 44), message: "length limit"},
+			{name: "too long", pmName: "a" + strings.Repeat("b", 44), message: "must not be longer than 44 characters"},
 			{name: "starts with digit", pmName: "1-starts-with-digit", message: "DNS-1035"},
 		}
 
