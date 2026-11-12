@@ -66,8 +66,8 @@ func (r requiredFiles) collectRequiredFiles() []string {
 			supportarchive.SupportArchiveOutputFileName,
 			supportarchive.NodeTaintAnalysisFileName,
 		},
-		r.getRequiredPodFiles(k8slabel.AppNameLabel, true),
-		r.getRequiredPodFiles(k8slabel.AppManagedByLabel, r.collectManaged),
+		r.getRequiredPodFiles(k8slabel.AppName, true),
+		r.getRequiredPodFiles(k8slabel.AppManagedBy, r.collectManaged),
 		r.getRequiredPodDiagnosticLogFiles(r.collectManaged),
 		r.getRequiredReplicaSetFiles(),
 		r.getRequiredServiceFiles(),
@@ -119,7 +119,7 @@ func (r requiredFiles) getRequiredPodDiagnosticLogFiles(collectManaged bool) []s
 	pods := k8spod.List(r.ctx, r.t, r.resources, r.dk.Namespace)
 
 	podList := filter(pods.Items, func(pod corev1.Pod) bool {
-		return pod.Labels[k8slabel.AppNameLabel] == supportarchive.LabelEECPodName && pod.Labels[k8slabel.AppManagedByLabel] == operator.DeploymentName
+		return pod.Labels[k8slabel.AppName] == supportarchive.LabelEECPodName && pod.Labels[k8slabel.AppManagedBy] == operator.DeploymentName
 	})
 
 	for _, pod := range podList {
@@ -133,8 +133,8 @@ func (r requiredFiles) getRequiredPodDiagnosticLogFiles(collectManaged bool) []s
 func (r requiredFiles) getRequiredReplicaSetFiles() []string {
 	replicaSets := k8sreplicaset.List(r.t, r.ctx, r.resources, r.dk.Namespace)
 	operatorReplicaSets := filter(replicaSets.Items, func(rs appsv1.ReplicaSet) bool {
-		return rs.Labels[k8slabel.AppNameLabel] == operator.DeploymentName ||
-			rs.Labels[k8slabel.AppManagedByLabel] == operator.DeploymentName
+		return rs.Labels[k8slabel.AppName] == operator.DeploymentName ||
+			rs.Labels[k8slabel.AppManagedBy] == operator.DeploymentName
 	})
 	requiredFiles := make([]string, len(operatorReplicaSets))
 	for i, replicaSet := range operatorReplicaSets {
@@ -177,8 +177,8 @@ func (r requiredFiles) getRequiredDaemonSetFiles() []string {
 func (r requiredFiles) getRequiredServiceFiles() []string {
 	services := k8sservice.List(r.t, r.ctx, r.resources, r.dk.Namespace)
 	operatorServices := filter(services.Items, func(svc corev1.Service) bool {
-		return svc.Labels[k8slabel.AppNameLabel] == operator.DeploymentName ||
-			svc.Labels[k8slabel.AppManagedByLabel] == operator.DeploymentName
+		return svc.Labels[k8slabel.AppName] == operator.DeploymentName ||
+			svc.Labels[k8slabel.AppManagedBy] == operator.DeploymentName
 	})
 	requiredFiles := make([]string, len(operatorServices))
 	for i, requiredService := range operatorServices {

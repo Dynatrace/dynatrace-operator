@@ -63,8 +63,8 @@ func (flc fsLogCollector) Name() string {
 func (flc fsLogCollector) getControllerPodList() (*corev1.PodList, error) {
 	ls := metav1.LabelSelector{
 		MatchLabels: map[string]string{
-			k8slabel.AppNameLabel:      LabelEECPodName,
-			k8slabel.AppManagedByLabel: flc.appName,
+			k8slabel.AppName:      LabelEECPodName,
+			k8slabel.AppManagedBy: flc.appName,
 		},
 	}
 

@@ -33,7 +33,7 @@ func (inst *Installer) buildJobName() string {
 }
 
 func (inst *Installer) buildJob(name, targetDir string) (*batchv1.Job, error) {
-	appLabels := k8slabel.NewAppLabels(k8slabel.CodeModuleComponentLabel, inst.props.Owner.GetName(), "", "")
+	labels := k8slabel.New(k8slabel.CodeModule, inst.props.Owner.GetName(), "")
 
 	container := corev1.Container{
 		Name:            "codemodule-download",
@@ -68,7 +68,7 @@ func (inst *Installer) buildJob(name, targetDir string) (*batchv1.Job, error) {
 		k8sjob.SetNodeSelector(createStrictNodeSelector(inst.nodeName)),
 		k8sjob.SetPullSecret(inst.props.PullSecrets...),
 		k8sjob.SetTolerations(inst.props.CSIJob.Tolerations),
-		k8sjob.SetAllLabels(appLabels.BuildLabels(), map[string]string{}, appLabels.BuildLabels(), inst.props.CSIJob.Labels),
+		k8sjob.SetAllLabels(labels.AsMap(), map[string]string{}, labels.AsSelector(), inst.props.CSIJob.Labels),
 		k8sjob.AddLabels(inst.props.CSIJob.Labels),
 		k8sjob.SetVolumes([]corev1.Volume{hostVolume}),
 		k8sjob.SetOnFailureRestartPolicy(),

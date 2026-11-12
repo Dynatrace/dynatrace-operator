@@ -46,8 +46,8 @@ func TestFsLog(t *testing.T) {
 			Kind:       "Pod",
 			APIVersion: "v1",
 			Labels: map[string]string{
-				k8slabel.AppNameLabel:      LabelEECPodName,
-				k8slabel.AppManagedByLabel: "dynatrace-operator",
+				k8slabel.AppName:      LabelEECPodName,
+				k8slabel.AppManagedBy: "dynatrace-operator",
 			},
 			Name:      eecPodName,
 			Namespace: eecNamespace,

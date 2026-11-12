@@ -187,7 +187,7 @@ data:
 kind: ConfigMap
 metadata:
   labels:
-    app.kubernetes.io/instance: otel-gateway
+    app.kubernetes.io/instance: pm
     app.kubernetes.io/managed-by: dynatrace-operator
     app.kubernetes.io/name: opentelemetry-gateway
     internal.dynatrace.com/operator-version: snapshot

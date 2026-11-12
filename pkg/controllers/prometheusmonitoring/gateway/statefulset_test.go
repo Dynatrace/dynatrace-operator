@@ -126,7 +126,7 @@ func TestReconcileStatefulSet(t *testing.T) {
 			Name: s.Spec.GetStatefulSetName(), Namespace: pm.Namespace,
 			Spec: appsv1.StatefulSetSpec{
 				Replicas: new(int32(5)),
-				Selector: &metav1.LabelSelector{MatchLabels: s.AppLabels.AsSelector()},
+				Selector: &metav1.LabelSelector{MatchLabels: s.Labels.AsSelector()},
 			},
 		}
 		var deletes int
@@ -170,7 +170,7 @@ func TestReconcileStatefulSet(t *testing.T) {
 
 		sts := &appsv1.StatefulSet{}
 		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetStatefulSetName(), Namespace: pm.Namespace}, sts))
-		assert.Equal(t, s.AppLabels.AsSelector(), sts.Spec.Selector.MatchLabels)
+		assert.Equal(t, s.Labels.AsSelector(), sts.Spec.Selector.MatchLabels)
 	})
 
 	t.Run("propagate error", func(t *testing.T) {

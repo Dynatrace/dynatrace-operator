@@ -4,14 +4,12 @@
 package daemonset
 
 import (
-	"strings"
 	"testing"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	k8sversion "github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
@@ -62,7 +60,14 @@ func TestBuildDaemonSet(t *testing.T) {
 
 func TestLabels(t *testing.T) {
 	t.Cleanup(k8sversion.DisableCacheForTest(123))
-	feature := strings.ReplaceAll(deploymentmetadata.ClassicFullStackDeploymentType, "_", "")
+
+	expectedSelector := func(dk *dynakube.DynaKube) map[string]string {
+		return map[string]string{
+			k8slabel.AppName:      k8slabel.OneAgent,
+			k8slabel.AppInstance:  dk.Name,
+			k8slabel.AppManagedBy: version.AppName,
+		}
+	}
 
 	t.Run("use version when set", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
@@ -79,26 +84,20 @@ func TestLabels(t *testing.T) {
 			},
 		}
 		expectedLabels := map[string]string{
-			k8slabel.AppNameLabel:      k8slabel.OneAgentComponentLabel,
-			k8slabel.AppCreatedByLabel: dk.Name,
-			k8slabel.AppComponentLabel: feature,
-			k8slabel.AppVersionLabel:   testImageTag,
-			k8slabel.AppManagedByLabel: version.AppName,
-		}
-		expectedMatchLabels := map[string]string{
-			k8slabel.AppNameLabel:      k8slabel.OneAgentComponentLabel,
-			k8slabel.AppCreatedByLabel: dk.Name,
-			k8slabel.AppManagedByLabel: version.AppName,
+			k8slabel.AppName:         k8slabel.OneAgent,
+			k8slabel.AppInstance:     dk.Name,
+			k8slabel.AppManagedBy:    version.AppName,
+			k8slabel.AppVersion:      testImageTag,
+			k8slabel.OperatorVersion: version.Version,
 		}
 		dsBuilder := NewClassicFullStack(dk, testClusterID)
 		ds, err := dsBuilder.BuildDaemonSet(t.Context())
 		require.NoError(t, err)
 
-		podSpecs := ds.Spec.Template.Spec
-		assert.NotNil(t, podSpecs)
 		assert.Equal(t, expectedLabels, ds.Labels)
-		assert.Equal(t, expectedMatchLabels, ds.Spec.Selector.MatchLabels)
-		assert.Equal(t, expectedLabels, ds.Spec.Template.Labels)
+		assert.Equal(t, expectedSelector(dk), ds.Spec.Selector.MatchLabels)
+		expectedPodLabels := expectedSelector(dk)
+		assert.Equal(t, expectedPodLabels, ds.Spec.Template.Labels)
 	})
 	t.Run("if no version is set, no version label", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
@@ -109,29 +108,59 @@ func TestLabels(t *testing.T) {
 				},
 			},
 		}
-
 		expectedLabels := map[string]string{
-			k8slabel.AppNameLabel:      k8slabel.OneAgentComponentLabel,
-			k8slabel.AppCreatedByLabel: dk.Name,
-			k8slabel.AppVersionLabel:   "",
-			k8slabel.AppComponentLabel: feature,
-			k8slabel.AppManagedByLabel: version.AppName,
-		}
-		expectedMatchLabels := map[string]string{
-			k8slabel.AppNameLabel:      k8slabel.OneAgentComponentLabel,
-			k8slabel.AppCreatedByLabel: dk.Name,
-			k8slabel.AppManagedByLabel: version.AppName,
+			k8slabel.AppName:         k8slabel.OneAgent,
+			k8slabel.AppInstance:     dk.Name,
+			k8slabel.AppManagedBy:    version.AppName,
+			k8slabel.OperatorVersion: version.Version,
 		}
 
 		dsBuilder := NewClassicFullStack(dk, testClusterID)
 		ds, err := dsBuilder.BuildDaemonSet(t.Context())
 		require.NoError(t, err)
 
-		podSpecs := ds.Spec.Template.Spec
-		assert.NotNil(t, podSpecs)
 		assert.Equal(t, expectedLabels, ds.Labels)
-		assert.Equal(t, expectedMatchLabels, ds.Spec.Selector.MatchLabels)
-		assert.Equal(t, expectedLabels, ds.Spec.Template.Labels)
+		assert.Equal(t, expectedSelector(dk), ds.Spec.Selector.MatchLabels)
+		expectedPodLabels := expectedSelector(dk)
+		assert.Equal(t, expectedPodLabels, ds.Spec.Template.Labels)
+	})
+	t.Run("custom labels are set on daemonset and pods, but can't override operator labels", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			Spec: dynakube.DynaKubeSpec{
+				APIURL: testURL,
+				OneAgent: oneagent.Spec{
+					ClassicFullStack: &oneagent.HostInjectSpec{
+						Labels: map[string]string{
+							"custom":         "label",
+							k8slabel.AppName: "override",
+						},
+					},
+				},
+			},
+			Status: dynakube.DynaKubeStatus{
+				OneAgent: oneagent.Status{
+					Version: testImageTag,
+				},
+			},
+		}
+		expectedLabels := map[string]string{
+			"custom":                 "label",
+			k8slabel.AppName:         k8slabel.OneAgent,
+			k8slabel.AppInstance:     dk.Name,
+			k8slabel.AppManagedBy:    version.AppName,
+			k8slabel.AppVersion:      testImageTag,
+			k8slabel.OperatorVersion: version.Version,
+		}
+		expectedPodLabels := expectedSelector(dk)
+		expectedPodLabels["custom"] = "label"
+
+		dsBuilder := NewClassicFullStack(dk, testClusterID)
+		ds, err := dsBuilder.BuildDaemonSet(t.Context())
+		require.NoError(t, err)
+
+		assert.Equal(t, expectedLabels, ds.Labels)
+		assert.Equal(t, expectedSelector(dk), ds.Spec.Selector.MatchLabels)
+		assert.Equal(t, expectedPodLabels, ds.Spec.Template.Labels)
 	})
 }
 

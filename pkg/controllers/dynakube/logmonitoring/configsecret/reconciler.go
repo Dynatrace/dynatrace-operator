@@ -108,12 +108,12 @@ func (r *Reconciler) prepareSecret(ctx context.Context, dk *dynakube.DynaKube) (
 		return nil, err
 	}
 
-	coreLabels := k8slabel.NewCoreLabels(dk.Name, k8slabel.LogMonitoringComponentLabel).BuildLabels()
+	labels := k8slabel.New(k8slabel.LogMonitoring, dk.Name, "")
 
 	newSecret, err := k8ssecret.Build(dk,
 		GetSecretName(dk.Name),
 		data,
-		k8ssecret.SetLabels(coreLabels),
+		k8ssecret.SetLabels(labels.AsMap()),
 	)
 	if err != nil {
 		log.Info("failed to build the final secret")

@@ -26,7 +26,7 @@ func TestGetAppName(t *testing.T) {
 			Name:       alternativeOperatorName,
 			Namespace:  alternativeNamespace,
 			Labels: map[string]string{
-				k8slabel.AppNameLabel: alternativeOperatorName,
+				k8slabel.AppName: alternativeOperatorName,
 			},
 			Spec: corev1.PodSpec{
 				Containers: []corev1.Container{

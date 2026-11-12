@@ -100,7 +100,7 @@ func kubemonService(dk *dynakube.DynaKube) *corev1.Service {
 		},
 	}
 
-	labels := k8slabel.New(k8slabel.KubeMonComponentLabel, dk.Name, "")
+	labels := k8slabel.New(k8slabel.KubeMon, dk.Name, "")
 
 	return &corev1.Service{
 		Name:      ServiceName(dk.Name),
@@ -175,7 +175,7 @@ func (r *Reconciler) tlsCertificateData(dk *dynakube.DynaKube) (map[string][]byt
 }
 
 func tlsSecretSpec(dk *dynakube.DynaKube, data map[string][]byte) *corev1.Secret {
-	labels := k8slabel.New(k8slabel.KubeMonComponentLabel, dk.Name, "")
+	labels := k8slabel.New(k8slabel.KubeMon, dk.Name, "")
 
 	return &corev1.Secret{
 		Name:      dk.KubernetesMonitoring().GetAutoTLSSecretName(),

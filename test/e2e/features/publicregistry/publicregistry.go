@@ -248,7 +248,7 @@ func featureTagAndDigest(t *testing.T, featureName, tagURI, digestURI, expectedT
 		func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 			var ds appsv1.DaemonSet
 			require.NoError(t, envConfig.Client().Resources().Get(ctx, testDynakube.LogMonitoring().GetDaemonSetName(), testDynakube.Namespace, &ds))
-			assert.Equal(t, expectedTag, ds.Labels[k8slabel.AppVersionLabel])
+			assert.Equal(t, expectedTag, ds.Labels[k8slabel.AppVersion])
 
 			return ctx
 		})

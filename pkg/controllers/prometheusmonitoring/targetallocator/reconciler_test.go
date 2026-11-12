@@ -55,10 +55,10 @@ func newTestPM(name, namespace string) *prometheusmonitoring.PrometheusMonitorin
 
 func newTestScope(pm *prometheusmonitoring.PrometheusMonitoring) *reconcileScope {
 	return &reconcileScope{
-		Owner:     pm,
-		DynaKube:  &dynakube.DynaKube{Name: "dk", Namespace: "dynatrace"},
-		Spec:      pm.TargetAllocator(),
-		AppLabels: k8slabel.OTelTargetAllocator(),
+		Owner:    pm,
+		DynaKube: &dynakube.DynaKube{Name: "dk", Namespace: "dynatrace"},
+		Spec:     pm.TargetAllocator(),
+		Labels:   k8slabel.New(k8slabel.OTelTargetAllocator, pm.Name, ""),
 	}
 }
 
@@ -131,7 +131,7 @@ func TestReconcileConfigMap(t *testing.T) {
 		existing := &corev1.ConfigMap{
 			Name:      s.Spec.GetDeploymentName(),
 			Namespace: pm.Namespace,
-			Labels:    map[string]string{"custom": "value", k8slabel.AppInstanceLabel: "override"}}
+			Labels:    map[string]string{"custom": "value", k8slabel.AppInstance: "override"}}
 		c := fake.NewClient(existing)
 		r := &Reconciler{Client: c}
 
@@ -140,7 +140,7 @@ func TestReconcileConfigMap(t *testing.T) {
 		cm := &corev1.ConfigMap{}
 		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetDeploymentName(), Namespace: pm.Namespace}, cm))
 		assert.Equal(t, "value", cm.Labels["custom"])
-		assert.Equal(t, k8slabel.OTelTargetAllocator().Instance, cm.Labels[k8slabel.AppInstanceLabel])
+		assert.Equal(t, pm.Name, cm.Labels[k8slabel.AppInstance])
 	})
 
 	t.Run("propagate error", func(t *testing.T) {
@@ -243,7 +243,7 @@ func TestReconcileDeployment(t *testing.T) {
 			Name: s.Spec.GetDeploymentName(), Namespace: pm.Namespace,
 			Spec: appsv1.DeploymentSpec{
 				Replicas: new(int32(5)),
-				Selector: &metav1.LabelSelector{MatchLabels: s.AppLabels.AsSelector()},
+				Selector: &metav1.LabelSelector{MatchLabels: s.Labels.AsSelector()},
 			},
 		}
 		var deletes int
@@ -287,7 +287,7 @@ func TestReconcileDeployment(t *testing.T) {
 
 		deploy := &appsv1.Deployment{}
 		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetDeploymentName(), Namespace: pm.Namespace}, deploy))
-		assert.Equal(t, s.AppLabels.AsSelector(), deploy.Spec.Selector.MatchLabels)
+		assert.Equal(t, s.Labels.AsSelector(), deploy.Spec.Selector.MatchLabels)
 	})
 
 	t.Run("propagate error", func(t *testing.T) {
@@ -323,7 +323,7 @@ func TestReconcileService(t *testing.T) {
 		existing := &corev1.Service{
 			Name:      s.Spec.GetDeploymentName(),
 			Namespace: pm.Namespace,
-			Labels:    map[string]string{"custom": "value", k8slabel.AppInstanceLabel: "override"}}
+			Labels:    map[string]string{"custom": "value", k8slabel.AppInstance: "override"}}
 		c := fake.NewClient(existing)
 		r := &Reconciler{Client: c}
 
@@ -332,7 +332,7 @@ func TestReconcileService(t *testing.T) {
 		svc := &corev1.Service{}
 		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetDeploymentName(), Namespace: pm.Namespace}, svc))
 		assert.Equal(t, "value", svc.Labels["custom"])
-		assert.Equal(t, k8slabel.OTelTargetAllocator().Instance, svc.Labels[k8slabel.AppInstanceLabel])
+		assert.Equal(t, pm.Name, svc.Labels[k8slabel.AppInstance])
 	})
 
 	t.Run("propagate error", func(t *testing.T) {

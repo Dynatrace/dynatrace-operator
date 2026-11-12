@@ -1223,7 +1223,7 @@ func createCRD(t *testing.T) *apiextensionsv1.CustomResourceDefinition {
 	return &apiextensionsv1.CustomResourceDefinition{
 		Name: k8scrd.EdgeConnectName,
 		Labels: map[string]string{
-			k8slabel.AppVersionLabel: "1.0.0",
+			k8slabel.AppVersion: "1.0.0",
 		},
 	}
 }

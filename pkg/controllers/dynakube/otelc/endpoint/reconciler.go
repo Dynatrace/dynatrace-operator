@@ -82,7 +82,7 @@ func (r *Reconciler) reconcileConfigMap(ctx context.Context, dk *dynakube.DynaKu
 	configMap, err := k8sconfigmap.Build(dk,
 		consts.OTLPAPIEndpointConfigMapName,
 		configMapData,
-		k8sconfigmap.SetLabels(k8slabel.NewCoreLabels(dk.Name, k8slabel.OTelColComponentLabel).BuildLabels()),
+		k8sconfigmap.SetLabels(k8slabel.New(k8slabel.OTelCol, dk.Name, "").AsMap()),
 	)
 	if err != nil {
 		k8sconditions.SetKubeAPIError(dk.Conditions(), configMapConditionType, err)

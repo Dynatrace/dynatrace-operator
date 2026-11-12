@@ -60,7 +60,7 @@ func secretData(dk *dynakube.DynaKube) map[string][]byte {
 }
 
 func secretSpec(dk *dynakube.DynaKube, data map[string][]byte) *corev1.Secret {
-	labels := k8slabel.New(k8slabel.KubeMonComponentLabel, dk.Name, "")
+	labels := k8slabel.New(k8slabel.KubeMon, dk.Name, "")
 
 	return &corev1.Secret{
 		Name:      dk.KubernetesMonitoring().GetDeploymentPropertiesSecretName(),

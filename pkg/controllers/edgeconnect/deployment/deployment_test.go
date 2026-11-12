@@ -4,6 +4,7 @@
 package deployment
 
 import (
+	"maps"
 	"testing"
 	"time"
 
@@ -46,7 +47,7 @@ func TestNew(t *testing.T) {
 	})
 }
 
-func Test_buildAppLabels(t *testing.T) {
+func Test_buildLabels(t *testing.T) {
 	ec := &edgeconnect.EdgeConnect{
 		Name:      testName,
 		Namespace: testNamespace,
@@ -67,7 +68,7 @@ func Test_buildAppLabels(t *testing.T) {
 	}
 
 	t.Run("Check version label set correctly", func(t *testing.T) {
-		labels := buildAppLabels(ec)
+		labels := k8slabel.New(k8slabel.EdgeConnect, ec.Name, ec.Status.Version.Version)
 		assert.Empty(t, labels.Version)
 	})
 }
@@ -81,6 +82,12 @@ func TestLabels(t *testing.T) {
 	testLabelKey := "test-label-key"
 	testLabelValue := "test-label-value"
 
+	expectedSelector := map[string]string{
+		k8slabel.AppName:      k8slabel.EdgeConnect,
+		k8slabel.AppInstance:  testName,
+		k8slabel.AppManagedBy: "dynatrace-operator",
+	}
+
 	t.Run("Check empty custom labels", func(t *testing.T) {
 		ec := &edgeconnect.EdgeConnect{
 			Name:      testName,
@@ -93,19 +100,12 @@ func TestLabels(t *testing.T) {
 
 		deployment := New(t.Context(), ec)
 
-		require.Len(t, deployment.Spec.Template.Labels, 5)
-		assert.Contains(t, deployment.Spec.Template.Labels, k8slabel.AppNameLabel)
-		assert.Contains(t, deployment.Spec.Template.Labels, k8slabel.AppCreatedByLabel)
-		assert.Contains(t, deployment.Spec.Template.Labels, k8slabel.AppManagedByLabel)
-		assert.Contains(t, deployment.Spec.Template.Labels, k8slabel.AppVersionLabel)
-		assert.Contains(t, deployment.Spec.Template.Labels, k8slabel.AppComponentLabel)
+		assert.Equal(t, expectedSelector, deployment.Spec.Selector.MatchLabels)
+		assert.Equal(t, expectedSelector, deployment.Spec.Template.Labels)
 
-		require.Len(t, deployment.Labels, 5)
-		assert.Contains(t, deployment.Labels, k8slabel.AppNameLabel)
-		assert.Contains(t, deployment.Labels, k8slabel.AppCreatedByLabel)
-		assert.Contains(t, deployment.Labels, k8slabel.AppManagedByLabel)
-		assert.Contains(t, deployment.Labels, k8slabel.AppVersionLabel)
-		assert.Contains(t, deployment.Labels, k8slabel.AppComponentLabel)
+		require.Len(t, deployment.Labels, 4)
+		assert.Subset(t, deployment.Labels, expectedSelector)
+		assert.Contains(t, deployment.Labels, k8slabel.OperatorVersion)
 	})
 
 	t.Run("Check custom label set correctly", func(t *testing.T) {
@@ -124,22 +124,16 @@ func TestLabels(t *testing.T) {
 
 		deployment := New(t.Context(), ec)
 
-		assert.Len(t, deployment.Spec.Template.Labels, 6)
-		assert.Contains(t, deployment.Spec.Template.Labels, k8slabel.AppNameLabel)
-		assert.Contains(t, deployment.Spec.Template.Labels, k8slabel.AppCreatedByLabel)
-		assert.Contains(t, deployment.Spec.Template.Labels, k8slabel.AppManagedByLabel)
-		assert.Contains(t, deployment.Spec.Template.Labels, k8slabel.AppVersionLabel)
-		assert.Contains(t, deployment.Spec.Template.Labels, k8slabel.AppComponentLabel)
+		expectedPodLabels := maps.Clone(expectedSelector)
+		expectedPodLabels[testLabelKey] = testLabelValue
 
-		assert.Contains(t, deployment.Spec.Template.Labels, testLabelKey)
-		assert.Equal(t, testLabelValue, deployment.Spec.Template.Labels[testLabelKey])
+		assert.Equal(t, expectedSelector, deployment.Spec.Selector.MatchLabels)
+		assert.Equal(t, expectedPodLabels, deployment.Spec.Template.Labels)
 
-		require.Len(t, deployment.Labels, 5)
-		assert.Contains(t, deployment.Labels, k8slabel.AppNameLabel)
-		assert.Contains(t, deployment.Labels, k8slabel.AppCreatedByLabel)
-		assert.Contains(t, deployment.Labels, k8slabel.AppManagedByLabel)
-		assert.Contains(t, deployment.Labels, k8slabel.AppVersionLabel)
-		assert.Contains(t, deployment.Labels, k8slabel.AppComponentLabel)
+		require.Len(t, deployment.Labels, 4)
+		assert.Subset(t, deployment.Labels, expectedSelector)
+		assert.Contains(t, deployment.Labels, k8slabel.OperatorVersion)
+		assert.NotContains(t, deployment.Labels, testLabelKey)
 	})
 }
 

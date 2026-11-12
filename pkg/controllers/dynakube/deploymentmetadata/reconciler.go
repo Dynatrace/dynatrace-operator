@@ -73,12 +73,12 @@ func (r *Reconciler) addOperatorVersionInfo(dk *dynakube.DynaKube, configMapData
 }
 
 func (r *Reconciler) maintainMetadataConfigMap(ctx context.Context, dk *dynakube.DynaKube, configMapData map[string]string) error {
-	coreLabels := k8slabel.NewCoreLabels(dk.Name, k8slabel.OperatorComponentLabel)
+	labels := k8slabel.New(k8slabel.Operator, dk.Name, "")
 
 	configMap, err := k8sconfigmap.Build(dk,
 		GetDeploymentMetadataConfigMapName(dk.Name),
 		configMapData,
-		k8sconfigmap.SetLabels(coreLabels.BuildLabels()),
+		k8sconfigmap.SetLabels(labels.AsMap()),
 	)
 	if err != nil {
 		return errors.WithStack(err)

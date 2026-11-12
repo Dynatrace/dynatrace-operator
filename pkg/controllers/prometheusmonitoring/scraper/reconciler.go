@@ -65,7 +65,7 @@ type reconcileScope struct {
 	Owner       *prometheusmonitoring.PrometheusMonitoring
 	DynaKube    *dynakube.DynaKube
 	Spec        *prometheusmonitoring.Scraper
-	AppLabels   *k8slabel.Labels
+	Labels      *k8slabel.Labels
 	ImageClient image.Client
 	// Computed during reconcile
 	ConfigMapHash string
@@ -75,7 +75,7 @@ type reconcileScope struct {
 // Reconcile brings the scraper pool in line with the PrometheusMonitoring spec.
 //
 // The scraper gets no Service: nothing connects to it. The target allocator finds
-// its scrapers by listing pods matching AppLabels, and every other connection the
+// its scrapers by listing pods matching Labels, and every other connection the
 // scraper makes is outbound.
 func (r *Reconciler) Reconcile(ctx context.Context, pm *prometheusmonitoring.PrometheusMonitoring, dk *dynakube.DynaKube, imageClient image.Client) error {
 	ctx, _ = logd.NewFromContext(ctx, "scraper")
@@ -84,7 +84,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, pm *prometheusmonitoring.Pro
 		Owner:       pm,
 		DynaKube:    dk,
 		Spec:        pm.Scraper(),
-		AppLabels:   k8slabel.OTelScraper(),
+		Labels:      k8slabel.New(k8slabel.OTelScraper, pm.Name, ""),
 		ImageClient: imageClient,
 	}
 
@@ -125,7 +125,7 @@ func (r *Reconciler) reconcileConfigMap(ctx context.Context, s *reconcileScope) 
 	cm := &corev1.ConfigMap{Name: s.Spec.GetDeploymentName(), Namespace: s.Owner.Namespace}
 
 	err = k8sobject.RetryCreateOrUpdate(ctx, r, cm, func() error {
-		s.AppLabels.MergeInto(cm)
+		s.Labels.MergeInto(cm)
 		cm.Data = map[string]string{scraperConfigKey: rendered}
 
 		return controllerutil.SetControllerReference(s.Owner, cm, r.Scheme())
@@ -201,7 +201,7 @@ func (r *Reconciler) reconcileDeployment(ctx context.Context, s *reconcileScope)
 }
 
 func mutateDeployment(deploy *appsv1.Deployment, s *reconcileScope) error {
-	s.AppLabels.MergeInto(deploy)
+	s.Labels.MergeInto(deploy)
 
 	if deploy.Spec.Template.Labels == nil {
 		deploy.Spec.Template.Labels = make(map[string]string)
@@ -209,7 +209,7 @@ func mutateDeployment(deploy *appsv1.Deployment, s *reconcileScope) error {
 
 	// merge instead of replace to keep metadata applied by users or kubectl (e.g. restartedAt)
 	maps.Copy(deploy.Spec.Template.Labels, s.Spec.Labels)
-	maps.Copy(deploy.Spec.Template.Labels, s.AppLabels.AsSelector())
+	maps.Copy(deploy.Spec.Template.Labels, s.Labels.AsSelector())
 
 	if deploy.Spec.Template.Annotations == nil {
 		deploy.Spec.Template.Annotations = make(map[string]string)
@@ -225,7 +225,7 @@ func mutateDeployment(deploy *appsv1.Deployment, s *reconcileScope) error {
 
 	deploy.Spec.Strategy = k8sdeployment.MergeStrategy(deploy.Spec.Strategy, s.Spec.Strategy)
 
-	selector := &metav1.LabelSelector{MatchLabels: s.AppLabels.AsSelector()}
+	selector := &metav1.LabelSelector{MatchLabels: s.Labels.AsSelector()}
 	if deploy.ResourceVersion != "" && !equality.Semantic.DeepEqual(deploy.Spec.Selector, selector) {
 		return fmt.Errorf("deployment selector changed: %w", k8sobject.ErrRecreate)
 	}

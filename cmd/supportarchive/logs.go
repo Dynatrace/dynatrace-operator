@@ -48,13 +48,13 @@ func (lc logCollector) Do() error {
 
 	logInfof(lc.log, "Starting log collection")
 
-	podList, err := lc.getPodList(k8slabel.AppNameLabel)
+	podList, err := lc.getPodList(k8slabel.AppName)
 	if err != nil {
 		return err
 	}
 
 	if lc.collectManagedLogs {
-		managedByOperatorPodList, err := lc.getPodList(k8slabel.AppManagedByLabel)
+		managedByOperatorPodList, err := lc.getPodList(k8slabel.AppManagedBy)
 		if err != nil {
 			return err
 		}

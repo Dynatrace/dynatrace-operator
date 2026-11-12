@@ -77,7 +77,7 @@ type reconcileScope struct {
 	Owner         *prometheusmonitoring.PrometheusMonitoring
 	DynaKube      *dynakube.DynaKube
 	Spec          *prometheusmonitoring.Gateway
-	AppLabels     *k8slabel.Labels
+	Labels        *k8slabel.Labels
 	ImageClient   image.Client
 	ConfigMapHash string
 	StatefulSet   *appsv1.StatefulSet
@@ -90,7 +90,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, pm *prometheusmonitoring.Pro
 		Owner:       pm,
 		DynaKube:    dk,
 		Spec:        pm.Gateway(),
-		AppLabels:   k8slabel.New("opentelemetry-gateway", "otel-gateway", ""),
+		Labels:      k8slabel.New(k8slabel.OTelGateway, pm.Name, ""),
 		ImageClient: imageClient,
 	}
 
@@ -131,7 +131,7 @@ func (r *Reconciler) reconcileConfigMap(ctx context.Context, s *reconcileScope) 
 	cm := &corev1.ConfigMap{Name: name, Namespace: s.Owner.Namespace}
 
 	err = k8sobject.RetryCreateOrUpdate(ctx, r, cm, func() error {
-		s.AppLabels.MergeInto(cm)
+		s.Labels.MergeInto(cm)
 		cm.Data = map[string]string{gatewayConfigKey: rendered}
 
 		return controllerutil.SetControllerReference(s.Owner, cm, r.Scheme())
@@ -203,7 +203,7 @@ func (r *Reconciler) reconcileStatefulset(ctx context.Context, s *reconcileScope
 }
 
 func mutateStatefulSet(sts *appsv1.StatefulSet, s *reconcileScope) error {
-	s.AppLabels.MergeInto(sts)
+	s.Labels.MergeInto(sts)
 
 	if sts.Spec.Template.Labels == nil {
 		sts.Spec.Template.Labels = make(map[string]string)
@@ -211,7 +211,7 @@ func mutateStatefulSet(sts *appsv1.StatefulSet, s *reconcileScope) error {
 
 	// merge instead of replace to keep metadata applied by users or kubectl (e.g. restartedAt)
 	maps.Copy(sts.Spec.Template.Labels, s.Spec.Labels)
-	maps.Copy(sts.Spec.Template.Labels, s.AppLabels.AsSelector())
+	maps.Copy(sts.Spec.Template.Labels, s.Labels.AsSelector())
 
 	if sts.Spec.Template.Annotations == nil {
 		sts.Spec.Template.Annotations = make(map[string]string)
@@ -231,7 +231,7 @@ func mutateStatefulSet(sts *appsv1.StatefulSet, s *reconcileScope) error {
 
 	sts.Spec.PodManagementPolicy = appsv1.ParallelPodManagement
 
-	selector := &metav1.LabelSelector{MatchLabels: s.AppLabels.AsSelector()}
+	selector := &metav1.LabelSelector{MatchLabels: s.Labels.AsSelector()}
 	if sts.ResourceVersion != "" && !equality.Semantic.DeepEqual(sts.Spec.Selector, selector) {
 		return fmt.Errorf("statefulset selector changed: %w", k8sobject.ErrRecreate)
 	}
@@ -446,9 +446,9 @@ func (r *Reconciler) reconcileService(ctx context.Context, s *reconcileScope) er
 	svc := &corev1.Service{Name: s.Spec.GetStatefulSetName(), Namespace: s.Owner.Namespace}
 
 	return k8sobject.RetryCreateOrUpdate(ctx, r, svc, func() error {
-		s.AppLabels.MergeInto(svc)
+		s.Labels.MergeInto(svc)
 
-		svc.Spec.Selector = s.AppLabels.AsSelector()
+		svc.Spec.Selector = s.Labels.AsSelector()
 		svc.Spec.Ports = []corev1.ServicePort{
 			{
 				Name:        otlpPortName,
