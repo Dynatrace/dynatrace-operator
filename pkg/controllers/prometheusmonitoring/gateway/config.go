@@ -13,7 +13,6 @@ import (
 // and the string representations derive from a single source.
 // The IDs of the components shared with the other collectors come from otelcfg.
 var (
-	otlpID            = component.MustNewID("otlp")
 	metricStartTimeID = component.MustNewID("metric_start_time")
 )
 
@@ -34,13 +33,7 @@ var prometheusLabelRenames = []struct{ semconv, prometheus string }{
 
 func buildConfig(data gatewayConfigData) *otelcfg.Config {
 	return otelcfg.NewBuilder().
-		Receiver(otlpID, map[string]any{
-			"protocols": map[string]any{
-				"grpc": map[string]any{
-					"endpoint": otelcfg.Endpoint(otelcfg.OTLPReceiverGRPCPort),
-				},
-			},
-		}).
+		OTLPReceiver("grpc", otelcfg.OTLPReceiverGRPCPort).
 		MemoryLimiter(otelcfg.PrometheusMonitoringMemoryLimiter).
 		Processor(metricStartTimeID, otelcfg.Empty).
 		Processor(otelcfg.CumulativeToDeltaID, map[string]any{

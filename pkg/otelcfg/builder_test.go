@@ -75,6 +75,11 @@ func TestBuilder(t *testing.T) {
 			func(b *Builder) { b.ReceiverForProtocol(OTLPProtocol, testReceiverOpts) },
 			nil,
 		},
+		{
+			"receivers_otlp_grpc",
+			func(b *Builder) { b.OTLPReceiver("grpc", OTLPReceiverGRPCPort) },
+			[]pipeline.Signal{pipeline.SignalMetrics},
+		},
 	}
 
 	for _, test := range tests {

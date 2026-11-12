@@ -38,6 +38,12 @@ type timerHistogramMapping struct {
 	Histogram    histogramConfig `mapstructure:"histogram"`
 }
 
+func (b *Builder) OTLPReceiver(protocol string, port int) *Builder {
+	return b.Receiver(OTLPID, map[string]any{"protocols": map[string]any{
+		protocol: buildReceiverConfig(port, ReceiverOpts{}),
+	}})
+}
+
 func (b *Builder) ReceiverForProtocol(protocol Protocol, opts ReceiverOpts) *Builder {
 	switch protocol {
 	case OTLPProtocol:
