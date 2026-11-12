@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 const (
@@ -27,7 +28,8 @@ const (
 func TestCerts(t *testing.T) {
 	t.Run("get trusted certificate authorities", trustedCAsTester)
 	t.Run("get no tls certificates", activeGateTLSNoCertificateTester)
-	activeGateTLSCertificate(t)
+	t.Run("get tls certificates", activeGateTLSCertificateTester)
+	t.Run("get activegate tls data", activeGateTLSDataTester)
 }
 
 func trustedCAsTester(t *testing.T) {
@@ -81,7 +83,7 @@ func activeGateTLSNoCertificateTester(t *testing.T) {
 	assert.Empty(t, tlsCert)
 }
 
-func activeGateTLSCertificate(t *testing.T) {
+func activeGateTLSCertificateTester(t *testing.T) {
 	testFunc := func(t *testing.T, data map[string][]byte) {
 		kubeReader := fake.NewClient(&corev1.Secret{
 			Name: testSecretName,
@@ -114,5 +116,44 @@ func activeGateTLSCertificate(t *testing.T) {
 			consts.TLSCrtDataName:       []byte(testSecretValue),
 			consts.TLSServerCrtDataName: []byte(testSecretValueNew),
 		})
+	})
+}
+
+func activeGateTLSDataTester(t *testing.T) {
+	data := map[string][]byte{
+		consts.TLSCrtDataName: []byte(testSecretValue),
+		"tls.key":             []byte(testSecretValueNew),
+	}
+	dk := dynakube.DynaKube{
+		Spec: dynakube.DynaKubeSpec{
+			ActiveGate: activegate.Spec{
+				Capabilities:  []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName},
+				TLSSecretName: testSecretName,
+			},
+		},
+	}
+
+	t.Run("returns whole secret data", func(t *testing.T) {
+		kubeReader := fake.NewClient(&corev1.Secret{Name: testSecretName, Data: data})
+
+		tlsData, err := dk.ActiveGateTLSData(t.Context(), kubeReader)
+
+		require.NoError(t, err)
+		assert.Equal(t, data, tlsData)
+	})
+	t.Run("missing secret returns not found error", func(t *testing.T) {
+		tlsData, err := dk.ActiveGateTLSData(t.Context(), fake.NewClient())
+
+		require.Error(t, err)
+		assert.True(t, k8serrors.IsNotFound(err))
+		assert.Empty(t, tlsData)
+	})
+	t.Run("no tls configured returns empty data", func(t *testing.T) {
+		emptyDK := dynakube.DynaKube{}
+
+		tlsData, err := emptyDK.ActiveGateTLSData(t.Context(), fake.NewClient())
+
+		require.NoError(t, err)
+		assert.Empty(t, tlsData)
 	})
 }
