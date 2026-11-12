@@ -738,6 +738,69 @@
               }
             ]
           }
+        ],
+        [
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "n/a"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "n/a"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "text",
+                    "text": "ocp_5-0 (platform token)"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "rich_text",
+            "elements": [
+              {
+                "type": "rich_text_section",
+                "elements": [
+                  {
+                    "type": "link",
+                    "url": "${{ env.OCP_5_0_RUN_ID_URL }}",
+                    "text": "tests "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "${{ env.OCP_5_0_EMOJI }}"
+                  }
+                ]
+              }
+            ]
+          }
         ]
       ]
     },
