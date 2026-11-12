@@ -29,7 +29,7 @@ func TestNameInvalid(t *testing.T) {
 
 	t.Run("not a DNS-1035 label", func(t *testing.T) {
 		for _, name := range []string{"1pm", "pm-", "Pm", "p.m"} {
-			assert.Equal(t, errorNoDNS1035Label, nameInvalid(t.Context(), clt, newPM(name, "ns", nil)), name)
+			assert.Equal(t, errorNoDNS1035Label(), nameInvalid(t.Context(), clt, newPM(name, "ns", nil)), name)
 		}
 	})
 

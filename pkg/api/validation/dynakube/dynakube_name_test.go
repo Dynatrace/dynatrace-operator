@@ -22,7 +22,7 @@ import (
 
 func TestNameStartsWithDigit(t *testing.T) {
 	t.Run("dynakube name starts with digit", func(t *testing.T) {
-		assertDenied(t, []string{errorNoDNS1053Label}, &dynakube.DynaKube{
+		assertDenied(t, []string{errorNoDNS1053Label()}, &dynakube.DynaKube{
 			Name: "1dynakube",
 		})
 		assertAllowed(t, &dynakube.DynaKube{
@@ -122,5 +122,5 @@ func TestNoNameViolationOnTooLongName(t *testing.T) {
 	_, err := runValidators(t, dk)
 	msg := fmt.Sprintf(errorNameTooLong, dynakube.MaxNameLength)
 	require.ErrorContains(t, err, msg)
-	assert.NotContains(t, err.Error(), errorNoDNS1053Label)
+	assert.NotContains(t, err.Error(), errorNoDNS1053Label())
 }
