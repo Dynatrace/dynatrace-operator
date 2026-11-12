@@ -4,8 +4,8 @@
 package injection
 
 import (
+	"cmp"
 	"context"
-	"strconv"
 
 	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit"
 	"github.com/Dynatrace/dynatrace-bootstrapper/cmd/k8sinit/configure"
@@ -14,6 +14,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/bootstrapperconfig"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sresource"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8ssecuritycontext"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/arg"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/mutator"
@@ -131,35 +132,25 @@ func combineSecurityContexts(ctx context.Context, baseSecurityCtx corev1.Securit
 		baseSecurityCtx.RunAsGroup = containerSecurityCtx.RunAsGroup
 	}
 
-	if user := getValidatedID(ctx, pod.Annotations[dtwebhook.AnnotationInitContainerRunAsUser]); user != nil {
+	user, err := k8ssecuritycontext.GetValidatedRunAsID(pod.Annotations[dtwebhook.AnnotationInitContainerRunAsUser])
+	if err != nil {
+		logd.FromContext(ctx).Error(err, "invalid init container runAsUser annotation, ignoring", "annotation", dtwebhook.AnnotationInitContainerRunAsUser)
+	} else if user != nil {
 		baseSecurityCtx.RunAsUser = user
 	}
 
-	if group := getValidatedID(ctx, pod.Annotations[dtwebhook.AnnotationInitContainerRunAsGroup]); group != nil {
+	group, err := k8ssecuritycontext.GetValidatedRunAsID(pod.Annotations[dtwebhook.AnnotationInitContainerRunAsGroup])
+	if err != nil {
+		logd.FromContext(ctx).Error(err, "invalid init container runAsGroup annotation, ignoring", "annotation", dtwebhook.AnnotationInitContainerRunAsGroup)
+	} else if group != nil {
 		baseSecurityCtx.RunAsGroup = group
 	}
 
-	baseSecurityCtx.RunAsNonRoot = new(isNonRoot(&baseSecurityCtx))
+	// if neither user nor group is set, the init container defaults to running as non-root.
+	// Kubernetes's default behavior for runAsNonRoot: nil == runAsNonRoot: false. (it will just not do the root check)
+	baseSecurityCtx.RunAsNonRoot = cmp.Or(k8ssecuritycontext.IsNonRoot(baseSecurityCtx.RunAsUser, baseSecurityCtx.RunAsGroup), new(true))
 
 	return &baseSecurityCtx
-}
-
-// getValidatedID will parse the provided annotation as valid user/group ID between 0 and math.MaxInt32.
-// Returns *int64 for compatibility with corev1.SecurityContext
-func getValidatedID(ctx context.Context, value string) *int64 {
-	if value == "" {
-		return nil
-	}
-
-	// uint31 == positive int32 range
-	parsed, err := strconv.ParseUint(value, 10, 31)
-	if err != nil {
-		logd.FromContext(ctx).Error(err, "failed to parse annotation value, must be a positive int32", "value", value)
-
-		return nil
-	}
-
-	return new(int64(parsed))
 }
 
 func addSeccompProfile(ctx *corev1.SecurityContext, dk *dynakube.DynaKube) {
@@ -182,16 +173,4 @@ func hasPodUserSet(psc *corev1.PodSecurityContext) bool {
 
 func hasPodGroupSet(psc *corev1.PodSecurityContext) bool {
 	return psc != nil && psc.RunAsGroup != nil
-}
-
-func isNonRoot(sc *corev1.SecurityContext) bool {
-	if sc == nil {
-		return true
-	}
-
-	if sc.RunAsUser != nil { // user takes precedence over group
-		return *sc.RunAsUser != RootUser
-	}
-
-	return sc.RunAsGroup == nil || *sc.RunAsGroup != RootGroup // if group is root, but no user is set, we are still "running as root"
 }

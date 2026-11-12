@@ -131,6 +131,22 @@ func TestReconcileConfigMap(t *testing.T) {
 		assert.Equal(t, hex.EncodeToString(sum[:]), s.ConfigMapHash)
 	})
 
+	t.Run("self-monitoring telemetry is rendered into the configmap", func(t *testing.T) {
+		pm := newTestPM("pm", "dynatrace")
+		dk := newTestDynaKube()
+		dk.Spec.SelfMonitoring = &dynakube.SelfMonitoringSpec{}
+		s := newTestScopeWithDynaKube(pm, dk)
+		c := fake.NewClient()
+		r := &Reconciler{Client: c}
+
+		require.NoError(t, r.reconcileConfigMap(t.Context(), s))
+
+		cm := &corev1.ConfigMap{}
+		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetDeploymentName(), Namespace: pm.Namespace}, cm))
+
+		helpers.AssertGolden(t, "testdata/configmap_with_self_monitoring.yaml", cm)
+	})
+
 	t.Run("merge labels", func(t *testing.T) {
 		pm := newTestPM("pm", "dynatrace")
 		s := newTestScope(pm)
@@ -211,6 +227,54 @@ func TestReconcileDeployment(t *testing.T) {
 		require.NoError(t, r.reconcileDeployment(t.Context(), s))
 
 		assert.Equal(t, testImage, pm.Status.Scraper.ResolvedImage)
+	})
+
+	t.Run("recreate on selector change", func(t *testing.T) {
+		pm := newTestPM("pm", "dynatrace")
+		pm.Spec.Scraper.Image = testImage
+		s := newTestScope(pm)
+		existing := &appsv1.Deployment{
+			Name: s.Spec.GetDeploymentName(), Namespace: pm.Namespace,
+			Spec: appsv1.DeploymentSpec{Selector: &metav1.LabelSelector{MatchLabels: map[string]string{"app": "old"}}},
+		}
+		var deletes int
+		c := fake.NewClientWithInterceptors(interceptor.Funcs{
+			Delete: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.DeleteOption) error {
+				deletes++
+
+				return client.Delete(ctx, obj, opts...)
+			},
+		}, existing)
+		r := &Reconciler{Client: c}
+
+		require.NoError(t, r.reconcileDeployment(t.Context(), s))
+		assert.Equal(t, 1, deletes)
+
+		deploy := &appsv1.Deployment{}
+		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetDeploymentName(), Namespace: pm.Namespace}, deploy))
+		assert.Equal(t, s.AppLabels.AsSelector(), deploy.Spec.Selector.MatchLabels)
+	})
+
+	t.Run("no recreate when selector is unchanged", func(t *testing.T) {
+		pm := newTestPM("pm", "dynatrace")
+		pm.Spec.Scraper.Image = testImage
+		s := newTestScope(pm)
+		existing := &appsv1.Deployment{
+			Name: s.Spec.GetDeploymentName(), Namespace: pm.Namespace,
+			Spec: appsv1.DeploymentSpec{Selector: &metav1.LabelSelector{MatchLabels: s.AppLabels.AsSelector()}},
+		}
+		var deletes int
+		c := fake.NewClientWithInterceptors(interceptor.Funcs{
+			Delete: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.DeleteOption) error {
+				deletes++
+
+				return client.Delete(ctx, obj, opts...)
+			},
+		}, existing)
+		r := &Reconciler{Client: c}
+
+		require.NoError(t, r.reconcileDeployment(t.Context(), s))
+		assert.Zero(t, deletes)
 	})
 
 	t.Run("propagate error", func(t *testing.T) {
@@ -294,10 +358,10 @@ func TestMutateDeploymentIsIdempotent(t *testing.T) {
 	s.DynaKube.Spec.CustomPullSecret = "custom-pull-secret"
 
 	deploy := &appsv1.Deployment{}
-	mutateDeployment(deploy, s)
+	require.NoError(t, mutateDeployment(deploy, s))
 	first := deploy.DeepCopy()
 
-	mutateDeployment(deploy, s)
+	require.NoError(t, mutateDeployment(deploy, s))
 
 	assert.Equal(t, first, deploy)
 }
@@ -308,7 +372,7 @@ func TestImagePullSecrets(t *testing.T) {
 	t.Run("no pull secrets when the DynaKube has no custom pull secret", func(t *testing.T) {
 		deploy := &appsv1.Deployment{}
 
-		mutateDeployment(deploy, newTestScope(newTestPM("pm", "dynatrace")))
+		require.NoError(t, mutateDeployment(deploy, newTestScope(newTestPM("pm", "dynatrace"))))
 
 		assert.Empty(t, deploy.Spec.Template.Spec.ImagePullSecrets)
 	})
@@ -318,7 +382,7 @@ func TestImagePullSecrets(t *testing.T) {
 		dk.Spec.CustomPullSecret = "custom-pull-secret"
 		deploy := &appsv1.Deployment{}
 
-		mutateDeployment(deploy, newTestScopeWithDynaKube(newTestPM("pm", "dynatrace"), dk))
+		require.NoError(t, mutateDeployment(deploy, newTestScopeWithDynaKube(newTestPM("pm", "dynatrace"), dk)))
 
 		assert.Equal(t, []corev1.LocalObjectReference{{Name: dk.Spec.CustomPullSecret}}, deploy.Spec.Template.Spec.ImagePullSecrets)
 

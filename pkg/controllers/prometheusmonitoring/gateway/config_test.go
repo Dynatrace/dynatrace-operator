@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -95,5 +96,17 @@ func TestRenderGatewayConfig_ResourceAttributes(t *testing.T) {
 		rendered, err := renderGatewayConfig(data)
 		require.NoError(t, err)
 		assert.YAMLEq(t, goldenRelay(t, "configmap_with_resource_attributes.yaml"), rendered)
+	})
+}
+
+func TestBuildGatewayConfigDataSelfMonitoring(t *testing.T) {
+	t.Run("not set without self-monitoring", func(t *testing.T) {
+		assert.Empty(t, buildGatewayConfigData(&dynakube.DynaKube{Name: "dk"}).SelfMonitoringEndpoint)
+	})
+
+	t.Run("endpoint derived from dynakube with self-monitoring", func(t *testing.T) {
+		dk := &dynakube.DynaKube{Name: "dk", Spec: dynakube.DynaKubeSpec{SelfMonitoring: &dynakube.SelfMonitoringSpec{}}}
+
+		assert.Equal(t, "http://dk-self-monitoring:4318", buildGatewayConfigData(dk).SelfMonitoringEndpoint)
 	})
 }

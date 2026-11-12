@@ -59,3 +59,12 @@ data:
       service_monitor_selector:
         matchLabels:
           foo: bar
+    telemetry:
+      metrics:
+        level: normal
+        readers:
+        - periodic:
+            exporter:
+              otlp_http:
+                endpoint: http://dk-self-monitoring:4318
+                temporality_preference: delta

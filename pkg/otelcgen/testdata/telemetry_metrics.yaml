@@ -1,0 +1,32 @@
+connectors: {}
+exporters: {}
+extensions: {}
+processors: {}
+receivers: {}
+service:
+  extensions: []
+  pipelines: {}
+  telemetry:
+    logs:
+      encoding: console
+      error_output_paths:
+        - stderr
+      level: info
+      output_paths:
+        - stderr
+      sampling:
+        enabled: true
+        initial: 10
+        thereafter: 100
+        tick: 10s
+    metrics:
+      level: Normal
+      readers:
+        - periodic:
+            exporter:
+              otlp:
+                endpoint: http://dk-self-monitoring:4318
+                protocol: http/protobuf
+                temporality_preference: delta
+    resource:
+      schema_url: https://opentelemetry.io/schemas/1.40.0

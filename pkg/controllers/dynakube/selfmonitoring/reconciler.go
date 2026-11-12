@@ -55,7 +55,6 @@ const (
 	trustedCAFile            = "rootca.pem"
 
 	otlpHTTPPortName = "otlp-http"
-	otlpHTTPPort     = 4318
 
 	healthCheckPortName = "health"
 	healthCheckPort     = 13133
@@ -309,7 +308,7 @@ func buildContainer(s *reconcileScope, current corev1.Container) corev1.Containe
 		Command:         []string{"/dynatrace-otel-collector"},
 		Args:            buildArgs(s),
 		Ports: []corev1.ContainerPort{
-			{Name: otlpHTTPPortName, ContainerPort: otlpHTTPPort, Protocol: corev1.ProtocolTCP},
+			{Name: otlpHTTPPortName, ContainerPort: dynakube.SelfMonitoringOTLPHTTPPort, Protocol: corev1.ProtocolTCP},
 			{Name: healthCheckPortName, ContainerPort: healthCheckPort, Protocol: corev1.ProtocolTCP},
 		},
 		Env:          buildEnv(s),
@@ -493,7 +492,7 @@ func (r *Reconciler) reconcileService(ctx context.Context, s *reconcileScope) er
 			{
 				Name:       otlpHTTPPortName,
 				Protocol:   corev1.ProtocolTCP,
-				Port:       otlpHTTPPort,
+				Port:       dynakube.SelfMonitoringOTLPHTTPPort,
 				TargetPort: intstr.FromString(otlpHTTPPortName),
 			},
 		}

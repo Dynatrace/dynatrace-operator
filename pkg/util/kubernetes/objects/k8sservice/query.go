@@ -6,7 +6,6 @@ package k8sservice
 import (
 	"reflect"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/internal/query"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -25,7 +24,7 @@ func Query(kubeClient client.Client, kubeReader client.Reader) query.Generic[*co
 			return out
 		},
 		IsEqual:      isEqual,
-		MustRecreate: mustRecreate,
+		MustRecreate: func(_, _ *corev1.Service) bool { return false },
 
 		KubeClient: kubeClient,
 		KubeReader: kubeReader,
@@ -34,8 +33,4 @@ func Query(kubeClient client.Client, kubeReader client.Reader) query.Generic[*co
 
 func isEqual(current, other *corev1.Service) bool {
 	return reflect.DeepEqual(current.Spec.Ports, other.Spec.Ports) && reflect.DeepEqual(current.Labels, other.Labels) && reflect.DeepEqual(current.OwnerReferences, other.OwnerReferences) && reflect.DeepEqual(current.Spec.Selector, other.Spec.Selector)
-}
-
-func mustRecreate(current, desired *corev1.Service) bool {
-	return k8slabel.NotEqual(current.Spec.Selector, desired.Spec.Selector)
 }

@@ -110,6 +110,7 @@ func TestReconcileConfigMap(t *testing.T) {
 		pm.Spec.TargetAllocator.CustomResourceNamespaceSelector = &metav1.LabelSelector{MatchLabels: map[string]string{"bar": "foo"}}
 		pm.Spec.TargetAllocator.CustomResourceSelector = &metav1.LabelSelector{MatchLabels: map[string]string{"foo": "bar"}}
 		s := newTestScope(pm)
+		s.DynaKube.Spec.SelfMonitoring = &dynakube.SelfMonitoringSpec{}
 		c := fake.NewClient()
 		r := &Reconciler{Client: c}
 
@@ -240,9 +241,19 @@ func TestReconcileDeployment(t *testing.T) {
 		s := newTestScope(pm)
 		existing := &appsv1.Deployment{
 			Name: s.Spec.GetDeploymentName(), Namespace: pm.Namespace,
-			Spec: appsv1.DeploymentSpec{Replicas: new(int32(5))},
+			Spec: appsv1.DeploymentSpec{
+				Replicas: new(int32(5)),
+				Selector: &metav1.LabelSelector{MatchLabels: s.AppLabels.AsSelector()},
+			},
 		}
-		c := fake.NewClient(existing)
+		var deletes int
+		c := fake.NewClientWithInterceptors(interceptor.Funcs{
+			Delete: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.DeleteOption) error {
+				deletes++
+
+				return client.Delete(ctx, obj, opts...)
+			},
+		}, existing)
 		r := &Reconciler{Client: c}
 
 		require.NoError(t, r.reconcileDeployment(t.Context(), s))
@@ -250,6 +261,33 @@ func TestReconcileDeployment(t *testing.T) {
 		deploy := &appsv1.Deployment{}
 		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetDeploymentName(), Namespace: pm.Namespace}, deploy))
 		assert.Equal(t, new(int32(5)), deploy.Spec.Replicas)
+		assert.Zero(t, deletes)
+	})
+
+	t.Run("recreate on selector change", func(t *testing.T) {
+		pm := newTestPM("pm", "dynatrace")
+		pm.Spec.TargetAllocator.Image = "img:1"
+		s := newTestScope(pm)
+		existing := &appsv1.Deployment{
+			Name: s.Spec.GetDeploymentName(), Namespace: pm.Namespace,
+			Spec: appsv1.DeploymentSpec{Selector: &metav1.LabelSelector{MatchLabels: map[string]string{"app": "old"}}},
+		}
+		var deletes int
+		c := fake.NewClientWithInterceptors(interceptor.Funcs{
+			Delete: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.DeleteOption) error {
+				deletes++
+
+				return client.Delete(ctx, obj, opts...)
+			},
+		}, existing)
+		r := &Reconciler{Client: c}
+
+		require.NoError(t, r.reconcileDeployment(t.Context(), s))
+		assert.Equal(t, 1, deletes)
+
+		deploy := &appsv1.Deployment{}
+		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetDeploymentName(), Namespace: pm.Namespace}, deploy))
+		assert.Equal(t, s.AppLabels.AsSelector(), deploy.Spec.Selector.MatchLabels)
 	})
 
 	t.Run("propagate error", func(t *testing.T) {
@@ -310,7 +348,7 @@ func TestImagePullSecrets(t *testing.T) {
 	t.Run("no pull secrets when the DynaKube has no custom pull secret", func(t *testing.T) {
 		deploy := &appsv1.Deployment{}
 
-		mutateDeployment(deploy, newTestScope(newTestPM("pm", "dynatrace")))
+		require.NoError(t, mutateDeployment(deploy, newTestScope(newTestPM("pm", "dynatrace"))))
 
 		assert.Empty(t, deploy.Spec.Template.Spec.ImagePullSecrets)
 	})
@@ -320,7 +358,7 @@ func TestImagePullSecrets(t *testing.T) {
 		s.DynaKube.Spec.CustomPullSecret = "custom-pull-secret"
 		deploy := &appsv1.Deployment{}
 
-		mutateDeployment(deploy, s)
+		require.NoError(t, mutateDeployment(deploy, s))
 
 		assert.Equal(t, []corev1.LocalObjectReference{{Name: s.DynaKube.Spec.CustomPullSecret}}, deploy.Spec.Template.Spec.ImagePullSecrets)
 
