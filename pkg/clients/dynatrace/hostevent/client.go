@@ -5,9 +5,12 @@
 package hostevent
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"net/http"
+	"slices"
+	"strings"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/core"
@@ -17,9 +20,10 @@ import (
 const (
 	MarkedForTerminationEvent = "MARKED_FOR_TERMINATION"
 
-	eventsPath = "/v1/events"
-	hostsPath  = "/v1/entity/infrastructure/hosts"
-	loggerName = "dtclient-hostevent"
+	eventsPath   = "/v1/events"
+	hostsPath    = "/v1/entity/infrastructure/hosts"
+	entitiesPath = "/v2/entities"
+	loggerName   = "dtclient-hostevent"
 )
 
 type Client interface {
@@ -73,14 +77,81 @@ func (entityMap hostEntityMap) update(ctx context.Context, info HostResponse) {
 	}
 }
 
+// entitiesResponse is the subset of the /v2/entities response needed to resolve a HOST by IP.
+type entitiesResponse struct {
+	Entities []hostEntity `json:"entities"`
+}
+
+type hostEntity struct {
+	EntityID    string `json:"entityId"`
+	LastSeenTms int64  `json:"lastSeenTms"`
+	Properties  struct {
+		NetworkZone string   `json:"networkZone"`
+		IPAddress   []string `json:"ipAddress"`
+	} `json:"properties"`
+}
+
 // GetEntityIDForIP returns the host entity ID for a given IP address.
+//
+// It first asks the Monitored entities API (v2) for exactly the HOST entities carrying the IP,
+// so the result size no longer depends on how many hosts the whole tenant has.
+// If the token lacks `entities.read` (HTTP 403), it falls back to the legacy v1 hosts listing.
 func (c *ClientImpl) GetEntityIDForIP(ctx context.Context, ip string) (string, error) {
-	ctx, _ = logd.NewFromContext(ctx, loggerName)
+	ctx, log := logd.NewFromContext(ctx, loggerName)
 
 	if ip == "" {
 		return "", errors.New("must provide IP")
 	}
 
+	entityID, err := c.getEntityIDForIPBySelector(ctx, ip)
+	if core.IsForbidden(err) {
+		log.Info("token cannot read /v2/entities (entities.read scope missing?), falling back to the v1 hosts listing", "ip", ip)
+
+		return c.getEntityIDForIPByHostList(ctx, ip)
+	}
+
+	return entityID, err
+}
+
+func (c *ClientImpl) getEntityIDForIPBySelector(ctx context.Context, ip string) (string, error) {
+	var resp entitiesResponse
+
+	err := c.apiClient.GET(ctx, entitiesPath).
+		WithQueryParams(map[string]string{
+			"entitySelector": `type(HOST),ipAddress("` + ip + `")`,
+			"from":           "now-30m",
+			"fields":         "+lastSeenTms,+properties.networkZone,+properties.ipAddress",
+		}).Execute(&resp)
+	if err != nil {
+		return "", setEndpointNotAvailable(err, entitiesPath)
+	}
+
+	// IPs get reused (e.g. node pools scaling in and out), so more than one HOST can match.
+	// Order oldest first, so the most recently seen HOST wins in hostEntityMap.update.
+	slices.SortStableFunc(resp.Entities, func(a, b hostEntity) int {
+		return cmp.Compare(a.LastSeenTms, b.LastSeenTms)
+	})
+
+	hosts := make([]HostResponse, 0, len(resp.Entities))
+	for _, e := range resp.Entities {
+		hosts = append(hosts, HostResponse{
+			EntityID:      e.EntityID,
+			NetworkZoneID: e.Properties.NetworkZone,
+			IPAddresses:   e.Properties.IPAddress,
+		})
+	}
+
+	entityID := buildHostEntityMap(ctx, hosts, c.networkZone)[ip]
+	if entityID == "" {
+		return "", EntityNotFoundError{IP: ip}
+	}
+
+	return entityID, nil
+}
+
+// getEntityIDForIPByHostList is the legacy lookup: it lists HOST entities and filters client side.
+// It only sees the first page, so on tenants with more hosts than pageSize it can miss the host.
+func (c *ClientImpl) getEntityIDForIPByHostList(ctx context.Context, ip string) (string, error) {
 	var hosts []HostResponse
 
 	err := c.apiClient.GET(ctx, hostsPath).
@@ -107,7 +178,8 @@ func buildHostEntityMap(ctx context.Context, hosts []HostResponse, networkZone s
 	entities := make(hostEntityMap)
 
 	for _, host := range hosts {
-		if (networkZone != "" && host.NetworkZoneID == networkZone) ||
+		// Dynatrace stores network zone names in lowercase, while spec.networkZone may use any case.
+		if (networkZone != "" && strings.EqualFold(host.NetworkZoneID, networkZone)) ||
 			(networkZone == "" && (host.NetworkZoneID == "default" || host.NetworkZoneID == "")) {
 			entities.update(ctx, host)
 		}

@@ -202,9 +202,9 @@ func (controller *Controller) sendMarkedForTermination(ctx context.Context, dk *
 	}
 
 	// NOTE: The dtclient in-memory cache is intentionally disabled here.
-	// `GetEntityIDForIP` fetches ALL host entities for the entire tenant, not just those belonging to this Kubernetes cluster.
-	// Which means a single call can pull in data from every cluster and environment reporting to the same tenant.
-	// Mark-for-termination events are rare, caching this possibly large dataset would waste memory with no meaningful benefit.
+	// `GetEntityIDForIP` asks for the HOST entities of a single IP, but if the token lacks `entities.read`
+	// it falls back to listing host entities of the entire tenant, which can be a large dataset.
+	// Mark-for-termination events are rare and every lookup is for a different IP, so caching has no meaningful benefit.
 	dk.Spec.DynatraceAPIRequestThreshold = new(uint16(0))
 
 	dtClient, err := controller.dtClientFactory(ctx, controller.apiReader, dk, tokens.APIToken().String(), "", k8senv.GetOperatorDTClientConnectionTimeout(ctx))
