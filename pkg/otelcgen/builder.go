@@ -94,7 +94,7 @@ func (b *Builder) Build(signals ...pipeline.Signal) *Config {
 		cfg := b.pipelines[key]
 
 		if cfg != nil && len(cfg.Receivers) > 0 && len(cfg.Processors) > 0 {
-			buildCfg.Service.Pipelines[key] = cfg
+			buildCfg.Service.Pipelines[key] = new(*cfg)
 		}
 	}
 

@@ -4,8 +4,6 @@
 package otelcgen
 
 import (
-	"slices"
-
 	"go.opentelemetry.io/collector/component"
 )
 
@@ -78,5 +76,5 @@ func k8sFactsMetadata(withUIDs bool) []string {
 		)
 	}
 
-	return slices.Clone(metadata)
+	return metadata
 }

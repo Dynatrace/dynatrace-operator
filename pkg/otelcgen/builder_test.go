@@ -16,6 +16,7 @@ import (
 
 var (
 	testOnlyID       = component.MustNewID("test_only")
+	testOnlyID2      = component.MustNewID("test_only2")
 	testReceiverOpts = ReceiverOpts{
 		CertFile: "/run/opensignals/tls/tls.crt",
 		KeyFile:  "/run/opensignals/tls/tls.key",
@@ -89,11 +90,23 @@ func TestBuilder(t *testing.T) {
 			require.NoError(t, err)
 
 			assert.YAMLEqf(t, string(expect), string(got), "EXPECT:\n%s\nACTUAL:\n%s", string(expect), string(got))
-
-			cfg2 := b.Processor(testOnlyID, Empty).Build()
-			require.NotEqual(t, cfg, cfg2)
 		})
 	}
+}
+
+func TestBuilder_BuildCopy(t *testing.T) {
+	b := NewBuilder()
+	emptyCfg := b.Build()
+	require.Empty(t, emptyCfg.Service.Pipelines)
+
+	firstCfg := b.Processor(testOnlyID, Empty).Receiver(testOnlyID, Empty).Build()
+
+	require.NotEqual(t, emptyCfg, firstCfg)
+	require.Empty(t, emptyCfg.Service.Pipelines)
+
+	secondCfg := b.Processor(testOnlyID2, Empty).Receiver(testOnlyID2, Empty).Build()
+	require.NotEqual(t, firstCfg, secondCfg)
+	require.NotEqual(t, firstCfg.Service.Pipelines, secondCfg.Service.Pipelines)
 }
 
 func TestBuilder_ReceiverForProtocol_Unknown(t *testing.T) {
