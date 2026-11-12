@@ -62,7 +62,7 @@ operator:
   clientConnectionTimeout: "" # defined in the Golang time.Duration format, like "30m" == 30 minutes. Defaults to 30s
 
 webhook:
-  priorityClassName: "system-node-critical"
+  priorityClassName: ""
   hostNetwork: false
   ports:
     server: 8443
