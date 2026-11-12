@@ -22,7 +22,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/prometheusmonitoring/condition"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
-	"github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
+	"github.com/Dynatrace/dynatrace-operator/pkg/otelcfg"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8scontainer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
@@ -250,7 +250,7 @@ func buildContainer(s *reconcileScope, current corev1.Container) corev1.Containe
 		imagePullPolicy = current.ImagePullPolicy
 	}
 
-	probeGet := &corev1.HTTPGetAction{Scheme: corev1.URISchemeHTTP, Path: "/", Port: intstr.FromInt32(otelcgen.ExtensionsHealthCheckPort)}
+	probeGet := &corev1.HTTPGetAction{Scheme: corev1.URISchemeHTTP, Path: "/", Port: intstr.FromInt32(otelcfg.ExtensionsHealthCheckPort)}
 
 	return corev1.Container{
 		Name:            "gateway",
@@ -259,7 +259,7 @@ func buildContainer(s *reconcileScope, current corev1.Container) corev1.Containe
 		Command:         []string{"/dynatrace-otel-collector"},
 		Args:            buildArgs(s),
 		Ports: []corev1.ContainerPort{
-			{Name: otlpPortName, ContainerPort: otelcgen.OTLPReceiverGRPCPort, Protocol: corev1.ProtocolTCP},
+			{Name: otlpPortName, ContainerPort: otelcfg.OTLPReceiverGRPCPort, Protocol: corev1.ProtocolTCP},
 		},
 		Env:          buildEnv(s),
 		VolumeMounts: buildVolumeMounts(s),
@@ -438,7 +438,7 @@ func (r *Reconciler) reconcileService(ctx context.Context, s *reconcileScope) er
 			{
 				Name:        otlpPortName,
 				Protocol:    corev1.ProtocolTCP,
-				Port:        otelcgen.OTLPReceiverGRPCPort,
+				Port:        otelcfg.OTLPReceiverGRPCPort,
 				AppProtocol: new("grpc"),
 				TargetPort:  intstr.FromString(otlpPortName),
 			},

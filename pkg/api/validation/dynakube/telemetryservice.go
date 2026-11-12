@@ -15,7 +15,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	agconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
-	"github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
+	"github.com/Dynatrace/dynatrace-operator/pkg/otelcfg"
 	"k8s.io/apimachinery/pkg/util/validation"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -59,7 +59,7 @@ func unknownTelemetryIngestProtocols(ctx context.Context, _ *Validator, dk *dyna
 	var unknownProtocols []string
 
 	for _, protocol := range dk.TelemetryIngest().GetProtocols() {
-		if !slices.Contains(otelcgen.RegisteredProtocols, protocol) {
+		if !slices.Contains(otelcfg.RegisteredProtocols, protocol) {
 			unknownProtocols = append(unknownProtocols, string(protocol))
 		}
 	}

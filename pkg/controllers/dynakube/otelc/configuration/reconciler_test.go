@@ -8,7 +8,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
-	"github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
+	"github.com/Dynatrace/dynatrace-operator/pkg/otelcfg"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
@@ -81,10 +81,10 @@ func TestReconcile(t *testing.T) {
 		helpers.AssertGolden(t, "testdata/configmap_with_resource_attributes.yaml", cm, removeHash)
 	})
 
-	for _, protocol := range otelcgen.RegisteredProtocols {
+	for _, protocol := range otelcfg.RegisteredProtocols {
 		t.Run("only protocol "+string(protocol), func(t *testing.T) {
 			k8sClient := fake.NewFakeClient()
-			dk := getTestDynakube(&telemetryingest.Spec{Protocols: []otelcgen.Protocol{protocol}})
+			dk := getTestDynakube(&telemetryingest.Spec{Protocols: []otelcfg.Protocol{protocol}})
 			err := NewReconciler(k8sClient, k8sClient).Reconcile(t.Context(), dk)
 			require.NoError(t, err)
 

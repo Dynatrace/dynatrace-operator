@@ -8,7 +8,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
-	"github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
+	"github.com/Dynatrace/dynatrace-operator/pkg/otelcfg"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sservice"
@@ -132,7 +132,7 @@ func (r *Reconciler) buildService(ctx context.Context, dk *dynakube.DynaKube) (*
 	)
 }
 
-func buildServicePortList(ctx context.Context, protocols []otelcgen.Protocol) []corev1.ServicePort {
+func buildServicePortList(ctx context.Context, protocols []otelcfg.Protocol) []corev1.ServicePort {
 	if len(protocols) == 0 {
 		return nil
 	}
@@ -141,63 +141,63 @@ func buildServicePortList(ctx context.Context, protocols []otelcgen.Protocol) []
 
 	for _, protocol := range protocols {
 		switch protocol {
-		case otelcgen.ZipkinProtocol:
+		case otelcfg.ZipkinProtocol:
 			svcPorts = append(svcPorts, corev1.ServicePort{
 				Name:       zipkinPortName,
-				Port:       otelcgen.ZipkinReceiverPort,
+				Port:       otelcfg.ZipkinReceiverPort,
 				Protocol:   corev1.ProtocolTCP,
-				TargetPort: intstr.FromInt32(otelcgen.ZipkinReceiverPort),
+				TargetPort: intstr.FromInt32(otelcfg.ZipkinReceiverPort),
 			})
-		case otelcgen.OTLPProtocol:
+		case otelcfg.OTLPProtocol:
 			svcPorts = append(svcPorts,
 				corev1.ServicePort{
 					Name:        otlpGRPCPortName,
-					Port:        otelcgen.OTLPReceiverGRPCPort,
+					Port:        otelcfg.OTLPReceiverGRPCPort,
 					Protocol:    corev1.ProtocolTCP,
 					AppProtocol: new(appProtocolGRPC),
-					TargetPort:  intstr.FromInt32(otelcgen.OTLPReceiverGRPCPort),
+					TargetPort:  intstr.FromInt32(otelcfg.OTLPReceiverGRPCPort),
 				},
 				corev1.ServicePort{
 					Name:        otlpHTTPPortName,
-					Port:        otelcgen.OTLPReceiverHTTPPort,
+					Port:        otelcfg.OTLPReceiverHTTPPort,
 					Protocol:    corev1.ProtocolTCP,
 					AppProtocol: new(appProtocolHTTP),
-					TargetPort:  intstr.FromInt32(otelcgen.OTLPReceiverHTTPPort),
+					TargetPort:  intstr.FromInt32(otelcfg.OTLPReceiverHTTPPort),
 				})
-		case otelcgen.JaegerProtocol:
+		case otelcfg.JaegerProtocol:
 			svcPorts = append(svcPorts,
 				corev1.ServicePort{
 					Name:        jaegerGRPCPortName,
-					Port:        otelcgen.JaegerReceiverGRPCPort,
+					Port:        otelcfg.JaegerReceiverGRPCPort,
 					Protocol:    corev1.ProtocolTCP,
 					AppProtocol: new(appProtocolGRPC),
-					TargetPort:  intstr.FromInt32(otelcgen.JaegerReceiverGRPCPort),
+					TargetPort:  intstr.FromInt32(otelcfg.JaegerReceiverGRPCPort),
 				},
 				corev1.ServicePort{
 					Name:       jaegerThriftBinaryPortName,
-					Port:       otelcgen.JaegerReceiverThriftBinaryPort,
+					Port:       otelcfg.JaegerReceiverThriftBinaryPort,
 					Protocol:   corev1.ProtocolUDP,
-					TargetPort: intstr.FromInt32(otelcgen.JaegerReceiverThriftBinaryPort),
+					TargetPort: intstr.FromInt32(otelcfg.JaegerReceiverThriftBinaryPort),
 				},
 				corev1.ServicePort{
 					Name:       jaegerThriftCompactPortName,
-					Port:       otelcgen.JaegerReceiverThriftCompactPort,
+					Port:       otelcfg.JaegerReceiverThriftCompactPort,
 					Protocol:   corev1.ProtocolUDP,
-					TargetPort: intstr.FromInt32(otelcgen.JaegerReceiverThriftCompactPort),
+					TargetPort: intstr.FromInt32(otelcfg.JaegerReceiverThriftCompactPort),
 				},
 				corev1.ServicePort{
 					Name:       jaegerThriftHTTPPortName,
-					Port:       otelcgen.JaegerReceiverThriftHTTPPort,
+					Port:       otelcfg.JaegerReceiverThriftHTTPPort,
 					Protocol:   corev1.ProtocolTCP,
-					TargetPort: intstr.FromInt32(otelcgen.JaegerReceiverThriftHTTPPort),
+					TargetPort: intstr.FromInt32(otelcfg.JaegerReceiverThriftHTTPPort),
 				})
-		case otelcgen.StatsdProtocol:
+		case otelcfg.StatsdProtocol:
 			svcPorts = append(svcPorts,
 				corev1.ServicePort{
 					Name:       statsdPortName,
-					Port:       otelcgen.StatsdReceiverPort,
+					Port:       otelcfg.StatsdReceiverPort,
 					Protocol:   corev1.ProtocolUDP,
-					TargetPort: intstr.FromInt32(otelcgen.StatsdReceiverPort),
+					TargetPort: intstr.FromInt32(otelcfg.StatsdReceiverPort),
 				})
 		default:
 			log := logd.FromContext(ctx)

@@ -1,7 +1,7 @@
 // Copyright Dynatrace LLC
 // SPDX-License-Identifier: Apache-2.0
 
-package otelcgen
+package otelcfg
 
 import (
 	"go.opentelemetry.io/collector/pipeline"

@@ -4,7 +4,7 @@
 package scraper
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
+	"github.com/Dynatrace/dynatrace-operator/pkg/otelcfg"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/pipeline"
 )
@@ -32,10 +32,10 @@ type scraperConfigData struct {
 	TargetsPollInterval string
 }
 
-func buildConfig(data scraperConfigData) *otelcgen.Config {
-	return otelcgen.NewBuilder().
+func buildConfig(data scraperConfigData) *otelcfg.Config {
+	return otelcfg.NewBuilder().
 		Receiver(prometheusID, buildPrometheusReceiver(data)).
-		MemoryLimiter(otelcgen.PrometheusMonitoringMemoryLimiter).
+		MemoryLimiter(otelcfg.PrometheusMonitoringMemoryLimiter).
 		Exporter(loadBalancingID, buildLoadBalancingExporter(data)).
 		HealthCheck().
 		Build(pipeline.SignalMetrics)
@@ -53,7 +53,7 @@ func buildLoadBalancingExporter(data scraperConfigData) component.Config {
 		"resolver": map[string]any{
 			"k8s": map[string]any{
 				"service": data.GatewayService,
-				"ports":   []int{otelcgen.OTLPReceiverGRPCPort},
+				"ports":   []int{otelcfg.OTLPReceiverGRPCPort},
 			},
 		},
 		"retry_on_failure": map[string]any{

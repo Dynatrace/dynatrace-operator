@@ -12,7 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	otelcconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
-	"github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
+	"github.com/Dynatrace/dynatrace-operator/pkg/otelcfg"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sconfigmap"
@@ -152,30 +152,30 @@ func (r *Reconciler) getData(dk *dynakube.DynaKube) (map[string]string, error) {
 		tlsKey = filepath.Join(otelcconsts.CustomTLSCertMountPath, consts.TLSKeyDataName)
 	}
 
-	b := otelcgen.NewBuilder()
+	b := otelcfg.NewBuilder()
 
 	for _, protocol := range dk.TelemetryIngest().GetProtocols() {
-		b.ReceiverForProtocol(protocol, otelcgen.ReceiverOpts{
+		b.ReceiverForProtocol(protocol, otelcfg.ReceiverOpts{
 			CertFile: tlsCert,
 			KeyFile:  tlsKey,
 		})
 	}
 
 	b.
-		MemoryLimiter(otelcgen.MemoryLimiterOpts{LimitPercentage: 70, SpikePercentage: 30}).
+		MemoryLimiter(otelcfg.MemoryLimiterOpts{LimitPercentage: 70, SpikePercentage: 30}).
 		Processor(transformPodIP, buildTransformPodIP()).
-		K8sEnrichment(otelcgen.K8sEnrichmentOpts{
+		K8sEnrichment(otelcfg.K8sEnrichmentOpts{
 			ResourceAttributes: dk.Spec.ResourceAttributes,
 			ResourceStatements: []string{
-				otelcgen.SetAttrFromEnv("k8s.cluster.uid", "K8S_CLUSTER_UID"),
-				otelcgen.SetAttrFromEnv("k8s.cluster.name", "K8S_CLUSTER_NAME"),
+				otelcfg.SetAttrFromEnv("k8s.cluster.uid", "K8S_CLUSTER_UID"),
+				otelcfg.SetAttrFromEnv("k8s.cluster.name", "K8S_CLUSTER_NAME"),
 				// TODO: decide if these should be removed
 				`set(attributes["dt.kubernetes.workload.name"], attributes["k8s.workload.name"])`,
 				`set(attributes["dt.kubernetes.workload.kind"], attributes["k8s.workload.kind"])`,
 				`set(attributes["dt.entity.kubernetes_cluster"], "${env:DT_ENTITY_KUBERNETES_CLUSTER}")`,
 			},
 		}).
-		Processor(otelcgen.CumulativeToDeltaID, otelcgen.Empty, pipeline.SignalMetrics).
+		Processor(otelcfg.CumulativeToDeltaID, otelcfg.Empty, pipeline.SignalMetrics).
 		Processor(batchTraces, &batchProcessorConfig{
 			SendBatchSize:    5000,
 			SendBatchMaxSize: 5000,
@@ -191,7 +191,7 @@ func (r *Reconciler) getData(dk *dynakube.DynaKube) (map[string]string, error) {
 			SendBatchMaxSize: 2000,
 			Timeout:          60 * time.Second,
 		}, pipeline.SignalLogs).
-		OTLPHTTPExporter("${env:DT_ENDPOINT}", otelcgen.ExporterOpts{
+		OTLPHTTPExporter("${env:DT_ENDPOINT}", otelcfg.ExporterOpts{
 			CAFile:                   caFile,
 			APIToken:                 "${env:" + otelcconsts.EnvDataIngestToken + "}",
 			IncludeSystemCACertsPool: includeSystemCAs,
@@ -218,7 +218,7 @@ func buildTransformPodIP() map[string]any {
 		"trace_statements": []map[string]any{
 			{
 				"context":    "resource",
-				"statements": []string{otelcgen.SetAttrIfAbsent("k8s.pod.ip", "ip")},
+				"statements": []string{otelcfg.SetAttrIfAbsent("k8s.pod.ip", "ip")},
 			},
 		},
 	}
