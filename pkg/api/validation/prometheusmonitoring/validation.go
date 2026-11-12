@@ -5,6 +5,7 @@ package validation
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/prometheusmonitoring"
@@ -41,6 +42,22 @@ func (v *Validator) validate(ctx context.Context, obj runtime.Object) (admission
 
 	pm, err := getPrometheusMonitoring(obj)
 	if err != nil {
+		return nil, err
+	}
+
+	errorTasks := []validatorFunc{
+		nameInvalid,
+	}
+
+	var errs []error
+
+	for _, errorTask := range errorTasks {
+		if msg := errorTask(ctx, v.apiReader, pm); msg != "" {
+			errs = append(errs, errors.New(msg))
+		}
+	}
+
+	if err := errors.Join(errs...); err != nil {
 		return nil, err
 	}
 

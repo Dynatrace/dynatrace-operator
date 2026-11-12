@@ -51,10 +51,6 @@ type PrometheusMonitoringSpec struct { //nolint:revive
 // +kubebuilder:printcolumn:name="DynaKube",type=string,JSONPath=`.spec.dynaKubeName`
 // +kubebuilder:printcolumn:name="Status",type=string,JSONPath=`.status.phase`
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
-// The name is the base for the names of all related resources (e.g. <name>-gateway), which are used as label values (max 63 characters).
-// 44 = 63 (label limit) - 10 (pod template hash) - 1 (hyphen) - 8 (len of GatewayNameSuffix), the gateway is the StatefulSet with the longest suffix.
-// +kubebuilder:validation:XValidation:rule="size(self.metadata.name) <= 44",message="The name of a PrometheusMonitoring must not be longer than 44 characters, because it is the base for the names of related resources (example: <name>-gateway) which are used as label values (limit of 63 characters)."
-// +kubebuilder:validation:XValidation:rule="self.metadata.name.matches('^[a-z]([-a-z0-9]*[a-z0-9])?$')",message="The PrometheusMonitoring name violates DNS-1035, it must consist of lower case alphanumeric characters or '-', start with an alphabetic character, and end with an alphanumeric character (regex used for validation is '[a-z]([-a-z0-9]*[a-z0-9])?')."
 
 // PrometheusMonitoring is the Schema for the PrometheusMonitoring API.
 type PrometheusMonitoring struct { //nolint:revive
