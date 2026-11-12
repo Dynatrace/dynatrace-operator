@@ -5,7 +5,7 @@ PLATFORM="${1:-openshift}"
 VERSION="${2:-0.0.1}"
 BUNDLE_CHANNELS="${3:-}"
 BUNDLE_DEFAULT_CHANNEL="${4:-}"
-OCP_MIN_VERSION="v4.14"
+OCP_MIN_VERSION="v4.16"
 
 lookup_cmd() {
     local cmd=$1

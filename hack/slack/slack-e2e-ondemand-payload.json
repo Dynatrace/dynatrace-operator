@@ -116,7 +116,7 @@
                 "elements": [
                   {
                     "type": "text",
-                    "text": "ocp_4-14"
+                    "text": "ocp_4-16"
                   }
                 ]
               }
@@ -130,12 +130,12 @@
                 "elements": [
                   {
                     "type": "link",
-                    "url": "${{ env.OCP_4_14_RUN_ID_URL }}",
+                    "url": "${{ env.OCP_4_16_RUN_ID_URL }}",
                     "text": "tests "
                   },
                   {
                     "type": "emoji",
-                    "name": "${{ env.OCP_4_14_EMOJI }}"
+                    "name": "${{ env.OCP_4_16_EMOJI }}"
                   }
                 ]
               }
@@ -184,7 +184,7 @@
                 "elements": [
                   {
                     "type": "text",
-                    "text": "ocp_4-15 (platform token) (phase 3)"
+                    "text": "ocp_4-17 (platform token)"
                   }
                 ]
               }
@@ -198,12 +198,12 @@
                 "elements": [
                   {
                     "type": "link",
-                    "url": "${{ env.OCP_4_15_RUN_ID_URL }}",
+                    "url": "${{ env.OCP_4_17_RUN_ID_URL }}",
                     "text": "tests "
                   },
                   {
                     "type": "emoji",
-                    "name": "${{ env.OCP_4_15_EMOJI }}"
+                    "name": "${{ env.OCP_4_17_EMOJI }}"
                   }
                 ]
               }
@@ -252,7 +252,7 @@
                 "elements": [
                   {
                     "type": "text",
-                    "text": "ocp_4-16"
+                    "text": "ocp_4-18"
                   }
                 ]
               }
@@ -266,12 +266,12 @@
                 "elements": [
                   {
                     "type": "link",
-                    "url": "${{ env.OCP_4_16_RUN_ID_URL }}",
+                    "url": "${{ env.OCP_4_18_RUN_ID_URL }}",
                     "text": "tests "
                   },
                   {
                     "type": "emoji",
-                    "name": "${{ env.OCP_4_16_EMOJI }}"
+                    "name": "${{ env.OCP_4_18_EMOJI }}"
                   }
                 ]
               }
@@ -320,7 +320,7 @@
                 "elements": [
                   {
                     "type": "text",
-                    "text": "ocp_4-17 (platform token)"
+                    "text": "ocp_4-19 (platform token) (phase 3)"
                   }
                 ]
               }
@@ -334,12 +334,12 @@
                 "elements": [
                   {
                     "type": "link",
-                    "url": "${{ env.OCP_4_17_RUN_ID_URL }}",
+                    "url": "${{ env.OCP_4_19_RUN_ID_URL }}",
                     "text": "tests "
                   },
                   {
                     "type": "emoji",
-                    "name": "${{ env.OCP_4_17_EMOJI }}"
+                    "name": "${{ env.OCP_4_19_EMOJI }}"
                   }
                 ]
               }
@@ -388,7 +388,7 @@
                 "elements": [
                   {
                     "type": "text",
-                    "text": "ocp_4-18"
+                    "text": "ocp_4-20"
                   }
                 ]
               }
@@ -402,12 +402,12 @@
                 "elements": [
                   {
                     "type": "link",
-                    "url": "${{ env.OCP_4_18_RUN_ID_URL }}",
+                    "url": "${{ env.OCP_4_20_RUN_ID_URL }}",
                     "text": "tests "
                   },
                   {
                     "type": "emoji",
-                    "name": "${{ env.OCP_4_18_EMOJI }}"
+                    "name": "${{ env.OCP_4_20_EMOJI }}"
                   }
                 ]
               }
@@ -456,137 +456,6 @@
                 "elements": [
                   {
                     "type": "text",
-                    "text": "ocp_4-19 (platform token) (phase 3)"
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            "type": "rich_text",
-            "elements": [
-              {
-                "type": "rich_text_section",
-                "elements": [
-                  {
-                    "type": "link",
-                    "url": "${{ env.OCP_4_19_RUN_ID_URL }}",
-                    "text": "tests "
-                  },
-                  {
-                    "type": "emoji",
-                    "name": "${{ env.OCP_4_19_EMOJI }}"
-                  }
-                ]
-              }
-            ]
-          }
-        ],
-        [
-          {
-            "type": "rich_text",
-            "elements": [
-              {
-                "type": "rich_text_section",
-                "elements": [
-                  {
-                    "type": "text",
-                    "text": "k8s_1-37"
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            "type": "rich_text",
-            "elements": [
-              {
-                "type": "rich_text_section",
-                "elements": [
-                  {
-                    "type": "link",
-                    "url": "${{ env.K8S_1_37_RUN_ID_URL }}",
-                    "text": "tests "
-                  },
-                  {
-                    "type": "emoji",
-                    "name": "${{ env.K8S_1_37_EMOJI }}"
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            "type": "rich_text",
-            "elements": [
-              {
-                "type": "rich_text_section",
-                "elements": [
-                  {
-                    "type": "text",
-                    "text": "ocp_4-20"
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            "type": "rich_text",
-            "elements": [
-              {
-                "type": "rich_text_section",
-                "elements": [
-                  {
-                    "type": "link",
-                    "url": "${{ env.OCP_4_20_RUN_ID_URL }}",
-                    "text": "tests "
-                  },
-                  {
-                    "type": "emoji",
-                    "name": "${{ env.OCP_4_20_EMOJI }}"
-                  }
-                ]
-              }
-            ]
-          }
-        ],
-        [
-          {
-            "type": "rich_text",
-            "elements": [
-              {
-                "type": "rich_text_section",
-                "elements": [
-                  {
-                    "type": "text",
-                    "text": "n/a"
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            "type": "rich_text",
-            "elements": [
-              {
-                "type": "rich_text_section",
-                "elements": [
-                  {
-                    "type": "text",
-                    "text": "n/a"
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            "type": "rich_text",
-            "elements": [
-              {
-                "type": "rich_text_section",
-                "elements": [
-                  {
-                    "type": "text",
                     "text": "ocp_4-20-olm"
                   }
                 ]
@@ -622,7 +491,7 @@
                 "elements": [
                   {
                     "type": "text",
-                    "text": "n/a"
+                    "text": "k8s_1-37"
                   }
                 ]
               }
@@ -635,8 +504,13 @@
                 "type": "rich_text_section",
                 "elements": [
                   {
-                    "type": "text",
-                    "text": "n/a"
+                    "type": "link",
+                    "url": "${{ env.K8S_1_37_RUN_ID_URL }}",
+                    "text": "tests "
+                  },
+                  {
+                    "type": "emoji",
+                    "name": "${{ env.K8S_1_37_EMOJI }}"
                   }
                 ]
               }
