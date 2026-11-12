@@ -51,12 +51,6 @@ jobs:
             token: platform
           - version: 1-37
             platform: k8s
-          - version: 4-14
-            platform: ocp
-          - version: 4-15
-            platform: ocp
-            token: platform
-            tenantPhase: 3
           - version: 4-16
             platform: ocp
           - version: 4-17
