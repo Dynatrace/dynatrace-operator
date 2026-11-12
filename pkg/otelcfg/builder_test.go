@@ -99,19 +99,42 @@ func TestBuilder(t *testing.T) {
 	}
 }
 
+func TestBuilder_Deduplicate(t *testing.T) {
+	notEmpty := map[string]any{"foo": "bar"}
+
+	cfg := NewBuilder().
+		Receiver(testOnlyID, notEmpty).
+		Receiver(testOnlyID, Empty).
+		Processor(testOnlyID, notEmpty).
+		Processor(testOnlyID, Empty).
+		Exporter(testOnlyID, notEmpty).
+		Exporter(testOnlyID, Empty).
+		Build(pipeline.SignalMetrics)
+
+	assert.Empty(t, cfg.Receivers[testOnlyID])
+	assert.Empty(t, cfg.Processors[testOnlyID])
+	assert.Empty(t, cfg.Exporters[testOnlyID])
+	assert.NotEmpty(t, cfg.Service.Pipelines)
+	for _, cfg := range cfg.Service.Pipelines {
+		assert.Equal(t, []component.ID{testOnlyID}, cfg.Receivers)
+		assert.Equal(t, []component.ID{testOnlyID}, cfg.Processors)
+		assert.Equal(t, []component.ID{testOnlyID}, cfg.Receivers)
+	}
+}
+
 func TestBuilder_BuildCopy(t *testing.T) {
 	b := NewBuilder()
 	emptyCfg := b.Build()
-	require.Empty(t, emptyCfg.Service.Pipelines)
+	assert.Empty(t, emptyCfg.Service.Pipelines)
 
-	firstCfg := b.Processor(testOnlyID, Empty).Receiver(testOnlyID, Empty).Build()
+	firstCfg := b.Processor(testOnlyID, Empty).Receiver(testOnlyID, Empty).Exporter(testOnlyID, Empty).Build()
 
-	require.NotEqual(t, emptyCfg, firstCfg)
-	require.Empty(t, emptyCfg.Service.Pipelines)
+	assert.NotEqual(t, emptyCfg, firstCfg)
+	assert.Empty(t, emptyCfg.Service.Pipelines)
 
-	secondCfg := b.Processor(testOnlyID2, Empty).Receiver(testOnlyID2, Empty).Build()
-	require.NotEqual(t, firstCfg, secondCfg)
-	require.NotEqual(t, firstCfg.Service.Pipelines, secondCfg.Service.Pipelines)
+	secondCfg := b.Processor(testOnlyID2, Empty).Receiver(testOnlyID2, Empty).Exporter(testOnlyID, Empty).Build()
+	assert.NotEqual(t, firstCfg, secondCfg)
+	assert.NotEqual(t, firstCfg.Service.Pipelines, secondCfg.Service.Pipelines)
 }
 
 func TestBuilder_ReceiverForProtocol_Unknown(t *testing.T) {
@@ -119,5 +142,5 @@ func TestBuilder_ReceiverForProtocol_Unknown(t *testing.T) {
 		CertFile: "/run/opensignals/tls/tls.crt",
 		KeyFile:  "/run/opensignals/tls/tls.key",
 	}).Build()
-	require.Empty(t, cfg.Receivers)
+	assert.Empty(t, cfg.Receivers)
 }

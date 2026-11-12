@@ -34,10 +34,11 @@ func NewBuilder() *Builder {
 
 // Receiver registers the receiver with the signal pipelines, in registration order.
 // The signals can be used to limit the registration to the respective pipelines.
+// Duplicate calls will overwrite data, but keep order intact.
 func (b *Builder) Receiver(id component.ID, cfg component.Config, signals ...pipeline.Signal) *Builder {
 	b.cfg.Receivers[id] = cfg
 	b.forEachSignal(signals, func(cfg *pipelines.PipelineConfig) {
-		cfg.Receivers = append(cfg.Receivers, id)
+		cfg.Receivers = appendUnique(cfg.Receivers, id)
 	})
 
 	return b
@@ -45,20 +46,22 @@ func (b *Builder) Receiver(id component.ID, cfg component.Config, signals ...pip
 
 // Processor registers the processor with the signal pipelines, in registration order.
 // The signals can be used to limit the registration to the respective pipelines.
+// Duplicate calls will overwrite data, but keep order intact.
 func (b *Builder) Processor(id component.ID, cfg component.Config, signals ...pipeline.Signal) *Builder {
 	b.cfg.Processors[id] = cfg
 	b.forEachSignal(signals, func(cfg *pipelines.PipelineConfig) {
-		cfg.Processors = append(cfg.Processors, id)
+		cfg.Processors = appendUnique(cfg.Processors, id)
 	})
 
 	return b
 }
 
 // Exporter registers the exporter with all signal pipelines, in registration order.
+// Duplicate calls will overwrite data, but keep order intact.
 func (b *Builder) Exporter(id component.ID, cfg component.Config) *Builder {
 	b.cfg.Exporters[id] = cfg
 	b.forEachSignal(allSignals, func(cfg *pipelines.PipelineConfig) {
-		cfg.Exporters = append(cfg.Exporters, id)
+		cfg.Exporters = appendUnique(cfg.Exporters, id)
 	})
 
 	return b
@@ -92,8 +95,8 @@ func (b *Builder) Build(signals ...pipeline.Signal) *Config {
 	for _, signal := range signals {
 		key := pipeline.NewID(signal)
 		cfg := b.pipelines[key]
-
-		if cfg != nil && len(cfg.Receivers) > 0 && len(cfg.Processors) > 0 {
+		// A valid pipelines config has a receiver and an exporter. For our use-case we always want a processor too.
+		if cfg != nil && len(cfg.Receivers) > 0 && len(cfg.Processors) > 0 && len(cfg.Exporters) > 0 {
 			buildCfg.Service.Pipelines[key] = new(*cfg)
 		}
 	}
@@ -118,4 +121,13 @@ func (b *Builder) forEachSignal(signals []pipeline.Signal, f func(cfg *pipelines
 
 		b.pipelines[key] = cfg
 	}
+}
+
+func appendUnique(slice []component.ID, id component.ID) []component.ID {
+	// The list of elements is small enough that O(n) is negligible.
+	if slices.Contains(slice, id) {
+		return slice
+	}
+
+	return append(slice, id)
 }
