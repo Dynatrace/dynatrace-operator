@@ -245,8 +245,8 @@ func TestHandleImpl(t *testing.T) {
 		err := h.Handle(request)
 		require.NoError(t, err)
 
-		assert.NotContains(t, request.Pod.Annotations, dtwebhook.AnnotationDynatraceInjected)
-		assert.NotContains(t, request.Pod.Annotations, dtwebhook.AnnotationDynatraceReason)
+		assert.Equal(t, "false", request.Pod.Annotations[dtwebhook.AnnotationDynatraceInjected])
+		assert.Equal(t, NoMutationNeededReason, request.Pod.Annotations[dtwebhook.AnnotationDynatraceReason])
 		assert.Nil(t, k8scontainer.FindInitInPodSpec(&request.Pod.Spec, dtwebhook.InstallContainerName))
 	})
 
