@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	errorNameTooLong = `The length limit for the name of a PrometheusMonitoring is %d, because it is the base for the name of resources related to the PrometheusMonitoring. (example: pmName-gateway).
+	errorNameTooLong = `The name "%s" is too long. The length limit for the name of a PrometheusMonitoring is %d, because it is the base for the name of resources related to the PrometheusMonitoring. (example: pmName-gateway).
     The limit is necessary because kubernetes uses the name of some resources (example: StatefulSet) for the label value, which has a limit of 63 characters. (see https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set)`
 )
 
@@ -30,18 +30,18 @@ const (
 	maxNameLength = maxStatefulSetNameLength - len(prometheusmonitoring.GatewayNameSuffix)
 )
 
-func errorNoDNS1035Label() string {
-	return dtvalidation.DNS1035LabelViolation("The PrometheusMonitoring name")
+func errorNoDNS1035Label(name string) string {
+	return dtvalidation.DNS1035LabelViolation(fmt.Sprintf("The PrometheusMonitoring name %q", name))
 }
 
 func nameInvalid(_ context.Context, _ client.Reader, pm *prometheusmonitoring.PrometheusMonitoring) string {
 	// Always check the length before DNS1035 validation to prevent false positives due to too long name.
 	if len(pm.Name) > maxNameLength {
-		return fmt.Sprintf(errorNameTooLong, maxNameLength)
+		return fmt.Sprintf(errorNameTooLong, pm.Name, maxNameLength)
 	}
 
 	if errs := validation.IsDNS1035Label(pm.Name); len(errs) != 0 {
-		return errorNoDNS1035Label()
+		return errorNoDNS1035Label(pm.Name)
 	}
 
 	return ""
