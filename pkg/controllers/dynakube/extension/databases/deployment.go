@@ -16,6 +16,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8ssecuritycontext"
+	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -87,14 +88,10 @@ func buildAllLabels(dk *dynakube.DynaKube, dbSpec extensions.DatabaseSpec) (map[
 
 func buildTemplateAnnotations(dbSpec extensions.DatabaseSpec, configurationHash string) map[string]string {
 	// Remove the deprecated app armor annotation
-	annotations := maps.Clone(k8ssecuritycontext.RemoveAppArmorAnnotation(dbSpec.Annotations, containerName))
-	if annotations == nil {
-		annotations = map[string]string{}
-	}
-
-	annotations[annotationConfigurationHash] = configurationHash
-
-	return annotations
+	return maputils.MergeMap(
+		k8ssecuritycontext.RemoveAppArmorAnnotation(dbSpec.Annotations, containerName),
+		map[string]string{annotationConfigurationHash: configurationHash},
+	)
 }
 
 func buildServiceAccountName(dbSpec extensions.DatabaseSpec) string {
