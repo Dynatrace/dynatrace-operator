@@ -12,7 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	agconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
+	"github.com/Dynatrace/dynatrace-operator/pkg/otelcfg"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -57,7 +57,7 @@ func TestTelemetryIngestProtocols(t *testing.T) {
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
 					TelemetryIngest: &telemetryingest.Spec{
-						Protocols: []otelcgen.Protocol{},
+						Protocols: []otelcfg.Protocol{},
 					},
 					Templates: dynakube.TemplatesSpec{
 						OpenTelemetryCollector: dynakube.OpenTelemetryCollectorSpec{
@@ -79,9 +79,9 @@ func TestTelemetryIngestProtocols(t *testing.T) {
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
 					TelemetryIngest: &telemetryingest.Spec{
-						Protocols: []otelcgen.Protocol{
-							otelcgen.ZipkinProtocol,
-							otelcgen.OTLPProtocol,
+						Protocols: []otelcfg.Protocol{
+							otelcfg.ZipkinProtocol,
+							otelcfg.OTLPProtocol,
 							"unknown",
 						},
 					},
@@ -97,9 +97,9 @@ func TestTelemetryIngestProtocols(t *testing.T) {
 				Spec: dynakube.DynaKubeSpec{
 					APIURL: testAPIURL,
 					TelemetryIngest: &telemetryingest.Spec{
-						Protocols: []otelcgen.Protocol{
-							otelcgen.ZipkinProtocol,
-							otelcgen.OTLPProtocol,
+						Protocols: []otelcfg.Protocol{
+							otelcfg.ZipkinProtocol,
+							otelcfg.OTLPProtocol,
 							"unknown1",
 							"unknown2",
 						},

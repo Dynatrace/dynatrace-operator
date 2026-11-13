@@ -18,6 +18,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/prometheusmonitoring/condition"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/otelcfg"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8scontainer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
@@ -41,14 +42,10 @@ const (
 	configHashAnnotation = "internal.operator.dynatrace.com/scraper-config-hash"
 
 	healthCheckPortName = "health"
-	healthCheckPort     = 13133
 
 	// targetAllocatorPort is the TA Service's plain HTTP port (not the container
 	// listen port 8080 — the Service maps 80 → http-port/8080 on the pod).
 	targetAllocatorPort = 80
-
-	// gatewayOTLPPort is the gateway service's OTLP/gRPC port.
-	gatewayOTLPPort = 4317
 
 	serviceAccountName = "dynatrace-prometheus-scraper"
 
@@ -169,7 +166,9 @@ func serviceAddress(name, namespace string) string {
 }
 
 func renderScraperConfig(data scraperConfigData) (string, error) {
-	b, err := buildScraperOTelConfig(data).Marshal()
+	cfg := buildConfig(data)
+
+	b, err := cfg.Marshal()
 
 	return string(b), err
 }
@@ -258,6 +257,8 @@ func buildContainer(s *reconcileScope, current corev1.Container) corev1.Containe
 		imagePullPolicy = current.ImagePullPolicy
 	}
 
+	probeGet := &corev1.HTTPGetAction{Scheme: corev1.URISchemeHTTP, Path: "/", Port: intstr.FromInt32(otelcfg.ExtensionsHealthCheckPort)}
+
 	return corev1.Container{
 		Name:            "scraper",
 		Image:           s.Owner.Status.Scraper.ResolvedImage,
@@ -265,7 +266,7 @@ func buildContainer(s *reconcileScope, current corev1.Container) corev1.Containe
 		Command:         []string{"/dynatrace-otel-collector"},
 		Args:            buildArgs(s),
 		Ports: []corev1.ContainerPort{
-			{Name: healthCheckPortName, ContainerPort: healthCheckPort, Protocol: corev1.ProtocolTCP},
+			{Name: healthCheckPortName, ContainerPort: otelcfg.ExtensionsHealthCheckPort, Protocol: corev1.ProtocolTCP},
 		},
 		Env:          buildEnv(s),
 		VolumeMounts: buildVolumeMounts(),
@@ -281,7 +282,7 @@ func buildContainer(s *reconcileScope, current corev1.Container) corev1.Containe
 			Capabilities:             &corev1.Capabilities{Drop: []corev1.Capability{"ALL"}},
 		},
 		LivenessProbe: &corev1.Probe{
-			HTTPGet:                       &corev1.HTTPGetAction{Scheme: corev1.URISchemeHTTP, Path: "/", Port: intstr.FromInt32(healthCheckPort)},
+			HTTPGet:                       probeGet,
 			InitialDelaySeconds:           15,
 			PeriodSeconds:                 20,
 			TimeoutSeconds:                currentLivenessProbe.TimeoutSeconds,
@@ -290,7 +291,7 @@ func buildContainer(s *reconcileScope, current corev1.Container) corev1.Containe
 			TerminationGracePeriodSeconds: currentLivenessProbe.TerminationGracePeriodSeconds,
 		},
 		ReadinessProbe: &corev1.Probe{
-			HTTPGet:                       &corev1.HTTPGetAction{Scheme: corev1.URISchemeHTTP, Path: "/", Port: intstr.FromInt32(healthCheckPort)},
+			HTTPGet:                       probeGet,
 			InitialDelaySeconds:           5,
 			PeriodSeconds:                 10,
 			TimeoutSeconds:                currentReadinessProbe.TimeoutSeconds,

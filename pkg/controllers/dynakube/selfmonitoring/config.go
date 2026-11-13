@@ -9,7 +9,7 @@ import (
 	"strconv"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
+	"github.com/Dynatrace/dynatrace-operator/pkg/otelcfg"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/pipeline"
 	"go.opentelemetry.io/collector/service/extensions"
@@ -48,13 +48,13 @@ type selfMonitoringConfigData struct {
 	ResourceAttributes map[string]string
 }
 
-// buildSelfMonitoringOTelConfig assembles the collector config as an otelcgen.Config.
+// buildSelfMonitoringOTelConfig assembles the collector config as an otelcfg.Config.
 // The caller marshals it to YAML via cfg.Marshal().
 //
 // There is no cumulative_to_delta processor on purpose: senders push delta temporality, which
 // keeps the collector stateless so any replica can receive data from any sender.
-func buildSelfMonitoringOTelConfig(data selfMonitoringConfigData) *otelcgen.Config {
-	cfg := &otelcgen.Config{
+func buildSelfMonitoringOTelConfig(data selfMonitoringConfigData) *otelcfg.Config {
+	cfg := &otelcfg.Config{
 		Receivers: map[component.ID]component.Config{
 			otlpID: map[string]any{
 				"protocols": map[string]any{
@@ -90,7 +90,7 @@ func buildSelfMonitoringOTelConfig(data selfMonitoringConfigData) *otelcgen.Conf
 				"scheme":   "Api-Token",
 			},
 		},
-		Service: otelcgen.ServiceConfig{
+		Service: otelcfg.ServiceConfig{
 			Extensions: extensions.Config{healthCheckID, bearerAuthID},
 			Pipelines: pipelines.Config{
 				metricsSignalID: &pipelines.PipelineConfig{

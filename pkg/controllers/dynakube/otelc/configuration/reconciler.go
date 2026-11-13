@@ -6,21 +6,28 @@ package configuration
 import (
 	"context"
 	"path/filepath"
+	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	otelcconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
-	"github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
+	"github.com/Dynatrace/dynatrace-operator/pkg/otelcfg"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sconfigmap"
+	"go.opentelemetry.io/collector/component"
+	"go.opentelemetry.io/collector/pipeline"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const conditionType string = "OTELCConfigurationConfigMap"
+
+func GetConfigMapName(dkName string) string {
+	return dkName + otelcconsts.TelemetryCollectorConfigmapSuffix
+}
 
 type Reconciler struct {
 	client    client.Client
@@ -87,7 +94,8 @@ func (r *Reconciler) prepareConfigMap(dk *dynakube.DynaKube) (*corev1.ConfigMap,
 
 	coreLabels := k8slabel.NewCoreLabels(dk.Name, k8slabel.OTelColComponentLabel).BuildLabels()
 
-	newSecret, err := k8sconfigmap.Build(dk,
+	newSecret, err := k8sconfigmap.Build(
+		dk,
 		GetConfigMapName(dk.Name),
 		data,
 		k8sconfigmap.SetLabels(coreLabels),
@@ -101,38 +109,96 @@ func (r *Reconciler) prepareConfigMap(dk *dynakube.DynaKube) (*corev1.ConfigMap,
 	return newSecret, err
 }
 
-func (r *Reconciler) getData(dk *dynakube.DynaKube) (map[string]string, error) {
-	myPodIP := "${env:MY_POD_IP}"
+var (
+	transformPodIP = component.MustNewIDWithName("transform", "add-pod-ip")
+	batch          = component.MustNewType("batch")
+	batchTraces    = component.NewIDWithName(batch, "traces")
+	batchMetrics   = component.NewIDWithName(batch, "metrics")
+	batchLogs      = component.NewIDWithName(batch, "logs")
+)
 
-	options := []otelcgen.Option{
-		otelcgen.WithAPIToken("${env:" + otelcconsts.EnvDataIngestToken + "}"),
-		otelcgen.WithExportersEndpoint("${env:DT_ENDPOINT}"),
-	}
+// https://github.com/open-telemetry/opentelemetry-collector/blob/v0.157.0/processor/batchprocessor/config.go#L16
+type batchProcessorConfig struct {
+	// Timeout sets the time after which a batch will be sent regardless of size.
+	// When this is set to zero, batched data will be sent immediately.
+	Timeout time.Duration `mapstructure:"timeout"`
+
+	// SendBatchSize is the size of a batch which after hit, will trigger it to be sent.
+	// When this is set to zero, the batch size is ignored and data will be sent immediately
+	// subject to only send_batch_max_size.
+	SendBatchSize uint32 `mapstructure:"send_batch_size"`
+
+	// SendBatchMaxSize is the maximum size of a batch. It must be larger than SendBatchSize.
+	// Larger batches are split into smaller units.
+	// Default value is 0, that means no maximum size.
+	SendBatchMaxSize uint32 `mapstructure:"send_batch_max_size"`
+}
+
+func (r *Reconciler) getData(dk *dynakube.DynaKube) (map[string]string, error) {
+	var (
+		caFile, tlsCert, tlsKey string
+		includeSystemCAs        bool
+	)
 
 	if dk.IsAGCertificateNeeded() {
-		options = append(options, otelcgen.WithCA(otelcconsts.ActiveGateTLSCertVolumePath))
+		caFile = otelcconsts.ActiveGateTLSCertVolumePath
 	} else if dk.IsCACertificateNeeded() {
-		options = append(options, otelcgen.WithCA(otelcconsts.TrustedCAVolumePath))
-		options = append(options, otelcgen.WithSystemCAs(true))
+		caFile = otelcconsts.TrustedCAVolumePath
+		includeSystemCAs = true
 	}
 
 	if dk.TelemetryIngest().IsEnabled() && dk.TelemetryIngest().TLSRefName != "" {
-		options = append(options, otelcgen.WithTLS(filepath.Join(otelcconsts.CustomTLSCertMountPath, consts.TLSCrtDataName), filepath.Join(otelcconsts.CustomTLSCertMountPath, consts.TLSKeyDataName)))
+		tlsCert = filepath.Join(otelcconsts.CustomTLSCertMountPath, consts.TLSCrtDataName)
+		tlsKey = filepath.Join(otelcconsts.CustomTLSCertMountPath, consts.TLSKeyDataName)
 	}
 
-	options = append(options,
-		otelcgen.WithResourceAttributes(dk.Spec.ResourceAttributes),
-		otelcgen.WithExporters(),
-		otelcgen.WithProcessors(),
-		otelcgen.WithReceivers(),
-		otelcgen.WithExtensions(),
-		otelcgen.WithServices(),
-	)
+	b := otelcfg.NewBuilder()
 
-	config, err := otelcgen.NewConfig(myPodIP, dk.TelemetryIngest().GetProtocols(), options...)
-	if err != nil {
-		return nil, err
+	for _, protocol := range dk.TelemetryIngest().GetProtocols() {
+		b.ReceiverForProtocol(protocol, otelcfg.ReceiverOpts{
+			CertFile: tlsCert,
+			KeyFile:  tlsKey,
+		})
 	}
+
+	b.
+		MemoryLimiter(otelcfg.MemoryLimiterOpts{LimitPercentage: 70, SpikePercentage: 30}).
+		Processor(transformPodIP, buildTransformPodIP()).
+		K8sEnrichment(otelcfg.K8sEnrichmentOpts{
+			ResourceAttributes: dk.Spec.ResourceAttributes,
+			ResourceStatements: []string{
+				otelcfg.SetAttrFromEnv("k8s.cluster.uid", "K8S_CLUSTER_UID"),
+				otelcfg.SetAttrFromEnv("k8s.cluster.name", "K8S_CLUSTER_NAME"),
+				// TODO: decide if these should be removed
+				`set(attributes["dt.kubernetes.workload.name"], attributes["k8s.workload.name"])`,
+				`set(attributes["dt.kubernetes.workload.kind"], attributes["k8s.workload.kind"])`,
+				`set(attributes["dt.entity.kubernetes_cluster"], "${env:DT_ENTITY_KUBERNETES_CLUSTER}")`,
+			},
+		}).
+		Processor(otelcfg.CumulativeToDeltaID, otelcfg.Empty, pipeline.SignalMetrics).
+		Processor(batchTraces, &batchProcessorConfig{
+			SendBatchSize:    5000,
+			SendBatchMaxSize: 5000,
+			Timeout:          60 * time.Second,
+		}, pipeline.SignalTraces).
+		Processor(batchMetrics, &batchProcessorConfig{
+			SendBatchSize:    3000,
+			SendBatchMaxSize: 3000,
+			Timeout:          60 * time.Second,
+		}, pipeline.SignalMetrics).
+		Processor(batchLogs, &batchProcessorConfig{
+			SendBatchSize:    1800,
+			SendBatchMaxSize: 2000,
+			Timeout:          60 * time.Second,
+		}, pipeline.SignalLogs).
+		OTLPHTTPExporter("${env:DT_ENDPOINT}", otelcfg.ExporterOpts{
+			CAFile:                   caFile,
+			APIToken:                 "${env:" + otelcconsts.EnvDataIngestToken + "}",
+			IncludeSystemCACertsPool: includeSystemCAs,
+		}).
+		HealthCheck()
+
+	config := b.Build()
 
 	configBytes, err := config.Marshal()
 	if err != nil {
@@ -146,6 +212,14 @@ func (r *Reconciler) getData(dk *dynakube.DynaKube) (map[string]string, error) {
 	return configMap, nil
 }
 
-func GetConfigMapName(dkName string) string {
-	return dkName + otelcconsts.TelemetryCollectorConfigmapSuffix
+func buildTransformPodIP() map[string]any {
+	return map[string]any{
+		"error_mode": "ignore",
+		"trace_statements": []map[string]any{
+			{
+				"context":    "resource",
+				"statements": []string{otelcfg.SetAttrIfAbsent("k8s.pod.ip", "ip")},
+			},
+		},
+	}
 }

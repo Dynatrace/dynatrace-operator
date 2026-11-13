@@ -1,0 +1,14 @@
+exporters: {}
+extensions:
+  bearertokenauth:
+    filename: test
+    scheme: Api-Token
+  health_check:
+    endpoint: ${env:MY_POD_IP}:13133
+processors: {}
+receivers: {}
+service:
+  extensions:
+    - health_check
+    - bearertokenauth
+  pipelines: {}

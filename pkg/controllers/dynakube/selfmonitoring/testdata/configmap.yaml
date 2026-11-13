@@ -1,7 +1,6 @@
 apiVersion: v1
 data:
   self-monitoring: |
-    connectors: {}
     exporters:
         otlp_http:
             auth:
