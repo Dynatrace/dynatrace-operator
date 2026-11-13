@@ -831,7 +831,7 @@ func TestGetActiveGateTLSCertHash(t *testing.T) {
 		hash, err := r.getActiveGateTLSCertHash(t.Context(), dk)
 		require.NoError(t, err)
 
-		expectedHash, err := hasher.GenerateHash(certData)
+		expectedHash, err := hasher.GenerateSecureHash(certData)
 		require.NoError(t, err)
 		assert.Equal(t, expectedHash, hash)
 	})
@@ -855,6 +855,28 @@ func TestGetActiveGateTLSCertHash(t *testing.T) {
 
 		assert.NotEmpty(t, hash1)
 		assert.Equal(t, hash1, hash2)
+	})
+
+	t.Run("secret without server.crt returns empty hash", func(t *testing.T) {
+		r := &Reconciler{apiReader: fake.NewClient(newSecret(map[string][]byte{consts.TLSCrtDataName: []byte("cert")}))}
+
+		hash, err := r.getActiveGateTLSCertHash(t.Context(), dk)
+		require.NoError(t, err)
+		assert.Empty(t, hash)
+	})
+
+	t.Run("routing disabled returns empty hash", func(t *testing.T) {
+		kubeMonDK := &dynakube.DynaKube{
+			Name: testDynakubeName, Namespace: testNamespace,
+			Spec: dynakube.DynaKubeSpec{
+				ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}},
+			},
+		}
+		r := &Reconciler{apiReader: fake.NewClient(newSecret(map[string][]byte{consts.TLSServerCrtDataName: []byte("cert")}))}
+
+		hash, err := r.getActiveGateTLSCertHash(t.Context(), kubeMonDK)
+		require.NoError(t, err)
+		assert.Empty(t, hash)
 	})
 }
 
@@ -888,7 +910,7 @@ func TestGetTrustedCAsHash(t *testing.T) {
 		hash, err := r.getTrustedCAsHash(t.Context(), dk)
 		require.NoError(t, err)
 
-		expectedHash, err := hasher.GenerateHash(caData)
+		expectedHash, err := hasher.GenerateSecureHash([]byte(caData))
 		require.NoError(t, err)
 		assert.Equal(t, expectedHash, hash)
 	})
@@ -947,6 +969,41 @@ func TestBuildDesiredDaemonSet_CertHashes(t *testing.T) {
 		assert.Equal(t, base, buildDS(t, "cert-1", "ca-1").Annotations[hasher.AnnotationHash])
 		assert.NotEqual(t, base, buildDS(t, "cert-2", "ca-1").Annotations[hasher.AnnotationHash])
 		assert.NotEqual(t, base, buildDS(t, "cert-1", "ca-2").Annotations[hasher.AnnotationHash])
+	})
+
+	t.Run("annotations are not set when secret and configmap are missing", func(t *testing.T) {
+		r := Reconciler{apiReader: fake.NewClient()}
+
+		ds, err := r.buildDesiredDaemonSet(t.Context(), newDK())
+		require.NoError(t, err)
+		assert.NotContains(t, ds.Spec.Template.Annotations, daemonset.AnnotationActiveGateTLSCertHash)
+		assert.NotContains(t, ds.Spec.Template.Annotations, daemonset.AnnotationTrustedCAHash)
+	})
+
+	t.Run("activegate cert annotation only follows server.crt", func(t *testing.T) {
+		build := func(serverCrt, tlsCrt string) string {
+			dk := newDK()
+			secret := &corev1.Secret{
+				Name:      dk.ActiveGate().GetTLSSecretName(),
+				Namespace: dk.Namespace,
+				Data: map[string][]byte{
+					consts.TLSCrtDataName:       []byte(tlsCrt),
+					consts.TLSServerCrtDataName: []byte(serverCrt),
+				},
+			}
+			r := Reconciler{apiReader: fake.NewClient(secret)}
+
+			ds, err := r.buildDesiredDaemonSet(t.Context(), dk)
+			require.NoError(t, err)
+
+			return ds.Spec.Template.Annotations[daemonset.AnnotationActiveGateTLSCertHash]
+		}
+
+		base := build("server-cert-1", "tls-cert-1")
+		require.NotEmpty(t, base)
+
+		assert.NotEqual(t, base, build("server-cert-2", "tls-cert-1"))
+		assert.Equal(t, base, build("server-cert-1", "tls-cert-2"))
 	})
 }
 
