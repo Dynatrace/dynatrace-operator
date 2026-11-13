@@ -8,11 +8,14 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	dtimage "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
+	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8ssecuritycontext"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sdeployment"
+	corev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -60,6 +63,11 @@ func (r *Reconciler) Reconcile(ctx context.Context, imageClient dtimage.Client, 
 		return err
 	}
 
+	configurationHash, err := r.calculateConfigurationHash(ctx, dk)
+	if err != nil {
+		return err
+	}
+
 	query := k8sdeployment.Query(r.client, r.apiReader)
 
 	for i, dbSpec := range ext.Databases {
@@ -74,7 +82,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, imageClient dtimage.Client, 
 			dk, ext.GetDatabaseDatasourceName(dbSpec.ID),
 			k8sdeployment.SetReplicas(replicas),
 			k8sdeployment.SetAllLabels(buildAllLabels(dk, dbSpec)),
-			k8sdeployment.SetAllAnnotations(nil, k8ssecuritycontext.RemoveAppArmorAnnotation(dbSpec.Annotations, containerName)),
+			k8sdeployment.SetAllAnnotations(nil, buildTemplateAnnotations(dbSpec, configurationHash)),
 			k8sdeployment.SetAffinity(dbSpec.Affinity),
 			k8sdeployment.SetTolerations(dk.Spec.Templates.SQLExtensionExecutor.Tolerations),
 			k8sdeployment.SetTopologySpreadConstraints(dbSpec.TopologySpreadConstraints),
@@ -107,6 +115,23 @@ func (r *Reconciler) Reconcile(ctx context.Context, imageClient dtimage.Client, 
 	k8sconditions.SetDeploymentsApplied(dk, conditionType, expectedDeploymentNames)
 
 	return nil
+}
+
+func (r *Reconciler) calculateConfigurationHash(ctx context.Context, dk *dynakube.DynaKube) (string, error) {
+	var tlsSecret corev1.Secret
+
+	err := r.apiReader.Get(ctx, client.ObjectKey{Name: dk.Extensions().GetTLSSecretName(), Namespace: dk.Namespace}, &tlsSecret)
+	if err != nil && !k8serrors.IsNotFound(err) {
+		return "", err
+	}
+
+	trustedCAs, err := dk.TrustedCAs(ctx, r.apiReader)
+	if err != nil && !k8serrors.IsNotFound(err) {
+		return "", err
+	}
+
+	// only tls.crt is mounted from the EEC TLS secret
+	return hasher.GenerateSecureHash([]any{tlsSecret.Data[consts.TLSCrtDataName], trustedCAs})
 }
 
 type imageResolver struct{ *dynakube.DynaKube }
