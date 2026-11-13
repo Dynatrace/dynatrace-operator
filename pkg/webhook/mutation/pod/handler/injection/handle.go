@@ -56,9 +56,20 @@ func (h *Handler) Handle(mutationRequest *dtwebhook.MutationRequest) error {
 	mutationRequest.Context = ctx
 	dk := mutationRequest.DynaKube
 
-	if (!dk.OneAgent().IsAppInjectionNeeded() && !dk.MetadataEnrichment().IsEnabled()) ||
-		(!h.metaMutator.IsEnabled(ctx, mutationRequest.BaseRequest) && !h.oaMutator.IsEnabled(ctx, mutationRequest.BaseRequest)) {
+	if !dk.OneAgent().IsAppInjectionNeeded() && !dk.MetadataEnrichment().IsEnabled() {
 		log.Debug("bootstrapper injection disabled", "podName", mutationRequest.PodName(), "namespace", mutationRequest.Namespace.Name)
+
+		return nil
+	}
+
+	if !h.metaMutator.IsEnabled(ctx, mutationRequest.BaseRequest) && !h.oaMutator.IsEnabled(ctx, mutationRequest.BaseRequest) {
+		log.Debug("no mutator enabled for pod", "podName", mutationRequest.PodName(), "namespace", mutationRequest.Namespace.Name)
+		annotations.SetNotInjected(
+			mutationRequest,
+			dtwebhook.AnnotationDynatraceInjected,
+			dtwebhook.AnnotationDynatraceReason,
+			NoMutationNeededReason,
+		)
 
 		return nil
 	}
@@ -80,20 +91,8 @@ func (h *Handler) Handle(mutationRequest *dtwebhook.MutationRequest) error {
 		}
 	}
 
-	mutated, err := h.handlePodMutation(mutationRequest)
-	if err != nil {
+	if err := h.handlePodMutation(mutationRequest); err != nil {
 		return err
-	}
-
-	if !mutated {
-		annotations.SetNotInjected(
-			mutationRequest,
-			dtwebhook.AnnotationDynatraceInjected,
-			dtwebhook.AnnotationDynatraceReason,
-			NoMutationNeededReason,
-		)
-
-		return nil
 	}
 
 	annotations.SetInjected(
@@ -107,36 +106,28 @@ func (h *Handler) Handle(mutationRequest *dtwebhook.MutationRequest) error {
 	return nil
 }
 
-func (h *Handler) handlePodMutation(mutationRequest *dtwebhook.MutationRequest) (bool, error) {
+func (h *Handler) handlePodMutation(mutationRequest *dtwebhook.MutationRequest) error {
 	mutationRequest.InstallContainer = h.createInitContainerBase(mutationRequest.Context, mutationRequest.Pod, mutationRequest.DynaKube)
-
-	var mutated bool
 
 	err := h.metaMutator.Mutate(mutationRequest)
 	if err != nil {
-		return false, err
+		return err
 	}
-
-	mutated = true
 
 	if h.oaMutator.IsEnabled(mutationRequest.Context, mutationRequest.BaseRequest) {
 		err := h.oaMutator.Mutate(mutationRequest)
 		if err != nil {
-			return false, err
+			return err
 		}
-
-		mutated = true
 	}
 
-	if mutated {
-		if err := addInitContainerToPod(mutationRequest.Context, mutationRequest.Pod, mutationRequest.InstallContainer); err != nil {
-			return false, err
-		}
-
-		events.SendPodInjectEvent(h.recorder, mutationRequest.DynaKube, mutationRequest.Pod)
+	if err := addInitContainerToPod(mutationRequest.Context, mutationRequest.Pod, mutationRequest.InstallContainer); err != nil {
+		return err
 	}
 
-	return mutated, nil
+	events.SendPodInjectEvent(h.recorder, mutationRequest.DynaKube, mutationRequest.Pod)
+
+	return nil
 }
 
 func (h *Handler) handlePodReinvocation(mutationRequest *dtwebhook.MutationRequest) {

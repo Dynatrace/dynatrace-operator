@@ -38,23 +38,6 @@ func TestHandleImpl(t *testing.T) {
 		Namespace: testNamespaceName,
 	}
 
-	t.Run("injection disabled => do not execute handler", func(t *testing.T) {
-		h := createTestHandler(webhookmock.NewMutator(t), webhookmock.NewMutator(t))
-
-		dk := getTestDynakube()
-
-		dk.Spec.OneAgent = oneagent.Spec{}
-		dk.Spec.MetadataEnrichment = metadataenrichment.Spec{}
-
-		request := createTestMutationRequest(t, dk)
-
-		err := h.Handle(request)
-		require.NoError(t, err)
-
-		assert.NotContains(t, request.Pod.Annotations, dtwebhook.AnnotationDynatraceInjected)
-		assert.NotContains(t, request.Pod.Annotations, dtwebhook.AnnotationDynatraceReason)
-	})
-
 	t.Run("no init secret + no init secret source => no injection + only annotation", func(t *testing.T) {
 		oaMutator := webhookmock.NewMutator(t)
 		oaMutator.EXPECT().IsEnabled(anyCtx, mock.Anything).Return(true).Once()
@@ -231,53 +214,6 @@ func TestHandleImpl(t *testing.T) {
 		assert.NotEmpty(t, installContainer.Args)
 	})
 
-	t.Run("happy path - nothing is enabled", func(t *testing.T) {
-		oaMutator := webhookmock.NewMutator(t)
-		oaMutator.EXPECT().IsEnabled(anyCtx, mock.Anything).Return(false).Once()
-
-		metaMutator := webhookmock.NewMutator(t)
-		metaMutator.EXPECT().IsEnabled(anyCtx, mock.Anything).Return(false).Once()
-
-		h := createTestHandler(oaMutator, metaMutator, initSecret, certsSecret)
-
-		request := createTestMutationRequest(t, getTestDynakube())
-
-		err := h.Handle(request)
-		require.NoError(t, err)
-
-		assert.NotContains(t, request.Pod.Annotations, dtwebhook.AnnotationDynatraceInjected)
-		assert.NotContains(t, request.Pod.Annotations, dtwebhook.AnnotationDynatraceReason)
-		assert.Nil(t, k8scontainer.FindInitInPodSpec(&request.Pod.Spec, dtwebhook.InstallContainerName))
-	})
-
-	t.Run("happy path - metadata enabled standalone, oneagent disabled => only metaMutator.Mutate runs", func(t *testing.T) {
-		oaMutator := webhookmock.NewMutator(t)
-		oaMutator.EXPECT().IsEnabled(anyCtx, mock.Anything).Return(false)
-		// no EXPECT().Mutate() set up: an unexpected call here would fail the test,
-		// proving metadata being enabled standalone does not also trigger oneagent.
-
-		metaMutator := webhookmock.NewMutator(t)
-		metaMutator.EXPECT().IsEnabled(anyCtx, mock.Anything).Return(true)
-		metaMutator.EXPECT().Mutate(mock.Anything).Return(nil)
-
-		h := createTestHandler(oaMutator, metaMutator, initSecret, certsSecret)
-
-		request := createTestMutationRequest(t, getTestDynakube())
-
-		err := h.Handle(request)
-		require.NoError(t, err)
-
-		isInjected, ok := request.Pod.Annotations[dtwebhook.AnnotationDynatraceInjected]
-		require.True(t, ok)
-		assert.Equal(t, "true", isInjected)
-
-		_, ok = request.Pod.Annotations[dtwebhook.AnnotationDynatraceReason]
-		require.False(t, ok)
-
-		installContainer := k8scontainer.FindInitInPodSpec(&request.Pod.Spec, dtwebhook.InstallContainerName)
-		require.NotNil(t, installContainer)
-	})
-
 	t.Run("happy path - reinvoke", func(t *testing.T) {
 		oaMutator := webhookmock.NewMutator(t)
 		oaMutator.EXPECT().IsEnabled(anyCtx, mock.Anything).Return(true).Twice()
@@ -336,6 +272,112 @@ func getInjectedPod(t *testing.T) *corev1.Pod {
 	pod.Spec.InitContainers = append(pod.Spec.InitContainers, *installContainer)
 
 	return pod
+}
+
+// TestHandleImpl_enablementPermutations covers every combination of the inputs of the early-return guards in Handle:
+//   - dynakube level: IsAppInjectionNeeded, MetadataEnrichment.IsEnabled
+//   - pod level: metaMutator.IsEnabled, oaMutator.IsEnabled
+func TestHandleImpl_enablementPermutations(t *testing.T) {
+	initSecret := &corev1.Secret{
+		Name:      consts.BootstrapperInitSecretName,
+		Namespace: testNamespaceName,
+	}
+
+	type enablementOutcome int
+
+	const (
+		// no annotation at all, the mutators are not even asked
+		silentlySkipped enablementOutcome = iota
+		// injected=false with NoMutationNeeded, nothing is mutated
+		noMutationNeeded
+		// injected=true, metaMutator always mutates, oaMutator only if it is enabled
+		injected
+	)
+
+	tests := []struct {
+		name               string
+		appInjection       bool
+		metadataEnrichment bool
+		metaMutatorEnabled bool
+		oaMutatorEnabled   bool
+		expected           enablementOutcome
+	}{
+		// dynakube level disabled => the pod level is irrelevant
+		{"dk disabled, no mutator enabled", false, false, false, false, silentlySkipped},
+		{"dk disabled, only oa mutator enabled", false, false, false, true, silentlySkipped},
+		{"dk disabled, only meta mutator enabled", false, false, true, false, silentlySkipped},
+		{"dk disabled, both mutators enabled", false, false, true, true, silentlySkipped},
+
+		// only app injection on at the dynakube level
+		{"app injection only, no mutator enabled", true, false, false, false, noMutationNeeded},
+		{"app injection only, only oa mutator enabled", true, false, false, true, injected},
+		{"app injection only, only meta mutator enabled", true, false, true, false, injected},
+		{"app injection only, both mutators enabled", true, false, true, true, injected},
+
+		// only metadata enrichment on at the dynakube level
+		{"metadata enrichment only, no mutator enabled", false, true, false, false, noMutationNeeded},
+		{"metadata enrichment only, only oa mutator enabled", false, true, false, true, injected},
+		{"metadata enrichment only, only meta mutator enabled", false, true, true, false, injected},
+		{"metadata enrichment only, both mutators enabled", false, true, true, true, injected},
+
+		// app injection and metadata enrichment on at the dynakube level
+		{"app injection and metadata enrichment, no mutator enabled", true, true, false, false, noMutationNeeded},
+		{"app injection and metadata enrichment, only oa mutator enabled", true, true, false, true, injected},
+		{"app injection and metadata enrichment, only meta mutator enabled", true, true, true, false, injected},
+		{"app injection and metadata enrichment, both mutators enabled", true, true, true, true, injected},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			dk := getTestDynakube()
+			dk.Spec.OneAgent = oneagent.Spec{}
+
+			if tt.appInjection {
+				dk.Spec.OneAgent = getCloudNativeSpec()
+			}
+
+			dk.Spec.MetadataEnrichment = metadataenrichment.Spec{Enabled: new(tt.metadataEnrichment)}
+
+			// the mocks are strict: calls that are not set up here fail the test
+			oaMutator := webhookmock.NewMutator(t)
+			metaMutator := webhookmock.NewMutator(t)
+
+			if tt.expected != silentlySkipped {
+				oaMutator.EXPECT().IsEnabled(anyCtx, mock.Anything).Return(tt.oaMutatorEnabled).Maybe()
+				metaMutator.EXPECT().IsEnabled(anyCtx, mock.Anything).Return(tt.metaMutatorEnabled).Maybe()
+			}
+
+			if tt.expected == injected {
+				metaMutator.EXPECT().Mutate(mock.Anything).Return(nil).Once()
+
+				if tt.oaMutatorEnabled {
+					oaMutator.EXPECT().Mutate(mock.Anything).Return(nil).Once()
+				}
+			}
+
+			h := createTestHandler(oaMutator, metaMutator, initSecret)
+			request := createTestMutationRequest(t, dk)
+
+			require.NoError(t, h.Handle(request))
+
+			installContainer := k8scontainer.FindInitInPodSpec(&request.Pod.Spec, dtwebhook.InstallContainerName)
+
+			switch tt.expected {
+			case silentlySkipped:
+				assert.NotContains(t, request.Pod.Annotations, dtwebhook.AnnotationDynatraceInjected)
+				assert.NotContains(t, request.Pod.Annotations, dtwebhook.AnnotationDynatraceReason)
+				assert.Nil(t, installContainer)
+			case noMutationNeeded:
+				assert.Equal(t, "false", request.Pod.Annotations[dtwebhook.AnnotationDynatraceInjected])
+				assert.Equal(t, NoMutationNeededReason, request.Pod.Annotations[dtwebhook.AnnotationDynatraceReason])
+				assert.Nil(t, installContainer)
+			case injected:
+				assert.Equal(t, "true", request.Pod.Annotations[dtwebhook.AnnotationDynatraceInjected])
+				assert.NotContains(t, request.Pod.Annotations, dtwebhook.AnnotationDynatraceReason)
+				assert.NotNil(t, installContainer)
+			}
+		})
+	}
 }
 
 func TestSetDynatraceInjectedAnnotation(t *testing.T) {
