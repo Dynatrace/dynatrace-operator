@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
-	"github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
+	"github.com/Dynatrace/dynatrace-operator/pkg/otelcfg"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -17,7 +17,7 @@ import (
 func TestProbes(t *testing.T) {
 	expectedHTTPGet := &corev1.HTTPGetAction{
 		Path: "/",
-		Port: intstr.FromInt32(otelcgen.ExtensionsHealthCheckPort),
+		Port: intstr.FromInt32(otelcfg.ExtensionsHealthCheckPort),
 	}
 
 	t.Run("liveness probe", func(t *testing.T) {

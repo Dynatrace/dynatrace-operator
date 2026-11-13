@@ -3,7 +3,7 @@
 
 package telemetryingest
 
-import "github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
+import "github.com/Dynatrace/dynatrace-operator/pkg/otelcfg"
 
 type TelemetryIngest struct {
 	*Spec
@@ -22,5 +22,5 @@ type Spec struct {
 
 	// +listType=set
 	// +kubebuilder:validation:Optional
-	Protocols []otelcgen.Protocol `json:"protocols,omitempty"`
+	Protocols []otelcfg.Protocol `json:"protocols,omitempty"`
 }

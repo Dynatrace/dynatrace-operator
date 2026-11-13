@@ -1,0 +1,126 @@
+// Copyright Dynatrace LLC
+// SPDX-License-Identifier: Apache-2.0
+
+package otelcfg
+
+import (
+	"slices"
+
+	"go.opentelemetry.io/collector/component"
+	"go.opentelemetry.io/collector/pipeline"
+	"go.opentelemetry.io/collector/service/pipelines"
+)
+
+var allSignals = []pipeline.Signal{pipeline.SignalMetrics, pipeline.SignalTraces, pipeline.SignalLogs}
+
+type Builder struct {
+	cfg       *Config
+	pipelines pipelines.Config
+}
+
+func NewBuilder() *Builder {
+	return &Builder{
+		cfg: &Config{
+			Receivers:  map[component.ID]component.Config{},
+			Processors: map[component.ID]component.Config{},
+			Exporters:  map[component.ID]component.Config{},
+			Extensions: map[component.ID]component.Config{},
+			Service:    ServiceConfig{Pipelines: pipelines.Config{}},
+		},
+		pipelines: pipelines.Config{},
+	}
+}
+
+// Receiver registers the receiver with the signal pipelines, in registration order.
+// The signals can be used to limit the registration to the respective pipelines.
+// Duplicate calls will overwrite data, but keep order intact.
+func (b *Builder) Receiver(id component.ID, cfg component.Config, signals ...pipeline.Signal) *Builder {
+	b.cfg.Receivers[id] = cfg
+	b.forEachSignal(signals, func(cfg *pipelines.PipelineConfig) {
+		cfg.Receivers = appendUnique(cfg.Receivers, id)
+	})
+
+	return b
+}
+
+// Processor registers the processor with the signal pipelines, in registration order.
+// The signals can be used to limit the registration to the respective pipelines.
+// Duplicate calls will overwrite data, but keep order intact.
+func (b *Builder) Processor(id component.ID, cfg component.Config, signals ...pipeline.Signal) *Builder {
+	b.cfg.Processors[id] = cfg
+	b.forEachSignal(signals, func(cfg *pipelines.PipelineConfig) {
+		cfg.Processors = appendUnique(cfg.Processors, id)
+	})
+
+	return b
+}
+
+// Exporter registers the exporter with all signal pipelines, in registration order.
+// Duplicate calls will overwrite data, but keep order intact.
+func (b *Builder) Exporter(id component.ID, cfg component.Config) *Builder {
+	b.cfg.Exporters[id] = cfg
+	b.forEachSignal(allSignals, func(cfg *pipelines.PipelineConfig) {
+		cfg.Exporters = appendUnique(cfg.Exporters, id)
+	})
+
+	return b
+}
+
+// Extension registers the extension and enables it in the service, in registration order.
+func (b *Builder) Extension(id component.ID, cfg component.Config) *Builder {
+	b.cfg.Extensions[id] = cfg
+	b.cfg.Service.Extensions = append(b.cfg.Service.Extensions, id)
+
+	return b
+}
+
+// Build generates a Config for the given signals from the working set of the builder
+// and clears the internal state.
+func (b *Builder) Build(signals ...pipeline.Signal) *Config {
+	if len(signals) == 0 {
+		signals = allSignals
+	}
+
+	for _, signal := range signals {
+		key := pipeline.NewID(signal)
+		cfg := b.pipelines[key]
+		// A valid pipelines config has a receiver and an exporter. For our use-case we always want a processor too.
+		if cfg != nil && len(cfg.Receivers) > 0 && len(cfg.Processors) > 0 && len(cfg.Exporters) > 0 {
+			b.cfg.Service.Pipelines[key] = new(*cfg)
+		}
+	}
+
+	cfg := b.cfg
+	// reset builder to prevent dangling references
+	*b = *NewBuilder()
+
+	return cfg
+}
+
+func (b *Builder) forEachSignal(signals []pipeline.Signal, f func(cfg *pipelines.PipelineConfig)) {
+	if len(signals) == 0 {
+		signals = allSignals
+	}
+
+	for _, signal := range signals {
+		key := pipeline.NewID(signal)
+
+		cfg := b.pipelines[key]
+		if cfg == nil {
+			cfg = &pipelines.PipelineConfig{}
+		}
+
+		f(cfg)
+
+		b.pipelines[key] = cfg
+	}
+}
+
+func appendUnique(slice []component.ID, id component.ID) []component.ID {
+	// The list of elements is small enough that O(n) is negligible.
+	if slices.Contains(slice, id) {
+		return slice
+	}
+
+	return append(slice, id)
+}

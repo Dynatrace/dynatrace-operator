@@ -1,7 +1,22 @@
 apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/instance: otel-scraper
+    app.kubernetes.io/managed-by: dynatrace-operator
+    app.kubernetes.io/name: opentelemetry-collector
+    internal.dynatrace.com/operator-version: snapshot
+  name: pm-scraper
+  namespace: dynatrace
+  ownerReferences:
+  - apiVersion: dynatrace.com/v1alpha1
+    blockOwnerDeletion: true
+    controller: true
+    kind: PrometheusMonitoring
+    name: pm
+    uid: pm-uid
 data:
   scraper: |
-    connectors: {}
     exporters:
         load_balancing:
             protocol:
@@ -54,18 +69,6 @@ data:
                 receivers:
                     - prometheus
         telemetry:
-            logs:
-                encoding: console
-                error_output_paths:
-                    - stderr
-                level: info
-                output_paths:
-                    - stderr
-                sampling:
-                    enabled: true
-                    initial: 10
-                    thereafter: 100
-                    tick: 10s
             metrics:
                 level: Normal
                 readers:
@@ -75,21 +78,3 @@ data:
                                 endpoint: http://dk-self-monitoring:4318
                                 protocol: http/protobuf
                                 temporality_preference: delta
-            resource:
-                schema_url: https://opentelemetry.io/schemas/1.40.0
-kind: ConfigMap
-metadata:
-  labels:
-    app.kubernetes.io/instance: otel-scraper
-    app.kubernetes.io/managed-by: dynatrace-operator
-    app.kubernetes.io/name: opentelemetry-collector
-    internal.dynatrace.com/operator-version: snapshot
-  name: pm-scraper
-  namespace: dynatrace
-  ownerReferences:
-  - apiVersion: dynatrace.com/v1alpha1
-    blockOwnerDeletion: true
-    controller: true
-    kind: PrometheusMonitoring
-    name: pm
-    uid: pm-uid
