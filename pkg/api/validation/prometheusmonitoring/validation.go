@@ -5,6 +5,7 @@ package validation
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/prometheusmonitoring"
@@ -34,16 +35,44 @@ func (v *Validator) ValidateDelete(_ context.Context, _ runtime.Object) (admissi
 	return nil, nil
 }
 
+type validatorFunc func(ctx context.Context, apiReader client.Reader, pm *prometheusmonitoring.PrometheusMonitoring) string
+
 func (v *Validator) validate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
 	ctx, _ = logd.NewFromContext(ctx, "validation")
 
-	if _, err := getPrometheusMonitoring(obj); err != nil {
+	pm, err := getPrometheusMonitoring(obj)
+	if err != nil {
 		return nil, err
 	}
 
+	errorTasks := []validatorFunc{
+		nameInvalid,
+		invalidSelectors,
+	}
+
+	var errs []error
+
+	for _, errorTask := range errorTasks {
+		if msg := errorTask(ctx, v.apiReader, pm); msg != "" {
+			errs = append(errs, errors.New(msg))
+		}
+	}
+
+	if err := errors.Join(errs...); err != nil {
+		return nil, err
+	}
+
+	warningTasks := []validatorFunc{
+		missingPrometheusCRDs,
+		overlappingSelectorWarning,
+	}
+
 	var warnings admission.Warnings
-	if msg := missingPrometheusCRDs(ctx, v.apiReader); msg != "" {
-		warnings = append(warnings, msg)
+
+	for _, warningTask := range warningTasks {
+		if msg := warningTask(ctx, v.apiReader, pm); msg != "" {
+			warnings = append(warnings, msg)
+		}
 	}
 
 	return warnings, nil
