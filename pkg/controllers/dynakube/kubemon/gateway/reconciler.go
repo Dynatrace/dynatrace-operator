@@ -14,7 +14,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/certificates"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	k8sobject "github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -148,7 +147,7 @@ func (r *Reconciler) createTLSSecret(ctx context.Context, dk *dynakube.DynaKube)
 }
 
 func (r *Reconciler) tlsCertificateData(dk *dynakube.DynaKube) (map[string][]byte, error) {
-	cert, err := certificates.New(timeprovider.New())
+	cert, err := certificates.New()
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}

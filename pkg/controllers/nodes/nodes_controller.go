@@ -19,7 +19,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sdeployment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/system"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -37,7 +36,6 @@ type Controller struct {
 	client          client.Client
 	apiReader       client.Reader
 	dtClientFactory dynatrace.ClientFactory
-	timeProvider    *timeprovider.Provider
 	podNamespace    string
 	runLocal        bool
 }
@@ -60,7 +58,6 @@ func NewController(mgr manager.Manager) *Controller {
 		dtClientFactory: dynatrace.NewClientFromDynakube,
 		runLocal:        system.IsRunLocally(),
 		podNamespace:    os.Getenv(k8senv.PodNamespace),
-		timeProvider:    timeprovider.New(),
 	}
 }
 
@@ -71,7 +68,6 @@ func NewControllerFromClient(clt client.Client) *Controller {
 		dtClientFactory: dynatrace.NewClientFromDynakube,
 		runLocal:        system.IsRunLocally(),
 		podNamespace:    os.Getenv(k8senv.PodNamespace),
-		timeProvider:    timeprovider.New(),
 	}
 }
 
@@ -122,12 +118,13 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 	}
 
 	// check node cache for outdated nodes and remove them, to keep cache clean
-	if nodeCache.IsOutdated(controller.timeProvider.Now().UTC()) {
+	now := time.Now().UTC()
+	if nodeCache.IsOutdated(now) {
 		if err := controller.pruneCache(ctx, nodeCache); err != nil {
 			return reconcile.Result{}, err
 		}
 
-		nodeCache.UpdateTimestamp(controller.timeProvider.Now().UTC())
+		nodeCache.UpdateTimestamp(now)
 	}
 
 	return reconcile.Result{}, nodeCache.Store(ctx, controller.client)
@@ -140,7 +137,7 @@ func (controller *Controller) reconcileNodeUpdate(ctx context.Context, dk *dynak
 		NodeName:     nodeName,
 		DynaKubeName: dk.Name,
 		IPAddress:    ipAddress,
-		LastSeen:     controller.timeProvider.Now().UTC(),
+		LastSeen:     time.Now().UTC(),
 	}
 
 	if cached, err := nodeCache.GetEntry(nodeName); err == nil {
@@ -253,11 +250,12 @@ func (controller *Controller) markForTermination(ctx context.Context, dk *dynaku
 		return nil
 	}
 
-	if !cacheEntry.IsMarkableForTermination(controller.timeProvider.Now().UTC()) {
+	now := time.Now().UTC()
+	if !cacheEntry.IsMarkableForTermination(now) {
 		return nil
 	}
 
-	cacheEntry.SetLastMarkedForTerminationTimestamp(controller.timeProvider.Now().UTC())
+	cacheEntry.SetLastMarkedForTerminationTimestamp(now)
 
 	log.Info("sending mark for termination event to dynatrace server", "dynakube", dk.Name, "ip", cacheEntry.IPAddress)
 
@@ -296,7 +294,7 @@ func (controller *Controller) getCache(ctx context.Context) (*cache.Cache, error
 func (controller *Controller) pruneCache(ctx context.Context, nodeCache *cache.Cache) error {
 	log := logd.FromContext(ctx)
 
-	missingCachedNodes, err := nodeCache.Prune(ctx, controller.client, controller.timeProvider.Now().UTC())
+	missingCachedNodes, err := nodeCache.Prune(ctx, controller.client, time.Now().UTC())
 	if err != nil {
 		return err
 	}
