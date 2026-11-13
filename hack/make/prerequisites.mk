@@ -17,7 +17,7 @@ GOLANGCI_LINT_VERSION ?= v2.15.0
 # renovate depName=golang.org/x/tools
 GOLANG_TOOLS_VERSION ?= v0.52.0
 # renovate depName=github.com/vektra/mockery
-MOCKERY_VERSION ?= v3.9.0
+MOCKERY_VERSION ?= v3.9.1
 # renovate depName=github.com/igorshubovych/markdownlint-cli
 MARKDOWNLINT_CLI_VERSION ?= v0.49.1
 # renovate depName=github.com/tcort/markdown-link-check
@@ -25,14 +25,14 @@ MARKDOWN_LINK_CHECK_VERSION ?= v3.15.0+incompatible
 # renovate depName=github.com/helm-unittest/helm-unittest
 HELMUNITTEST_VERSION ?= v1.2.1
 # renovate depName=github.com/vladopajic/go-test-coverage/v2
-GO_TEST_COVERAGE_VERSION ?= v2.22.0
+GO_TEST_COVERAGE_VERSION ?= v2.23.0
 # renovate depName=github.com/openapitools/openapi-generator-cli
 OPENAPI_GENERATOR_CLI_VERSION ?= v2.41.0+incompatible
 # renovate depName=github.com/google/addlicense
 ADDLICENSE_VERSION ?= v1.2.0
 
 # renovate depName=github.com/prometheus-operator/prometheus-operator
-PROMETHEUS_OPERATOR_VERSION ?= v0.95.1
+PROMETHEUS_OPERATOR_VERSION ?= v0.95.2
 
 # Enable renovate once project is migrated to newer structure
 OPERATOR_SDK_VERSION ?= v1.36.0
