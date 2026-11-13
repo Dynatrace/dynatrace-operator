@@ -45,6 +45,9 @@ type Config struct {
 
 // https://github.com/open-telemetry/opentelemetry-collector/blob/v0.157.0/service/config.go#L13
 type ServiceConfig struct {
+	// Telemetry is the configuration for collector's own telemetry.
+	Telemetry component.Config `mapstructure:"telemetry,omitempty"`
+
 	// Extensions are the ordered list of extensions configured for the service.
 	Extensions extensions.Config `mapstructure:"extensions,omitempty"`
 

@@ -30,6 +30,9 @@ type scraperConfigData struct {
 
 	// TargetsPollInterval is how often the receiver re-polls the target allocator.
 	TargetsPollInterval string
+
+	// SelfMonitoringEndpoint is the OTLP/HTTP base URL the collector exports its own metrics to. Empty disables it.
+	SelfMonitoringEndpoint string
 }
 
 func buildConfig(data scraperConfigData) *otelcfg.Config {
@@ -38,6 +41,7 @@ func buildConfig(data scraperConfigData) *otelcfg.Config {
 		MemoryLimiter(otelcfg.PrometheusMonitoringMemoryLimiter).
 		Exporter(loadBalancingID, buildLoadBalancingExporter(data)).
 		HealthCheck().
+		SelfMonitoring(data.SelfMonitoringEndpoint).
 		Build(pipeline.SignalMetrics)
 }
 

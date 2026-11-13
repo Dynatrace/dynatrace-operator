@@ -4,7 +4,6 @@
 package otelcfg
 
 import (
-	"maps"
 	"slices"
 
 	"go.opentelemetry.io/collector/component"
@@ -75,19 +74,9 @@ func (b *Builder) Extension(id component.ID, cfg component.Config) *Builder {
 	return b
 }
 
-// Build generates a Config for the given signals from the working set of the builder.
+// Build generates a Config for the given signals from the working set of the builder
+// and clears the internal state.
 func (b *Builder) Build(signals ...pipeline.Signal) *Config {
-	buildCfg := &Config{
-		Receivers:  maps.Clone(b.cfg.Receivers),
-		Exporters:  maps.Clone(b.cfg.Exporters),
-		Processors: maps.Clone(b.cfg.Processors),
-		Extensions: maps.Clone(b.cfg.Extensions),
-		Service: ServiceConfig{
-			Extensions: slices.Clone(b.cfg.Service.Extensions),
-			Pipelines:  pipelines.Config{},
-		},
-	}
-
 	if len(signals) == 0 {
 		signals = allSignals
 	}
@@ -97,11 +86,15 @@ func (b *Builder) Build(signals ...pipeline.Signal) *Config {
 		cfg := b.pipelines[key]
 		// A valid pipelines config has a receiver and an exporter. For our use-case we always want a processor too.
 		if cfg != nil && len(cfg.Receivers) > 0 && len(cfg.Processors) > 0 && len(cfg.Exporters) > 0 {
-			buildCfg.Service.Pipelines[key] = new(*cfg)
+			b.cfg.Service.Pipelines[key] = new(*cfg)
 		}
 	}
 
-	return buildCfg
+	cfg := b.cfg
+	// reset builder to prevent dangling references
+	*b = *NewBuilder()
+
+	return cfg
 }
 
 func (b *Builder) forEachSignal(signals []pipeline.Signal, f func(cfg *pipelines.PipelineConfig)) {

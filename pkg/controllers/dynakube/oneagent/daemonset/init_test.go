@@ -36,7 +36,7 @@ func TestInitContainerSpec(t *testing.T) {
 		}
 
 		require.NoError(t, os.Setenv(k8senv.DTOperatorImageEnvName, testOperatorImageName))
-		spec := dsBuilder.initContainerSpec()
+		spec := dsBuilder.initContainerSpec(dsBuilder.runAsIDs(t.Context()))
 		require.NoError(t, os.Unsetenv(k8senv.DTOperatorImageEnvName))
 
 		assert.Equal(t, testOperatorImageName, spec.Image)
@@ -72,7 +72,7 @@ func TestInitContainerSpec(t *testing.T) {
 				},
 			},
 		}
-		spec := dsBuilder.initContainerSpec()
+		spec := dsBuilder.initContainerSpec(dsBuilder.runAsIDs(t.Context()))
 
 		assert.True(t, cpuRequest.Equal(*spec.Resources.Requests.Cpu()))
 		assert.True(t, memRequest.Equal(*spec.Resources.Requests.Memory()))
@@ -272,9 +272,11 @@ func TestInitContainerVolumeMounts(t *testing.T) {
 }
 
 func TestInitContainerSecurityContext(t *testing.T) {
-	dsBuilder := builder{}
+	dsBuilder := builder{
+		dk: &dynakube.DynaKube{},
+	}
 
-	securityContext := dsBuilder.initContainerSecurityContext()
+	securityContext := dsBuilder.initContainerSecurityContext(dsBuilder.runAsIDs(t.Context()))
 
 	assert.False(t, *securityContext.Privileged)
 	assert.False(t, *securityContext.AllowPrivilegeEscalation)

@@ -58,6 +58,7 @@ func buildConfig(data gatewayConfigData) *otelcfg.Config {
 		}).
 		HealthCheck().
 		BearerTokenAuth(tokenMountPath + "/" + tokenFileName).
+		SelfMonitoring(data.SelfMonitoringEndpoint).
 		Build(pipeline.SignalMetrics)
 }
 

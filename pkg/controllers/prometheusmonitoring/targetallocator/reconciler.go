@@ -23,6 +23,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sdeployment"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
@@ -45,40 +46,6 @@ const (
 
 type Reconciler struct {
 	client.Client
-}
-
-// Config is the subset of configurations that can be configured by the operator.
-//
-// https://github.com/open-telemetry/opentelemetry-operator/blob/v0.157.0/cmd/otel-allocator/internal/config/config.go
-type Config struct {
-	ListenAddr         string                `json:"listen_addr"`
-	AllocationStrategy string                `json:"allocation_strategy"`
-	CollectorNamespace string                `json:"collector_namespace"`
-	CollectorSelector  *metav1.LabelSelector `json:"collector_selector,omitempty"`
-	FilterStrategy     string                `json:"filter_strategy"`
-	HTTPS              *HTTPSConfig          `json:"https,omitempty"`
-	PrometheusCR       ScrapeConfig          `json:"prometheus_cr"`
-}
-
-type HTTPSConfig struct {
-	Enabled         bool   `json:"enabled"`
-	ListenAddr      string `json:"listen_addr"`
-	TLSCertFilePath string `json:"tls_cert_file_path"`
-	TLSKeyFilePath  string `json:"tls_key_file_path"`
-	CAFilePath      string `json:"ca_file_path"`
-}
-
-type ScrapeConfig struct {
-	Enabled                         bool                  `json:"enabled"`
-	ScrapeInterval                  *metav1.Duration      `json:"scrape_interval"`
-	PodMonitorSelector              *metav1.LabelSelector `json:"pod_monitor_selector,omitempty"`
-	PodMonitorNamespaceSelector     *metav1.LabelSelector `json:"pod_monitor_namespace_selector,omitempty"`
-	ServiceMonitorSelector          *metav1.LabelSelector `json:"service_monitor_selector,omitempty"`
-	ServiceMonitorNamespaceSelector *metav1.LabelSelector `json:"service_monitor_namespace_selector,omitempty"`
-	ScrapeConfigSelector            *metav1.LabelSelector `json:"scrape_config_selector,omitempty"`
-	ScrapeConfigNamespaceSelector   *metav1.LabelSelector `json:"scrape_config_namespace_selector,omitempty"`
-	ProbeSelector                   *metav1.LabelSelector `json:"probe_selector,omitempty"`
-	ProbeNamespaceSelector          *metav1.LabelSelector `json:"probe_namespace_selector,omitempty"`
 }
 
 type reconcileScope struct {
@@ -150,6 +117,7 @@ func (r *Reconciler) reconcileConfigMap(ctx context.Context, s *reconcileScope) 
 			ProbeSelector:                   s.Spec.CustomResourceSelector,
 			ProbeNamespaceSelector:          s.Spec.CustomResourceNamespaceSelector,
 		},
+		Telemetry: buildTelemetry(s.DynaKube),
 	}
 
 	data, err := yaml.Marshal(cfg)
@@ -195,7 +163,9 @@ func (r *Reconciler) reconcileDeployment(ctx context.Context, s *reconcileScope)
 	deploy := &appsv1.Deployment{Name: s.Spec.GetDeploymentName(), Namespace: s.Owner.Namespace}
 
 	err := k8sobject.RetryCreateOrUpdate(ctx, r, deploy, func() error {
-		mutateDeployment(deploy, s)
+		if err := mutateDeployment(deploy, s); err != nil {
+			return err
+		}
 
 		return controllerutil.SetControllerReference(s.Owner, deploy, r.Scheme())
 	})
@@ -237,7 +207,7 @@ func (r *Reconciler) reconcileService(ctx context.Context, s *reconcileScope) er
 	})
 }
 
-func mutateDeployment(deploy *appsv1.Deployment, s *reconcileScope) {
+func mutateDeployment(deploy *appsv1.Deployment, s *reconcileScope) error {
 	s.AppLabels.MergeInto(deploy)
 
 	if deploy.Spec.Template.Labels == nil {
@@ -262,7 +232,12 @@ func mutateDeployment(deploy *appsv1.Deployment, s *reconcileScope) {
 
 	deploy.Spec.Strategy = k8sdeployment.MergeStrategy(deploy.Spec.Strategy, s.Spec.Strategy)
 
-	deploy.Spec.Selector = &metav1.LabelSelector{MatchLabels: s.AppLabels.AsSelector()}
+	selector := &metav1.LabelSelector{MatchLabels: s.AppLabels.AsSelector()}
+	if deploy.ResourceVersion != "" && !equality.Semantic.DeepEqual(deploy.Spec.Selector, selector) {
+		return fmt.Errorf("deployment selector changed: %w", k8sobject.ErrRecreate)
+	}
+
+	deploy.Spec.Selector = selector
 	deploy.Spec.Template.Spec.ServiceAccountName = serviceAccount
 	deploy.Spec.Template.Spec.AutomountServiceAccountToken = new(true)
 	deploy.Spec.Template.Spec.Affinity = s.Spec.Affinity
@@ -275,6 +250,8 @@ func mutateDeployment(deploy *appsv1.Deployment, s *reconcileScope) {
 	deploy.Spec.Template.Spec.Containers = []corev1.Container{
 		buildContainer(s.Spec, s.Owner.Status.TargetAllocator.ResolvedImage, s.Owner.Namespace, k8scontainer.GetFirstInPodSpec(&deploy.Spec.Template.Spec)),
 	}
+
+	return nil
 }
 
 // Build the container for the target allocator. The created container should only cause an update if a mandated value changed.

@@ -26,6 +26,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sdeployment"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
@@ -149,6 +150,10 @@ func buildScraperConfigData(s *reconcileScope) scraperConfigData {
 		GatewayService: s.Owner.Gateway().GetStatefulSetName() + "." + namespace,
 	}
 
+	if s.DynaKube.IsSelfMonitoringEnabled() {
+		data.SelfMonitoringEndpoint = s.DynaKube.SelfMonitoringOTLPEndpoint()
+	}
+
 	if interval := s.Spec.TargetsPollInterval; interval != nil && interval.Duration > 0 {
 		data.TargetsPollInterval = s.Spec.TargetsPollInterval.Duration.String()
 	}
@@ -179,7 +184,9 @@ func (r *Reconciler) reconcileDeployment(ctx context.Context, s *reconcileScope)
 	deploy := &appsv1.Deployment{Name: s.Spec.GetDeploymentName(), Namespace: s.Owner.Namespace}
 
 	err := k8sobject.RetryCreateOrUpdate(ctx, r, deploy, func() error {
-		mutateDeployment(deploy, s)
+		if err := mutateDeployment(deploy, s); err != nil {
+			return err
+		}
 
 		return controllerutil.SetControllerReference(s.Owner, deploy, r.Scheme())
 	})
@@ -192,7 +199,7 @@ func (r *Reconciler) reconcileDeployment(ctx context.Context, s *reconcileScope)
 	return nil
 }
 
-func mutateDeployment(deploy *appsv1.Deployment, s *reconcileScope) {
+func mutateDeployment(deploy *appsv1.Deployment, s *reconcileScope) error {
 	s.AppLabels.MergeInto(deploy)
 
 	if deploy.Spec.Template.Labels == nil {
@@ -217,7 +224,12 @@ func mutateDeployment(deploy *appsv1.Deployment, s *reconcileScope) {
 
 	deploy.Spec.Strategy = k8sdeployment.MergeStrategy(deploy.Spec.Strategy, s.Spec.Strategy)
 
-	deploy.Spec.Selector = &metav1.LabelSelector{MatchLabels: s.AppLabels.AsSelector()}
+	selector := &metav1.LabelSelector{MatchLabels: s.AppLabels.AsSelector()}
+	if deploy.ResourceVersion != "" && !equality.Semantic.DeepEqual(deploy.Spec.Selector, selector) {
+		return fmt.Errorf("deployment selector changed: %w", k8sobject.ErrRecreate)
+	}
+
+	deploy.Spec.Selector = selector
 	deploy.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 	deploy.Spec.Template.Spec.AutomountServiceAccountToken = new(true)
 	deploy.Spec.Template.Spec.Affinity = s.Spec.Affinity
@@ -232,6 +244,8 @@ func mutateDeployment(deploy *appsv1.Deployment, s *reconcileScope) {
 	deploy.Spec.Template.Spec.Containers = []corev1.Container{
 		buildContainer(s, k8scontainer.GetFirstInPodSpec(&deploy.Spec.Template.Spec)),
 	}
+
+	return nil
 }
 
 func buildContainer(s *reconcileScope, current corev1.Container) corev1.Container {

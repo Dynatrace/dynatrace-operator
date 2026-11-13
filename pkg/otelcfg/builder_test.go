@@ -77,7 +77,12 @@ func TestBuilder(t *testing.T) {
 		},
 		{
 			"receivers_otlp_grpc",
-			func(b *Builder) { b.OTLPReceiver("grpc", OTLPReceiverGRPCPort) },
+			func(b *Builder) { b.OTLPReceiver("grpc", OTLPReceiverGRPCPort).SelfMonitoring("") },
+			[]pipeline.Signal{pipeline.SignalMetrics},
+		},
+		{
+			"telemetry_metrics",
+			func(b *Builder) { b.SelfMonitoring("test") },
 			[]pipeline.Signal{pipeline.SignalMetrics},
 		},
 	}

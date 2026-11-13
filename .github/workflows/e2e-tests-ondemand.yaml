@@ -51,12 +51,6 @@ jobs:
             token: platform
           - version: 1-37
             platform: k8s
-          - version: 4-14
-            platform: ocp
-          - version: 4-15
-            platform: ocp
-            token: platform
-            tenantPhase: 3
           - version: 4-16
             platform: ocp
           - version: 4-17
@@ -152,7 +146,7 @@ jobs:
           if [[ "$CLUSTER_STATUS" == "skipped" ]]; then
             exit 1
           fi
-      - uses: hoverkraft-tech/ci-github-common/actions/set-matrix-output@4a6ed33ba735d57ebbcd89fe8ed35134de599a67 # 0.39.2
+      - uses: hoverkraft-tech/ci-github-common/actions/set-matrix-output@90211d735aa0289702ddbd7eb95b218020ccadad # 2.0.2
         if: always()
         with:
           value: ${{ steps.prepare_outputs.outputs.matrix }}
@@ -168,7 +162,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: hoverkraft-tech/ci-github-common/actions/get-matrix-outputs@4a6ed33ba735d57ebbcd89fe8ed35134de599a67 # 0.39.2
+      - uses: hoverkraft-tech/ci-github-common/actions/get-matrix-outputs@90211d735aa0289702ddbd7eb95b218020ccadad # 2.0.2
         id: get-matrix-outputs
         with:
           artifact-name: run-matrix-artifact

@@ -6,7 +6,9 @@ package selfmonitoring
 import (
 	"maps"
 	"slices"
+	"strconv"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/otelcfg"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/pipeline"
@@ -57,7 +59,7 @@ func buildSelfMonitoringOTelConfig(data selfMonitoringConfigData) *otelcfg.Confi
 			otlpID: map[string]any{
 				"protocols": map[string]any{
 					"http": map[string]any{
-						"endpoint": "${env:MY_POD_IP}:4318",
+						"endpoint": "${env:MY_POD_IP}:" + strconv.Itoa(dynakube.SelfMonitoringOTLPHTTPPort),
 					},
 				},
 			},
