@@ -17,8 +17,95 @@ import (
 
 var anyCtx = mock.MatchedBy(func(context.Context) bool { return true })
 
+func newEntity(id string, lastSeen int64, zone string, ips ...string) hostEntity {
+	e := hostEntity{EntityID: id, LastSeenTms: lastSeen}
+	e.Properties.NetworkZone = zone
+	e.Properties.IPAddress = ips
+
+	return e
+}
+
+func expectSelectorRequest(t *testing.T, coreClient *coremock.Client, ip string, entities []hostEntity, err error) {
+	req := coremock.NewRequest(t)
+	req.EXPECT().
+		WithQueryParams(map[string]string{
+			"entitySelector": `type(HOST),ipAddress("` + ip + `")`,
+			"from":           "now-30m",
+			"fields":         "+lastSeenTms,+properties.networkZone,+properties.ipAddress",
+		}).
+		Return(req).Once()
+	req.EXPECT().
+		Execute(new(entitiesResponse)).
+		Run(func(model any) {
+			if err == nil {
+				model.(*entitiesResponse).Entities = entities
+			}
+		}).
+		Return(err).Once()
+	coreClient.EXPECT().GET(anyCtx, entitiesPath).Return(req).Once()
+}
+
+func TestGetEntityIDForIPBySelector(t *testing.T) {
+	t.Run("found", func(t *testing.T) {
+		coreClient := coremock.NewClient(t)
+		expectSelectorRequest(t, coreClient, "1.1.1.1", []hostEntity{newEntity("HOST-42", 1, "", "1.1.1.1")}, nil)
+		entityID, err := NewClient(coreClient, "").GetEntityIDForIP(t.Context(), "1.1.1.1")
+		require.NoError(t, err)
+		assert.Equal(t, "HOST-42", entityID)
+	})
+
+	t.Run("not found", func(t *testing.T) {
+		coreClient := coremock.NewClient(t)
+		expectSelectorRequest(t, coreClient, "1.1.1.2", nil, nil)
+		_, err := NewClient(coreClient, "").GetEntityIDForIP(t.Context(), "1.1.1.2")
+		require.ErrorAs(t, err, new(EntityNotFoundError))
+	})
+
+	t.Run("reused IP picks most recently seen host", func(t *testing.T) {
+		coreClient := coremock.NewClient(t)
+		expectSelectorRequest(t, coreClient, "1.1.1.1", []hostEntity{
+			newEntity("HOST-NEW", 200, "zone-a", "1.1.1.1"),
+			newEntity("HOST-OLD", 100, "zone-a", "1.1.1.1"),
+		}, nil)
+		entityID, err := NewClient(coreClient, "zone-a").GetEntityIDForIP(t.Context(), "1.1.1.1")
+		require.NoError(t, err)
+		assert.Equal(t, "HOST-NEW", entityID)
+	})
+
+	t.Run("network zone filter still applies", func(t *testing.T) {
+		coreClient := coremock.NewClient(t)
+		expectSelectorRequest(t, coreClient, "1.1.1.1", []hostEntity{
+			newEntity("HOST-OTHER-ZONE", 200, "zone-b", "1.1.1.1"),
+			newEntity("HOST-MY-ZONE", 100, "zone-a", "1.1.1.1"),
+		}, nil)
+		entityID, err := NewClient(coreClient, "zone-a").GetEntityIDForIP(t.Context(), "1.1.1.1")
+		require.NoError(t, err)
+		assert.Equal(t, "HOST-MY-ZONE", entityID)
+	})
+
+	t.Run("api error 404", func(t *testing.T) {
+		coreClient := coremock.NewClient(t)
+		expectSelectorRequest(t, coreClient, "1.1.1.1", nil, &core.HTTPError{StatusCode: 404, Message: "nope"})
+		_, err := NewClient(coreClient, "").GetEntityIDForIP(t.Context(), "1.1.1.1")
+		require.True(t, core.IsNotFound(err))
+		assert.EqualError(t, err, entitiesPath+" is not available on the tenant")
+	})
+
+	t.Run("api error generic is not swallowed", func(t *testing.T) {
+		expectErr := &core.HTTPError{StatusCode: 418, Message: "teapot"}
+		coreClient := coremock.NewClient(t)
+		expectSelectorRequest(t, coreClient, "1.1.1.1", nil, expectErr)
+		_, err := NewClient(coreClient, "").GetEntityIDForIP(t.Context(), "1.1.1.1")
+		require.ErrorIs(t, err, expectErr)
+	})
+}
+
+// TestGetEntityIDForIP covers the v1 fallback, taken when the token gets 403 on /v2/entities.
 func TestGetEntityIDForIP(t *testing.T) {
 	setupClient := func(t *testing.T, err error) *ClientImpl {
+		coreClient := coremock.NewClient(t)
+		expectSelectorRequest(t, coreClient, "1.1.1.1", nil, &core.HTTPError{StatusCode: 403, Message: "missing entities.read"})
+
 		req := coremock.NewRequest(t)
 		req.EXPECT().
 			WithQueryParams(map[string]string{
@@ -38,7 +125,6 @@ func TestGetEntityIDForIP(t *testing.T) {
 				}
 			}).
 			Return(err).Once()
-		coreClient := coremock.NewClient(t)
 		coreClient.EXPECT().GET(anyCtx, hostsPath).Return(req).Once()
 
 		return NewClient(coreClient, "")
@@ -52,8 +138,17 @@ func TestGetEntityIDForIP(t *testing.T) {
 	})
 
 	t.Run("not found", func(t *testing.T) {
-		coreClient := setupClient(t, nil)
-		_, err := coreClient.GetEntityIDForIP(t.Context(), "1.1.1.2")
+		coreClient := coremock.NewClient(t)
+		expectSelectorRequest(t, coreClient, "1.1.1.2", nil, &core.HTTPError{StatusCode: 403, Message: "missing entities.read"})
+
+		req := coremock.NewRequest(t)
+		req.EXPECT().WithQueryParams(mock.Anything).Return(req).Once()
+		req.EXPECT().Execute(new([]HostResponse)).Run(func(model any) {
+			*model.(*[]HostResponse) = []HostResponse{{EntityID: "HOST-42", IPAddresses: []string{"1.1.1.1"}}}
+		}).Return(nil).Once()
+		coreClient.EXPECT().GET(anyCtx, hostsPath).Return(req).Once()
+
+		_, err := NewClient(coreClient, "").GetEntityIDForIP(t.Context(), "1.1.1.2")
 		require.ErrorAs(t, err, new(EntityNotFoundError))
 	})
 
@@ -127,6 +222,14 @@ func Test_buildHostEntityMap(t *testing.T) {
 			name:        "match other network zone",
 			hosts:       hosts,
 			networkZone: "other",
+			want: hostEntityMap{
+				"1.1.1.3": "HOST-3",
+			},
+		},
+		{
+			name:        "match network zone case-insensitively",
+			hosts:       hosts,
+			networkZone: "OTHER",
 			want: hostEntityMap{
 				"1.1.1.3": "HOST-3",
 			},
