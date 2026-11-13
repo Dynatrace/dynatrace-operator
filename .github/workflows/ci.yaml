@@ -138,7 +138,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Set up Helm
-        uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+        uses: azure/setup-helm@2f5e7bc67f1f9972ab16657bb795f36d8f04de0e # v5.1.0
         with:
           # renovate datasource=github-releases depName=helm/helm
           version: v4.3.1
@@ -158,7 +158,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Set up Helm
-        uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+        uses: azure/setup-helm@2f5e7bc67f1f9972ab16657bb795f36d8f04de0e # v5.1.0
         with:
           # renovate datasource=github-releases depName=helm/helm
           version: v4.3.1
@@ -233,7 +233,7 @@ jobs:
           go-version: ${{ needs.detect-changes.outputs.go_version }}
           cache: false
       - name: Set up Helm
-        uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+        uses: azure/setup-helm@2f5e7bc67f1f9972ab16657bb795f36d8f04de0e # v5.1.0
         with:
           # usually we use latest, but 3.18.0 has bug https://github.com/helm/helm/issues/30890
           version: v4.3.1
