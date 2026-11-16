@@ -37,7 +37,7 @@ func TestMissingPrometheusCRDs(t *testing.T) {
 	t.Run("all CRDs missing produces a single warning listing all of them", func(t *testing.T) {
 		clt := fake.NewClientWithInterceptors(noPrometheusCRDsInterceptor)
 
-		msg := missingPrometheusCRDs(t.Context(), clt)
+		msg := missingPrometheusCRDs(t.Context(), clt, nil)
 
 		assert.Contains(t, msg, "ServiceMonitor.monitoring.coreos.com")
 		assert.Contains(t, msg, "PodMonitor.monitoring.coreos.com")
@@ -57,7 +57,7 @@ func TestMissingPrometheusCRDs(t *testing.T) {
 		}
 		clt := fake.NewClientWithInterceptors(partialInterceptor)
 
-		msg := missingPrometheusCRDs(t.Context(), clt)
+		msg := missingPrometheusCRDs(t.Context(), clt, nil)
 
 		assert.Contains(t, msg, "ScrapeConfig.monitoring.coreos.com")
 		assert.NotContains(t, msg, "ServiceMonitor.monitoring.coreos.com")
@@ -68,7 +68,7 @@ func TestMissingPrometheusCRDs(t *testing.T) {
 	t.Run("all CRDs present produces no warning", func(t *testing.T) {
 		clt := fake.NewClient()
 
-		msg := missingPrometheusCRDs(t.Context(), clt)
+		msg := missingPrometheusCRDs(t.Context(), clt, nil)
 
 		assert.Empty(t, msg)
 	})
@@ -81,7 +81,7 @@ func TestMissingPrometheusCRDs(t *testing.T) {
 		}
 		clt := fake.NewClientWithInterceptors(forbiddenInterceptor)
 
-		msg := missingPrometheusCRDs(t.Context(), clt)
+		msg := missingPrometheusCRDs(t.Context(), clt, nil)
 
 		assert.Empty(t, msg)
 	})

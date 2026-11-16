@@ -39,15 +39,11 @@ const (
 	DatabaseSQLExecutorLabel    = "dynatrace-sql-extension-executor"
 	NodeControllerLabel         = "node-controller"
 	OperatorComponentLabel      = "operator"
+
+	OTelTargetAllocatorAppName = "dynatrace-target-allocator"
+	OTelScraperAppName         = "dynatrace-collector"
+	OTelGatewayAppName         = "dynatrace-gateway"
 )
-
-func OTelTargetAllocator() *Labels {
-	return New("opentelemetry-target-allocator", "otel-allocator", "")
-}
-
-func OTelScraper() *Labels {
-	return New("opentelemetry-collector", "otel-scraper", "")
-}
 
 type AppMatchLabels struct {
 	Name      string

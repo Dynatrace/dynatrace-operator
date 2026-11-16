@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/prometheusmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8scrd"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -26,7 +27,7 @@ var requiredPrometheusCRDs = []schema.GroupVersionKind{
 	{Group: prometheusOperatorGroup, Version: "v1alpha1", Kind: "ScrapeConfig"},
 }
 
-func missingPrometheusCRDs(ctx context.Context, apiReader client.Reader) string {
+func missingPrometheusCRDs(ctx context.Context, apiReader client.Reader, _ *prometheusmonitoring.PrometheusMonitoring) string {
 	missing := []string{}
 
 	for _, gvk := range requiredPrometheusCRDs {

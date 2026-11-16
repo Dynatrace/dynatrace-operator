@@ -2,9 +2,9 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   labels:
-    app.kubernetes.io/instance: otel-gateway
+    app.kubernetes.io/instance: pm
     app.kubernetes.io/managed-by: dynatrace-operator
-    app.kubernetes.io/name: opentelemetry-gateway
+    app.kubernetes.io/name: dynatrace-gateway
     internal.dynatrace.com/operator-version: snapshot
   name: pm-gateway
   namespace: dynatrace
@@ -20,9 +20,9 @@ spec:
   replicas: 3
   selector:
     matchLabels:
-      app.kubernetes.io/instance: otel-gateway
+      app.kubernetes.io/instance: pm
       app.kubernetes.io/managed-by: dynatrace-operator
-      app.kubernetes.io/name: opentelemetry-gateway
+      app.kubernetes.io/name: dynatrace-gateway
   serviceName: pm-gateway
   template:
     metadata:
@@ -30,9 +30,9 @@ spec:
         custom: annotation
         internal.operator.dynatrace.com/gateway-config-hash: deadbeef
       labels:
-        app.kubernetes.io/instance: otel-gateway
+        app.kubernetes.io/instance: pm
         app.kubernetes.io/managed-by: dynatrace-operator
-        app.kubernetes.io/name: opentelemetry-gateway
+        app.kubernetes.io/name: dynatrace-gateway
         custom: label
     spec:
       automountServiceAccountToken: true

@@ -4,9 +4,9 @@ metadata:
   name: pm-allocator
   namespace: dynatrace
   labels:
-    app.kubernetes.io/instance: otel-allocator
+    app.kubernetes.io/instance: pm
     app.kubernetes.io/managed-by: dynatrace-operator
-    app.kubernetes.io/name: opentelemetry-target-allocator
+    app.kubernetes.io/name: dynatrace-target-allocator
     internal.dynatrace.com/operator-version: snapshot
   ownerReferences:
   - apiVersion: dynatrace.com/v1alpha1
@@ -19,9 +19,9 @@ spec:
   replicas: 3
   selector:
     matchLabels:
-      app.kubernetes.io/instance: otel-allocator
+      app.kubernetes.io/instance: pm
       app.kubernetes.io/managed-by: dynatrace-operator
-      app.kubernetes.io/name: opentelemetry-target-allocator
+      app.kubernetes.io/name: dynatrace-target-allocator
   strategy:
     rollingUpdate:
       maxUnavailable: 0
@@ -31,9 +31,9 @@ spec:
         internal.operator.dynatrace.com/allocator-config-hash: deadbeef
         custom: annotation
       labels:
-        app.kubernetes.io/instance: otel-allocator
+        app.kubernetes.io/instance: pm
         app.kubernetes.io/managed-by: dynatrace-operator
-        app.kubernetes.io/name: opentelemetry-target-allocator
+        app.kubernetes.io/name: dynatrace-target-allocator
         custom: label
     spec:
       automountServiceAccountToken: true

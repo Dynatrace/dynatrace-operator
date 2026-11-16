@@ -41,6 +41,7 @@ tests:
                 - dynatrace.com
               resources:
                 - dynakubes
+                - prometheusmonitorings
               verbs:
                 - get
                 - list
@@ -83,6 +84,7 @@ tests:
                 - dynatrace.com
               resources:
                 - dynakubes
+                - prometheusmonitorings
               verbs:
                 - get
                 - list
