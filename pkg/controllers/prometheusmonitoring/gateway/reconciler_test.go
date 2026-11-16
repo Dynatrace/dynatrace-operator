@@ -9,11 +9,14 @@ import (
 	"encoding/hex"
 	"errors"
 	"path/filepath"
+	"slices"
+	"strings"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
+	optypes "github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/prometheusmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
@@ -266,4 +269,59 @@ func TestMutateStatefulSetKeepsExistingTemplateMetadata(t *testing.T) {
 	assert.Equal(t, "spec", obj.Spec.Template.Annotations["from"])
 	assert.Equal(t, "label", obj.Spec.Template.Labels["user"])
 	assert.Equal(t, "label", obj.Spec.Template.Labels["spec"])
+}
+
+func TestNoProxyEnvVar(t *testing.T) {
+	t.Run("proxy enabled", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			Spec: dynakube.DynaKubeSpec{
+				Proxy: &optypes.ValueSource{
+					Value: "http://127.0.0.1:8080",
+				},
+			},
+			Status: dynakube.DynaKubeStatus{
+				KubernetesClusterName: "my-cluster",
+			},
+		}
+
+		rs := &reconcileScope{
+			Spec: &prometheusmonitoring.Gateway{
+				GatewaySpec: &prometheusmonitoring.GatewaySpec{
+					Resources: corev1.ResourceRequirements{},
+				},
+			},
+			DynaKube: dk,
+		}
+
+		envVars := buildEnv(rs)
+		assert.True(t, slices.ContainsFunc(envVars, func(envVar corev1.EnvVar) bool {
+			if envVar.Name == "NO_PROXY" && !strings.Contains(envVar.Value, "activegate") {
+				return true
+			}
+
+			return false
+		}))
+	})
+
+	t.Run("proxy disabled", func(t *testing.T) {
+		dk := &dynakube.DynaKube{
+			Status: dynakube.DynaKubeStatus{
+				KubernetesClusterName: "my-cluster",
+			},
+		}
+
+		rs := &reconcileScope{
+			Spec: &prometheusmonitoring.Gateway{
+				GatewaySpec: &prometheusmonitoring.GatewaySpec{
+					Resources: corev1.ResourceRequirements{},
+				},
+			},
+			DynaKube: dk,
+		}
+
+		envVars := buildEnv(rs)
+		assert.False(t, slices.ContainsFunc(envVars, func(envVar corev1.EnvVar) bool {
+			return envVar.Name == "NO_PROXY"
+		}))
+	})
 }
