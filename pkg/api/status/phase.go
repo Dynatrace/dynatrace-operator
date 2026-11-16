@@ -18,4 +18,5 @@ const (
 	ReasonAvailable   = "Available"
 	ReasonReconciling = "Reconciling"
 	ReasonOff         = "Off"
+	ReasonNotFound    = "NotFound"
 )

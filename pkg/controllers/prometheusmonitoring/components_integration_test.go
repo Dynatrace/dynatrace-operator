@@ -128,8 +128,9 @@ func testStatus(t *testing.T, clt client.Client) {
 		assert.Equal(t, testTargetAllocatorImage, stored.Status.TargetAllocator.ResolvedImage)
 	})
 
-	t.Run("one availability condition per component", func(t *testing.T) {
+	t.Run("one availability condition per component and the DynaKube", func(t *testing.T) {
 		wantTypes := []string{
+			prometheusmonitoring.DynaKubeAvailable,
 			prometheusmonitoring.GatewayAvailable,
 			prometheusmonitoring.ScraperAvailable,
 			prometheusmonitoring.TargetAllocatorAvailable,
@@ -161,7 +162,7 @@ func testPreconditions(t *testing.T, clt client.Client) {
 			name:      "missing DynaKube",
 			namespace: "err-no-dynakube",
 			prepare:   func(t *testing.T, f *fixture) { require.NoError(t, clt.Delete(t.Context(), f.dk)) },
-			phase:     status.Deploying,
+			phase:     status.Error,
 		},
 		{
 			name:      "DynaKube not running",
