@@ -14,6 +14,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/prometheusmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/prometheusmonitoring/condition"
+	pmconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/prometheusmonitoring/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8scontainer"
@@ -36,7 +37,7 @@ const (
 	insecurePortName = "http-port"
 	securePortName   = "https-port"
 
-	configVolume = "config"
+	configVolume = pmconsts.TargetAllocatorConfigVolumeName
 	configFile   = "targetallocator.yaml"
 
 	serviceAccount = "dynatrace-target-allocator"
@@ -246,7 +247,7 @@ func mutateDeployment(deploy *appsv1.Deployment, s *reconcileScope) error {
 	deploy.Spec.Template.Spec.Tolerations = s.Spec.Tolerations
 	deploy.Spec.Template.Spec.TopologySpreadConstraints = s.Spec.TopologySpreadConstraints
 	deploy.Spec.Template.Spec.ImagePullSecrets = s.DynaKube.CustomPullSecretReferences()
-	deploy.Spec.Template.Spec.Volumes = buildVolumes(s.Spec)
+	deploy.Spec.Template.Spec.Volumes = s.Spec.AppendVolumes(buildVolumes(s.Spec))
 	deploy.Spec.Template.Spec.Containers = []corev1.Container{
 		buildContainer(s.Spec, s.Owner.Status.TargetAllocator.ResolvedImage, s.Owner.Namespace, k8scontainer.GetFirstInPodSpec(&deploy.Spec.Template.Spec)),
 	}
@@ -273,11 +274,11 @@ func buildContainer(spec *prometheusmonitoring.TargetAllocator, imageURI string,
 			{Name: insecurePortName, ContainerPort: 8080, Protocol: corev1.ProtocolTCP},
 			{Name: securePortName, ContainerPort: 8443, Protocol: corev1.ProtocolTCP},
 		},
-		VolumeMounts: []corev1.VolumeMount{
-			{Name: configVolume, MountPath: "/conf", ReadOnly: true},
+		VolumeMounts: spec.AppendVolumeMounts([]corev1.VolumeMount{
+			{Name: configVolume, MountPath: pmconsts.ConfigMountDir, ReadOnly: true},
 			// TODO: TLS volume
-		},
-		Env:       k8senv.AppendGoMemoryLimit([]corev1.EnvVar{{Name: "OTELCOL_NAMESPACE", Value: namespace}}, spec.Resources),
+		}),
+		Env:       spec.AppendEnv(k8senv.AppendGoMemoryLimit([]corev1.EnvVar{{Name: "OTELCOL_NAMESPACE", Value: namespace}}, spec.Resources)),
 		Resources: spec.Resources,
 		SecurityContext: &corev1.SecurityContext{
 			Privileged:               new(false),

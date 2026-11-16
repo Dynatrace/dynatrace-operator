@@ -10,8 +10,10 @@ import (
 	"testing"
 	"time"
 
+	apitypes "github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/prometheusmonitoring"
 	validation "github.com/Dynatrace/dynatrace-operator/pkg/api/validation/prometheusmonitoring"
+	pmconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/prometheusmonitoring/consts"
 	"github.com/Dynatrace/dynatrace-operator/test/integrationtests"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -164,6 +166,28 @@ func TestWebhook(t *testing.T) {
 		t.Run("max length is accepted", func(t *testing.T) {
 			recorder.reset()
 			integrationtests.CreateKubernetesObject(t, clt, newTestPrometheusMonitoringInNamespace("a"+strings.Repeat("b", 43), ns, nil))
+		})
+	})
+
+	t.Run("conflicting volumes are rejected", func(t *testing.T) {
+		t.Run("volume name", func(t *testing.T) {
+			pm := newTestPrometheusMonitoring("conflicting-volume-name")
+			pm.Spec.Scraper.Volumes = apitypes.Volumes{{Name: pmconsts.ConfigVolumeName, AllowedVolumeSource: apitypes.AllowedVolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}}}}
+
+			err := clt.Create(t.Context(), pm)
+
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), "volume name that conflicts")
+		})
+
+		t.Run("volume mount path", func(t *testing.T) {
+			pm := newTestPrometheusMonitoring("conflicting-mount-path")
+			pm.Spec.Gateway.VolumeMounts = []corev1.VolumeMount{{Name: "custom", MountPath: pmconsts.TokenMountPath}}
+
+			err := clt.Create(t.Context(), pm)
+
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), "volume mount path that conflicts")
 		})
 	})
 }

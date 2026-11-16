@@ -16,10 +16,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/prometheusmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
-	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/prometheusmonitoring/condition"
+	pmconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/prometheusmonitoring/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/otelcfg"
@@ -44,7 +44,7 @@ const (
 	gatewayConfigKey     = "relay"
 	configHashAnnotation = "internal.operator.dynatrace.com/gateway-config-hash"
 
-	trustedCAVolumeMountPath = "/tls/custom/cacerts"
+	trustedCAVolumeMountPath = pmconsts.TrustedCAMountPath
 	trustedCAFile            = "rootca.pem"
 
 	otlpPortName = "otlp"
@@ -54,15 +54,15 @@ const (
 	// otelCollectorNonRootUser is the "nonroot" UID/GID the gateway image runs as.
 	otelCollectorNonRootUser = 10001
 
-	configVolumeName  = "opentelemetry-collector-configmap"
-	configMountDir    = "/conf"
+	configVolumeName  = pmconsts.ConfigVolumeName
+	configMountDir    = pmconsts.ConfigMountDir
 	relayConfigFile   = "relay.yaml"
-	cacertsVolumeName = "cacerts"
+	cacertsVolumeName = pmconsts.CACertsVolumeName
 
 	// Mounted as a directory, not subPath: subPath mounts don't receive live Secret
 	// updates, which would break token rotation.
-	tokenVolumeName = "dt-token"
-	tokenMountPath  = consts.DTComponentsSecretsRootDir + "/tokens"
+	tokenVolumeName = pmconsts.TokenVolumeName
+	tokenMountPath  = pmconsts.TokenMountPath
 	tokenFileName   = "data-ingest-token"
 )
 
@@ -248,7 +248,7 @@ func mutateStatefulSet(sts *appsv1.StatefulSet, s *reconcileScope) error {
 	sts.Spec.Template.Spec.Tolerations = s.Spec.Tolerations
 	sts.Spec.Template.Spec.TopologySpreadConstraints = s.Spec.TopologySpreadConstraints
 	sts.Spec.Template.Spec.ImagePullSecrets = s.DynaKube.CustomPullSecretReferences()
-	sts.Spec.Template.Spec.Volumes = buildVolumes(s)
+	sts.Spec.Template.Spec.Volumes = s.Spec.AppendVolumes(buildVolumes(s))
 	// The stored container is passed in so buildContainer can preserve apiserver-defaulted
 	// fields (e.g. ImagePullPolicy, probe timeouts) and avoid spurious diffs.
 	sts.Spec.Template.Spec.Containers = []corev1.Container{
@@ -278,8 +278,8 @@ func buildContainer(s *reconcileScope, current corev1.Container) corev1.Containe
 		Ports: []corev1.ContainerPort{
 			{Name: otlpPortName, ContainerPort: otelcfg.OTLPReceiverGRPCPort, Protocol: corev1.ProtocolTCP},
 		},
-		Env:          buildEnv(s),
-		VolumeMounts: buildVolumeMounts(s),
+		Env:          s.Spec.AppendEnv(buildEnv(s)),
+		VolumeMounts: s.Spec.AppendVolumeMounts(buildVolumeMounts(s)),
 		Resources:    s.Spec.Resources,
 		SecurityContext: &corev1.SecurityContext{
 			Privileged:               new(false),

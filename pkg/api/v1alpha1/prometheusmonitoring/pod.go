@@ -4,6 +4,9 @@
 package prometheusmonitoring
 
 import (
+	"slices"
+
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/sanitize"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -31,6 +34,21 @@ type PodSpec struct {
 	// Command-line arguments for the main application container.
 	// +kubebuilder:validation:Optional
 	Args []string `json:"args,omitempty"`
+
+	// Additional environment variables for the main application container.
+	// Entries are appended to the ones set by the operator; if a name is used twice, the last entry (the one defined here) wins.
+	// +kubebuilder:validation:Optional
+	Env []corev1.EnvVar `json:"env,omitempty"`
+
+	// Additional volumes for the component pods.
+	// Entries are appended to the ones set by the operator, their names must not collide with the operator's volumes.
+	// +kubebuilder:validation:Optional
+	Volumes types.Volumes `json:"volumes,omitempty"`
+
+	// Additional volume mounts for the main application container.
+	// Entries are appended to the ones set by the operator, their mount paths must not collide with the operator's mounts.
+	// +kubebuilder:validation:Optional
+	VolumeMounts []corev1.VolumeMount `json:"volumeMounts,omitempty"`
 
 	// Resource requests and limits for each component pod.
 	// +kubebuilder:validation:Optional
@@ -69,4 +87,20 @@ type PodSpec struct {
 
 func (s PodSpec) SanitizedArgs() []string {
 	return sanitize.CommandLineArgs(s.Args)
+}
+
+// AppendEnv returns base followed by the user-defined env vars.
+// Kubernetes resolves a duplicate name to the last entry, so a user-defined entry wins.
+func (s PodSpec) AppendEnv(base []corev1.EnvVar) []corev1.EnvVar {
+	return slices.Concat(base, s.Env)
+}
+
+// AppendVolumes returns base followed by the user-defined volumes.
+func (s PodSpec) AppendVolumes(base []corev1.Volume) []corev1.Volume {
+	return slices.Concat(base, s.Volumes.AsCoreV1())
+}
+
+// AppendVolumeMounts returns base followed by the user-defined volume mounts.
+func (s PodSpec) AppendVolumeMounts(base []corev1.VolumeMount) []corev1.VolumeMount {
+	return slices.Concat(base, s.VolumeMounts)
 }
