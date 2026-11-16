@@ -239,7 +239,7 @@ func mutateDeployment(deploy *appsv1.Deployment, s *reconcileScope) error {
 	deploy.Spec.Template.Spec.Tolerations = s.Spec.Tolerations
 	deploy.Spec.Template.Spec.TopologySpreadConstraints = s.Spec.TopologySpreadConstraints
 	deploy.Spec.Template.Spec.ImagePullSecrets = s.DynaKube.CustomPullSecretReferences()
-	deploy.Spec.Template.Spec.Volumes = s.Spec.AppendVolumes(buildVolumes(s))
+	deploy.Spec.Template.Spec.Volumes = append(buildVolumes(s), s.Spec.Volumes.AsCoreV1()...)
 	// The stored container is passed in so buildContainer can preserve apiserver-defaulted
 	// fields (e.g. ImagePullPolicy, probe timeouts) and avoid spurious diffs.
 	deploy.Spec.Template.Spec.Containers = []corev1.Container{
@@ -269,8 +269,8 @@ func buildContainer(s *reconcileScope, current corev1.Container) corev1.Containe
 		Ports: []corev1.ContainerPort{
 			{Name: healthCheckPortName, ContainerPort: otelcfg.ExtensionsHealthCheckPort, Protocol: corev1.ProtocolTCP},
 		},
-		Env:          s.Spec.AppendEnv(buildEnv(s)),
-		VolumeMounts: s.Spec.AppendVolumeMounts(buildVolumeMounts()),
+		Env:          append(buildEnv(s), s.Spec.Env...),
+		VolumeMounts: append(buildVolumeMounts(), s.Spec.VolumeMounts...),
 		Resources:    s.Spec.Resources,
 		SecurityContext: &corev1.SecurityContext{
 			Privileged:               new(false),

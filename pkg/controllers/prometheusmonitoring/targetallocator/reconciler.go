@@ -247,7 +247,7 @@ func mutateDeployment(deploy *appsv1.Deployment, s *reconcileScope) error {
 	deploy.Spec.Template.Spec.Tolerations = s.Spec.Tolerations
 	deploy.Spec.Template.Spec.TopologySpreadConstraints = s.Spec.TopologySpreadConstraints
 	deploy.Spec.Template.Spec.ImagePullSecrets = s.DynaKube.CustomPullSecretReferences()
-	deploy.Spec.Template.Spec.Volumes = s.Spec.AppendVolumes(buildVolumes(s.Spec))
+	deploy.Spec.Template.Spec.Volumes = append(buildVolumes(s.Spec), s.Spec.Volumes.AsCoreV1()...)
 	deploy.Spec.Template.Spec.Containers = []corev1.Container{
 		buildContainer(s.Spec, s.Owner.Status.TargetAllocator.ResolvedImage, s.Owner.Namespace, k8scontainer.GetFirstInPodSpec(&deploy.Spec.Template.Spec)),
 	}
@@ -265,6 +265,8 @@ func buildContainer(spec *prometheusmonitoring.TargetAllocator, imageURI string,
 		imagePullPolicy = current.ImagePullPolicy
 	}
 
+	env := k8senv.AppendGoMemoryLimit([]corev1.EnvVar{{Name: "OTELCOL_NAMESPACE", Value: namespace}}, spec.Resources)
+
 	return corev1.Container{
 		Name:            "targetallocator",
 		Image:           imageURI,
@@ -274,11 +276,11 @@ func buildContainer(spec *prometheusmonitoring.TargetAllocator, imageURI string,
 			{Name: insecurePortName, ContainerPort: 8080, Protocol: corev1.ProtocolTCP},
 			{Name: securePortName, ContainerPort: 8443, Protocol: corev1.ProtocolTCP},
 		},
-		VolumeMounts: spec.AppendVolumeMounts([]corev1.VolumeMount{
+		VolumeMounts: append([]corev1.VolumeMount{
 			{Name: configVolume, MountPath: pmconsts.ConfigMountDir, ReadOnly: true},
 			// TODO: TLS volume
-		}),
-		Env:       spec.AppendEnv(k8senv.AppendGoMemoryLimit([]corev1.EnvVar{{Name: "OTELCOL_NAMESPACE", Value: namespace}}, spec.Resources)),
+		}, spec.VolumeMounts...),
+		Env:       append(env, spec.Env...),
 		Resources: spec.Resources,
 		SecurityContext: &corev1.SecurityContext{
 			Privileged:               new(false),

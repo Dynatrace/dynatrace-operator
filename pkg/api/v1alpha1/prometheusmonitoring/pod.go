@@ -4,8 +4,6 @@
 package prometheusmonitoring
 
 import (
-	"slices"
-
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/sanitize"
 	corev1 "k8s.io/api/core/v1"
@@ -87,20 +85,4 @@ type PodSpec struct {
 
 func (s PodSpec) SanitizedArgs() []string {
 	return sanitize.CommandLineArgs(s.Args)
-}
-
-// AppendEnv returns base followed by the user-defined env vars.
-// Kubernetes resolves a duplicate name to the last entry, so a user-defined entry wins.
-func (s PodSpec) AppendEnv(base []corev1.EnvVar) []corev1.EnvVar {
-	return slices.Concat(base, s.Env)
-}
-
-// AppendVolumes returns base followed by the user-defined volumes.
-func (s PodSpec) AppendVolumes(base []corev1.Volume) []corev1.Volume {
-	return slices.Concat(base, s.Volumes.AsCoreV1())
-}
-
-// AppendVolumeMounts returns base followed by the user-defined volume mounts.
-func (s PodSpec) AppendVolumeMounts(base []corev1.VolumeMount) []corev1.VolumeMount {
-	return slices.Concat(base, s.VolumeMounts)
 }
