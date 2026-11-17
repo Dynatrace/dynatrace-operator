@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"maps"
+	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
@@ -15,6 +16,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/prometheusmonitoring/condition"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/prometheusmonitoring/gateway"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/prometheusmonitoring/scraper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/prometheusmonitoring/targetallocator"
@@ -36,9 +38,14 @@ import (
 )
 
 var (
-	errDynaKubeNotReady           = errors.New("dynakube not ready")
-	errDataIngestTokenUnavailable = errors.New("data-ingest token not available")
+	errPrerequisitesNotMet    = errors.New("prerequisites not met")
+	errTenantURLMissing       = errors.New("tenant URL (apiUrl) is missing in the DynaKube")
+	errTokenSecretUnreadable  = errors.New("token secret cannot be read")
+	errDataIngestTokenMissing = errors.New("data-ingest token is missing in the token secret")
 )
+
+// missingDependencyRequeueInterval is how often to re-check a missing DynaKube or missing prerequisites.
+const missingDependencyRequeueInterval = time.Minute
 
 func Add(mgr manager.Manager, _ string) error {
 	return NewReconciler(mgr.GetClient()).SetupWithManager(mgr)
@@ -122,7 +129,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ct
 			Message: fmt.Sprintf("The DynaKube '%s' is not present in the '%s' namespace.", pm.Spec.DynaKubeName, pm.Namespace),
 		})
 
-		return ctrl.Result{}, nil
+		return ctrl.Result{RequeueAfter: missingDependencyRequeueInterval}, nil
 	}
 
 	_ = meta.SetStatusCondition(&pm.Status.Conditions, metav1.Condition{
@@ -132,16 +139,10 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ct
 		Message: fmt.Sprintf("The DynaKube '%s' is present.", pm.Spec.DynaKubeName),
 	})
 
-	if dk.Status.Phase != status.Running {
-		log.Info("skipping reconcile due to pending DynaKube", "phase", dk.Status.Phase)
+	if err := r.checkPrerequisites(ctx, pm, dk); err != nil {
+		log.Info("skipping reconcile: prerequisites not met", "reason", err.Error())
 
-		return ctrl.Result{}, errDynaKubeNotReady
-	}
-
-	if tokens, err := token.NewReader(r, dk).ReadTokens(ctx); err != nil || !token.CheckForDataIngestToken(tokens) {
-		log.Info("skipping reconcile: data-ingest token not available")
-
-		return ctrl.Result{}, errDataIngestTokenUnavailable
+		return ctrl.Result{RequeueAfter: missingDependencyRequeueInterval}, errPrerequisitesNotMet
 	}
 
 	dtClient, err := r.buildDynatraceClient(ctx, dk)
@@ -163,6 +164,34 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ct
 	}
 
 	return ctrl.Result{}, nil
+}
+
+// checkPrerequisites verifies that the DynaKube has a tenant URL, a readable token secret and a data-ingest token.
+// The result is reflected in the PrerequisitesMet condition.
+func (r *Reconciler) checkPrerequisites(ctx context.Context, pm *prometheusmonitoring.PrometheusMonitoring, dk *dynakube.DynaKube) error {
+	err := r.verifyPrerequisites(ctx, dk)
+
+	condition.Set(&pm.Status.Conditions, prometheusmonitoring.PrerequisitesMet, "prerequisites",
+		func() bool { return true }, err)
+
+	return err
+}
+
+func (r *Reconciler) verifyPrerequisites(ctx context.Context, dk *dynakube.DynaKube) error {
+	if dk.Spec.APIURL == "" {
+		return errTenantURLMissing
+	}
+
+	tokens, err := token.NewReader(r, dk).ReadTokens(ctx)
+	if err != nil {
+		return fmt.Errorf("%w (%s): %w", errTokenSecretUnreadable, dk.Tokens(), err)
+	}
+
+	if !token.CheckForDataIngestToken(tokens) {
+		return errDataIngestTokenMissing
+	}
+
+	return nil
 }
 
 func (r *Reconciler) buildDynatraceClient(ctx context.Context, dk *dynakube.DynaKube) (*dynatrace.Client, error) {
@@ -189,13 +218,7 @@ func (r *Reconciler) buildDynatraceClient(ctx context.Context, dk *dynakube.Dyna
 //   - Reconciliation ongoing: condition status False/Unknown and reason Reconciling
 //   - Reconciliation failed: anything that does not fit the above
 func setPhase(pm *prometheusmonitoring.PrometheusMonitoring, err error) error {
-	if errors.Is(errDynaKubeNotReady, err) {
-		pm.Status.Phase = status.Deploying
-
-		return nil
-	}
-
-	if errors.Is(errDataIngestTokenUnavailable, err) {
+	if errors.Is(err, errPrerequisitesNotMet) {
 		pm.Status.Phase = status.Error
 
 		return nil
@@ -313,7 +336,8 @@ func newDynaKubeChangedPredicate() predicate.Funcs {
 				return false
 			}
 
-			return oldDK.Status.Phase != newDK.Status.Phase ||
+			return oldDK.Spec.APIURL != newDK.Spec.APIURL ||
+				oldDK.Status.KubernetesClusterName != newDK.Status.KubernetesClusterName ||
 				oldDK.Tokens() != newDK.Tokens() ||
 				oldDK.Status.CA.PublicHash != newDK.Status.CA.PublicHash ||
 				oldDK.Spec.TrustedCAs != newDK.Spec.TrustedCAs ||
