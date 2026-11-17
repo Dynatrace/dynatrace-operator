@@ -9,7 +9,6 @@ import (
 	"slices"
 	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/conversion"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
@@ -35,14 +34,12 @@ func (dk *DynaKube) FF() *exp.FeatureFlags {
 	return exp.NewFlags(dk.Annotations, ptr.Deref(dk.Status.APIToken.Platform, false))
 }
 
-func (dk *DynaKube) RemovedFields() *conversion.RemovedFields {
+func (dk *DynaKube) InitAnnotations() map[string]string {
 	if dk.Annotations == nil {
-		// Set this value here instead of in the conversion package to prevent having to use a pointer to map.
-		// Pointer to map is the only way to initialize a nil map function argument.
 		dk.Annotations = make(map[string]string)
 	}
 
-	return conversion.NewRemovedFields(dk.Annotations)
+	return dk.Annotations
 }
 
 // APIURL returns the API URL that the operator and its components should communicate with.
@@ -215,4 +212,21 @@ func (dk *DynaKube) IsCACertificateNeeded() bool {
 	}
 
 	return false
+}
+
+// TLSMode returns the effective TLS mode for in-cluster Operand traffic.
+func (dk *DynaKube) TLSMode() TLSMode {
+	if dk.Spec.TLS == nil {
+		return TLSModeAutomatic
+	}
+
+	return dk.Spec.TLS.Mode
+}
+
+func (dk *DynaKube) IsTLSAutomatic() bool {
+	return dk.Spec.TLS == nil || dk.Spec.TLS.Mode == TLSModeAutomatic
+}
+
+func (dk *DynaKube) IsTLSOff() bool {
+	return dk.Spec.TLS != nil && dk.Spec.TLS.Mode == TLSModeOff
 }

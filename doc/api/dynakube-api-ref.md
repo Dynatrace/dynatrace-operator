@@ -16,6 +16,12 @@
 |`tokens`||-|string|
 |`trustedCAs`||-|string|
 
+### .spec.tls
+
+|Parameter|Description|Default value|Data type|
+|:-|:-|:-|:-|
+|`mode`||-|string|
+
 ### .spec.kspm
 
 |Parameter|Description|Default value|Data type|

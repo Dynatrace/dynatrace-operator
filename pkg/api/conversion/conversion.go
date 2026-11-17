@@ -5,6 +5,8 @@ package conversion
 
 import (
 	"encoding/json"
+
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 )
 
 const (
@@ -12,6 +14,7 @@ const (
 
 	AutoUpdateKey          = Prefix + "auto-update"
 	DefaultOTelColImageKey = Prefix + "default-otelc-image"
+	TLSModeKey             = Prefix + "tls-mode"
 )
 
 type Field[T any] struct {
@@ -50,6 +53,7 @@ type RemovedFields struct {
 }
 
 func NewRemovedFields(annotations map[string]string) *RemovedFields {
+	// We don't want to initialize dk.Annotation map here
 	return &RemovedFields{
 		AutoUpdate:          Field[bool]{name: AutoUpdateKey, data: annotations},
 		DefaultOTelColImage: Field[bool]{name: DefaultOTelColImageKey, data: annotations},
@@ -59,4 +63,20 @@ func NewRemovedFields(annotations map[string]string) *RemovedFields {
 func CleanupAnnotations(annotations map[string]string) {
 	delete(annotations, AutoUpdateKey)
 	delete(annotations, DefaultOTelColImageKey)
+}
+
+type AddedFields struct {
+	// TLSMode added to v1beta6
+	TLS Field[dynakube.TLSSpec]
+}
+
+func NewAddedFields(annotations map[string]string) *AddedFields {
+	// We don't want to initialize dk.Annotation map here
+	return &AddedFields{
+		TLS: Field[dynakube.TLSSpec]{name: TLSModeKey, data: annotations},
+	}
+}
+
+func CleanupAnnotationsForAddedFields(annotations map[string]string) {
+	delete(annotations, TLSModeKey)
 }

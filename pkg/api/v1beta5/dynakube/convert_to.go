@@ -4,6 +4,7 @@
 package dynakube
 
 import (
+	dkconversion "github.com/Dynatrace/dynatrace-operator/pkg/api/conversion"
 	dynakubelatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	activegatelatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	extensionslatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
@@ -40,7 +41,7 @@ func (src *DynaKube) ConvertTo(dstRaw conversion.Hub) error {
 
 func (src *DynaKube) toBase(dst *dynakubelatest.DynaKube) {
 	if src.Annotations == nil {
-		dst.Annotations = map[string]string{}
+		src.Annotations = map[string]string{}
 	}
 
 	dst.ObjectMeta = *src.ObjectMeta.DeepCopy() // DeepCopy mainly relevant for testing
@@ -54,6 +55,9 @@ func (src *DynaKube) toBase(dst *dynakubelatest.DynaKube) {
 	dst.Spec.CustomPullSecret = src.Spec.CustomPullSecret
 	dst.Spec.SkipCertCheck = src.Spec.SkipCertCheck
 	dst.Spec.EnableIstio = src.Spec.EnableIstio
+
+	dst.Spec.TLS = dkconversion.NewAddedFields(src.InitAnnotations()).TLS.Get()
+	dkconversion.CleanupAnnotationsForAddedFields(dst.Annotations)
 }
 
 func (src *DynaKube) toLogMonitoringSpec(dst *dynakubelatest.DynaKube) {
@@ -82,11 +86,11 @@ func (src *DynaKube) toOneAgentSpec(dst *dynakubelatest.DynaKube) { //nolint:dup
 	switch {
 	case src.OneAgent().IsClassicFullStackMode():
 		dst.Spec.OneAgent.ClassicFullStack = toHostInjectSpec(*src.Spec.OneAgent.ClassicFullStack)
-		dst.RemovedFields().AutoUpdate.Set(src.Spec.OneAgent.ClassicFullStack.AutoUpdate) //nolint:staticcheck
+		dkconversion.NewRemovedFields(dst.InitAnnotations()).AutoUpdate.Set(src.Spec.OneAgent.ClassicFullStack.AutoUpdate) //nolint:staticcheck
 	case src.OneAgent().IsCloudNativeFullstackMode():
 		dst.Spec.OneAgent.CloudNativeFullStack = &oneagentlatest.CloudNativeFullStackSpec{}
 		dst.Spec.OneAgent.CloudNativeFullStack.HostInjectSpec = *toHostInjectSpec(src.Spec.OneAgent.CloudNativeFullStack.HostInjectSpec)
-		dst.RemovedFields().AutoUpdate.Set(src.Spec.OneAgent.CloudNativeFullStack.AutoUpdate) //nolint:staticcheck
+		dkconversion.NewRemovedFields(dst.InitAnnotations()).AutoUpdate.Set(src.Spec.OneAgent.CloudNativeFullStack.AutoUpdate) //nolint:staticcheck
 		dst.Spec.OneAgent.CloudNativeFullStack.AppInjectionSpec = *toAppInjectSpec(src.Spec.OneAgent.CloudNativeFullStack.AppInjectionSpec)
 	case src.OneAgent().IsApplicationMonitoringMode():
 		dst.Spec.OneAgent.ApplicationMonitoring = &oneagentlatest.ApplicationMonitoringSpec{}
@@ -94,7 +98,7 @@ func (src *DynaKube) toOneAgentSpec(dst *dynakubelatest.DynaKube) { //nolint:dup
 		dst.Spec.OneAgent.ApplicationMonitoring.AppInjectionSpec = *toAppInjectSpec(src.Spec.OneAgent.ApplicationMonitoring.AppInjectionSpec)
 	case src.OneAgent().IsHostMonitoringMode():
 		dst.Spec.OneAgent.HostMonitoring = toHostInjectSpec(*src.Spec.OneAgent.HostMonitoring)
-		dst.RemovedFields().AutoUpdate.Set(src.Spec.OneAgent.HostMonitoring.AutoUpdate) //nolint:staticcheck
+		dkconversion.NewRemovedFields(dst.InitAnnotations()).AutoUpdate.Set(src.Spec.OneAgent.HostMonitoring.AutoUpdate) //nolint:staticcheck
 	}
 
 	dst.Spec.OneAgent.HostGroup = src.Spec.OneAgent.HostGroup
@@ -158,11 +162,11 @@ func toOpenTelemetryCollectorTemplate(dk *dynakubelatest.DynaKube, src OpenTelem
 		dst.ImageRef.Repository = "public.ecr.aws/dynatrace/dynatrace-otel-collector"
 		dst.ImageRef.Tag = "latest"
 
-		dk.RemovedFields().DefaultOTelColImage.Set(new(true))
+		dkconversion.NewRemovedFields(dk.InitAnnotations()).DefaultOTelColImage.Set(new(true))
 	} else {
 		// Drop any stale marker so we never signal a defaulted image when the image
 		// is user-set or telemetry is disabled; otherwise ConvertFrom would wipe it.
-		dk.RemovedFields().DefaultOTelColImage.Set(nil)
+		dkconversion.NewRemovedFields(dk.InitAnnotations()).DefaultOTelColImage.Set(nil)
 	}
 
 	dst.TLSRefName = src.TLSRefName //nolint:staticcheck // SA1019: deprecated field still converted to avoid data loss

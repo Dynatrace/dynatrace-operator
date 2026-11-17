@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/conversion"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
@@ -226,15 +227,15 @@ func conflictingHostGroupSettings(_ context.Context, _ *Validator, dk *dynakube.
 
 func deprecatedAutoUpdate(_ context.Context, _ *Validator, dk *dynakube.DynaKube) string {
 	oa := dk.OneAgent()
-	if oa.IsClassicFullStackMode() && dk.RemovedFields().AutoUpdate.Get() != nil {
+	if oa.IsClassicFullStackMode() && conversion.NewRemovedFields(dk.InitAnnotations()).AutoUpdate.Get() != nil {
 		return warningDeprecatedAutoUpdate
 	}
 
-	if oa.IsHostMonitoringMode() && dk.RemovedFields().AutoUpdate.Get() != nil {
+	if oa.IsHostMonitoringMode() && conversion.NewRemovedFields(dk.InitAnnotations()).AutoUpdate.Get() != nil {
 		return warningDeprecatedAutoUpdate
 	}
 
-	if oa.IsCloudNativeFullstackMode() && dk.RemovedFields().AutoUpdate.Get() != nil {
+	if oa.IsCloudNativeFullstackMode() && conversion.NewRemovedFields(dk.InitAnnotations()).AutoUpdate.Get() != nil {
 		return warningDeprecatedAutoUpdate
 	}
 
