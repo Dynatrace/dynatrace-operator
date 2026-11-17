@@ -11,7 +11,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/prometheusmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/test/integrationtests"
@@ -169,19 +168,18 @@ func TestSetupWithManager(t *testing.T) {
 		})
 	})
 
-	t.Run("DynaKube phase change triggers reconcile", func(t *testing.T) {
+	t.Run("DynaKube apiUrl change triggers reconcile", func(t *testing.T) {
 		pm, key := createPrometheusMonitoring(t)
 
 		dk := &dynakube.DynaKube{
 			Name: pm.Spec.DynaKubeName, Namespace: pm.Namespace,
-			Spec:   dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
-			Status: dynakube.DynaKubeStatus{Phase: status.Running},
+			Spec: dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
 		}
+		integrationtests.CreateDynakube(t, clt, dk)
 
 		assertReconcileTriggered(t, key, func() {
-			// Create leaves Status empty; UpdateStatus then performs the phase-changing
-			// Update event that the watch predicate looks for.
-			integrationtests.CreateDynakube(t, clt, dk)
+			dk.Spec.APIURL = "https://other.dynatrace.com/api"
+			require.NoError(t, clt.Update(t.Context(), dk))
 		})
 	})
 
@@ -260,17 +258,14 @@ func TestSetupWithManager(t *testing.T) {
 		})
 	})
 
-	t.Run("DynaKube update without a phase change does not trigger reconcile", func(t *testing.T) {
+	t.Run("DynaKube update of an irrelevant field does not trigger reconcile", func(t *testing.T) {
 		pm, key := createPrometheusMonitoring(t)
 
 		dk := &dynakube.DynaKube{
 			Name: pm.Spec.DynaKubeName, Namespace: pm.Namespace,
-			Spec:   dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
-			Status: dynakube.DynaKubeStatus{Phase: status.Running},
+			Spec: dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
 		}
-		assertReconcileTriggered(t, key, func() {
-			integrationtests.CreateDynakube(t, clt, dk)
-		})
+		integrationtests.CreateDynakube(t, clt, dk)
 
 		assertReconcileNotTriggered(t, key, func() {
 			dk.Annotations = map[string]string{"foo": "bar"}
@@ -283,12 +278,9 @@ func TestSetupWithManager(t *testing.T) {
 
 		dk := &dynakube.DynaKube{
 			Name: pm.Spec.DynaKubeName, Namespace: pm.Namespace,
-			Spec:   dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
-			Status: dynakube.DynaKubeStatus{Phase: status.Running},
+			Spec: dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
 		}
-		assertReconcileTriggered(t, key, func() {
-			integrationtests.CreateDynakube(t, clt, dk)
-		})
+		integrationtests.CreateDynakube(t, clt, dk)
 
 		assertReconcileTriggered(t, key, func() {
 			dk.Spec.ResourceAttributes = map[string]string{"region": "us-east"}
@@ -296,13 +288,12 @@ func TestSetupWithManager(t *testing.T) {
 		})
 	})
 
-	t.Run("phase change on a DynaKube not referenced by any PrometheusMonitoring does not trigger reconcile", func(t *testing.T) {
+	t.Run("creation of a DynaKube not referenced by any PrometheusMonitoring does not trigger reconcile", func(t *testing.T) {
 		_, key := createPrometheusMonitoring(t)
 
 		unreferencedDK := &dynakube.DynaKube{
 			Name: "dk-unreferenced", Namespace: metav1.NamespaceDefault,
-			Spec:   dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
-			Status: dynakube.DynaKubeStatus{Phase: status.Running},
+			Spec: dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
 		}
 
 		assertReconcileNotTriggered(t, key, func() {
@@ -315,8 +306,7 @@ func TestSetupWithManager(t *testing.T) {
 
 		dk := &dynakube.DynaKube{
 			Name: pm.Spec.DynaKubeName, Namespace: pm.Namespace,
-			Spec:   dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
-			Status: dynakube.DynaKubeStatus{Phase: status.Running},
+			Spec: dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
 		}
 
 		integrationtests.CreateDynakube(t, clt, dk)
