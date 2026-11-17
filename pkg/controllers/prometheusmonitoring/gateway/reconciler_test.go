@@ -9,15 +9,15 @@ import (
 	"encoding/hex"
 	"errors"
 	"path/filepath"
-	"slices"
-	"strings"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	optypes "github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/prometheusmonitoring"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/stretchr/testify/assert"
@@ -273,8 +273,14 @@ func TestMutateStatefulSetKeepsExistingTemplateMetadata(t *testing.T) {
 
 func TestNoProxyEnvVar(t *testing.T) {
 	t.Run("proxy enabled", func(t *testing.T) {
+		// enable AG and make sure that "dynakube-activegate.dynatrace" is not on the NO_PROXY list
 		dk := &dynakube.DynaKube{
+			Name:      "dynakube",
+			Namespace: "dynatrace",
 			Spec: dynakube.DynaKubeSpec{
+				ActiveGate: activegate.Spec{
+					Capabilities: []activegate.CapabilityDisplayName{activegate.RoutingCapability.DisplayName},
+				},
 				Proxy: &optypes.ValueSource{
 					Value: "http://127.0.0.1:8080",
 				},
@@ -294,13 +300,9 @@ func TestNoProxyEnvVar(t *testing.T) {
 		}
 
 		envVars := buildEnv(rs)
-		assert.True(t, slices.ContainsFunc(envVars, func(envVar corev1.EnvVar) bool {
-			if envVar.Name == "NO_PROXY" && !strings.Contains(envVar.Value, "activegate") {
-				return true
-			}
-
-			return false
-		}))
+		noProxy := k8senv.Find(envVars, "NO_PROXY")
+		require.NotNil(t, noProxy)
+		assert.Equal(t, "$(KUBERNETES_SERVICE_HOST),kubernetes.default", noProxy.Value)
 	})
 
 	t.Run("proxy disabled", func(t *testing.T) {
@@ -320,8 +322,7 @@ func TestNoProxyEnvVar(t *testing.T) {
 		}
 
 		envVars := buildEnv(rs)
-		assert.False(t, slices.ContainsFunc(envVars, func(envVar corev1.EnvVar) bool {
-			return envVar.Name == "NO_PROXY"
-		}))
+		noProxy := k8senv.Find(envVars, "NO_PROXY")
+		require.Nil(t, noProxy)
 	})
 }
