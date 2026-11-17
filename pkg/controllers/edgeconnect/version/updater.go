@@ -12,6 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha2/edgeconnect"
 	dtimage "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8smeta"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/oci/registry"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/opencontainers/go-digest"
@@ -77,9 +78,7 @@ func (u updater) RequiresReconcile() bool {
 		return true
 	}
 
-	outdated := version.LastProbeTimestamp == nil || time.Since(version.LastProbeTimestamp.Time) >= minRequestThreshold
-
-	return outdated && u.IsAutoUpdateEnabled()
+	return k8smeta.TimeoutReached(version.LastProbeTimestamp, minRequestThreshold) && u.IsAutoUpdateEnabled()
 }
 
 // hasPublicRegistryChanged reports whether the override registry changed between reconciles. Adding

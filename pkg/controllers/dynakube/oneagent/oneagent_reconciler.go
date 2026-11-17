@@ -31,6 +31,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8smeta"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sconfigmap"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sdaemonset"
 	"github.com/pkg/errors"
@@ -185,11 +186,9 @@ func (r *Reconciler) updateInstancesStatus(ctx context.Context, dk *dynakube.Dyn
 		}
 	}
 
-	now := metav1.Now()
-	last := dk.Status.OneAgent.LastInstanceStatusUpdate
-	outdated := last == nil || now.Sub(last.Time) >= updInterval
+	if k8smeta.TimeoutReached(dk.Status.OneAgent.LastInstanceStatusUpdate, updInterval) {
+		now := metav1.Now()
 
-	if outdated {
 		err := r.reconcileInstanceStatuses(ctx, dk)
 		if err != nil {
 			return err

@@ -55,25 +55,6 @@ func TestIsOutdated(t *testing.T) {
 		assert.False(t, IsOutdated(dk, testingConditionType))
 	})
 
-	t.Run("old timestamp => outdated", func(t *testing.T) {
-		synctest.Test(t, func(t *testing.T) {
-			dk := &dynakube.DynaKube{}
-
-			SetSecretCreated(dk.Conditions(), testingConditionType, "")
-
-			// set time to just before the API request threshold
-			apiRequestThreshold := dk.APIRequestThreshold()
-			synctest.Sleep(apiRequestThreshold - time.Nanosecond)
-
-			assert.False(t, IsOutdated(dk, testingConditionType))
-
-			// set time just at the API request threshold
-			synctest.Sleep(time.Nanosecond)
-
-			assert.True(t, IsOutdated(dk, testingConditionType))
-		})
-	})
-
 	t.Run("custom APIRequestThreshold is respected", func(t *testing.T) {
 		synctest.Test(t, func(t *testing.T) {
 			thresholdInMinutes := 5

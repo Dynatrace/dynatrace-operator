@@ -4,9 +4,8 @@
 package k8sconditions
 
 import (
-	"time"
-
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8smeta"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -23,5 +22,5 @@ func IsOutdated(dk *dynakube.DynaKube, conditionType string) bool {
 		return true
 	}
 
-	return time.Since(condition.LastTransitionTime.Time) >= dk.APIRequestThreshold()
+	return k8smeta.TimeoutReached(&condition.LastTransitionTime, dk.APIRequestThreshold())
 }
