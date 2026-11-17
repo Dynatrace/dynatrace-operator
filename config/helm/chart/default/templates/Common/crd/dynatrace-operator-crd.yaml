@@ -7385,6 +7385,14 @@ spec:
                         type: array
                     type: object
                 type: object
+              tls:
+                properties:
+                  mode:
+                    enum:
+                    - "Off"
+                    - Automatic
+                    type: string
+                type: object
               tokens:
                 type: string
               trustedCAs:

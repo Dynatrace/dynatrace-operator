@@ -216,6 +216,11 @@ type DynaKubeSpec struct { //nolint:revive
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Public Registry Override",order=10,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
 	PublicRegistryOverride string `json:"publicRegistryOverride,omitempty"`
+
+	// Configures TLS for in-cluster communication between the Operands (e.g. OneAgent, ActiveGate, OpenTelemetry Collector) managed by this DynaKube.
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="TLS",order=11,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
+	TLS *TLSSpec `json:"tls,omitempty"`
 }
 
 type TemplatesSpec struct {
@@ -282,4 +287,18 @@ type SelfMonitoringSpec struct {
 	Resources corev1.ResourceRequirements `json:"resources,omitzero"`
 	// +kubebuilder:validation:Optional
 	VolumeMounts []corev1.VolumeMount `json:"volumeMounts,omitempty"`
+}
+
+type TLSMode string
+
+const (
+	TLSModeAutomatic TLSMode = "Automatic"
+	TLSModeOff       TLSMode = "Off"
+)
+
+type TLSSpec struct {
+	// Enables/disables TLS encryption for in-cluster Operand traffic.
+	// +kubebuilder:validation:Enum=Off;Automatic
+	// +kubebuilder:validation:Optional
+	Mode TLSMode `json:"mode,omitempty"`
 }
