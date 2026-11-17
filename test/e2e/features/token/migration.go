@@ -6,12 +6,15 @@
 package token
 
 import (
+	"crypto/rand"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/oneagent"
 	e2econst "github.com/Dynatrace/dynatrace-operator/test/e2e/features/consts"
 	componentDynakube "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
@@ -69,6 +72,34 @@ func FromAPIToPlatformToken(t *testing.T) features.Feature {
 	componentDynakube.TriggerReconciliation(builder, testDynakube)
 	componentDynakube.VerifyStartup(builder, features.LevelAssess, testDynakube)
 	componentDynakube.VerifyPlatformTokenStatus(builder, testDynakube, true)
+
+	return builder.Feature()
+}
+
+func InvalidToken(t *testing.T) features.Feature {
+	builder := features.New("invalid-token")
+
+	secretConfig := tenant.GetSingleTenantSecret(t)
+	malformedSecret := tenant.Secret{
+		TenantUID:               secretConfig.TenantUID,
+		APIURL:                  secretConfig.APIURL,
+		APIToken:                rand.Text(),
+		DataIngestToken:         rand.Text(),
+		APITokenNoSettings:      rand.Text(),
+		PlatformToken:           rand.Text(),
+		PlatformTokenNoSettings: rand.Text(),
+		DataIngestPlatformToken: rand.Text(),
+	}
+
+	testDynakube := componentDynakube.New(
+		componentDynakube.WithAPIURL(malformedSecret.APIURL),
+		componentDynakube.WithHostMonitoringSpec(&oneagent.HostInjectSpec{}),
+		componentDynakube.WithCustomPullSecret(e2econst.DevRegistryPullSecretName),
+	)
+
+	componentDynakube.Create(builder, features.LevelAssess, malformedSecret.TokensWithSettingsScope(), testDynakube)
+	builder.Assess("invalid token sets a token error condition",
+		componentDynakube.WaitForCondition(testDynakube, dynakube.TokenConditionType, metav1.ConditionFalse))
 
 	return builder.Feature()
 }

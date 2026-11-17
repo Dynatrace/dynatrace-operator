@@ -14,9 +14,11 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	prevDynakube "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta5/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	e2econst "github.com/Dynatrace/dynatrace-operator/test/e2e/features/consts"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/oneagent"
+	k8sobject "github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/tenant"
 	"github.com/stretchr/testify/require"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -170,11 +172,14 @@ func WaitForPhase(dk *dynakube.DynaKube, phase status.DeploymentPhase) features.
 		resources := envConfig.Client().Resources()
 
 		const timeout = 8 * time.Minute
-		err := wait.For(conditions.New(resources).ResourceMatch(dk, func(object k8s.Object) bool {
+		phaseReached := conditions.New(resources).ResourceMatch(dk, func(object k8s.Object) bool {
 			dynakube, isDynakube := object.(*dynakube.DynaKube)
 
 			return isDynakube && dynakube.Status.Phase == phase
-		}), wait.WithTimeout(timeout))
+		})
+		earlyTerminationConditions := k8sobject.ConditionsNotMatchedContextFunc(resources, dk, terminalE2EStatusConditions()...)
+
+		err := wait.For(k8sobject.CompositeWaitConditions(phaseReached, earlyTerminationConditions), wait.WithTimeout(timeout))
 
 		require.NoError(t, err)
 
@@ -187,11 +192,14 @@ func WaitForPhasePreviousVersion(dk *prevDynakube.DynaKube, phase status.Deploym
 		resources := envConfig.Client().Resources()
 
 		const timeout = 5 * time.Minute
-		err := wait.For(conditions.New(resources).ResourceMatch(dk, func(object k8s.Object) bool {
+		phaseReached := conditions.New(resources).ResourceMatch(dk, func(object k8s.Object) bool {
 			dynakube, isDynakube := object.(*prevDynakube.DynaKube)
 
 			return isDynakube && dynakube.Status.Phase == phase
-		}), wait.WithTimeout(timeout))
+		})
+		earlyTerminationConditions := k8sobject.ConditionsNotMatchedContextFunc(resources, dk, terminalE2EStatusConditions()...)
+
+		err := wait.For(k8sobject.CompositeWaitConditions(phaseReached, earlyTerminationConditions), wait.WithTimeout(timeout))
 
 		require.NoError(t, err)
 
@@ -298,4 +306,19 @@ func remove(dk *dynakube.DynaKube) features.Func {
 
 		return ctx
 	}
+}
+
+// terminalE2EStatusConditions for conditions probably signaling there is no reason to move forward with the test
+func terminalE2EStatusConditions() []metav1.Condition {
+	conditions := make([]metav1.Condition, 0, 2)
+	k8sconditions.SetDataIngestTokenMissing(&conditions, dynakube.TokenConditionType, "token error")
+
+	conditions = append(conditions, metav1.Condition{
+		Type:    dynakube.TokenConditionType,
+		Status:  metav1.ConditionFalse,
+		Reason:  dynakube.ReasonTokenError,
+		Message: "token error",
+	})
+
+	return conditions
 }

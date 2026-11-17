@@ -309,6 +309,10 @@ func TestNoCSI_token_migration_revert_platform(t *testing.T) {
 	testEnv.Test(t, token.FromPlatformToAPIToken(t))
 }
 
+func TestNoCSI_token_invalid(t *testing.T) {
+	testEnv.Test(t, token.InvalidToken(t))
+}
+
 func TestNoCSI_host_agent_pgc_host_monitoring(t *testing.T) {
 	testEnv.Test(t, hostmonitoring.HostAgentPGC(t))
 }
