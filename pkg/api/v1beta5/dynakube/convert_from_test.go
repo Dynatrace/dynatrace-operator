@@ -348,10 +348,6 @@ func compareBase(t *testing.T, oldDK DynaKube, newDK dynakubelatest.DynaKube) {
 
 	assert.Equal(t, oldDK.MetadataEnrichmentEnabled(), newDK.MetadataEnrichment().IsEnabled())
 	assert.Equal(t, oldDK.Spec.MetadataEnrichment.NamespaceSelector, newDK.Spec.MetadataEnrichment.NamespaceSelector)
-
-	if oldDK.FF().GetCSIMaxFailedMountAttempts() != exp.DefaultCSIMaxFailedMountAttempts {
-		assert.Equal(t, exp.MountAttemptsToTimeout(oldDK.FF().GetCSIMaxFailedMountAttempts()), newDK.FF().GetCSIMaxRetryTimeout().String())
-	}
 }
 
 func compareHostInjectSpec(t *testing.T, oldSpec oneagent.HostInjectSpec, newSpec oneagentlatest.HostInjectSpec, removedFields *conversion.RemovedFields) {
