@@ -344,7 +344,7 @@ func buildEnv(s *reconcileScope) []corev1.EnvVar {
 			envs,
 			proxyEnv("HTTPS_PROXY", dk.Spec.Proxy),
 			proxyEnv("HTTP_PROXY", dk.Spec.Proxy),
-			corev1.EnvVar{Name: "NO_PROXY", Value: noProxyValue()},
+			corev1.EnvVar{Name: "NO_PROXY", Value: noProxyValue(dk)},
 		)
 	}
 
@@ -367,8 +367,18 @@ func proxyEnv(name string, src *types.ValueSource) corev1.EnvVar {
 	return corev1.EnvVar{Name: name, Value: src.Value}
 }
 
-func noProxyValue() string {
+func noProxyValue(dk *dynakube.DynaKube) string {
 	values := []string{"$(KUBERNETES_SERVICE_HOST)", "kubernetes.default"}
+
+	if dk.NeedsCustomNoProxy() {
+		noProxyValue := dk.FF().GetNoProxy()
+		for hostname := range strings.SplitSeq(noProxyValue, ",") {
+			hostname = strings.TrimSpace(hostname)
+			if hostname != "" {
+				values = append(values, hostname)
+			}
+		}
+	}
 
 	return strings.Join(values, ",")
 }

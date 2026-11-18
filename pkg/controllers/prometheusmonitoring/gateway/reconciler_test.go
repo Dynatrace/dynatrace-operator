@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
@@ -282,7 +283,7 @@ func TestNoProxyEnvVar(t *testing.T) {
 					Capabilities: []activegate.CapabilityDisplayName{activegate.RoutingCapability.DisplayName},
 				},
 				Proxy: &optypes.ValueSource{
-					Value: "http://127.0.0.1:8080",
+					Value: "http://proxy:8080",
 				},
 			},
 			Status: dynakube.DynaKubeStatus{
@@ -324,5 +325,39 @@ func TestNoProxyEnvVar(t *testing.T) {
 		envVars := buildEnv(rs)
 		noProxy := k8senv.Find(envVars, "NO_PROXY")
 		require.Nil(t, noProxy)
+	})
+
+	t.Run("proxy enabled with no-proxy ff", func(t *testing.T) {
+		const (
+			host1 = "http://host1"
+			host2 = "https://host2:8443"
+		)
+		dk := &dynakube.DynaKube{
+			Annotations: map[string]string{
+				exp.NoProxyKey: host1 + "," + host2,
+			},
+			Spec: dynakube.DynaKubeSpec{
+				Proxy: &optypes.ValueSource{
+					Value: "http://proxy:8080",
+				},
+			},
+			Status: dynakube.DynaKubeStatus{
+				KubernetesClusterName: "my-cluster",
+			},
+		}
+
+		rs := &reconcileScope{
+			Spec: &prometheusmonitoring.Gateway{
+				GatewaySpec: &prometheusmonitoring.GatewaySpec{
+					Resources: corev1.ResourceRequirements{},
+				},
+			},
+			DynaKube: dk,
+		}
+
+		envVars := buildEnv(rs)
+		noProxy := k8senv.Find(envVars, "NO_PROXY")
+		require.NotNil(t, noProxy)
+		assert.Equal(t, "$(KUBERNETES_SERVICE_HOST),kubernetes.default,"+host1+","+host2, noProxy.Value)
 	})
 }
