@@ -40,7 +40,7 @@ import (
 var (
 	errPrerequisitesNotMet    = errors.New("prerequisites not met")
 	errTenantURLMissing       = errors.New("tenant URL (apiUrl) is missing in the DynaKube")
-	errTokenSecretUnreadable  = errors.New("token secret cannot be read")
+	errTokenSecretNotFound    = errors.New("token secret not found")
 	errDataIngestTokenMissing = errors.New("data-ingest token is missing in the token secret")
 )
 
@@ -140,9 +140,13 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ct
 	})
 
 	if err := r.checkPrerequisites(ctx, pm, dk); err != nil {
+		if !errors.Is(err, errPrerequisitesNotMet) {
+			return ctrl.Result{}, err
+		}
+
 		log.Info("skipping reconcile: prerequisites not met", "reason", err.Error())
 
-		return ctrl.Result{RequeueAfter: missingDependencyRequeueInterval}, errPrerequisitesNotMet
+		return ctrl.Result{RequeueAfter: missingDependencyRequeueInterval}, err
 	}
 
 	dtClient, err := r.buildDynatraceClient(ctx, dk)
@@ -166,32 +170,53 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ct
 	return ctrl.Result{}, nil
 }
 
-// checkPrerequisites verifies that the DynaKube has a tenant URL, a readable token secret and a data-ingest token.
-// The result is reflected in the PrerequisitesMet condition.
+// checkPrerequisites verifies that the DynaKube has a tenant URL, a token secret and a data-ingest token.
+// The result, a missing prerequisite or a failure to find out, is reflected in the PrerequisitesMet condition.
+// A missing prerequisite is returned wrapped in errPrerequisitesNotMet, any other error is returned as is.
 func (r *Reconciler) checkPrerequisites(ctx context.Context, pm *prometheusmonitoring.PrometheusMonitoring, dk *dynakube.DynaKube) error {
-	err := r.verifyPrerequisites(ctx, dk)
+	missing, err := r.verifyPrerequisites(ctx, dk)
 
-	condition.Set(&pm.Status.Conditions, prometheusmonitoring.PrerequisitesMet, "prerequisites",
-		func() bool { return true }, err)
+	switch {
+	case err != nil:
+		setPrerequisitesCondition(pm, err)
 
-	return err
+		return err
+	case missing != nil:
+		setPrerequisitesCondition(pm, missing)
+
+		return fmt.Errorf("%w: %w", errPrerequisitesNotMet, missing)
+	default:
+		setPrerequisitesCondition(pm, nil)
+
+		return nil
+	}
 }
 
-func (r *Reconciler) verifyPrerequisites(ctx context.Context, dk *dynakube.DynaKube) error {
+// verifyPrerequisites returns the first missing prerequisite as missing. err is set if that cannot be determined.
+func (r *Reconciler) verifyPrerequisites(ctx context.Context, dk *dynakube.DynaKube) (missing, err error) {
 	if dk.Spec.APIURL == "" {
-		return errTenantURLMissing
+		return errTenantURLMissing, nil
 	}
 
 	tokens, err := token.NewReader(r, dk).ReadTokens(ctx)
+	if k8serrors.IsNotFound(err) {
+		return fmt.Errorf("%w (%s): %w", errTokenSecretNotFound, dk.Tokens(), err), nil
+	}
+
 	if err != nil {
-		return fmt.Errorf("%w (%s): %w", errTokenSecretUnreadable, dk.Tokens(), err)
+		return nil, fmt.Errorf("read token secret %s: %w", dk.Tokens(), err)
 	}
 
 	if !token.CheckForDataIngestToken(tokens) {
-		return errDataIngestTokenMissing
+		return errDataIngestTokenMissing, nil
 	}
 
-	return nil
+	return nil, nil
+}
+
+func setPrerequisitesCondition(pm *prometheusmonitoring.PrometheusMonitoring, err error) {
+	condition.Set(&pm.Status.Conditions, prometheusmonitoring.PrerequisitesMet, "prerequisites",
+		func() bool { return true }, err)
 }
 
 func (r *Reconciler) buildDynatraceClient(ctx context.Context, dk *dynakube.DynaKube) (*dynatrace.Client, error) {
@@ -211,7 +236,10 @@ func (r *Reconciler) buildDynatraceClient(ctx context.Context, dk *dynakube.Dyna
 }
 
 // setPhase calculates the phase according to the conditions and the error.
-// The error is only used when the conditions are empty and results in phases Deploying or Error.
+// A missing DynaKube is reported through the DynaKubeAvailable condition and results in phase Error.
+// errPrerequisitesNotMet is an expected state that is reported through the PrerequisitesMet condition and the phase only:
+// it is swallowed so that the requeue of the result takes effect.
+// Any other error is only used when there are no conditions and results in phases Deploying or Error.
 //
 // To accurately calculate the phase the reconcilers are expect to follow the following rules:
 //   - Reconciliation successful: condition status True
