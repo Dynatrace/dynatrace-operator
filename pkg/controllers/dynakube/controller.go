@@ -33,6 +33,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/proxy"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/selfmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
+	operatortls "github.com/Dynatrace/dynatrace-operator/pkg/controllers/tls"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
@@ -351,6 +352,14 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dk *dynakub
 
 	if err := controller.proxyReconciler.Reconcile(ctx, dk); err != nil {
 		log.Info("could not reconcile proxy resources")
+
+		return err
+	}
+
+	log.Info("start reconciling operator root CA")
+
+	if err := operatortls.VerifyCA(ctx, controller.client, dk); err != nil {
+		log.Info("could not reconcile operator root CA")
 
 		return err
 	}
