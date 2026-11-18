@@ -199,7 +199,7 @@ func TestReconcile_prerequisites(t *testing.T) {
 		message string
 	}{
 		{"tenant url missing", []client.Object{newDK(""), tokenSecret(map[string][]byte{token.DataIngestKey: []byte("t")})}, errTenantURLMissing.Error()},
-		{"token secret missing", []client.Object{newDK("https://tenant.dynatrace.com/api")}, errTokenSecretUnreadable.Error() + " (dk)"},
+		{"token secret missing", []client.Object{newDK("https://tenant.dynatrace.com/api")}, errTokenSecretNotFound.Error() + " (dk)"},
 		{"data-ingest token missing", []client.Object{newDK("https://tenant.dynatrace.com/api"), tokenSecret(map[string][]byte{token.APIKey: []byte("t")})}, errDataIngestTokenMissing.Error()},
 	}
 
@@ -222,6 +222,76 @@ func TestReconcile_prerequisites(t *testing.T) {
 			assert.Contains(t, cond.Message, tt.message)
 		})
 	}
+}
+
+func TestReconcile_prerequisitesReadError(t *testing.T) {
+	req := ctrl.Request{Name: "prometheusmonitoring", Namespace: "dynatrace"}
+	pm := &prometheusmonitoring.PrometheusMonitoring{Name: req.Name, Namespace: req.Namespace, Spec: prometheusmonitoring.PrometheusMonitoringSpec{DynaKubeName: "dk"}}
+	dk := &dynakube.DynaKube{Name: "dk", Namespace: req.Namespace, Spec: dynakube.DynaKubeSpec{APIURL: "https://tenant.dynatrace.com/api"}}
+	forbidden := k8serrors.NewForbidden(corev1.Resource("secrets"), "dk", errors.New("BOOM"))
+
+	c := fake.NewClientWithInterceptors(interceptor.Funcs{
+		Get: func(ctx context.Context, c client.WithWatch, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
+			if _, ok := obj.(*corev1.Secret); ok {
+				return forbidden
+			}
+
+			return c.Get(ctx, key, obj, opts...)
+		},
+	}, pm, dk)
+
+	_, err := NewReconciler(c).Reconcile(t.Context(), req)
+
+	require.ErrorIs(t, err, forbidden)
+	require.NotErrorIs(t, err, errPrerequisitesNotMet)
+	require.NoError(t, c.Get(t.Context(), client.ObjectKeyFromObject(pm), pm))
+	assert.Equal(t, status.Error, pm.Status.Phase)
+
+	cond := meta.FindStatusCondition(pm.Status.Conditions, prometheusmonitoring.PrerequisitesMet)
+	require.NotNil(t, cond)
+	assert.Equal(t, metav1.ConditionFalse, cond.Status)
+	assert.Contains(t, cond.Message, forbidden.Error())
+}
+
+func TestReconcile_prerequisitesRecover(t *testing.T) {
+	req := ctrl.Request{Name: "prometheusmonitoring", Namespace: "dynatrace"}
+	pm := &prometheusmonitoring.PrometheusMonitoring{Name: req.Name, Namespace: req.Namespace, Spec: prometheusmonitoring.PrometheusMonitoringSpec{DynaKubeName: "dk"}}
+	dk := &dynakube.DynaKube{Name: "dk", Namespace: req.Namespace, Spec: dynakube.DynaKubeSpec{APIURL: "https://tenant.dynatrace.com/api"}}
+	secret := &corev1.Secret{Name: "dk", Namespace: req.Namespace, Data: map[string][]byte{token.APIKey: []byte("api-token")}}
+
+	gm := newMockGatewayReconciler(t)
+	gm.EXPECT().Reconcile(t.Context(), mock.Anything, dk, image.Client(nil)).Return(nil).Once()
+	tm := newMockTargetAllocatorReconciler(t)
+	tm.EXPECT().Reconcile(t.Context(), mock.Anything, dk, image.Client(nil)).Return(nil).Once()
+	sm := newMockScraperReconciler(t)
+	sm.EXPECT().Reconcile(t.Context(), mock.Anything, dk, image.Client(nil)).Return(nil).Once()
+
+	c := fake.NewClient(pm, dk, secret)
+	r := NewReconciler(c)
+	r.newDynatraceClient = func(context.Context, client.Reader, *dynakube.DynaKube, string, string, time.Duration) (*dynatrace.Client, error) {
+		return &dynatrace.Client{}, nil
+	}
+	r.gateway = gm
+	r.targetAllocator = tm
+	r.scraper = sm
+
+	result, err := r.Reconcile(t.Context(), req)
+	require.NoError(t, err)
+	require.Equal(t, missingDependencyRequeueInterval, result.RequeueAfter)
+
+	require.NoError(t, c.Get(t.Context(), client.ObjectKeyFromObject(secret), secret))
+	secret.Data[token.DataIngestKey] = []byte("data-ingest-token")
+	require.NoError(t, c.Update(t.Context(), secret))
+
+	result, err = r.Reconcile(t.Context(), req)
+	require.NoError(t, err)
+	require.Empty(t, result)
+
+	require.NoError(t, c.Get(t.Context(), client.ObjectKeyFromObject(pm), pm))
+	cond := meta.FindStatusCondition(pm.Status.Conditions, prometheusmonitoring.PrerequisitesMet)
+	require.NotNil(t, cond)
+	assert.Equal(t, metav1.ConditionTrue, cond.Status)
+	assert.Equal(t, status.Running, pm.Status.Phase)
 }
 
 func TestReconcile_dynaKubePhaseIsIgnored(t *testing.T) {
