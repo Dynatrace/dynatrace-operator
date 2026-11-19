@@ -717,6 +717,34 @@ func (clt caErrorClient) Get(ctx context.Context, key client.ObjectKey, obj clie
 	return clt.Client.Get(ctx, key, obj, opts...)
 }
 
+func TestMapCAChange(t *testing.T) {
+	t.Run("all DynaKubes are reconciled", func(t *testing.T) {
+		controller := &Controller{client: fake.NewClient(
+			&dynakube.DynaKube{Name: "one", Namespace: testNamespace},
+			&dynakube.DynaKube{Name: "two", Namespace: testNamespace},
+		)}
+
+		requests := controller.mapCAChange(t.Context(), nil)
+
+		assert.ElementsMatch(t, []reconcile.Request{
+			{Name: "one", Namespace: testNamespace},
+			{Name: "two", Namespace: testNamespace},
+		}, requests)
+	})
+
+	t.Run("no DynaKubes, no requests", func(t *testing.T) {
+		controller := &Controller{client: fake.NewClient()}
+
+		assert.Empty(t, controller.mapCAChange(t.Context(), nil))
+	})
+
+	t.Run("list error, no requests", func(t *testing.T) {
+		controller := &Controller{client: errorClient{Client: fake.NewClient()}}
+
+		assert.Empty(t, controller.mapCAChange(t.Context(), nil))
+	})
+}
+
 type errorClient struct {
 	client.Client
 }

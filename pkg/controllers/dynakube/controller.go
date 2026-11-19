@@ -117,7 +117,7 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, ev
 }
 
 func (controller *Controller) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
+	builder := ctrl.NewControllerManagedBy(mgr).
 		For(&dynakube.DynaKube{}).
 		Named(controllerName).
 		Owns(&appsv1.StatefulSet{}).
@@ -125,15 +125,39 @@ func (controller *Controller) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&appsv1.Deployment{}).
 		Owns(&corev1.ConfigMap{}).
 		Owns(&corev1.Secret{}).
-		Owns(&corev1.Service{}).
-		// Istio related resources are not registered as owned,
-		// because we can't be sure that they are present at Operator startup,
-		// istio could be installed later, or uninstalled while the Operator is present.
-		// this is unlikely, but we spam the logs if it happens and restarted would be needed.
-		// It is not worth the risk.
-		// Owns(&istiov1beta1.ServiceEntry{}).
-		// Owns(&istiov1beta1.VirtualService{}).
+		Owns(&corev1.Service{})
+
+	// Istio related resources are not registered as owned,
+	// because we can't be sure that they are present at Operator startup,
+	// istio could be installed later, or uninstalled while the Operator is present.
+	// this is unlikely, but we spam the logs if it happens and restarted would be needed.
+	// It is not worth the risk.
+	// Owns(&istiov1beta1.ServiceEntry{}).
+	// Owns(&istiov1beta1.VirtualService{}).
+
+	return operatortls.WatchCA(builder, controller.operatorNamespace, controller.mapCAChange).
 		Complete(controller)
+}
+
+// mapCAChange maps a change of the operator root CA to the DynaKubes that have to be reconciled because of it.
+func (controller *Controller) mapCAChange(ctx context.Context, _ client.Object) []reconcile.Request {
+	dkList := &dynakube.DynaKubeList{}
+
+	err := controller.client.List(ctx, dkList)
+	if err != nil {
+		logd.FromContext(ctx).Error(err, "failed to list DynaKubes after the operator root CA changed")
+
+		return nil
+	}
+
+	requests := make([]reconcile.Request, 0, len(dkList.Items))
+
+	for _, dk := range dkList.Items {
+		// TODO: only trigger the DynaKubes that have spec.tls enabled, once the field exists (ICP-11033)
+		requests = append(requests, reconcile.Request{Name: dk.Name, Namespace: dk.Namespace})
+	}
+
+	return requests
 }
 
 type istioReconciler interface {

@@ -4,6 +4,8 @@
 package tls_test
 
 import (
+	"context"
+	"sync"
 	"testing"
 	"time"
 
@@ -18,6 +20,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 const (
@@ -265,4 +268,122 @@ func TestVerifyCANeverCreatesCA(t *testing.T) {
 
 	_, err = getBundle(t, clt)
 	require.Error(t, err)
+}
+
+func TestWatchCA(t *testing.T) {
+	var (
+		mu         sync.Mutex
+		reconciled = map[string]int{}
+	)
+
+	reset := func() {
+		mu.Lock()
+		defer mu.Unlock()
+
+		reconciled = map[string]int{}
+	}
+
+	count := func(name string) int {
+		mu.Lock()
+		defer mu.Unlock()
+
+		return reconciled[name]
+	}
+
+	// controller names have to be unique in a process, so the tls controller is not started here,
+	// the CA is created by calling its Reconcile directly
+	clt := integrationtests.SetupManagerTestEnvironment(t, func(mgr ctrl.Manager) error {
+		consumer := reconcile.Func(func(_ context.Context, req reconcile.Request) (reconcile.Result, error) {
+			mu.Lock()
+			defer mu.Unlock()
+
+			reconciled[req.Name]++
+
+			return reconcile.Result{}, nil
+		})
+
+		// the consumer decides what to reconcile, here all DynaKubes
+		mapFn := func(ctx context.Context, _ client.Object) []reconcile.Request {
+			dkList := &dynakube.DynaKubeList{}
+			if err := mgr.GetClient().List(ctx, dkList); err != nil {
+				return nil
+			}
+
+			requests := make([]reconcile.Request, 0, len(dkList.Items))
+			for _, dk := range dkList.Items {
+				requests = append(requests, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(&dk)})
+			}
+
+			return requests
+		}
+
+		return operatortls.WatchCA(ctrl.NewControllerManagedBy(mgr).Named("watch-ca-test").For(&dynakube.DynaKube{}), integrationNamespace, mapFn).
+			Complete(consumer)
+	})
+
+	integrationtests.CreateNamespace(t, clt, integrationNamespace)
+
+	for _, name := range []string{"first", "second"} {
+		integrationtests.CreateDynakube(t, clt, &dynakube.DynaKube{
+			Name:      name,
+			Namespace: integrationNamespace,
+			Spec:      dynakube.DynaKubeSpec{APIURL: "https://tenant.live.dynatrace.com/api"},
+		})
+	}
+
+	// let the reconciles caused by the creation of the DynaKubes settle
+	settle := func() {
+		require.Eventually(t, func() bool {
+			before := count("first") + count("second")
+			time.Sleep(500 * time.Millisecond)
+
+			return count("first")+count("second") == before
+		}, eventuallyTimeout, eventuallyInterval)
+
+		reset()
+	}
+
+	requireAllReconciled := func(t *testing.T, trigger func()) {
+		t.Helper()
+
+		settle()
+		trigger()
+
+		assert.Eventually(t, func() bool { return count("first") > 0 && count("second") > 0 }, eventuallyTimeout, eventuallyInterval)
+	}
+
+	t.Run("creation of the CA reconciles all DynaKubes", func(t *testing.T) {
+		requireAllReconciled(t, func() {
+			_, err := operatortls.NewController(clt, integrationNamespace).Reconcile(t.Context(), reconcile.Request{})
+			require.NoError(t, err)
+		})
+	})
+
+	t.Run("change of the bundle reconciles all DynaKubes", func(t *testing.T) {
+		requireAllReconciled(t, func() {
+			bundle, err := getBundle(t, clt)
+			require.NoError(t, err)
+
+			bundle.Data["unrelated"] = "change"
+			require.NoError(t, clt.Update(t.Context(), bundle))
+		})
+	})
+
+	t.Run("deletion of the CA reconciles all DynaKubes", func(t *testing.T) {
+		requireAllReconciled(t, func() {
+			secret, err := getCASecret(t, clt)
+			require.NoError(t, err)
+
+			require.NoError(t, clt.Delete(t.Context(), secret))
+		})
+	})
+
+	t.Run("unrelated objects do not reconcile the DynaKubes", func(t *testing.T) {
+		settle()
+
+		require.NoError(t, clt.Create(t.Context(), &corev1.Secret{Name: "unrelated", Namespace: integrationNamespace}))
+		require.NoError(t, clt.Create(t.Context(), &corev1.ConfigMap{Name: "unrelated", Namespace: integrationNamespace}))
+
+		assert.Never(t, func() bool { return count("first") > 0 || count("second") > 0 }, neverTimeout, eventuallyInterval)
+	})
 }
