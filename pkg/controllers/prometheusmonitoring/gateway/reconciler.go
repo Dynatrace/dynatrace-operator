@@ -368,17 +368,10 @@ func proxyEnv(name string, src *types.ValueSource) corev1.EnvVar {
 }
 
 func noProxyValue(dk *dynakube.DynaKube) string {
-	values := []string{"$(KUBERNETES_SERVICE_HOST)", "kubernetes.default"}
+	values := []string{"$(KUBERNETES_SERVICE_HOST)", "kubernetes.default"} //nolint:prealloc
 
-	if dk.NeedsCustomNoProxy() {
-		noProxyValue := dk.FF().GetNoProxy()
-		for hostname := range strings.SplitSeq(noProxyValue, ",") {
-			hostname = strings.TrimSpace(hostname)
-			if hostname != "" {
-				values = append(values, hostname)
-			}
-		}
-	}
+	noProxyHosts := dk.GetNoProxyHosts()
+	values = append(values, noProxyHosts...)
 
 	return strings.Join(values, ",")
 }

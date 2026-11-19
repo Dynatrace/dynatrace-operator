@@ -329,12 +329,13 @@ func TestNoProxyEnvVar(t *testing.T) {
 
 	t.Run("proxy enabled with no-proxy ff", func(t *testing.T) {
 		const (
-			host1 = "http://host1"
-			host2 = "https://host2:8443"
+			host1 = "host1"
+			host2 = "host2:8443"
 		)
 		dk := &dynakube.DynaKube{
 			Annotations: map[string]string{
-				exp.NoProxyKey: host1 + "," + host2,
+				// check if spaces are removed
+				exp.NoProxyKey: host1 + " , " + host2,
 			},
 			Spec: dynakube.DynaKubeSpec{
 				Proxy: &optypes.ValueSource{

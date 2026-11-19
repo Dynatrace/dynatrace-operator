@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
@@ -260,6 +261,9 @@ func Test_dynaKubeProxyChanged(t *testing.T) {
 		{"both nil", nil, nil, false},
 		{"old nil", nil, &types.ValueSource{Value: "test"}, true},
 		{"new nil", &types.ValueSource{Value: "test"}, nil, true},
+		{"both empty", &types.ValueSource{}, &types.ValueSource{}, false},
+		{"old empty", &types.ValueSource{}, &types.ValueSource{Value: "test"}, true},
+		{"new empty", &types.ValueSource{Value: "test"}, &types.ValueSource{}, true},
 		{"value equal", &types.ValueSource{Value: "test"}, &types.ValueSource{Value: "test"}, false},
 		{"value diff", &types.ValueSource{Value: "foo"}, &types.ValueSource{Value: "bar"}, true},
 		{"valueFrom equal", &types.ValueSource{ValueFrom: "test"}, &types.ValueSource{ValueFrom: "test"}, false},
@@ -271,6 +275,39 @@ func Test_dynaKubeProxyChanged(t *testing.T) {
 			got := dynaKubeProxyChanged(
 				&dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{Proxy: tt.oldProxy}},
 				&dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{Proxy: tt.newProxy}},
+			)
+			assert.Equal(t, tt.expect, got)
+		})
+	}
+}
+
+func Test_dynaKubeProxyChangedWithNoProxyFF(t *testing.T) {
+	tests := []struct {
+		name       string
+		oldProxy   *types.ValueSource
+		oldNoProxy string
+		newProxy   *types.ValueSource
+		newNoProxy string
+		expect     bool
+	}{
+		{"values nil, both no-proxy ffs empty", nil, "", nil, "", false},
+		{"values nil, new no-proxy ff empty", nil, "test", nil, "", false},
+		{"values nil, old no-proxy ff empty", nil, "", nil, "test", false},
+		{"values empty, both no-proxy ffs empty", &types.ValueSource{}, "", &types.ValueSource{}, "", false},
+		{"values empty, new no-proxy ff empty", &types.ValueSource{}, "test", &types.ValueSource{}, "", false},
+		{"values empty, old no-proxy ff empty", &types.ValueSource{}, "", &types.ValueSource{}, "test", false},
+		{"values nil, ffs equal", nil, "test", nil, "test", false},
+		{"values empty, ffs equal", &types.ValueSource{}, "test", &types.ValueSource{}, "test", false},
+		{"values equal, ffs equal", &types.ValueSource{Value: "foo"}, "test", &types.ValueSource{Value: "foo"}, "test", false},
+		{"values equal, old no-proxy ff empty", &types.ValueSource{Value: "foo"}, "", &types.ValueSource{Value: "foo"}, "test", true},
+		{"values equal, new no-proxy ff empty", &types.ValueSource{Value: "foo"}, "test", &types.ValueSource{Value: "foo"}, "", true},
+		{"values diff, no-proxy ff equal", &types.ValueSource{Value: "foo"}, "test", &types.ValueSource{Value: "bar"}, "test", true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := dynaKubeProxyChanged(
+				&dynakube.DynaKube{Annotations: map[string]string{exp.NoProxyKey: tt.oldNoProxy}, Spec: dynakube.DynaKubeSpec{Proxy: tt.oldProxy}},
+				&dynakube.DynaKube{Annotations: map[string]string{exp.NoProxyKey: tt.newNoProxy}, Spec: dynakube.DynaKubeSpec{Proxy: tt.newProxy}},
 			)
 			assert.Equal(t, tt.expect, got)
 		})
