@@ -62,34 +62,23 @@ func proxyValueFromTester(t *testing.T) {
 	assert.Empty(t, proxy)
 }
 
-func TestNoProxy(t *testing.T) {
-	t.Run("empty no-proxy ff", func(t *testing.T) {
-		dk := dynakube.DynaKube{
-			Spec: dynakube.DynaKubeSpec{
-				Proxy: &types.ValueSource{Value: "test"},
-			},
-		}
+func TestNoProxyFF(t *testing.T) {
+	t.Run("empty", func(t *testing.T) {
+		dk := dynakube.DynaKube{}
 		noProxyHosts := dk.GetNoProxyHosts()
 		assert.Empty(t, noProxyHosts)
 	})
-	t.Run("value no-proxy ff", func(t *testing.T) {
+	t.Run("value", func(t *testing.T) {
 		dk := dynakube.DynaKube{
 			Annotations: map[string]string{
 				exp.NoProxyKey: "test1 , test2",
-			},
-			Spec: dynakube.DynaKubeSpec{
-				Proxy: &types.ValueSource{Value: "test"},
 			},
 		}
 		noProxyHosts := dk.GetNoProxyHosts()
 		assert.Equal(t, []string{"test1", "test2"}, noProxyHosts)
 	})
 	t.Run("append empty no-proxy ff", func(t *testing.T) {
-		dk := dynakube.DynaKube{
-			Spec: dynakube.DynaKubeSpec{
-				Proxy: &types.ValueSource{Value: "test"},
-			},
-		}
+		dk := dynakube.DynaKube{}
 		values := []string{"test"}
 		// no IsEmpty guard is needed
 		noProxyHosts := dk.GetNoProxyHosts()
