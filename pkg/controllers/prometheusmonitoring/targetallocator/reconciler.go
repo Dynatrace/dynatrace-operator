@@ -14,7 +14,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/prometheusmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/prometheusmonitoring/condition"
-	pmvolume "github.com/Dynatrace/dynatrace-operator/pkg/controllers/prometheusmonitoring/volume"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8scontainer"
@@ -37,7 +36,7 @@ const (
 	insecurePortName = "http-port"
 	securePortName   = "https-port"
 
-	configVolume = pmvolume.TargetAllocatorConfigVolumeName
+	configVolume = prometheusmonitoring.TargetAllocatorConfigVolumeName
 	configFile   = "targetallocator.yaml"
 
 	serviceAccount = "dynatrace-target-allocator"
@@ -277,7 +276,7 @@ func buildContainer(spec *prometheusmonitoring.TargetAllocator, imageURI string,
 			{Name: securePortName, ContainerPort: 8443, Protocol: corev1.ProtocolTCP},
 		},
 		VolumeMounts: append([]corev1.VolumeMount{
-			{Name: configVolume, MountPath: pmvolume.ConfigMountDir, ReadOnly: true},
+			{Name: configVolume, MountPath: prometheusmonitoring.ConfigMountDir, ReadOnly: true},
 			// TODO: TLS volume
 		}, spec.VolumeMounts...),
 		Env:       append(env, spec.Env...),

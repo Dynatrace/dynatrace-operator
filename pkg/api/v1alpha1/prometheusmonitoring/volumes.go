@@ -1,7 +1,7 @@
 // Copyright Dynatrace LLC
 // SPDX-License-Identifier: Apache-2.0
 
-package volume
+package prometheusmonitoring
 
 import "github.com/Dynatrace/dynatrace-operator/pkg/consts"
 
