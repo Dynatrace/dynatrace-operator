@@ -9,7 +9,7 @@ import (
 	"slices"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/prometheusmonitoring"
-	pmconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/prometheusmonitoring/consts"
+	pmvolume "github.com/Dynatrace/dynatrace-operator/pkg/controllers/prometheusmonitoring/volume"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -27,9 +27,9 @@ type reservedVolumes struct {
 
 func conflictingVolumes(_ context.Context, _ client.Reader, pm *prometheusmonitoring.PrometheusMonitoring) string {
 	components := []reservedVolumes{
-		{"targetAllocator", pm.Spec.TargetAllocator.PodSpec, pmconsts.TargetAllocatorVolumeNames, pmconsts.TargetAllocatorVolumeMountPaths},
-		{"scraper", pm.Spec.Scraper.PodSpec, pmconsts.ScraperVolumeNames, pmconsts.ScraperVolumeMountPaths},
-		{"gateway", pm.Spec.Gateway.PodSpec, pmconsts.GatewayVolumeNames, pmconsts.GatewayVolumeMountPaths},
+		{"targetAllocator", pm.Spec.TargetAllocator.PodSpec, pmvolume.TargetAllocatorVolumeNames, pmvolume.TargetAllocatorVolumeMountPaths},
+		{"scraper", pm.Spec.Scraper.PodSpec, pmvolume.ScraperVolumeNames, pmvolume.ScraperVolumeMountPaths},
+		{"gateway", pm.Spec.Gateway.PodSpec, pmvolume.GatewayVolumeNames, pmvolume.GatewayVolumeMountPaths},
 	}
 
 	for _, c := range components {

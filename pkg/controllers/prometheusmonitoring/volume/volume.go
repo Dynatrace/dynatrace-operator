@@ -1,7 +1,7 @@
 // Copyright Dynatrace LLC
 // SPDX-License-Identifier: Apache-2.0
 
-package consts
+package volume
 
 import "github.com/Dynatrace/dynatrace-operator/pkg/consts"
 

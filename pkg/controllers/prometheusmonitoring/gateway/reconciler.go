@@ -19,7 +19,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/prometheusmonitoring/condition"
-	pmconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/prometheusmonitoring/consts"
+	pmvolume "github.com/Dynatrace/dynatrace-operator/pkg/controllers/prometheusmonitoring/volume"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/otelcfg"
@@ -44,7 +44,7 @@ const (
 	gatewayConfigKey     = "relay"
 	configHashAnnotation = "internal.operator.dynatrace.com/gateway-config-hash"
 
-	trustedCAVolumeMountPath = pmconsts.TrustedCAMountPath
+	trustedCAVolumeMountPath = pmvolume.TrustedCAMountPath
 	trustedCAFile            = "rootca.pem"
 
 	otlpPortName = "otlp"
@@ -54,15 +54,15 @@ const (
 	// otelCollectorNonRootUser is the "nonroot" UID/GID the gateway image runs as.
 	otelCollectorNonRootUser = 10001
 
-	configVolumeName  = pmconsts.ConfigVolumeName
-	configMountDir    = pmconsts.ConfigMountDir
+	configVolumeName  = pmvolume.ConfigVolumeName
+	configMountDir    = pmvolume.ConfigMountDir
 	relayConfigFile   = "relay.yaml"
-	cacertsVolumeName = pmconsts.CACertsVolumeName
+	cacertsVolumeName = pmvolume.CACertsVolumeName
 
 	// Mounted as a directory, not subPath: subPath mounts don't receive live Secret
 	// updates, which would break token rotation.
-	tokenVolumeName = pmconsts.TokenVolumeName
-	tokenMountPath  = pmconsts.TokenMountPath
+	tokenVolumeName = pmvolume.TokenVolumeName
+	tokenMountPath  = pmvolume.TokenMountPath
 	tokenFileName   = "data-ingest-token"
 )
 

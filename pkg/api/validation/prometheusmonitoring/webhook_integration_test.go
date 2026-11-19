@@ -13,7 +13,7 @@ import (
 	apitypes "github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/prometheusmonitoring"
 	validation "github.com/Dynatrace/dynatrace-operator/pkg/api/validation/prometheusmonitoring"
-	pmconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/prometheusmonitoring/consts"
+	pmvolume "github.com/Dynatrace/dynatrace-operator/pkg/controllers/prometheusmonitoring/volume"
 	"github.com/Dynatrace/dynatrace-operator/test/integrationtests"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -172,7 +172,7 @@ func TestWebhook(t *testing.T) {
 	t.Run("conflicting volumes are rejected", func(t *testing.T) {
 		t.Run("volume name", func(t *testing.T) {
 			pm := newTestPrometheusMonitoring("conflicting-volume-name")
-			pm.Spec.Scraper.Volumes = apitypes.Volumes{{Name: pmconsts.ConfigVolumeName, AllowedVolumeSource: apitypes.AllowedVolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}}}}
+			pm.Spec.Scraper.Volumes = apitypes.Volumes{{Name: pmvolume.ConfigVolumeName, AllowedVolumeSource: apitypes.AllowedVolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}}}}
 
 			err := clt.Create(t.Context(), pm)
 
@@ -182,7 +182,7 @@ func TestWebhook(t *testing.T) {
 
 		t.Run("volume mount path", func(t *testing.T) {
 			pm := newTestPrometheusMonitoring("conflicting-mount-path")
-			pm.Spec.Gateway.VolumeMounts = []corev1.VolumeMount{{Name: "custom", MountPath: pmconsts.TokenMountPath}}
+			pm.Spec.Gateway.VolumeMounts = []corev1.VolumeMount{{Name: "custom", MountPath: pmvolume.TokenMountPath}}
 
 			err := clt.Create(t.Context(), pm)
 

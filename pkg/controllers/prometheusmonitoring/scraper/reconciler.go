@@ -16,7 +16,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/prometheusmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/prometheusmonitoring/condition"
-	pmconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/prometheusmonitoring/consts"
+	pmvolume "github.com/Dynatrace/dynatrace-operator/pkg/controllers/prometheusmonitoring/volume"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/otelcfg"
@@ -50,8 +50,8 @@ const (
 
 	serviceAccountName = "dynatrace-prometheus-scraper"
 
-	configVolumeName = pmconsts.ConfigVolumeName
-	configMountDir   = pmconsts.ConfigMountDir
+	configVolumeName = pmvolume.ConfigVolumeName
+	configMountDir   = pmvolume.ConfigMountDir
 )
 
 type Reconciler struct {

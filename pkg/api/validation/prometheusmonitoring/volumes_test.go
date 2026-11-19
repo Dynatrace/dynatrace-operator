@@ -9,7 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/prometheusmonitoring"
-	pmconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/prometheusmonitoring/consts"
+	pmvolume "github.com/Dynatrace/dynatrace-operator/pkg/controllers/prometheusmonitoring/volume"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -26,13 +26,13 @@ func TestConflictingVolumes(t *testing.T) {
 	}{
 		"targetAllocator": {func(pm *prometheusmonitoring.PrometheusMonitoring) *prometheusmonitoring.PodSpec {
 			return &pm.Spec.TargetAllocator.PodSpec
-		}, pmconsts.TargetAllocatorVolumeNames, pmconsts.TargetAllocatorVolumeMountPaths},
+		}, pmvolume.TargetAllocatorVolumeNames, pmvolume.TargetAllocatorVolumeMountPaths},
 		"scraper": {func(pm *prometheusmonitoring.PrometheusMonitoring) *prometheusmonitoring.PodSpec {
 			return &pm.Spec.Scraper.PodSpec
-		}, pmconsts.ScraperVolumeNames, pmconsts.ScraperVolumeMountPaths},
+		}, pmvolume.ScraperVolumeNames, pmvolume.ScraperVolumeMountPaths},
 		"gateway": {func(pm *prometheusmonitoring.PrometheusMonitoring) *prometheusmonitoring.PodSpec {
 			return &pm.Spec.Gateway.PodSpec
-		}, pmconsts.GatewayVolumeNames, pmconsts.GatewayVolumeMountPaths},
+		}, pmvolume.GatewayVolumeNames, pmvolume.GatewayVolumeMountPaths},
 	}
 
 	t.Run("no custom volumes", func(t *testing.T) {
@@ -88,13 +88,13 @@ func newTestPM() *prometheusmonitoring.PrometheusMonitoring {
 func TestValidateRejectsConflictingVolumes(t *testing.T) {
 	validator := &Validator{apiReader: fake.NewClient()}
 	pm := newTestPM()
-	pm.Spec.Gateway.VolumeMounts = []corev1.VolumeMount{{Name: "custom", MountPath: pmconsts.ConfigMountDir}}
+	pm.Spec.Gateway.VolumeMounts = []corev1.VolumeMount{{Name: "custom", MountPath: pmvolume.ConfigMountDir}}
 
 	t.Run("ValidateCreate", func(t *testing.T) {
 		_, err := validator.ValidateCreate(t.Context(), pm)
 
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), pmconsts.ConfigMountDir)
+		assert.Contains(t, err.Error(), pmvolume.ConfigMountDir)
 	})
 
 	t.Run("ValidateUpdate", func(t *testing.T) {
