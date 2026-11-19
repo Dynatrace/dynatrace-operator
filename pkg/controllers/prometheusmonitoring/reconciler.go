@@ -36,7 +36,6 @@ import (
 )
 
 var (
-	errDynaKubeNotFound           = errors.New("dynakube not found")
 	errDynaKubeNotReady           = errors.New("dynakube not ready")
 	errDataIngestTokenUnavailable = errors.New("data-ingest token not available")
 )
@@ -123,7 +122,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ct
 			Message: fmt.Sprintf("The DynaKube '%s' is not present in the '%s' namespace.", pm.Spec.DynaKubeName, pm.Namespace),
 		})
 
-		return ctrl.Result{}, errDynaKubeNotFound
+		return ctrl.Result{}, nil
 	}
 
 	_ = meta.SetStatusCondition(&pm.Status.Conditions, metav1.Condition{
@@ -190,12 +189,6 @@ func (r *Reconciler) buildDynatraceClient(ctx context.Context, dk *dynakube.Dyna
 //   - Reconciliation ongoing: condition status False/Unknown and reason Reconciling
 //   - Reconciliation failed: anything that does not fit the above
 func setPhase(pm *prometheusmonitoring.PrometheusMonitoring, err error) error {
-	if errors.Is(errDynaKubeNotFound, err) {
-		pm.Status.Phase = status.Error
-
-		return nil
-	}
-
 	if errors.Is(errDynaKubeNotReady, err) {
 		pm.Status.Phase = status.Deploying
 

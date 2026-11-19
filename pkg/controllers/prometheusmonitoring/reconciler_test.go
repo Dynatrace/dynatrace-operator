@@ -210,6 +210,7 @@ func Test_setPhase(t *testing.T) {
 	conditionTrue := metav1.Condition{Type: "Available", Status: metav1.ConditionTrue, Reason: status.ReasonAvailable}
 	conditionReconciling := metav1.Condition{Type: "Available", Status: metav1.ConditionFalse, Reason: status.ReasonReconciling}
 	conditionError := metav1.Condition{Type: "Available", Status: metav1.ConditionFalse, Reason: status.ReasonError}
+	conditionDynaKubeMissing := metav1.Condition{Type: prometheusmonitoring.DynaKubeAvailable, Status: metav1.ConditionFalse, Reason: status.ReasonNotFound}
 
 	boom := errors.New("boom")
 
@@ -220,8 +221,7 @@ func Test_setPhase(t *testing.T) {
 		expectedPhase status.DeploymentPhase
 		expectedErr   error
 	}{
-		{"missing dynakube on creation", errDynaKubeNotFound, nil, status.Error, nil},
-		{"missing dynakube after creation", errDynaKubeNotFound, []metav1.Condition{conditionTrue}, status.Error, nil},
+		{"missing dynakube", nil, []metav1.Condition{conditionDynaKubeMissing}, status.Error, nil},
 		{"not ready dynakube on creation", errDynaKubeNotReady, nil, status.Deploying, nil},
 		{"not ready dynakube after creation", errDynaKubeNotReady, []metav1.Condition{conditionTrue}, status.Deploying, nil},
 		{"data-ingest token unavailable", errDataIngestTokenUnavailable, nil, status.Error, nil},
