@@ -24,6 +24,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -115,8 +116,22 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ct
 
 		log.Info("skipping reconcile due to missing DynaKube")
 
+		_ = meta.SetStatusCondition(&pm.Status.Conditions, metav1.Condition{
+			Type:    prometheusmonitoring.DynaKubeAvailable,
+			Status:  metav1.ConditionFalse,
+			Reason:  status.ReasonNotFound,
+			Message: fmt.Sprintf("The DynaKube '%s' is not present in the '%s' namespace.", pm.Spec.DynaKubeName, pm.Namespace),
+		})
+
 		return ctrl.Result{}, errDynaKubeNotFound
 	}
+
+	_ = meta.SetStatusCondition(&pm.Status.Conditions, metav1.Condition{
+		Type:    prometheusmonitoring.DynaKubeAvailable,
+		Status:  metav1.ConditionTrue,
+		Reason:  status.ReasonAvailable,
+		Message: fmt.Sprintf("The DynaKube '%s' is present.", pm.Spec.DynaKubeName),
+	})
 
 	if dk.Status.Phase != status.Running {
 		log.Info("skipping reconcile due to pending DynaKube", "phase", dk.Status.Phase)
@@ -176,11 +191,7 @@ func (r *Reconciler) buildDynatraceClient(ctx context.Context, dk *dynakube.Dyna
 //   - Reconciliation failed: anything that does not fit the above
 func setPhase(pm *prometheusmonitoring.PrometheusMonitoring, err error) error {
 	if errors.Is(errDynaKubeNotFound, err) {
-		if len(pm.Status.Conditions) == 0 {
-			pm.Status.Phase = status.Deploying
-		} else {
-			pm.Status.Phase = status.Error
-		}
+		pm.Status.Phase = status.Error
 
 		return nil
 	}
