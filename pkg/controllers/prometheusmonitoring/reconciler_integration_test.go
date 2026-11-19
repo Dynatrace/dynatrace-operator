@@ -18,6 +18,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -121,6 +122,16 @@ func TestSetupWithManager(t *testing.T) {
 		require.Never(t, func() bool { return recorder.count(key) > 0 }, neverTimeout, eventuallyInterval)
 	}
 
+	// createDynaKube creates the DynaKube and waits for the reconcile its create event triggers.
+	createDynaKube := func(t *testing.T, key client.ObjectKey, dk *dynakube.DynaKube) {
+		t.Helper()
+
+		recorder.reset(key)
+		integrationtests.CreateDynakube(t, clt, dk)
+
+		require.Eventually(t, func() bool { return recorder.count(key) > 0 }, eventuallyTimeout, eventuallyInterval)
+	}
+
 	t.Run("update to an owned ConfigMap triggers reconcile", func(t *testing.T) {
 		pm, key := createPrometheusMonitoring(t)
 
@@ -168,6 +179,19 @@ func TestSetupWithManager(t *testing.T) {
 		})
 	})
 
+	t.Run("DynaKube creation triggers reconcile", func(t *testing.T) {
+		pm, key := createPrometheusMonitoring(t)
+
+		dk := &dynakube.DynaKube{
+			Name: pm.Spec.DynaKubeName, Namespace: pm.Namespace,
+			Spec: dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
+		}
+
+		assertReconcileTriggered(t, key, func() {
+			integrationtests.CreateDynakube(t, clt, dk)
+		})
+	})
+
 	t.Run("DynaKube apiUrl change triggers reconcile", func(t *testing.T) {
 		pm, key := createPrometheusMonitoring(t)
 
@@ -175,7 +199,7 @@ func TestSetupWithManager(t *testing.T) {
 			Name: pm.Spec.DynaKubeName, Namespace: pm.Namespace,
 			Spec: dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
 		}
-		integrationtests.CreateDynakube(t, clt, dk)
+		createDynaKube(t, key, dk)
 
 		assertReconcileTriggered(t, key, func() {
 			dk.Spec.APIURL = "https://other.dynatrace.com/api"
@@ -190,7 +214,7 @@ func TestSetupWithManager(t *testing.T) {
 			Name: pm.Spec.DynaKubeName, Namespace: pm.Namespace,
 			Spec: dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api", Tokens: "old-token-secret"},
 		}
-		integrationtests.CreateDynakube(t, clt, dk)
+		createDynaKube(t, key, dk)
 
 		assertReconcileTriggered(t, key, func() {
 			dk.Spec.Tokens = "new-token-secret"
@@ -205,7 +229,7 @@ func TestSetupWithManager(t *testing.T) {
 			Name: pm.Spec.DynaKubeName, Namespace: pm.Namespace,
 			Spec: dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
 		}
-		integrationtests.CreateDynakube(t, clt, dk)
+		createDynaKube(t, key, dk)
 
 		assertReconcileTriggered(t, key, func() {
 			dk.Spec.ResourceAttributes = map[string]string{"foo": "bar"}
@@ -220,7 +244,7 @@ func TestSetupWithManager(t *testing.T) {
 			Name: pm.Spec.DynaKubeName, Namespace: pm.Namespace,
 			Spec: dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
 		}
-		integrationtests.CreateDynakube(t, clt, dk)
+		createDynaKube(t, key, dk)
 
 		assertReconcileTriggered(t, key, func() {
 			dk.Spec.TrustedCAs = "test"
@@ -250,7 +274,7 @@ func TestSetupWithManager(t *testing.T) {
 			Name: pm.Spec.DynaKubeName, Namespace: pm.Namespace,
 			Spec: dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
 		}
-		integrationtests.CreateDynakube(t, clt, dk)
+		createDynaKube(t, key, dk)
 
 		assertReconcileTriggered(t, key, func() {
 			dk.Spec.Proxy = &types.ValueSource{Value: "test"}
@@ -265,11 +289,36 @@ func TestSetupWithManager(t *testing.T) {
 			Name: pm.Spec.DynaKubeName, Namespace: pm.Namespace,
 			Spec: dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
 		}
-		integrationtests.CreateDynakube(t, clt, dk)
+		createDynaKube(t, key, dk)
 
 		assertReconcileTriggered(t, key, func() {
 			dk.Spec.DynatraceAPIRequestThreshold = new(uint16(14))
 			require.NoError(t, clt.Update(t.Context(), dk))
+		})
+	})
+
+	t.Run("DynaKube tokens condition change triggers reconcile", func(t *testing.T) {
+		pm, key := createPrometheusMonitoring(t)
+
+		dk := &dynakube.DynaKube{
+			Name: pm.Spec.DynaKubeName, Namespace: pm.Namespace,
+			Spec: dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
+		}
+		createDynaKube(t, key, dk)
+
+		// The DynaKube controller reflects the token secret content in this condition.
+		assertReconcileTriggered(t, key, func() {
+			meta.SetStatusCondition(&dk.Status.Conditions, metav1.Condition{
+				Type: dynakube.TokenConditionType, Status: metav1.ConditionTrue, Reason: dynakube.ReasonTokenReady, Message: "Token ready, DataIngest token not provided",
+			})
+			require.NoError(t, dk.UpdateStatus(t.Context(), clt))
+		})
+
+		assertReconcileTriggered(t, key, func() {
+			meta.SetStatusCondition(&dk.Status.Conditions, metav1.Condition{
+				Type: dynakube.TokenConditionType, Status: metav1.ConditionTrue, Reason: dynakube.ReasonTokenReady, Message: "Token ready",
+			})
+			require.NoError(t, dk.UpdateStatus(t.Context(), clt))
 		})
 	})
 
@@ -280,7 +329,7 @@ func TestSetupWithManager(t *testing.T) {
 			Name: pm.Spec.DynaKubeName, Namespace: pm.Namespace,
 			Spec: dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
 		}
-		integrationtests.CreateDynakube(t, clt, dk)
+		createDynaKube(t, key, dk)
 
 		assertReconcileNotTriggered(t, key, func() {
 			dk.Annotations = map[string]string{"foo": "bar"}
@@ -295,7 +344,7 @@ func TestSetupWithManager(t *testing.T) {
 			Name: pm.Spec.DynaKubeName, Namespace: pm.Namespace,
 			Spec: dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
 		}
-		integrationtests.CreateDynakube(t, clt, dk)
+		createDynaKube(t, key, dk)
 
 		assertReconcileTriggered(t, key, func() {
 			dk.Spec.ResourceAttributes = map[string]string{"region": "us-east"}
@@ -324,7 +373,7 @@ func TestSetupWithManager(t *testing.T) {
 			Spec: dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
 		}
 
-		integrationtests.CreateDynakube(t, clt, dk)
+		createDynaKube(t, key, dk)
 
 		assertReconcileTriggered(t, key, func() {
 			require.NoError(t, clt.Delete(t.Context(), dk))

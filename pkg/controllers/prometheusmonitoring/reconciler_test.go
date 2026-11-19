@@ -80,7 +80,7 @@ func TestReconcile(t *testing.T) {
 		c := fake.NewClient(pm)
 		result, err := NewReconciler(c).Reconcile(t.Context(), req)
 		require.NoError(t, err)
-		require.Equal(t, missingDependencyRequeueInterval, result.RequeueAfter)
+		require.Empty(t, result)
 		require.NoError(t, c.Get(t.Context(), client.ObjectKeyFromObject(pm), pm))
 		require.Equal(t, status.Error, pm.Status.Phase)
 
@@ -89,6 +89,12 @@ func TestReconcile(t *testing.T) {
 		require.Equal(t, metav1.ConditionFalse, cond.Status)
 		require.Equal(t, status.ReasonNotFound, cond.Reason)
 		require.Equal(t, "The DynaKube 'dk' is not present in the 'dynatrace' namespace.", cond.Message)
+
+		prereq := meta.FindStatusCondition(pm.Status.Conditions, prometheusmonitoring.PrerequisitesMet)
+		require.NotNil(t, prereq)
+		require.Equal(t, metav1.ConditionFalse, prereq.Status)
+		require.Equal(t, status.ReasonNotFound, prereq.Reason)
+		require.Contains(t, prereq.Message, "'dk'")
 	})
 
 	t.Run("dynakube recovered after not found", func(t *testing.T) {
@@ -198,9 +204,9 @@ func TestReconcile_prerequisites(t *testing.T) {
 		objects []client.Object
 		message string
 	}{
-		{"tenant url missing", []client.Object{newDK(""), tokenSecret(map[string][]byte{token.DataIngestKey: []byte("t")})}, errTenantURLMissing.Error()},
-		{"token secret missing", []client.Object{newDK("https://tenant.dynatrace.com/api")}, errTokenSecretNotFound.Error() + " (dk)"},
-		{"data-ingest token missing", []client.Object{newDK("https://tenant.dynatrace.com/api"), tokenSecret(map[string][]byte{token.APIKey: []byte("t")})}, errDataIngestTokenMissing.Error()},
+		{"tenant url missing", []client.Object{newDK(""), tokenSecret(map[string][]byte{token.DataIngestKey: []byte("t")})}, "tenant URL (apiUrl) is missing in the DynaKube"},
+		{"token secret missing", []client.Object{newDK("https://tenant.dynatrace.com/api")}, "token secret dk not found"},
+		{"data-ingest token missing", []client.Object{newDK("https://tenant.dynatrace.com/api"), tokenSecret(map[string][]byte{token.APIKey: []byte("t")})}, "data-ingest token is missing in the token secret"},
 	}
 
 	for _, tt := range tests {
@@ -209,7 +215,7 @@ func TestReconcile_prerequisites(t *testing.T) {
 
 			result, err := NewReconciler(c).Reconcile(t.Context(), req)
 			require.NoError(t, err)
-			assert.Equal(t, missingDependencyRequeueInterval, result.RequeueAfter)
+			assert.Empty(t, result)
 
 			got := &prometheusmonitoring.PrometheusMonitoring{}
 			require.NoError(t, c.Get(t.Context(), client.ObjectKeyFromObject(pm), got))
@@ -243,7 +249,6 @@ func TestReconcile_prerequisitesReadError(t *testing.T) {
 	_, err := NewReconciler(c).Reconcile(t.Context(), req)
 
 	require.ErrorIs(t, err, forbidden)
-	require.NotErrorIs(t, err, errPrerequisitesNotMet)
 	require.NoError(t, c.Get(t.Context(), client.ObjectKeyFromObject(pm), pm))
 	assert.Equal(t, status.Error, pm.Status.Phase)
 
@@ -277,7 +282,7 @@ func TestReconcile_prerequisitesRecover(t *testing.T) {
 
 	result, err := r.Reconcile(t.Context(), req)
 	require.NoError(t, err)
-	require.Equal(t, missingDependencyRequeueInterval, result.RequeueAfter)
+	require.Empty(t, result)
 
 	require.NoError(t, c.Get(t.Context(), client.ObjectKeyFromObject(secret), secret))
 	secret.Data[token.DataIngestKey] = []byte("data-ingest-token")
@@ -354,6 +359,12 @@ func Test_newDynaKubeChangedPredicate(t *testing.T) {
 		{"kubernetes cluster name", func(dk *dynakube.DynaKube) { dk.Status.KubernetesClusterName = "cluster" }, true},
 		{"tokens", func(dk *dynakube.DynaKube) { dk.Spec.Tokens = "other-secret" }, true},
 		{"trusted CAs", func(dk *dynakube.DynaKube) { dk.Spec.TrustedCAs = "ca-configmap" }, true},
+		{"tokens condition added", func(dk *dynakube.DynaKube) {
+			setTokensCondition(dk, metav1.ConditionTrue, "Token ready, DataIngest token not provided")
+		}, true},
+		{"unrelated condition", func(dk *dynakube.DynaKube) {
+			dk.Status.Conditions = []metav1.Condition{{Type: "Other", Status: metav1.ConditionTrue, Reason: "r", Message: "m"}}
+		}, false},
 		{"resource attributes", func(dk *dynakube.DynaKube) { dk.Spec.ResourceAttributes = map[string]string{"a": "b"} }, true},
 	}
 
@@ -373,8 +384,8 @@ func Test_newDynaKubeChangedPredicate(t *testing.T) {
 		assert.False(t, p.Update(e))
 	})
 
-	t.Run("create is ignored", func(t *testing.T) {
-		assert.False(t, p.Create(event.TypedCreateEvent[client.Object]{Object: newDK(nil)}))
+	t.Run("create triggers", func(t *testing.T) {
+		assert.True(t, p.Create(event.TypedCreateEvent[client.Object]{Object: newDK(nil)}))
 	})
 
 	t.Run("delete triggers", func(t *testing.T) {
@@ -387,6 +398,7 @@ func Test_setPhase(t *testing.T) {
 	conditionReconciling := metav1.Condition{Type: "Available", Status: metav1.ConditionFalse, Reason: status.ReasonReconciling}
 	conditionError := metav1.Condition{Type: "Available", Status: metav1.ConditionFalse, Reason: status.ReasonError}
 	conditionDynaKubeMissing := metav1.Condition{Type: prometheusmonitoring.DynaKubeAvailable, Status: metav1.ConditionFalse, Reason: status.ReasonNotFound}
+	conditionPrerequisitesMissing := metav1.Condition{Type: prometheusmonitoring.PrerequisitesMet, Status: metav1.ConditionFalse, Reason: status.ReasonError}
 
 	boom := errors.New("boom")
 
@@ -398,7 +410,7 @@ func Test_setPhase(t *testing.T) {
 		expectedErr   error
 	}{
 		{"missing dynakube", nil, []metav1.Condition{conditionDynaKubeMissing}, status.Error, nil},
-		{"prerequisites not met", errPrerequisitesNotMet, nil, status.Error, nil},
+		{"prerequisites not met", nil, []metav1.Condition{conditionPrerequisitesMissing}, status.Error, nil},
 		{"generic error without conditions", boom, nil, status.Error, boom},
 		{"no error without conditions", nil, nil, status.Deploying, nil},
 		{"no error with all conditions true", nil, []metav1.Condition{conditionTrue, conditionTrue, conditionTrue}, status.Running, nil},
@@ -487,3 +499,95 @@ func Test_dynaKubeProxyChangedWithNoProxyFF(t *testing.T) {
 	}
 }
 
+func TestReconcile_dynaKubeDeletedAfterPrerequisitesMet(t *testing.T) {
+	req := ctrl.Request{Name: "prometheusmonitoring", Namespace: "dynatrace"}
+	pm := &prometheusmonitoring.PrometheusMonitoring{Name: req.Name, Namespace: req.Namespace, Spec: prometheusmonitoring.PrometheusMonitoringSpec{DynaKubeName: "dk"}}
+	dk := &dynakube.DynaKube{Name: "dk", Namespace: req.Namespace, Spec: dynakube.DynaKubeSpec{APIURL: "https://tenant.dynatrace.com/api"}}
+	secret := &corev1.Secret{Name: "dk", Namespace: req.Namespace, Data: map[string][]byte{token.APIKey: []byte("api-token"), token.DataIngestKey: []byte("data-ingest-token")}}
+
+	gm := newMockGatewayReconciler(t)
+	gm.EXPECT().Reconcile(t.Context(), mock.Anything, dk, image.Client(nil)).Return(nil).Once()
+	tm := newMockTargetAllocatorReconciler(t)
+	tm.EXPECT().Reconcile(t.Context(), mock.Anything, dk, image.Client(nil)).Return(nil).Once()
+	sm := newMockScraperReconciler(t)
+	sm.EXPECT().Reconcile(t.Context(), mock.Anything, dk, image.Client(nil)).Return(nil).Once()
+
+	c := fake.NewClient(pm, dk, secret)
+	r := NewReconciler(c)
+	r.newDynatraceClient = func(context.Context, client.Reader, *dynakube.DynaKube, string, string, time.Duration) (*dynatrace.Client, error) {
+		return &dynatrace.Client{}, nil
+	}
+	r.gateway = gm
+	r.targetAllocator = tm
+	r.scraper = sm
+
+	_, err := r.Reconcile(t.Context(), req)
+	require.NoError(t, err)
+	require.NoError(t, c.Get(t.Context(), client.ObjectKeyFromObject(pm), pm))
+
+	for _, conditionType := range []string{prometheusmonitoring.DynaKubeAvailable, prometheusmonitoring.PrerequisitesMet} {
+		cond := meta.FindStatusCondition(pm.Status.Conditions, conditionType)
+		require.NotNil(t, cond, conditionType)
+		require.Equal(t, metav1.ConditionTrue, cond.Status, conditionType)
+	}
+
+	require.NoError(t, c.Delete(t.Context(), dk))
+
+	_, err = r.Reconcile(t.Context(), req)
+	require.NoError(t, err)
+	require.NoError(t, c.Get(t.Context(), client.ObjectKeyFromObject(pm), pm))
+	assert.Equal(t, status.Error, pm.Status.Phase)
+
+	for _, conditionType := range []string{prometheusmonitoring.DynaKubeAvailable, prometheusmonitoring.PrerequisitesMet} {
+		cond := meta.FindStatusCondition(pm.Status.Conditions, conditionType)
+		require.NotNil(t, cond, conditionType)
+		assert.Equal(t, metav1.ConditionFalse, cond.Status, conditionType)
+		assert.Equal(t, status.ReasonNotFound, cond.Reason, conditionType)
+	}
+}
+
+func setTokensCondition(dk *dynakube.DynaKube, conditionStatus metav1.ConditionStatus, message string) {
+	meta.SetStatusCondition(&dk.Status.Conditions, metav1.Condition{
+		Type: dynakube.TokenConditionType, Status: conditionStatus, Reason: "TokenReady", Message: message,
+	})
+}
+
+func Test_tokensConditionChanged(t *testing.T) {
+	const withoutDataIngest = "Token ready, DataIngest token not provided"
+
+	newDK := func(conditionStatus metav1.ConditionStatus, message string) *dynakube.DynaKube {
+		dk := &dynakube.DynaKube{Name: "dk", Namespace: "dynatrace"}
+		if message != "" {
+			setTokensCondition(dk, conditionStatus, message)
+		}
+
+		return dk
+	}
+
+	tests := []struct {
+		name     string
+		oldDK    *dynakube.DynaKube
+		newDK    *dynakube.DynaKube
+		expected bool
+	}{
+		{"no condition", newDK("", ""), newDK("", ""), false},
+		{"condition added", newDK("", ""), newDK(metav1.ConditionTrue, withoutDataIngest), true},
+		{"condition removed", newDK(metav1.ConditionTrue, withoutDataIngest), newDK("", ""), true},
+		{"unchanged", newDK(metav1.ConditionTrue, withoutDataIngest), newDK(metav1.ConditionTrue, withoutDataIngest), false},
+		{"data-ingest token added", newDK(metav1.ConditionTrue, withoutDataIngest), newDK(metav1.ConditionTrue, "Token ready"), true},
+		{"tokens became invalid", newDK(metav1.ConditionTrue, "Token ready"), newDK(metav1.ConditionFalse, "Token verification failed"), true},
+		{"tokens recovered", newDK(metav1.ConditionFalse, "Token verification failed"), newDK(metav1.ConditionTrue, "Token ready"), true},
+		{"transition time only", newDK(metav1.ConditionTrue, withoutDataIngest), func() *dynakube.DynaKube {
+			dk := newDK(metav1.ConditionTrue, withoutDataIngest)
+			dk.Status.Conditions[0].LastTransitionTime = metav1.Now()
+
+			return dk
+		}(), false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, tokensConditionChanged(tt.oldDK, tt.newDK))
+		})
+	}
+}
