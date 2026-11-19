@@ -13,13 +13,14 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sdaemonset"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8spod"
 	appsv1 "k8s.io/api/apps/v1"
+	apimachinerywait "k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-func WaitForDaemonset(dsName, namespace string) features.Func {
-	return helpers.ToFeatureFunc(k8sdaemonset.WaitFor(dsName, namespace), true)
+func WaitForDaemonset(dsName, namespace string, otherWait ...apimachinerywait.ConditionWithContextFunc) features.Func {
+	return helpers.ToFeatureFunc(k8sdaemonset.WaitFor(dsName, namespace, otherWait...), true)
 }
 
 func WaitForDaemonSetPodsDeletion(dsName, namespace string) features.Func {

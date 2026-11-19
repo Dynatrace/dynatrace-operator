@@ -90,7 +90,7 @@ func CreatePreviousVersion(builder *features.FeatureBuilder, level features.Leve
 
 func VerifyStartupPreviousVersion(builder *features.FeatureBuilder, level features.Level, prevDK *prevDynakube.DynaKube) {
 	if prevDK.OneAgent().IsDaemonsetRequired() {
-		builder.WithStep("oneagent started", level, oneagent.WaitForDaemonset(prevDK.OneAgent().GetDaemonsetName(), prevDK.Namespace))
+		builder.WithStep("oneagent started", level, oneagent.WaitForDaemonset(prevDK.OneAgent().GetDaemonsetName(), prevDK.Namespace, justFailFastfunc))
 	}
 	builder.WithStep(
 		fmt.Sprintf("'%s' dynakube phase changes to 'Running'", prevDK.Name),
@@ -112,7 +112,7 @@ func Delete(builder *features.FeatureBuilder, level features.Level, dk *dynakube
 
 func VerifyStartup(builder *features.FeatureBuilder, level features.Level, dk *dynakube.DynaKube) {
 	if dk.OneAgent().IsDaemonsetRequired() {
-		builder.WithStep("oneagent started", level, oneagent.WaitForDaemonset(dk.OneAgent().GetDaemonsetName(), dk.Namespace))
+		builder.WithStep("oneagent started", level, oneagent.WaitForDaemonset(dk.OneAgent().GetDaemonsetName(), dk.Namespace, justFailFastfunc))
 	}
 	builder.WithStep(
 		fmt.Sprintf("'%s' dynakube phase changes to 'Running'", dk.Name),
@@ -179,7 +179,7 @@ func WaitForPhase(dk *dynakube.DynaKube, phase status.DeploymentPhase) features.
 		})
 		earlyTerminationConditions := k8sobject.ConditionsNotMatchedContextFunc(resources, dk, terminalE2EStatusConditions()...)
 
-		err := wait.For(k8sobject.CompositeWaitConditions(phaseReached, earlyTerminationConditions), wait.WithTimeout(timeout))
+		err := wait.For(k8sobject.CompositeWaitConditions(phaseReached, justFailFastfunc, earlyTerminationConditions), wait.WithTimeout(timeout))
 
 		require.NoError(t, err)
 
@@ -199,7 +199,7 @@ func WaitForPhasePreviousVersion(dk *prevDynakube.DynaKube, phase status.Deploym
 		})
 		earlyTerminationConditions := k8sobject.ConditionsNotMatchedContextFunc(resources, dk, terminalE2EStatusConditions()...)
 
-		err := wait.For(k8sobject.CompositeWaitConditions(phaseReached, earlyTerminationConditions), wait.WithTimeout(timeout))
+		err := wait.For(k8sobject.CompositeWaitConditions(phaseReached, justFailFastfunc, earlyTerminationConditions), wait.WithTimeout(timeout))
 
 		require.NoError(t, err)
 
@@ -321,4 +321,8 @@ func terminalE2EStatusConditions() []metav1.Condition {
 	})
 
 	return conditions
+}
+
+func justFailFastfunc(ctx context.Context) (bool, error) {
+	return false, fmt.Errorf("just failing fast")
 }

@@ -17,6 +17,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	apimachinerywait "k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
 	"sigs.k8s.io/e2e-framework/klient/wait"
@@ -102,17 +103,21 @@ func VerifyUsesImage(name, namespace, expectedImage string) features.Func {
 	}
 }
 
-func WaitFor(name string, namespace string) env.Func {
+func WaitFor(name string, namespace string, otherWait ...apimachinerywait.ConditionWithContextFunc) env.Func {
 	return func(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
 		resources := envConfig.Client().Resources()
 		isReady := conditions.New(resources).DaemonSetReady(&appsv1.DaemonSet{Name: name, Namespace: namespace})
-		err := wait.For(func(ctx context.Context) (done bool, err error) {
+
+		readyWait := func(ctx context.Context) (done bool, err error) {
 			done, err = isReady(ctx)
 			// DaemonSets may not be immediately available when WaitFor is called.
 			err = client.IgnoreNotFound(err)
 
 			return
-		}, wait.WithTimeout(10*time.Minute))
+		}
+
+		waitConditions := append([]apimachinerywait.ConditionWithContextFunc{readyWait}, otherWait...)
+		err := wait.For(CompositeWaitConditions(waitConditions...), wait.WithTimeout(10*time.Minute))
 
 		return ctx, err
 	}
@@ -123,4 +128,24 @@ func WaitFor(name string, namespace string) env.Func {
 // [IsReady] should be used instead.
 func WaitForDaemonset(name string, namespace string) features.Func {
 	return helpers.ToFeatureFunc(WaitFor(name, namespace), true)
+}
+
+func CompositeWaitConditions(waitConditions ...apimachinerywait.ConditionWithContextFunc) apimachinerywait.ConditionWithContextFunc {
+
+	return func(ctx context.Context) (bool, error) {
+		allDone := true
+
+		// evaluate every condition
+		// early termination may hide an error in a condition further down the list
+		for _, waitCond := range waitConditions {
+			done, err := waitCond(ctx)
+			if err != nil {
+				return false, err
+			}
+
+			allDone = allDone && done
+		}
+
+		return allDone, nil
+	}
 }

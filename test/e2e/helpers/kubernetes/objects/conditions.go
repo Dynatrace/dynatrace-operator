@@ -54,8 +54,8 @@ func CompositeWaitConditions(waitConditions ...apimachinerywait.ConditionWithCon
 	return func(ctx context.Context) (bool, error) {
 		allDone := true
 
-		// evaluate every condition on each poll, so an erroring condition fails the wait
-		// even while an earlier one is still not done
+		// evaluate every condition
+		// early termination may hide an error in a condition further down the list
 		for _, waitCond := range waitConditions {
 			done, err := waitCond(ctx)
 			if err != nil {
