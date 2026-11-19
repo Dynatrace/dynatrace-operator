@@ -284,8 +284,10 @@ linters:
         # Istio client packages
         - pkg: istio.io/client-go/pkg/apis/networking/v1beta1
           alias: istiov1beta1
-        # pkg/util/kubernetes/fields or objects/k8s* packages should never be aliased
+        # never alias the following packages
         - pkg: github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/(fields|objects)/k8s\w+
+          alias: ""
+        - pkg: k8s.io/apimachinery/pkg/api/meta
           alias: ""
     staticcheck:
       checks:
