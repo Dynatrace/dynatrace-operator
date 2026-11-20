@@ -138,10 +138,10 @@ jobs:
         with:
           persist-credentials: false
       - name: Set up Helm
-        uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+        uses: azure/setup-helm@2f5e7bc67f1f9972ab16657bb795f36d8f04de0e # v5.1.0
         with:
           # renovate datasource=github-releases depName=helm/helm
-          version: v4.3.1
+          version: v4.3.2
       - name: Run Unit tests
         id: helm-unittest
         run: |
@@ -158,10 +158,10 @@ jobs:
         with:
           persist-credentials: false
       - name: Set up Helm
-        uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+        uses: azure/setup-helm@2f5e7bc67f1f9972ab16657bb795f36d8f04de0e # v5.1.0
         with:
           # renovate datasource=github-releases depName=helm/helm
-          version: v4.3.1
+          version: v4.3.2
       - name: Run Linting
         id: helm-linting
         run: |
@@ -178,7 +178,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Setup Golang
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
         with:
           go-version: ${{ needs.detect-changes.outputs.go_version }}
           cache: false
@@ -202,7 +202,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+      - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
         with:
           go-version: ${{ needs.detect-changes.outputs.go_version }}
           cache: false
@@ -228,15 +228,15 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+      - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
         with:
           go-version: ${{ needs.detect-changes.outputs.go_version }}
           cache: false
       - name: Set up Helm
-        uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+        uses: azure/setup-helm@2f5e7bc67f1f9972ab16657bb795f36d8f04de0e # v5.1.0
         with:
           # usually we use latest, but 3.18.0 has bug https://github.com/helm/helm/issues/30890
-          version: v4.3.1
+          version: v4.3.2
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           package-manager-cache: false

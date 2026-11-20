@@ -6,6 +6,7 @@ package dynakube
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -37,6 +38,20 @@ func (dk *DynaKube) HasProxy() bool {
 
 func (dk *DynaKube) NeedsCustomNoProxy() bool {
 	return dk.HasProxy() && dk.FF().GetNoProxy() != ""
+}
+
+func (dk *DynaKube) GetNoProxyHosts() []string {
+	var hosts []string
+
+	noProxyValue := dk.FF().GetNoProxy()
+	for hostname := range strings.SplitSeq(noProxyValue, ",") {
+		hostname = strings.TrimSpace(hostname)
+		if hostname != "" {
+			hosts = append(hosts, hostname)
+		}
+	}
+
+	return hosts
 }
 
 func (dk *DynaKube) NeedsActiveGateProxy() bool {

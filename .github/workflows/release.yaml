@@ -392,7 +392,7 @@ jobs:
         id: go-version
         uses: $/.github/actions/get-go-version
       - name: Setup Golang
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
         with:
           go-version: ${{ steps.go-version.outputs.go_version }}
           cache: false
@@ -510,7 +510,7 @@ jobs:
           hack/build/ci/generate-new-helm-index-yaml.sh
       - name: Create pull request for adding helm index to main branch
         if: ${{ !contains(github.ref, '-rc.') }}
-        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        uses: peter-evans/create-pull-request@3ffccacd46053766916f087ce41d627c0b8cf2d1 # v8.1.3
         with:
           base: main
           delete-branch: true

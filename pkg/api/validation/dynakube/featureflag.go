@@ -46,7 +46,6 @@ var (
 		exp.AGAutomaticK8sAPIMonitoringClusterNameKey,
 		exp.AGTLSCertificateTransferringToOneAgentKey,
 		// csi.go
-		exp.CSIMaxFailedMountAttemptsKey,
 		exp.CSIMaxMountTimeoutKey,
 		// enrichment.go
 		exp.EnrichmentEnableAttributesDTKubernetes,

@@ -6,6 +6,8 @@ require (
 	github.com/Dynatrace/dynatrace-bootstrapper v1.4.3
 	github.com/container-storage-interface/spec v1.14.0
 	github.com/docker/cli v29.9.3+incompatible
+	github.com/container-storage-interface/spec v1.13.0
+	github.com/docker/cli v29.10.0+incompatible
 	github.com/evanphx/json-patch v5.9.11+incompatible
 	github.com/go-logr/logr v1.4.4
 	github.com/google/go-containerregistry v0.22.1

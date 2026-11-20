@@ -116,15 +116,8 @@ func getDynakubeNoProxyEnvValue(dk *dynakube.DynaKube) string {
 		noProxyValues = append(noProxyValues, activegate.GetServiceFQDN(dk))
 	}
 
-	noProxyValue := dk.FF().GetNoProxy()
-	if noProxyValue != "" {
-		for hostname := range strings.SplitSeq(noProxyValue, ",") {
-			hostname = strings.TrimSpace(hostname)
-			if hostname != "" {
-				noProxyValues = append(noProxyValues, hostname)
-			}
-		}
-	}
+	noProxyHosts := dk.GetNoProxyHosts()
+	noProxyValues = append(noProxyValues, noProxyHosts...)
 
 	return strings.Join(noProxyValues, ",")
 }
