@@ -48,6 +48,7 @@ func (v *Validator) validate(ctx context.Context, obj runtime.Object) (admission
 	errorTasks := []validatorFunc{
 		nameInvalid,
 		invalidSelectors,
+		conflictingVolumes,
 	}
 
 	var errs []error
