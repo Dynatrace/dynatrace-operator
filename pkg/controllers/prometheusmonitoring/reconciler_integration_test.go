@@ -207,6 +207,36 @@ func TestSetupWithManager(t *testing.T) {
 		})
 	})
 
+	t.Run("DynaKube customPullSecret change triggers reconcile", func(t *testing.T) {
+		pm, key := createPrometheusMonitoring(t)
+
+		dk := &dynakube.DynaKube{
+			Name: pm.Spec.DynaKubeName, Namespace: pm.Namespace,
+			Spec: dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
+		}
+		createDynaKube(t, key, dk)
+
+		assertReconcileTriggered(t, key, func() {
+			dk.Spec.CustomPullSecret = "pull-secret"
+			require.NoError(t, clt.Update(t.Context(), dk))
+		})
+	})
+
+	t.Run("DynaKube self-monitoring enabled triggers reconcile", func(t *testing.T) {
+		pm, key := createPrometheusMonitoring(t)
+
+		dk := &dynakube.DynaKube{
+			Name: pm.Spec.DynaKubeName, Namespace: pm.Namespace,
+			Spec: dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
+		}
+		createDynaKube(t, key, dk)
+
+		assertReconcileTriggered(t, key, func() {
+			dk.Spec.SelfMonitoring = &dynakube.SelfMonitoringSpec{}
+			require.NoError(t, clt.Update(t.Context(), dk))
+		})
+	})
+
 	t.Run("DynaKube tokens change triggers reconcile", func(t *testing.T) {
 		pm, key := createPrometheusMonitoring(t)
 

@@ -18,6 +18,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -202,11 +203,12 @@ func TestReconcile_prerequisites(t *testing.T) {
 	tests := []struct {
 		name    string
 		objects []client.Object
+		reason  string
 		message string
 	}{
-		{"tenant url missing", []client.Object{newDK(""), tokenSecret(map[string][]byte{token.DataIngestKey: []byte("t")})}, "tenant URL (apiUrl) is missing in the DynaKube"},
-		{"token secret missing", []client.Object{newDK("https://tenant.dynatrace.com/api")}, "token secret dk not found"},
-		{"data-ingest token missing", []client.Object{newDK("https://tenant.dynatrace.com/api"), tokenSecret(map[string][]byte{token.APIKey: []byte("t")})}, "data-ingest token is missing in the token secret"},
+		{"tenant url missing", []client.Object{newDK(""), tokenSecret(map[string][]byte{token.DataIngestKey: []byte("t")})}, status.ReasonError, "tenant URL (apiUrl) is missing in the DynaKube"},
+		{"token secret missing", []client.Object{newDK("https://tenant.dynatrace.com/api")}, status.ReasonError, "token secret dk not found"},
+		{"data-ingest token missing", []client.Object{newDK("https://tenant.dynatrace.com/api"), tokenSecret(map[string][]byte{token.APIKey: []byte("t")})}, k8sconditions.DataIngestTokenMissing, "data-ingest token is missing in the token secret"},
 	}
 
 	for _, tt := range tests {
@@ -224,7 +226,7 @@ func TestReconcile_prerequisites(t *testing.T) {
 			cond := meta.FindStatusCondition(got.Status.Conditions, prometheusmonitoring.PrerequisitesMet)
 			require.NotNil(t, cond)
 			assert.Equal(t, metav1.ConditionFalse, cond.Status)
-			assert.Equal(t, status.ReasonError, cond.Reason)
+			assert.Equal(t, tt.reason, cond.Reason)
 			assert.Contains(t, cond.Message, tt.message)
 		})
 	}
@@ -255,7 +257,8 @@ func TestReconcile_prerequisitesReadError(t *testing.T) {
 	cond := meta.FindStatusCondition(pm.Status.Conditions, prometheusmonitoring.PrerequisitesMet)
 	require.NotNil(t, cond)
 	assert.Equal(t, metav1.ConditionFalse, cond.Status)
-	assert.Contains(t, cond.Message, forbidden.Error())
+	assert.Equal(t, k8sconditions.KubeAPIErrorReason, cond.Reason)
+	assert.Equal(t, "token secret cannot be read", cond.Message)
 }
 
 func TestReconcile_prerequisitesRecover(t *testing.T) {
@@ -359,6 +362,8 @@ func Test_newDynaKubeChangedPredicate(t *testing.T) {
 		{"kubernetes cluster name", func(dk *dynakube.DynaKube) { dk.Status.KubernetesClusterName = "cluster" }, true},
 		{"tokens", func(dk *dynakube.DynaKube) { dk.Spec.Tokens = "other-secret" }, true},
 		{"trusted CAs", func(dk *dynakube.DynaKube) { dk.Spec.TrustedCAs = "ca-configmap" }, true},
+		{"custom pull secret", func(dk *dynakube.DynaKube) { dk.Spec.CustomPullSecret = "pull-secret" }, true},
+		{"self-monitoring enabled", func(dk *dynakube.DynaKube) { dk.Spec.SelfMonitoring = &dynakube.SelfMonitoringSpec{} }, true},
 		{"tokens condition added", func(dk *dynakube.DynaKube) {
 			setTokensCondition(dk, metav1.ConditionTrue, "Token ready, DataIngest token not provided")
 		}, true},
