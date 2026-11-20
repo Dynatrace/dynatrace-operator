@@ -331,6 +331,11 @@ func dynaKubeProxyChanged(oldDK, newDK *dynakube.DynaKube) bool {
 		return true
 	}
 
+	// FF only matters if Spec.Proxy is not an empty ValueSource{}. Proxy!=nil condition is too weak
+	if (oldDK.HasProxy() || newDK.HasProxy()) && oldDK.FF().GetNoProxy() != newDK.FF().GetNoProxy() {
+		return true
+	}
+
 	if oldDK.Spec.Proxy != nil {
 		return *oldDK.Spec.Proxy != *newDK.Spec.Proxy
 	}
