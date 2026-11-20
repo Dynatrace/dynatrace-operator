@@ -192,95 +192,45 @@ func TestSetupWithManager(t *testing.T) {
 		})
 	})
 
-	t.Run("DynaKube apiUrl change triggers reconcile", func(t *testing.T) {
-		pm, key := createPrometheusMonitoring(t)
+	specChanges := []struct {
+		name    string
+		initial func(spec *dynakube.DynaKubeSpec)
+		change  func(spec *dynakube.DynaKubeSpec)
+	}{
+		{name: "apiUrl", change: func(spec *dynakube.DynaKubeSpec) { spec.APIURL = "https://other.dynatrace.com/api" }},
+		{name: "customPullSecret", change: func(spec *dynakube.DynaKubeSpec) { spec.CustomPullSecret = "pull-secret" }},
+		{name: "self-monitoring enabled", change: func(spec *dynakube.DynaKubeSpec) { spec.SelfMonitoring = &dynakube.SelfMonitoringSpec{} }},
+		{
+			name:    "tokens",
+			initial: func(spec *dynakube.DynaKubeSpec) { spec.Tokens = "old-token-secret" },
+			change:  func(spec *dynakube.DynaKubeSpec) { spec.Tokens = "new-token-secret" },
+		},
+		{name: "resource attributes", change: func(spec *dynakube.DynaKubeSpec) { spec.ResourceAttributes = map[string]string{"foo": "bar"} }},
+		{name: "trusted CAs", change: func(spec *dynakube.DynaKubeSpec) { spec.TrustedCAs = "test" }},
+		{name: "proxy", change: func(spec *dynakube.DynaKubeSpec) { spec.Proxy = &types.ValueSource{Value: "test"} }},
+		{name: "API request threshold", change: func(spec *dynakube.DynaKubeSpec) { spec.DynatraceAPIRequestThreshold = new(uint16(14)) }},
+	}
 
-		dk := &dynakube.DynaKube{
-			Name: pm.Spec.DynaKubeName, Namespace: pm.Namespace,
-			Spec: dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
-		}
-		createDynaKube(t, key, dk)
+	for _, tc := range specChanges {
+		t.Run("DynaKube "+tc.name+" change triggers reconcile", func(t *testing.T) {
+			pm, key := createPrometheusMonitoring(t)
 
-		assertReconcileTriggered(t, key, func() {
-			dk.Spec.APIURL = "https://other.dynatrace.com/api"
-			require.NoError(t, clt.Update(t.Context(), dk))
+			dk := &dynakube.DynaKube{
+				Name: pm.Spec.DynaKubeName, Namespace: pm.Namespace,
+				Spec: dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
+			}
+			if tc.initial != nil {
+				tc.initial(&dk.Spec)
+			}
+
+			createDynaKube(t, key, dk)
+
+			assertReconcileTriggered(t, key, func() {
+				tc.change(&dk.Spec)
+				require.NoError(t, clt.Update(t.Context(), dk))
+			})
 		})
-	})
-
-	t.Run("DynaKube customPullSecret change triggers reconcile", func(t *testing.T) {
-		pm, key := createPrometheusMonitoring(t)
-
-		dk := &dynakube.DynaKube{
-			Name: pm.Spec.DynaKubeName, Namespace: pm.Namespace,
-			Spec: dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
-		}
-		createDynaKube(t, key, dk)
-
-		assertReconcileTriggered(t, key, func() {
-			dk.Spec.CustomPullSecret = "pull-secret"
-			require.NoError(t, clt.Update(t.Context(), dk))
-		})
-	})
-
-	t.Run("DynaKube self-monitoring enabled triggers reconcile", func(t *testing.T) {
-		pm, key := createPrometheusMonitoring(t)
-
-		dk := &dynakube.DynaKube{
-			Name: pm.Spec.DynaKubeName, Namespace: pm.Namespace,
-			Spec: dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
-		}
-		createDynaKube(t, key, dk)
-
-		assertReconcileTriggered(t, key, func() {
-			dk.Spec.SelfMonitoring = &dynakube.SelfMonitoringSpec{}
-			require.NoError(t, clt.Update(t.Context(), dk))
-		})
-	})
-
-	t.Run("DynaKube tokens change triggers reconcile", func(t *testing.T) {
-		pm, key := createPrometheusMonitoring(t)
-
-		dk := &dynakube.DynaKube{
-			Name: pm.Spec.DynaKubeName, Namespace: pm.Namespace,
-			Spec: dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api", Tokens: "old-token-secret"},
-		}
-		createDynaKube(t, key, dk)
-
-		assertReconcileTriggered(t, key, func() {
-			dk.Spec.Tokens = "new-token-secret"
-			require.NoError(t, clt.Update(t.Context(), dk))
-		})
-	})
-
-	t.Run("DynaKube resource attributes change triggers reconcile", func(t *testing.T) {
-		pm, key := createPrometheusMonitoring(t)
-
-		dk := &dynakube.DynaKube{
-			Name: pm.Spec.DynaKubeName, Namespace: pm.Namespace,
-			Spec: dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
-		}
-		createDynaKube(t, key, dk)
-
-		assertReconcileTriggered(t, key, func() {
-			dk.Spec.ResourceAttributes = map[string]string{"foo": "bar"}
-			require.NoError(t, clt.Update(t.Context(), dk))
-		})
-	})
-
-	t.Run("DynaKube trusted CAs change triggers reconcile", func(t *testing.T) {
-		pm, key := createPrometheusMonitoring(t)
-
-		dk := &dynakube.DynaKube{
-			Name: pm.Spec.DynaKubeName, Namespace: pm.Namespace,
-			Spec: dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
-		}
-		createDynaKube(t, key, dk)
-
-		assertReconcileTriggered(t, key, func() {
-			dk.Spec.TrustedCAs = "test"
-			require.NoError(t, clt.Update(t.Context(), dk))
-		})
-	})
+	}
 
 	t.Run("DynaKube operator root CA hash change triggers reconcile", func(t *testing.T) {
 		pm, key := createPrometheusMonitoring(t)
@@ -294,36 +244,6 @@ func TestSetupWithManager(t *testing.T) {
 		assertReconcileTriggered(t, key, func() {
 			dk.Status.CA.PublicHash = "new-hash"
 			require.NoError(t, dk.UpdateStatus(t.Context(), clt))
-		})
-	})
-
-	t.Run("DynaKube proxy change triggers reconcile", func(t *testing.T) {
-		pm, key := createPrometheusMonitoring(t)
-
-		dk := &dynakube.DynaKube{
-			Name: pm.Spec.DynaKubeName, Namespace: pm.Namespace,
-			Spec: dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
-		}
-		createDynaKube(t, key, dk)
-
-		assertReconcileTriggered(t, key, func() {
-			dk.Spec.Proxy = &types.ValueSource{Value: "test"}
-			require.NoError(t, clt.Update(t.Context(), dk))
-		})
-	})
-
-	t.Run("DynaKube API request threshold triggers reconcile", func(t *testing.T) {
-		pm, key := createPrometheusMonitoring(t)
-
-		dk := &dynakube.DynaKube{
-			Name: pm.Spec.DynaKubeName, Namespace: pm.Namespace,
-			Spec: dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
-		}
-		createDynaKube(t, key, dk)
-
-		assertReconcileTriggered(t, key, func() {
-			dk.Spec.DynatraceAPIRequestThreshold = new(uint16(14))
-			require.NoError(t, clt.Update(t.Context(), dk))
 		})
 	})
 
@@ -363,21 +283,6 @@ func TestSetupWithManager(t *testing.T) {
 
 		assertReconcileNotTriggered(t, key, func() {
 			dk.Annotations = map[string]string{"foo": "bar"}
-			require.NoError(t, clt.Update(t.Context(), dk))
-		})
-	})
-
-	t.Run("DynaKube resource attributes change triggers reconcile", func(t *testing.T) {
-		pm, key := createPrometheusMonitoring(t)
-
-		dk := &dynakube.DynaKube{
-			Name: pm.Spec.DynaKubeName, Namespace: pm.Namespace,
-			Spec: dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
-		}
-		createDynaKube(t, key, dk)
-
-		assertReconcileTriggered(t, key, func() {
-			dk.Spec.ResourceAttributes = map[string]string{"region": "us-east"}
 			require.NoError(t, clt.Update(t.Context(), dk))
 		})
 	})
