@@ -22,3 +22,7 @@ WARNING: Golang profiling endpoint is enabled. Make sure to restrict external ac
 {{- if .Values.dtClientLogLevel }}
 WARNING: Enabled extended Dynatrace API logging verbosity. This may expose confidential information to your logging infrastructure.
 {{- end }}
+{{- if semverCompare "<1.29-0" .Capabilities.KubeVersion.Version }}
+WARNING: The Kubernetes version you are currently running was already outside Dynatrace's officially supported versions when the version of this chart was released.
+More information: https://docs.dynatrace.com/docs/ingest-from/technology-support/support-model-and-issues
+{{- end }}
