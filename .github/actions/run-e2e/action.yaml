@@ -132,15 +132,15 @@ runs:
       with:
         dockerfile: ./target/Dockerfile
     - name: Set up go
-      uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+      uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
       with:
         go-version: ${{ steps.go-version.outputs.go_version }}
         cache: false
     - name: Set up helm
-      uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+      uses: azure/setup-helm@2f5e7bc67f1f9972ab16657bb795f36d8f04de0e # v5.1.0
       with:
         # renovate datasource=github-releases depName=helm/helm
-        version: v4.3.1
+        version: v4.3.2
         token: ${{ github.token }}
     - name: Install gotestsum
       shell: bash
