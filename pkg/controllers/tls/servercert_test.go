@@ -25,6 +25,8 @@ const (
 	operatorNamespace = "dynatrace"
 	ownerNamespace    = "consumer-ns"
 	secretName        = "server-cert"
+	componentName     = "test"
+	serviceName       = "svc"
 )
 
 func newOwner() *dynakube.DynaKube {
@@ -47,21 +49,20 @@ func setupIssuer(t *testing.T) (*Issuer, client.Client) {
 	_, err := NewController(clt, operatorNamespace).Reconcile(t.Context(), reconcile.Request{})
 	require.NoError(t, err)
 
-	return NewIssuer(clt, operatorNamespace), clt
+	return NewIssuer(clt, operatorNamespace, componentName, serviceName), clt
 }
 
 func TestServiceDNSNames(t *testing.T) {
-	assert.Equal(t, []string{"svc", "svc.ns", "svc.ns.svc", "svc.ns.svc.cluster.local"}, ServiceDNSNames("svc", "ns"))
+	assert.ElementsMatch(t, []string{"svc", "svc.ns", "svc.ns.svc", "svc.ns.svc.cluster.local"}, serviceDNSNames("svc", "ns"))
+	assert.Equal(t, "svc.ns", serviceDNSNames("svc", "ns")[0], "the first name is used as common name")
 }
 
 func TestEnsureServerCertSecret(t *testing.T) {
-	names := ServiceDNSNames("svc", ownerNamespace)
-
 	t.Run("creates owned secret with hash annotation", func(t *testing.T) {
 		issuer, clt := setupIssuer(t)
 		owner := newOwner()
 
-		hash, err := issuer.EnsureServerCertSecret(t.Context(), owner, "test", secretName, names)
+		hash, err := issuer.EnsureServerCertSecret(t.Context(), owner, secretName)
 		require.NoError(t, err)
 		require.NotEmpty(t, hash)
 
@@ -79,12 +80,12 @@ func TestEnsureServerCertSecret(t *testing.T) {
 		issuer, clt := setupIssuer(t)
 		owner := newOwner()
 
-		hash, err := issuer.EnsureServerCertSecret(t.Context(), owner, "test", secretName, names)
+		hash, err := issuer.EnsureServerCertSecret(t.Context(), owner, secretName)
 		require.NoError(t, err)
 
 		rv := getServerSecret(t, clt).ResourceVersion
 
-		hash2, err := issuer.EnsureServerCertSecret(t.Context(), owner, "test", secretName, append([]string{}, names...))
+		hash2, err := issuer.EnsureServerCertSecret(t.Context(), owner, secretName)
 		require.NoError(t, err)
 		assert.Equal(t, hash, hash2)
 		assert.Equal(t, rv, getServerSecret(t, clt).ResourceVersion)
@@ -94,7 +95,7 @@ func TestEnsureServerCertSecret(t *testing.T) {
 		issuer, clt := setupIssuer(t)
 		owner := newOwner()
 
-		hash, err := issuer.EnsureServerCertSecret(t.Context(), owner, "test", secretName, names)
+		hash, err := issuer.EnsureServerCertSecret(t.Context(), owner, secretName)
 		require.NoError(t, err)
 
 		secret := getServerSecret(t, clt)
@@ -102,7 +103,7 @@ func TestEnsureServerCertSecret(t *testing.T) {
 		delete(secret.Annotations, CertHashAnnotation)
 		require.NoError(t, clt.Update(t.Context(), secret))
 
-		hash2, err := issuer.EnsureServerCertSecret(t.Context(), owner, "test", secretName, names)
+		hash2, err := issuer.EnsureServerCertSecret(t.Context(), owner, secretName)
 		require.NoError(t, err)
 		assert.Equal(t, hash, hash2)
 		assert.Equal(t, crt, getServerSecret(t, clt).Data[consts.TLSCrtDataName])
@@ -112,23 +113,25 @@ func TestEnsureServerCertSecret(t *testing.T) {
 		issuer, clt := setupIssuer(t)
 		owner := newOwner()
 
-		hash, err := issuer.EnsureServerCertSecret(t.Context(), owner, "test", secretName, names)
+		hash, err := issuer.EnsureServerCertSecret(t.Context(), owner, secretName)
 		require.NoError(t, err)
 
-		hash2, err := issuer.EnsureServerCertSecret(t.Context(), owner, "test", secretName, append([]string{"extra"}, names...))
+		otherIssuer := NewIssuer(clt, operatorNamespace, componentName, "other-svc")
+
+		hash2, err := otherIssuer.EnsureServerCertSecret(t.Context(), owner, secretName)
 		require.NoError(t, err)
 		assert.NotEqual(t, hash, hash2)
 
 		leaf, err := certificates.ParseCertificatePEM(getServerSecret(t, clt).Data[consts.TLSCrtDataName])
 		require.NoError(t, err)
-		assert.Contains(t, leaf.DNSNames, "extra")
+		assert.ElementsMatch(t, serviceDNSNames("other-svc", ownerNamespace), leaf.DNSNames)
 	})
 
 	t.Run("reissues on CA change", func(t *testing.T) {
 		issuer, clt := setupIssuer(t)
 		owner := newOwner()
 
-		hash, err := issuer.EnsureServerCertSecret(t.Context(), owner, "test", secretName, names)
+		hash, err := issuer.EnsureServerCertSecret(t.Context(), owner, secretName)
 		require.NoError(t, err)
 
 		caSecret := &corev1.Secret{}
@@ -137,7 +140,7 @@ func TestEnsureServerCertSecret(t *testing.T) {
 		_, err = NewController(clt, operatorNamespace).Reconcile(t.Context(), reconcile.Request{})
 		require.NoError(t, err)
 
-		hash2, err := issuer.EnsureServerCertSecret(t.Context(), owner, "test", secretName, names)
+		hash2, err := issuer.EnsureServerCertSecret(t.Context(), owner, secretName)
 		require.NoError(t, err)
 		assert.NotEqual(t, hash, hash2)
 
@@ -150,12 +153,12 @@ func TestEnsureServerCertSecret(t *testing.T) {
 			issuer, _ := setupIssuer(t)
 			owner := newOwner()
 
-			hash, err := issuer.EnsureServerCertSecret(t.Context(), owner, "test", secretName, names)
+			hash, err := issuer.EnsureServerCertSecret(t.Context(), owner, secretName)
 			require.NoError(t, err)
 
 			time.Sleep(certificates.ServerCertDuration - certificates.ServerCertRenewalThreshold + time.Hour)
 
-			hash2, err := issuer.EnsureServerCertSecret(t.Context(), owner, "test", secretName, names)
+			hash2, err := issuer.EnsureServerCertSecret(t.Context(), owner, secretName)
 			require.NoError(t, err)
 			assert.NotEqual(t, hash, hash2)
 		})
@@ -171,10 +174,10 @@ func TestEnsureServerCertSecret(t *testing.T) {
 
 			time.Sleep(time.Until(ca.Cert.NotAfter) - time.Hour)
 
-			hash, err := issuer.EnsureServerCertSecret(t.Context(), owner, "test", secretName, names)
+			hash, err := issuer.EnsureServerCertSecret(t.Context(), owner, secretName)
 			require.NoError(t, err)
 
-			hash2, err := issuer.EnsureServerCertSecret(t.Context(), owner, "test", secretName, names)
+			hash2, err := issuer.EnsureServerCertSecret(t.Context(), owner, secretName)
 			require.NoError(t, err)
 			assert.Equal(t, hash, hash2)
 		})
@@ -190,7 +193,7 @@ func TestEnsureServerCertSecret(t *testing.T) {
 			Type:      corev1.SecretTypeOpaque,
 		}))
 
-		_, err := issuer.EnsureServerCertSecret(t.Context(), owner, "test", secretName, names)
+		_, err := issuer.EnsureServerCertSecret(t.Context(), owner, secretName)
 		require.NoError(t, err)
 		assert.Equal(t, corev1.SecretTypeTLS, getServerSecret(t, clt).Type)
 	})
@@ -198,7 +201,7 @@ func TestEnsureServerCertSecret(t *testing.T) {
 	t.Run("CA missing", func(t *testing.T) {
 		clt := fake.NewClient()
 
-		_, err := NewIssuer(clt, operatorNamespace).EnsureServerCertSecret(t.Context(), newOwner(), "test", secretName, names)
+		_, err := NewIssuer(clt, operatorNamespace, componentName, serviceName).EnsureServerCertSecret(t.Context(), newOwner(), secretName)
 		require.Error(t, err)
 		assert.True(t, IsCAUnavailable(err))
 		require.ErrorIs(t, err, ErrCANotFound)
@@ -212,7 +215,7 @@ func TestEnsureServerCertSecret(t *testing.T) {
 		caSecret.Data["ca.key"] = []byte("garbage")
 		require.NoError(t, clt.Update(t.Context(), caSecret))
 
-		_, err := issuer.EnsureServerCertSecret(t.Context(), newOwner(), "test", secretName, names)
+		_, err := issuer.EnsureServerCertSecret(t.Context(), newOwner(), secretName)
 		require.Error(t, err)
 		assert.True(t, IsCAUnavailable(err))
 	})
@@ -220,13 +223,13 @@ func TestEnsureServerCertSecret(t *testing.T) {
 	t.Run("invalid arguments", func(t *testing.T) {
 		issuer, _ := setupIssuer(t)
 
-		_, err := issuer.EnsureServerCertSecret(t.Context(), nil, "test", secretName, names)
+		_, err := issuer.EnsureServerCertSecret(t.Context(), nil, secretName)
 		require.Error(t, err)
 
-		_, err = issuer.EnsureServerCertSecret(t.Context(), &dynakube.DynaKube{}, "test", secretName, names)
+		_, err = issuer.EnsureServerCertSecret(t.Context(), &dynakube.DynaKube{}, secretName)
 		require.Error(t, err)
 
-		_, err = issuer.EnsureServerCertSecret(t.Context(), newOwner(), "test", secretName, nil)
+		_, err = NewIssuer(fake.NewClient(), operatorNamespace, componentName, "").EnsureServerCertSecret(t.Context(), newOwner(), secretName)
 		require.Error(t, err)
 	})
 }

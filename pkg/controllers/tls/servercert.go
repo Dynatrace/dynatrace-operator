@@ -49,41 +49,50 @@ func IsCAUnavailable(err error) bool {
 	return errors.As(err, &target)
 }
 
-// ServiceDNSNames returns the DNS names under which a Service is reachable in the cluster.
-func ServiceDNSNames(serviceName, namespace string) []string {
+// serviceDNSNames returns the DNS names under which a Service is reachable in the cluster.
+func serviceDNSNames(serviceName, namespace string) []string {
 	return []string{
+		serviceName + "." + namespace, // kept as first, to remain compatible with previous impl
 		serviceName,
-		serviceName + "." + namespace,
 		serviceName + "." + namespace + ".svc",
 		serviceName + "." + namespace + ".svc.cluster.local",
 	}
 }
 
-// Issuer manages server cert Secrets that are signed by the operator root CA.
+// Issuer manages the server cert Secret of a component, that is signed by the operator root CA.
 type Issuer struct {
 	client            client.Client
 	operatorNamespace string
+	// componentName is used for labeling the Secret
+	componentName string
+	// serviceName is the name of the Service of the component, the server certificate is valid for its DNS names
+	serviceName string
 }
 
-func NewIssuer(clt client.Client, operatorNamespace string) *Issuer {
+func NewIssuer(clt client.Client, operatorNamespace, componentName, serviceName string) *Issuer {
 	return &Issuer{
 		client:            clt,
 		operatorNamespace: operatorNamespace,
+		componentName:     componentName,
+		serviceName:       serviceName,
 	}
 }
 
 // EnsureServerCertSecret makes sure that a TLS Secret named secretName, owned by owner, exists in the
-// namespace of the owner, and contains a valid server certificate for dnsNames, signed by the current operator root CA.
-// The certificate is re-issued if the DNS names or the CA changed, or if it is about to expire.
+// namespace of the owner, and contains a valid server certificate for the DNS names of the service of the Issuer
+// (in the namespace of the owner), signed by the current operator root CA.
+// The certificate is re-issued if the service or the CA changed, or if it is about to expire.
 // It returns the hash of tls.crt and ca.crt that is also stored in the CertHashAnnotation of the Secret.
-func (i *Issuer) EnsureServerCertSecret(ctx context.Context, owner client.Object, componentName, secretName string, dnsNames []string) (string, error) {
+func (i *Issuer) EnsureServerCertSecret(ctx context.Context, owner client.Object, secretName string) (string, error) {
 	if owner == nil || owner.GetNamespace() == "" {
 		return "", errors.New("owner with a namespace is required to ensure a server certificate secret")
 	}
 
-	if len(dnsNames) == 0 {
-		return "", errors.New("at least one DNS name is required to ensure a server certificate secret")
+	if i.serviceName == "" {
+		return "", errors.New("service name is required to ensure a server certificate secret")
 	}
+
+	dnsNames := serviceDNSNames(i.serviceName, owner.GetNamespace())
 
 	now := time.Now()
 
@@ -102,7 +111,7 @@ func (i *Issuer) EnsureServerCertSecret(ctx context.Context, owner client.Object
 	err = k8sobject.RetryCreateOrUpdate(ctx, i.client, secret, func() error {
 		var err error
 
-		k8slabel.New(componentName, owner.GetName(), "").MergeInto(secret)
+		k8slabel.New(i.componentName, owner.GetName(), "").MergeInto(secret)
 
 		err = controllerutil.SetControllerReference(owner, secret, i.client.Scheme())
 		if err != nil {
