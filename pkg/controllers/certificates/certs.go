@@ -18,6 +18,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/certificates"
 	"github.com/pkg/errors"
+	corev1 "k8s.io/api/core/v1"
 )
 
 const intSerialNumberLimit = 128
@@ -28,8 +29,6 @@ const (
 	RootKey     = "ca.key"
 	RootCert    = "ca.crt"
 	RootCertOld = "ca.crt.old"
-	ServerKey   = "tls.key"
-	ServerCert  = "tls.crt"
 )
 
 // Certs handles creation and renewal of CA and SSL/TLS server certificates.
@@ -113,13 +112,13 @@ func (cs *Certs) validateRootCerts(ctx context.Context, now time.Time) bool {
 func (cs *Certs) validateServerCerts(ctx context.Context, now time.Time) bool {
 	log := logd.FromContext(ctx)
 
-	if cs.Data[ServerKey] == nil || cs.Data[ServerCert] == nil {
+	if cs.Data[corev1.TLSPrivateKeyKey] == nil || cs.Data[corev1.TLSCertKey] == nil {
 		log.Info("no server certificates found, creating")
 
 		return true
 	}
 
-	isValid, err := certificates.ValidateCertificateExpiration(ctx, cs.Data[ServerCert], cs.RenewalThreshold, now)
+	isValid, err := certificates.ValidateCertificateExpiration(ctx, cs.Data[corev1.TLSCertKey], cs.RenewalThreshold, now)
 	if err != nil || !isValid {
 		log.Info("server certificate failed to parse or is outdated")
 
@@ -194,7 +193,7 @@ func (cs *Certs) generateServerCerts(ctx context.Context, domain string, now tim
 	// Generate server keys
 	log.Info("generating server certificate")
 
-	privateKey, err := cs.generatePrivateKey(ServerKey)
+	privateKey, err := cs.generatePrivateKey(corev1.TLSPrivateKeyKey)
 	if err != nil {
 		return err
 	}
@@ -231,7 +230,7 @@ func (cs *Certs) generateServerCerts(ctx context.Context, domain string, now tim
 		return errors.WithMessage(err, "failed to generate server certificate")
 	}
 
-	cs.Data[ServerCert] = pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: serverPublicCertDER})
+	cs.Data[corev1.TLSCertKey] = pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: serverPublicCertDER})
 
 	log.Info("server certificate generated")
 

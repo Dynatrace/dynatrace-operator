@@ -121,8 +121,8 @@ func activeGateTLSCertificateTester(t *testing.T) {
 
 func activeGateTLSDataTester(t *testing.T) {
 	data := map[string][]byte{
-		corev1.TLSCertKey: []byte(testSecretValue),
-		"tls.key":         []byte(testSecretValueNew),
+		corev1.TLSCertKey:       []byte(testSecretValue),
+		corev1.TLSPrivateKeyKey: []byte(testSecretValueNew),
 	}
 	dk := dynakube.DynaKube{
 		Spec: dynakube.DynaKubeSpec{
