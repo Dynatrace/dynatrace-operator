@@ -137,7 +137,16 @@ func TestOperatorRootCA(t *testing.T) {
 				return
 			}
 
-			assert.Empty(c, cm.OwnerReferences)
+			// no operator deployment in the test environment, that could own the secret
+			if assert.Len(c, cm.OwnerReferences, 1) {
+				assert.Equal(c, "Secret", cm.OwnerReferences[0].Kind)
+				assert.Equal(c, secret.UID, cm.OwnerReferences[0].UID)
+			}
+
+			if assert.NotNil(c, cm.Immutable) {
+				assert.True(c, *cm.Immutable)
+			}
+
 			assert.NotContains(c, cm.Data, operatortls.CAKeyKey)
 			assert.Equal(c, string(secret.Data[operatortls.CACertKey]), cm.Data[operatortls.CACertKey])
 		}, eventuallyTimeout, eventuallyInterval)
@@ -193,7 +202,10 @@ func TestOperatorRootCA(t *testing.T) {
 
 		secretAfter, err := getCASecret(t, clt)
 		require.NoError(t, err)
-		assert.Empty(t, secretAfter.OwnerReferences)
+
+		for _, ref := range secretAfter.OwnerReferences {
+			assert.NotEqual(t, "DynaKube", ref.Kind)
+		}
 	})
 
 	t.Run("corrupted key is replaced by a new valid CA", func(t *testing.T) {
@@ -364,7 +376,8 @@ func TestWatchCA(t *testing.T) {
 			bundle, err := getBundle(t, clt)
 			require.NoError(t, err)
 
-			bundle.Data["unrelated"] = "change"
+			// the data of the bundle is immutable
+			bundle.Annotations = map[string]string{"unrelated": "change"}
 			require.NoError(t, clt.Update(t.Context(), bundle))
 		})
 	})

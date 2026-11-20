@@ -12,10 +12,13 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/certificates"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
+	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
@@ -87,13 +90,58 @@ func TestReconcile(t *testing.T) {
 		assert.Contains(t, secret.Data, CACertKey)
 		assert.Contains(t, secret.Data, CAKeyKey)
 		assert.Equal(t, k8slabel.OperatorComponentLabel, secret.Labels[k8slabel.AppNameLabel])
-		assert.Empty(t, secret.OwnerReferences)
+		assert.Empty(t, secret.OwnerReferences, "there is no operator deployment to own the secret")
 
 		cm := getConfigMap(t, clt)
 		assert.Len(t, cm.Data, 1)
 		assert.Equal(t, string(secret.Data[CACertKey]), cm.Data[CACertKey])
 		assert.Equal(t, k8slabel.OperatorComponentLabel, cm.Labels[k8slabel.AppNameLabel])
-		assert.Empty(t, cm.OwnerReferences)
+		require.NotNil(t, cm.Immutable)
+		assert.True(t, *cm.Immutable)
+		require.Len(t, cm.OwnerReferences, 1)
+		assert.Equal(t, "Secret", cm.OwnerReferences[0].Kind)
+		assert.Equal(t, CASecretName, cm.OwnerReferences[0].Name)
+		assert.Nil(t, cm.OwnerReferences[0].BlockOwnerDeletion)
+	})
+
+	t.Run("secret is owned by the operator deployment", func(t *testing.T) {
+		deployment := &appsv1.Deployment{Name: version.AppName, Namespace: testNamespace, UID: "deployment-uid"}
+		clt := fake.NewClient(deployment)
+		c := NewController(clt, testNamespace)
+
+		reconcileOnce(t, c)
+
+		secret := getSecret(t, clt)
+		require.Len(t, secret.OwnerReferences, 1)
+		assert.Equal(t, "Deployment", secret.OwnerReferences[0].Kind)
+		assert.Equal(t, version.AppName, secret.OwnerReferences[0].Name)
+		assert.True(t, metav1.IsControlledBy(secret, deployment))
+
+		// owning it does not make the secret change on every reconcile
+		rv := secret.ResourceVersion
+
+		reconcileOnce(t, c)
+
+		assert.Equal(t, rv, getSecret(t, clt).ResourceVersion)
+	})
+
+	t.Run("bundle is recreated if the CA is regenerated", func(t *testing.T) {
+		clt := fake.NewClient()
+		c := NewController(clt, testNamespace)
+
+		reconcileOnce(t, c)
+
+		oldCert := getSecret(t, clt).Data[CACertKey]
+
+		require.NoError(t, clt.Delete(t.Context(), getSecret(t, clt)))
+		reconcileOnce(t, c)
+
+		newCert := getSecret(t, clt).Data[CACertKey]
+		require.NotEqual(t, oldCert, newCert)
+
+		cm := getConfigMap(t, clt)
+		assert.Equal(t, string(newCert), cm.Data[CACertKey])
+		assert.True(t, *cm.Immutable)
 	})
 
 	t.Run("second reconcile does not change anything", func(t *testing.T) {

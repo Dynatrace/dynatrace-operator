@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/eventfilter"
@@ -15,6 +16,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	k8sobject "github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -22,6 +24,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -84,24 +87,27 @@ func (c *Controller) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func (c *Controller) Reconcile(ctx context.Context, _ reconcile.Request) (reconcile.Result, error) {
-	ca, err := c.ensureCA(ctx)
+	caSecret, err := c.ensureCA(ctx)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
-	return reconcile.Result{}, c.ensureBundle(ctx, ca)
+	return reconcile.Result{}, c.ensureBundle(ctx, caSecret)
 }
 
-// ensureCA makes sure the CA Secret holds a valid CA and returns it. A valid CA Secret is never written,
-// a missing one is created and an invalid one is replaced in place.
-func (c *Controller) ensureCA(ctx context.Context) (*certificates.CA, error) {
+// ensureCA makes sure the CA Secret holds a valid CA and returns the Secret. A valid CA Secret is never written,
+// a missing or an invalid one is (re)created. The Secret is owned by the operator Deployment, so it is removed with the Operator.
+func (c *Controller) ensureCA(ctx context.Context) (*corev1.Secret, error) {
 	log := logd.FromContext(ctx)
+
+	owner, err := c.getOperatorDeployment(ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	secret := &corev1.Secret{Name: CASecretName, Namespace: c.namespace}
 
-	var ca *certificates.CA
-
-	err := k8sobject.RetryCreateOrUpdate(ctx, c.client, secret, func() error {
+	err = k8sobject.RetryCreateOrUpdate(ctx, c.client, secret, func() error {
 		// after a recreate the object still holds the data of the deleted Secret, which must not be validated again
 		if secret.ResourceVersion == "" {
 			secret.Data = nil
@@ -116,10 +122,15 @@ func (c *Controller) ensureCA(ctx context.Context) (*certificates.CA, error) {
 
 		k8slabel.New(k8slabel.OperatorComponentLabel, version.AppName, "").MergeInto(secret)
 
-		parsed, err := certificates.ParseCA(secret.Data[CACertKey], secret.Data[CAKeyKey], time.Now())
-		if err == nil {
-			ca = parsed
+		if owner != nil {
+			err := controllerutil.SetControllerReference(owner, secret, c.client.Scheme())
+			if err != nil {
+				return err
+			}
+		}
 
+		_, err := certificates.ParseCA(secret.Data[CACertKey], secret.Data[CAKeyKey], time.Now())
+		if err == nil {
 			return nil
 		}
 
@@ -136,7 +147,7 @@ func (c *Controller) ensureCA(ctx context.Context) (*certificates.CA, error) {
 			return err
 		}
 
-		ca, err = certificates.NewCA(time.Now())
+		ca, err := certificates.NewCA(time.Now())
 		if err != nil {
 			return err
 		}
@@ -154,17 +165,45 @@ func (c *Controller) ensureCA(ctx context.Context) (*certificates.CA, error) {
 		return nil, err
 	}
 
-	return ca, nil
+	return secret, nil
 }
 
-func (c *Controller) ensureBundle(ctx context.Context, ca *certificates.CA) error {
+// getOperatorDeployment returns the Deployment of the Operator, or nil if it does not exist, for example if the Operator runs locally.
+func (c *Controller) getOperatorDeployment(ctx context.Context) (*appsv1.Deployment, error) {
+	deployment := &appsv1.Deployment{}
+
+	err := c.client.Get(ctx, types.NamespacedName{Name: version.AppName, Namespace: c.namespace}, deployment)
+	if k8serrors.IsNotFound(err) {
+		logd.FromContext(ctx).Info("operator deployment not found, the operator root CA will not be owned by it", "name", version.AppName, "namespace", c.namespace)
+
+		return nil, nil //nolint:nilnil
+	}
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get operator deployment: %w", err)
+	}
+
+	return deployment, nil
+}
+
+// ensureBundle makes sure the bundle ConfigMap holds the public part of the CA. The ConfigMap is immutable,
+// so it is recreated if the CA changed. It is owned by the CA Secret, so it is removed with it.
+func (c *Controller) ensureBundle(ctx context.Context, caSecret *corev1.Secret) error {
 	configMap := &corev1.ConfigMap{Name: CABundleConfigMapName, Namespace: c.namespace}
+	data := map[string]string{CACertKey: string(caSecret.Data[CACertKey])}
 
 	return k8sobject.RetryCreateOrUpdate(ctx, c.client, configMap, func() error {
-		k8slabel.New(k8slabel.OperatorComponentLabel, version.AppName, "").MergeInto(configMap)
-		configMap.Data = map[string]string{CACertKey: string(ca.CertPEM)}
+		if configMap.ResourceVersion != "" && !maps.Equal(configMap.Data, data) {
+			return k8sobject.ErrRecreate
+		}
 
-		return nil
+		k8slabel.New(k8slabel.OperatorComponentLabel, version.AppName, "").MergeInto(configMap)
+
+		configMap.Data = data
+		configMap.Immutable = new(true)
+
+		// not a controller reference, as that would block the deletion of the Secret, which needs additional permissions (secrets/finalizers)
+		return controllerutil.SetOwnerReference(caSecret, configMap, c.client.Scheme())
 	})
 }
 
