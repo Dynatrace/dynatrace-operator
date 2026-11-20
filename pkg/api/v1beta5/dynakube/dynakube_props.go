@@ -21,6 +21,14 @@ func (dk *DynaKube) FF() *exp.FeatureFlags {
 	return exp.NewFlags(dk.Annotations, false)
 }
 
+func (dk *DynaKube) InitAnnotations() map[string]string {
+	if dk.Annotations == nil {
+		dk.Annotations = make(map[string]string)
+	}
+
+	return dk.Annotations
+}
+
 // APIURL is a getter for dk.Spec.APIURL.
 func (dk *DynaKube) APIURL() string { //nolint:staticcheck
 	return dk.Spec.APIURL

@@ -67,7 +67,7 @@ func TestConvertFrom(t *testing.T) {
 		err := to.ConvertFrom(&from)
 		require.NoError(t, err)
 
-		compareHostInjectSpec(t, *to.Spec.OneAgent.HostMonitoring, *from.Spec.OneAgent.HostMonitoring, from.RemovedFields())
+		compareHostInjectSpec(t, *to.Spec.OneAgent.HostMonitoring, *from.Spec.OneAgent.HostMonitoring, conversion.NewRemovedFields(from.InitAnnotations()))
 		compareBase(t, to, from)
 	})
 
@@ -84,7 +84,7 @@ func TestConvertFrom(t *testing.T) {
 		assert.Nil(t, to.Spec.OneAgent.ApplicationMonitoring)
 		assert.Nil(t, to.Spec.OneAgent.HostMonitoring)
 
-		compareHostInjectSpec(t, *to.Spec.OneAgent.ClassicFullStack, *from.Spec.OneAgent.ClassicFullStack, from.RemovedFields())
+		compareHostInjectSpec(t, *to.Spec.OneAgent.ClassicFullStack, *from.Spec.OneAgent.ClassicFullStack, conversion.NewRemovedFields(from.InitAnnotations()))
 		compareBase(t, to, from)
 	})
 
@@ -101,7 +101,7 @@ func TestConvertFrom(t *testing.T) {
 		assert.Nil(t, to.Spec.OneAgent.ApplicationMonitoring)
 		assert.Nil(t, to.Spec.OneAgent.HostMonitoring)
 
-		compareCloudNativeSpec(t, *to.Spec.OneAgent.CloudNativeFullStack, *from.Spec.OneAgent.CloudNativeFullStack, from.RemovedFields())
+		compareCloudNativeSpec(t, *to.Spec.OneAgent.CloudNativeFullStack, *from.Spec.OneAgent.CloudNativeFullStack, conversion.NewRemovedFields(from.InitAnnotations()))
 		compareBase(t, to, from)
 	})
 
@@ -207,7 +207,7 @@ func TestConvertFrom(t *testing.T) {
 	t.Run("clear default otelc image", func(t *testing.T) {
 		from := getNewDynakubeBase()
 		from.Spec.Templates.OpenTelemetryCollector = getNewOpenTelemetryTemplateSpec()
-		from.RemovedFields().DefaultOTelColImage.Set(new(true))
+		conversion.NewRemovedFields(from.InitAnnotations()).DefaultOTelColImage.Set(new(true))
 
 		to := DynaKube{}
 
@@ -348,6 +348,14 @@ func compareBase(t *testing.T, oldDK DynaKube, newDK dynakubelatest.DynaKube) {
 
 	assert.Equal(t, oldDK.MetadataEnrichmentEnabled(), newDK.MetadataEnrichment().IsEnabled())
 	assert.Equal(t, oldDK.Spec.MetadataEnrichment.NamespaceSelector, newDK.Spec.MetadataEnrichment.NamespaceSelector)
+
+	tls, ok := oldDK.Annotations[conversion.TLSModeKey]
+	require.True(t, ok)
+	assert.JSONEq(t, "{\"mode\":\"Off\"}", tls)
+	require.NotNil(t, newDK.Spec.TLS)
+	assert.Equal(t, dynakubelatest.TLSModeOff, newDK.Spec.TLS.Mode)
+	_, ok = newDK.Annotations[conversion.TLSModeKey]
+	require.False(t, ok)
 }
 
 func compareHostInjectSpec(t *testing.T, oldSpec oneagent.HostInjectSpec, newSpec oneagentlatest.HostInjectSpec, removedFields *conversion.RemovedFields) {
@@ -558,6 +566,9 @@ func getNewDynakubeBase() dynakubelatest.DynaKube {
 			MetadataEnrichment: metadataenrichmentlatest.Spec{
 				Enabled:           new(true),
 				NamespaceSelector: getTestNamespaceSelector(),
+			},
+			TLS: &dynakubelatest.TLSSpec{
+				Mode: dynakubelatest.TLSModeOff,
 			},
 		},
 	}

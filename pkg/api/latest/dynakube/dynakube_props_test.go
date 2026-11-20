@@ -270,3 +270,120 @@ func TestCustomPullSecretReferences(t *testing.T) {
 		}
 	})
 }
+
+func TestTLSMode(t *testing.T) {
+	testCases := []struct {
+		name   string
+		tls    *TLSSpec
+		expect TLSMode
+	}{
+		{
+			name:   "off",
+			tls:    &TLSSpec{Mode: "Off"},
+			expect: TLSModeOff,
+		},
+		{
+			name:   "automatic",
+			tls:    &TLSSpec{Mode: "Automatic"},
+			expect: TLSModeAutomatic,
+		},
+		{
+			name:   "automatic by default",
+			tls:    nil,
+			expect: TLSModeAutomatic,
+		},
+		{
+			name:   "automatic by default, empty value",
+			tls:    &TLSSpec{},
+			expect: TLSModeAutomatic,
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			dk := &DynaKube{
+				Spec: DynaKubeSpec{
+					TLS: tc.tls,
+				},
+			}
+			assert.Equal(t, tc.expect, dk.TLSMode())
+		})
+	}
+}
+
+func TestIsTLSAutomatic(t *testing.T) {
+	testCases := []struct {
+		name   string
+		tls    *TLSSpec
+		expect bool
+	}{
+		{
+			name:   "off",
+			tls:    &TLSSpec{Mode: "Off"},
+			expect: false,
+		},
+		{
+			name:   "automatic",
+			tls:    &TLSSpec{Mode: "Automatic"},
+			expect: true,
+		},
+		{
+			name:   "automatic by default",
+			tls:    nil,
+			expect: true,
+		},
+		{
+			name:   "automatic by default, empty value",
+			tls:    &TLSSpec{},
+			expect: true,
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			dk := &DynaKube{
+				Spec: DynaKubeSpec{
+					TLS: tc.tls,
+				},
+			}
+			assert.Equal(t, tc.expect, dk.IsTLSAutomatic())
+		})
+	}
+}
+
+func TestIsTLSOff(t *testing.T) {
+	testCases := []struct {
+		name   string
+		tls    *TLSSpec
+		expect bool
+	}{
+		{
+			name:   "off",
+			tls:    &TLSSpec{Mode: "Off"},
+			expect: true,
+		},
+		{
+			name:   "automatic",
+			tls:    &TLSSpec{Mode: "Automatic"},
+			expect: false,
+		},
+		{
+			name:   "automatic by default",
+			tls:    nil,
+			expect: false,
+		},
+		{
+			name:   "automatic by default, empty value",
+			tls:    &TLSSpec{},
+			expect: false,
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			dk := &DynaKube{
+				Spec: DynaKubeSpec{
+					TLS: tc.tls,
+				},
+			}
+			assert.Equal(t, tc.expect, dk.IsTLSOff())
+		})
+	}
+}

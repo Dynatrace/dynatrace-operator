@@ -54,6 +54,8 @@ func (dst *DynaKube) fromBase(src *dynakubelatest.DynaKube) {
 	dst.Spec.CustomPullSecret = src.Spec.CustomPullSecret
 	dst.Spec.SkipCertCheck = src.Spec.SkipCertCheck
 	dst.Spec.EnableIstio = src.Spec.EnableIstio
+
+	dkconversion.NewAddedFields(dst.InitAnnotations()).TLS.Set(src.Spec.TLS)
 }
 
 func (dst *DynaKube) fromLogMonitoringSpec(src *dynakubelatest.DynaKube) {
@@ -82,11 +84,11 @@ func (dst *DynaKube) fromOneAgentSpec(src *dynakubelatest.DynaKube) { //nolint:d
 	switch {
 	case src.OneAgent().IsClassicFullStackMode():
 		dst.Spec.OneAgent.ClassicFullStack = fromHostInjectSpec(*src.Spec.OneAgent.ClassicFullStack)
-		dst.Spec.OneAgent.ClassicFullStack.AutoUpdate = src.RemovedFields().AutoUpdate.Get() //nolint:staticcheck
+		dst.Spec.OneAgent.ClassicFullStack.AutoUpdate = dkconversion.NewRemovedFields(src.InitAnnotations()).AutoUpdate.Get() //nolint:staticcheck
 	case src.OneAgent().IsCloudNativeFullstackMode():
 		dst.Spec.OneAgent.CloudNativeFullStack = &oneagent.CloudNativeFullStackSpec{}
 		dst.Spec.OneAgent.CloudNativeFullStack.HostInjectSpec = *fromHostInjectSpec(src.Spec.OneAgent.CloudNativeFullStack.HostInjectSpec)
-		dst.Spec.OneAgent.CloudNativeFullStack.AutoUpdate = src.RemovedFields().AutoUpdate.Get() //nolint:staticcheck
+		dst.Spec.OneAgent.CloudNativeFullStack.AutoUpdate = dkconversion.NewRemovedFields(src.InitAnnotations()).AutoUpdate.Get() //nolint:staticcheck
 		dst.Spec.OneAgent.CloudNativeFullStack.AppInjectionSpec = *fromAppInjectSpec(src.Spec.OneAgent.CloudNativeFullStack.AppInjectionSpec)
 	case src.OneAgent().IsApplicationMonitoringMode():
 		dst.Spec.OneAgent.ApplicationMonitoring = &oneagent.ApplicationMonitoringSpec{}
@@ -94,7 +96,7 @@ func (dst *DynaKube) fromOneAgentSpec(src *dynakubelatest.DynaKube) { //nolint:d
 		dst.Spec.OneAgent.ApplicationMonitoring.AppInjectionSpec = *fromAppInjectSpec(src.Spec.OneAgent.ApplicationMonitoring.AppInjectionSpec)
 	case src.OneAgent().IsHostMonitoringMode():
 		dst.Spec.OneAgent.HostMonitoring = fromHostInjectSpec(*src.Spec.OneAgent.HostMonitoring)
-		dst.Spec.OneAgent.HostMonitoring.AutoUpdate = src.RemovedFields().AutoUpdate.Get() //nolint:staticcheck
+		dst.Spec.OneAgent.HostMonitoring.AutoUpdate = dkconversion.NewRemovedFields(src.InitAnnotations()).AutoUpdate.Get() //nolint:staticcheck
 	}
 
 	dst.Spec.OneAgent.HostGroup = src.Spec.OneAgent.HostGroup
@@ -158,7 +160,7 @@ func fromOpenTelemetryCollectorTemplate(dk *dynakubelatest.DynaKube, src dynakub
 	dst.Replicas = src.Replicas
 	dst.ImageRef = src.ImageRef
 
-	if usingDefault := dk.RemovedFields().DefaultOTelColImage.Get(); usingDefault != nil && *usingDefault {
+	if usingDefault := dkconversion.NewRemovedFields(dk.InitAnnotations()).DefaultOTelColImage.Get(); usingDefault != nil && *usingDefault {
 		dst.ImageRef.Repository = ""
 		dst.ImageRef.Tag = ""
 	}
