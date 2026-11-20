@@ -7429,6 +7429,11 @@ spec:
                   platform:
                     type: boolean
                 type: object
+              ca:
+                properties:
+                  publicHash:
+                    type: string
+                type: object
               codeModules:
                 properties:
                   imageID:
