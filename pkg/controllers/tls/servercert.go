@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api"
-	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/certificates"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
@@ -165,9 +164,9 @@ func (i *Issuer) mutate(secret *corev1.Secret, ca *certificates.CA, dnsNames []s
 		chain := slices.Concat(certPEM, ca.CertPEM)
 
 		secret.Data = map[string][]byte{
-			consts.TLSCrtDataName: chain,
-			consts.TLSKeyDataName: keyPEM,
-			CACertKey:             ca.CertPEM,
+			corev1.TLSCertKey:       chain,
+			corev1.TLSPrivateKeyKey: keyPEM,
+			CACertKey:               ca.CertPEM,
 		}
 
 		reissued = true
@@ -192,11 +191,11 @@ func needsReissue(existing *corev1.Secret, ca *certificates.CA, wantDNSNames []s
 		return true
 	}
 
-	if len(existing.Data[consts.TLSKeyDataName]) == 0 {
+	if len(existing.Data[corev1.TLSPrivateKeyKey]) == 0 {
 		return true
 	}
 
-	leaf, err := certificates.ParseCertificatePEM(existing.Data[consts.TLSCrtDataName])
+	leaf, err := certificates.ParseCertificatePEM(existing.Data[corev1.TLSCertKey])
 	if err != nil {
 		return true
 	}
@@ -212,7 +211,7 @@ func needsReissue(existing *corev1.Secret, ca *certificates.CA, wantDNSNames []s
 // computeHash computes the hash of the tls.crt and ca.crt entries of the given Secret data.
 func computeHash(data map[string][]byte) (string, error) {
 	return hasher.GenerateSecureHash(map[string]string{
-		consts.TLSCrtDataName: string(data[consts.TLSCrtDataName]),
-		CACertKey:             string(data[CACertKey]),
+		corev1.TLSCertKey: string(data[corev1.TLSCertKey]),
+		CACertKey:         string(data[CACertKey]),
 	})
 }

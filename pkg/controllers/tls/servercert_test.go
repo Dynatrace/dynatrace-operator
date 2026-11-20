@@ -10,7 +10,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/certificates"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -99,14 +98,14 @@ func TestEnsureServerCertSecret(t *testing.T) {
 		require.NoError(t, err)
 
 		secret := getServerSecret(t, clt)
-		crt := secret.Data[consts.TLSCrtDataName]
+		crt := secret.Data[corev1.TLSCertKey]
 		delete(secret.Annotations, CertHashAnnotation)
 		require.NoError(t, clt.Update(t.Context(), secret))
 
 		hash2, err := issuer.EnsureServerCertSecret(t.Context(), owner, secretName)
 		require.NoError(t, err)
 		assert.Equal(t, hash, hash2)
-		assert.Equal(t, crt, getServerSecret(t, clt).Data[consts.TLSCrtDataName])
+		assert.Equal(t, crt, getServerSecret(t, clt).Data[corev1.TLSCertKey])
 	})
 
 	t.Run("reissues on SAN change", func(t *testing.T) {
@@ -122,7 +121,7 @@ func TestEnsureServerCertSecret(t *testing.T) {
 		require.NoError(t, err)
 		assert.NotEqual(t, hash, hash2)
 
-		leaf, err := certificates.ParseCertificatePEM(getServerSecret(t, clt).Data[consts.TLSCrtDataName])
+		leaf, err := certificates.ParseCertificatePEM(getServerSecret(t, clt).Data[corev1.TLSCertKey])
 		require.NoError(t, err)
 		assert.ElementsMatch(t, serviceDNSNames("other-svc", ownerNamespace), leaf.DNSNames)
 	})
