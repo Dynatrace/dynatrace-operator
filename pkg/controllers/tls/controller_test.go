@@ -270,6 +270,6 @@ func TestReconcile(t *testing.T) {
 		})
 
 		_, err := NewController(clt, testNamespace).Reconcile(t.Context(), reconcile.Request{})
-		require.Error(t, err)
+		require.ErrorIs(t, err, errAPI)
 	})
 }
