@@ -292,6 +292,11 @@ func TestTLSMode(t *testing.T) {
 			tls:    nil,
 			expect: TLSModeAutomatic,
 		},
+		{
+			name:   "automatic by default, empty value",
+			tls:    &TLSSpec{},
+			expect: TLSModeAutomatic,
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -326,6 +331,11 @@ func TestIsTLSAutomatic(t *testing.T) {
 			tls:    nil,
 			expect: true,
 		},
+		{
+			name:   "automatic by default, empty value",
+			tls:    &TLSSpec{},
+			expect: true,
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -358,6 +368,11 @@ func TestIsTLSOff(t *testing.T) {
 		{
 			name:   "automatic by default",
 			tls:    nil,
+			expect: false,
+		},
+		{
+			name:   "automatic by default, empty value",
+			tls:    &TLSSpec{},
 			expect: false,
 		},
 	}
