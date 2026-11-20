@@ -5,7 +5,6 @@ package prometheusmonitoring
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"maps"
 
@@ -15,11 +14,11 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/prometheusmonitoring/condition"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/prometheusmonitoring/gateway"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/prometheusmonitoring/scraper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/prometheusmonitoring/targetallocator"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	k8sobject "github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects"
 	appsv1 "k8s.io/api/apps/v1"
@@ -171,49 +170,41 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ct
 // checkPrerequisites reflects the result in the PrerequisitesMet condition.
 // met is false if a prerequisite is missing, err is set if that cannot be determined.
 func (r *Reconciler) checkPrerequisites(ctx context.Context, pm *prometheusmonitoring.PrometheusMonitoring, dk *dynakube.DynaKube) (met bool, err error) {
-	missing, err := r.verifyPrerequisites(ctx, dk)
+	cond := metav1.Condition{Type: prometheusmonitoring.PrerequisitesMet, Status: metav1.ConditionFalse, Reason: status.ReasonError}
+	defer func() { _ = meta.SetStatusCondition(&pm.Status.Conditions, cond) }()
 
-	switch {
-	case err != nil:
-		setPrerequisitesCondition(pm, err)
-
-		return false, err
-	case missing != nil:
-		setPrerequisitesCondition(pm, missing)
+	if dk.Spec.APIURL == "" {
+		cond.Message = "tenant URL (apiUrl) is missing in the DynaKube"
 
 		return false, nil
-	default:
-		setPrerequisitesCondition(pm, nil)
-
-		return true, nil
-	}
-}
-
-// verifyPrerequisites returns the first missing prerequisite. err is set if that cannot be determined.
-func (r *Reconciler) verifyPrerequisites(ctx context.Context, dk *dynakube.DynaKube) (missing, err error) {
-	if dk.Spec.APIURL == "" {
-		return errors.New("tenant URL (apiUrl) is missing in the DynaKube"), nil
 	}
 
 	tokens, err := token.NewReader(r, dk).ReadTokens(ctx)
 	if k8serrors.IsNotFound(err) {
-		return fmt.Errorf("token secret %s not found", dk.Tokens()), nil
+		cond.Message = fmt.Sprintf("token secret %s not found", dk.Tokens())
+
+		return false, nil
 	}
 
 	if err != nil {
-		return nil, fmt.Errorf("read token secret %s: %w", dk.Tokens(), err)
+		cond.Reason = k8sconditions.KubeAPIErrorReason
+		cond.Message = "token secret cannot be read"
+
+		return false, fmt.Errorf("read token secret %s: %w", dk.Tokens(), err)
 	}
 
 	if !token.CheckForDataIngestToken(tokens) {
-		return errors.New("data-ingest token is missing in the token secret"), nil
+		cond.Reason = k8sconditions.DataIngestTokenMissing
+		cond.Message = "data-ingest token is missing in the token secret"
+
+		return false, nil
 	}
 
-	return nil, nil
-}
+	cond.Status = metav1.ConditionTrue
+	cond.Reason = status.ReasonAvailable
+	cond.Message = "all prerequisites are met"
 
-func setPrerequisitesCondition(pm *prometheusmonitoring.PrometheusMonitoring, err error) {
-	condition.Set(&pm.Status.Conditions, prometheusmonitoring.PrerequisitesMet, "prerequisites",
-		func() bool { return true }, err)
+	return true, nil
 }
 
 func (r *Reconciler) buildDynatraceClient(ctx context.Context, dk *dynakube.DynaKube) (*dynatrace.Client, error) {
@@ -358,6 +349,8 @@ func newDynaKubeChangedPredicate() predicate.Funcs {
 				oldDK.Status.KubernetesClusterName != newDK.Status.KubernetesClusterName ||
 				oldDK.Tokens() != newDK.Tokens() ||
 				oldDK.Spec.TrustedCAs != newDK.Spec.TrustedCAs ||
+				oldDK.Spec.CustomPullSecret != newDK.Spec.CustomPullSecret ||
+				oldDK.IsSelfMonitoringEnabled() != newDK.IsSelfMonitoringEnabled() ||
 				oldDK.GetDynatraceAPIRequestThreshold() != newDK.GetDynatraceAPIRequestThreshold() ||
 				dynaKubeProxyChanged(oldDK, newDK) ||
 				!maps.Equal(oldDK.Spec.ResourceAttributes, newDK.Spec.ResourceAttributes)
