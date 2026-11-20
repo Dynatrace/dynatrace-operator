@@ -21,9 +21,9 @@ const (
 type EventRecorder = events.EventRecorder
 
 func SendPodInjectEvent(recorder events.EventRecorder, dk *dynakube.DynaKube, pod *corev1.Pod) {
-	msg := fmt.Sprintf("Injecting the necessary info into pod %s in namespace %s", pod.GenerateName, pod.Namespace)
+	msg := fmt.Sprint("Injecting configuration into pod")
 	recorder.Eventf(dk,
-		nil, // no related obj
+		pod,
 		corev1.EventTypeNormal,
 		injectEvent,
 		msg,
