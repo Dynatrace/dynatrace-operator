@@ -37,7 +37,7 @@ type Publisher struct {
 }
 
 const (
-	retryLimitReachedMsg = "reached max mount attempts for pod, attaching dummy volume, monitoring disabled"
+	retryLimitReachedMsg = "reached max mount timeout for pod, attaching dummy volume, monitoring disabled"
 )
 
 func (pub *Publisher) PublishVolume(ctx context.Context, volumeCfg *csivolumes.VolumeConfig) (*csi.NodePublishVolumeResponse, error) {
