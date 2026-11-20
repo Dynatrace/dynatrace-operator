@@ -227,8 +227,8 @@ func TestKubemonEnabled(t *testing.T) {
 		secret := &corev1.Secret{}
 		require.NoError(t, fakeClient.Get(t.Context(), client.ObjectKey{Name: dk.KubernetesMonitoring().GetAutoTLSSecretName(), Namespace: dk.Namespace}, secret))
 
-		assert.Contains(t, secret.Data, tlsconsts.TLSCrtDataName, "secret should contain "+tlsconsts.TLSCrtDataName+" field")
-		assert.Contains(t, secret.Data, tlsconsts.TLSKeyDataName, "secret should contain "+tlsconsts.TLSKeyDataName+" field")
+		assert.Contains(t, secret.Data, corev1.TLSCertKey, "secret should contain "+corev1.TLSCertKey+" field")
+		assert.Contains(t, secret.Data, corev1.TLSPrivateKeyKey, "secret should contain "+corev1.TLSPrivateKeyKey+" field")
 		assert.Contains(t, secret.Data, tlsconsts.TLSServerCrtDataName, "secret should contain "+tlsconsts.TLSServerCrtDataName+" field")
 	})
 }

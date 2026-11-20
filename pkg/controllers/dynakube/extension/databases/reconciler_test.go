@@ -226,7 +226,7 @@ func TestConfigurationHashAnnotation(t *testing.T) {
 		return &corev1.Secret{
 			Name:      dk.Extensions().GetTLSSecretName(),
 			Namespace: dk.Namespace,
-			Data:      map[string][]byte{consts.TLSCrtDataName: []byte("crt"), consts.TLSKeyDataName: []byte("key")},
+			Data:      map[string][]byte{corev1.TLSCertKey: []byte("crt"), corev1.TLSPrivateKeyKey: []byte("key")},
 		}
 	}
 
@@ -288,7 +288,7 @@ func TestConfigurationHashAnnotation(t *testing.T) {
 
 		assert.Equal(t, originalHash, getHash(t, clt, dk))
 
-		tlsSecret.Data[consts.TLSCrtDataName] = []byte("rotated-crt")
+		tlsSecret.Data[corev1.TLSCertKey] = []byte("rotated-crt")
 		require.NoError(t, clt.Update(t.Context(), tlsSecret))
 
 		assert.NotEqual(t, originalHash, getHash(t, clt, dk))
@@ -303,7 +303,7 @@ func TestConfigurationHashAnnotation(t *testing.T) {
 		originalHash := getHash(t, clt, dk)
 		require.NotEmpty(t, originalHash)
 
-		tlsSecret.Data[consts.TLSKeyDataName] = []byte("rotated-key")
+		tlsSecret.Data[corev1.TLSPrivateKeyKey] = []byte("rotated-key")
 		require.NoError(t, clt.Update(t.Context(), tlsSecret))
 
 		assert.Equal(t, originalHash, getHash(t, clt, dk))

@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	otelcconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
 	"github.com/Dynatrace/dynatrace-operator/pkg/otelcfg"
@@ -148,8 +147,8 @@ func (r *Reconciler) getData(dk *dynakube.DynaKube) (map[string]string, error) {
 	}
 
 	if dk.TelemetryIngest().IsEnabled() && dk.TelemetryIngest().TLSRefName != "" {
-		tlsCert = filepath.Join(otelcconsts.CustomTLSCertMountPath, consts.TLSCrtDataName)
-		tlsKey = filepath.Join(otelcconsts.CustomTLSCertMountPath, consts.TLSKeyDataName)
+		tlsCert = filepath.Join(otelcconsts.CustomTLSCertMountPath, corev1.TLSCertKey)
+		tlsKey = filepath.Join(otelcconsts.CustomTLSCertMountPath, corev1.TLSPrivateKeyKey)
 	}
 
 	b := otelcfg.NewBuilder()

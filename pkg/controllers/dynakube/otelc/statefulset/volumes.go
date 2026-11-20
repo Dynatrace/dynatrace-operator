@@ -65,12 +65,12 @@ func setVolumes(dk *dynakube.DynaKube) func(o *appsv1.StatefulSet) {
 				SecretName: dk.TelemetryIngest().TLSRefName,
 				Items: []corev1.KeyToPath{
 					{
-						Key:  consts.TLSCrtDataName,
-						Path: consts.TLSCrtDataName,
+						Key:  corev1.TLSCertKey,
+						Path: corev1.TLSCertKey,
 					},
 					{
-						Key:  consts.TLSKeyDataName,
-						Path: consts.TLSKeyDataName,
+						Key:  corev1.TLSPrivateKeyKey,
+						Path: corev1.TLSPrivateKeyKey,
 					},
 				},
 				DefaultMode: mode,

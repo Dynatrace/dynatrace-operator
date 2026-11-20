@@ -113,7 +113,7 @@ func activeGateTLSCertificateTester(t *testing.T) {
 	t.Run("get tls certificates from tls.crt", func(t *testing.T) {
 		testFunc(t, map[string][]byte{
 			// prioritize tls.crt over server.crt
-			consts.TLSCrtDataName:       []byte(testSecretValue),
+			corev1.TLSCertKey:           []byte(testSecretValue),
 			consts.TLSServerCrtDataName: []byte(testSecretValueNew),
 		})
 	})
@@ -121,8 +121,8 @@ func activeGateTLSCertificateTester(t *testing.T) {
 
 func activeGateTLSDataTester(t *testing.T) {
 	data := map[string][]byte{
-		consts.TLSCrtDataName: []byte(testSecretValue),
-		"tls.key":             []byte(testSecretValueNew),
+		corev1.TLSCertKey: []byte(testSecretValue),
+		"tls.key":         []byte(testSecretValueNew),
 	}
 	dk := dynakube.DynaKube{
 		Spec: dynakube.DynaKubeSpec{

@@ -1290,7 +1290,7 @@ func getOTLPExporterCertsSecret(namespace string) *corev1.Secret {
 		Name:      consts.OTLPExporterCertsSecretName,
 		Namespace: namespace,
 		Data: map[string][]byte{
-			consts.TLSCrtDataName: []byte("ag-cert-data"),
+			corev1.TLSCertKey: []byte("ag-cert-data"),
 		},
 	}
 }

@@ -56,8 +56,8 @@ const (
 	envExtensionsModuleExecPath = "/opt/dynatrace/remotepluginmodule/agent/lib64/extensionsmodule"
 	envDsInstallDir             = "/opt/dynatrace/remotepluginmodule/agent/datasources"
 	envActiveGateTrustedCert    = activeGateTrustedCertMountPath + "/" + consts.TLSServerCrtDataName
-	envEECHTTPSCertPathPem      = httpsCertMountPath + "/" + consts.TLSCrtDataName
-	envEECHTTPSPrivKeyPathPem   = httpsCertMountPath + "/" + consts.TLSKeyDataName
+	envEECHTTPSCertPathPem      = httpsCertMountPath + "/" + corev1.TLSCertKey
+	envEECHTTPSPrivKeyPathPem   = httpsCertMountPath + "/" + corev1.TLSPrivateKeyKey
 	// Volume names and paths
 	eecTokenMountPath               = "/secrets/tokens"
 	customCertificateMountPath      = "/secrets/extensions"

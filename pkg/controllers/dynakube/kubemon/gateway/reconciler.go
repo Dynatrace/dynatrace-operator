@@ -135,8 +135,8 @@ func (r *Reconciler) createTLSSecret(ctx context.Context, dk *dynakube.DynaKube)
 		// secret.Data is empty -> the secret doesn't exist yet
 		// secret.Data is "broken"
 
-		_, okTLSCrtDataName := secret.Data[tlsconsts.TLSCrtDataName]
-		_, okTLSKeyDataName := secret.Data[tlsconsts.TLSKeyDataName]
+		_, okTLSCrtDataName := secret.Data[corev1.TLSCertKey]
+		_, okTLSKeyDataName := secret.Data[corev1.TLSPrivateKeyKey]
 		_, okTLSServerCrtDataName := secret.Data[tlsconsts.TLSServerCrtDataName]
 
 		if !okTLSCrtDataName || !okTLSKeyDataName || !okTLSServerCrtDataName {
@@ -168,8 +168,8 @@ func (r *Reconciler) tlsCertificateData(dk *dynakube.DynaKube) (map[string][]byt
 	}
 
 	return map[string][]byte{
-		tlsconsts.TLSCrtDataName:       pemCert,
-		tlsconsts.TLSKeyDataName:       pemPk,
+		corev1.TLSCertKey:              pemCert,
+		corev1.TLSPrivateKeyKey:        pemPk,
 		tlsconsts.TLSServerCrtDataName: pemCert,
 	}, nil
 }
