@@ -44,6 +44,7 @@ const (
 	AnnotationKSPMTokenHash            = api.InternalFlagPrefix + "kubemon-kspm-token-hash"
 	AnnotationTLSSecretHash            = api.InternalFlagPrefix + "kubemon-tls-secret-hash"
 	AnnotationDeploymentPropertiesHash = api.InternalFlagPrefix + "kubemon-deploymentproperties-hash"
+	AnnotationTrustedCAsHash           = api.InternalFlagPrefix + "kubemon-trustedcas-hash"
 	StorageVolumeName                  = "kubemon-storage"
 	AuthTokenVolumeName                = "kubemon-authtoken-secret"
 	kspmTokenVolumeName                = "kspm-token"
@@ -107,7 +108,7 @@ func ensureReady(dk *dynakube.DynaKube) error {
 	return nil
 }
 
-func buildPodAnnotations(dk *dynakube.DynaKube, tokenHash, authTokenHash, customPropertiesHash, deploymentPropertiesHash, tlsSecretHash string) map[string]string { //nolint:revive
+func buildPodAnnotations(dk *dynakube.DynaKube, tokenHash, authTokenHash, customPropertiesHash, deploymentPropertiesHash, tlsSecretHash, trustedCAsHash string) map[string]string { //nolint:revive
 	annotations := map[string]string{
 		AnnotationTenantTokenHash:              tokenHash,
 		AnnotationAuthTokenHash:                authTokenHash,
@@ -122,6 +123,7 @@ func buildPodAnnotations(dk *dynakube.DynaKube, tokenHash, authTokenHash, custom
 
 	insertNonEmptyValue(AnnotationCustomPropertiesHash, customPropertiesHash)
 	insertNonEmptyValue(AnnotationDeploymentPropertiesHash, deploymentPropertiesHash)
+	insertNonEmptyValue(AnnotationTrustedCAsHash, trustedCAsHash)
 
 	if dk.KSPM().IsEnabled() {
 		annotations[AnnotationKSPMTokenHash] = dk.KSPM().TokenSecretHash
@@ -290,6 +292,21 @@ func buildVolumes(dk *dynakube.DynaKube) []corev1.Volume {
 		})
 	}
 
+	if dk.Spec.TrustedCAs != "" {
+		volumes = append(volumes, corev1.Volume{
+			Name: agconsts.TrustedCAsVolumeName,
+			ConfigMap: &corev1.ConfigMapVolumeSource{
+				Name: dk.Spec.TrustedCAs,
+				Items: []corev1.KeyToPath{
+					{
+						Key:  dynakube.TrustedCAKey,
+						Path: agconsts.TrustedCAsFileName,
+					},
+				},
+			},
+		})
+	}
+
 	if dk.HasProxy() {
 		volumes = append(volumes, corev1.Volume{
 			Name: agconsts.ProxySecretVolumeName,
@@ -385,6 +402,14 @@ func buildVolumeMounts(dk *dynakube.DynaKube) []corev1.VolumeMount {
 			Name:      agconsts.DeploymentPropertiesVolumeName,
 			MountPath: agconsts.DeploymentPropertiesMountPath,
 			SubPath:   agconsts.DeploymentPropertiesFileName,
+		})
+	}
+
+	if dk.Spec.TrustedCAs != "" {
+		mounts = append(mounts, corev1.VolumeMount{
+			ReadOnly:  true,
+			Name:      agconsts.TrustedCAsVolumeName,
+			MountPath: agconsts.TrustedCAsMountPath,
 		})
 	}
 
@@ -496,6 +521,11 @@ func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.D
 		return nil, err
 	}
 
+	trustedCAsHash, err := r.getTrustedCAsHash(ctx, dk)
+	if err != nil {
+		return nil, err
+	}
+
 	km := dk.KubernetesMonitoring()
 
 	initContainer := corev1.Container{
@@ -533,7 +563,7 @@ func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.D
 	opts := []k8sstatefulset.Option{
 		k8sstatefulset.SetReplicas(replicas),
 		k8sstatefulset.SetAllLabels(labels.AsMap(), labels.AsSelector(), labels.AsSelector(), km.Labels),
-		k8sstatefulset.SetAllAnnotations(nil, maputil.MergeMap(km.Annotations, buildPodAnnotations(dk, tokenHash, authTokenHash, customPropertiesHash, deploymentPropertiesHash, tlsSecretHash))),
+		k8sstatefulset.SetAllAnnotations(nil, maputil.MergeMap(km.Annotations, buildPodAnnotations(dk, tokenHash, authTokenHash, customPropertiesHash, deploymentPropertiesHash, tlsSecretHash, trustedCAsHash))),
 		k8sstatefulset.SetServiceAccount(km.GetServiceAccountName()),
 		k8sstatefulset.SetNodeSelector(km.NodeSelector),
 		k8sstatefulset.SetTolerations(km.Tolerations),
@@ -711,6 +741,28 @@ func (r *Reconciler) getTLSSecretHash(ctx context.Context, dk *dynakube.DynaKube
 	hash, err := hasher.GenerateSecureHash(secret.Data)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to hash TLS secret")
+	}
+
+	return hash, nil
+}
+
+func (r *Reconciler) getTrustedCAsHash(ctx context.Context, dk *dynakube.DynaKube) (string, error) {
+	trustedCAs, err := dk.TrustedCAs(ctx, r.kubeClient)
+	if k8serrors.IsNotFound(err) {
+		return "", nil
+	}
+
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+
+	if len(trustedCAs) == 0 {
+		return "", nil
+	}
+
+	hash, err := hasher.GenerateSecureHash(trustedCAs)
+	if err != nil {
+		return "", errors.Wrap(err, "can't hash trusted CAs")
 	}
 
 	return hash, nil
