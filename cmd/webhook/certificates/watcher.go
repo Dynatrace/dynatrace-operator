@@ -83,13 +83,13 @@ func (watcher *CertificateWatcher) updateCertificatesFromSecret(ctx context.Cont
 		}
 	}
 
-	for _, filename := range []string{certificates.ServerCert, certificates.ServerKey} {
+	for _, filename := range []string{corev1.TLSCertKey, corev1.TLSPrivateKeyKey} {
 		if _, err = watcher.ensureCertificateFile(secret, filename); err != nil {
 			return false, err
 		}
 	}
 
-	isValid, err := certsutils.ValidateCertificateExpiration(ctx, secret.Data[certificates.ServerCert], certificateRenewalInterval, time.Now())
+	isValid, err := certsutils.ValidateCertificateExpiration(ctx, secret.Data[corev1.TLSCertKey], certificateRenewalInterval, time.Now())
 	if err != nil {
 		return false, err
 	} else if !isValid {

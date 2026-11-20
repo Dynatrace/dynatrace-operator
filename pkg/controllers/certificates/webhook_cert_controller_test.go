@@ -51,8 +51,8 @@ func TestReconcileCertificate(t *testing.T) {
 		assert.Contains(t, secret.Data, RootKey)
 		assert.Contains(t, secret.Data, RootCert)
 		assert.Contains(t, secret.Data, RootCertOld)
-		assert.Contains(t, secret.Data, ServerKey)
-		assert.Contains(t, secret.Data, ServerCert)
+		assert.Contains(t, secret.Data, corev1.TLSPrivateKeyKey)
+		assert.Contains(t, secret.Data, corev1.TLSCertKey)
 		assert.NotNil(t, secret.Data[RootCert])
 		assert.NotEmpty(t, secret.Data[RootCert])
 		assert.Empty(t, secret.Data[RootCertOld])
@@ -87,8 +87,8 @@ func TestReconcileCertificate(t *testing.T) {
 		assert.Contains(t, secret.Data, RootKey)
 		assert.Contains(t, secret.Data, RootCert)
 		assert.Contains(t, secret.Data, RootCertOld)
-		assert.Contains(t, secret.Data, ServerKey)
-		assert.Contains(t, secret.Data, ServerCert)
+		assert.Contains(t, secret.Data, corev1.TLSPrivateKeyKey)
+		assert.Contains(t, secret.Data, corev1.TLSCertKey)
 		assert.NotNil(t, secret.Data[RootCert])
 		assert.NotEmpty(t, secret.Data[RootCert])
 		assert.Equal(t, []byte{testBytes}, secret.Data[RootCertOld])
@@ -229,10 +229,10 @@ func TestReconcile(t *testing.T) {
 
 func createInvalidTestCertData() map[string][]byte {
 	return map[string][]byte{
-		RootKey:    {testBytes},
-		RootCert:   {testBytes},
-		ServerKey:  {testBytes},
-		ServerCert: {testBytes},
+		RootKey:                 {testBytes},
+		RootCert:                {testBytes},
+		corev1.TLSPrivateKeyKey: {testBytes},
+		corev1.TLSCertKey:       {testBytes},
 	}
 }
 

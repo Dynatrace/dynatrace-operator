@@ -40,7 +40,7 @@ func (dk *DynaKube) ActiveGateTLSCert(ctx context.Context, kubeReader client.Rea
 	}
 
 	// first check if the tls.crt key is available
-	if tlsCertKey, ok := tlsSecretData[consts.TLSCrtDataName]; ok {
+	if tlsCertKey, ok := tlsSecretData[corev1.TLSCertKey]; ok {
 		return tlsCertKey, nil
 	}
 

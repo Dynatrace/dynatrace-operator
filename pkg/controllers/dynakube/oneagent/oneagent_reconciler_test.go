@@ -839,13 +839,13 @@ func TestGetActiveGateTLSCertHash(t *testing.T) {
 	t.Run("hash only depends on server.crt", func(t *testing.T) {
 		r1 := &Reconciler{apiReader: fake.NewClient(newSecret(map[string][]byte{
 			consts.TLSServerCrtDataName: []byte("cert"),
-			consts.TLSCrtDataName:       []byte("cert-1"),
-			consts.TLSKeyDataName:       []byte("key-1"),
+			corev1.TLSCertKey:           []byte("cert-1"),
+			corev1.TLSPrivateKeyKey:     []byte("key-1"),
 		}))}
 		r2 := &Reconciler{apiReader: fake.NewClient(newSecret(map[string][]byte{
 			consts.TLSServerCrtDataName: []byte("cert"),
-			consts.TLSCrtDataName:       []byte("cert-2"),
-			consts.TLSKeyDataName:       []byte("key-2"),
+			corev1.TLSCertKey:           []byte("cert-2"),
+			corev1.TLSPrivateKeyKey:     []byte("key-2"),
 		}))}
 
 		hash1, err := r1.getActiveGateTLSCertHash(t.Context(), dk)
@@ -858,7 +858,7 @@ func TestGetActiveGateTLSCertHash(t *testing.T) {
 	})
 
 	t.Run("secret without server.crt returns empty hash", func(t *testing.T) {
-		r := &Reconciler{apiReader: fake.NewClient(newSecret(map[string][]byte{consts.TLSCrtDataName: []byte("cert")}))}
+		r := &Reconciler{apiReader: fake.NewClient(newSecret(map[string][]byte{corev1.TLSCertKey: []byte("cert")}))}
 
 		hash, err := r.getActiveGateTLSCertHash(t.Context(), dk)
 		require.NoError(t, err)
@@ -987,7 +987,7 @@ func TestBuildDesiredDaemonSet_CertHashes(t *testing.T) {
 				Name:      dk.ActiveGate().GetTLSSecretName(),
 				Namespace: dk.Namespace,
 				Data: map[string][]byte{
-					consts.TLSCrtDataName:       []byte(tlsCrt),
+					corev1.TLSCertKey:           []byte(tlsCrt),
 					consts.TLSServerCrtDataName: []byte(serverCrt),
 				},
 			}
