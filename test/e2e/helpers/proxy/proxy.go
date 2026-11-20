@@ -16,7 +16,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/certificates"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod/volumes"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers"
@@ -175,7 +174,7 @@ func createProxyTLSSecret(pemCert []byte, pemPK []byte) *corev1.Secret {
 }
 
 func CreateProxyTLSCertAndKey() (pemCert []byte, pemKey []byte, err error) {
-	cert, err := certificates.New(timeprovider.New())
+	cert, err := certificates.New()
 	if err != nil {
 		return nil, nil, err
 	}

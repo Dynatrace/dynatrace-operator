@@ -6,6 +6,8 @@ package oneagent
 import (
 	"context"
 	"testing"
+	"testing/synctest"
+	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
@@ -601,100 +603,111 @@ func newDynaKube() *dynakube.DynaKube {
 }
 
 func TestInstanceStatus(t *testing.T) {
-	namespace := "dynatrace"
-	dkName := "dynakube"
+	setup := func(t *testing.T, modifyPod ...func(*corev1.Pod)) (*Reconciler, *dynakube.DynaKube) {
+		t.Helper()
 
-	dk := &dynakube.DynaKube{
-		Name: dkName, Namespace: namespace,
-		Spec: dynakube.DynaKubeSpec{
-			APIURL: "https://ENVIRONMENTID.live.dynatrace.com/api",
-			Tokens: dkName,
-			OneAgent: oneagent.Spec{
-				HostMonitoring: &oneagent.HostInjectSpec{},
+		namespace := "dynatrace"
+		dkName := "dynakube"
+
+		dk := &dynakube.DynaKube{
+			Name: dkName, Namespace: namespace,
+			Spec: dynakube.DynaKubeSpec{
+				APIURL: "https://ENVIRONMENTID.live.dynatrace.com/api",
+				Tokens: dkName,
+				OneAgent: oneagent.Spec{
+					HostMonitoring: &oneagent.HostInjectSpec{},
+				},
 			},
-		},
-	}
+		}
 
-	// use the same labels getOneagentPods selects on, so the pod is guaranteed to be found
-	podLabels := k8slabel.NewAppLabels(k8slabel.OneAgentComponentLabel, dk.Name,
-		deploymentmetadata.GetOneAgentDeploymentType(dk), dk.OneAgent().GetVersion())
+		// use the same labels getOneagentPods selects on, so the pod is guaranteed to be found
+		podLabels := k8slabel.NewAppLabels(k8slabel.OneAgentComponentLabel, dk.Name,
+			deploymentmetadata.GetOneAgentDeploymentType(dk), dk.OneAgent().GetVersion())
 
-	pod := &corev1.Pod{
-		Name:      "test-pod-1",
-		Namespace: namespace,
-		Labels:    podLabels.BuildLabels(),
-		Spec: corev1.PodSpec{
-			NodeName: "node-1",
-		},
-		Status: corev1.PodStatus{
-			HostIP: "123.123.123.123",
-		},
-	}
-
-	fakeClient := fake.NewClient(
-		dk,
-		pod)
-
-	reconciler := &Reconciler{
-		client:    fakeClient,
-		apiReader: fakeClient,
-		configmap: k8sconfigmap.Query(fakeClient, fakeClient),
-		daemonset: k8sdaemonset.Query(fakeClient, fakeClient),
-	}
-
-	err := reconciler.reconcileInstanceStatuses(t.Context(), dk)
-	require.NoError(t, err)
-	assert.NotEmpty(t, dk.Status.OneAgent.Instances)
-	instances := dk.Status.OneAgent.Instances
-
-	err = reconciler.reconcileInstanceStatuses(t.Context(), dk)
-	require.NoError(t, err)
-	assert.Equal(t, instances, dk.Status.OneAgent.Instances)
-}
-
-func TestEmptyInstancesWithWrongLabels(t *testing.T) {
-	namespace := "dynatrace"
-	dkName := "dynakube"
-
-	dk := &dynakube.DynaKube{
-		Name: dkName, Namespace: namespace,
-		Spec: dynakube.DynaKubeSpec{
-			APIURL: "https://ENVIRONMENTID.live.dynatrace.com/api",
-			Tokens: dkName,
-			OneAgent: oneagent.Spec{
-				HostMonitoring: &oneagent.HostInjectSpec{},
+		pod := &corev1.Pod{
+			Name:      "test-pod-1",
+			Namespace: namespace,
+			Labels:    podLabels.BuildLabels(),
+			Spec: corev1.PodSpec{
+				NodeName: "node-1",
 			},
-		},
+			Status: corev1.PodStatus{
+				HostIP: "123.123.123.123",
+			},
+		}
+
+		for _, modify := range modifyPod {
+			modify(pod)
+		}
+
+		fakeClient := fake.NewClient(dk, pod)
+
+		return &Reconciler{
+			client:    fakeClient,
+			apiReader: fakeClient,
+			configmap: k8sconfigmap.Query(fakeClient, fakeClient),
+			daemonset: k8sdaemonset.Query(fakeClient, fakeClient),
+		}, dk
 	}
 
-	pod := &corev1.Pod{
-		Name:      "test-pod-1",
-		Namespace: namespace,
-		Labels: map[string]string{
-			"wrongLabel": "dynatrace-operator",
-		},
-		Spec: corev1.PodSpec{
-			NodeName: "node-1",
-		},
-		Status: corev1.PodStatus{
-			HostIP: "123.123.123.123",
-		},
-	}
+	t.Run("reconcileInstanceStatuses is idempotent", func(t *testing.T) {
+		reconciler, dk := setup(t)
 
-	fakeClient := fake.NewClient(
-		dk,
-		pod)
+		require.NoError(t, reconciler.reconcileInstanceStatuses(t.Context(), dk))
+		assert.NotEmpty(t, dk.Status.OneAgent.Instances)
+		instances := dk.Status.OneAgent.Instances
 
-	reconciler := &Reconciler{
-		client:    fakeClient,
-		apiReader: fakeClient,
-		configmap: k8sconfigmap.Query(fakeClient, fakeClient),
-		daemonset: k8sdaemonset.Query(fakeClient, fakeClient),
-	}
+		require.NoError(t, reconciler.reconcileInstanceStatuses(t.Context(), dk))
+		assert.Equal(t, instances, dk.Status.OneAgent.Instances)
+	})
 
-	err := reconciler.reconcileInstanceStatuses(t.Context(), dk)
-	require.NoError(t, err)
-	assert.Empty(t, dk.Status.OneAgent.Instances)
+	t.Run("nil timestamp => instances reconciled", func(t *testing.T) {
+		synctest.Test(t, func(t *testing.T) {
+			reconciler, dk := setup(t)
+
+			require.NoError(t, reconciler.updateInstancesStatus(t.Context(), dk))
+
+			assert.NotEmpty(t, dk.Status.OneAgent.Instances)
+			require.NotNil(t, dk.Status.OneAgent.LastInstanceStatusUpdate)
+			assert.Equal(t, time.Now(), dk.Status.OneAgent.LastInstanceStatusUpdate.Time)
+		})
+	})
+
+	t.Run("only reconcile again after at least interval has been reached", func(t *testing.T) {
+		synctest.Test(t, func(t *testing.T) {
+			reconciler, dk := setup(t)
+
+			lastUpdate := metav1.Now()
+			dk.Status.OneAgent.LastInstanceStatusUpdate = &lastUpdate
+			dk.Status.OneAgent.Instances = nil
+
+			synctest.Sleep(defaultUpdateInterval - time.Nanosecond)
+
+			require.NoError(t, reconciler.updateInstancesStatus(t.Context(), dk))
+
+			assert.Empty(t, dk.Status.OneAgent.Instances)
+			assert.Equal(t, lastUpdate, *dk.Status.OneAgent.LastInstanceStatusUpdate)
+
+			synctest.Sleep(time.Nanosecond)
+
+			require.NoError(t, reconciler.updateInstancesStatus(t.Context(), dk))
+
+			assert.NotEmpty(t, dk.Status.OneAgent.Instances)
+			require.NotNil(t, dk.Status.OneAgent.LastInstanceStatusUpdate)
+			assert.Equal(t, time.Now(), dk.Status.OneAgent.LastInstanceStatusUpdate.Time)
+		})
+	})
+
+	t.Run("pods with wrong labels => no instances", func(t *testing.T) {
+		reconciler, dk := setup(t, func(pod *corev1.Pod) {
+			pod.Labels = map[string]string{
+				"wrongLabel": "dynatrace-operator",
+			}
+		})
+
+		require.NoError(t, reconciler.reconcileInstanceStatuses(t.Context(), dk))
+		assert.Empty(t, dk.Status.OneAgent.Instances)
+	})
 }
 
 func TestReconcile_OneAgentConfigMap(t *testing.T) {

@@ -13,7 +13,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -28,14 +27,12 @@ const (
 )
 
 type Reconciler struct {
-	timeProvider *timeprovider.Provider
-	secrets      k8ssecret.QueryObject
+	secrets k8ssecret.QueryObject
 }
 
 func NewReconciler(clt client.Client, apiReader client.Reader) *Reconciler {
 	return &Reconciler{
-		timeProvider: timeprovider.New(),
-		secrets:      k8ssecret.Query(clt, apiReader),
+		secrets: k8ssecret.Query(clt, apiReader),
 	}
 }
 
@@ -83,7 +80,7 @@ func (r *Reconciler) deleteSelfSignedTLSSecret(ctx context.Context, dk *dynakube
 }
 
 func (r *Reconciler) createSelfSignedTLSSecret(ctx context.Context, dk *dynakube.DynaKube) error {
-	cert, err := certificates.New(r.timeProvider)
+	cert, err := certificates.New()
 	if err != nil {
 		k8sconditions.SetSecretGenFailed(dk.Conditions(), conditionType, err)
 

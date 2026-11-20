@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/stretchr/testify/require"
 )
 
@@ -39,7 +38,7 @@ func TestValidateCertificateExpiration(t *testing.T) {
 
 func TestNew(t *testing.T) {
 	t.Run("create new certificate", func(t *testing.T) {
-		cert, err := New(timeprovider.New())
+		cert, err := New()
 
 		require.NoError(t, err)
 
@@ -56,7 +55,7 @@ func TestNew(t *testing.T) {
 
 func Test_Certificate_SelfSign(t *testing.T) {
 	t.Run("self sign certificate", func(t *testing.T) {
-		cert, err := New(timeprovider.New())
+		cert, err := New()
 		require.NoError(t, err)
 
 		err = cert.SelfSign()
@@ -69,7 +68,7 @@ func Test_Certificate_SelfSign(t *testing.T) {
 
 func Test_Certificate_ToPEM(t *testing.T) {
 	t.Run("signed certificate to PEM", func(t *testing.T) {
-		cert, err := New(timeprovider.New())
+		cert, err := New()
 		require.NoError(t, err)
 		err = cert.SelfSign()
 		require.NoError(t, err)
@@ -81,7 +80,7 @@ func Test_Certificate_ToPEM(t *testing.T) {
 		require.NotEmpty(t, pemPk)
 	})
 	t.Run("unsigned certificate to PEM", func(t *testing.T) {
-		cert, err := New(timeprovider.New())
+		cert, err := New()
 		require.NoError(t, err)
 
 		pemCert, pemPk, err := cert.ToPEM()
