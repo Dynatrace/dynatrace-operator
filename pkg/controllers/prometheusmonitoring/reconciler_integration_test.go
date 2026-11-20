@@ -230,6 +230,21 @@ func TestSetupWithManager(t *testing.T) {
 		})
 	})
 
+	t.Run("DynaKube operator root CA hash change triggers reconcile", func(t *testing.T) {
+		pm, key := createPrometheusMonitoring(t)
+
+		dk := &dynakube.DynaKube{
+			Name: pm.Spec.DynaKubeName, Namespace: pm.Namespace,
+			Spec: dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
+		}
+		integrationtests.CreateDynakube(t, clt, dk)
+
+		assertReconcileTriggered(t, key, func() {
+			dk.Status.CA.PublicHash = "new-hash"
+			require.NoError(t, dk.UpdateStatus(t.Context(), clt))
+		})
+	})
+
 	t.Run("DynaKube proxy change triggers reconcile", func(t *testing.T) {
 		pm, key := createPrometheusMonitoring(t)
 

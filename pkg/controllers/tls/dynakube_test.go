@@ -9,6 +9,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -27,18 +28,45 @@ func TestDynaKubeReconcile(t *testing.T) {
 		_, err := NewController(clt, testNamespace).Reconcile(t.Context(), reconcile.Request{})
 		require.NoError(t, err)
 
-		dk := &dynakube.DynaKube{ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace}}
+		dk := &dynakube.DynaKube{Namespace: testNamespace}
 		require.NoError(t, VerifyCA(t.Context(), clt, dk))
 
 		cond := meta.FindStatusCondition(dk.Status.Conditions, ConditionType)
 		require.NotNil(t, cond)
 		assert.Equal(t, metav1.ConditionTrue, cond.Status)
 		assert.Equal(t, ReasonCAReady, cond.Reason)
+
+		expectedHash, err := hasher.GenerateSecureHash(string(getSecret(t, clt).Data[CACertKey]))
+		require.NoError(t, err)
+		assert.NotEmpty(t, dk.Status.CA.PublicHash)
+		assert.Equal(t, expectedHash, dk.Status.CA.PublicHash)
+	})
+
+	t.Run("public hash is stable and changes with the CA", func(t *testing.T) {
+		clt := fake.NewClient()
+		controller := NewController(clt, testNamespace)
+		_, err := controller.Reconcile(t.Context(), reconcile.Request{})
+		require.NoError(t, err)
+
+		dk := &dynakube.DynaKube{Namespace: testNamespace}
+		require.NoError(t, VerifyCA(t.Context(), clt, dk))
+		first := dk.Status.CA.PublicHash
+
+		require.NoError(t, VerifyCA(t.Context(), clt, dk))
+		assert.Equal(t, first, dk.Status.CA.PublicHash)
+
+		require.NoError(t, clt.Delete(t.Context(), getSecret(t, clt)))
+		_, err = controller.Reconcile(t.Context(), reconcile.Request{})
+		require.NoError(t, err)
+
+		require.NoError(t, VerifyCA(t.Context(), clt, dk))
+		assert.NotEmpty(t, dk.Status.CA.PublicHash)
+		assert.NotEqual(t, first, dk.Status.CA.PublicHash)
 	})
 
 	t.Run("missing CA sets condition false and creates nothing", func(t *testing.T) {
 		clt := fake.NewClient()
-		dk := &dynakube.DynaKube{ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace}}
+		dk := &dynakube.DynaKube{Namespace: testNamespace, Status: dynakube.DynaKubeStatus{CA: dynakube.CAStatus{PublicHash: "stale"}}}
 
 		require.NoError(t, VerifyCA(t.Context(), clt, dk))
 
@@ -46,6 +74,7 @@ func TestDynaKubeReconcile(t *testing.T) {
 		require.NotNil(t, cond)
 		assert.Equal(t, metav1.ConditionFalse, cond.Status)
 		assert.Equal(t, ReasonCANotFound, cond.Reason)
+		assert.Empty(t, dk.Status.CA.PublicHash)
 
 		err := clt.Get(t.Context(), types.NamespacedName{Name: CASecretName, Namespace: testNamespace}, &corev1.Secret{})
 		require.Error(t, err)
@@ -63,13 +92,14 @@ func TestDynaKubeReconcile(t *testing.T) {
 		require.NoError(t, clt.Update(t.Context(), secret))
 		before := getSecret(t, clt)
 
-		dk := &dynakube.DynaKube{ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace}}
+		dk := &dynakube.DynaKube{Namespace: testNamespace, Status: dynakube.DynaKubeStatus{CA: dynakube.CAStatus{PublicHash: "stale"}}}
 		require.NoError(t, VerifyCA(t.Context(), clt, dk))
 
 		cond := meta.FindStatusCondition(dk.Status.Conditions, ConditionType)
 		require.NotNil(t, cond)
 		assert.Equal(t, metav1.ConditionFalse, cond.Status)
 		assert.Equal(t, ReasonCAInvalid, cond.Reason)
+		assert.Empty(t, dk.Status.CA.PublicHash)
 
 		after := getSecret(t, clt)
 		assert.Equal(t, before.Data, after.Data)
@@ -82,10 +112,13 @@ func TestDynaKubeReconcile(t *testing.T) {
 				return errAPI
 			},
 		})
-		dk := &dynakube.DynaKube{ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace}}
+		dk := &dynakube.DynaKube{Namespace: testNamespace, Status: dynakube.DynaKubeStatus{CA: dynakube.CAStatus{PublicHash: "previous"}}}
 
 		err := VerifyCA(t.Context(), clt, dk)
 		require.Error(t, err)
+
+		// an API error says nothing about the CA, so the last known hash is kept
+		assert.Equal(t, "previous", dk.Status.CA.PublicHash)
 
 		cond := meta.FindStatusCondition(dk.Status.Conditions, ConditionType)
 		require.NotNil(t, cond)

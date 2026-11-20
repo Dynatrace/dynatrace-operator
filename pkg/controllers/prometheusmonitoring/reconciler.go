@@ -311,6 +311,7 @@ func newDynaKubeChangedPredicate() predicate.Funcs {
 
 			return oldDK.Status.Phase != newDK.Status.Phase ||
 				oldDK.Tokens() != newDK.Tokens() ||
+				oldDK.Status.CA.PublicHash != newDK.Status.CA.PublicHash ||
 				oldDK.Spec.TrustedCAs != newDK.Spec.TrustedCAs ||
 				oldDK.GetDynatraceAPIRequestThreshold() != newDK.GetDynatraceAPIRequestThreshold() ||
 				dynaKubeProxyChanged(oldDK, newDK) ||
