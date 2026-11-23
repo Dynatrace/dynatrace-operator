@@ -85,17 +85,11 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, c.Get(t.Context(), client.ObjectKeyFromObject(pm), pm))
 		require.Equal(t, status.Error, pm.Status.Phase)
 
-		cond := meta.FindStatusCondition(pm.Status.Conditions, prometheusmonitoring.DynaKubeAvailable)
+		cond := meta.FindStatusCondition(pm.Status.Conditions, prometheusmonitoring.PrerequisitesMet)
 		require.NotNil(t, cond)
 		require.Equal(t, metav1.ConditionFalse, cond.Status)
 		require.Equal(t, status.ReasonNotFound, cond.Reason)
 		require.Equal(t, "The DynaKube 'dk' is not present in the 'dynatrace' namespace.", cond.Message)
-
-		prereq := meta.FindStatusCondition(pm.Status.Conditions, prometheusmonitoring.PrerequisitesMet)
-		require.NotNil(t, prereq)
-		require.Equal(t, metav1.ConditionFalse, prereq.Status)
-		require.Equal(t, status.ReasonNotFound, prereq.Reason)
-		require.Contains(t, prereq.Message, "'dk'")
 	})
 
 	t.Run("dynakube recovered after not found", func(t *testing.T) {
@@ -111,10 +105,9 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		require.NoError(t, c.Get(t.Context(), client.ObjectKeyFromObject(pm), pm))
-		cond := meta.FindStatusCondition(pm.Status.Conditions, prometheusmonitoring.DynaKubeAvailable)
+		cond := meta.FindStatusCondition(pm.Status.Conditions, prometheusmonitoring.PrerequisitesMet)
 		require.NotNil(t, cond)
-		require.Equal(t, metav1.ConditionTrue, cond.Status)
-		require.Equal(t, status.ReasonAvailable, cond.Reason)
+		require.NotEqual(t, status.ReasonNotFound, cond.Reason)
 	})
 
 	t.Run("build client error", func(t *testing.T) {
@@ -402,7 +395,7 @@ func Test_setPhase(t *testing.T) {
 	conditionTrue := metav1.Condition{Type: "Available", Status: metav1.ConditionTrue, Reason: status.ReasonAvailable}
 	conditionReconciling := metav1.Condition{Type: "Available", Status: metav1.ConditionFalse, Reason: status.ReasonReconciling}
 	conditionError := metav1.Condition{Type: "Available", Status: metav1.ConditionFalse, Reason: status.ReasonError}
-	conditionDynaKubeMissing := metav1.Condition{Type: prometheusmonitoring.DynaKubeAvailable, Status: metav1.ConditionFalse, Reason: status.ReasonNotFound}
+	conditionDynaKubeMissing := metav1.Condition{Type: prometheusmonitoring.PrerequisitesMet, Status: metav1.ConditionFalse, Reason: status.ReasonNotFound}
 	conditionPrerequisitesMissing := metav1.Condition{Type: prometheusmonitoring.PrerequisitesMet, Status: metav1.ConditionFalse, Reason: status.ReasonError}
 
 	boom := errors.New("boom")
@@ -530,11 +523,9 @@ func TestReconcile_dynaKubeDeletedAfterPrerequisitesMet(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, c.Get(t.Context(), client.ObjectKeyFromObject(pm), pm))
 
-	for _, conditionType := range []string{prometheusmonitoring.DynaKubeAvailable, prometheusmonitoring.PrerequisitesMet} {
-		cond := meta.FindStatusCondition(pm.Status.Conditions, conditionType)
-		require.NotNil(t, cond, conditionType)
-		require.Equal(t, metav1.ConditionTrue, cond.Status, conditionType)
-	}
+	cond := meta.FindStatusCondition(pm.Status.Conditions, prometheusmonitoring.PrerequisitesMet)
+	require.NotNil(t, cond)
+	require.Equal(t, metav1.ConditionTrue, cond.Status)
 
 	require.NoError(t, c.Delete(t.Context(), dk))
 
@@ -543,12 +534,10 @@ func TestReconcile_dynaKubeDeletedAfterPrerequisitesMet(t *testing.T) {
 	require.NoError(t, c.Get(t.Context(), client.ObjectKeyFromObject(pm), pm))
 	assert.Equal(t, status.Error, pm.Status.Phase)
 
-	for _, conditionType := range []string{prometheusmonitoring.DynaKubeAvailable, prometheusmonitoring.PrerequisitesMet} {
-		cond := meta.FindStatusCondition(pm.Status.Conditions, conditionType)
-		require.NotNil(t, cond, conditionType)
-		assert.Equal(t, metav1.ConditionFalse, cond.Status, conditionType)
-		assert.Equal(t, status.ReasonNotFound, cond.Reason, conditionType)
-	}
+	cond = meta.FindStatusCondition(pm.Status.Conditions, prometheusmonitoring.PrerequisitesMet)
+	require.NotNil(t, cond)
+	assert.Equal(t, metav1.ConditionFalse, cond.Status)
+	assert.Equal(t, status.ReasonNotFound, cond.Reason)
 }
 
 func setTokensCondition(dk *dynakube.DynaKube, conditionStatus metav1.ConditionStatus, message string) {

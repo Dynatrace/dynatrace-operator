@@ -102,40 +102,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ct
 
 	log = log.WithValues("dynaKubeName", pm.Spec.DynaKubeName)
 
-	dk := &dynakube.DynaKube{}
-	if err := r.Get(ctx, client.ObjectKey{Name: pm.Spec.DynaKubeName, Namespace: pm.Namespace}, dk); err != nil {
-		if !k8serrors.IsNotFound(err) {
-			return ctrl.Result{}, fmt.Errorf("get dynakube %s: %w", pm.Spec.DynaKubeName, err)
-		}
-
-		log.Info("skipping reconcile due to missing DynaKube")
-
-		_ = meta.SetStatusCondition(&pm.Status.Conditions, metav1.Condition{
-			Type:    prometheusmonitoring.DynaKubeAvailable,
-			Status:  metav1.ConditionFalse,
-			Reason:  status.ReasonNotFound,
-			Message: fmt.Sprintf("The DynaKube '%s' is not present in the '%s' namespace.", pm.Spec.DynaKubeName, pm.Namespace),
-		})
-
-		// Without the DynaKube no prerequisite can be checked.
-		_ = meta.SetStatusCondition(&pm.Status.Conditions, metav1.Condition{
-			Type:    prometheusmonitoring.PrerequisitesMet,
-			Status:  metav1.ConditionFalse,
-			Reason:  status.ReasonNotFound,
-			Message: fmt.Sprintf("The DynaKube '%s' is not present, so the prerequisites cannot be checked.", pm.Spec.DynaKubeName),
-		})
-
-		return ctrl.Result{}, nil
-	}
-
-	_ = meta.SetStatusCondition(&pm.Status.Conditions, metav1.Condition{
-		Type:    prometheusmonitoring.DynaKubeAvailable,
-		Status:  metav1.ConditionTrue,
-		Reason:  status.ReasonAvailable,
-		Message: fmt.Sprintf("The DynaKube '%s' is present.", pm.Spec.DynaKubeName),
-	})
-
-	met, err := r.checkPrerequisites(ctx, pm, dk)
+	dk, met, err := r.checkPrerequisites(ctx, pm)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -167,44 +134,61 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ct
 	return ctrl.Result{}, nil
 }
 
-// checkPrerequisites reflects the result in the PrerequisitesMet condition.
+// checkPrerequisites fetches the referenced DynaKube and reflects the result in the PrerequisitesMet condition.
 // met is false if a prerequisite is missing, err is set if that cannot be determined.
-func (r *Reconciler) checkPrerequisites(ctx context.Context, pm *prometheusmonitoring.PrometheusMonitoring, dk *dynakube.DynaKube) (met bool, err error) {
+func (r *Reconciler) checkPrerequisites(ctx context.Context, pm *prometheusmonitoring.PrometheusMonitoring) (dk *dynakube.DynaKube, met bool, err error) {
 	cond := metav1.Condition{Type: prometheusmonitoring.PrerequisitesMet, Status: metav1.ConditionFalse, Reason: status.ReasonError}
 	defer func() { _ = meta.SetStatusCondition(&pm.Status.Conditions, cond) }()
+
+	dk = &dynakube.DynaKube{}
+
+	err = r.Get(ctx, client.ObjectKey{Name: pm.Spec.DynaKubeName, Namespace: pm.Namespace}, dk)
+	if k8serrors.IsNotFound(err) {
+		cond.Reason = status.ReasonNotFound
+		cond.Message = fmt.Sprintf("The DynaKube '%s' is not present in the '%s' namespace.", pm.Spec.DynaKubeName, pm.Namespace)
+
+		return nil, false, nil
+	}
+
+	if err != nil {
+		cond.Reason = k8sconditions.KubeAPIErrorReason
+		cond.Message = "DynaKube cannot be read"
+
+		return nil, false, fmt.Errorf("get dynakube %s: %w", pm.Spec.DynaKubeName, err)
+	}
 
 	if dk.Spec.APIURL == "" {
 		cond.Message = "tenant URL (apiUrl) is missing in the DynaKube"
 
-		return false, nil
+		return dk, false, nil
 	}
 
 	tokens, err := token.NewReader(r, dk).ReadTokens(ctx)
 	if k8serrors.IsNotFound(err) {
 		cond.Message = fmt.Sprintf("token secret %s not found", dk.Tokens())
 
-		return false, nil
+		return dk, false, nil
 	}
 
 	if err != nil {
 		cond.Reason = k8sconditions.KubeAPIErrorReason
 		cond.Message = "token secret cannot be read"
 
-		return false, fmt.Errorf("read token secret %s: %w", dk.Tokens(), err)
+		return dk, false, fmt.Errorf("read token secret %s: %w", dk.Tokens(), err)
 	}
 
 	if !token.CheckForDataIngestToken(tokens) {
 		cond.Reason = k8sconditions.DataIngestTokenMissing
 		cond.Message = "data-ingest token is missing in the token secret"
 
-		return false, nil
+		return dk, false, nil
 	}
 
 	cond.Status = metav1.ConditionTrue
 	cond.Reason = status.ReasonAvailable
 	cond.Message = "all prerequisites are met"
 
-	return true, nil
+	return dk, true, nil
 }
 
 func (r *Reconciler) buildDynatraceClient(ctx context.Context, dk *dynakube.DynaKube) (*dynatrace.Client, error) {

@@ -136,9 +136,8 @@ func testStatus(t *testing.T, clt client.Client) {
 		assert.Equal(t, testTargetAllocatorImage, stored.Status.TargetAllocator.ResolvedImage)
 	})
 
-	t.Run("one availability condition per component plus the DynaKube and the prerequisites", func(t *testing.T) {
+	t.Run("one availability condition per component plus the prerequisites", func(t *testing.T) {
 		wantTypes := []string{
-			prometheusmonitoring.DynaKubeAvailable,
 			prometheusmonitoring.PrerequisitesMet,
 			prometheusmonitoring.GatewayAvailable,
 			prometheusmonitoring.ScraperAvailable,
@@ -166,7 +165,7 @@ func testPreconditions(t *testing.T, clt client.Client) {
 		phase     status.DeploymentPhase
 	}{
 		{
-			// A missing DynaKube is reported through the DynaKubeAvailable condition and requeued.
+			// A missing DynaKube is reported through the PrerequisitesMet condition and requeued.
 			name:      "missing DynaKube",
 			namespace: "err-no-dynakube",
 			prepare:   func(t *testing.T, f *fixture) { require.NoError(t, clt.Delete(t.Context(), f.dk)) },
