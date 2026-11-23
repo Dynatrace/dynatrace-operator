@@ -60,7 +60,7 @@ func checkInitContainers(sampleApp *sample.App) features.Func {
 
 			assert.NotContains(t, oneAgentInstallInitContainer.Args, "--"+k8sinit.SuppressErrorsFlag, "in the tests the init-container should have no errors suppressed")
 
-			ifNotEmptyCommand := shell.Shell(shell.CheckIfNotEmpty("/var/lib/dynatrace/oneagent/log/php/"))
+			ifNotEmptyCommand := shell.Shell(shell.CheckIfNotEmpty("/var/lib/dynatrace/oneagent/log/nodejs/"))
 			executionResult, err := k8spod.Exec(ctx, resources, pod, sampleApp.ContainerName(), ifNotEmptyCommand...)
 			require.NoError(t, err)
 

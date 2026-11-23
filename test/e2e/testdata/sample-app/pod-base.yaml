@@ -6,27 +6,31 @@ metadata:
   name: php-sample
 spec:
   containers:
-    - image: docker.io/php:fpm-stretch
+    - image: registry.access.redhat.com/ubi9/nodejs-22-minimal
       imagePullPolicy: Always
       livenessProbe:
         failureThreshold: 3
         tcpSocket:
-          port: 9000
+          port: 8080
         initialDelaySeconds: 600
         periodSeconds: 30
         successThreshold: 1
         timeoutSeconds: 2
       name: app
+      command: [ "node", "-e" ]
+      args:
+        - |
+          require('http').createServer((req, res) => res.end('ok\n')).listen(8080);
       env:
         - name: DT_DEBUGFLAGS
           value: debugBootstrapNative=true
       ports:
-        - containerPort: 9000
+        - containerPort: 8080
           protocol: TCP
       readinessProbe:
         failureThreshold: 3
         tcpSocket:
-          port: 9000
+          port: 8080
         periodSeconds: 10
         successThreshold: 1
         timeoutSeconds: 1
@@ -44,6 +48,12 @@ spec:
       effect: NoSchedule
     - key: kubernetes.io/arch
       value: amd64
+      effect: NoSchedule
+    - key: kubernetes.io/arch
+      value: ppc64le
+      effect: NoSchedule
+    - key: kubernetes.io/arch
+      value: s390x
       effect: NoSchedule
   securityContext:
     runAsUser: 0

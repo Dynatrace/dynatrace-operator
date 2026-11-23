@@ -91,7 +91,7 @@ func CheckImageVolumeInjection(deployment *sample.App, imageURI string) features
 			})
 
 			// the only reliable way to test if codemodules works is to check
-			ifNotEmptyCommand := shell.Shell(shell.CheckIfNotEmpty("/var/lib/dynatrace/oneagent/log/php/"))
+			ifNotEmptyCommand := shell.Shell(shell.CheckIfNotEmpty("/var/lib/dynatrace/oneagent/log/nodejs/"))
 			executionResult, err := k8spod.Exec(ctx, resource, pod, deployment.ContainerName(), ifNotEmptyCommand...)
 			require.NoError(t, err)
 			require.NotEmpty(t, executionResult)
