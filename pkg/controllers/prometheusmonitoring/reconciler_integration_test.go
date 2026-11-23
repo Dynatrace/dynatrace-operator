@@ -58,6 +58,38 @@ func (r *reconcileRecorder) reset(key client.ObjectKey) {
 	delete(r.calls, key)
 }
 
+// dynaKubeSpecChange describes a DynaKube spec change that must trigger a reconcile.
+// initial optionally prepares the spec before the DynaKube is created, change is applied afterwards.
+type dynaKubeSpecChange struct {
+	name    string
+	initial func(spec *dynakube.DynaKubeSpec)
+	change  func(spec *dynakube.DynaKubeSpec)
+}
+
+func (c dynaKubeSpecChange) initialSpec() dynakube.DynaKubeSpec {
+	spec := dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"}
+	if c.initial != nil {
+		c.initial(&spec)
+	}
+
+	return spec
+}
+
+var dynaKubeSpecChanges = []dynaKubeSpecChange{
+	{name: "apiUrl", change: func(spec *dynakube.DynaKubeSpec) { spec.APIURL = "https://other.dynatrace.com/api" }},
+	{name: "customPullSecret", change: func(spec *dynakube.DynaKubeSpec) { spec.CustomPullSecret = "pull-secret" }},
+	{name: "self-monitoring enabled", change: func(spec *dynakube.DynaKubeSpec) { spec.SelfMonitoring = &dynakube.SelfMonitoringSpec{} }},
+	{
+		name:    "tokens",
+		initial: func(spec *dynakube.DynaKubeSpec) { spec.Tokens = "old-token-secret" },
+		change:  func(spec *dynakube.DynaKubeSpec) { spec.Tokens = "new-token-secret" },
+	},
+	{name: "resource attributes", change: func(spec *dynakube.DynaKubeSpec) { spec.ResourceAttributes = map[string]string{"foo": "bar"} }},
+	{name: "trusted CAs", change: func(spec *dynakube.DynaKubeSpec) { spec.TrustedCAs = "test" }},
+	{name: "proxy", change: func(spec *dynakube.DynaKubeSpec) { spec.Proxy = &types.ValueSource{Value: "test"} }},
+	{name: "API request threshold", change: func(spec *dynakube.DynaKubeSpec) { spec.DynatraceAPIRequestThreshold = new(uint16(14)) }},
+}
+
 func TestSetupWithManager(t *testing.T) {
 	recorder := newReconcileRecorder()
 	r := &Reconciler{
@@ -192,37 +224,11 @@ func TestSetupWithManager(t *testing.T) {
 		})
 	})
 
-	specChanges := []struct {
-		name    string
-		initial func(spec *dynakube.DynaKubeSpec)
-		change  func(spec *dynakube.DynaKubeSpec)
-	}{
-		{name: "apiUrl", change: func(spec *dynakube.DynaKubeSpec) { spec.APIURL = "https://other.dynatrace.com/api" }},
-		{name: "customPullSecret", change: func(spec *dynakube.DynaKubeSpec) { spec.CustomPullSecret = "pull-secret" }},
-		{name: "self-monitoring enabled", change: func(spec *dynakube.DynaKubeSpec) { spec.SelfMonitoring = &dynakube.SelfMonitoringSpec{} }},
-		{
-			name:    "tokens",
-			initial: func(spec *dynakube.DynaKubeSpec) { spec.Tokens = "old-token-secret" },
-			change:  func(spec *dynakube.DynaKubeSpec) { spec.Tokens = "new-token-secret" },
-		},
-		{name: "resource attributes", change: func(spec *dynakube.DynaKubeSpec) { spec.ResourceAttributes = map[string]string{"foo": "bar"} }},
-		{name: "trusted CAs", change: func(spec *dynakube.DynaKubeSpec) { spec.TrustedCAs = "test" }},
-		{name: "proxy", change: func(spec *dynakube.DynaKubeSpec) { spec.Proxy = &types.ValueSource{Value: "test"} }},
-		{name: "API request threshold", change: func(spec *dynakube.DynaKubeSpec) { spec.DynatraceAPIRequestThreshold = new(uint16(14)) }},
-	}
-
-	for _, tc := range specChanges {
+	for _, tc := range dynaKubeSpecChanges {
 		t.Run("DynaKube "+tc.name+" change triggers reconcile", func(t *testing.T) {
 			pm, key := createPrometheusMonitoring(t)
 
-			dk := &dynakube.DynaKube{
-				Name: pm.Spec.DynaKubeName, Namespace: pm.Namespace,
-				Spec: dynakube.DynaKubeSpec{APIURL: "https://dummy.dynatrace.com/api"},
-			}
-			if tc.initial != nil {
-				tc.initial(&dk.Spec)
-			}
-
+			dk := &dynakube.DynaKube{Name: pm.Spec.DynaKubeName, Namespace: pm.Namespace, Spec: tc.initialSpec()}
 			createDynaKube(t, key, dk)
 
 			assertReconcileTriggered(t, key, func() {
