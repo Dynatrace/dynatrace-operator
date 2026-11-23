@@ -60,7 +60,7 @@ func TestInitReconcile(t *testing.T) {
 	t.Run("run error", func(t *testing.T) {
 		ctx, clt := setupOneTimeClient(&appsv1.Deployment{
 			Spec:   appsv1.DeploymentSpec{Replicas: new(int32(3))},
-			Status: appsv1.DeploymentStatus{ReadyReplicas: 3},
+			Status: appsv1.DeploymentStatus{Replicas: 3, UpdatedReplicas: 3, ReadyReplicas: 3},
 		})
 
 		called := false
@@ -84,7 +84,7 @@ func TestInitReconcile(t *testing.T) {
 	t.Run("defaulting error", func(t *testing.T) {
 		ctx, clt := setupOneTimeClient(&appsv1.Deployment{
 			Spec:   appsv1.DeploymentSpec{Replicas: new(int32(3))},
-			Status: appsv1.DeploymentStatus{ReadyReplicas: 3},
+			Status: appsv1.DeploymentStatus{Replicas: 3, UpdatedReplicas: 3, ReadyReplicas: 3},
 		})
 
 		run = func(context.Context, client.Client, string) error {
@@ -106,7 +106,7 @@ func TestInitReconcile(t *testing.T) {
 	t.Run("run ok", func(t *testing.T) {
 		ctx, clt := setupOneTimeClient(&appsv1.Deployment{
 			Spec:   appsv1.DeploymentSpec{Replicas: new(int32(3))},
-			Status: appsv1.DeploymentStatus{ReadyReplicas: 3},
+			Status: appsv1.DeploymentStatus{Replicas: 3, UpdatedReplicas: 3, ReadyReplicas: 3},
 		})
 
 		run = func(context.Context, client.Client, string) error {
@@ -137,7 +137,7 @@ func Test_isDeploymentReady(t *testing.T) {
 			deploy: &appsv1.Deployment{
 				Generation: 2,
 				Spec:       appsv1.DeploymentSpec{Replicas: new(int32(3))},
-				Status:     appsv1.DeploymentStatus{ObservedGeneration: 2, ReadyReplicas: 3},
+				Status:     appsv1.DeploymentStatus{ObservedGeneration: 2, Replicas: 3, UpdatedReplicas: 3, ReadyReplicas: 3},
 			},
 			expected: true,
 		},
@@ -147,6 +147,15 @@ func Test_isDeploymentReady(t *testing.T) {
 				Generation: 2,
 				Spec:       appsv1.DeploymentSpec{Replicas: new(int32(3))},
 				Status:     appsv1.DeploymentStatus{ObservedGeneration: 2, ReadyReplicas: 2},
+			},
+			expected: false,
+		},
+		{
+			name: "not ready: rolling update in progress, old replicas are still ready",
+			deploy: &appsv1.Deployment{
+				Generation: 2,
+				Spec:       appsv1.DeploymentSpec{Replicas: new(int32(3))},
+				Status:     appsv1.DeploymentStatus{ObservedGeneration: 2, Replicas: 4, UpdatedReplicas: 1, ReadyReplicas: 3},
 			},
 			expected: false,
 		},
