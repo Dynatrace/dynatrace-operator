@@ -43,8 +43,7 @@ const (
 	gatewayConfigKey     = "relay"
 	configHashAnnotation = "internal.operator.dynatrace.com/gateway-config-hash"
 
-	trustedCAVolumeMountPath = prometheusmonitoring.TrustedCAMountPath
-	trustedCAFile            = "rootca.pem"
+	trustedCAFile = "rootca.pem"
 
 	otlpPortName = "otlp"
 
@@ -53,16 +52,11 @@ const (
 	// otelCollectorNonRootUser is the "nonroot" UID/GID the gateway image runs as.
 	otelCollectorNonRootUser = 10001
 
-	configVolumeName  = prometheusmonitoring.ConfigVolumeName
-	configMountDir    = prometheusmonitoring.ConfigMountDir
-	relayConfigFile   = "relay.yaml"
-	cacertsVolumeName = prometheusmonitoring.CACertsVolumeName
+	relayConfigFile = "relay.yaml"
 
 	// Mounted as a directory, not subPath: subPath mounts don't receive live Secret
 	// updates, which would break token rotation.
-	tokenVolumeName = prometheusmonitoring.TokenVolumeName
-	tokenMountPath  = prometheusmonitoring.TokenMountPath
-	tokenFileName   = "data-ingest-token"
+	tokenFileName = "data-ingest-token"
 )
 
 type Reconciler struct {
@@ -164,7 +158,7 @@ func buildGatewayConfigData(dk *dynakube.DynaKube) gatewayConfigData {
 	}
 
 	if dk.Spec.TrustedCAs != "" {
-		data.CustomCAPath = filepath.Join(trustedCAVolumeMountPath, trustedCAFile)
+		data.CustomCAPath = filepath.Join(prometheusmonitoring.TrustedCAMountPath, trustedCAFile)
 	}
 
 	return data
@@ -319,7 +313,7 @@ func buildArgs(s *reconcileScope) []string {
 	userArgs := s.Spec.SanitizedArgs()
 
 	args := make([]string, 0, 1+len(userArgs))
-	args = append(args, "--config="+configMountDir+"/"+relayConfigFile)
+	args = append(args, "--config="+prometheusmonitoring.ConfigMountDir+"/"+relayConfigFile)
 
 	return append(args, userArgs...)
 }
@@ -387,7 +381,7 @@ func buildVolumes(s *reconcileScope) []corev1.Volume {
 
 	volumes := []corev1.Volume{
 		{
-			Name: configVolumeName,
+			Name: prometheusmonitoring.ConfigVolumeName,
 			ConfigMap: &corev1.ConfigMapVolumeSource{
 				Name:        s.Spec.GetStatefulSetName(),
 				Items:       []corev1.KeyToPath{{Key: gatewayConfigKey, Path: relayConfigFile}},
@@ -395,7 +389,7 @@ func buildVolumes(s *reconcileScope) []corev1.Volume {
 			},
 		},
 		{
-			Name: tokenVolumeName,
+			Name: prometheusmonitoring.TokenVolumeName,
 			Projected: &corev1.ProjectedVolumeSource{
 				// Group-readable, not world-readable: the pod's fsGroup grants read access to
 				// the container without exposing the file to any other UID.
@@ -416,7 +410,7 @@ func buildVolumes(s *reconcileScope) []corev1.Volume {
 
 	if dk.Spec.TrustedCAs != "" {
 		volumes = append(volumes, corev1.Volume{
-			Name: cacertsVolumeName,
+			Name: prometheusmonitoring.CACertsVolumeName,
 			ConfigMap: &corev1.ConfigMapVolumeSource{
 				Name:        dk.Spec.TrustedCAs,
 				Items:       []corev1.KeyToPath{{Key: "certs", Path: trustedCAFile}},
@@ -432,12 +426,12 @@ func buildVolumeMounts(s *reconcileScope) []corev1.VolumeMount {
 	dk := s.DynaKube
 
 	mounts := []corev1.VolumeMount{
-		{Name: configVolumeName, MountPath: configMountDir, ReadOnly: true},
-		{Name: tokenVolumeName, MountPath: tokenMountPath, ReadOnly: true},
+		{Name: prometheusmonitoring.ConfigVolumeName, MountPath: prometheusmonitoring.ConfigMountDir, ReadOnly: true},
+		{Name: prometheusmonitoring.TokenVolumeName, MountPath: prometheusmonitoring.TokenMountPath, ReadOnly: true},
 	}
 
 	if dk.Spec.TrustedCAs != "" {
-		mounts = append(mounts, corev1.VolumeMount{Name: cacertsVolumeName, MountPath: trustedCAVolumeMountPath, ReadOnly: true})
+		mounts = append(mounts, corev1.VolumeMount{Name: prometheusmonitoring.CACertsVolumeName, MountPath: prometheusmonitoring.TrustedCAMountPath, ReadOnly: true})
 	}
 
 	return mounts

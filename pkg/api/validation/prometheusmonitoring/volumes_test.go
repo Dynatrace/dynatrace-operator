@@ -68,6 +68,7 @@ func TestConflictingVolumes(t *testing.T) {
 		for name, c := range components {
 			for _, reserved := range c.paths {
 				pm := newTestPM()
+				c.pod(pm).Volumes = types.Volumes{{Name: "custom", AllowedVolumeSource: emptyDir}}
 				c.pod(pm).VolumeMounts = []corev1.VolumeMount{{Name: "custom", MountPath: reserved}}
 
 				msg := conflictingVolumes(t.Context(), clt, pm)
@@ -76,6 +77,28 @@ func TestConflictingVolumes(t *testing.T) {
 				assert.Contains(t, msg, reserved)
 				assert.Contains(t, msg, "volume mount path")
 			}
+		}
+	})
+
+	t.Run("volume mount nested in reserved path", func(t *testing.T) {
+		for name, c := range components {
+			pm := newTestPM()
+			c.pod(pm).Volumes = types.Volumes{{Name: "custom", AllowedVolumeSource: emptyDir}}
+			c.pod(pm).VolumeMounts = []corev1.VolumeMount{{Name: "custom", MountPath: c.paths[0] + "/nested"}}
+
+			assert.Contains(t, conflictingVolumes(t.Context(), clt, pm), "volume mount path", name)
+		}
+	})
+
+	t.Run("volume mount without matching volume", func(t *testing.T) {
+		for name, c := range components {
+			pm := newTestPM()
+			c.pod(pm).VolumeMounts = []corev1.VolumeMount{{Name: "missing", MountPath: "/custom"}}
+
+			msg := conflictingVolumes(t.Context(), clt, pm)
+
+			assert.Contains(t, msg, name)
+			assert.Contains(t, msg, "missing")
 		}
 	})
 }
@@ -87,6 +110,7 @@ func newTestPM() *prometheusmonitoring.PrometheusMonitoring {
 func TestValidateRejectsConflictingVolumes(t *testing.T) {
 	validator := &Validator{apiReader: fake.NewClient()}
 	pm := newTestPM()
+	pm.Spec.Gateway.Volumes = types.Volumes{{Name: "custom", AllowedVolumeSource: types.AllowedVolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}}}}
 	pm.Spec.Gateway.VolumeMounts = []corev1.VolumeMount{{Name: "custom", MountPath: prometheusmonitoring.ConfigMountDir}}
 
 	t.Run("ValidateCreate", func(t *testing.T) {

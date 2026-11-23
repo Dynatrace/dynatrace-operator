@@ -345,10 +345,10 @@ func TestBuildVolumes(t *testing.T) {
 		mounts := buildVolumeMounts()
 
 		require.Len(t, volumes, 1)
-		assert.Equal(t, configVolumeName, volumes[0].Name)
+		assert.Equal(t, prometheusmonitoring.ConfigVolumeName, volumes[0].Name)
 		assert.Equal(t, "pm-scraper", volumes[0].ConfigMap.Name)
 		require.Len(t, mounts, 1)
-		assert.Equal(t, configMountDir, mounts[0].MountPath)
+		assert.Equal(t, prometheusmonitoring.ConfigMountDir, mounts[0].MountPath)
 	})
 }
 

@@ -1581,6 +1581,9 @@ spec:
                       - name
                       type: object
                     type: array
+                    x-kubernetes-list-map-keys:
+                    - mountPath
+                    x-kubernetes-list-type: map
                   volumes:
                     description: |-
                       Additional volumes for the component pods.
@@ -2758,6 +2761,9 @@ spec:
                         rule: (has(self.configMap)?1:0)+(has(self.csi)?1:0)+(has(self.downwardAPI)?1:0)+(has(self.emptyDir)?1:0)+(has(self.ephemeral)?1:0)+(has(self.persistentVolumeClaim)?1:0)+(has(self.projected)?1:0)+(has(self.secret)?1:0)+(has(self.image)?1:0)
                           == 1
                     type: array
+                    x-kubernetes-list-map-keys:
+                    - name
+                    x-kubernetes-list-type: map
                 type: object
               publicRegistryOverride:
                 description: Overrides the default registry from which Dynatrace images
@@ -4299,6 +4305,9 @@ spec:
                       - name
                       type: object
                     type: array
+                    x-kubernetes-list-map-keys:
+                    - mountPath
+                    x-kubernetes-list-type: map
                   volumes:
                     description: |-
                       Additional volumes for the component pods.
@@ -5476,6 +5485,9 @@ spec:
                         rule: (has(self.configMap)?1:0)+(has(self.csi)?1:0)+(has(self.downwardAPI)?1:0)+(has(self.emptyDir)?1:0)+(has(self.ephemeral)?1:0)+(has(self.persistentVolumeClaim)?1:0)+(has(self.projected)?1:0)+(has(self.secret)?1:0)+(has(self.image)?1:0)
                           == 1
                     type: array
+                    x-kubernetes-list-map-keys:
+                    - name
+                    x-kubernetes-list-type: map
                 type: object
               targetAllocator:
                 default: {}
@@ -7115,6 +7127,9 @@ spec:
                       - name
                       type: object
                     type: array
+                    x-kubernetes-list-map-keys:
+                    - mountPath
+                    x-kubernetes-list-type: map
                   volumes:
                     description: |-
                       Additional volumes for the component pods.
@@ -8292,6 +8307,9 @@ spec:
                         rule: (has(self.configMap)?1:0)+(has(self.csi)?1:0)+(has(self.downwardAPI)?1:0)+(has(self.emptyDir)?1:0)+(has(self.ephemeral)?1:0)+(has(self.persistentVolumeClaim)?1:0)+(has(self.projected)?1:0)+(has(self.secret)?1:0)+(has(self.image)?1:0)
                           == 1
                     type: array
+                    x-kubernetes-list-map-keys:
+                    - name
+                    x-kubernetes-list-type: map
                 type: object
             required:
             - dynaKubeName

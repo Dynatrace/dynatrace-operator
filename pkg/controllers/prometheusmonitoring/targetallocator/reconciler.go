@@ -36,8 +36,7 @@ const (
 	insecurePortName = "http-port"
 	securePortName   = "https-port"
 
-	configVolume = prometheusmonitoring.TargetAllocatorConfigVolumeName
-	configFile   = "targetallocator.yaml"
+	configFile = "targetallocator.yaml"
 
 	serviceAccount = "dynatrace-target-allocator"
 
@@ -276,7 +275,7 @@ func buildContainer(spec *prometheusmonitoring.TargetAllocator, imageURI string,
 			{Name: securePortName, ContainerPort: 8443, Protocol: corev1.ProtocolTCP},
 		},
 		VolumeMounts: append([]corev1.VolumeMount{
-			{Name: configVolume, MountPath: prometheusmonitoring.ConfigMountDir, ReadOnly: true},
+			{Name: prometheusmonitoring.TargetAllocatorConfigVolumeName, MountPath: prometheusmonitoring.ConfigMountDir, ReadOnly: true},
 			// TODO: TLS volume
 		}, spec.VolumeMounts...),
 		Env:       append(env, spec.Env...),
@@ -331,7 +330,7 @@ func buildContainer(spec *prometheusmonitoring.TargetAllocator, imageURI string,
 func buildVolumes(spec *prometheusmonitoring.TargetAllocator) []corev1.Volume {
 	volumes := []corev1.Volume{
 		{
-			Name: configVolume,
+			Name: prometheusmonitoring.TargetAllocatorConfigVolumeName,
 			ConfigMap: &corev1.ConfigMapVolumeSource{
 				Name: spec.GetDeploymentName(),
 				Items: []corev1.KeyToPath{

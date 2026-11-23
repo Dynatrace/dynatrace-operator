@@ -48,9 +48,6 @@ const (
 	targetAllocatorPort = 80
 
 	serviceAccountName = "dynatrace-prometheus-scraper"
-
-	configVolumeName = prometheusmonitoring.ConfigVolumeName
-	configMountDir   = prometheusmonitoring.ConfigMountDir
 )
 
 type Reconciler struct {
@@ -310,7 +307,7 @@ func buildArgs(s *reconcileScope) []string {
 	userArgs := s.Spec.SanitizedArgs()
 
 	args := make([]string, 0, 1+len(userArgs))
-	args = append(args, "--config="+configMountDir+"/"+scraperConfigFile)
+	args = append(args, "--config="+prometheusmonitoring.ConfigMountDir+"/"+scraperConfigFile)
 
 	return append(args, userArgs...)
 }
@@ -342,7 +339,7 @@ func buildVolumes(s *reconcileScope) []corev1.Volume {
 
 	return []corev1.Volume{
 		{
-			Name: configVolumeName,
+			Name: prometheusmonitoring.ConfigVolumeName,
 			ConfigMap: &corev1.ConfigMapVolumeSource{
 				Name:        s.Spec.GetDeploymentName(),
 				Items:       []corev1.KeyToPath{{Key: scraperConfigKey, Path: scraperConfigFile}},
@@ -354,6 +351,6 @@ func buildVolumes(s *reconcileScope) []corev1.Volume {
 
 func buildVolumeMounts() []corev1.VolumeMount {
 	return []corev1.VolumeMount{
-		{Name: configVolumeName, MountPath: configMountDir, ReadOnly: true},
+		{Name: prometheusmonitoring.ConfigVolumeName, MountPath: prometheusmonitoring.ConfigMountDir, ReadOnly: true},
 	}
 }

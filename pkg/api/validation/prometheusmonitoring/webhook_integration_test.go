@@ -181,6 +181,7 @@ func TestWebhook(t *testing.T) {
 
 		t.Run("volume mount path", func(t *testing.T) {
 			pm := newTestPrometheusMonitoring("conflicting-mount-path")
+			pm.Spec.Gateway.Volumes = apitypes.Volumes{{Name: "custom", AllowedVolumeSource: apitypes.AllowedVolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}}}}
 			pm.Spec.Gateway.VolumeMounts = []corev1.VolumeMount{{Name: "custom", MountPath: prometheusmonitoring.TokenMountPath}}
 
 			err := clt.Create(t.Context(), pm)
