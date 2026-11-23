@@ -222,8 +222,8 @@ func buildVolumes(dk *dynakube.DynaKube, dbSpec extensions.DatabaseSpec) []corev
 				SecretName: dk.Extensions().GetTLSSecretName(),
 				Items: []corev1.KeyToPath{
 					{
-						Key:  consts.TLSCrtDataName,
-						Path: consts.TLSCrtDataName,
+						Key:  corev1.TLSCertKey,
+						Path: corev1.TLSCertKey,
 					},
 				},
 				DefaultMode: mode,

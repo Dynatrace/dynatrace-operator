@@ -768,6 +768,87 @@ func TestReconcileBuildsStatefulSetVolumes(t *testing.T) {
 	})
 }
 
+func TestReconcileTrustedCAs(t *testing.T) {
+	t.Run("no trusted CAs volume, mount or annotation when trustedCAs is not set", func(t *testing.T) {
+		dk := newTestDynaKube()
+		sts := reconcileAndGetSTS(t, dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t))
+
+		assert.Nil(t, k8svolume.FindByName(sts.Spec.Template.Spec.Volumes, agconsts.TrustedCAsVolumeName))
+
+		_, err := k8smount.Find(sts.Spec.Template.Spec.Containers[0].VolumeMounts, agconsts.TrustedCAsVolumeName)
+		require.Error(t, err)
+
+		assert.NotContains(t, sts.Spec.Template.Annotations, statefulset.AnnotationTrustedCAsHash)
+	})
+
+	t.Run("trusted CAs configmap is mounted like on the ActiveGate when trustedCAs is set", func(t *testing.T) {
+		dk := newTestDynaKube()
+		dk.Spec.TrustedCAs = "my-trusted-cas"
+		fakeClient := fake.NewClient(dk, newTestTenantSecret(dk), newTestAuthTokenSecret(dk), newTestTrustedCAsConfigMap(dk, "ca-content"))
+		require.ErrorIs(t, statefulset.NewReconciler(fakeClient).Reconcile(t.Context(), dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t)), k8sstatefulset.ErrRolloutInProgress)
+
+		sts := requireTestStatefulSet(t, t.Context(), fakeClient, dk)
+
+		volume := k8svolume.FindByName(sts.Spec.Template.Spec.Volumes, agconsts.TrustedCAsVolumeName)
+		require.NotNil(t, volume, "trusted CAs volume not found")
+		require.NotNil(t, volume.ConfigMap)
+		assert.Equal(t, "my-trusted-cas", volume.ConfigMap.Name)
+		assert.Equal(t, []corev1.KeyToPath{{Key: dynakube.TrustedCAKey, Path: "rootca.pem"}}, volume.ConfigMap.Items)
+
+		mount, err := k8smount.Find(sts.Spec.Template.Spec.Containers[0].VolumeMounts, agconsts.TrustedCAsVolumeName)
+		require.NoError(t, err)
+		assert.True(t, mount.ReadOnly)
+		assert.Equal(t, operatorconsts.DTComponentsSecretsRootDir+"/rootca", mount.MountPath)
+
+		assert.NotEmpty(t, sts.Spec.Template.Annotations[statefulset.AnnotationTrustedCAsHash])
+	})
+
+	t.Run("changing the trusted CAs content changes the pod template hash", func(t *testing.T) {
+		dk := newTestDynaKube()
+		dk.Spec.TrustedCAs = "my-trusted-cas"
+		caConfigMap := newTestTrustedCAsConfigMap(dk, "ca-content")
+		fakeClient := fake.NewClient(dk, newTestTenantSecret(dk), newTestAuthTokenSecret(dk), caConfigMap)
+		require.ErrorIs(t, statefulset.NewReconciler(fakeClient).Reconcile(t.Context(), dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t)), k8sstatefulset.ErrRolloutInProgress)
+
+		initialHash := requireTestStatefulSet(t, t.Context(), fakeClient, dk).Spec.Template.Annotations[statefulset.AnnotationTrustedCAsHash]
+		require.NotEmpty(t, initialHash)
+
+		caConfigMap.Data[dynakube.TrustedCAKey] = "rotated-ca-content"
+		require.NoError(t, fakeClient.Update(t.Context(), caConfigMap))
+		require.ErrorIs(t, statefulset.NewReconciler(fakeClient).Reconcile(t.Context(), dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t)), k8sstatefulset.ErrRolloutInProgress)
+
+		rotatedHash := requireTestStatefulSet(t, t.Context(), fakeClient, dk).Spec.Template.Annotations[statefulset.AnnotationTrustedCAsHash]
+		assert.NotEmpty(t, rotatedHash)
+		assert.NotEqual(t, initialHash, rotatedHash)
+	})
+
+	t.Run("missing trusted CAs configmap is tolerated, volume is kept but no annotation is set", func(t *testing.T) {
+		dk := newTestDynaKube()
+		dk.Spec.TrustedCAs = "my-trusted-cas"
+		sts := reconcileAndGetSTS(t, dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t))
+
+		assert.NotNil(t, k8svolume.FindByName(sts.Spec.Template.Spec.Volumes, agconsts.TrustedCAsVolumeName))
+		assert.NotContains(t, sts.Spec.Template.Annotations, statefulset.AnnotationTrustedCAsHash)
+	})
+
+	t.Run("returns error when reading the trusted CAs configmap fails", func(t *testing.T) {
+		dk := newTestDynaKube()
+		dk.Spec.TrustedCAs = "my-trusted-cas"
+		fakeClient := fake.NewClientWithInterceptors(interceptor.Funcs{
+			Get: func(ctx context.Context, c client.WithWatch, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
+				if _, ok := obj.(*corev1.ConfigMap); ok && key.Name == dk.Spec.TrustedCAs {
+					return errors.New("boom")
+				}
+
+				return c.Get(ctx, key, obj, opts...)
+			},
+		}, dk, newTestTenantSecret(dk), newTestAuthTokenSecret(dk))
+
+		err := statefulset.NewReconciler(fakeClient).Reconcile(t.Context(), dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t))
+		require.ErrorContains(t, err, "boom")
+	})
+}
+
 func TestReconcileMetadata(t *testing.T) {
 	dk := newTestDynaKube()
 
@@ -1060,4 +1141,14 @@ func hasCustomPropertiesVolume(sts *appsv1.StatefulSet, dk *dynakube.DynaKube) b
 			v.Secret.SecretName == dk.KubernetesMonitoring().GetCustomPropertiesSecretName() &&
 			v.Secret.Optional != nil && !*v.Secret.Optional
 	})
+}
+
+func newTestTrustedCAsConfigMap(dk *dynakube.DynaKube, certs string) *corev1.ConfigMap {
+	return &corev1.ConfigMap{
+		Name:      dk.Spec.TrustedCAs,
+		Namespace: dk.Namespace,
+		Data: map[string]string{
+			dynakube.TrustedCAKey: certs,
+		},
+	}
 }

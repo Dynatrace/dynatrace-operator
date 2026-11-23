@@ -4,28 +4,16 @@
 package exp
 
 import (
-	"math"
 	"time"
 )
 
 const (
-	CSIMaxFailedMountAttemptsKey = FFPrefix + "max-csi-mount-attempts"
-	CSIMaxMountTimeoutKey        = FFPrefix + "max-csi-mount-timeout"
+	CSIMaxMountTimeoutKey = FFPrefix + "max-csi-mount-timeout"
 )
 
 const (
-	DefaultCSIMaxMountTimeout        = "10m"
-	DefaultCSIMaxFailedMountAttempts = 10
+	DefaultCSIMaxMountTimeout = "10m"
 )
-
-func (ff *FeatureFlags) GetCSIMaxFailedMountAttempts() int {
-	maxCSIMountAttemptsValue := ff.getIntWithDefault(CSIMaxFailedMountAttemptsKey, DefaultCSIMaxFailedMountAttempts)
-	if maxCSIMountAttemptsValue < 0 {
-		return DefaultCSIMaxFailedMountAttempts
-	}
-
-	return maxCSIMountAttemptsValue
-}
 
 func (ff *FeatureFlags) GetCSIMaxRetryTimeout() time.Duration {
 	maxCSIMountTimeoutValue := ff.getRaw(CSIMaxMountTimeoutKey)
@@ -36,19 +24,4 @@ func (ff *FeatureFlags) GetCSIMaxRetryTimeout() time.Duration {
 	}
 
 	return duration
-}
-
-// MountAttemptsToTimeout converts the (old) number of csi mount attempts into a time.Duration string.
-// The converted value is based on the exponential backoff's algorithm.
-// The output is string because it's main purpose is to convert the value of an annotation to another annotation.
-func MountAttemptsToTimeout(maxAttempts int) string {
-	if maxAttempts <= 0 {
-		return time.Duration(0).String()
-	}
-
-	var baseDelay = time.Second / 2
-
-	delay := time.Duration(math.Exp2(float64(maxAttempts))) * baseDelay
-
-	return delay.String()
 }

@@ -6,9 +6,11 @@ package prometheusmonitoring
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
@@ -18,9 +20,12 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -76,7 +81,30 @@ func TestReconcile(t *testing.T) {
 		c := fake.NewClient(pm)
 		assertReconcileDone(t, NewReconciler(c), req)
 		require.NoError(t, c.Get(t.Context(), client.ObjectKeyFromObject(pm), pm))
-		require.Equal(t, status.Deploying, pm.Status.Phase)
+		require.Equal(t, status.Error, pm.Status.Phase)
+
+		cond := meta.FindStatusCondition(pm.Status.Conditions, prometheusmonitoring.DynaKubeAvailable)
+		require.NotNil(t, cond)
+		require.Equal(t, metav1.ConditionFalse, cond.Status)
+		require.Equal(t, status.ReasonNotFound, cond.Reason)
+		require.Equal(t, "The DynaKube 'dk' is not present in the 'dynatrace' namespace.", cond.Message)
+	})
+
+	t.Run("dynakube recovered after not found", func(t *testing.T) {
+		pm := &prometheusmonitoring.PrometheusMonitoring{Name: req.Name, Namespace: req.Namespace, Spec: prometheusmonitoring.PrometheusMonitoringSpec{DynaKubeName: "dk"}}
+		c := fake.NewClient(pm)
+		r := NewReconciler(c)
+		assertReconcileDone(t, r, req)
+
+		// DynaKube is not running yet, so reconcile stops right after the lookup.
+		require.NoError(t, c.Create(t.Context(), &dynakube.DynaKube{Name: "dk", Namespace: req.Namespace}))
+		assertReconcileDone(t, r, req)
+
+		require.NoError(t, c.Get(t.Context(), client.ObjectKeyFromObject(pm), pm))
+		cond := meta.FindStatusCondition(pm.Status.Conditions, prometheusmonitoring.DynaKubeAvailable)
+		require.NotNil(t, cond)
+		require.Equal(t, metav1.ConditionTrue, cond.Status)
+		require.Equal(t, status.ReasonAvailable, cond.Reason)
 	})
 
 	t.Run("dynakube not running", func(t *testing.T) {
@@ -132,9 +160,9 @@ func TestReconcile(t *testing.T) {
 
 		expectErr := errors.New("boom")
 		gm := newMockGatewayReconciler(t)
-		gm.EXPECT().Reconcile(t.Context(), pm, dk, image.Client(nil)).Return(nil).Once()
+		gm.EXPECT().Reconcile(t.Context(), matchesWithDynaKubeAvailable(pm), dk, image.Client(nil)).Return(nil).Once()
 		m := newMockTargetAllocatorReconciler(t)
-		m.EXPECT().Reconcile(t.Context(), pm, dk, image.Client(nil)).Return(expectErr).Once()
+		m.EXPECT().Reconcile(t.Context(), matchesWithDynaKubeAvailable(pm), dk, image.Client(nil)).Return(expectErr).Once()
 		c := fake.NewClient(pm, dk, secret)
 		r := NewReconciler(c)
 		r.newDynatraceClient = func(context.Context, client.Reader, *dynakube.DynaKube, string, string, time.Duration) (*dynatrace.Client, error) {
@@ -157,11 +185,11 @@ func TestReconcile(t *testing.T) {
 
 		expectErr := errors.New("boom")
 		gm := newMockGatewayReconciler(t)
-		gm.EXPECT().Reconcile(t.Context(), pm, dk, image.Client(nil)).Return(nil).Once()
+		gm.EXPECT().Reconcile(t.Context(), matchesWithDynaKubeAvailable(pm), dk, image.Client(nil)).Return(nil).Once()
 		m := newMockTargetAllocatorReconciler(t)
-		m.EXPECT().Reconcile(t.Context(), pm, dk, image.Client(nil)).Return(nil).Once()
+		m.EXPECT().Reconcile(t.Context(), matchesWithDynaKubeAvailable(pm), dk, image.Client(nil)).Return(nil).Once()
 		sm := newMockScraperReconciler(t)
-		sm.EXPECT().Reconcile(t.Context(), pm, dk, image.Client(nil)).Return(expectErr).Once()
+		sm.EXPECT().Reconcile(t.Context(), matchesWithDynaKubeAvailable(pm), dk, image.Client(nil)).Return(expectErr).Once()
 		c := fake.NewClient(pm, dk, secret)
 		r := NewReconciler(c)
 		r.newDynatraceClient = func(context.Context, client.Reader, *dynakube.DynaKube, string, string, time.Duration) (*dynatrace.Client, error) {
@@ -183,6 +211,7 @@ func Test_setPhase(t *testing.T) {
 	conditionTrue := metav1.Condition{Type: "Available", Status: metav1.ConditionTrue, Reason: status.ReasonAvailable}
 	conditionReconciling := metav1.Condition{Type: "Available", Status: metav1.ConditionFalse, Reason: status.ReasonReconciling}
 	conditionError := metav1.Condition{Type: "Available", Status: metav1.ConditionFalse, Reason: status.ReasonError}
+	conditionDynaKubeMissing := metav1.Condition{Type: prometheusmonitoring.DynaKubeAvailable, Status: metav1.ConditionFalse, Reason: status.ReasonNotFound}
 
 	boom := errors.New("boom")
 
@@ -193,8 +222,7 @@ func Test_setPhase(t *testing.T) {
 		expectedPhase status.DeploymentPhase
 		expectedErr   error
 	}{
-		{"missing dynakube on creation", errDynaKubeNotFound, nil, status.Deploying, nil},
-		{"missing dynakube after creation", errDynaKubeNotFound, []metav1.Condition{conditionTrue}, status.Error, nil},
+		{"missing dynakube", nil, []metav1.Condition{conditionDynaKubeMissing}, status.Error, nil},
 		{"not ready dynakube on creation", errDynaKubeNotReady, nil, status.Deploying, nil},
 		{"not ready dynakube after creation", errDynaKubeNotReady, []metav1.Condition{conditionTrue}, status.Deploying, nil},
 		{"data-ingest token unavailable", errDataIngestTokenUnavailable, nil, status.Error, nil},
@@ -233,6 +261,9 @@ func Test_dynaKubeProxyChanged(t *testing.T) {
 		{"both nil", nil, nil, false},
 		{"old nil", nil, &types.ValueSource{Value: "test"}, true},
 		{"new nil", &types.ValueSource{Value: "test"}, nil, true},
+		{"both empty", &types.ValueSource{}, &types.ValueSource{}, false},
+		{"old empty", &types.ValueSource{}, &types.ValueSource{Value: "test"}, true},
+		{"new empty", &types.ValueSource{Value: "test"}, &types.ValueSource{}, true},
 		{"value equal", &types.ValueSource{Value: "test"}, &types.ValueSource{Value: "test"}, false},
 		{"value diff", &types.ValueSource{Value: "foo"}, &types.ValueSource{Value: "bar"}, true},
 		{"valueFrom equal", &types.ValueSource{ValueFrom: "test"}, &types.ValueSource{ValueFrom: "test"}, false},
@@ -248,4 +279,60 @@ func Test_dynaKubeProxyChanged(t *testing.T) {
 			assert.Equal(t, tt.expect, got)
 		})
 	}
+}
+
+func Test_dynaKubeProxyChangedWithNoProxyFF(t *testing.T) {
+	tests := []struct {
+		name       string
+		oldProxy   *types.ValueSource
+		oldNoProxy string
+		newProxy   *types.ValueSource
+		newNoProxy string
+		expect     bool
+	}{
+		{"values nil, both no-proxy ffs empty", nil, "", nil, "", false},
+		{"values nil, new no-proxy ff empty", nil, "test", nil, "", false},
+		{"values nil, old no-proxy ff empty", nil, "", nil, "test", false},
+		{"values empty, both no-proxy ffs empty", &types.ValueSource{}, "", &types.ValueSource{}, "", false},
+		{"values empty, new no-proxy ff empty", &types.ValueSource{}, "test", &types.ValueSource{}, "", false},
+		{"values empty, old no-proxy ff empty", &types.ValueSource{}, "", &types.ValueSource{}, "test", false},
+		{"values nil, ffs equal", nil, "test", nil, "test", false},
+		{"values empty, ffs equal", &types.ValueSource{}, "test", &types.ValueSource{}, "test", false},
+		{"values equal, ffs equal", &types.ValueSource{Value: "foo"}, "test", &types.ValueSource{Value: "foo"}, "test", false},
+		{"values equal, old no-proxy ff empty", &types.ValueSource{Value: "foo"}, "", &types.ValueSource{Value: "foo"}, "test", true},
+		{"values equal, new no-proxy ff empty", &types.ValueSource{Value: "foo"}, "test", &types.ValueSource{Value: "foo"}, "", true},
+		{"values diff, no-proxy ff equal", &types.ValueSource{Value: "foo"}, "test", &types.ValueSource{Value: "bar"}, "test", true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := dynaKubeProxyChanged(
+				&dynakube.DynaKube{Annotations: map[string]string{exp.NoProxyKey: tt.oldNoProxy}, Spec: dynakube.DynaKubeSpec{Proxy: tt.oldProxy}},
+				&dynakube.DynaKube{Annotations: map[string]string{exp.NoProxyKey: tt.newNoProxy}, Spec: dynakube.DynaKubeSpec{Proxy: tt.newProxy}},
+			)
+			assert.Equal(t, tt.expect, got)
+		})
+	}
+}
+
+// matchesWithDynaKubeAvailable matches a PrometheusMonitoring that equals the given one,
+// except for the DynaKubeAvailable condition that is expected to be added with status True.
+func matchesWithDynaKubeAvailable(original *prometheusmonitoring.PrometheusMonitoring) any {
+	return mock.MatchedBy(func(got *prometheusmonitoring.PrometheusMonitoring) bool {
+		want := original.DeepCopy()
+
+		cond := meta.FindStatusCondition(got.Status.Conditions, prometheusmonitoring.DynaKubeAvailable)
+		if cond == nil {
+			return false
+		}
+
+		_ = meta.SetStatusCondition(&want.Status.Conditions, metav1.Condition{
+			Type:               prometheusmonitoring.DynaKubeAvailable,
+			Status:             metav1.ConditionTrue,
+			Reason:             status.ReasonAvailable,
+			Message:            fmt.Sprintf("The DynaKube '%s' is present.", original.Spec.DynaKubeName),
+			LastTransitionTime: cond.LastTransitionTime,
+		})
+
+		return apiequality.Semantic.DeepEqual(want, got)
+	})
 }

@@ -594,7 +594,7 @@ func TestGenerateCorrectCertInitSecret(t *testing.T) {
 	})
 
 	autoTLSSecret := clientSecret(dkBase.ActiveGate().GetTLSSecretName(), dkBase.Namespace, map[string][]byte{
-		consts.TLSCrtDataName: []byte("certificate"),
+		corev1.TLSCertKey: []byte("certificate"),
 	})
 
 	t.Run("create new cert secret and delete it if not needed", func(t *testing.T) {
@@ -682,7 +682,7 @@ func TestGenerateCorrectOTLPCertInitSecret(t *testing.T) {
 	})
 
 	autoTLSSecret := clientSecret(dkBase.ActiveGate().GetTLSSecretName(), dkBase.Namespace, map[string][]byte{
-		consts.TLSCrtDataName: []byte("certificate"),
+		corev1.TLSCertKey: []byte("certificate"),
 	})
 
 	t.Run("create new cert secret and delete it if not needed", func(t *testing.T) {

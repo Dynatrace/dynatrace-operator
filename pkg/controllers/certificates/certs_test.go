@@ -11,6 +11,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
 )
 
 const (
@@ -32,21 +33,21 @@ func TestCertsValidation(t *testing.T) {
 
 	require.NoError(t, firstCerts.ValidateCerts(t.Context()))
 	require.Len(t, firstCerts.Data, 5)
-	requireValidCerts(t, domain, now.Add(5*time.Minute), firstCerts.Data[RootCert], firstCerts.Data[ServerCert])
+	requireValidCerts(t, domain, now.Add(5*time.Minute), firstCerts.Data[RootCert], firstCerts.Data[corev1.TLSCertKey])
 
 	t.Run("up-to-date certs", func(t *testing.T) {
 		newTime := now.Add(5 * time.Minute)
 
 		newCerts := Certs{Domain: domain, SrcData: firstCerts.Data, Now: newTime, RenewalThreshold: testRenewalThreshold, ServerCertDuration: testServerCertDuration, RootCertDuration: testRootCertDuration}
 		require.NoError(t, newCerts.ValidateCerts(t.Context()))
-		requireValidCerts(t, domain, newTime, newCerts.Data[RootCert], newCerts.Data[ServerCert])
+		requireValidCerts(t, domain, newTime, newCerts.Data[RootCert], newCerts.Data[corev1.TLSCertKey])
 
 		// No changes should have been applied.
 		assert.Equal(t, string(firstCerts.Data[RootCert]), string(newCerts.Data[RootCert]))
 		assert.Empty(t, string(firstCerts.Data[RootCertOld]))
 		assert.Equal(t, string(firstCerts.Data[RootKey]), string(newCerts.Data[RootKey]))
-		assert.Equal(t, string(firstCerts.Data[ServerCert]), string(newCerts.Data[ServerCert]))
-		assert.Equal(t, string(firstCerts.Data[ServerKey]), string(newCerts.Data[ServerKey]))
+		assert.Equal(t, string(firstCerts.Data[corev1.TLSCertKey]), string(newCerts.Data[corev1.TLSCertKey]))
+		assert.Equal(t, string(firstCerts.Data[corev1.TLSPrivateKeyKey]), string(newCerts.Data[corev1.TLSPrivateKeyKey]))
 	})
 
 	t.Run("outdated server certs", func(t *testing.T) {
@@ -54,14 +55,14 @@ func TestCertsValidation(t *testing.T) {
 
 		newCerts := Certs{Domain: domain, SrcData: firstCerts.Data, Now: newTime, RenewalThreshold: testRenewalThreshold, ServerCertDuration: testServerCertDuration, RootCertDuration: testRootCertDuration}
 		require.NoError(t, newCerts.ValidateCerts(t.Context()))
-		requireValidCerts(t, domain, newTime, newCerts.Data[RootCert], newCerts.Data[ServerCert])
+		requireValidCerts(t, domain, newTime, newCerts.Data[RootCert], newCerts.Data[corev1.TLSCertKey])
 
 		// Server certificates should have been updated.
 		assert.Equal(t, string(firstCerts.Data[RootCert]), string(newCerts.Data[RootCert]))
 		assert.Empty(t, string(firstCerts.Data[RootCertOld]))
 		assert.Equal(t, string(firstCerts.Data[RootKey]), string(newCerts.Data[RootKey]))
-		assert.NotEqual(t, string(firstCerts.Data[ServerCert]), string(newCerts.Data[ServerCert]))
-		assert.NotEqual(t, string(firstCerts.Data[ServerKey]), string(newCerts.Data[ServerKey]))
+		assert.NotEqual(t, string(firstCerts.Data[corev1.TLSCertKey]), string(newCerts.Data[corev1.TLSCertKey]))
+		assert.NotEqual(t, string(firstCerts.Data[corev1.TLSPrivateKeyKey]), string(newCerts.Data[corev1.TLSPrivateKeyKey]))
 	})
 
 	t.Run("outdated root certs", func(t *testing.T) {
@@ -69,14 +70,14 @@ func TestCertsValidation(t *testing.T) {
 
 		newCerts := Certs{Domain: domain, SrcData: firstCerts.Data, Now: newTime, RenewalThreshold: testRenewalThreshold, ServerCertDuration: testServerCertDuration, RootCertDuration: testRootCertDuration}
 		require.NoError(t, newCerts.ValidateCerts(t.Context()))
-		requireValidCerts(t, domain, newTime, newCerts.Data[RootCert], newCerts.Data[ServerCert])
+		requireValidCerts(t, domain, newTime, newCerts.Data[RootCert], newCerts.Data[corev1.TLSCertKey])
 
 		// Server certificates should have been updated.
 		assert.Equal(t, string(firstCerts.Data[RootCert]), string(newCerts.Data[RootCertOld]))
 		assert.NotEqual(t, string(firstCerts.Data[RootCert]), string(newCerts.Data[RootCert]))
 		assert.NotEqual(t, string(firstCerts.Data[RootKey]), string(newCerts.Data[RootKey]))
-		assert.NotEqual(t, string(firstCerts.Data[ServerCert]), string(newCerts.Data[ServerCert]))
-		assert.NotEqual(t, string(firstCerts.Data[ServerKey]), string(newCerts.Data[ServerKey]))
+		assert.NotEqual(t, string(firstCerts.Data[corev1.TLSCertKey]), string(newCerts.Data[corev1.TLSCertKey]))
+		assert.NotEqual(t, string(firstCerts.Data[corev1.TLSPrivateKeyKey]), string(newCerts.Data[corev1.TLSPrivateKeyKey]))
 	})
 }
 

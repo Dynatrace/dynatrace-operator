@@ -416,7 +416,7 @@ func TestTlsSecretHashAnnotationHandling(t *testing.T) {
 			Name:      dk.ActiveGate().GetTLSSecretName(),
 			Namespace: dk.Namespace,
 			Data: map[string][]byte{
-				"tls.key": []byte("foo"),
+				corev1.TLSPrivateKeyKey: []byte("foo"),
 			},
 		})
 		reconciler := NewReconciler(kubeClient, nil)
@@ -443,7 +443,7 @@ func TestTlsSecretHashAnnotationHandling(t *testing.T) {
 			Name:      dk.KubernetesMonitoring().GetTLSSecretName(),
 			Namespace: dk.Namespace,
 			Data: map[string][]byte{
-				"tls.key": []byte("foo"),
+				corev1.TLSPrivateKeyKey: []byte("foo"),
 			},
 		})
 		reconciler := NewReconciler(kubeClient, nil)

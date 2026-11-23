@@ -12,7 +12,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
-	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -202,8 +201,8 @@ func getSelfSignedTLSSecret(dk *dynakube.DynaKube) *corev1.Secret {
 		Name:      dk.Extensions().GetTLSSecretName(),
 		Namespace: dk.Namespace,
 		Data: map[string][]byte{
-			consts.TLSCrtDataName: []byte("super-cert"),
-			consts.TLSKeyDataName: []byte("super-key"),
+			corev1.TLSCertKey:       []byte("super-cert"),
+			corev1.TLSPrivateKeyKey: []byte("super-key"),
 		},
 	}
 }

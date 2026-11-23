@@ -111,8 +111,8 @@ func getTLSSecret(name string, namespace string, crt string, key string) *corev1
 		Name:      name,
 		Namespace: namespace,
 		Data: map[string][]byte{
-			consts.TLSCrtDataName: []byte(crt),
-			consts.TLSKeyDataName: []byte(key),
+			corev1.TLSCertKey:       []byte(crt),
+			corev1.TLSPrivateKeyKey: []byte(key),
 		},
 	}
 }

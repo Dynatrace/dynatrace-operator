@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"testing/synctest"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
@@ -16,7 +17,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/tenant/optionalscope"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	settingsmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/settings"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -74,29 +74,28 @@ func TestReconcile(t *testing.T) {
 	})
 
 	t.Run("update if outdated", func(t *testing.T) {
-		dk := createDynaKube()
-		optionalscope.SetAvailable(dk, token.ScopeSettingsRead)
+		synctest.Test(t, func(t *testing.T) {
+			dk := createDynaKube()
+			optionalscope.SetAvailable(dk, token.ScopeSettingsRead)
 
-		expectedResponse := createRules()
-		specialMessage := "TESTING" // if the special message changes == condition updated
-		k8sconditions.SetStatusUpdated(dk.Conditions(), conditionType, specialMessage)
+			expectedResponse := createRules()
+			specialMessage := "TESTING" // if the special message changes == condition updated
+			k8sconditions.SetStatusUpdated(dk.Conditions(), conditionType, specialMessage)
 
-		dtClient := settingsmock.NewClient(t)
-		dtClient.EXPECT().GetRules(anyCtx, dk.Status.KubeSystemUUID, dk.Status.KubernetesClusterMEID).Return(expectedResponse, nil)
+			dtClient := settingsmock.NewClient(t)
+			dtClient.EXPECT().GetRules(anyCtx, dk.Status.KubeSystemUUID, dk.Status.KubernetesClusterMEID).Return(expectedResponse, nil)
 
-		futureTime := timeprovider.New()
-		futureTime.Set(time.Now().Add(time.Hour))
-		reconciler := Reconciler{
-			timeProvider: futureTime,
-		}
+			synctest.Sleep(1 * time.Hour)
 
-		err := reconciler.Reconcile(ctx, dtClient, dk)
+			reconciler := NewReconciler()
+			err := reconciler.Reconcile(t.Context(), dtClient, dk)
 
-		require.NoError(t, err)
-		assert.Equal(t, createRules(), dk.Status.MetadataEnrichment.Rules)
-		condition := meta.FindStatusCondition(*dk.Conditions(), conditionType)
-		require.NotNil(t, condition)
-		assert.NotEqual(t, specialMessage, condition.Message)
+			require.NoError(t, err)
+			assert.Equal(t, createRules(), dk.Status.MetadataEnrichment.Rules)
+			condition := meta.FindStatusCondition(*dk.Conditions(), conditionType)
+			require.NotNil(t, condition)
+			assert.NotEqual(t, specialMessage, condition.Message)
+		})
 	})
 
 	t.Run("set rules correctly", func(t *testing.T) {

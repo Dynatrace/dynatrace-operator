@@ -16,7 +16,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/prometheusmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/prometheusmonitoring/condition"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/registry"
@@ -362,11 +361,10 @@ func proxyEnv(name string, src *types.ValueSource) corev1.EnvVar {
 }
 
 func noProxyValue(dk *dynakube.DynaKube) string {
-	values := []string{"$(KUBERNETES_SERVICE_HOST)", "kubernetes.default"}
+	values := []string{"$(KUBERNETES_SERVICE_HOST)", "kubernetes.default"} //nolint:prealloc
 
-	if dk.ActiveGate().IsEnabled() {
-		values = append(values, capability.BuildServiceName(dk.Name)+"."+dk.Namespace)
-	}
+	noProxyHosts := dk.GetNoProxyHosts()
+	values = append(values, noProxyHosts...)
 
 	return strings.Join(values, ",")
 }

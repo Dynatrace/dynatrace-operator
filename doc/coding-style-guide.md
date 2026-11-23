@@ -792,6 +792,8 @@ func TestMyFunction(t *testing.T) {
 
 - **Inline single-use timeouts.** Do not define a package-level `const` for a timeout that is only used in one test. Specify it inline to keep the test self-contained and consistent with the rest of the codebase.
 
+- Create multiple envtest environments in a package. Every new environment adds about 6 seconds runtime.
+
 ## E2E testing guide
 
 We are using the [e2e-framework](https://github.com/kubernetes-sigs/e2e-framework) package to write our E2E tests.

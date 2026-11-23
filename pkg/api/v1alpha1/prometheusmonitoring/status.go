@@ -8,6 +8,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// DynaKubeAvailable is the condition type reporting whether the referenced DynaKube exists.
+const DynaKubeAvailable = "DynaKubeAvailable"
+
 // PrometheusMonitoringStatus defines the observed state of PrometheusMonitoring.
 type PrometheusMonitoringStatus struct { //nolint:revive
 	// Defines the current state (Running, Deploying, Error, ...)

@@ -21,6 +21,7 @@ import (
 	podmutator "github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/discovery"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -45,8 +46,8 @@ var (
 
 func addFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVar(&certificateDirectory, FlagCertificateDirectory, "/tmp/webhook/certs", "Directory to look certificates for.")
-	cmd.PersistentFlags().StringVar(&certificateFileName, FlagCertificateFileName, "tls.crt", "File name for the public certificate.")
-	cmd.PersistentFlags().StringVar(&certificateKeyFileName, FlagCertificateKeyFileName, "tls.key", "File name for the private key.")
+	cmd.PersistentFlags().StringVar(&certificateFileName, FlagCertificateFileName, corev1.TLSCertKey, "File name for the public certificate.")
+	cmd.PersistentFlags().StringVar(&certificateKeyFileName, FlagCertificateKeyFileName, corev1.TLSPrivateKeyKey, "File name for the private key.")
 }
 
 func New() *cobra.Command {

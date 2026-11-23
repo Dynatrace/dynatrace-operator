@@ -24,6 +24,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -35,7 +36,6 @@ import (
 )
 
 var (
-	errDynaKubeNotFound           = errors.New("dynakube not found")
 	errDynaKubeNotReady           = errors.New("dynakube not ready")
 	errDataIngestTokenUnavailable = errors.New("data-ingest token not available")
 )
@@ -115,8 +115,22 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ct
 
 		log.Info("skipping reconcile due to missing DynaKube")
 
-		return ctrl.Result{}, errDynaKubeNotFound
+		_ = meta.SetStatusCondition(&pm.Status.Conditions, metav1.Condition{
+			Type:    prometheusmonitoring.DynaKubeAvailable,
+			Status:  metav1.ConditionFalse,
+			Reason:  status.ReasonNotFound,
+			Message: fmt.Sprintf("The DynaKube '%s' is not present in the '%s' namespace.", pm.Spec.DynaKubeName, pm.Namespace),
+		})
+
+		return ctrl.Result{}, nil
 	}
+
+	_ = meta.SetStatusCondition(&pm.Status.Conditions, metav1.Condition{
+		Type:    prometheusmonitoring.DynaKubeAvailable,
+		Status:  metav1.ConditionTrue,
+		Reason:  status.ReasonAvailable,
+		Message: fmt.Sprintf("The DynaKube '%s' is present.", pm.Spec.DynaKubeName),
+	})
 
 	if dk.Status.Phase != status.Running {
 		log.Info("skipping reconcile due to pending DynaKube", "phase", dk.Status.Phase)
@@ -175,16 +189,6 @@ func (r *Reconciler) buildDynatraceClient(ctx context.Context, dk *dynakube.Dyna
 //   - Reconciliation ongoing: condition status False/Unknown and reason Reconciling
 //   - Reconciliation failed: anything that does not fit the above
 func setPhase(pm *prometheusmonitoring.PrometheusMonitoring, err error) error {
-	if errors.Is(errDynaKubeNotFound, err) {
-		if len(pm.Status.Conditions) == 0 {
-			pm.Status.Phase = status.Deploying
-		} else {
-			pm.Status.Phase = status.Error
-		}
-
-		return nil
-	}
-
 	if errors.Is(errDynaKubeNotReady, err) {
 		pm.Status.Phase = status.Deploying
 
@@ -311,6 +315,7 @@ func newDynaKubeChangedPredicate() predicate.Funcs {
 
 			return oldDK.Status.Phase != newDK.Status.Phase ||
 				oldDK.Tokens() != newDK.Tokens() ||
+				oldDK.Status.CA.PublicHash != newDK.Status.CA.PublicHash ||
 				oldDK.Spec.TrustedCAs != newDK.Spec.TrustedCAs ||
 				oldDK.GetDynatraceAPIRequestThreshold() != newDK.GetDynatraceAPIRequestThreshold() ||
 				dynaKubeProxyChanged(oldDK, newDK) ||
@@ -324,6 +329,11 @@ func newDynaKubeChangedPredicate() predicate.Funcs {
 
 func dynaKubeProxyChanged(oldDK, newDK *dynakube.DynaKube) bool {
 	if (oldDK.Spec.Proxy != nil) != (newDK.Spec.Proxy != nil) {
+		return true
+	}
+
+	// FF only matters if Spec.Proxy is not an empty ValueSource{}. Proxy!=nil condition is too weak
+	if (oldDK.HasProxy() || newDK.HasProxy()) && oldDK.FF().GetNoProxy() != newDK.FF().GetNoProxy() {
 		return true
 	}
 

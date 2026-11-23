@@ -12,7 +12,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	dtimage "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
-	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	otelcconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/otelc/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
@@ -706,8 +705,8 @@ func getTLSSecret(name string, namespace string, crt string, key string) *corev1
 		Name:      name,
 		Namespace: namespace,
 		Data: map[string][]byte{
-			consts.TLSCrtDataName: []byte(crt),
-			consts.TLSKeyDataName: []byte(key),
+			corev1.TLSCertKey:       []byte(crt),
+			corev1.TLSPrivateKeyKey: []byte(key),
 		},
 	}
 }

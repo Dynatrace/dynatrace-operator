@@ -16,8 +16,6 @@ var _ volumeModifier = TrustedCAsModifier{}
 var _ volumeMountModifier = TrustedCAsModifier{}
 var _ builder.Modifier = TrustedCAsModifier{}
 
-const trustedCAsFile = "rootca.pem"
-
 func NewTrustedCAsVolumeModifier(dk *dynakube.DynaKube) TrustedCAsModifier {
 	return TrustedCAsModifier{
 		dk: dk,
@@ -48,8 +46,8 @@ func (mod TrustedCAsModifier) getVolumes() []corev1.Volume {
 				Name: mod.dk.Spec.TrustedCAs,
 				Items: []corev1.KeyToPath{
 					{
-						Key:  "certs",
-						Path: trustedCAsFile,
+						Key:  dynakube.TrustedCAKey,
+						Path: consts.TrustedCAsFileName,
 					},
 				},
 			},

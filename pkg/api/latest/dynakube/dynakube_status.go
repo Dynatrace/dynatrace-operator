@@ -70,6 +70,10 @@ type DynaKubeStatus struct { //nolint:revive
 	// +kubebuilder:validation:Optional
 	LogMonitoring logmonitoring.Status `json:"logMonitoring,omitzero"`
 
+	// Observed state of the operator root CA, which is shared by all DynaKubes
+	// +kubebuilder:validation:Optional
+	CA CAStatus `json:"ca,omitzero"`
+
 	// UpdatedTimestamp indicates when the instance was last updated
 	// +operator-sdk:gen-csv:customresourcedefinitions.statusDescriptors=true
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Last Updated"
@@ -145,4 +149,11 @@ func (dk *DynaKube) UpdateStatus(ctx context.Context, client client.Client) erro
 	}
 
 	return errors.WithStack(err)
+}
+
+type CAStatus struct {
+	// PublicHash is the hash of the public part (ca.crt) of the operator root CA.
+	// It changes whenever the CA is regenerated, so components that trust the CA can react to the change.
+	// Empty if there is no valid operator root CA.
+	PublicHash string `json:"publicHash,omitempty"`
 }

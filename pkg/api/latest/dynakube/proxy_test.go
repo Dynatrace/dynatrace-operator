@@ -6,6 +6,7 @@ package dynakube_test
 import (
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/exp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
@@ -59,4 +60,29 @@ func proxyValueFromTester(t *testing.T) {
 	proxy, err = dk.Proxy(t.Context(), kubeReader)
 	require.Error(t, err)
 	assert.Empty(t, proxy)
+}
+
+func TestNoProxyFF(t *testing.T) {
+	t.Run("empty", func(t *testing.T) {
+		dk := dynakube.DynaKube{}
+		noProxyHosts := dk.GetNoProxyHosts()
+		assert.Empty(t, noProxyHosts)
+	})
+	t.Run("value", func(t *testing.T) {
+		dk := dynakube.DynaKube{
+			Annotations: map[string]string{
+				exp.NoProxyKey: "test1 , test2",
+			},
+		}
+		noProxyHosts := dk.GetNoProxyHosts()
+		assert.Equal(t, []string{"test1", "test2"}, noProxyHosts)
+	})
+	t.Run("append empty no-proxy ff", func(t *testing.T) {
+		dk := dynakube.DynaKube{}
+		values := []string{"test"}
+		// no IsEmpty guard is needed
+		noProxyHosts := dk.GetNoProxyHosts()
+		values = append(values, noProxyHosts...)
+		assert.Equal(t, []string{"test"}, values)
+	})
 }

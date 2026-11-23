@@ -30,12 +30,12 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8ssecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/system"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/oci/registry"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	"golang.org/x/oauth2/clientcredentials"
 	"gopkg.in/yaml.v3"
 	appsv1 "k8s.io/api/apps/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/events"
@@ -81,7 +81,6 @@ type Controller struct {
 	imageClientBuilder       imageClientBuilderType
 	registryClientBuilder    registry.ClientBuilder
 	config                   *rest.Config
-	timeProvider             *timeprovider.Provider
 	edgeConnectClientBuilder edgeConnectClientBuilderType
 	secrets                  k8ssecret.QueryObject
 }
@@ -98,7 +97,6 @@ func NewController(mgr manager.Manager) *Controller {
 		imageClientBuilder:       newImageClient(),
 		registryClientBuilder:    registry.NewClient,
 		config:                   mgr.GetConfig(),
-		timeProvider:             timeprovider.New(),
 		edgeConnectClientBuilder: newEdgeConnectClient(),
 		secrets:                  k8ssecret.Query(mgr.GetClient(), mgr.GetAPIReader()),
 	}
@@ -345,7 +343,7 @@ func (controller *Controller) updateVersionInfo(ctx context.Context, ec *edgecon
 
 	log.Info("updating version info")
 
-	versionReconciler := version.NewReconciler(controller.apiReader, controller.imageClientProvider(ec), controller.registryClientProvider(ec), timeprovider.New(), ec)
+	versionReconciler := version.NewReconciler(controller.apiReader, controller.imageClientProvider(ec), controller.registryClientProvider(ec), ec)
 	if err := versionReconciler.Reconcile(ctx); err != nil {
 		log.Debug("reconciliation of EdgeConnect version failed")
 
@@ -440,7 +438,7 @@ func newImageClient() imageClientBuilderType {
 func (controller *Controller) updateEdgeConnectStatus(ctx context.Context, ec *edgeconnect.EdgeConnect) error {
 	log := logd.FromContext(ctx)
 
-	ec.Status.UpdatedTimestamp = *controller.timeProvider.Now()
+	ec.Status.UpdatedTimestamp = metav1.Now()
 
 	err := controller.client.Status().Update(ctx, ec)
 	if k8serrors.IsConflict(err) {
