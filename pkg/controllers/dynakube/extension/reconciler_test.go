@@ -191,7 +191,6 @@ func TestReconciler_ReconcileService(t *testing.T) {
 		var svc corev1.Service
 		err = mockK8sClient.Get(t.Context(), client.ObjectKey{Name: dk.Extensions().GetServiceName(), Namespace: testNamespace}, &svc)
 		require.NoError(t, err)
-		assert.NotNil(t, svc)
 
 		// assert extensions token condition is added
 		require.NotEmpty(t, dk.Conditions())

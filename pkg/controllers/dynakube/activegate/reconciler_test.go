@@ -348,7 +348,6 @@ func TestReconciler_Reconcile(t *testing.T) {
 		err = fakeClient.Get(t.Context(), client.ObjectKey{Name: name, Namespace: testNamespace}, &statefulSet)
 
 		require.NoError(t, err)
-		assert.NotNil(t, statefulSet)
 		assert.Equal(t, "test-name-activegate", statefulSet.GetName())
 	})
 	t.Run("KSPMToken reconciler runs if KSPM is enabled", func(t *testing.T) {
@@ -383,7 +382,6 @@ func TestReconciler_Reconcile(t *testing.T) {
 		err = fakeClient.Get(t.Context(), client.ObjectKey{Name: name, Namespace: testNamespace}, &statefulSet)
 
 		require.NoError(t, err)
-		assert.NotNil(t, statefulSet)
 		assert.Equal(t, "test-name-activegate", statefulSet.GetName())
 	})
 }

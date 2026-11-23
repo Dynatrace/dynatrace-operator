@@ -96,12 +96,11 @@ func TestReconcile(t *testing.T) {
 			createKubeSystemNamespace(),
 		)
 
-		result, err := controller.Reconcile(t.Context(), reconcile.Request{
+		_, err := controller.Reconcile(t.Context(), reconcile.Request{
 			Namespace: testNamespace, Name: testName,
 		})
 
 		require.NoError(t, err)
-		assert.NotNil(t, result)
 	})
 	t.Run("Timestamp update in EdgeConnect status works", func(t *testing.T) {
 		synctest.Test(t, func(t *testing.T) {
@@ -119,11 +118,10 @@ func TestReconcile(t *testing.T) {
 				createKubeSystemNamespace(),
 			)
 
-			result, err := controller.Reconcile(t.Context(), reconcile.Request{
+			_, err := controller.Reconcile(t.Context(), reconcile.Request{
 				Namespace: testNamespace, Name: testName,
 			})
 			require.NoError(t, err)
-			require.NotNil(t, result)
 
 			err = controller.apiReader.Get(t.Context(), client.ObjectKey{Name: ec.Name, Namespace: ec.Namespace}, ec)
 			require.NoError(t, err)
@@ -268,12 +266,11 @@ func TestReconcileProvisionerCreate(t *testing.T) {
 			createKubeSystemNamespace(),
 		)
 
-		result, err := controller.Reconcile(ctx, reconcile.Request{
+		_, err := controller.Reconcile(ctx, reconcile.Request{
 			Namespace: testNamespace, Name: testName,
 		})
 
 		require.NoError(t, err)
-		assert.NotNil(t, result)
 
 		edgeConnectCR, err := getEdgeConnectCR(t, controller.apiReader, ec.Name, ec.Namespace)
 		require.NoError(t, err)
@@ -330,12 +327,11 @@ func TestReconcileProvisionerRecreate(t *testing.T) {
 			createKubeSystemNamespace(),
 		)
 
-		result, err := controller.Reconcile(ctx, reconcile.Request{
+		_, err := controller.Reconcile(ctx, reconcile.Request{
 			Namespace: testNamespace, Name: testName,
 		})
 
 		require.NoError(t, err)
-		assert.NotNil(t, result)
 
 		edgeConnectCR, err := getEdgeConnectCR(t, controller.apiReader, ec.Name, ec.Namespace)
 		require.NoError(t, err)
@@ -392,12 +388,11 @@ func TestReconcileProvisionerRecreate(t *testing.T) {
 			createKubeSystemNamespace(),
 		)
 
-		result, err := controller.Reconcile(ctx, reconcile.Request{
+		_, err := controller.Reconcile(ctx, reconcile.Request{
 			Namespace: testNamespace, Name: testName,
 		})
 
 		require.NoError(t, err)
-		assert.NotNil(t, result)
 
 		edgeConnectCR, err := getEdgeConnectCR(t, controller.apiReader, ec.Name, ec.Namespace)
 		require.NoError(t, err)
@@ -455,12 +450,11 @@ func TestReconcileProvisionerDelete(t *testing.T) {
 			createKubeSystemNamespace(),
 		)
 
-		result, err := controller.Reconcile(t.Context(), reconcile.Request{
+		_, err := controller.Reconcile(t.Context(), reconcile.Request{
 			Namespace: testNamespace, Name: testName,
 		})
 
 		require.NoError(t, err)
-		assert.NotNil(t, result)
 
 		_, err = getEdgeConnectCR(t, controller.apiReader, ec.Name, ec.Namespace)
 		require.Error(t, err)
@@ -485,12 +479,11 @@ func TestReconcileProvisionerDelete(t *testing.T) {
 			createKubeSystemNamespace(),
 		)
 
-		result, err := controller.Reconcile(t.Context(), reconcile.Request{
+		_, err := controller.Reconcile(t.Context(), reconcile.Request{
 			Namespace: testNamespace, Name: testName,
 		})
 
 		require.NoError(t, err)
-		assert.NotNil(t, result)
 
 		_, err = getEdgeConnectCR(t, controller.apiReader, ec.Name, ec.Namespace)
 		require.Error(t, err)
@@ -513,12 +506,11 @@ func TestReconcileProvisionerDelete(t *testing.T) {
 			createClientSecret(ec.ClientSecretName(), ec.Namespace),
 		)
 
-		result, err := controller.Reconcile(t.Context(), reconcile.Request{
+		_, err := controller.Reconcile(t.Context(), reconcile.Request{
 			Namespace: testNamespace, Name: testName,
 		})
 
 		require.NoError(t, err)
-		assert.NotNil(t, result)
 
 		_, err = getEdgeConnectCR(t, controller.apiReader, ec.Name, ec.Namespace)
 		require.Error(t, err)
@@ -544,12 +536,11 @@ func TestReconcileProvisionerUpdate(t *testing.T) {
 			createKubeSystemNamespace(),
 		)
 
-		result, err := controller.Reconcile(t.Context(), reconcile.Request{
+		_, err := controller.Reconcile(t.Context(), reconcile.Request{
 			Namespace: testNamespace, Name: testName,
 		})
 
 		require.NoError(t, err)
-		assert.NotNil(t, result)
 
 		edgeConnectClient.AssertCalled(t, "ListEdgeConnects", mock.Anything, testName)
 		edgeConnectClient.AssertCalled(t, "GetEdgeConnect", mock.Anything, testCreatedID)
@@ -578,12 +569,11 @@ func TestReconcileProvisionerWithK8sAutomationsCreate(t *testing.T) {
 			createKubeSystemNamespace(),
 		)
 
-		result, err := controller.Reconcile(ctx, reconcile.Request{
+		_, err := controller.Reconcile(ctx, reconcile.Request{
 			Namespace: testNamespace, Name: testName,
 		})
 
 		require.NoError(t, err)
-		assert.NotNil(t, result)
 
 		edgeConnectCR, err := getEdgeConnectCR(t, controller.apiReader, ec.Name, ec.Namespace)
 		require.NoError(t, err)
@@ -641,12 +631,11 @@ func TestReconcileProvisionerWithK8sAutomationsUpdate(t *testing.T) {
 			createKubeSystemNamespace(),
 		)
 
-		result, err := controller.Reconcile(t.Context(), reconcile.Request{
+		_, err := controller.Reconcile(t.Context(), reconcile.Request{
 			Namespace: testNamespace, Name: testName,
 		})
 
 		require.NoError(t, err)
-		assert.NotNil(t, result)
 
 		edgeConnectClient.AssertCalled(t, "ListEdgeConnects", mock.Anything, testName)
 		edgeConnectClient.AssertCalled(t, "GetEdgeConnect", mock.Anything, testCreatedID)

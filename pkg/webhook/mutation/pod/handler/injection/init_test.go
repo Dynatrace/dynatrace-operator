@@ -89,10 +89,10 @@ func TestCreateInitContainerBase(t *testing.T) {
 		require.NotNil(t, initContainer.SecurityContext.RunAsNonRoot)
 		assert.True(t, *initContainer.SecurityContext.RunAsNonRoot)
 
-		require.NotNil(t, *initContainer.SecurityContext.RunAsUser)
+		require.NotNil(t, initContainer.SecurityContext.RunAsUser)
 		assert.Equal(t, *testUser, *initContainer.SecurityContext.RunAsUser)
 
-		require.NotNil(t, *initContainer.SecurityContext.RunAsGroup)
+		require.NotNil(t, initContainer.SecurityContext.RunAsGroup)
 		assert.Equal(t, *testUser, *initContainer.SecurityContext.RunAsGroup)
 	})
 	t.Run("PodSecurityContext overrules defaults", func(t *testing.T) {
@@ -128,10 +128,10 @@ func TestCreateInitContainerBase(t *testing.T) {
 		assert.NotNil(t, initContainer.SecurityContext.RunAsNonRoot)
 		assert.False(t, *initContainer.SecurityContext.RunAsNonRoot)
 
-		require.NotNil(t, *initContainer.SecurityContext.RunAsUser)
+		require.NotNil(t, initContainer.SecurityContext.RunAsUser)
 		assert.Equal(t, k8ssecuritycontext.RootUser, *initContainer.SecurityContext.RunAsUser)
 
-		require.NotNil(t, *initContainer.SecurityContext.RunAsGroup)
+		require.NotNil(t, initContainer.SecurityContext.RunAsGroup)
 		assert.Equal(t, k8ssecuritycontext.RootGroup, *initContainer.SecurityContext.RunAsGroup)
 	})
 	t.Run("should set seccomp profile if feature flag is enabled", func(t *testing.T) {

@@ -122,10 +122,9 @@ func TestMinimalRequest(t *testing.T) {
 			client:    fake.NewClient(),
 			apiReader: fake.NewClient(createCRD(t)),
 		}
-		result, err := controller.Reconcile(t.Context(), reconcile.Request{})
+		_, err := controller.Reconcile(t.Context(), reconcile.Request{})
 
 		require.NoError(t, err)
-		assert.NotNil(t, result)
 	})
 
 	t.Run("reconcile fails with faulty client", func(t *testing.T) {
@@ -134,10 +133,9 @@ func TestMinimalRequest(t *testing.T) {
 			apiReader: errorClient{},
 		}
 
-		result, err := controller.Reconcile(t.Context(), reconcile.Request{})
+		_, err := controller.Reconcile(t.Context(), reconcile.Request{})
 
 		require.Error(t, err)
-		assert.NotNil(t, result)
 	})
 }
 
@@ -628,9 +626,8 @@ func TestReconcileDynaKube(t *testing.T) {
 	t.Run("reconcile the controller and its sub controllers", func(t *testing.T) {
 		controller := baseController
 
-		result, err := controller.Reconcile(ctx, request)
+		_, err := controller.Reconcile(ctx, request)
 		require.NoError(t, err)
-		assert.NotNil(t, result)
 	})
 
 	t.Run("reconcile the controller with istio enabled", func(t *testing.T) {
@@ -644,9 +641,8 @@ func TestReconcileDynaKube(t *testing.T) {
 		controller.client = fakeClient
 		controller.apiReader = fakeClient
 
-		result, err := controller.Reconcile(ctx, request)
+		_, err := controller.Reconcile(ctx, request)
 		require.NoError(t, err)
-		assert.NotNil(t, result)
 	})
 
 	t.Run("failing operator root CA reconcile stops before the components", func(t *testing.T) {
@@ -698,9 +694,8 @@ func TestReconcileDynaKube(t *testing.T) {
 		controller.client = fakeClient
 		controller.apiReader = fakeClient
 
-		result, err := controller.Reconcile(ctx, request)
+		_, err := controller.Reconcile(ctx, request)
 		require.Error(t, err)
-		assert.NotNil(t, result)
 	})
 }
 

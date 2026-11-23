@@ -50,7 +50,6 @@ func TestReconciler_Reconcile(t *testing.T) {
 			&pullSecret)
 
 		require.NoError(t, err)
-		assert.NotNil(t, pullSecret)
 		assert.NotEmpty(t, pullSecret.Data)
 		assert.Contains(t, pullSecret.Data, ".dockerconfigjson")
 		assert.NotEmpty(t, pullSecret.Data[".dockerconfigjson"])
@@ -134,7 +133,6 @@ func TestReconciler_Reconcile(t *testing.T) {
 			&pullSecret)
 
 		require.NoError(t, err)
-		assert.NotNil(t, pullSecret)
 		assert.NotEmpty(t, pullSecret.Data)
 		assert.Contains(t, pullSecret.Data, ".dockerconfigjson")
 		assert.NotEmpty(t, pullSecret.Data[".dockerconfigjson"])

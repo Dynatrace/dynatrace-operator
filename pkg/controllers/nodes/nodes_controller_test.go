@@ -67,18 +67,16 @@ func TestReconcile(t *testing.T) {
 		dtClient := createDTMockClient(t, "1.2.3.4", "HOST-42")
 
 		ctrl := createDefaultReconciler(t, fakeClient, dtClient)
-		result, err := ctrl.Reconcile(ctx, createReconcileRequest("node1"))
+		_, err := ctrl.Reconcile(ctx, createReconcileRequest("node1"))
 		require.NoError(t, err)
-		assert.NotNil(t, result)
 
 		// delete node from kube api
 		err = fakeClient.Delete(ctx, node)
 		require.NoError(t, err)
 
 		// run another request reconcile
-		result, err = ctrl.Reconcile(ctx, createReconcileRequest("node1"))
+		_, err = ctrl.Reconcile(ctx, createReconcileRequest("node1"))
 		require.NoError(t, err)
-		assert.NotNil(t, result)
 
 		nodesCache, err := cache.New(ctx, fakeClient, testNamespace, nil)
 		require.NoError(t, err)
@@ -113,18 +111,16 @@ func TestReconcile(t *testing.T) {
 		hostClient.EXPECT().GetEntityIDForIP(anyCtx, "1.2.3.4").Return("", &core.HTTPError{StatusCode: 404})
 
 		ctrl := createDefaultReconciler(t, fakeClient, &dynatrace.Client{HostEvent: hostClient})
-		result, err := ctrl.Reconcile(ctx, createReconcileRequest("node1"))
+		_, err := ctrl.Reconcile(ctx, createReconcileRequest("node1"))
 		require.NoError(t, err)
-		assert.NotNil(t, result)
 
 		// delete node from kube api
 		err = fakeClient.Delete(ctx, node)
 		require.NoError(t, err)
 
 		// run another request reconcile
-		result, err = ctrl.Reconcile(ctx, createReconcileRequest("node1"))
+		_, err = ctrl.Reconcile(ctx, createReconcileRequest("node1"))
 		require.NoError(t, err)
-		assert.NotNil(t, result)
 	})
 
 	t.Run("No error if v1 events api is not present on tenant ", func(t *testing.T) {
@@ -157,18 +153,16 @@ func TestReconcile(t *testing.T) {
 		})).Return(&core.HTTPError{StatusCode: 404}).Once()
 
 		ctrl := createDefaultReconciler(t, fakeClient, &dynatrace.Client{HostEvent: hostClient})
-		result, err := ctrl.Reconcile(ctx, createReconcileRequest("node1"))
+		_, err := ctrl.Reconcile(ctx, createReconcileRequest("node1"))
 		require.NoError(t, err)
-		assert.NotNil(t, result)
 
 		// delete node from kube api
 		err = fakeClient.Delete(ctx, node)
 		require.NoError(t, err)
 
 		// run another request reconcile
-		result, err = ctrl.Reconcile(ctx, createReconcileRequest("node1"))
+		_, err = ctrl.Reconcile(ctx, createReconcileRequest("node1"))
 		require.NoError(t, err)
-		assert.NotNil(t, result)
 	})
 
 	t.Run("Create two nodes and then delete one", func(t *testing.T) {
@@ -187,9 +181,8 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		// run another request reconcile
-		result, err := ctrl.Reconcile(ctx, createReconcileRequest("node1"))
+		_, err = ctrl.Reconcile(ctx, createReconcileRequest("node1"))
 		require.NoError(t, err)
-		assert.NotNil(t, result)
 
 		nodesCache, err := cache.New(ctx, fakeClient, testNamespace, nil)
 		require.NoError(t, err)
@@ -219,8 +212,7 @@ func TestReconcile(t *testing.T) {
 		err = fakeClient.Update(ctx, node1)
 		require.NoError(t, err)
 
-		result, err := ctrl.Reconcile(ctx, createReconcileRequest("node1"))
-		assert.NotNil(t, result)
+		_, err = ctrl.Reconcile(ctx, createReconcileRequest("node1"))
 		require.NoError(t, err)
 
 		// Get node from cache
@@ -230,7 +222,6 @@ func TestReconcile(t *testing.T) {
 
 		node, err := c.GetEntry("node1")
 		require.NoError(t, err)
-		assert.NotNil(t, node)
 
 		// Check if LastMarkedForTermination Timestamp is set to current time
 		// Added one minute buffer to account for operation times
@@ -313,9 +304,8 @@ func TestReconcile(t *testing.T) {
 		ctrl := createDefaultReconciler(t, fakeClient, dtClient)
 
 		// warm up the cache, so node1 is known with 1.2.3.4
-		result, err := ctrl.Reconcile(ctx, createReconcileRequest("node1"))
+		_, err := ctrl.Reconcile(ctx, createReconcileRequest("node1"))
 		require.NoError(t, err)
-		assert.NotNil(t, result)
 
 		// the OneAgent pod is evicted -> the instance is kept, but without an IP
 		var dk dynakube.DynaKube
@@ -333,9 +323,8 @@ func TestReconcile(t *testing.T) {
 		node1.Spec.Unschedulable = true
 		require.NoError(t, fakeClient.Update(ctx, &node1))
 
-		result, err = ctrl.Reconcile(ctx, createReconcileRequest("node1"))
+		_, err = ctrl.Reconcile(ctx, createReconcileRequest("node1"))
 		require.NoError(t, err)
-		assert.NotNil(t, result)
 
 		// the cached IP must survive the empty DynaKube status
 		c, err := ctrl.getCache(ctx)
@@ -572,9 +561,8 @@ func reconcileAllNodes(t *testing.T, ctrl *Controller, fakeClient client.Client)
 	require.NoError(t, err)
 
 	for _, clusterNode := range nodeList.Items {
-		result, err := ctrl.Reconcile(t.Context(), createReconcileRequest(clusterNode.Name))
+		_, err := ctrl.Reconcile(t.Context(), createReconcileRequest(clusterNode.Name))
 		require.NoError(t, err)
-		assert.NotNil(t, result)
 	}
 }
 

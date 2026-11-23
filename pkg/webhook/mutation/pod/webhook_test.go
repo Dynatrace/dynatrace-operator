@@ -41,7 +41,6 @@ func TestHandle(t *testing.T) {
 		request := createTestAdmissionRequest(getTestPodWithInjectionDisabled())
 
 		resp := wh.Handle(ctx, *request)
-		require.NotNil(t, resp)
 		assert.True(t, resp.Allowed)
 		assert.NotEmpty(t, resp.Result.Message)
 		assert.Contains(t, resp.Result.Message, "err")
@@ -53,7 +52,6 @@ func TestHandle(t *testing.T) {
 		request := createTestAdmissionRequest(getTestPodWithInjectionDisabled())
 
 		resp := wh.Handle(ctx, *request)
-		require.NotNil(t, resp)
 		assert.True(t, resp.Allowed)
 		assert.NotEmpty(t, resp.Result.Message)
 		assert.Contains(t, resp.Result.Message, "err")
@@ -68,7 +66,6 @@ func TestHandle(t *testing.T) {
 		request := createTestAdmissionRequest(getTestPodWithInjectionDisabled())
 
 		resp := wh.Handle(ctx, *request)
-		require.NotNil(t, resp)
 		assert.True(t, resp.Allowed)
 		assert.NotEmpty(t, resp.Result.Message)
 		assert.NotContains(t, resp.Result.Message, "err")
@@ -82,7 +79,6 @@ func TestHandle(t *testing.T) {
 		request := createTestAdmissionRequest(getTestPodWithInjectionDisabled())
 
 		resp := wh.Handle(ctx, *request)
-		require.NotNil(t, resp)
 		assert.True(t, resp.Allowed)
 		assert.NotEmpty(t, resp.Result.Message)
 		assert.Contains(t, resp.Result.Message, "err")
@@ -99,7 +95,6 @@ func TestHandle(t *testing.T) {
 		request := createTestAdmissionRequest(getTestPodWithInjectionDisabled())
 
 		resp := wh.Handle(ctx, *request)
-		require.NotNil(t, resp)
 		assert.True(t, resp.Allowed)
 		assert.Equal(t, admission.Patched(""), resp)
 	})
@@ -115,7 +110,6 @@ func TestHandle(t *testing.T) {
 		request := createTestAdmissionRequest(getTestPodWithInjectionDisabledOnContainer())
 
 		resp := wh.Handle(ctx, *request)
-		require.NotNil(t, resp)
 		assert.True(t, resp.Allowed)
 		assert.Equal(t, admission.Patched(""), resp)
 	})
@@ -131,7 +125,6 @@ func TestHandle(t *testing.T) {
 		request := createTestAdmissionRequest(getTestPodWithOcDebugPodAnnotations())
 
 		resp := wh.Handle(ctx, *request)
-		require.NotNil(t, resp)
 		assert.True(t, resp.Allowed)
 		assert.Equal(t, admission.Patched(""), resp)
 	})
@@ -152,7 +145,6 @@ func TestHandle(t *testing.T) {
 		request := createTestAdmissionRequest(getTestPod())
 
 		resp := wh.Handle(ctx, *request)
-		require.NotNil(t, resp)
 		assert.True(t, resp.Allowed)
 		assert.Equal(t, admission.Patched("Failed to inject into pod: test-pod because err"), resp)
 	})
@@ -179,7 +171,6 @@ func TestHandle(t *testing.T) {
 		request := createTestAdmissionRequest(getTestPod())
 
 		resp := wh.Handle(ctx, *request)
-		require.NotNil(t, resp)
 		assert.True(t, resp.Allowed)
 		// make sure no changes have been made to the pod due to the error returned by the handler
 		assert.Empty(t, resp.Patches)

@@ -47,9 +47,8 @@ func TestReconcile(t *testing.T) {
 		prov := createProvisioner(t)
 		dk := createDynaKubeBase(t)
 
-		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
+		_, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.NoError(t, err)
-		require.NotNil(t, result)
 
 		assert.False(t, areFsDirsCreated(t, prov, dk))
 	})
@@ -60,7 +59,6 @@ func TestReconcile(t *testing.T) {
 
 		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.NoError(t, err)
-		require.NotNil(t, result)
 		assert.Equal(t, longRequeueDuration, result.RequeueAfter)
 
 		assert.False(t, areFsDirsCreated(t, prov, dk))
@@ -78,7 +76,6 @@ func TestReconcile(t *testing.T) {
 
 		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.NoError(t, err)
-		require.NotNil(t, result)
 		assert.Equal(t, longRequeueDuration, result.RequeueAfter)
 
 		assert.False(t, areFsDirsCreated(t, prov, dk))
@@ -97,7 +94,6 @@ func TestReconcile(t *testing.T) {
 
 		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.NoError(t, err)
-		require.NotNil(t, result)
 		assert.Equal(t, longRequeueDuration, result.RequeueAfter)
 
 		assert.False(t, areFsDirsCreated(t, prov, dk))
@@ -109,7 +105,6 @@ func TestReconcile(t *testing.T) {
 
 		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.NoError(t, err)
-		require.NotNil(t, result)
 		assert.Equal(t, shortRequeueDuration, result.RequeueAfter)
 
 		assert.True(t, areFsDirsCreated(t, prov, dk))
@@ -123,7 +118,6 @@ func TestReconcile(t *testing.T) {
 
 		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.NoError(t, err)
-		require.NotNil(t, result)
 		assert.Equal(t, shortRequeueDuration, result.RequeueAfter)
 
 		assert.True(t, areFsDirsCreated(t, prov, dk))
@@ -136,7 +130,6 @@ func TestReconcile(t *testing.T) {
 
 		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.NoError(t, err)
-		require.NotNil(t, result)
 		assert.Equal(t, shortRequeueDuration, result.RequeueAfter)
 
 		assert.True(t, areFsDirsCreated(t, prov, dk))
@@ -149,7 +142,6 @@ func TestReconcile(t *testing.T) {
 
 		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.NoError(t, err)
-		require.NotNil(t, result)
 		assert.Equal(t, defaultRequeueDuration, result.RequeueAfter)
 
 		assert.True(t, areFsDirsCreated(t, prov, dk))
@@ -160,9 +152,8 @@ func TestReconcile(t *testing.T) {
 		dk.Spec.APIURL = ""
 		prov := createProvisioner(t, dk, createToken(t, dk))
 
-		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
+		_, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.Error(t, err)
-		require.NotNil(t, result)
 
 		assert.True(t, areFsDirsCreated(t, prov, dk))
 	})
@@ -177,7 +168,6 @@ func TestReconcile(t *testing.T) {
 
 		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.NoError(t, err)
-		require.NotNil(t, result)
 		require.Equal(t, shortRequeueDuration, result.RequeueAfter)
 	})
 
@@ -188,7 +178,6 @@ func TestReconcile(t *testing.T) {
 
 		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.NoError(t, err)
-		require.NotNil(t, result)
 		assert.Equal(t, defaultRequeueDuration, result.RequeueAfter)
 
 		assert.True(t, areFsDirsCreated(t, prov, dk))
@@ -201,7 +190,6 @@ func TestReconcile(t *testing.T) {
 
 		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.NoError(t, err)
-		require.NotNil(t, result)
 		assert.Equal(t, defaultRequeueDuration, result.RequeueAfter)
 
 		assert.True(t, areFsDirsCreated(t, prov, dk))
@@ -214,7 +202,6 @@ func TestReconcile(t *testing.T) {
 
 		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.NoError(t, err)
-		require.NotNil(t, result)
 		assert.Equal(t, defaultRequeueDuration, result.RequeueAfter)
 
 		assert.True(t, areFsDirsCreated(t, prov, dk))
@@ -228,7 +215,6 @@ func TestReconcile(t *testing.T) {
 
 		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.NoError(t, err)
-		require.NotNil(t, result)
 		assert.Equal(t, defaultRequeueDuration, result.RequeueAfter)
 
 		assert.True(t, areFsDirsCreated(t, prov, dk))
@@ -243,7 +229,6 @@ func TestReconcile(t *testing.T) {
 
 		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.NoError(t, err)
-		require.NotNil(t, result)
 		assert.Equal(t, defaultRequeueDuration, result.RequeueAfter)
 
 		assert.True(t, areFsDirsCreated(t, prov, dk))
@@ -256,7 +241,6 @@ func TestReconcile(t *testing.T) {
 
 		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.NoError(t, err)
-		require.NotNil(t, result)
 		assert.Equal(t, notReadyRequeueDuration, result.RequeueAfter)
 
 		assert.True(t, areFsDirsCreated(t, prov, dk))
@@ -267,9 +251,8 @@ func TestReconcile(t *testing.T) {
 		prov := createProvisioner(t, dk)
 		prov.jobInstallerBuilder = mockJobInstallerBuilder(t, createFailingInstaller(t))
 
-		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
+		_, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.Error(t, err)
-		require.NotNil(t, result)
 
 		assert.True(t, areFsDirsCreated(t, prov, dk))
 	})
@@ -279,9 +262,8 @@ func TestReconcile(t *testing.T) {
 		prov := createProvisioner(t, dk)
 		prov.imageInstallerBuilder = mockImageInstallerBuilder(t, createFailingInstaller(t))
 
-		result, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
+		_, err := prov.Reconcile(t.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(dk)})
 		require.Error(t, err)
-		require.NotNil(t, result)
 
 		assert.True(t, areFsDirsCreated(t, prov, dk))
 	})

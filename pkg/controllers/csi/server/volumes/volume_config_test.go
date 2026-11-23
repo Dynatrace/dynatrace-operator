@@ -22,10 +22,9 @@ const (
 func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 	t.Run("No volume id", func(t *testing.T) {
 		request := &csi.NodePublishVolumeRequest{}
-		volumeCfg, err := ParseNodePublishVolumeRequest(request)
+		_, err := ParseNodePublishVolumeRequest(request)
 
 		require.EqualError(t, err, "rpc error: code = InvalidArgument desc = Volume ID missing in request")
-		assert.NotNil(t, volumeCfg)
 	})
 	t.Run("No target path", func(t *testing.T) {
 		request := &csi.NodePublishVolumeRequest{
@@ -34,7 +33,6 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 		volumeCfg, err := ParseNodePublishVolumeRequest(request)
 
 		require.EqualError(t, err, "rpc error: code = InvalidArgument desc = Target path missing in request")
-		require.NotNil(t, volumeCfg)
 		assert.Equal(t, request.GetVolumeId(), volumeCfg.VolumeID)
 	})
 	t.Run("No volume capability", func(t *testing.T) {
@@ -45,7 +43,6 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 		volumeCfg, err := ParseNodePublishVolumeRequest(request)
 
 		require.EqualError(t, err, "rpc error: code = InvalidArgument desc = Volume capability missing in request")
-		require.NotNil(t, volumeCfg)
 		assert.Equal(t, request.GetVolumeId(), volumeCfg.VolumeID)
 		assert.Equal(t, request.GetTargetPath(), volumeCfg.TargetPath)
 	})
@@ -62,7 +59,6 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 		volumeCfg, err := ParseNodePublishVolumeRequest(request)
 
 		require.EqualError(t, err, "rpc error: code = InvalidArgument desc = cannot have block access type")
-		require.NotNil(t, volumeCfg)
 		assert.Equal(t, request.GetVolumeId(), volumeCfg.VolumeID)
 		assert.Equal(t, request.GetTargetPath(), volumeCfg.TargetPath)
 	})
@@ -75,7 +71,6 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 		volumeCfg, err := ParseNodePublishVolumeRequest(request)
 
 		require.EqualError(t, err, "rpc error: code = InvalidArgument desc = expecting to have mount access type")
-		require.NotNil(t, volumeCfg)
 		assert.Equal(t, request.GetVolumeId(), volumeCfg.VolumeID)
 		assert.Equal(t, request.GetTargetPath(), volumeCfg.TargetPath)
 	})
@@ -92,7 +87,6 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 		volumeCfg, err := ParseNodePublishVolumeRequest(request)
 
 		require.EqualError(t, err, "rpc error: code = InvalidArgument desc = Publish context missing in request")
-		require.NotNil(t, volumeCfg)
 		assert.Equal(t, request.GetVolumeId(), volumeCfg.VolumeID)
 		assert.Equal(t, request.GetTargetPath(), volumeCfg.TargetPath)
 	})
@@ -110,7 +104,6 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 		volumeCfg, err := ParseNodePublishVolumeRequest(request)
 
 		require.Error(t, err)
-		require.NotNil(t, volumeCfg)
 		assert.Equal(t, request.GetVolumeId(), volumeCfg.VolumeID)
 		assert.Equal(t, request.GetTargetPath(), volumeCfg.TargetPath)
 	})
@@ -130,7 +123,6 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 		volumeCfg, err := ParseNodePublishVolumeRequest(request)
 
 		require.Error(t, err)
-		require.NotNil(t, volumeCfg)
 		assert.Equal(t, request.GetVolumeId(), volumeCfg.VolumeID)
 		assert.Equal(t, request.GetTargetPath(), volumeCfg.TargetPath)
 		assert.Equal(t, request.GetVolumeContext()[PodNameContextKey], volumeCfg.PodName)
@@ -152,7 +144,6 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 		volumeCfg, err := ParseNodePublishVolumeRequest(request)
 
 		require.Error(t, err)
-		require.NotNil(t, volumeCfg)
 		assert.Equal(t, request.GetVolumeId(), volumeCfg.VolumeID)
 		assert.Equal(t, request.GetTargetPath(), volumeCfg.TargetPath)
 		assert.Equal(t, request.GetVolumeContext()[PodNameContextKey], volumeCfg.PodName)
@@ -176,7 +167,6 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 		volumeCfg, err := ParseNodePublishVolumeRequest(request)
 
 		require.Error(t, err)
-		require.NotNil(t, volumeCfg)
 		assert.Equal(t, request.GetVolumeId(), volumeCfg.VolumeID)
 		assert.Equal(t, request.GetTargetPath(), volumeCfg.TargetPath)
 		assert.Equal(t, request.GetVolumeContext()[PodNameContextKey], volumeCfg.PodName)
@@ -237,7 +227,6 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 		volumeCfg, err := ParseNodePublishVolumeRequest(request)
 
 		require.NoError(t, err)
-		assert.NotNil(t, volumeCfg)
 		assert.Equal(t, request.GetVolumeId(), volumeCfg.VolumeID)
 		assert.Equal(t, request.GetTargetPath(), volumeCfg.TargetPath)
 		assert.Equal(t, request.GetVolumeContext()[PodNameContextKey], volumeCfg.PodName)

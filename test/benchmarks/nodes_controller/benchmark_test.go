@@ -109,16 +109,14 @@ func BenchmarkNodesController_OnDelete(b *testing.B) {
 func onDeleteSetupFunc(b *testing.B, controller *nodes.Controller, config benchmarkConfig) {
 	b.Helper()
 	for i := range config.NumNodes {
-		result, err := controller.Reconcile(b.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(genNode(i))})
+		_, err := controller.Reconcile(b.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(genNode(i))})
 		require.NoError(b, err)
-		require.NotNil(b, result)
 	}
 }
 
 func benchmarkedFunc(b *testing.B, controller *nodes.Controller, i int) {
 	b.Helper()
 	// Example target function that could be benchmarked
-	result, err := controller.Reconcile(b.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(genNode(i))})
+	_, err := controller.Reconcile(b.Context(), reconcile.Request{NamespacedName: client.ObjectKeyFromObject(genNode(i))})
 	require.NoError(b, err)
-	require.NotNil(b, result)
 }
