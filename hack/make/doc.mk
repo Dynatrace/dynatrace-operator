@@ -6,6 +6,7 @@ doc: doc/api-ref
 doc/api-ref: manifests prerequisites/python
 	source ./bin/.venv/bin/activate && $(PYTHON) ./hack/doc/custom_resource_params_to_md.py ./config/crd/bases/dynatrace.com_dynakubes.yaml > ./doc/api/dynakube-api-ref.md
 	source ./bin/.venv/bin/activate && $(PYTHON) ./hack/doc/custom_resource_params_to_md.py ./config/crd/bases/dynatrace.com_edgeconnects.yaml > ./doc/api/edgeconnect-api-ref.md
+	source ./bin/.venv/bin/activate && $(PYTHON) ./hack/doc/custom_resource_params_to_md.py ./config/crd/bases/dynatrace.com_prometheusmonitorings.yaml > ./doc/api/prometheusmonitoring-api-ref.md
 
 ## Create a table containing permissions needed by Operator components
 doc/permissions: manifests prerequisites/python
