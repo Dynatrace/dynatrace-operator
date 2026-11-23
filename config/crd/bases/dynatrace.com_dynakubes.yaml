@@ -7373,8 +7373,8 @@ spec:
                 properties:
                   mode:
                     enum:
-                    - "Off"
-                    - Automatic
+                    - "off"
+                    - automatic
                     type: string
                 type: object
               tokens:

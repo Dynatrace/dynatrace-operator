@@ -292,14 +292,14 @@ type SelfMonitoringSpec struct {
 type TLSMode string
 
 const (
-	TLSModeAutomatic TLSMode = "Automatic"
-	TLSModeOff       TLSMode = "Off"
+	TLSModeAutomatic TLSMode = "automatic"
+	TLSModeOff       TLSMode = "off"
 )
 
 type TLSSpec struct {
 	// Enables/disables TLS encryption for in-cluster Operand traffic.
-	// +kubebuilder:validation:Enum=Off;Automatic
+	// +kubebuilder:validation:Enum=off;automatic
 	// +kubebuilder:validation:Optional
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="TLS Mode",order=12,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:select:Automatic","urn:alm:descriptor:com.tectonic.ui:select:Off"}
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="TLS Mode",order=12,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:select:automatic","urn:alm:descriptor:com.tectonic.ui:select:off"}
 	Mode TLSMode `json:"mode,omitempty"`
 }

@@ -279,12 +279,12 @@ func TestTLSMode(t *testing.T) {
 	}{
 		{
 			name:   "off",
-			tls:    &TLSSpec{Mode: "Off"},
+			tls:    &TLSSpec{Mode: "off"},
 			expect: TLSModeOff,
 		},
 		{
 			name:   "automatic",
-			tls:    &TLSSpec{Mode: "Automatic"},
+			tls:    &TLSSpec{Mode: "automatic"},
 			expect: TLSModeAutomatic,
 		},
 		{
@@ -318,12 +318,12 @@ func TestIsTLSAutomatic(t *testing.T) {
 	}{
 		{
 			name:   "off",
-			tls:    &TLSSpec{Mode: "Off"},
+			tls:    &TLSSpec{Mode: "off"},
 			expect: false,
 		},
 		{
 			name:   "automatic",
-			tls:    &TLSSpec{Mode: "Automatic"},
+			tls:    &TLSSpec{Mode: "automatic"},
 			expect: true,
 		},
 		{
@@ -357,12 +357,12 @@ func TestIsTLSOff(t *testing.T) {
 	}{
 		{
 			name:   "off",
-			tls:    &TLSSpec{Mode: "Off"},
+			tls:    &TLSSpec{Mode: "off"},
 			expect: true,
 		},
 		{
 			name:   "automatic",
-			tls:    &TLSSpec{Mode: "Automatic"},
+			tls:    &TLSSpec{Mode: "automatic"},
 			expect: false,
 		},
 		{
