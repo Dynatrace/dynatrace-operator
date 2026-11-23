@@ -29,12 +29,18 @@ const (
 
 // VerifyCA checks the state of the operator root CA and reflects it in the TLSCA condition and in status.ca.publicHash of the DynaKube.
 // The hash only changes if the CA changes, so components that trust the CA can react to that change.
-// It never creates or modifies the CA, that is the job of the tls Controller, and it never reads the DynaKube spec,
-// the CA exists in every TLS mode. Only unexpected errors, like Kubernetes API errors, are returned.
+// It never creates or modifies the CA, that is the job of the tls Controller.
+// The CA exists in every TLS mode. Only unexpected errors, like Kubernetes API errors, are returned.
 func VerifyCA(ctx context.Context, clt client.Client, dk *dynakube.DynaKube) error {
 	log := logd.FromContext(ctx)
 
-	// TODO: Add check for spec.tls
+	if dk.IsTLSOff() {
+		dk.Status.CA.PublicHash = ""
+
+		_ = meta.RemoveStatusCondition(dk.Conditions(), ConditionType)
+
+		return nil
+	}
 
 	ca, err := loadCA(ctx, clt, dk.Namespace, time.Now())
 	secretRef := dk.Namespace + "/" + CASecretName
