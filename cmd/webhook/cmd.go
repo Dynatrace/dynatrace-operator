@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/Dynatrace/dynatrace-operator/cmd/webhook/certificates"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/defaulting"
 	dynakubevalidation "github.com/Dynatrace/dynatrace-operator/pkg/api/validation/dynakube"
 	edgeconnectvalidation "github.com/Dynatrace/dynatrace-operator/pkg/api/validation/edgeconnect"
 	pmvalidation "github.com/Dynatrace/dynatrace-operator/pkg/api/validation/prometheusmonitoring"
@@ -116,6 +117,11 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 
 	err = dynakubevalidation.SetupWebhookWithManager(webhookManager)
+	if err != nil {
+		return err
+	}
+
+	err = defaulting.SetupWebhookWithManager(webhookManager)
 	if err != nil {
 		return err
 	}

@@ -23,6 +23,20 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// NZFallbackMode defines what happens when the configured network zone is not available.
+type NZFallbackMode string
+
+const (
+	// NZFallbackModeDefault falls back to the default network zone.
+	NZFallbackModeDefault NZFallbackMode = "default"
+	// NZFallbackModeNone does not fall back to any network zone.
+	NZFallbackModeNone NZFallbackMode = "none"
+	// NZFallbackModeAny falls back to any network zone.
+	NZFallbackModeAny NZFallbackMode = "any"
+	// NetworkZoneDefault is the name of the default network zone.
+	NetworkZoneDefault = "default"
+)
+
 // Hub tags this version as the 'source' of the conversion for controller runtime.
 func (*DynaKube) Hub() {}
 
@@ -153,6 +167,13 @@ type DynaKubeSpec struct { //nolint:revive
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Network Zone",order=7,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
 	NetworkZone string `json:"networkZone,omitempty"`
+
+	// Defines the fallback behavior when the configured network zone is not available. Valid values are: "default", "none" and "any". Must be empty if networkZone is "default".
+	// Defaulted by the operator's defaulting webhook to "default" when the network zone is defaulted.
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Enum="";default;none;any
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Network Zone Fallback Mode",order=8,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
+	NetworkZoneFallbackMode NZFallbackMode `json:"networkZoneFallbackMode,omitempty"`
 
 	// Defines a custom pull secret in case you use a private registry when pulling images from the Dynatrace environment.
 	// To define a custom pull secret and learn about the expected behavior, see Configure customPullSecret

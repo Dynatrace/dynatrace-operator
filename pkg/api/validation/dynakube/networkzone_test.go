@@ -32,4 +32,24 @@ func TestInvalidNetworkZone(t *testing.T) {
 			dk.Spec.NetworkZone = value
 		}, errorInvalidNetworkZone)
 	})
+
+	t.Run("valid fallback modes are allowed", func(t *testing.T) {
+		for _, mode := range []dynakube.NZFallbackMode{"", dynakube.NZFallbackModeDefault, dynakube.NZFallbackModeNone, dynakube.NZFallbackModeAny} {
+			assertAllowed(t, &dynakube.DynaKube{
+				Spec: dynakube.DynaKubeSpec{APIURL: testAPIURL, NetworkZone: "network-zone", NetworkZoneFallbackMode: mode},
+			})
+		}
+	})
+
+	t.Run("fallback mode with default network zone is denied", func(t *testing.T) {
+		assertDenied(t, []string{errorFallbackModeWithDefaultNetworkZone}, &dynakube.DynaKube{
+			Spec: dynakube.DynaKubeSpec{APIURL: testAPIURL, NetworkZone: "default", NetworkZoneFallbackMode: dynakube.NZFallbackModeNone},
+		})
+	})
+
+	t.Run("default network zone without fallback mode is allowed", func(t *testing.T) {
+		assertAllowed(t, &dynakube.DynaKube{
+			Spec: dynakube.DynaKubeSpec{APIURL: testAPIURL, NetworkZone: "default"},
+		})
+	})
 }
