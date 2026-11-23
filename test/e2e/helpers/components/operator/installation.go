@@ -104,6 +104,10 @@ func installViaOLMLocalBundle() error {
 
 func Uninstall(withCSI bool) env.Func {
 	return func(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
+		if os.Getenv("SKIP_INSTALL") == "true" {
+			return ctx, nil
+		}
+
 		rootDir := project.RootDir()
 
 		switch {
@@ -191,6 +195,9 @@ func execMakeCommand(rootDir, makeTarget string, envVariables ...string) error {
 }
 
 func InstallViaHelm(releaseTag string, withCSI bool, extraOpts ...helm.Option) error {
+	if os.Getenv("SKIP_INSTALL") == "true" {
+		return nil
+	}
 	manager := helm.New("''")
 
 	p, err := platform.NewResolver().GetPlatform()
