@@ -59,19 +59,9 @@ func Run(ctx context.Context, clt client.Client, namespace string) error {
 		"storedVersions", crd.Status.StoredVersions,
 		"targetVersion", targetVersion)
 
-	// List all DynaKube instances using unstructured to avoid version conflicts
-	dynakubeList := &unstructured.UnstructuredList{}
-	dynakubeList.SetGroupVersionKind(schema.GroupVersionKind{
-		Group:   "dynatrace.com",
-		Version: targetVersion,
-		Kind:    "DynaKubeList",
-	})
-
-	err = clt.List(ctx, dynakubeList, &client.ListOptions{
-		Namespace: namespace,
-	})
+	dynakubeList, err := listDynaKubes(ctx, clt, namespace, targetVersion)
 	if err != nil {
-		return errors.Wrap(err, "failed to list DynaKube instances")
+		return err
 	}
 
 	log.Info("migrating DynaKube instances to current storage version",
@@ -100,4 +90,21 @@ func Run(ctx context.Context, clt client.Client, namespace string) error {
 	log.Info("successfully migrated all DynaKube instances to current storage version")
 
 	return nil
+}
+
+func listDynaKubes(ctx context.Context, clt client.Client, namespace, version string) (*unstructured.UnstructuredList, error) {
+	// List all DynaKube instances using unstructured to avoid version conflicts
+	dynakubeList := &unstructured.UnstructuredList{}
+	dynakubeList.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   "dynatrace.com",
+		Version: version,
+		Kind:    "DynaKubeList",
+	})
+
+	err := clt.List(ctx, dynakubeList, &client.ListOptions{Namespace: namespace})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to list DynaKube instances")
+	}
+
+	return dynakubeList, nil
 }

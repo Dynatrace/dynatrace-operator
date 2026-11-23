@@ -20,7 +20,10 @@ import (
 const retryInterval = 10 * time.Second
 
 // for unit tests
-var run = Run
+var (
+	run              = Run
+	triggerDefaulter = TriggerDefaulting
+)
 
 func InitReconcile(ctx context.Context, clt client.Client, namespace string) error {
 	ctx, log := logd.NewFromContext(ctx, "crd-storage-migration")
@@ -50,6 +53,13 @@ func InitReconcile(ctx context.Context, clt client.Client, namespace string) err
 
 		if err := run(ctx, clt, request.Namespace); err != nil {
 			log.Error(err, "CRD storage migration failed")
+
+			return false, nil
+		}
+
+		// only in the init container: the webhook is ready here, so the defaulting webhook can be triggered
+		if err := triggerDefaulter(ctx, clt, request.Namespace); err != nil {
+			log.Error(err, "triggering DynaKube defaulting failed")
 
 			return false, nil
 		}
