@@ -22,6 +22,9 @@ var (
 	ScraperVolumeNames      = []string{ConfigVolumeName}
 	ScraperVolumeMountPaths = []string{ConfigMountDir}
 
+	SelfMonitoringVolumeNames      = []string{ConfigVolumeName, TokenVolumeName, CACertsVolumeName}
+	SelfMonitoringVolumeMountPaths = []string{ConfigMountDir, TokenMountPath, TrustedCAMountPath}
+
 	TargetAllocatorVolumeNames      = []string{ConfigVolumeName}
 	TargetAllocatorVolumeMountPaths = []string{ConfigMountDir}
 )
