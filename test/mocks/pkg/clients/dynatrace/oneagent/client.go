@@ -82,18 +82,18 @@ func (_e *Client_Expecter) Get(ctx any, args any, writer any) *Client_Get_Call {
 }
 
 func (_c *Client_Get_Call) Run(run func(ctx context.Context, args oneagent.GetParams, writer io.Writer)) *Client_Get_Call {
-	_c.Call.Run(func(args mock.Arguments) {
+	_c.Call.Run(func(args1 mock.Arguments) {
 		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
+		if args1[0] != nil {
+			arg0 = args1[0].(context.Context)
 		}
 		var arg1 oneagent.GetParams
-		if args[1] != nil {
-			arg1 = args[1].(oneagent.GetParams)
+		if args1[1] != nil {
+			arg1 = args1[1].(oneagent.GetParams)
 		}
 		var arg2 io.Writer
-		if args[2] != nil {
-			arg2 = args[2].(io.Writer)
+		if args1[2] != nil {
+			arg2 = args1[2].(io.Writer)
 		}
 		run(
 			arg0,
@@ -211,18 +211,18 @@ func (_e *Client_Expecter) GetLatest(ctx any, args any, writer any) *Client_GetL
 }
 
 func (_c *Client_GetLatest_Call) Run(run func(ctx context.Context, args oneagent.GetParams, writer io.Writer)) *Client_GetLatest_Call {
-	_c.Call.Run(func(args mock.Arguments) {
+	_c.Call.Run(func(args1 mock.Arguments) {
 		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
+		if args1[0] != nil {
+			arg0 = args1[0].(context.Context)
 		}
 		var arg1 oneagent.GetParams
-		if args[1] != nil {
-			arg1 = args[1].(oneagent.GetParams)
+		if args1[1] != nil {
+			arg1 = args1[1].(oneagent.GetParams)
 		}
 		var arg2 io.Writer
-		if args[2] != nil {
-			arg2 = args[2].(io.Writer)
+		if args1[2] != nil {
+			arg2 = args1[2].(io.Writer)
 		}
 		run(
 			arg0,
@@ -420,14 +420,14 @@ func (_e *Client_Expecter) GetVersions(ctx any, args any) *Client_GetVersions_Ca
 }
 
 func (_c *Client_GetVersions_Call) Run(run func(ctx context.Context, args oneagent.GetParams)) *Client_GetVersions_Call {
-	_c.Call.Run(func(args mock.Arguments) {
+	_c.Call.Run(func(args1 mock.Arguments) {
 		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
+		if args1[0] != nil {
+			arg0 = args1[0].(context.Context)
 		}
 		var arg1 oneagent.GetParams
-		if args[1] != nil {
-			arg1 = args[1].(oneagent.GetParams)
+		if args1[1] != nil {
+			arg1 = args1[1].(oneagent.GetParams)
 		}
 		run(
 			arg0,
