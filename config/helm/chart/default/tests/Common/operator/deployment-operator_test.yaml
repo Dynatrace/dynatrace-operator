@@ -22,9 +22,9 @@ tests:
       - hasDocuments:
           count: 1
 
-  - it: should exist if platform is set to google-marketplace
+  - it: should exist if installSource is set to google-marketplace
     set:
-      platform: google-marketplace
+      installSource: google-marketplace
     asserts:
       - hasDocuments:
           count: 1
@@ -895,9 +895,9 @@ tests:
           path: spec.template.spec.containers[0].image
           value: "public.ecr.aws/dynatrace/dynatrace-operator:v1.0.1"
 
-  - it: not setting image or imageref but platform to google-marketplace defaults to correct repo and version
+  - it: not setting image or imageref but installSource to google-marketplace defaults to correct repo and version
     set:
-      platform: google-marketplace
+      installSource: google-marketplace
 
     asserts:
       - equal:
@@ -913,9 +913,28 @@ tests:
           path: spec.template.spec.containers[0].image
           value: "registry.connect.redhat.com/dynatrace/dynatrace-operator:v1.0.1"
 
-  - it: not setting image or imageref but platform to azure-marketplace defaults to registry, image and digest
+  - it: not setting image or imageref but installSource to azure-marketplace defaults to registry, image and digest
     set:
-      platform: azure-marketplace
+      installSource: azure-marketplace
+      global:
+        azure:
+          images:
+            operator:
+              registry: azure-registry.io
+              image: azure/operator
+              digest: sha256:aaaa
+
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "azure-registry.io/azure/operator@sha256:aaaa"
+
+  - it: installSource azure-marketplace keeps the azure image on an openshift cluster
+    capabilities:
+      apiVersions:
+        - security.openshift.io/v1
+    set:
+      installSource: azure-marketplace
       global:
         azure:
           images:
@@ -951,7 +970,7 @@ tests:
 
   - it: imageref.tag without repository overrides the tag on the google-marketplace default repo
     set:
-      platform: google-marketplace
+      installSource: google-marketplace
       imageRef:
         tag: 1.2.3-fips
     asserts:
@@ -973,7 +992,7 @@ tests:
 
   - it: imageref.tag without repository replaces the digest on the azure-marketplace default repo
     set:
-      platform: azure-marketplace
+      installSource: azure-marketplace
       global:
         azure:
           images:

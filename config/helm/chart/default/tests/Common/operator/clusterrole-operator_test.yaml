@@ -51,3 +51,23 @@ tests:
               - securitycontextconstraints
             verbs:
               - use
+  - it: ClusterRole should have openshift permissions for a marketplace install on openshift
+    documentIndex: 0
+    capabilities:
+      apiVersions:
+        - security.openshift.io/v1
+    set:
+      installSource: azure-marketplace
+    asserts:
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - security.openshift.io
+            resourceNames:
+              - privileged
+              - nonroot-v2
+            resources:
+              - securitycontextconstraints
+            verbs:
+              - use
