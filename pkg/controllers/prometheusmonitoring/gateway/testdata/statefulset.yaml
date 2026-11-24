@@ -89,7 +89,7 @@ spec:
             type: RuntimeDefault
         volumeMounts:
         - mountPath: /conf
-          name: opentelemetry-collector-configmap
+          name: dynatrace-otel-config
           readOnly: true
         - mountPath: /var/lib/dynatrace/secrets/tokens
           name: dt-token
@@ -110,7 +110,7 @@ spec:
           - key: relay
             path: relay.yaml
           name: pm-gateway
-        name: opentelemetry-collector-configmap
+        name: dynatrace-otel-config
       - name: dt-token
         projected:
           defaultMode: 288

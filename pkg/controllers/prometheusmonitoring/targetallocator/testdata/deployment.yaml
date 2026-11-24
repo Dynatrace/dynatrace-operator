@@ -88,7 +88,7 @@ spec:
             type: RuntimeDefault
         volumeMounts:
         - mountPath: /conf
-          name: config
+          name: dynatrace-otel-config
           readOnly: true
       nodeSelector:
         disk: ssd
@@ -104,5 +104,5 @@ spec:
           - key: targetallocator.yaml
             path: targetallocator.yaml
           name: pm-allocator
-        name: config
+        name: dynatrace-otel-config
 status: {}
