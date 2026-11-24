@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"maps"
 	"net"
+	"path/filepath"
 	"strconv"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -307,7 +308,7 @@ func buildArgs(s *reconcileScope) []string {
 	userArgs := s.Spec.SanitizedArgs()
 
 	args := make([]string, 0, 1+len(userArgs))
-	args = append(args, "--config="+prometheusmonitoring.ConfigMountDir+"/"+scraperConfigFile)
+	args = append(args, "--config="+filepath.Join(prometheusmonitoring.ConfigMountDir, scraperConfigFile))
 
 	return append(args, userArgs...)
 }
