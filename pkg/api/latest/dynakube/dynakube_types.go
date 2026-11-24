@@ -168,7 +168,7 @@ type DynaKubeSpec struct { //nolint:revive
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Network Zone",order=7,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
 	NetworkZone string `json:"networkZone,omitempty"`
 
-	// Defines the fallback behavior when the configured network zone is not available. Valid values are: "default", "none" and "any". Must be empty if networkZone is "default".
+	// Defines the fallback behavior when the configured network zone is not available. Valid values are: "", "default", "none" and "any". Must be empty if networkZone is "default".
 	// Defaulted by the operator's defaulting webhook to "default" when the network zone is defaulted.
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:Enum="";default;none;any
