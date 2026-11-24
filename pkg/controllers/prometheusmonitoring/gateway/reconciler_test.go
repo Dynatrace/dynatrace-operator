@@ -16,7 +16,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	optypes "github.com/Dynatrace/dynatrace-operator/pkg/api/types"
+	apitypes "github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/prometheusmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
@@ -272,6 +272,91 @@ func TestMutateStatefulSetKeepsExistingTemplateMetadata(t *testing.T) {
 	assert.Equal(t, "label", obj.Spec.Template.Labels["spec"])
 }
 
+func TestMutateStatefulSetCustomEnvVolumes(t *testing.T) {
+	newScope := func(spec func(*prometheusmonitoring.PodSpec)) *reconcileScope {
+		s := newTestScope(newTestPM("pm", "dynatrace"))
+		spec(&s.Spec.PodSpec)
+
+		return s
+	}
+
+	t.Run("empty -> only operator-generated entries", func(t *testing.T) {
+		obj := &appsv1.StatefulSet{}
+		require.NoError(t, mutateStatefulSet(obj, newScope(func(*prometheusmonitoring.PodSpec) {})))
+
+		container := obj.Spec.Template.Spec.Containers[0]
+		require.NotEmpty(t, container.Env)
+		require.NotEmpty(t, container.VolumeMounts)
+		require.NotEmpty(t, obj.Spec.Template.Spec.Volumes)
+		assert.NotContains(t, envNames(container.Env), "CUSTOM")
+		assert.NotContains(t, mountNames(container.VolumeMounts), "custom")
+	})
+
+	t.Run("custom entries are appended", func(t *testing.T) {
+		obj := &appsv1.StatefulSet{}
+		s := newScope(func(p *prometheusmonitoring.PodSpec) {
+			p.Env = []corev1.EnvVar{{Name: "CUSTOM", Value: "1"}}
+			p.Volumes = apitypes.Volumes{{Name: "custom", AllowedVolumeSource: apitypes.AllowedVolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}}}}
+			p.VolumeMounts = []corev1.VolumeMount{{Name: "custom", MountPath: "/custom"}}
+		})
+		require.NoError(t, mutateStatefulSet(obj, s))
+
+		container := obj.Spec.Template.Spec.Containers[0]
+		assert.Equal(t, "CUSTOM", container.Env[len(container.Env)-1].Name)
+		assert.Equal(t, "custom", container.VolumeMounts[len(container.VolumeMounts)-1].Name)
+		assert.Equal(t, "custom", obj.Spec.Template.Spec.Volumes[len(obj.Spec.Template.Spec.Volumes)-1].Name)
+	})
+
+	t.Run("custom env var with an operator-generated name is appended last", func(t *testing.T) {
+		base := &appsv1.StatefulSet{}
+		require.NoError(t, mutateStatefulSet(base, newScope(func(*prometheusmonitoring.PodSpec) {})))
+		baseEnv := base.Spec.Template.Spec.Containers[0].Env
+
+		obj := &appsv1.StatefulSet{}
+		s := newScope(func(p *prometheusmonitoring.PodSpec) {
+			p.Env = []corev1.EnvVar{{Name: baseEnv[0].Name, Value: "override"}}
+		})
+		require.NoError(t, mutateStatefulSet(obj, s))
+
+		env := obj.Spec.Template.Spec.Containers[0].Env
+		assert.Len(t, env, len(baseEnv)+1)
+		assert.Equal(t, baseEnv, env[:len(baseEnv)])
+		assert.Equal(t, corev1.EnvVar{Name: baseEnv[0].Name, Value: "override"}, env[len(env)-1])
+	})
+
+	t.Run("template is stable across reconciles", func(t *testing.T) {
+		s := newScope(func(p *prometheusmonitoring.PodSpec) {
+			p.Env = []corev1.EnvVar{{Name: "CUSTOM", Value: "1"}}
+			p.VolumeMounts = []corev1.VolumeMount{{Name: "custom", MountPath: "/custom"}}
+		})
+		obj := &appsv1.StatefulSet{}
+		require.NoError(t, mutateStatefulSet(obj, s))
+		first := obj.DeepCopy()
+
+		require.NoError(t, mutateStatefulSet(obj, s))
+
+		assert.Equal(t, first, obj)
+	})
+}
+
+func envNames(envs []corev1.EnvVar) []string {
+	names := make([]string, 0, len(envs))
+	for _, e := range envs {
+		names = append(names, e.Name)
+	}
+
+	return names
+}
+
+func mountNames(mounts []corev1.VolumeMount) []string {
+	names := make([]string, 0, len(mounts))
+	for _, m := range mounts {
+		names = append(names, m.Name)
+	}
+
+	return names
+}
+
 func TestNoProxyEnvVar(t *testing.T) {
 	t.Run("proxy enabled", func(t *testing.T) {
 		// enable AG and make sure that "dynakube-activegate.dynatrace" is not on the NO_PROXY list
@@ -282,7 +367,7 @@ func TestNoProxyEnvVar(t *testing.T) {
 				ActiveGate: activegate.Spec{
 					Capabilities: []activegate.CapabilityDisplayName{activegate.RoutingCapability.DisplayName},
 				},
-				Proxy: &optypes.ValueSource{
+				Proxy: &apitypes.ValueSource{
 					Value: "http://proxy:8080",
 				},
 			},
@@ -338,7 +423,7 @@ func TestNoProxyEnvVar(t *testing.T) {
 				exp.NoProxyKey: host1 + " , " + host2,
 			},
 			Spec: dynakube.DynaKubeSpec{
-				Proxy: &optypes.ValueSource{
+				Proxy: &apitypes.ValueSource{
 					Value: "http://proxy:8080",
 				},
 			},

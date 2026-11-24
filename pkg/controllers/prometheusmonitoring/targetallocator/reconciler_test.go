@@ -14,6 +14,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
+	apitypes "github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/prometheusmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
@@ -390,4 +391,89 @@ func TestMutateDeploymentKeepsExistingTemplateMetadata(t *testing.T) {
 	assert.Equal(t, "spec", obj.Spec.Template.Annotations["from"])
 	assert.Equal(t, "label", obj.Spec.Template.Labels["user"])
 	assert.Equal(t, "label", obj.Spec.Template.Labels["spec"])
+}
+
+func TestMutateDeploymentCustomEnvVolumes(t *testing.T) {
+	newScope := func(spec func(*prometheusmonitoring.PodSpec)) *reconcileScope {
+		s := newTestScope(newTestPM("pm", "dynatrace"))
+		spec(&s.Spec.PodSpec)
+
+		return s
+	}
+
+	t.Run("empty -> only operator-generated entries", func(t *testing.T) {
+		obj := &appsv1.Deployment{}
+		require.NoError(t, mutateDeployment(obj, newScope(func(*prometheusmonitoring.PodSpec) {})))
+
+		container := obj.Spec.Template.Spec.Containers[0]
+		require.NotEmpty(t, container.Env)
+		require.NotEmpty(t, container.VolumeMounts)
+		require.NotEmpty(t, obj.Spec.Template.Spec.Volumes)
+		assert.NotContains(t, envNames(container.Env), "CUSTOM")
+		assert.NotContains(t, mountNames(container.VolumeMounts), "custom")
+	})
+
+	t.Run("custom entries are appended", func(t *testing.T) {
+		obj := &appsv1.Deployment{}
+		s := newScope(func(p *prometheusmonitoring.PodSpec) {
+			p.Env = []corev1.EnvVar{{Name: "CUSTOM", Value: "1"}}
+			p.Volumes = apitypes.Volumes{{Name: "custom", AllowedVolumeSource: apitypes.AllowedVolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}}}}
+			p.VolumeMounts = []corev1.VolumeMount{{Name: "custom", MountPath: "/custom"}}
+		})
+		require.NoError(t, mutateDeployment(obj, s))
+
+		container := obj.Spec.Template.Spec.Containers[0]
+		assert.Equal(t, "CUSTOM", container.Env[len(container.Env)-1].Name)
+		assert.Equal(t, "custom", container.VolumeMounts[len(container.VolumeMounts)-1].Name)
+		assert.Equal(t, "custom", obj.Spec.Template.Spec.Volumes[len(obj.Spec.Template.Spec.Volumes)-1].Name)
+	})
+
+	t.Run("custom env var with an operator-generated name is appended last", func(t *testing.T) {
+		base := &appsv1.Deployment{}
+		require.NoError(t, mutateDeployment(base, newScope(func(*prometheusmonitoring.PodSpec) {})))
+		baseEnv := base.Spec.Template.Spec.Containers[0].Env
+
+		obj := &appsv1.Deployment{}
+		s := newScope(func(p *prometheusmonitoring.PodSpec) {
+			p.Env = []corev1.EnvVar{{Name: baseEnv[0].Name, Value: "override"}}
+		})
+		require.NoError(t, mutateDeployment(obj, s))
+
+		env := obj.Spec.Template.Spec.Containers[0].Env
+		assert.Len(t, env, len(baseEnv)+1)
+		assert.Equal(t, baseEnv, env[:len(baseEnv)])
+		assert.Equal(t, corev1.EnvVar{Name: baseEnv[0].Name, Value: "override"}, env[len(env)-1])
+	})
+
+	t.Run("template is stable across reconciles", func(t *testing.T) {
+		s := newScope(func(p *prometheusmonitoring.PodSpec) {
+			p.Env = []corev1.EnvVar{{Name: "CUSTOM", Value: "1"}}
+			p.VolumeMounts = []corev1.VolumeMount{{Name: "custom", MountPath: "/custom"}}
+		})
+		obj := &appsv1.Deployment{}
+		require.NoError(t, mutateDeployment(obj, s))
+		first := obj.DeepCopy()
+
+		require.NoError(t, mutateDeployment(obj, s))
+
+		assert.Equal(t, first, obj)
+	})
+}
+
+func envNames(envs []corev1.EnvVar) []string {
+	names := make([]string, 0, len(envs))
+	for _, e := range envs {
+		names = append(names, e.Name)
+	}
+
+	return names
+}
+
+func mountNames(mounts []corev1.VolumeMount) []string {
+	names := make([]string, 0, len(mounts))
+	for _, m := range mounts {
+		names = append(names, m.Name)
+	}
+
+	return names
 }

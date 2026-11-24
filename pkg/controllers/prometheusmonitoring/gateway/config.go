@@ -4,6 +4,7 @@
 package gateway
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/prometheusmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/otelcfg"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/pipeline"
@@ -57,7 +58,7 @@ func buildConfig(data gatewayConfigData) *otelcfg.Config {
 			BearerTokenAuth: true,
 		}).
 		HealthCheck().
-		BearerTokenAuth(tokenMountPath + "/" + tokenFileName).
+		BearerTokenAuth(prometheusmonitoring.TokenMountPath + "/" + tokenFileName).
 		SelfMonitoring(data.SelfMonitoringEndpoint).
 		Build(pipeline.SignalMetrics)
 }

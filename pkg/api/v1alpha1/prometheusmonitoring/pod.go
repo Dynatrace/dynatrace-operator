@@ -4,6 +4,7 @@
 package prometheusmonitoring
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/sanitize"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -31,6 +32,25 @@ type PodSpec struct {
 	// Command-line arguments for the main application container.
 	// +kubebuilder:validation:Optional
 	Args []string `json:"args,omitempty"`
+
+	// Additional environment variables for the main application container.
+	// Entries are appended to the ones set by the operator; if a name is used twice, the last entry (the one defined here) wins.
+	// +kubebuilder:validation:Optional
+	Env []corev1.EnvVar `json:"env,omitempty"`
+
+	// Additional volumes for the component pods.
+	// Entries are appended to the ones set by the operator, their names must not collide with the operator's volumes.
+	// +kubebuilder:validation:Optional
+	// +listType=map
+	// +listMapKey=name
+	Volumes types.Volumes `json:"volumes,omitempty"`
+
+	// Additional volume mounts for the main application container.
+	// Entries are appended to the ones set by the operator, their mount paths must not collide with the operator's mounts.
+	// +kubebuilder:validation:Optional
+	// +listType=map
+	// +listMapKey=mountPath
+	VolumeMounts []corev1.VolumeMount `json:"volumeMounts,omitempty"`
 
 	// Resource requests and limits for each component pod.
 	// +kubebuilder:validation:Optional
