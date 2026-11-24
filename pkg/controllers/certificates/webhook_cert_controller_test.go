@@ -39,7 +39,6 @@ func TestReconcileCertificate(t *testing.T) {
 
 		res, err := controller.Reconcile(t.Context(), request)
 		require.NoError(t, err)
-		assert.NotNil(t, res)
 		assert.Equal(t, k8senv.GetWebhookCertsRequeueAfter(t.Context()), res.RequeueAfter)
 
 		secret := &corev1.Secret{}
@@ -75,7 +74,6 @@ func TestReconcileCertificate(t *testing.T) {
 
 		res, err := controller.Reconcile(t.Context(), request)
 		require.NoError(t, err)
-		assert.NotNil(t, res)
 		assert.Equal(t, k8senv.GetWebhookCertsRequeueAfter(t.Context()), res.RequeueAfter)
 
 		secret := &corev1.Secret{}
@@ -102,7 +100,6 @@ func TestReconcileCertificate(t *testing.T) {
 
 		res, err := controller.Reconcile(t.Context(), request)
 		require.NoError(t, err)
-		assert.NotNil(t, res)
 		assert.Equal(t, k8senv.GetWebhookCertsRequeueAfter(t.Context()), res.RequeueAfter)
 
 		secret := &corev1.Secret{}
@@ -153,10 +150,9 @@ func TestReconcile(t *testing.T) {
 				Namespace: testNamespace,
 			})
 		controller, request := prepareController(t, fakeClient)
-		result, err := controller.Reconcile(t.Context(), request)
+		_, err := controller.Reconcile(t.Context(), request)
 
 		require.NoError(t, err)
-		assert.NotNil(t, result)
 	})
 
 	t.Run("reconcile successfully without validatingwebhookconfiguration", func(t *testing.T) {
@@ -177,10 +173,9 @@ func TestReconcile(t *testing.T) {
 				Namespace: testNamespace,
 			})
 		controller, request := prepareController(t, fakeClient)
-		result, err := controller.Reconcile(t.Context(), request)
+		_, err := controller.Reconcile(t.Context(), request)
 
 		require.NoError(t, err)
-		assert.NotNil(t, result)
 	})
 
 	t.Run("update crd successfully with up-to-date secret", func(t *testing.T) {
@@ -195,9 +190,8 @@ func TestReconcile(t *testing.T) {
 		_ = cs.createOrUpdateIfNecessary(t.Context(), fakeClient)
 
 		controller, request := prepareController(t, fakeClient)
-		result, err := controller.Reconcile(t.Context(), request)
+		_, err := controller.Reconcile(t.Context(), request)
 		require.NoError(t, err)
-		assert.NotNil(t, result)
 
 		expectedBundle, err := cs.loadCombinedBundle()
 		require.NoError(t, err)
@@ -216,10 +210,9 @@ func TestReconcile(t *testing.T) {
 			Namespace: testNamespace,
 		})
 		controller, request := prepareController(t, fakeClient)
-		result, err := controller.Reconcile(t.Context(), request)
+		_, err := controller.Reconcile(t.Context(), request)
 
 		require.NoError(t, err)
-		assert.NotNil(t, result)
 
 		secret := &corev1.Secret{}
 		err = fakeClient.Get(t.Context(), client.ObjectKey{Name: expectedSecretName, Namespace: testNamespace}, secret)

@@ -15,7 +15,6 @@ import (
 func TestNewMultiArchNodeAffinity(t *testing.T) {
 	affinity := NewMultiArchNodeAffinity()
 
-	require.NotNil(t, affinity)
 	require.NotNil(t, affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution)
 	require.Len(t, affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms, 1)
 
@@ -28,7 +27,6 @@ func Test_nodeAffinityForArches(t *testing.T) {
 	expectedArches := []string{"arch1", "arch2", "arch3"}
 	affinity := nodeAffinityForArches(expectedArches...)
 
-	require.NotNil(t, affinity)
 	require.NotNil(t, affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution)
 	require.Len(t, affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms, 1)
 

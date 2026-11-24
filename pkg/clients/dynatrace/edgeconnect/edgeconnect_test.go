@@ -23,7 +23,6 @@ func TestGetEdgeConnect(t *testing.T) {
 		}).Return(nil).Once()
 		got, err := mockClient.GetEdgeConnect(t.Context(), edgeConnectID)
 		require.NoError(t, err)
-		require.NotNil(t, got)
 		require.Equal(t, "test-name", got.Name)
 	})
 
@@ -55,7 +54,6 @@ func TestCreateEdgeConnect(t *testing.T) {
 		}).Return(nil).Once()
 		got, err := mockClient.CreateEdgeConnect(t.Context(), edgeConnectCreateRequest)
 		require.NoError(t, err)
-		require.NotNil(t, got)
 		require.Equal(t, edgeConnectCreateRequest.Name, got.Name)
 	})
 

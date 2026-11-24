@@ -175,7 +175,6 @@ func assertBuildLabels(sampleApp *sample.App, expectedBuildLabels map[string]bui
 
 func assertReferences(t *testing.T, pod *corev1.Pod, sampleApp *sample.App, expectedBuildLabels map[string]buildLabel) {
 	require.NotNil(t, pod)
-	require.NotNil(t, pod.Spec)
 
 	appContainer := pod.Spec.Containers[0]
 	require.Equal(t, sampleApp.ContainerName(), appContainer.Name)

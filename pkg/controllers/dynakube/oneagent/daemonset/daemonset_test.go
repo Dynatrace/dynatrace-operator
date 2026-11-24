@@ -54,7 +54,6 @@ func TestBuildDaemonSet(t *testing.T) {
 		require.NoError(t, err)
 
 		podSpecs := ds.Spec.Template.Spec
-		assert.NotNil(t, podSpecs)
 		assert.Equal(t, imageID, podSpecs.Containers[0].Image)
 		assert.Equal(t, serviceAccountName, podSpecs.ServiceAccountName)
 	})
@@ -94,8 +93,6 @@ func TestLabels(t *testing.T) {
 		ds, err := dsBuilder.BuildDaemonSet(t.Context())
 		require.NoError(t, err)
 
-		podSpecs := ds.Spec.Template.Spec
-		assert.NotNil(t, podSpecs)
 		assert.Equal(t, expectedLabels, ds.Labels)
 		assert.Equal(t, expectedMatchLabels, ds.Spec.Selector.MatchLabels)
 		assert.Equal(t, expectedLabels, ds.Spec.Template.Labels)
@@ -127,8 +124,6 @@ func TestLabels(t *testing.T) {
 		ds, err := dsBuilder.BuildDaemonSet(t.Context())
 		require.NoError(t, err)
 
-		podSpecs := ds.Spec.Template.Spec
-		assert.NotNil(t, podSpecs)
 		assert.Equal(t, expectedLabels, ds.Labels)
 		assert.Equal(t, expectedMatchLabels, ds.Spec.Selector.MatchLabels)
 		assert.Equal(t, expectedLabels, ds.Spec.Template.Labels)
@@ -153,7 +148,6 @@ func TestCustomPullSecret(t *testing.T) {
 	require.NoError(t, err)
 
 	podSpecs := ds.Spec.Template.Spec
-	assert.NotNil(t, podSpecs)
 	require.Len(t, podSpecs.ImagePullSecrets, 2)
 
 	assert.Contains(t, podSpecs.ImagePullSecrets, corev1.LocalObjectReference{Name: dk.TenantRegistryPullSecretName()})
@@ -177,7 +171,6 @@ func TestResources(t *testing.T) {
 		require.NoError(t, err)
 
 		podSpecs := ds.Spec.Template.Spec
-		assert.NotNil(t, podSpecs)
 		assert.NotEmpty(t, podSpecs.Containers)
 
 		hasMinimumCPURequest := resource.NewScaledQuantity(1, -1).Equal(*podSpecs.Containers[0].Resources.Requests.Cpu())
@@ -214,7 +207,6 @@ func TestResources(t *testing.T) {
 		require.NoError(t, err)
 
 		podSpecs := ds.Spec.Template.Spec
-		assert.NotNil(t, podSpecs)
 		assert.NotEmpty(t, podSpecs.Containers)
 
 		hasCPURequest := cpuRequest.Equal(*podSpecs.Containers[0].Resources.Requests.Cpu())

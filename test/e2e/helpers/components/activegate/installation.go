@@ -38,7 +38,6 @@ func CheckContainer(dk *dynakube.DynaKube) features.Func {
 		var activeGatePod corev1.Pod
 		require.NoError(t, resources.WithNamespace(dk.Namespace).Get(ctx, GetActiveGatePodName(dk), dk.Namespace, &activeGatePod))
 
-		require.NotNil(t, activeGatePod.Spec)
 		require.NotEmpty(t, activeGatePod.Spec.Containers)
 
 		return ctx

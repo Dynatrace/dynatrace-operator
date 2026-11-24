@@ -204,9 +204,6 @@ func TestSecurityContext(t *testing.T) {
 		initContainer := getInitContainer(dk, tenantUUID, "")
 		mainContainer := getContainer(dk, tenantUUID, "")
 
-		require.NotNil(t, initContainer)
-		require.NotNil(t, mainContainer)
-
 		assert.NotEqual(t, *initContainer.SecurityContext, *mainContainer.SecurityContext)
 		initContainer.SecurityContext.Capabilities = nil
 		mainContainer.SecurityContext.Capabilities = nil
