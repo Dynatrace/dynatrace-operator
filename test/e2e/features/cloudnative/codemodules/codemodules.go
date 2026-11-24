@@ -602,7 +602,7 @@ func checkEnvVarsInContainer(t *testing.T, pod *corev1.Pod, containerName string
 			require.True(t, k8senv.Contains(container.Env, envVar))
 			for _, env := range container.Env {
 				if env.Name == envVar {
-					require.NotNil(t, env.Value)
+					require.NotEmpty(t, env.Value)
 				}
 			}
 		}

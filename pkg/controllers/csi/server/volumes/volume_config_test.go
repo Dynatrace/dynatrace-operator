@@ -233,6 +233,6 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 		assert.Equal(t, request.GetVolumeContext()[PodNamespaceContextKey], volumeCfg.PodNamespace)
 		assert.Equal(t, request.GetVolumeContext()[CSIVolumeAttributeModeField], volumeCfg.Mode)
 		assert.Equal(t, request.GetVolumeContext()[CSIVolumeAttributeDynakubeField], volumeCfg.DynakubeName)
-		assert.NotNil(t, volumeCfg.RetryTimeout)
+		assert.Positive(t, volumeCfg.RetryTimeout)
 	})
 }
