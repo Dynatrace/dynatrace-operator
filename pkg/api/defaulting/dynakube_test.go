@@ -7,12 +7,12 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/system"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestDefault(t *testing.T) {
@@ -21,7 +21,7 @@ func TestDefault(t *testing.T) {
 	kubeSystem := &corev1.Namespace{Name: system.Namespace, UID: uid}
 
 	t.Run("does nothing if network zone is set", func(t *testing.T) {
-		d := &dkDefaulter{apiReader: fake.NewClientBuilder().Build()}
+		d := &dkDefaulter{apiReader: fake.NewClient()}
 		dk := &dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{NetworkZone: "zone"}}
 
 		require.NoError(t, d.Default(t.Context(), dk))
@@ -30,7 +30,7 @@ func TestDefault(t *testing.T) {
 	})
 
 	t.Run("defaults network zone and fallback mode", func(t *testing.T) {
-		d := &dkDefaulter{apiReader: fake.NewClientBuilder().WithObjects(kubeSystem).Build()}
+		d := &dkDefaulter{apiReader: fake.NewClient(kubeSystem)}
 		dk := &dynakube.DynaKube{}
 
 		require.NoError(t, d.Default(t.Context(), dk))
@@ -39,7 +39,7 @@ func TestDefault(t *testing.T) {
 	})
 
 	t.Run("keeps existing fallback mode", func(t *testing.T) {
-		d := &dkDefaulter{apiReader: fake.NewClientBuilder().WithObjects(kubeSystem).Build()}
+		d := &dkDefaulter{apiReader: fake.NewClient(kubeSystem)}
 		dk := &dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{NetworkZoneFallbackMode: dynakube.NZFallbackModeAny}}
 
 		require.NoError(t, d.Default(t.Context(), dk))
@@ -48,7 +48,7 @@ func TestDefault(t *testing.T) {
 	})
 
 	t.Run("fails if cluster uid can't be determined", func(t *testing.T) {
-		d := &dkDefaulter{apiReader: fake.NewClientBuilder().Build()}
+		d := &dkDefaulter{apiReader: fake.NewClient()}
 
 		require.Error(t, d.Default(t.Context(), &dynakube.DynaKube{}))
 	})
