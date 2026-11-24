@@ -8,8 +8,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// DynaKubeAvailable is the condition type reporting whether the referenced DynaKube exists.
-const DynaKubeAvailable = "DynaKubeAvailable"
+// PrerequisitesMet indicates whether the DynaKube exists and provides everything PrometheusMonitoring needs: tenant URL, token secret and data-ingest token.
+const PrerequisitesMet = "PrerequisitesMet"
 
 // PrometheusMonitoringStatus defines the observed state of PrometheusMonitoring.
 type PrometheusMonitoringStatus struct { //nolint:revive

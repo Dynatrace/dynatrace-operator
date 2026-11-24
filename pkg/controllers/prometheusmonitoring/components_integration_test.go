@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -68,6 +69,7 @@ func TestReconcileOrchestration(t *testing.T) {
 	t.Run("every component is deployed", func(t *testing.T) { testComponentsDeployed(t, clt) })
 	t.Run("status", func(t *testing.T) { testStatus(t, clt) })
 	t.Run("preconditions", func(t *testing.T) { testPreconditions(t, clt) })
+	t.Run("dynakube phase is ignored", func(t *testing.T) { testDynaKubePhaseIsIgnored(t, clt) })
 	t.Run("stops at the first failing component", func(t *testing.T) { testStopsAtFirstError(t, clt) })
 	t.Run("multiple monitorings", func(t *testing.T) { testMultiplePrometheusMonitorings(t, clt) })
 }
@@ -134,9 +136,9 @@ func testStatus(t *testing.T, clt client.Client) {
 		assert.Equal(t, testTargetAllocatorImage, stored.Status.TargetAllocator.ResolvedImage)
 	})
 
-	t.Run("one availability condition per component and the DynaKube", func(t *testing.T) {
+	t.Run("one availability condition per component plus the prerequisites", func(t *testing.T) {
 		wantTypes := []string{
-			prometheusmonitoring.DynaKubeAvailable,
+			prometheusmonitoring.PrerequisitesMet,
 			prometheusmonitoring.GatewayAvailable,
 			prometheusmonitoring.ScraperAvailable,
 			prometheusmonitoring.TargetAllocatorAvailable,
@@ -163,21 +165,20 @@ func testPreconditions(t *testing.T, clt client.Client) {
 		phase     status.DeploymentPhase
 	}{
 		{
-			// errDynaKubeNotFound is swallowed by setPhase: it is an expected transient state while
-			// the DynaKube is still being created.
+			// A missing DynaKube is reported through the PrerequisitesMet condition and requeued.
 			name:      "missing DynaKube",
 			namespace: "err-no-dynakube",
 			prepare:   func(t *testing.T, f *fixture) { require.NoError(t, clt.Delete(t.Context(), f.dk)) },
 			phase:     status.Error,
 		},
 		{
-			name:      "DynaKube not running",
-			namespace: "err-dynakube-pending",
+			name:      "tenant URL missing",
+			namespace: "err-no-api-url",
 			prepare: func(t *testing.T, f *fixture) {
-				f.dk.Status.Phase = status.Deploying
-				require.NoError(t, f.dk.UpdateStatus(t.Context(), clt))
+				f.dk.Spec.APIURL = ""
+				require.NoError(t, clt.Update(t.Context(), f.dk))
 			},
-			phase: status.Deploying,
+			phase: status.Error,
 		},
 		{
 			name:      "token secret missing",
@@ -206,6 +207,24 @@ func testPreconditions(t *testing.T, clt client.Client) {
 
 			assert.Equal(t, precondition.phase, f.getStoredPrometheusMonitoring(t).Status.Phase)
 			f.assertObjectsAbsent(t, allManagedObjects(f.pm), "nothing may be deployed when the reconcile bails out")
+		})
+	}
+}
+
+// testDynaKubePhaseIsIgnored asserts that the components are deployed while the DynaKube is not Running,
+// as long as it provides the tenant URL and the token secret.
+func testDynaKubePhaseIsIgnored(t *testing.T, clt client.Client) {
+	for _, phase := range []status.DeploymentPhase{status.Deploying, status.Error} {
+		t.Run(string(phase), func(t *testing.T) {
+			f := newFixture(t, clt, "dk-phase-"+strings.ToLower(string(phase)))
+			f.dk.Status.Phase = phase
+			require.NoError(t, f.dk.UpdateStatus(t.Context(), clt))
+
+			require.NoError(t, f.reconcile(t))
+
+			for _, obj := range allManagedObjects(f.pm) {
+				f.assertIsManaged(t, obj)
+			}
 		})
 	}
 }
@@ -391,7 +410,7 @@ type fixture struct {
 	ns  string
 }
 
-// newFixture creates a namespace, a token Secret, a Running DynaKube and a default
+// newFixture creates a namespace, a token Secret, a DynaKube and a default
 // PrometheusMonitoring, plus a Reconciler whose Dynatrace client factory is stubbed out. No token
 // beyond the two the reconcile reads, and no image in the spec: the images are resolved from the
 // stubbed fleet management API, the way they are for a user who sets none.
@@ -414,7 +433,7 @@ func newFixture(t *testing.T, clt client.Client, name string) *fixture {
 		Name:      testDynaKubeName,
 		Namespace: ns,
 		Spec:      dynakube.DynaKubeSpec{APIURL: testAPIURL},
-		Status:    dynakube.DynaKubeStatus{Phase: status.Running, KubernetesClusterName: testClusterName},
+		Status:    dynakube.DynaKubeStatus{KubernetesClusterName: testClusterName},
 	}
 	integrationtests.CreateDynakube(t, clt, dk)
 
