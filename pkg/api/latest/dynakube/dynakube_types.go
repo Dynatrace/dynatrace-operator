@@ -217,7 +217,7 @@ type DynaKubeSpec struct { //nolint:revive
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Public Registry Override",order=10,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
 	PublicRegistryOverride string `json:"publicRegistryOverride,omitempty"`
 
-	// Configures TLS for in-cluster communication between the Operands (e.g. OneAgent, ActiveGate, OpenTelemetry Collector) managed by this DynaKube.
+	// Configures TLS for in-cluster communication between the Operands managed by this DynaKube. Currently only affects `PrometheusMonitoring`, other Operands (e.g. OneAgent, ActiveGate, ...) will respect it in future versions.
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default={}
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="TLS",order=11,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
