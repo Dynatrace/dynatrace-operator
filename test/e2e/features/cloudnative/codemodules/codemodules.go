@@ -580,13 +580,15 @@ func isVolumeAttached(t *testing.T, volumes []corev1.Volume, volumeName string) 
 }
 
 func checkOneAgentEnvVars(dk *dynakube.DynaKube) features.Func {
+	const containerName = "dynatrace-oneagent"
+
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resources := envConfig.Client().Resources()
 		err := k8sdaemonset.NewQuery(ctx, resources, client.ObjectKey{
 			Name:      dk.OneAgent().GetDaemonsetName(),
 			Namespace: dk.Namespace,
 		}).ForEachPod(func(pod *corev1.Pod) {
-			checkEnvVarsInContainer(t, pod, dk.OneAgent().GetDaemonsetName(), httpsProxy)
+			checkEnvVarsInContainer(t, pod, containerName, httpsProxy)
 		})
 
 		require.NoError(t, err)
