@@ -219,7 +219,7 @@ func (dk *DynaKube) IsCACertificateNeeded() bool {
 
 // TLSMode returns the effective TLS mode for in-cluster Operand traffic.
 func (dk *DynaKube) TLSMode() TLSMode {
-	if dk.Spec.TLS == nil || string(dk.Spec.TLS.Mode) == "" {
+	if string(dk.Spec.TLS.Mode) == "" {
 		return TLSModeAutomatic
 	}
 

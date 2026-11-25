@@ -7,6 +7,8 @@ spec:
   activeGate:
     useEphemeralVolume: false
   apiUrl: https://ephemeral-volumes.dev.dynatracelabs.com/api
+  tls:
+    mode: automatic
   templates:
     extensionExecutionController:
       useEphemeralVolume: false

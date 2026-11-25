@@ -274,27 +274,22 @@ func TestCustomPullSecretReferences(t *testing.T) {
 func TestTLSMode(t *testing.T) {
 	testCases := []struct {
 		name   string
-		tls    *TLSSpec
+		tls    TLSSpec
 		expect TLSMode
 	}{
 		{
 			name:   "off",
-			tls:    &TLSSpec{Mode: "off"},
+			tls:    TLSSpec{Mode: "off"},
 			expect: TLSModeOff,
 		},
 		{
 			name:   "automatic",
-			tls:    &TLSSpec{Mode: "automatic"},
+			tls:    TLSSpec{Mode: "automatic"},
 			expect: TLSModeAutomatic,
 		},
 		{
 			name:   "automatic by default",
-			tls:    nil,
-			expect: TLSModeAutomatic,
-		},
-		{
-			name:   "automatic by default, empty value",
-			tls:    &TLSSpec{},
+			tls:    TLSSpec{},
 			expect: TLSModeAutomatic,
 		},
 	}
@@ -313,27 +308,22 @@ func TestTLSMode(t *testing.T) {
 func TestIsTLSAutomatic(t *testing.T) {
 	testCases := []struct {
 		name   string
-		tls    *TLSSpec
+		tls    TLSSpec
 		expect bool
 	}{
 		{
 			name:   "off",
-			tls:    &TLSSpec{Mode: "off"},
+			tls:    TLSSpec{Mode: "off"},
 			expect: false,
 		},
 		{
 			name:   "automatic",
-			tls:    &TLSSpec{Mode: "automatic"},
+			tls:    TLSSpec{Mode: "automatic"},
 			expect: true,
 		},
 		{
 			name:   "automatic by default",
-			tls:    nil,
-			expect: true,
-		},
-		{
-			name:   "automatic by default, empty value",
-			tls:    &TLSSpec{},
+			tls:    TLSSpec{},
 			expect: true,
 		},
 	}
@@ -352,27 +342,22 @@ func TestIsTLSAutomatic(t *testing.T) {
 func TestIsTLSOff(t *testing.T) {
 	testCases := []struct {
 		name   string
-		tls    *TLSSpec
+		tls    TLSSpec
 		expect bool
 	}{
 		{
 			name:   "off",
-			tls:    &TLSSpec{Mode: "off"},
+			tls:    TLSSpec{Mode: "off"},
 			expect: true,
 		},
 		{
 			name:   "automatic",
-			tls:    &TLSSpec{Mode: "automatic"},
+			tls:    TLSSpec{Mode: "automatic"},
 			expect: false,
 		},
 		{
 			name:   "automatic by default",
-			tls:    nil,
-			expect: false,
-		},
-		{
-			name:   "automatic by default, empty value",
-			tls:    &TLSSpec{},
+			tls:    TLSSpec{},
 			expect: false,
 		},
 	}

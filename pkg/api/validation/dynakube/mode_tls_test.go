@@ -16,7 +16,7 @@ func TestTLS(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testAPIURL,
-				TLS:    &dynakube.TLSSpec{Mode: dynakube.TLSModeOff},
+				TLS:    dynakube.TLSSpec{Mode: dynakube.TLSModeOff},
 			},
 		}
 
@@ -29,7 +29,7 @@ func TestTLS(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{
 				APIURL: testAPIURL,
-				TLS:    &dynakube.TLSSpec{Mode: dynakube.TLSModeAutomatic},
+				TLS:    dynakube.TLSSpec{Mode: dynakube.TLSModeAutomatic},
 			},
 		}
 

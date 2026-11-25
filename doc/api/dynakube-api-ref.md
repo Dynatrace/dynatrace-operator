@@ -21,7 +21,7 @@
 
 |Parameter|Description|Default value|Data type|
 |:-|:-|:-|:-|
-|`mode`||-|string|
+|`mode`||automatic|string|
 
 ### .spec.kspm
 

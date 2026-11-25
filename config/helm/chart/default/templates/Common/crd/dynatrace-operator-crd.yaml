@@ -7386,8 +7386,10 @@ spec:
                     type: object
                 type: object
               tls:
+                default: {}
                 properties:
                   mode:
+                    default: automatic
                     enum:
                     - "off"
                     - automatic

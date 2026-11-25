@@ -219,8 +219,9 @@ type DynaKubeSpec struct { //nolint:revive
 
 	// Configures TLS for in-cluster communication between the Operands (e.g. OneAgent, ActiveGate, OpenTelemetry Collector) managed by this DynaKube.
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:default={}
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="TLS",order=11,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
-	TLS *TLSSpec `json:"tls,omitempty"`
+	TLS TLSSpec `json:"tls,omitzero"`
 }
 
 type TemplatesSpec struct {
@@ -300,6 +301,7 @@ type TLSSpec struct {
 	// Enables/disables TLS encryption for in-cluster Operand traffic.
 	// +kubebuilder:validation:Enum=off;automatic
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:default:=automatic
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="TLS Mode",order=12,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:select:automatic","urn:alm:descriptor:com.tectonic.ui:select:off"}
-	Mode TLSMode `json:"mode,omitempty"`
+	Mode TLSMode `json:"mode,omitzero"`
 }
