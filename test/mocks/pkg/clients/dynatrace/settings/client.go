@@ -202,6 +202,78 @@ func (_c *Client_CreateLogMonitoringSetting_Call) RunAndReturn(run func(ctx cont
 	return _c
 }
 
+// CreateNetworkZoneObject provides a mock function for the type Client
+func (_mock *Client) CreateNetworkZoneObject(ctx context.Context, networkZoneID string, fallbackMode string) (string, error) {
+	ret := _mock.Called(ctx, networkZoneID, fallbackMode)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CreateNetworkZoneObject")
+	}
+
+	var r0 string
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string) (string, error)); ok {
+		return returnFunc(ctx, networkZoneID, fallbackMode)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string) string); ok {
+		r0 = returnFunc(ctx, networkZoneID, fallbackMode)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = returnFunc(ctx, networkZoneID, fallbackMode)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Client_CreateNetworkZoneObject_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreateNetworkZoneObject'
+type Client_CreateNetworkZoneObject_Call struct {
+	*mock.Call
+}
+
+// CreateNetworkZoneObject is a helper method to define mock.On call
+//   - ctx context.Context
+//   - networkZoneID string
+//   - fallbackMode string
+func (_e *Client_Expecter) CreateNetworkZoneObject(ctx any, networkZoneID any, fallbackMode any) *Client_CreateNetworkZoneObject_Call {
+	return &Client_CreateNetworkZoneObject_Call{Call: _e.mock.On("CreateNetworkZoneObject", ctx, networkZoneID, fallbackMode)}
+}
+
+func (_c *Client_CreateNetworkZoneObject_Call) Run(run func(ctx context.Context, networkZoneID string, fallbackMode string)) *Client_CreateNetworkZoneObject_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
+		var arg2 string
+		if args[2] != nil {
+			arg2 = args[2].(string)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
+	})
+	return _c
+}
+
+func (_c *Client_CreateNetworkZoneObject_Call) Return(s string, err error) *Client_CreateNetworkZoneObject_Call {
+	_c.Call.Return(s, err)
+	return _c
+}
+
+func (_c *Client_CreateNetworkZoneObject_Call) RunAndReturn(run func(ctx context.Context, networkZoneID string, fallbackMode string) (string, error)) *Client_CreateNetworkZoneObject_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // CreateOrUpdateKubernetesAppSetting provides a mock function for the type Client
 func (_mock *Client) CreateOrUpdateKubernetesAppSetting(ctx context.Context, scope string) (string, error) {
 	ret := _mock.Called(ctx, scope)
@@ -474,6 +546,72 @@ func (_c *Client_GetKSPMSettings_Call) Return(kSPMSettingsResponse settings.KSPM
 }
 
 func (_c *Client_GetKSPMSettings_Call) RunAndReturn(run func(ctx context.Context, monitoredEntity string) (settings.KSPMSettingsResponse, error)) *Client_GetKSPMSettings_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetNetworkZoneObject provides a mock function for the type Client
+func (_mock *Client) GetNetworkZoneObject(ctx context.Context, networkZoneID string) (settings.NetworkZoneObject, error) {
+	ret := _mock.Called(ctx, networkZoneID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetNetworkZoneObject")
+	}
+
+	var r0 settings.NetworkZoneObject
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) (settings.NetworkZoneObject, error)); ok {
+		return returnFunc(ctx, networkZoneID)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) settings.NetworkZoneObject); ok {
+		r0 = returnFunc(ctx, networkZoneID)
+	} else {
+		r0 = ret.Get(0).(settings.NetworkZoneObject)
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = returnFunc(ctx, networkZoneID)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Client_GetNetworkZoneObject_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetNetworkZoneObject'
+type Client_GetNetworkZoneObject_Call struct {
+	*mock.Call
+}
+
+// GetNetworkZoneObject is a helper method to define mock.On call
+//   - ctx context.Context
+//   - networkZoneID string
+func (_e *Client_Expecter) GetNetworkZoneObject(ctx any, networkZoneID any) *Client_GetNetworkZoneObject_Call {
+	return &Client_GetNetworkZoneObject_Call{Call: _e.mock.On("GetNetworkZoneObject", ctx, networkZoneID)}
+}
+
+func (_c *Client_GetNetworkZoneObject_Call) Run(run func(ctx context.Context, networkZoneID string)) *Client_GetNetworkZoneObject_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Client_GetNetworkZoneObject_Call) Return(networkZoneObject settings.NetworkZoneObject, err error) *Client_GetNetworkZoneObject_Call {
+	_c.Call.Return(networkZoneObject, err)
+	return _c
+}
+
+func (_c *Client_GetNetworkZoneObject_Call) RunAndReturn(run func(ctx context.Context, networkZoneID string) (settings.NetworkZoneObject, error)) *Client_GetNetworkZoneObject_Call {
 	_c.Call.Return(run)
 	return _c
 }
