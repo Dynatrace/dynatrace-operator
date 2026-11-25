@@ -275,7 +275,7 @@ func buildContainer(spec *prometheusmonitoring.TargetAllocator, imageURI string,
 			{Name: securePortName, ContainerPort: 8443, Protocol: corev1.ProtocolTCP},
 		},
 		VolumeMounts: append([]corev1.VolumeMount{
-			{Name: prometheusmonitoring.TargetAllocatorConfigVolumeName, MountPath: prometheusmonitoring.ConfigMountDir, ReadOnly: true},
+			{Name: prometheusmonitoring.ConfigVolumeName, MountPath: prometheusmonitoring.ConfigMountDir, ReadOnly: true},
 			// TODO: TLS volume
 		}, spec.VolumeMounts...),
 		Env:       append(env, spec.Env...),
@@ -330,7 +330,7 @@ func buildContainer(spec *prometheusmonitoring.TargetAllocator, imageURI string,
 func buildVolumes(spec *prometheusmonitoring.TargetAllocator) []corev1.Volume {
 	volumes := []corev1.Volume{
 		{
-			Name: prometheusmonitoring.TargetAllocatorConfigVolumeName,
+			Name: prometheusmonitoring.ConfigVolumeName,
 			ConfigMap: &corev1.ConfigMapVolumeSource{
 				Name: spec.GetDeploymentName(),
 				Items: []corev1.KeyToPath{

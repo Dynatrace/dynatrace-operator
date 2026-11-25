@@ -312,7 +312,7 @@ func buildArgs(s *reconcileScope) []string {
 	userArgs := s.Spec.SanitizedArgs()
 
 	args := make([]string, 0, 1+len(userArgs))
-	args = append(args, "--config="+prometheusmonitoring.ConfigMountDir+"/"+relayConfigFile)
+	args = append(args, "--config="+filepath.Join(prometheusmonitoring.ConfigMountDir, relayConfigFile))
 
 	return append(args, userArgs...)
 }

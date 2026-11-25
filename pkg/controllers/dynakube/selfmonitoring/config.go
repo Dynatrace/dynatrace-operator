@@ -5,10 +5,12 @@ package selfmonitoring
 
 import (
 	"maps"
+	"path/filepath"
 	"slices"
 	"strconv"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/prometheusmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/otelcfg"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/pipeline"
@@ -86,7 +88,7 @@ func buildSelfMonitoringOTelConfig(data selfMonitoringConfigData) *otelcfg.Confi
 				"endpoint": "${env:MY_POD_IP}:13133",
 			},
 			bearerAuthID: map[string]any{
-				"filename": tokenMountPath + "/" + tokenFileName,
+				"filename": filepath.Join(prometheusmonitoring.TokenMountPath, tokenFileName),
 				"scheme":   "Api-Token",
 			},
 		},

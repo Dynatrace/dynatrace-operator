@@ -6,14 +6,13 @@ package prometheusmonitoring
 import "github.com/Dynatrace/dynatrace-operator/pkg/consts"
 
 const (
-	ConfigVolumeName = "opentelemetry-collector-configmap"
+	ConfigVolumeName = "dynatrace-otel-config"
 	ConfigMountDir   = "/conf"
 
-	CACertsVolumeName               = "cacerts"
-	TrustedCAMountPath              = "/tls/custom/cacerts"
-	TokenVolumeName                 = "dt-token"
-	TokenMountPath                  = consts.DTComponentsSecretsRootDir + "/tokens"
-	TargetAllocatorConfigVolumeName = "config"
+	CACertsVolumeName  = "cacerts"
+	TrustedCAMountPath = "/tls/custom/cacerts"
+	TokenVolumeName    = "dt-token"
+	TokenMountPath     = consts.DTComponentsSecretsRootDir + "/tokens"
 )
 
 var (
@@ -23,6 +22,9 @@ var (
 	ScraperVolumeNames      = []string{ConfigVolumeName}
 	ScraperVolumeMountPaths = []string{ConfigMountDir}
 
-	TargetAllocatorVolumeNames      = []string{TargetAllocatorConfigVolumeName}
+	SelfMonitoringVolumeNames      = []string{ConfigVolumeName, TokenVolumeName, CACertsVolumeName}
+	SelfMonitoringVolumeMountPaths = []string{ConfigMountDir, TokenMountPath, TrustedCAMountPath}
+
+	TargetAllocatorVolumeNames      = []string{ConfigVolumeName}
 	TargetAllocatorVolumeMountPaths = []string{ConfigMountDir}
 )
