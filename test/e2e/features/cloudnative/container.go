@@ -68,24 +68,17 @@ func AssessOneAgentContainer(builder *features.FeatureBuilder, dk *dynakube.Dyna
 	builder.Assess("certificates are propagated to OneAgent containers", checkOneAgentContainer(dk, agCrtFunc, trustedCAs))
 }
 
-func checkOneAgentContainer(dk *dynakube.DynaKube, agCrtFunc func() []byte, trustedCAs []byte) features.Func {
+// checkOneAgentContainer look for activategate certificates in oneagent containers
+//   - does not checking ruxit certificates shipped by default with the oneagent
+//   - trustedCAs are never mounted there regardless of their value
+func checkOneAgentContainer(dk *dynakube.DynaKube, agCrtFunc func() []byte, _ []byte) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		const customPemPath = "mnt/dynatrace/certs/activegate/custom.pem"
 
-		// not checking ruxit certificates shipped by default with the oneagent
 		resources := envConfig.Client().Resources()
 
 		pods := k8spod.ListForOwner(ctx, t, resources, dk.OneAgent().GetDaemonsetName(), dk.Namespace)
 		require.NotEmpty(t, pods.Items)
-
-		certs := string(agCrtFunc())
-		if len(trustedCAs) > 0 {
-			if len(certs) > 0 {
-				certs += "\n"
-			}
-
-			certs += string(trustedCAs)
-		}
 
 		for _, pod := range pods.Items {
 			if pod.DeletionTimestamp != nil {
@@ -97,13 +90,12 @@ func checkOneAgentContainer(dk *dynakube.DynaKube, agCrtFunc func() []byte, trus
 			for _, container := range pod.Spec.Containers {
 				containerName := container.Name
 
-				if string(agCrtFunc()) == "" && string(trustedCAs) == "" {
+				if string(agCrtFunc()) == "" {
 					checkFileNotFound(ctx, t, resources, &pod, containerName, customPemPath)
 				} else {
-					checkFileContents(ctx, t, resources, &pod, containerName, customPemPath, certs)
+					checkFileContents(ctx, t, resources, &pod, containerName, customPemPath, string(agCrtFunc()))
 				}
 			}
-
 		}
 
 		return ctx

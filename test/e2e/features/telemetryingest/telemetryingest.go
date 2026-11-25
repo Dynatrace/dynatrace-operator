@@ -206,7 +206,7 @@ func OTelCollectorConfigUpdate(t *testing.T) features.Feature {
 
 func checkActiveGateContainer(dk *dynakube.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		componentActiveGate.CheckContainer(dk)
+		componentActiveGate.CheckContainer(dk)(ctx, t, envConfig)
 
 		assertTelemetryIngestActiveGateModulesAreActive(ctx, t, envConfig, dk)
 
