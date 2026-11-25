@@ -267,7 +267,7 @@ This command [`cmd/metadata/`](./cmd/metadata/) generates metadata files contain
 
 - Common utilities for Kubernetes operations, hashing, tokens, conditions, etc.
 
-[**`pkg/otelcgen/`**](./pkg/otelcgen/): OpenTelemetry Collector generation
+[**`pkg/otelcfg/`**](./pkg/otelcfg/): OpenTelemetry Collector config generation
 
 - Logic for generating OpenTelemetry Collector configurations and components
 

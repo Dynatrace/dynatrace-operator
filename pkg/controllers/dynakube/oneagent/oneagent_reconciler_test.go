@@ -6,6 +6,8 @@ package oneagent
 import (
 	"context"
 	"testing"
+	"testing/synctest"
+	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
@@ -601,102 +603,111 @@ func newDynaKube() *dynakube.DynaKube {
 }
 
 func TestInstanceStatus(t *testing.T) {
-	namespace := "dynatrace"
-	dkName := "dynakube"
+	setup := func(t *testing.T, modifyPod ...func(*corev1.Pod)) (*Reconciler, *dynakube.DynaKube) {
+		t.Helper()
 
-	dk := &dynakube.DynaKube{
-		Name: dkName, Namespace: namespace,
-		Spec: dynakube.DynaKubeSpec{
-			APIURL: "https://ENVIRONMENTID.live.dynatrace.com/api",
-			Tokens: dkName,
-			OneAgent: oneagent.Spec{
-				HostMonitoring: &oneagent.HostInjectSpec{},
+		namespace := "dynatrace"
+		dkName := "dynakube"
+
+		dk := &dynakube.DynaKube{
+			Name: dkName, Namespace: namespace,
+			Spec: dynakube.DynaKubeSpec{
+				APIURL: "https://ENVIRONMENTID.live.dynatrace.com/api",
+				Tokens: dkName,
+				OneAgent: oneagent.Spec{
+					HostMonitoring: &oneagent.HostInjectSpec{},
+				},
 			},
-		},
-	}
+		}
 
-	pod := &corev1.Pod{
-		Name:      "test-pod-1",
-		Namespace: namespace,
-		Labels: map[string]string{
-			"app.kubernetes.io/name":          "dynatrace-operator",
-			"app.kubernetes.io/component":     "oneagent",
-			"app.kubernetes.io/created-by":    dkName,
-			"app.kubernetes.io/version":       "snapshot",
-			"component.dynatrace.com/feature": deploymentmetadata.HostMonitoringDeploymentType,
-		},
-		Spec: corev1.PodSpec{
-			NodeName: "node-1",
-		},
-		Status: corev1.PodStatus{
-			HostIP: "123.123.123.123",
-		},
-	}
+		// use the same labels getOneagentPods selects on, so the pod is guaranteed to be found
+		podLabels := k8slabel.NewAppLabels(k8slabel.OneAgentComponentLabel, dk.Name,
+			deploymentmetadata.GetOneAgentDeploymentType(dk), dk.OneAgent().GetVersion())
 
-	fakeClient := fake.NewClient(
-		dk,
-		pod)
-
-	reconciler := &Reconciler{
-		client:    fakeClient,
-		apiReader: fakeClient,
-		configmap: k8sconfigmap.Query(fakeClient, fakeClient),
-		daemonset: k8sdaemonset.Query(fakeClient, fakeClient),
-	}
-
-	err := reconciler.reconcileInstanceStatuses(t.Context(), dk)
-	require.NoError(t, err)
-	assert.NotEmpty(t, t, dk.Status.OneAgent.Instances)
-	instances := dk.Status.OneAgent.Instances
-
-	err = reconciler.reconcileInstanceStatuses(t.Context(), dk)
-	require.NoError(t, err)
-	assert.Equal(t, instances, dk.Status.OneAgent.Instances)
-}
-
-func TestEmptyInstancesWithWrongLabels(t *testing.T) {
-	namespace := "dynatrace"
-	dkName := "dynakube"
-
-	dk := &dynakube.DynaKube{
-		Name: dkName, Namespace: namespace,
-		Spec: dynakube.DynaKubeSpec{
-			APIURL: "https://ENVIRONMENTID.live.dynatrace.com/api",
-			Tokens: dkName,
-			OneAgent: oneagent.Spec{
-				HostMonitoring: &oneagent.HostInjectSpec{},
+		pod := &corev1.Pod{
+			Name:      "test-pod-1",
+			Namespace: namespace,
+			Labels:    podLabels.BuildLabels(),
+			Spec: corev1.PodSpec{
+				NodeName: "node-1",
 			},
-		},
+			Status: corev1.PodStatus{
+				HostIP: "123.123.123.123",
+			},
+		}
+
+		for _, modify := range modifyPod {
+			modify(pod)
+		}
+
+		fakeClient := fake.NewClient(dk, pod)
+
+		return &Reconciler{
+			client:    fakeClient,
+			apiReader: fakeClient,
+			configmap: k8sconfigmap.Query(fakeClient, fakeClient),
+			daemonset: k8sdaemonset.Query(fakeClient, fakeClient),
+		}, dk
 	}
 
-	pod := &corev1.Pod{
-		Name:      "test-pod-1",
-		Namespace: namespace,
-		Labels: map[string]string{
-			"wrongLabel": "dynatrace-operator",
-		},
-		Spec: corev1.PodSpec{
-			NodeName: "node-1",
-		},
-		Status: corev1.PodStatus{
-			HostIP: "123.123.123.123",
-		},
-	}
+	t.Run("reconcileInstanceStatuses is idempotent", func(t *testing.T) {
+		reconciler, dk := setup(t)
 
-	fakeClient := fake.NewClient(
-		dk,
-		pod)
+		require.NoError(t, reconciler.reconcileInstanceStatuses(t.Context(), dk))
+		assert.NotEmpty(t, dk.Status.OneAgent.Instances)
+		instances := dk.Status.OneAgent.Instances
 
-	reconciler := &Reconciler{
-		client:    fakeClient,
-		apiReader: fakeClient,
-		configmap: k8sconfigmap.Query(fakeClient, fakeClient),
-		daemonset: k8sdaemonset.Query(fakeClient, fakeClient),
-	}
+		require.NoError(t, reconciler.reconcileInstanceStatuses(t.Context(), dk))
+		assert.Equal(t, instances, dk.Status.OneAgent.Instances)
+	})
 
-	err := reconciler.reconcileInstanceStatuses(t.Context(), dk)
-	require.NoError(t, err)
-	assert.Empty(t, dk.Status.OneAgent.Instances)
+	t.Run("nil timestamp => instances reconciled", func(t *testing.T) {
+		synctest.Test(t, func(t *testing.T) {
+			reconciler, dk := setup(t)
+
+			require.NoError(t, reconciler.updateInstancesStatus(t.Context(), dk))
+
+			assert.NotEmpty(t, dk.Status.OneAgent.Instances)
+			require.NotNil(t, dk.Status.OneAgent.LastInstanceStatusUpdate)
+			assert.Equal(t, time.Now(), dk.Status.OneAgent.LastInstanceStatusUpdate.Time)
+		})
+	})
+
+	t.Run("only reconcile again after at least interval has been reached", func(t *testing.T) {
+		synctest.Test(t, func(t *testing.T) {
+			reconciler, dk := setup(t)
+
+			lastUpdate := metav1.Now()
+			dk.Status.OneAgent.LastInstanceStatusUpdate = &lastUpdate
+			dk.Status.OneAgent.Instances = nil
+
+			synctest.Sleep(defaultUpdateInterval - time.Nanosecond)
+
+			require.NoError(t, reconciler.updateInstancesStatus(t.Context(), dk))
+
+			assert.Empty(t, dk.Status.OneAgent.Instances)
+			assert.Equal(t, lastUpdate, *dk.Status.OneAgent.LastInstanceStatusUpdate)
+
+			synctest.Sleep(time.Nanosecond)
+
+			require.NoError(t, reconciler.updateInstancesStatus(t.Context(), dk))
+
+			assert.NotEmpty(t, dk.Status.OneAgent.Instances)
+			require.NotNil(t, dk.Status.OneAgent.LastInstanceStatusUpdate)
+			assert.Equal(t, time.Now(), dk.Status.OneAgent.LastInstanceStatusUpdate.Time)
+		})
+	})
+
+	t.Run("pods with wrong labels => no instances", func(t *testing.T) {
+		reconciler, dk := setup(t, func(pod *corev1.Pod) {
+			pod.Labels = map[string]string{
+				"wrongLabel": "dynatrace-operator",
+			}
+		})
+
+		require.NoError(t, reconciler.reconcileInstanceStatuses(t.Context(), dk))
+		assert.Empty(t, dk.Status.OneAgent.Instances)
+	})
 }
 
 func TestReconcile_OneAgentConfigMap(t *testing.T) {
@@ -833,7 +844,7 @@ func TestGetActiveGateTLSCertHash(t *testing.T) {
 		hash, err := r.getActiveGateTLSCertHash(t.Context(), dk)
 		require.NoError(t, err)
 
-		expectedHash, err := hasher.GenerateHash(certData)
+		expectedHash, err := hasher.GenerateSecureHash(certData)
 		require.NoError(t, err)
 		assert.Equal(t, expectedHash, hash)
 	})
@@ -841,13 +852,13 @@ func TestGetActiveGateTLSCertHash(t *testing.T) {
 	t.Run("hash only depends on server.crt", func(t *testing.T) {
 		r1 := &Reconciler{apiReader: fake.NewClient(newSecret(map[string][]byte{
 			consts.TLSServerCrtDataName: []byte("cert"),
-			consts.TLSCrtDataName:       []byte("cert-1"),
-			consts.TLSKeyDataName:       []byte("key-1"),
+			corev1.TLSCertKey:           []byte("cert-1"),
+			corev1.TLSPrivateKeyKey:     []byte("key-1"),
 		}))}
 		r2 := &Reconciler{apiReader: fake.NewClient(newSecret(map[string][]byte{
 			consts.TLSServerCrtDataName: []byte("cert"),
-			consts.TLSCrtDataName:       []byte("cert-2"),
-			consts.TLSKeyDataName:       []byte("key-2"),
+			corev1.TLSCertKey:           []byte("cert-2"),
+			corev1.TLSPrivateKeyKey:     []byte("key-2"),
 		}))}
 
 		hash1, err := r1.getActiveGateTLSCertHash(t.Context(), dk)
@@ -857,6 +868,28 @@ func TestGetActiveGateTLSCertHash(t *testing.T) {
 
 		assert.NotEmpty(t, hash1)
 		assert.Equal(t, hash1, hash2)
+	})
+
+	t.Run("secret without server.crt returns empty hash", func(t *testing.T) {
+		r := &Reconciler{apiReader: fake.NewClient(newSecret(map[string][]byte{corev1.TLSCertKey: []byte("cert")}))}
+
+		hash, err := r.getActiveGateTLSCertHash(t.Context(), dk)
+		require.NoError(t, err)
+		assert.Empty(t, hash)
+	})
+
+	t.Run("routing disabled returns empty hash", func(t *testing.T) {
+		kubeMonDK := &dynakube.DynaKube{
+			Name: testDynakubeName, Namespace: testNamespace,
+			Spec: dynakube.DynaKubeSpec{
+				ActiveGate: activegate.Spec{Capabilities: []activegate.CapabilityDisplayName{activegate.KubeMonCapability.DisplayName}},
+			},
+		}
+		r := &Reconciler{apiReader: fake.NewClient(newSecret(map[string][]byte{consts.TLSServerCrtDataName: []byte("cert")}))}
+
+		hash, err := r.getActiveGateTLSCertHash(t.Context(), kubeMonDK)
+		require.NoError(t, err)
+		assert.Empty(t, hash)
 	})
 }
 
@@ -890,7 +923,7 @@ func TestGetTrustedCAsHash(t *testing.T) {
 		hash, err := r.getTrustedCAsHash(t.Context(), dk)
 		require.NoError(t, err)
 
-		expectedHash, err := hasher.GenerateHash(caData)
+		expectedHash, err := hasher.GenerateSecureHash([]byte(caData))
 		require.NoError(t, err)
 		assert.Equal(t, expectedHash, hash)
 	})
@@ -949,6 +982,41 @@ func TestBuildDesiredDaemonSet_CertHashes(t *testing.T) {
 		assert.Equal(t, base, buildDS(t, "cert-1", "ca-1").Annotations[hasher.AnnotationHash])
 		assert.NotEqual(t, base, buildDS(t, "cert-2", "ca-1").Annotations[hasher.AnnotationHash])
 		assert.NotEqual(t, base, buildDS(t, "cert-1", "ca-2").Annotations[hasher.AnnotationHash])
+	})
+
+	t.Run("annotations are not set when secret and configmap are missing", func(t *testing.T) {
+		r := Reconciler{apiReader: fake.NewClient()}
+
+		ds, err := r.buildDesiredDaemonSet(t.Context(), newDK())
+		require.NoError(t, err)
+		assert.NotContains(t, ds.Spec.Template.Annotations, daemonset.AnnotationActiveGateTLSCertHash)
+		assert.NotContains(t, ds.Spec.Template.Annotations, daemonset.AnnotationTrustedCAHash)
+	})
+
+	t.Run("activegate cert annotation only follows server.crt", func(t *testing.T) {
+		build := func(serverCrt, tlsCrt string) string {
+			dk := newDK()
+			secret := &corev1.Secret{
+				Name:      dk.ActiveGate().GetTLSSecretName(),
+				Namespace: dk.Namespace,
+				Data: map[string][]byte{
+					corev1.TLSCertKey:           []byte(tlsCrt),
+					consts.TLSServerCrtDataName: []byte(serverCrt),
+				},
+			}
+			r := Reconciler{apiReader: fake.NewClient(secret)}
+
+			ds, err := r.buildDesiredDaemonSet(t.Context(), dk)
+			require.NoError(t, err)
+
+			return ds.Spec.Template.Annotations[daemonset.AnnotationActiveGateTLSCertHash]
+		}
+
+		base := build("server-cert-1", "tls-cert-1")
+		require.NotEmpty(t, base)
+
+		assert.NotEqual(t, base, build("server-cert-2", "tls-cert-1"))
+		assert.Equal(t, base, build("server-cert-1", "tls-cert-2"))
 	})
 }
 

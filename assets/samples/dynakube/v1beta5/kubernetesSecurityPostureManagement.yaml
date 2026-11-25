@@ -65,12 +65,8 @@ spec:
     #
     #  Suggested list of paths:
     mappedHostPaths:
-      - /boot
       - /etc
-      - /proc/sys/kernel
-      - /sys/fs
-      - /sys/kernel/security/apparmor
-      - /usr/lib/systemd/system
+      - /usr/lib
       - /var/lib
 
   # Configuration for ActiveGate instances.

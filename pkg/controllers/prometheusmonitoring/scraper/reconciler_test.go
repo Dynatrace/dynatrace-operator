@@ -14,6 +14,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
+	apitypes "github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/prometheusmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
@@ -63,7 +64,7 @@ func newTestScopeWithDynaKube(pm *prometheusmonitoring.PrometheusMonitoring, dk 
 		Owner:     pm,
 		DynaKube:  dk,
 		Spec:      pm.Scraper(),
-		AppLabels: k8slabel.OTelScraper(),
+		AppLabels: k8slabel.New(k8slabel.OTelScraperAppName, pm.Name, ""),
 	}
 }
 
@@ -131,6 +132,22 @@ func TestReconcileConfigMap(t *testing.T) {
 		assert.Equal(t, hex.EncodeToString(sum[:]), s.ConfigMapHash)
 	})
 
+	t.Run("self-monitoring telemetry is rendered into the configmap", func(t *testing.T) {
+		pm := newTestPM("pm", "dynatrace")
+		dk := newTestDynaKube()
+		dk.Spec.SelfMonitoring = &dynakube.SelfMonitoringSpec{}
+		s := newTestScopeWithDynaKube(pm, dk)
+		c := fake.NewClient()
+		r := &Reconciler{Client: c}
+
+		require.NoError(t, r.reconcileConfigMap(t.Context(), s))
+
+		cm := &corev1.ConfigMap{}
+		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetDeploymentName(), Namespace: pm.Namespace}, cm))
+
+		helpers.AssertGolden(t, "testdata/configmap_with_self_monitoring.yaml", cm)
+	})
+
 	t.Run("merge labels", func(t *testing.T) {
 		pm := newTestPM("pm", "dynatrace")
 		s := newTestScope(pm)
@@ -146,7 +163,7 @@ func TestReconcileConfigMap(t *testing.T) {
 		cm := &corev1.ConfigMap{}
 		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetDeploymentName(), Namespace: pm.Namespace}, cm))
 		assert.Equal(t, "value", cm.Labels["custom"])
-		assert.Equal(t, k8slabel.OTelScraper().Instance, cm.Labels[k8slabel.AppInstanceLabel])
+		assert.Equal(t, k8slabel.New(k8slabel.OTelScraperAppName, pm.Name, "").Instance, cm.Labels[k8slabel.AppInstanceLabel])
 	})
 
 	t.Run("propagate error", func(t *testing.T) {
@@ -211,6 +228,54 @@ func TestReconcileDeployment(t *testing.T) {
 		require.NoError(t, r.reconcileDeployment(t.Context(), s))
 
 		assert.Equal(t, testImage, pm.Status.Scraper.ResolvedImage)
+	})
+
+	t.Run("recreate on selector change", func(t *testing.T) {
+		pm := newTestPM("pm", "dynatrace")
+		pm.Spec.Scraper.Image = testImage
+		s := newTestScope(pm)
+		existing := &appsv1.Deployment{
+			Name: s.Spec.GetDeploymentName(), Namespace: pm.Namespace,
+			Spec: appsv1.DeploymentSpec{Selector: &metav1.LabelSelector{MatchLabels: map[string]string{"app": "old"}}},
+		}
+		var deletes int
+		c := fake.NewClientWithInterceptors(interceptor.Funcs{
+			Delete: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.DeleteOption) error {
+				deletes++
+
+				return client.Delete(ctx, obj, opts...)
+			},
+		}, existing)
+		r := &Reconciler{Client: c}
+
+		require.NoError(t, r.reconcileDeployment(t.Context(), s))
+		assert.Equal(t, 1, deletes)
+
+		deploy := &appsv1.Deployment{}
+		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetDeploymentName(), Namespace: pm.Namespace}, deploy))
+		assert.Equal(t, s.AppLabels.AsSelector(), deploy.Spec.Selector.MatchLabels)
+	})
+
+	t.Run("no recreate when selector is unchanged", func(t *testing.T) {
+		pm := newTestPM("pm", "dynatrace")
+		pm.Spec.Scraper.Image = testImage
+		s := newTestScope(pm)
+		existing := &appsv1.Deployment{
+			Name: s.Spec.GetDeploymentName(), Namespace: pm.Namespace,
+			Spec: appsv1.DeploymentSpec{Selector: &metav1.LabelSelector{MatchLabels: s.AppLabels.AsSelector()}},
+		}
+		var deletes int
+		c := fake.NewClientWithInterceptors(interceptor.Funcs{
+			Delete: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.DeleteOption) error {
+				deletes++
+
+				return client.Delete(ctx, obj, opts...)
+			},
+		}, existing)
+		r := &Reconciler{Client: c}
+
+		require.NoError(t, r.reconcileDeployment(t.Context(), s))
+		assert.Zero(t, deletes)
 	})
 
 	t.Run("propagate error", func(t *testing.T) {
@@ -280,10 +345,10 @@ func TestBuildVolumes(t *testing.T) {
 		mounts := buildVolumeMounts()
 
 		require.Len(t, volumes, 1)
-		assert.Equal(t, configVolumeName, volumes[0].Name)
+		assert.Equal(t, prometheusmonitoring.ConfigVolumeName, volumes[0].Name)
 		assert.Equal(t, "pm-scraper", volumes[0].ConfigMap.Name)
 		require.Len(t, mounts, 1)
-		assert.Equal(t, configMountDir, mounts[0].MountPath)
+		assert.Equal(t, prometheusmonitoring.ConfigMountDir, mounts[0].MountPath)
 	})
 }
 
@@ -294,10 +359,10 @@ func TestMutateDeploymentIsIdempotent(t *testing.T) {
 	s.DynaKube.Spec.CustomPullSecret = "custom-pull-secret"
 
 	deploy := &appsv1.Deployment{}
-	mutateDeployment(deploy, s)
+	require.NoError(t, mutateDeployment(deploy, s))
 	first := deploy.DeepCopy()
 
-	mutateDeployment(deploy, s)
+	require.NoError(t, mutateDeployment(deploy, s))
 
 	assert.Equal(t, first, deploy)
 }
@@ -308,7 +373,7 @@ func TestImagePullSecrets(t *testing.T) {
 	t.Run("no pull secrets when the DynaKube has no custom pull secret", func(t *testing.T) {
 		deploy := &appsv1.Deployment{}
 
-		mutateDeployment(deploy, newTestScope(newTestPM("pm", "dynatrace")))
+		require.NoError(t, mutateDeployment(deploy, newTestScope(newTestPM("pm", "dynatrace"))))
 
 		assert.Empty(t, deploy.Spec.Template.Spec.ImagePullSecrets)
 	})
@@ -318,7 +383,7 @@ func TestImagePullSecrets(t *testing.T) {
 		dk.Spec.CustomPullSecret = "custom-pull-secret"
 		deploy := &appsv1.Deployment{}
 
-		mutateDeployment(deploy, newTestScopeWithDynaKube(newTestPM("pm", "dynatrace"), dk))
+		require.NoError(t, mutateDeployment(deploy, newTestScopeWithDynaKube(newTestPM("pm", "dynatrace"), dk)))
 
 		assert.Equal(t, []corev1.LocalObjectReference{{Name: dk.Spec.CustomPullSecret}}, deploy.Spec.Template.Spec.ImagePullSecrets)
 
@@ -342,4 +407,89 @@ func TestMutateDeploymentKeepsExistingTemplateMetadata(t *testing.T) {
 	assert.Equal(t, "spec", obj.Spec.Template.Annotations["from"])
 	assert.Equal(t, "label", obj.Spec.Template.Labels["user"])
 	assert.Equal(t, "label", obj.Spec.Template.Labels["spec"])
+}
+
+func TestMutateDeploymentCustomEnvVolumes(t *testing.T) {
+	newScope := func(spec func(*prometheusmonitoring.PodSpec)) *reconcileScope {
+		s := newTestScope(newTestPM("pm", "dynatrace"))
+		spec(&s.Spec.PodSpec)
+
+		return s
+	}
+
+	t.Run("empty -> only operator-generated entries", func(t *testing.T) {
+		obj := &appsv1.Deployment{}
+		require.NoError(t, mutateDeployment(obj, newScope(func(*prometheusmonitoring.PodSpec) {})))
+
+		container := obj.Spec.Template.Spec.Containers[0]
+		require.NotEmpty(t, container.Env)
+		require.NotEmpty(t, container.VolumeMounts)
+		require.NotEmpty(t, obj.Spec.Template.Spec.Volumes)
+		assert.NotContains(t, envNames(container.Env), "CUSTOM")
+		assert.NotContains(t, mountNames(container.VolumeMounts), "custom")
+	})
+
+	t.Run("custom entries are appended", func(t *testing.T) {
+		obj := &appsv1.Deployment{}
+		s := newScope(func(p *prometheusmonitoring.PodSpec) {
+			p.Env = []corev1.EnvVar{{Name: "CUSTOM", Value: "1"}}
+			p.Volumes = apitypes.Volumes{{Name: "custom", AllowedVolumeSource: apitypes.AllowedVolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}}}}
+			p.VolumeMounts = []corev1.VolumeMount{{Name: "custom", MountPath: "/custom"}}
+		})
+		require.NoError(t, mutateDeployment(obj, s))
+
+		container := obj.Spec.Template.Spec.Containers[0]
+		assert.Equal(t, "CUSTOM", container.Env[len(container.Env)-1].Name)
+		assert.Equal(t, "custom", container.VolumeMounts[len(container.VolumeMounts)-1].Name)
+		assert.Equal(t, "custom", obj.Spec.Template.Spec.Volumes[len(obj.Spec.Template.Spec.Volumes)-1].Name)
+	})
+
+	t.Run("custom env var with an operator-generated name is appended last", func(t *testing.T) {
+		base := &appsv1.Deployment{}
+		require.NoError(t, mutateDeployment(base, newScope(func(*prometheusmonitoring.PodSpec) {})))
+		baseEnv := base.Spec.Template.Spec.Containers[0].Env
+
+		obj := &appsv1.Deployment{}
+		s := newScope(func(p *prometheusmonitoring.PodSpec) {
+			p.Env = []corev1.EnvVar{{Name: baseEnv[0].Name, Value: "override"}}
+		})
+		require.NoError(t, mutateDeployment(obj, s))
+
+		env := obj.Spec.Template.Spec.Containers[0].Env
+		assert.Len(t, env, len(baseEnv)+1)
+		assert.Equal(t, baseEnv, env[:len(baseEnv)])
+		assert.Equal(t, corev1.EnvVar{Name: baseEnv[0].Name, Value: "override"}, env[len(env)-1])
+	})
+
+	t.Run("template is stable across reconciles", func(t *testing.T) {
+		s := newScope(func(p *prometheusmonitoring.PodSpec) {
+			p.Env = []corev1.EnvVar{{Name: "CUSTOM", Value: "1"}}
+			p.VolumeMounts = []corev1.VolumeMount{{Name: "custom", MountPath: "/custom"}}
+		})
+		obj := &appsv1.Deployment{}
+		require.NoError(t, mutateDeployment(obj, s))
+		first := obj.DeepCopy()
+
+		require.NoError(t, mutateDeployment(obj, s))
+
+		assert.Equal(t, first, obj)
+	})
+}
+
+func envNames(envs []corev1.EnvVar) []string {
+	names := make([]string, 0, len(envs))
+	for _, e := range envs {
+		names = append(names, e.Name)
+	}
+
+	return names
+}
+
+func mountNames(mounts []corev1.VolumeMount) []string {
+	names := make([]string, 0, len(mounts))
+	for _, m := range mounts {
+		names = append(names, m.Name)
+	}
+
+	return names
 }

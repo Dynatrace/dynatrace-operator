@@ -113,7 +113,7 @@ func checkInjection(deployment *sample.App) features.Func {
 		resource := envConfig.Client().Resources()
 		samplePods := deployment.ListPods(ctx, t, resource)
 
-		require.NotNil(t, samplePods)
+		require.NotEmpty(t, samplePods.Items)
 
 		for _, item := range samplePods.Items {
 			require.NotNil(t, item.Spec.InitContainers)

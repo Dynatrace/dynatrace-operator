@@ -45,3 +45,20 @@ webhooks:
         path: /label-ns
     admissionReviewVersions: [ "v1" ]
     sideEffects: None
+  - name: v1beta6.dynakube.defaulting.webhook.dynatrace.com
+    failurePolicy: Fail
+    timeoutSeconds: {{.Values.webhook.mutatingWebhook.timeoutSeconds}}
+    rules:
+      - apiGroups: [ "dynatrace.com" ]
+        apiVersions: [ "v1beta6" ]
+        operations: [ "CREATE", "UPDATE" ]
+        resources: [ "dynakubes" ]
+        scope: Namespaced
+    matchPolicy: Equivalent
+    clientConfig:
+      service:
+        name: dynatrace-webhook
+        namespace: {{ .Release.Namespace }}
+        path: /mutate-dynatrace-com-v1beta6-dynakube
+    admissionReviewVersions: [ "v1" ]
+    sideEffects: None

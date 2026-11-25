@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"maps"
 	"net"
+	"path/filepath"
 	"strconv"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -18,6 +19,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/prometheusmonitoring/condition"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/otelcfg"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8scontainer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
@@ -25,6 +27,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sdeployment"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
@@ -40,19 +43,12 @@ const (
 	configHashAnnotation = "internal.operator.dynatrace.com/scraper-config-hash"
 
 	healthCheckPortName = "health"
-	healthCheckPort     = 13133
 
 	// targetAllocatorPort is the TA Service's plain HTTP port (not the container
 	// listen port 8080 — the Service maps 80 → http-port/8080 on the pod).
 	targetAllocatorPort = 80
 
-	// gatewayOTLPPort is the gateway service's OTLP/gRPC port.
-	gatewayOTLPPort = 4317
-
 	serviceAccountName = "dynatrace-prometheus-scraper"
-
-	configVolumeName = "opentelemetry-collector-configmap"
-	configMountDir   = "/conf"
 )
 
 type Reconciler struct {
@@ -83,7 +79,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, pm *prometheusmonitoring.Pro
 		Owner:       pm,
 		DynaKube:    dk,
 		Spec:        pm.Scraper(),
-		AppLabels:   k8slabel.OTelScraper(),
+		AppLabels:   k8slabel.New(k8slabel.OTelScraperAppName, pm.Name, ""),
 		ImageClient: imageClient,
 	}
 
@@ -152,6 +148,10 @@ func buildScraperConfigData(s *reconcileScope) scraperConfigData {
 		GatewayService: s.Owner.Gateway().GetStatefulSetName() + "." + namespace,
 	}
 
+	if s.DynaKube.IsSelfMonitoringEnabled() {
+		data.SelfMonitoringEndpoint = s.DynaKube.SelfMonitoringOTLPEndpoint()
+	}
+
 	if interval := s.Spec.TargetsPollInterval; interval != nil && interval.Duration > 0 {
 		data.TargetsPollInterval = s.Spec.TargetsPollInterval.Duration.String()
 	}
@@ -164,7 +164,9 @@ func serviceAddress(name, namespace string) string {
 }
 
 func renderScraperConfig(data scraperConfigData) (string, error) {
-	b, err := buildScraperOTelConfig(data).Marshal()
+	cfg := buildConfig(data)
+
+	b, err := cfg.Marshal()
 
 	return string(b), err
 }
@@ -180,7 +182,9 @@ func (r *Reconciler) reconcileDeployment(ctx context.Context, s *reconcileScope)
 	deploy := &appsv1.Deployment{Name: s.Spec.GetDeploymentName(), Namespace: s.Owner.Namespace}
 
 	err := k8sobject.RetryCreateOrUpdate(ctx, r, deploy, func() error {
-		mutateDeployment(deploy, s)
+		if err := mutateDeployment(deploy, s); err != nil {
+			return err
+		}
 
 		return controllerutil.SetControllerReference(s.Owner, deploy, r.Scheme())
 	})
@@ -193,7 +197,7 @@ func (r *Reconciler) reconcileDeployment(ctx context.Context, s *reconcileScope)
 	return nil
 }
 
-func mutateDeployment(deploy *appsv1.Deployment, s *reconcileScope) {
+func mutateDeployment(deploy *appsv1.Deployment, s *reconcileScope) error {
 	s.AppLabels.MergeInto(deploy)
 
 	if deploy.Spec.Template.Labels == nil {
@@ -218,7 +222,12 @@ func mutateDeployment(deploy *appsv1.Deployment, s *reconcileScope) {
 
 	deploy.Spec.Strategy = k8sdeployment.MergeStrategy(deploy.Spec.Strategy, s.Spec.Strategy)
 
-	deploy.Spec.Selector = &metav1.LabelSelector{MatchLabels: s.AppLabels.AsSelector()}
+	selector := &metav1.LabelSelector{MatchLabels: s.AppLabels.AsSelector()}
+	if deploy.ResourceVersion != "" && !equality.Semantic.DeepEqual(deploy.Spec.Selector, selector) {
+		return fmt.Errorf("deployment selector changed: %w", k8sobject.ErrRecreate)
+	}
+
+	deploy.Spec.Selector = selector
 	deploy.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 	deploy.Spec.Template.Spec.AutomountServiceAccountToken = new(true)
 	deploy.Spec.Template.Spec.Affinity = s.Spec.Affinity
@@ -227,12 +236,14 @@ func mutateDeployment(deploy *appsv1.Deployment, s *reconcileScope) {
 	deploy.Spec.Template.Spec.Tolerations = s.Spec.Tolerations
 	deploy.Spec.Template.Spec.TopologySpreadConstraints = s.Spec.TopologySpreadConstraints
 	deploy.Spec.Template.Spec.ImagePullSecrets = s.DynaKube.CustomPullSecretReferences()
-	deploy.Spec.Template.Spec.Volumes = buildVolumes(s)
+	deploy.Spec.Template.Spec.Volumes = append(buildVolumes(s), s.Spec.Volumes.AsCoreV1()...)
 	// The stored container is passed in so buildContainer can preserve apiserver-defaulted
 	// fields (e.g. ImagePullPolicy, probe timeouts) and avoid spurious diffs.
 	deploy.Spec.Template.Spec.Containers = []corev1.Container{
 		buildContainer(s, k8scontainer.GetFirstInPodSpec(&deploy.Spec.Template.Spec)),
 	}
+
+	return nil
 }
 
 func buildContainer(s *reconcileScope, current corev1.Container) corev1.Container {
@@ -244,6 +255,8 @@ func buildContainer(s *reconcileScope, current corev1.Container) corev1.Containe
 		imagePullPolicy = current.ImagePullPolicy
 	}
 
+	probeGet := &corev1.HTTPGetAction{Scheme: corev1.URISchemeHTTP, Path: "/", Port: intstr.FromInt32(otelcfg.ExtensionsHealthCheckPort)}
+
 	return corev1.Container{
 		Name:            "scraper",
 		Image:           s.Owner.Status.Scraper.ResolvedImage,
@@ -251,10 +264,10 @@ func buildContainer(s *reconcileScope, current corev1.Container) corev1.Containe
 		Command:         []string{"/dynatrace-otel-collector"},
 		Args:            buildArgs(s),
 		Ports: []corev1.ContainerPort{
-			{Name: healthCheckPortName, ContainerPort: healthCheckPort, Protocol: corev1.ProtocolTCP},
+			{Name: healthCheckPortName, ContainerPort: otelcfg.ExtensionsHealthCheckPort, Protocol: corev1.ProtocolTCP},
 		},
-		Env:          buildEnv(s),
-		VolumeMounts: buildVolumeMounts(),
+		Env:          append(buildEnv(s), s.Spec.Env...),
+		VolumeMounts: append(buildVolumeMounts(), s.Spec.VolumeMounts...),
 		Resources:    s.Spec.Resources,
 		SecurityContext: &corev1.SecurityContext{
 			Privileged:               new(false),
@@ -267,7 +280,7 @@ func buildContainer(s *reconcileScope, current corev1.Container) corev1.Containe
 			Capabilities:             &corev1.Capabilities{Drop: []corev1.Capability{"ALL"}},
 		},
 		LivenessProbe: &corev1.Probe{
-			HTTPGet:                       &corev1.HTTPGetAction{Scheme: corev1.URISchemeHTTP, Path: "/", Port: intstr.FromInt32(healthCheckPort)},
+			HTTPGet:                       probeGet,
 			InitialDelaySeconds:           15,
 			PeriodSeconds:                 20,
 			TimeoutSeconds:                currentLivenessProbe.TimeoutSeconds,
@@ -276,7 +289,7 @@ func buildContainer(s *reconcileScope, current corev1.Container) corev1.Containe
 			TerminationGracePeriodSeconds: currentLivenessProbe.TerminationGracePeriodSeconds,
 		},
 		ReadinessProbe: &corev1.Probe{
-			HTTPGet:                       &corev1.HTTPGetAction{Scheme: corev1.URISchemeHTTP, Path: "/", Port: intstr.FromInt32(healthCheckPort)},
+			HTTPGet:                       probeGet,
 			InitialDelaySeconds:           5,
 			PeriodSeconds:                 10,
 			TimeoutSeconds:                currentReadinessProbe.TimeoutSeconds,
@@ -295,7 +308,7 @@ func buildArgs(s *reconcileScope) []string {
 	userArgs := s.Spec.SanitizedArgs()
 
 	args := make([]string, 0, 1+len(userArgs))
-	args = append(args, "--config="+configMountDir+"/"+scraperConfigFile)
+	args = append(args, "--config="+filepath.Join(prometheusmonitoring.ConfigMountDir, scraperConfigFile))
 
 	return append(args, userArgs...)
 }
@@ -327,7 +340,7 @@ func buildVolumes(s *reconcileScope) []corev1.Volume {
 
 	return []corev1.Volume{
 		{
-			Name: configVolumeName,
+			Name: prometheusmonitoring.ConfigVolumeName,
 			ConfigMap: &corev1.ConfigMapVolumeSource{
 				Name:        s.Spec.GetDeploymentName(),
 				Items:       []corev1.KeyToPath{{Key: scraperConfigKey, Path: scraperConfigFile}},
@@ -339,6 +352,6 @@ func buildVolumes(s *reconcileScope) []corev1.Volume {
 
 func buildVolumeMounts() []corev1.VolumeMount {
 	return []corev1.VolumeMount{
-		{Name: configVolumeName, MountPath: configMountDir, ReadOnly: true},
+		{Name: prometheusmonitoring.ConfigVolumeName, MountPath: prometheusmonitoring.ConfigMountDir, ReadOnly: true},
 	}
 }

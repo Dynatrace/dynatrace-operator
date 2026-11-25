@@ -74,7 +74,7 @@ var (
 		invalidOneAgentResourceAttributesSanitization,
 		invalidOTLPResourceAttributesSanitization,
 		publicRegistryOverrideWithoutPublicRegistry,
-		invalidNetworkZone,
+		fallbackModeWithDefaultNetworkZone,
 		invalidOneAgentHostGroup,
 		invalidNoProxy,
 		publicRegistryNotAllowedForClassic,

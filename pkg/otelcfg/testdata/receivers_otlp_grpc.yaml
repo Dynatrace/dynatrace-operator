@@ -1,0 +1,10 @@
+exporters: {}
+extensions: {}
+processors: {}
+receivers:
+    otlp:
+        protocols:
+            grpc:
+                endpoint: ${env:MY_POD_IP}:4317
+service:
+    pipelines: {}

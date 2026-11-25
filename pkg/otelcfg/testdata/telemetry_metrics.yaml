@@ -1,0 +1,16 @@
+exporters: {}
+extensions: {}
+processors: {}
+receivers: {}
+service:
+  pipelines: {}
+  telemetry:
+    metrics:
+      level: Normal
+      readers:
+        - periodic:
+            exporter:
+              otlp:
+                endpoint: test
+                protocol: http/protobuf
+                temporality_preference: delta

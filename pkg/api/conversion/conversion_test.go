@@ -72,3 +72,29 @@ func TestRemovedFieldsMutability(t *testing.T) {
 
 	assert.Equal(t, "false", value)
 }
+
+func TestAddedFields(t *testing.T) {
+	annotations := map[string]string{}
+	af := NewAddedFields(annotations)
+
+	assert.Nil(t, af.NetworkZoneFallbackMode.Get())
+
+	af.NetworkZoneFallbackMode.Set(new("none"))
+	require.NotNil(t, af.NetworkZoneFallbackMode.Get())
+	assert.Equal(t, "none", *af.NetworkZoneFallbackMode.Get())
+
+	af.Cleanup()
+	assert.Empty(t, annotations)
+}
+
+func TestRemovedFieldsCleanup(t *testing.T) {
+	annotations := map[string]string{"other": "annotation"}
+	rf := NewRemovedFields(annotations)
+
+	rf.AutoUpdate.Set(new(true))
+	rf.DefaultOTelColImage.Set(new(true))
+
+	rf.Cleanup()
+
+	assert.Equal(t, map[string]string{"other": "annotation"}, annotations)
+}

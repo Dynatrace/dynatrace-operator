@@ -14,6 +14,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/prometheusmonitoring"
 	dtimage "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
@@ -425,7 +426,7 @@ func TestBuildVolumes(t *testing.T) {
 
 		require.Len(t, volumes, 2)
 		tokenVolume := volumes[1]
-		assert.Equal(t, tokenVolumeName, tokenVolume.Name)
+		assert.Equal(t, prometheusmonitoring.TokenVolumeName, tokenVolume.Name)
 		require.NotNil(t, tokenVolume.Projected)
 		assert.Equal(t, int32(288), *tokenVolume.Projected.DefaultMode)
 		assert.Equal(t, testName, tokenVolume.Projected.Sources[0].Secret.Name)
@@ -435,7 +436,7 @@ func TestBuildVolumes(t *testing.T) {
 			assert.Empty(t, m.SubPath, m.Name)
 		}
 
-		assert.Contains(t, mounts, corev1.VolumeMount{Name: tokenVolumeName, MountPath: tokenMountPath, ReadOnly: true})
+		assert.Contains(t, mounts, corev1.VolumeMount{Name: prometheusmonitoring.TokenVolumeName, MountPath: prometheusmonitoring.TokenMountPath, ReadOnly: true})
 	})
 
 	t.Run("trusted CAs and user volumes are added", func(t *testing.T) {
@@ -451,7 +452,7 @@ func TestBuildVolumes(t *testing.T) {
 		mounts := buildVolumeMounts(s)
 
 		require.Len(t, volumes, 4)
-		assert.Equal(t, cacertsVolumeName, volumes[2].Name)
+		assert.Equal(t, prometheusmonitoring.CACertsVolumeName, volumes[2].Name)
 		assert.Equal(t, userVolume, volumes[3])
 		assert.Contains(t, mounts, userMount)
 	})

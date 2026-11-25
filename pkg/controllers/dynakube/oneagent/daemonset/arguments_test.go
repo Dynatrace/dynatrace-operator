@@ -68,7 +68,6 @@ func TestArguments(t *testing.T) {
 			},
 		}
 		podSpecs, _ := dsBuilder.podSpec(t.Context())
-		assert.NotNil(t, podSpecs)
 		assert.NotEmpty(t, podSpecs.Containers)
 		assert.Contains(t, podSpecs.Containers[0].Args, testValue)
 	})
@@ -373,7 +372,6 @@ func TestPodSpec_Arguments(t *testing.T) {
 
 	dk.Annotations = map[string]string{}
 	podSpecs, _ := dsBuilder.podSpec(t.Context())
-	require.NotNil(t, podSpecs)
 	require.NotEmpty(t, podSpecs.Containers)
 
 	for _, arg := range hostInjectSpecs.Args {

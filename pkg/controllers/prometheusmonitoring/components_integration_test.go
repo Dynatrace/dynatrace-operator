@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -16,6 +17,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/prometheusmonitoring/gateway"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/prometheusmonitoring/scraper"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/prometheusmonitoring/targetallocator"
 	"github.com/Dynatrace/dynatrace-operator/test/integrationtests"
 	imagemock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace/image"
 	"github.com/stretchr/testify/assert"
@@ -25,8 +29,10 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/yaml"
 )
 
 // Integration tests for the top-level PrometheusMonitoring reconciler against a real API server.
@@ -63,7 +69,9 @@ func TestReconcileOrchestration(t *testing.T) {
 	t.Run("every component is deployed", func(t *testing.T) { testComponentsDeployed(t, clt) })
 	t.Run("status", func(t *testing.T) { testStatus(t, clt) })
 	t.Run("preconditions", func(t *testing.T) { testPreconditions(t, clt) })
+	t.Run("dynakube phase is ignored", func(t *testing.T) { testDynaKubePhaseIsIgnored(t, clt) })
 	t.Run("stops at the first failing component", func(t *testing.T) { testStopsAtFirstError(t, clt) })
+	t.Run("multiple monitorings", func(t *testing.T) { testMultiplePrometheusMonitorings(t, clt) })
 }
 
 // All objects of a component share the component's name.
@@ -128,8 +136,9 @@ func testStatus(t *testing.T, clt client.Client) {
 		assert.Equal(t, testTargetAllocatorImage, stored.Status.TargetAllocator.ResolvedImage)
 	})
 
-	t.Run("one availability condition per component", func(t *testing.T) {
+	t.Run("one availability condition per component plus the prerequisites", func(t *testing.T) {
 		wantTypes := []string{
+			prometheusmonitoring.PrerequisitesMet,
 			prometheusmonitoring.GatewayAvailable,
 			prometheusmonitoring.ScraperAvailable,
 			prometheusmonitoring.TargetAllocatorAvailable,
@@ -156,21 +165,20 @@ func testPreconditions(t *testing.T, clt client.Client) {
 		phase     status.DeploymentPhase
 	}{
 		{
-			// errDynaKubeNotFound is swallowed by setPhase: it is an expected transient state while
-			// the DynaKube is still being created.
+			// A missing DynaKube is reported through the PrerequisitesMet condition and requeued.
 			name:      "missing DynaKube",
 			namespace: "err-no-dynakube",
 			prepare:   func(t *testing.T, f *fixture) { require.NoError(t, clt.Delete(t.Context(), f.dk)) },
-			phase:     status.Deploying,
+			phase:     status.Error,
 		},
 		{
-			name:      "DynaKube not running",
-			namespace: "err-dynakube-pending",
+			name:      "tenant URL missing",
+			namespace: "err-no-api-url",
 			prepare: func(t *testing.T, f *fixture) {
-				f.dk.Status.Phase = status.Deploying
-				require.NoError(t, f.dk.UpdateStatus(t.Context(), clt))
+				f.dk.Spec.APIURL = ""
+				require.NoError(t, clt.Update(t.Context(), f.dk))
 			},
-			phase: status.Deploying,
+			phase: status.Error,
 		},
 		{
 			name:      "token secret missing",
@@ -203,6 +211,24 @@ func testPreconditions(t *testing.T, clt client.Client) {
 	}
 }
 
+// testDynaKubePhaseIsIgnored asserts that the components are deployed while the DynaKube is not Running,
+// as long as it provides the tenant URL and the token secret.
+func testDynaKubePhaseIsIgnored(t *testing.T, clt client.Client) {
+	for _, phase := range []status.DeploymentPhase{status.Deploying, status.Error} {
+		t.Run(string(phase), func(t *testing.T) {
+			f := newFixture(t, clt, "dk-phase-"+strings.ToLower(string(phase)))
+			f.dk.Status.Phase = phase
+			require.NoError(t, f.dk.UpdateStatus(t.Context(), clt))
+
+			require.NoError(t, f.reconcile(t))
+
+			for _, obj := range allManagedObjects(f.pm) {
+				f.assertIsManaged(t, obj)
+			}
+		})
+	}
+}
+
 // testStopsAtFirstError pins the order the components are reconciled in and that the loop breaks on
 // the first error. The gateway runs before the target allocator and the scraper runs after it, so a
 // fleet management API that knows no target allocator image leaves a deployed gateway and no
@@ -223,6 +249,158 @@ func testStopsAtFirstError(t *testing.T, clt client.Client) {
 	assert.Equal(t, status.Error, f.getStoredPrometheusMonitoring(t).Status.Phase)
 }
 
+func testMultiplePrometheusMonitorings(t *testing.T, clt client.Client) {
+	const (
+		dynaKubeName = "dk"
+		image        = "registry.example.com/component:1.2.3"
+	)
+
+	dk := &dynakube.DynaKube{
+		Name: dynaKubeName, Namespace: metav1.NamespaceDefault,
+		Spec: dynakube.DynaKubeSpec{CustomPullSecret: "custom-pull-secret"},
+	}
+
+	newPM := func(name string) *prometheusmonitoring.PrometheusMonitoring {
+		pm := &prometheusmonitoring.PrometheusMonitoring{
+			Name: name, Namespace: metav1.NamespaceDefault,
+			Spec: prometheusmonitoring.PrometheusMonitoringSpec{DynaKubeName: dynaKubeName},
+		}
+		pm.Spec.Gateway.Image = image
+		pm.Spec.Scraper.Image = image
+		pm.Spec.TargetAllocator.Image = image
+		pm.Spec.TargetAllocator.CustomResourceSelector = &metav1.LabelSelector{
+			MatchLabels: map[string]string{"pm": name},
+		}
+
+		integrationtests.CreateKubernetesObject(t, clt, pm)
+
+		return pm
+	}
+
+	pms := []*prometheusmonitoring.PrometheusMonitoring{newPM("pm-one"), newPM("pm-two")}
+
+	for _, pm := range pms {
+		require.NoError(t, (&gateway.Reconciler{Client: clt}).Reconcile(t.Context(), pm, dk, nil))
+		require.NoError(t, (&targetallocator.Reconciler{Client: clt}).Reconcile(t.Context(), pm, dk, nil))
+		require.NoError(t, (&scraper.Reconciler{Client: clt}).Reconcile(t.Context(), pm, dk, nil))
+	}
+
+	assertDistinctResourceNames(t, pms)
+	assertServicesSelectOwnPods(t, clt, pms)
+	assertAllocatorSelectors(t, clt, pms)
+}
+
+func assertDistinctResourceNames(t *testing.T, pms []*prometheusmonitoring.PrometheusMonitoring) {
+	t.Helper()
+
+	seen := map[string]string{}
+
+	for _, pm := range pms {
+		for kind, name := range map[string]string{
+			"gateway":         pm.Gateway().GetStatefulSetName(),
+			"scraper":         pm.Scraper().GetDeploymentName(),
+			"targetallocator": pm.TargetAllocator().GetDeploymentName(),
+		} {
+			key := kind + "/" + name
+			assert.NotContains(t, seen, key)
+			seen[key] = pm.Name
+		}
+	}
+}
+
+// collectPodLabels returns the pod template labels of every workload, grouped by owning PrometheusMonitoring.
+func collectPodLabels(t *testing.T, clt client.Client, pms []*prometheusmonitoring.PrometheusMonitoring) map[string][]map[string]string {
+	t.Helper()
+
+	podLabels := map[string][]map[string]string{}
+
+	for _, pm := range pms {
+		sts := &appsv1.StatefulSet{}
+		require.NoError(t, clt.Get(t.Context(), client.ObjectKey{Name: pm.Gateway().GetStatefulSetName(), Namespace: metav1.NamespaceDefault}, sts))
+
+		scraperDeploy := &appsv1.Deployment{}
+		require.NoError(t, clt.Get(t.Context(), client.ObjectKey{Name: pm.Scraper().GetDeploymentName(), Namespace: metav1.NamespaceDefault}, scraperDeploy))
+
+		allocatorDeploy := &appsv1.Deployment{}
+		require.NoError(t, clt.Get(t.Context(), client.ObjectKey{Name: pm.TargetAllocator().GetDeploymentName(), Namespace: metav1.NamespaceDefault}, allocatorDeploy))
+
+		podLabels[pm.Name] = []map[string]string{sts.Spec.Template.Labels, scraperDeploy.Spec.Template.Labels, allocatorDeploy.Spec.Template.Labels}
+	}
+
+	return podLabels
+}
+
+func assertServicesSelectOwnPods(t *testing.T, clt client.Client, pms []*prometheusmonitoring.PrometheusMonitoring) {
+	t.Helper()
+
+	podLabels := collectPodLabels(t, clt, pms)
+
+	services := map[string]*prometheusmonitoring.PrometheusMonitoring{}
+
+	for _, pm := range pms {
+		services[pm.Gateway().GetStatefulSetName()] = pm
+		services[pm.TargetAllocator().GetDeploymentName()] = pm
+	}
+
+	for name, owner := range services {
+		svc := &corev1.Service{}
+		require.NoError(t, clt.Get(t.Context(), client.ObjectKey{Name: name, Namespace: metav1.NamespaceDefault}, svc))
+		require.NotEmpty(t, svc.Spec.Selector)
+
+		selector := labels.SelectorFromSet(svc.Spec.Selector)
+
+		matched := 0
+
+		for pmName, pods := range podLabels {
+			for _, l := range pods {
+				if !selector.Matches(labels.Set(l)) {
+					continue
+				}
+
+				assert.Equal(t, owner.Name, pmName, "service %s selects a pod of another PrometheusMonitoring", name)
+
+				matched++
+			}
+		}
+
+		assert.Equal(t, 1, matched, "service %s must select exactly one workload", name)
+	}
+}
+
+func assertAllocatorSelectors(t *testing.T, clt client.Client, pms []*prometheusmonitoring.PrometheusMonitoring) {
+	t.Helper()
+
+	for _, pm := range pms {
+		cm := &corev1.ConfigMap{}
+		require.NoError(t, clt.Get(t.Context(), client.ObjectKey{Name: pm.TargetAllocator().GetDeploymentName(), Namespace: metav1.NamespaceDefault}, cm))
+
+		var cfg targetallocator.Config
+		require.NoError(t, yaml.Unmarshal([]byte(cm.Data["targetallocator.yaml"]), &cfg))
+
+		assert.Equal(t, pm.Spec.TargetAllocator.CustomResourceSelector, cfg.PrometheusCR.PodMonitorSelector)
+		assert.Equal(t, map[string]string{"pm": pm.Name}, cfg.PrometheusCR.PodMonitorSelector.MatchLabels)
+
+		// The collector selector must match the pods of the own scraper only.
+		scraperDeploy := &appsv1.Deployment{}
+		require.NoError(t, clt.Get(t.Context(), client.ObjectKey{Name: pm.Scraper().GetDeploymentName(), Namespace: metav1.NamespaceDefault}, scraperDeploy))
+
+		collectorSelector, err := metav1.LabelSelectorAsSelector(cfg.CollectorSelector)
+		require.NoError(t, err)
+		assert.True(t, collectorSelector.Matches(labels.Set(scraperDeploy.Spec.Template.Labels)))
+
+		for _, other := range pms {
+			if other.Name == pm.Name {
+				continue
+			}
+
+			otherScraper := &appsv1.Deployment{}
+			require.NoError(t, clt.Get(t.Context(), client.ObjectKey{Name: other.Scraper().GetDeploymentName(), Namespace: metav1.NamespaceDefault}, otherScraper))
+			assert.False(t, collectorSelector.Matches(labels.Set(otherScraper.Spec.Template.Labels)),
+				"allocator of %s selects the scraper of %s", pm.Name, other.Name)
+		}
+	}
+}
+
 // fixture is one fully provisioned PrometheusMonitoring scenario in its own namespace.
 type fixture struct {
 	clt client.Client
@@ -232,7 +410,7 @@ type fixture struct {
 	ns  string
 }
 
-// newFixture creates a namespace, a token Secret, a Running DynaKube and a default
+// newFixture creates a namespace, a token Secret, a DynaKube and a default
 // PrometheusMonitoring, plus a Reconciler whose Dynatrace client factory is stubbed out. No token
 // beyond the two the reconcile reads, and no image in the spec: the images are resolved from the
 // stubbed fleet management API, the way they are for a user who sets none.
@@ -255,7 +433,7 @@ func newFixture(t *testing.T, clt client.Client, name string) *fixture {
 		Name:      testDynaKubeName,
 		Namespace: ns,
 		Spec:      dynakube.DynaKubeSpec{APIURL: testAPIURL},
-		Status:    dynakube.DynaKubeStatus{Phase: status.Running, KubernetesClusterName: testClusterName},
+		Status:    dynakube.DynaKubeStatus{KubernetesClusterName: testClusterName},
 	}
 	integrationtests.CreateDynakube(t, clt, dk)
 

@@ -27,6 +27,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/k8sentity"
 	kubemonconnectioninfo "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/kubemon/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
+	operatortls "github.com/Dynatrace/dynatrace-operator/pkg/controllers/tls"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dttoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
@@ -121,10 +122,9 @@ func TestMinimalRequest(t *testing.T) {
 			client:    fake.NewClient(),
 			apiReader: fake.NewClient(createCRD(t)),
 		}
-		result, err := controller.Reconcile(t.Context(), reconcile.Request{})
+		_, err := controller.Reconcile(t.Context(), reconcile.Request{})
 
 		require.NoError(t, err)
-		assert.NotNil(t, result)
 	})
 
 	t.Run("reconcile fails with faulty client", func(t *testing.T) {
@@ -133,10 +133,9 @@ func TestMinimalRequest(t *testing.T) {
 			apiReader: errorClient{},
 		}
 
-		result, err := controller.Reconcile(t.Context(), reconcile.Request{})
+		_, err := controller.Reconcile(t.Context(), reconcile.Request{})
 
 		require.Error(t, err)
-		assert.NotNil(t, result)
 	})
 }
 
@@ -627,9 +626,8 @@ func TestReconcileDynaKube(t *testing.T) {
 	t.Run("reconcile the controller and its sub controllers", func(t *testing.T) {
 		controller := baseController
 
-		result, err := controller.Reconcile(ctx, request)
+		_, err := controller.Reconcile(ctx, request)
 		require.NoError(t, err)
-		assert.NotNil(t, result)
 	})
 
 	t.Run("reconcile the controller with istio enabled", func(t *testing.T) {
@@ -643,9 +641,47 @@ func TestReconcileDynaKube(t *testing.T) {
 		controller.client = fakeClient
 		controller.apiReader = fakeClient
 
-		result, err := controller.Reconcile(ctx, request)
+		_, err := controller.Reconcile(ctx, request)
 		require.NoError(t, err)
-		assert.NotNil(t, result)
+	})
+
+	t.Run("failing operator root CA reconcile stops before the components", func(t *testing.T) {
+		tokenClient := tokenclientmock.NewClient(t)
+		tokenClient.EXPECT().GetScopes(anyCtx, testAPIToken).Return([]string{
+			tokenclient.ScopeDataExport,
+			tokenclient.ScopeSettingsRead,
+			tokenclient.ScopeSettingsWrite,
+			tokenclient.ScopeInstallerDownload,
+			tokenclient.ScopeActiveGateTokenCreate,
+		}, nil)
+
+		failingDTClient := &dynatrace.Client{
+			Images:   image.NewClient(nil),
+			Settings: settings.NewClient(nil),
+			Token:    tokenClient,
+		}
+
+		metadataReconciler := newMockDynakubeReconciler(t)
+		metadataReconciler.EXPECT().Reconcile(anyCtx, anyDynaKube).Return(nil)
+
+		proxyReconciler := newMockDynakubeReconciler(t)
+		proxyReconciler.EXPECT().Reconcile(anyCtx, anyDynaKube).Return(nil)
+
+		istioReconciler := newMockIstioReconciler(t)
+		istioReconciler.EXPECT().ReconcileAPIURL(anyCtx, anyDynaKube).Return(nil)
+
+		// component reconcilers are intentionally left nil, calling any of them would panic
+		controller := &Controller{
+			apiReader:                    fakeClient,
+			client:                       caErrorClient{Client: fakeClient},
+			deploymentMetadataReconciler: metadataReconciler,
+			dtClientFactory:              newClientFactory(failingDTClient),
+			istioReconciler:              istioReconciler,
+			proxyReconciler:              proxyReconciler,
+		}
+
+		_, err := controller.Reconcile(ctx, request)
+		require.Error(t, err)
 	})
 
 	t.Run("reconciling the controller with istio enabled (but without valid API URL) should fail", func(t *testing.T) {
@@ -658,9 +694,49 @@ func TestReconcileDynaKube(t *testing.T) {
 		controller.client = fakeClient
 		controller.apiReader = fakeClient
 
-		result, err := controller.Reconcile(ctx, request)
+		_, err := controller.Reconcile(ctx, request)
 		require.Error(t, err)
-		assert.NotNil(t, result)
+	})
+}
+
+// caErrorClient fails reading the operator root CA Secret, everything else works
+type caErrorClient struct {
+	client.Client
+}
+
+func (clt caErrorClient) Get(ctx context.Context, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
+	if key.Name == operatortls.CASecretName {
+		return errors.New("tls ca failure")
+	}
+
+	return clt.Client.Get(ctx, key, obj, opts...)
+}
+
+func TestMapCAChange(t *testing.T) {
+	t.Run("all DynaKubes are reconciled", func(t *testing.T) {
+		controller := &Controller{client: fake.NewClient(
+			&dynakube.DynaKube{Name: "one", Namespace: testNamespace},
+			&dynakube.DynaKube{Name: "two", Namespace: testNamespace},
+		)}
+
+		requests := controller.mapCAChange(t.Context(), nil)
+
+		assert.ElementsMatch(t, []reconcile.Request{
+			{Name: "one", Namespace: testNamespace},
+			{Name: "two", Namespace: testNamespace},
+		}, requests)
+	})
+
+	t.Run("no DynaKubes, no requests", func(t *testing.T) {
+		controller := &Controller{client: fake.NewClient()}
+
+		assert.Empty(t, controller.mapCAChange(t.Context(), nil))
+	})
+
+	t.Run("list error, no requests", func(t *testing.T) {
+		controller := &Controller{client: errorClient{Client: fake.NewClient()}}
+
+		assert.Empty(t, controller.mapCAChange(t.Context(), nil))
 	})
 }
 

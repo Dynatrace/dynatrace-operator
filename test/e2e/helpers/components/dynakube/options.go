@@ -20,7 +20,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/otlp"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
-	"github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
+	"github.com/Dynatrace/dynatrace-operator/pkg/otelcfg"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/features/consts"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/components/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/registry"
@@ -419,7 +419,7 @@ func WithKubernetesMonitoringRegistration() Option {
 	}
 }
 
-func WithTelemetryIngestEnabled(enabled bool, protocols ...otelcgen.Protocol) Option {
+func WithTelemetryIngestEnabled(enabled bool, protocols ...otelcfg.Protocol) Option {
 	return func(dk *dynakube.DynaKube) {
 		if enabled {
 			dk.Spec.TelemetryIngest = &telemetryingest.Spec{}

@@ -3,7 +3,7 @@
 
 package telemetryingest
 
-import "github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
+import "github.com/Dynatrace/dynatrace-operator/pkg/otelcfg"
 
 // +kubebuilder:object:generate=true
 
@@ -15,5 +15,5 @@ type Spec struct {
 	TLSRefName string `json:"tlsRefName,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	Protocols []otelcgen.Protocol `json:"protocols,omitempty"`
+	Protocols []otelcfg.Protocol `json:"protocols,omitempty"`
 }

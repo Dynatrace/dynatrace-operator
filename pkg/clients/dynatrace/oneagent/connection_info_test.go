@@ -62,7 +62,6 @@ func Test_GetConnectionInfo(t *testing.T) {
 		oaClient := setupMockedClient(t, map[string]string{}, "", response, nil)
 		connectionInfo, err := oaClient.GetConnectionInfo(ctx, nil)
 		require.NoError(t, err)
-		assert.NotNil(t, connectionInfo)
 
 		assert.Equal(t, expectedResponse, connectionInfo)
 	})
@@ -75,7 +74,6 @@ func Test_GetConnectionInfo(t *testing.T) {
 		oaClient := setupMockedClient(t, params, testNetworkZone, response, nil)
 		connectionInfo, err := oaClient.GetConnectionInfo(ctx, nil)
 		require.NoError(t, err)
-		assert.NotNil(t, connectionInfo)
 
 		assert.Equal(t, expectedResponse, connectionInfo)
 	})

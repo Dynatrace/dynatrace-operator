@@ -1,0 +1,18 @@
+exporters:
+  otlp_http:
+    endpoint: "test"
+    tls:
+      ca_file: "/run/opensignals/cacerts/certs"
+      include_system_ca_certs_pool: false
+    auth:
+      authenticator: bearertokenauth
+    sending_queue:
+      batch:
+        flush_timeout: 10s
+        max_size: 5000
+        min_size: 500
+extensions: {}
+processors: {}
+receivers: {}
+service:
+  pipelines: {}

@@ -5,7 +5,7 @@ package statefulset
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
+	"github.com/Dynatrace/dynatrace-operator/pkg/otelcfg"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -35,7 +35,7 @@ func buildLivenessProbe() *corev1.Probe {
 	return &corev1.Probe{
 		HTTPGet: &corev1.HTTPGetAction{
 			Path: "/",
-			Port: intstr.FromInt32(otelcgen.ExtensionsHealthCheckPort),
+			Port: intstr.FromInt32(otelcfg.ExtensionsHealthCheckPort),
 		},
 		InitialDelaySeconds: 10,
 		PeriodSeconds:       30,
@@ -49,7 +49,7 @@ func buildReadinessProbe() *corev1.Probe {
 	return &corev1.Probe{
 		HTTPGet: &corev1.HTTPGetAction{
 			Path: "/",
-			Port: intstr.FromInt32(otelcgen.ExtensionsHealthCheckPort),
+			Port: intstr.FromInt32(otelcfg.ExtensionsHealthCheckPort),
 		},
 		InitialDelaySeconds: 5,
 		PeriodSeconds:       10,

@@ -12,7 +12,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	csivolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/server/volumes"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/mount-utils"
@@ -49,12 +48,12 @@ func TestPublishVolume(t *testing.T) {
 		volumeCfg := getTestVolumeConfig(t)
 		require.NoError(t, os.MkdirAll(path.AppMountRetryTrackerForID(volumeCfg.VolumeID), os.ModePerm))
 
-		pastTime := timeprovider.New()
-		pastTime.Set(time.Now().Add(2 * volumeCfg.RetryTimeout))
+		past := time.Now().Add(-2 * volumeCfg.RetryTimeout)
+		require.NoError(t, os.Chtimes(path.AppMountRetryTrackerForID(volumeCfg.VolumeID), past, past))
+
 		pub := Publisher{
 			mounter: mounter,
 			path:    path,
-			time:    pastTime,
 		}
 
 		resp, err := pub.PublishVolume(ctx, &volumeCfg)
@@ -105,12 +104,12 @@ func TestPublishVolume(t *testing.T) {
 		volumeCfg := getTestVolumeConfig(t)
 		require.NoError(t, os.MkdirAll(path.AppMountRetryTrackerForID(volumeCfg.VolumeID), os.ModePerm))
 
-		pastTime := timeprovider.New()
-		pastTime.Set(time.Now().Add(2 * volumeCfg.RetryTimeout))
+		past := time.Now().Add(-2 * volumeCfg.RetryTimeout)
+		require.NoError(t, os.Chtimes(path.AppMountRetryTrackerForID(volumeCfg.VolumeID), past, past))
+
 		pub := Publisher{
 			mounter: mounter,
 			path:    path,
-			time:    pastTime,
 		}
 
 		// Binary present
@@ -192,6 +191,40 @@ func TestPublishVolume(t *testing.T) {
 		assert.Contains(t, overlayMount.Opts[2], workDir)    // workdir
 
 		require.NoDirExists(t, path.AppMountRetryTrackerForID(volumeCfg.VolumeID))
+	})
+}
+
+func TestAddPodInfoSymlink(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("creates symlink", func(t *testing.T) {
+		path := metadata.PathResolver{RootDir: t.TempDir()}
+		volumeCfg := getTestVolumeConfig(t)
+		pub := Publisher{path: path}
+
+		require.NoError(t, pub.addPodInfoSymlink(ctx, &volumeCfg))
+
+		podInfoDir := path.AppMountPodInfoDir(volumeCfg.DynakubeName, volumeCfg.PodNamespace, volumeCfg.PodName)
+		target, err := os.Readlink(podInfoDir)
+		require.NoError(t, err)
+		assert.Equal(t, path.AppMountForID(volumeCfg.VolumeID), target)
+	})
+
+	t.Run("replaces existing symlink (static pod name, e.g. StatefulSet)", func(t *testing.T) {
+		path := metadata.PathResolver{RootDir: t.TempDir()}
+		volumeCfg := getTestVolumeConfig(t)
+		pub := Publisher{path: path}
+
+		require.NoError(t, pub.addPodInfoSymlink(ctx, &volumeCfg))
+
+		// same pod name, new volume
+		volumeCfg.VolumeID += "-new"
+		require.NoError(t, pub.addPodInfoSymlink(ctx, &volumeCfg))
+
+		podInfoDir := path.AppMountPodInfoDir(volumeCfg.DynakubeName, volumeCfg.PodNamespace, volumeCfg.PodName)
+		target, err := os.Readlink(podInfoDir)
+		require.NoError(t, err)
+		assert.Equal(t, path.AppMountForID(volumeCfg.VolumeID), target)
 	})
 }
 

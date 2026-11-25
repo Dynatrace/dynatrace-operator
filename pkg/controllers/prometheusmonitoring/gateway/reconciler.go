@@ -16,12 +16,11 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/prometheusmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
-	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/prometheusmonitoring/condition"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
+	"github.com/Dynatrace/dynatrace-operator/pkg/otelcfg"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8scontainer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8senv"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
@@ -29,6 +28,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/objects/k8sstatefulset"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
@@ -42,29 +42,20 @@ const (
 	gatewayConfigKey     = "relay"
 	configHashAnnotation = "internal.operator.dynatrace.com/gateway-config-hash"
 
-	trustedCAVolumeMountPath = "/tls/custom/cacerts"
-	trustedCAFile            = "rootca.pem"
+	trustedCAFile = "rootca.pem"
 
 	otlpPortName = "otlp"
-	otlpPort     = 4317
-
-	healthCheckPort = 13133
 
 	serviceAccountName = "dynatrace-prometheus-gateway"
 
 	// otelCollectorNonRootUser is the "nonroot" UID/GID the gateway image runs as.
 	otelCollectorNonRootUser = 10001
 
-	configVolumeName  = "opentelemetry-collector-configmap"
-	configMountDir    = "/conf"
-	relayConfigFile   = "relay.yaml"
-	cacertsVolumeName = "cacerts"
+	relayConfigFile = "relay.yaml"
 
 	// Mounted as a directory, not subPath: subPath mounts don't receive live Secret
 	// updates, which would break token rotation.
-	tokenVolumeName = "dt-token"
-	tokenMountPath  = consts.DTComponentsSecretsRootDir + "/tokens"
-	tokenFileName   = "data-ingest-token"
+	tokenFileName = "data-ingest-token"
 )
 
 type Reconciler struct {
@@ -89,7 +80,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, pm *prometheusmonitoring.Pro
 		Owner:       pm,
 		DynaKube:    dk,
 		Spec:        pm.Gateway(),
-		AppLabels:   k8slabel.New("opentelemetry-gateway", "otel-gateway", ""),
+		AppLabels:   k8slabel.New(k8slabel.OTelGatewayAppName, pm.Name, ""),
 		ImageClient: imageClient,
 	}
 
@@ -149,6 +140,9 @@ type gatewayConfigData struct {
 	Endpoint           string
 	CustomCAPath       string
 	ResourceAttributes map[string]string
+
+	// SelfMonitoringEndpoint is the OTLP/HTTP base URL the collector exports its own metrics to. Empty disables it.
+	SelfMonitoringEndpoint string
 }
 
 // buildGatewayConfigData resolves the DynaKube-derived inputs to the relay.yaml template.
@@ -158,15 +152,21 @@ func buildGatewayConfigData(dk *dynakube.DynaKube) gatewayConfigData {
 		ResourceAttributes: dk.GetResourceAttributes(),
 	}
 
+	if dk.IsSelfMonitoringEnabled() {
+		data.SelfMonitoringEndpoint = dk.SelfMonitoringOTLPEndpoint()
+	}
+
 	if dk.Spec.TrustedCAs != "" {
-		data.CustomCAPath = filepath.Join(trustedCAVolumeMountPath, trustedCAFile)
+		data.CustomCAPath = filepath.Join(prometheusmonitoring.TrustedCAMountPath, trustedCAFile)
 	}
 
 	return data
 }
 
 func renderGatewayConfig(data gatewayConfigData) (string, error) {
-	b, err := buildGatewayOTelConfig(data).Marshal()
+	cfg := buildConfig(data)
+
+	b, err := cfg.Marshal()
 
 	return string(b), err
 }
@@ -179,7 +179,9 @@ func (r *Reconciler) reconcileStatefulset(ctx context.Context, s *reconcileScope
 	sts := &appsv1.StatefulSet{Name: s.Spec.GetStatefulSetName(), Namespace: s.Owner.Namespace}
 
 	err := k8sobject.RetryCreateOrUpdate(ctx, r, sts, func() error {
-		mutateStatefulSet(sts, s)
+		if err := mutateStatefulSet(sts, s); err != nil {
+			return err
+		}
 
 		return controllerutil.SetControllerReference(s.Owner, sts, r.Scheme())
 	})
@@ -192,7 +194,7 @@ func (r *Reconciler) reconcileStatefulset(ctx context.Context, s *reconcileScope
 	return nil
 }
 
-func mutateStatefulSet(sts *appsv1.StatefulSet, s *reconcileScope) {
+func mutateStatefulSet(sts *appsv1.StatefulSet, s *reconcileScope) error {
 	s.AppLabels.MergeInto(sts)
 
 	if sts.Spec.Template.Labels == nil {
@@ -221,7 +223,12 @@ func mutateStatefulSet(sts *appsv1.StatefulSet, s *reconcileScope) {
 
 	sts.Spec.PodManagementPolicy = appsv1.ParallelPodManagement
 
-	sts.Spec.Selector = &metav1.LabelSelector{MatchLabels: s.AppLabels.AsSelector()}
+	selector := &metav1.LabelSelector{MatchLabels: s.AppLabels.AsSelector()}
+	if sts.ResourceVersion != "" && !equality.Semantic.DeepEqual(sts.Spec.Selector, selector) {
+		return fmt.Errorf("statefulset selector changed: %w", k8sobject.ErrRecreate)
+	}
+
+	sts.Spec.Selector = selector
 	sts.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 	sts.Spec.Template.Spec.AutomountServiceAccountToken = new(true)
 	// fsGroup lets the container (RunAsGroup nonRootUser) read the token volume via the group
@@ -233,12 +240,14 @@ func mutateStatefulSet(sts *appsv1.StatefulSet, s *reconcileScope) {
 	sts.Spec.Template.Spec.Tolerations = s.Spec.Tolerations
 	sts.Spec.Template.Spec.TopologySpreadConstraints = s.Spec.TopologySpreadConstraints
 	sts.Spec.Template.Spec.ImagePullSecrets = s.DynaKube.CustomPullSecretReferences()
-	sts.Spec.Template.Spec.Volumes = buildVolumes(s)
+	sts.Spec.Template.Spec.Volumes = append(buildVolumes(s), s.Spec.Volumes.AsCoreV1()...)
 	// The stored container is passed in so buildContainer can preserve apiserver-defaulted
 	// fields (e.g. ImagePullPolicy, probe timeouts) and avoid spurious diffs.
 	sts.Spec.Template.Spec.Containers = []corev1.Container{
 		buildContainer(s, k8scontainer.GetFirstInPodSpec(&sts.Spec.Template.Spec)),
 	}
+
+	return nil
 }
 
 func buildContainer(s *reconcileScope, current corev1.Container) corev1.Container {
@@ -250,6 +259,8 @@ func buildContainer(s *reconcileScope, current corev1.Container) corev1.Containe
 		imagePullPolicy = current.ImagePullPolicy
 	}
 
+	probeGet := &corev1.HTTPGetAction{Scheme: corev1.URISchemeHTTP, Path: "/", Port: intstr.FromInt32(otelcfg.ExtensionsHealthCheckPort)}
+
 	return corev1.Container{
 		Name:            "gateway",
 		Image:           s.Owner.Status.Gateway.ResolvedImage,
@@ -257,10 +268,10 @@ func buildContainer(s *reconcileScope, current corev1.Container) corev1.Containe
 		Command:         []string{"/dynatrace-otel-collector"},
 		Args:            buildArgs(s),
 		Ports: []corev1.ContainerPort{
-			{Name: otlpPortName, ContainerPort: otlpPort, Protocol: corev1.ProtocolTCP},
+			{Name: otlpPortName, ContainerPort: otelcfg.OTLPReceiverGRPCPort, Protocol: corev1.ProtocolTCP},
 		},
-		Env:          buildEnv(s),
-		VolumeMounts: buildVolumeMounts(s),
+		Env:          append(buildEnv(s), s.Spec.Env...),
+		VolumeMounts: append(buildVolumeMounts(s), s.Spec.VolumeMounts...),
 		Resources:    s.Spec.Resources,
 		SecurityContext: &corev1.SecurityContext{
 			Privileged:               new(false),
@@ -273,7 +284,7 @@ func buildContainer(s *reconcileScope, current corev1.Container) corev1.Containe
 			Capabilities:             &corev1.Capabilities{Drop: []corev1.Capability{"ALL"}},
 		},
 		LivenessProbe: &corev1.Probe{
-			HTTPGet:                       &corev1.HTTPGetAction{Scheme: corev1.URISchemeHTTP, Path: "/", Port: intstr.FromInt32(healthCheckPort)},
+			HTTPGet:                       probeGet,
 			InitialDelaySeconds:           15,
 			PeriodSeconds:                 20,
 			TimeoutSeconds:                currentLivenessProbe.TimeoutSeconds,
@@ -282,7 +293,7 @@ func buildContainer(s *reconcileScope, current corev1.Container) corev1.Containe
 			TerminationGracePeriodSeconds: currentLivenessProbe.TerminationGracePeriodSeconds,
 		},
 		ReadinessProbe: &corev1.Probe{
-			HTTPGet:                       &corev1.HTTPGetAction{Scheme: corev1.URISchemeHTTP, Path: "/", Port: intstr.FromInt32(healthCheckPort)},
+			HTTPGet:                       probeGet,
 			InitialDelaySeconds:           5,
 			PeriodSeconds:                 10,
 			TimeoutSeconds:                currentReadinessProbe.TimeoutSeconds,
@@ -301,7 +312,7 @@ func buildArgs(s *reconcileScope) []string {
 	userArgs := s.Spec.SanitizedArgs()
 
 	args := make([]string, 0, 1+len(userArgs))
-	args = append(args, "--config="+configMountDir+"/"+relayConfigFile)
+	args = append(args, "--config="+filepath.Join(prometheusmonitoring.ConfigMountDir, relayConfigFile))
 
 	return append(args, userArgs...)
 }
@@ -350,11 +361,10 @@ func proxyEnv(name string, src *types.ValueSource) corev1.EnvVar {
 }
 
 func noProxyValue(dk *dynakube.DynaKube) string {
-	values := []string{"$(KUBERNETES_SERVICE_HOST)", "kubernetes.default"}
+	values := []string{"$(KUBERNETES_SERVICE_HOST)", "kubernetes.default"} //nolint:prealloc
 
-	if dk.ActiveGate().IsEnabled() {
-		values = append(values, capability.BuildServiceName(dk.Name)+"."+dk.Namespace)
-	}
+	noProxyHosts := dk.GetNoProxyHosts()
+	values = append(values, noProxyHosts...)
 
 	return strings.Join(values, ",")
 }
@@ -369,7 +379,7 @@ func buildVolumes(s *reconcileScope) []corev1.Volume {
 
 	volumes := []corev1.Volume{
 		{
-			Name: configVolumeName,
+			Name: prometheusmonitoring.ConfigVolumeName,
 			ConfigMap: &corev1.ConfigMapVolumeSource{
 				Name:        s.Spec.GetStatefulSetName(),
 				Items:       []corev1.KeyToPath{{Key: gatewayConfigKey, Path: relayConfigFile}},
@@ -377,7 +387,7 @@ func buildVolumes(s *reconcileScope) []corev1.Volume {
 			},
 		},
 		{
-			Name: tokenVolumeName,
+			Name: prometheusmonitoring.TokenVolumeName,
 			Projected: &corev1.ProjectedVolumeSource{
 				// Group-readable, not world-readable: the pod's fsGroup grants read access to
 				// the container without exposing the file to any other UID.
@@ -398,7 +408,7 @@ func buildVolumes(s *reconcileScope) []corev1.Volume {
 
 	if dk.Spec.TrustedCAs != "" {
 		volumes = append(volumes, corev1.Volume{
-			Name: cacertsVolumeName,
+			Name: prometheusmonitoring.CACertsVolumeName,
 			ConfigMap: &corev1.ConfigMapVolumeSource{
 				Name:        dk.Spec.TrustedCAs,
 				Items:       []corev1.KeyToPath{{Key: "certs", Path: trustedCAFile}},
@@ -414,12 +424,12 @@ func buildVolumeMounts(s *reconcileScope) []corev1.VolumeMount {
 	dk := s.DynaKube
 
 	mounts := []corev1.VolumeMount{
-		{Name: configVolumeName, MountPath: configMountDir, ReadOnly: true},
-		{Name: tokenVolumeName, MountPath: tokenMountPath, ReadOnly: true},
+		{Name: prometheusmonitoring.ConfigVolumeName, MountPath: prometheusmonitoring.ConfigMountDir, ReadOnly: true},
+		{Name: prometheusmonitoring.TokenVolumeName, MountPath: prometheusmonitoring.TokenMountPath, ReadOnly: true},
 	}
 
 	if dk.Spec.TrustedCAs != "" {
-		mounts = append(mounts, corev1.VolumeMount{Name: cacertsVolumeName, MountPath: trustedCAVolumeMountPath, ReadOnly: true})
+		mounts = append(mounts, corev1.VolumeMount{Name: prometheusmonitoring.CACertsVolumeName, MountPath: prometheusmonitoring.TrustedCAMountPath, ReadOnly: true})
 	}
 
 	return mounts
@@ -436,7 +446,7 @@ func (r *Reconciler) reconcileService(ctx context.Context, s *reconcileScope) er
 			{
 				Name:        otlpPortName,
 				Protocol:    corev1.ProtocolTCP,
-				Port:        otlpPort,
+				Port:        otelcfg.OTLPReceiverGRPCPort,
 				AppProtocol: new("grpc"),
 				TargetPort:  intstr.FromString(otlpPortName),
 			},

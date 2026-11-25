@@ -8,7 +8,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/telemetryingest"
-	"github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
+	"github.com/Dynatrace/dynatrace-operator/pkg/otelcfg"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8sconditions"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubernetes/fields/k8slabel"
 	"github.com/stretchr/testify/assert"
@@ -100,9 +100,9 @@ func TestService(t *testing.T) {
 	t.Run("create service for specified protocols", func(t *testing.T) {
 		mockK8sClient := fake.NewFakeClient()
 		dk := getTestDynakube(&telemetryingest.Spec{
-			Protocols: []otelcgen.Protocol{
-				otelcgen.ZipkinProtocol,
-				otelcgen.StatsdProtocol,
+			Protocols: []otelcfg.Protocol{
+				otelcfg.ZipkinProtocol,
+				otelcfg.StatsdProtocol,
 			},
 		})
 		err := NewReconciler(mockK8sClient, mockK8sClient).Reconcile(t.Context(), dk)

@@ -86,7 +86,6 @@ func TestReconciler_Reconcile(t *testing.T) {
 		err = fakeClient.Get(t.Context(), client.ObjectKey{Name: r.buildCustomPropertiesName(testName, testOwner), Namespace: testNamespace}, &customPropertiesSecret)
 
 		require.NoError(t, err)
-		assert.NotNil(t, customPropertiesSecret)
 		assert.NotEmpty(t, customPropertiesSecret.Data)
 		assert.Contains(t, customPropertiesSecret.Data, DataKey)
 
@@ -118,7 +117,6 @@ func TestReconciler_Reconcile(t *testing.T) {
 		err = fakeClient.Get(t.Context(), client.ObjectKey{Name: r.buildCustomPropertiesName(testName, testOwner), Namespace: testNamespace}, &customPropertiesSecret)
 
 		require.NoError(t, err)
-		assert.NotNil(t, customPropertiesSecret)
 		assert.NotEmpty(t, customPropertiesSecret.Data)
 		assert.Contains(t, customPropertiesSecret.Data, DataKey)
 		assert.Equal(t, []byte(testValue), customPropertiesSecret.Data[DataKey])
@@ -139,7 +137,6 @@ func TestReconciler_Reconcile(t *testing.T) {
 		err = fakeClient.Get(t.Context(), client.ObjectKey{Name: r.buildCustomPropertiesName(testName, testOwner), Namespace: testNamespace}, &customPropertiesSecret)
 
 		require.NoError(t, err)
-		assert.NotNil(t, customPropertiesSecret)
 		assert.NotEmpty(t, customPropertiesSecret.Data)
 		assert.Contains(t, customPropertiesSecret.Data, DataKey)
 		assert.Equal(t, customPropertiesSecret.Data[DataKey], []byte(testValue))
@@ -159,7 +156,6 @@ func TestReconciler_Reconcile(t *testing.T) {
 		err = fakeClient.Get(t.Context(), client.ObjectKey{Name: r.buildCustomPropertiesName(testName, testOwner), Namespace: testNamespace}, &customPropertiesSecret)
 
 		require.NoError(t, err)
-		assert.NotNil(t, customPropertiesSecret)
 		assert.NotEmpty(t, customPropertiesSecret.Data)
 		assert.Contains(t, customPropertiesSecret.Data, DataKey)
 		assert.Equal(t, customPropertiesSecret.Data[DataKey], []byte(testValue))
@@ -171,7 +167,6 @@ func TestReconciler_Reconcile(t *testing.T) {
 		err = fakeClient.Get(t.Context(), client.ObjectKey{Name: r.buildCustomPropertiesName(testName, testOwner), Namespace: testNamespace}, &customPropertiesSecret)
 
 		require.NoError(t, err)
-		assert.NotNil(t, customPropertiesSecret)
 		assert.NotEmpty(t, customPropertiesSecret.Data)
 		assert.Contains(t, customPropertiesSecret.Data, DataKey)
 		assert.Equal(t, customPropertiesSecret.Data[DataKey], []byte(testValue))
@@ -184,7 +179,6 @@ func TestReconciler_Reconcile(t *testing.T) {
 		err = fakeClient.Get(t.Context(), client.ObjectKey{Name: r.buildCustomPropertiesName(testName, testOwner), Namespace: testNamespace}, &customPropertiesSecret)
 
 		require.NoError(t, err)
-		assert.NotNil(t, customPropertiesSecret)
 		assert.NotEmpty(t, customPropertiesSecret.Data)
 		assert.Contains(t, customPropertiesSecret.Data, DataKey)
 		assert.Equal(t, customPropertiesSecret.Data[DataKey], []byte(testKey))

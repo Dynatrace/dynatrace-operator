@@ -6,20 +6,20 @@ package telemetryingest
 import (
 	"slices"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/otelcgen"
+	"github.com/Dynatrace/dynatrace-operator/pkg/otelcfg"
 )
 
 const (
 	ServiceNameSuffix = "-telemetry-ingest"
 )
 
-func (spec *Spec) GetProtocols() otelcgen.Protocols {
+func (spec *Spec) GetProtocols() []otelcfg.Protocol {
 	if spec == nil {
-		return otelcgen.Protocols{}
+		return []otelcfg.Protocol{}
 	}
 
 	if len(spec.Protocols) == 0 {
-		return otelcgen.RegisteredProtocols
+		return otelcfg.RegisteredProtocols
 	}
 
 	return spec.Protocols
@@ -55,7 +55,7 @@ func (ts *TelemetryIngest) IsOTLPEnabled() bool {
 		return false
 	}
 
-	return slices.Contains(ts.GetProtocols(), otelcgen.OTLPProtocol)
+	return slices.Contains(ts.GetProtocols(), otelcfg.OTLPProtocol)
 }
 
 func (ts *TelemetryIngest) IsJaegerEnabled() bool {
@@ -63,7 +63,7 @@ func (ts *TelemetryIngest) IsJaegerEnabled() bool {
 		return false
 	}
 
-	return slices.Contains(ts.GetProtocols(), otelcgen.JaegerProtocol)
+	return slices.Contains(ts.GetProtocols(), otelcfg.JaegerProtocol)
 }
 
 func (ts *TelemetryIngest) IsZipkinEnabled() bool {
@@ -71,7 +71,7 @@ func (ts *TelemetryIngest) IsZipkinEnabled() bool {
 		return false
 	}
 
-	return slices.Contains(ts.GetProtocols(), otelcgen.ZipkinProtocol)
+	return slices.Contains(ts.GetProtocols(), otelcfg.ZipkinProtocol)
 }
 
 func (ts *TelemetryIngest) IsStatsdEnabled() bool {
@@ -79,5 +79,5 @@ func (ts *TelemetryIngest) IsStatsdEnabled() bool {
 		return false
 	}
 
-	return slices.Contains(ts.GetProtocols(), otelcgen.StatsdProtocol)
+	return slices.Contains(ts.GetProtocols(), otelcfg.StatsdProtocol)
 }

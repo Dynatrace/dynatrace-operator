@@ -1,0 +1,22 @@
+exporters: {}
+extensions: {}
+processors: {}
+receivers:
+    jaeger:
+        protocols:
+            grpc:
+                endpoint: ${env:MY_POD_IP}:14250
+                tls:
+                    cert_file: /run/opensignals/tls/tls.crt
+                    key_file: /run/opensignals/tls/tls.key
+            thrift_binary:
+                endpoint: ${env:MY_POD_IP}:6832
+            thrift_compact:
+                endpoint: ${env:MY_POD_IP}:6831
+            thrift_http:
+                endpoint: ${env:MY_POD_IP}:14268
+                tls:
+                    cert_file: /run/opensignals/tls/tls.crt
+                    key_file: /run/opensignals/tls/tls.key
+service:
+    pipelines: {}

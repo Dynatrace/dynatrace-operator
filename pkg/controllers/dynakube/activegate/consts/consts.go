@@ -65,6 +65,7 @@ const (
 	// Volumes: trusted CAs
 	TrustedCAsVolumeName = "trustedcas"
 	TrustedCAsMountPath  = consts.DTComponentsSecretsRootDir + "/rootca"
+	TrustedCAsFileName   = "rootca.pem"
 
 	// Volumes: custom properties
 	CustomPropertiesVolumeName = "custom-properties"

@@ -15,7 +15,6 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/logd"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 )
 
 const (
@@ -45,7 +44,7 @@ type Certificate struct {
 	signed     bool
 }
 
-func New(timeProvider *timeprovider.Provider) (*Certificate, error) {
+func New() (*Certificate, error) {
 	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
 	if err != nil {
 		return nil, err
@@ -56,11 +55,12 @@ func New(timeProvider *timeprovider.Provider) (*Certificate, error) {
 		return nil, err
 	}
 
+	now := time.Now()
 	cert := &x509.Certificate{
 		SerialNumber:       serialNumber,
 		Subject:            defaultCertSubject,
-		NotBefore:          timeProvider.Now().Time,
-		NotAfter:           timeProvider.Now().Add(defaultCertExpiration),
+		NotBefore:          now,
+		NotAfter:           now.Add(defaultCertExpiration),
 		SignatureAlgorithm: x509.SHA256WithRSA,
 	}
 

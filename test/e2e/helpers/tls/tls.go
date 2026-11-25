@@ -9,7 +9,6 @@ import (
 	"os"
 	"path/filepath"
 
-	operatorconsts "github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8ssecret"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/project"
 	corev1 "k8s.io/api/core/v1"
@@ -28,8 +27,8 @@ func CreateTestdataTLSSecret(namespace string, name string, keyFile string, crtF
 
 	tlsSecret := k8ssecret.New(name, namespace,
 		map[string][]byte{
-			operatorconsts.TLSCrtDataName: tlsCrt,
-			operatorconsts.TLSKeyDataName: tlsKey,
+			corev1.TLSCertKey:       tlsCrt,
+			corev1.TLSPrivateKeyKey: tlsKey,
 		})
 	tlsSecret.Type = corev1.SecretTypeTLS
 

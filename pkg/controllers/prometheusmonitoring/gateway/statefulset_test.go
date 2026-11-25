@@ -4,6 +4,7 @@
 package gateway
 
 import (
+	"context"
 	"errors"
 	"path/filepath"
 	"testing"
@@ -21,7 +22,9 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
 
 func newTestDynaKube() *dynakube.DynaKube {
@@ -121,9 +124,19 @@ func TestReconcileStatefulSet(t *testing.T) {
 		s := newTestScopeWithDynaKube(pm, newTestDynaKube())
 		existing := &appsv1.StatefulSet{
 			Name: s.Spec.GetStatefulSetName(), Namespace: pm.Namespace,
-			Spec: appsv1.StatefulSetSpec{Replicas: new(int32(5))},
+			Spec: appsv1.StatefulSetSpec{
+				Replicas: new(int32(5)),
+				Selector: &metav1.LabelSelector{MatchLabels: s.AppLabels.AsSelector()},
+			},
 		}
-		c := fake.NewClient(existing)
+		var deletes int
+		c := fake.NewClientWithInterceptors(interceptor.Funcs{
+			Delete: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.DeleteOption) error {
+				deletes++
+
+				return client.Delete(ctx, obj, opts...)
+			},
+		}, existing)
 		r := &Reconciler{Client: c}
 
 		require.NoError(t, r.reconcileStatefulset(t.Context(), s))
@@ -131,6 +144,33 @@ func TestReconcileStatefulSet(t *testing.T) {
 		sts := &appsv1.StatefulSet{}
 		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetStatefulSetName(), Namespace: pm.Namespace}, sts))
 		assert.Equal(t, new(int32(5)), sts.Spec.Replicas)
+		assert.Zero(t, deletes)
+	})
+
+	t.Run("recreate on selector change", func(t *testing.T) {
+		pm := newTestPM("pm", "dynatrace")
+		pm.Spec.Gateway.Image = "img:1"
+		s := newTestScopeWithDynaKube(pm, newTestDynaKube())
+		existing := &appsv1.StatefulSet{
+			Name: s.Spec.GetStatefulSetName(), Namespace: pm.Namespace,
+			Spec: appsv1.StatefulSetSpec{Selector: &metav1.LabelSelector{MatchLabels: map[string]string{"app": "old"}}},
+		}
+		var deletes int
+		c := fake.NewClientWithInterceptors(interceptor.Funcs{
+			Delete: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.DeleteOption) error {
+				deletes++
+
+				return client.Delete(ctx, obj, opts...)
+			},
+		}, existing)
+		r := &Reconciler{Client: c}
+
+		require.NoError(t, r.reconcileStatefulset(t.Context(), s))
+		assert.Equal(t, 1, deletes)
+
+		sts := &appsv1.StatefulSet{}
+		require.NoError(t, c.Get(t.Context(), client.ObjectKey{Name: s.Spec.GetStatefulSetName(), Namespace: pm.Namespace}, sts))
+		assert.Equal(t, s.AppLabels.AsSelector(), sts.Spec.Selector.MatchLabels)
 	})
 
 	t.Run("propagate error", func(t *testing.T) {
@@ -151,7 +191,7 @@ func TestImagePullSecrets(t *testing.T) {
 	t.Run("no pull secrets when the DynaKube has no custom pull secret", func(t *testing.T) {
 		sts := &appsv1.StatefulSet{}
 
-		mutateStatefulSet(sts, newTestScopeWithDynaKube(newTestPM("pm", "dynatrace"), newTestDynaKube()))
+		require.NoError(t, mutateStatefulSet(sts, newTestScopeWithDynaKube(newTestPM("pm", "dynatrace"), newTestDynaKube())))
 
 		assert.Empty(t, sts.Spec.Template.Spec.ImagePullSecrets)
 	})
@@ -161,7 +201,7 @@ func TestImagePullSecrets(t *testing.T) {
 		dk.Spec.CustomPullSecret = "custom-pull-secret"
 		sts := &appsv1.StatefulSet{}
 
-		mutateStatefulSet(sts, newTestScopeWithDynaKube(newTestPM("pm", "dynatrace"), dk))
+		require.NoError(t, mutateStatefulSet(sts, newTestScopeWithDynaKube(newTestPM("pm", "dynatrace"), dk)))
 
 		assert.Equal(t, []corev1.LocalObjectReference{{Name: dk.Spec.CustomPullSecret}}, sts.Spec.Template.Spec.ImagePullSecrets)
 

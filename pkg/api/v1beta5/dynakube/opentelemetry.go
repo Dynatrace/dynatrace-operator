@@ -20,7 +20,7 @@ type OpenTelemetryCollectorSpec struct {
 
 	// Number of replicas for your OtelCollector
 	// +kubebuilder:validation:Optional
-	Replicas *int32 `json:"replicas"`
+	Replicas *int32 `json:"replicas,omitempty"`
 
 	// Overrides the default image
 	// +kubebuilder:validation:Optional

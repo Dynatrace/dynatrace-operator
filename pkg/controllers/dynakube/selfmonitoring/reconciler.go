@@ -16,8 +16,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/types"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/prometheusmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace/image"
-	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/prometheusmonitoring/condition"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/registry"
@@ -44,18 +44,14 @@ const (
 	// mounted as self-monitoring.yaml (see --config=/conf/self-monitoring.yaml on the container).
 	configKey            = "self-monitoring"
 	configFile           = "self-monitoring.yaml"
-	configMountDir       = "/conf"
-	configVolumeName     = "opentelemetry-collector-configmap"
 	configHashAnnotation = "internal.operator.dynatrace.com/self-monitoring-config-hash"
 
 	containerName = "self-monitoring"
 	componentName = "self-monitoring"
 
-	trustedCAVolumeMountPath = "/tls/custom/cacerts"
-	trustedCAFile            = "rootca.pem"
+	trustedCAFile = "rootca.pem"
 
 	otlpHTTPPortName = "otlp-http"
-	otlpHTTPPort     = 4318
 
 	healthCheckPortName = "health"
 	healthCheckPort     = 13133
@@ -66,13 +62,9 @@ const (
 	// otelCollectorNonRootUser is the "nonroot" UID/GID the collector runs as.
 	otelCollectorNonRootUser = 65532
 
-	cacertsVolumeName = "cacerts"
-
 	// Mounted as a directory, not subPath: subPath mounts don't receive live Secret
 	// updates, which would break token rotation.
-	tokenVolumeName = "dt-token"
-	tokenMountPath  = consts.DTComponentsSecretsRootDir + "/tokens"
-	tokenFileName   = "data-ingest-token"
+	tokenFileName = "data-ingest-token"
 
 	dataIngestTokenMissingMessage = "data ingest token is missing, but it's required for self-monitoring"
 	selfMonitoringOffMessage      = "self-monitoring is not enabled, supportability is reduced. Add .spec.selfMonitoring to the DynaKube to enable it."
@@ -208,7 +200,7 @@ func buildConfigData(dk *dynakube.DynaKube) selfMonitoringConfigData {
 	}
 
 	if dk.Spec.TrustedCAs != "" {
-		data.CustomCAPath = filepath.Join(trustedCAVolumeMountPath, trustedCAFile)
+		data.CustomCAPath = filepath.Join(prometheusmonitoring.TrustedCAMountPath, trustedCAFile)
 	}
 
 	return data
@@ -309,7 +301,7 @@ func buildContainer(s *reconcileScope, current corev1.Container) corev1.Containe
 		Command:         []string{"/dynatrace-otel-collector"},
 		Args:            buildArgs(s),
 		Ports: []corev1.ContainerPort{
-			{Name: otlpHTTPPortName, ContainerPort: otlpHTTPPort, Protocol: corev1.ProtocolTCP},
+			{Name: otlpHTTPPortName, ContainerPort: dynakube.SelfMonitoringOTLPHTTPPort, Protocol: corev1.ProtocolTCP},
 			{Name: healthCheckPortName, ContainerPort: healthCheckPort, Protocol: corev1.ProtocolTCP},
 		},
 		Env:          buildEnv(s),
@@ -354,7 +346,7 @@ func buildArgs(s *reconcileScope) []string {
 	userArgs := s.Spec.SanitizedArgs()
 
 	args := make([]string, 0, 1+len(userArgs))
-	args = append(args, "--config="+configMountDir+"/"+configFile)
+	args = append(args, "--config="+filepath.Join(prometheusmonitoring.ConfigMountDir, configFile))
 
 	return append(args, userArgs...)
 }
@@ -427,7 +419,7 @@ func buildVolumes(s *reconcileScope) []corev1.Volume {
 
 	volumes := []corev1.Volume{
 		{
-			Name: configVolumeName,
+			Name: prometheusmonitoring.ConfigVolumeName,
 			ConfigMap: &corev1.ConfigMapVolumeSource{
 				Name:        dk.SelfMonitoringName(),
 				Items:       []corev1.KeyToPath{{Key: configKey, Path: configFile}},
@@ -435,7 +427,7 @@ func buildVolumes(s *reconcileScope) []corev1.Volume {
 			},
 		},
 		{
-			Name: tokenVolumeName,
+			Name: prometheusmonitoring.TokenVolumeName,
 			Projected: &corev1.ProjectedVolumeSource{
 				DefaultMode: new(int32(0o440)),
 				Sources: []corev1.VolumeProjection{
@@ -454,7 +446,7 @@ func buildVolumes(s *reconcileScope) []corev1.Volume {
 
 	if dk.Spec.TrustedCAs != "" {
 		volumes = append(volumes, corev1.Volume{
-			Name: cacertsVolumeName,
+			Name: prometheusmonitoring.CACertsVolumeName,
 			ConfigMap: &corev1.ConfigMapVolumeSource{
 				Name:        dk.Spec.TrustedCAs,
 				Items:       []corev1.KeyToPath{{Key: "certs", Path: trustedCAFile}},
@@ -468,12 +460,12 @@ func buildVolumes(s *reconcileScope) []corev1.Volume {
 
 func buildVolumeMounts(s *reconcileScope) []corev1.VolumeMount {
 	mounts := []corev1.VolumeMount{
-		{Name: configVolumeName, MountPath: configMountDir, ReadOnly: true},
-		{Name: tokenVolumeName, MountPath: tokenMountPath, ReadOnly: true},
+		{Name: prometheusmonitoring.ConfigVolumeName, MountPath: prometheusmonitoring.ConfigMountDir, ReadOnly: true},
+		{Name: prometheusmonitoring.TokenVolumeName, MountPath: prometheusmonitoring.TokenMountPath, ReadOnly: true},
 	}
 
 	if s.DynaKube.Spec.TrustedCAs != "" {
-		mounts = append(mounts, corev1.VolumeMount{Name: cacertsVolumeName, MountPath: trustedCAVolumeMountPath, ReadOnly: true})
+		mounts = append(mounts, corev1.VolumeMount{Name: prometheusmonitoring.CACertsVolumeName, MountPath: prometheusmonitoring.TrustedCAMountPath, ReadOnly: true})
 	}
 
 	return append(mounts, s.Spec.VolumeMounts...)
@@ -493,7 +485,7 @@ func (r *Reconciler) reconcileService(ctx context.Context, s *reconcileScope) er
 			{
 				Name:       otlpHTTPPortName,
 				Protocol:   corev1.ProtocolTCP,
-				Port:       otlpHTTPPort,
+				Port:       dynakube.SelfMonitoringOTLPHTTPPort,
 				TargetPort: intstr.FromString(otlpHTTPPortName),
 			},
 		}

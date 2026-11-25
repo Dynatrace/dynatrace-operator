@@ -14,19 +14,19 @@ func TestGetControllerAddFuncs(t *testing.T) {
 	t.Run("without OLM", func(t *testing.T) {
 		funcs := getControllerAddFuncs(false)
 
-		assert.Len(t, funcs, 5) // dk, ec, pm, nodes, certs
+		assert.Len(t, funcs, 6) // dk, ec, pm, tls, nodes, certs
 	})
 
 	t.Run("with OLM", func(t *testing.T) {
 		funcs := getControllerAddFuncs(true)
 
-		assert.Len(t, funcs, 4) // dk, ec, pm, nodes
+		assert.Len(t, funcs, 5) // dk, ec, pm, tls, nodes
 	})
 
 	t.Run("without HostAvailabilityDetectionEnvVar", func(t *testing.T) {
 		t.Setenv(consts.HostAvailabilityDetectionEnvVar, "false")
 		funcs := getControllerAddFuncs(true)
 
-		assert.Len(t, funcs, 3) // dk, ec, pm
+		assert.Len(t, funcs, 4) // dk, ec, pm, tls
 	})
 }

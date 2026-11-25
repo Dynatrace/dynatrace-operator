@@ -57,6 +57,23 @@ tests:
                     path: /label-ns
                 admissionReviewVersions: [ "v1" ]
                 sideEffects: None
+              - name: v1beta6.dynakube.defaulting.webhook.dynatrace.com
+                failurePolicy: Fail
+                timeoutSeconds: 10
+                rules:
+                  - apiGroups: [ "dynatrace.com" ]
+                    apiVersions: [ "v1beta6" ]
+                    operations: [ "CREATE", "UPDATE" ]
+                    resources: [ "dynakubes" ]
+                    scope: Namespaced
+                matchPolicy: Equivalent
+                clientConfig:
+                  service:
+                    name: dynatrace-webhook
+                    namespace: NAMESPACE
+                    path: /mutate-dynatrace-com-v1beta6-dynakube
+                admissionReviewVersions: [ "v1" ]
+                sideEffects: None
   - it: should change timeoutSeconds
     set:
       platform: kubernetes
@@ -69,6 +86,9 @@ tests:
           value: 13
       - equal:
           path: webhooks[1].timeoutSeconds
+          value: 13
+      - equal:
+          path: webhooks[2].timeoutSeconds
           value: 13
   - it: should change failurePolicy
     set:
@@ -91,3 +111,12 @@ tests:
       - equal:
           path: webhooks[1].failurePolicy
           value: Ignore
+  - it: dynakube defaulting webhook failurePolicy should not be configurable
+    set:
+      webhook:
+        mutatingWebhook:
+          failurePolicy: Ignore
+    asserts:
+      - equal:
+          path: webhooks[2].failurePolicy
+          value: Fail

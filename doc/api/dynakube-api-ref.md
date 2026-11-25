@@ -9,6 +9,7 @@
 |`dynatraceApiRequestThreshold`||-|integer|
 |`enableIstio`||-|boolean|
 |`networkZone`||-|string|
+|`networkZoneFallbackMode`||-|string|
 |`proxy`||-|object|
 |`publicRegistryOverride`||-|string|
 |`resourceAttributes`||-|object|

@@ -4,6 +4,7 @@
 package dynakube
 
 import (
+	dkconversion "github.com/Dynatrace/dynatrace-operator/pkg/api/conversion"
 	dynakubelatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
 	activegatelatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/activegate"
 	extensionslatest "github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube/extensions"
@@ -39,11 +40,16 @@ func (src *DynaKube) ConvertTo(dstRaw conversion.Hub) error {
 }
 
 func (src *DynaKube) toBase(dst *dynakubelatest.DynaKube) {
-	if src.Annotations == nil {
-		dst.Annotations = map[string]string{}
+	// DeepCopy, so the annotation changes below don't leak into src (the maps would be shared otherwise)
+	dst.ObjectMeta = *src.ObjectMeta.DeepCopy()
+
+	// restore the fields that don't exist in this version from the annotations
+	addedFields := dkconversion.NewAddedFields(dst.Annotations)
+	if mode := addedFields.NetworkZoneFallbackMode.Get(); mode != nil {
+		dst.Spec.NetworkZoneFallbackMode = dynakubelatest.NZFallbackMode(*mode)
 	}
 
-	dst.ObjectMeta = *src.ObjectMeta.DeepCopy() // DeepCopy mainly relevant for testing
+	addedFields.Cleanup()
 
 	dst.Spec.Proxy = src.Spec.Proxy
 	dst.Spec.DynatraceAPIRequestThreshold = src.Spec.DynatraceAPIRequestThreshold

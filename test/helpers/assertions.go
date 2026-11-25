@@ -17,18 +17,26 @@ import (
 // AssertGolden compares obj, marshaled to YAML, against expectedPath. The fake
 // client is the only source of non-determinism (it stamps resourceVersion), so
 // that field is cleared before comparing.
-func AssertGolden(t *testing.T, expectedPath string, obj client.Object) {
+// The optional mutateFuncs can be used to further modify the object before comparison.
+// This can be used to remove hashes for example.
+func AssertGolden[T client.Object](t *testing.T, expectedPath string, obj T, mutateFuncs ...func(T)) {
 	t.Helper()
+
+	obj = obj.DeepCopyObject().(T)
 
 	obj.SetResourceVersion("")
 	kinds, _, _ := scheme.Scheme.ObjectKinds(obj)
 	require.Len(t, kinds, 1)
 	obj.GetObjectKind().SetGroupVersionKind(kinds[0])
 
+	for _, mutate := range mutateFuncs {
+		mutate(obj)
+	}
+
 	got, err := yaml.Marshal(obj)
 	require.NoError(t, err)
 
 	want, err := os.ReadFile(expectedPath)
 	require.NoError(t, err)
-	assert.YAMLEq(t, string(want), string(got))
+	assert.YAMLEqf(t, string(want), string(got), "EXPECT:\n%s\nACTUAL:\n%s", string(want), string(got))
 }

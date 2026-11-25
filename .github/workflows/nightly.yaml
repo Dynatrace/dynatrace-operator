@@ -44,7 +44,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Login to Registry
-        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
+        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
         with:
           registry: ${{ env.IMAGE_REGISTRY }}
           username: ${{ github.repository_owner }}
@@ -71,7 +71,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Login to Registry
-        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
+        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
         with:
           registry: ${{ env.IMAGE_REGISTRY }}
           username: ${{ github.repository_owner }}
@@ -172,7 +172,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Login to Registry
-        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
+        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
         with:
           registry: ${{ env.IMAGE_REGISTRY }}
           username: ${{ github.repository_owner }}
@@ -244,7 +244,7 @@ jobs:
         id: go-version
         uses: $/.github/actions/get-go-version
       - name: Setup Golang
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
         with:
           go-version: ${{ steps.go-version.outputs.go_version }}
           cache: false
@@ -261,7 +261,7 @@ jobs:
         run: |
           helm registry login -u "${{ github.repository_owner }}" -p "${{ secrets.GITHUB_TOKEN }}" "${{ env.IMAGE_REGISTRY }}"
       - name: Authenticate Docker
-        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
+        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
         with:
           registry: ${{ env.IMAGE_REGISTRY }}
           username: ${{ github.repository_owner }}

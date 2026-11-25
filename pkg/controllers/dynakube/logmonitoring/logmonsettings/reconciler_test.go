@@ -7,6 +7,7 @@ import (
 	"errors"
 	"net/http"
 	"testing"
+	"testing/synctest"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/latest/dynakube"
@@ -125,32 +126,35 @@ func TestReconcile(t *testing.T) {
 	})
 
 	t.Run("update condition timestamp if outdated", func(t *testing.T) {
-		mockClient := settingsmock.NewClient(t)
-		mockClient.EXPECT().GetSettingsForLogModule(mock.Anything, meID).
-			Return(settings.TotalCountSettingsResponse{TotalCount: 1}, nil)
+		synctest.Test(t, func(t *testing.T) {
+			mockClient := settingsmock.NewClient(t)
+			mockClient.EXPECT().GetSettingsForLogModule(mock.Anything, meID).
+				Return(settings.TotalCountSettingsResponse{TotalCount: 1}, nil)
 
-		dk := getDK()
-		setReadScope(t, dk)
-		setWriteScope(t, dk)
+			dk := getDK()
+			setReadScope(t, dk)
+			setWriteScope(t, dk)
 
-		r := NewReconciler()
-		r.timeProvider.Set(time.Now().Add(time.Hour))
+			r := NewReconciler()
 
-		setExistsCondition(dk.Conditions())
-		condition := meta.FindStatusCondition(*dk.Conditions(), ConditionType)
-		require.NotNil(t, condition)
+			setExistsCondition(dk.Conditions())
+			condition := meta.FindStatusCondition(*dk.Conditions(), ConditionType)
+			require.NotNil(t, condition)
 
-		prevTS := condition.LastTransitionTime.Time
+			prevTS := condition.LastTransitionTime.Time
 
-		err := r.Reconcile(t.Context(), mockClient, dk)
-		require.NoError(t, err)
+			synctest.Sleep(1 * time.Hour)
 
-		condition = meta.FindStatusCondition(*dk.Conditions(), ConditionType)
-		require.NotNil(t, condition)
+			err := r.Reconcile(t.Context(), mockClient, dk)
+			require.NoError(t, err)
 
-		currentTS := condition.LastTransitionTime.Time
+			condition = meta.FindStatusCondition(*dk.Conditions(), ConditionType)
+			require.NotNil(t, condition)
 
-		require.NotEqual(t, prevTS, currentTS)
+			currentTS := condition.LastTransitionTime.Time
+
+			require.NotEqual(t, prevTS, currentTS)
+		})
 	})
 
 	t.Run("don't update condition timestamp if not outdated", func(t *testing.T) {
