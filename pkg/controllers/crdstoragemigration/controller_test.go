@@ -11,6 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
@@ -35,7 +36,10 @@ func TestInitReconcile(t *testing.T) {
 		return ctx, fakeClient
 	}
 
-	t.Cleanup(func() { run = Run })
+	t.Cleanup(func() {
+		run = Run
+		triggerDefaulter = TriggerDefaulting
+	})
 
 	t.Run("deployment not found", func(t *testing.T) {
 		run = nil
@@ -56,11 +60,39 @@ func TestInitReconcile(t *testing.T) {
 	t.Run("run error", func(t *testing.T) {
 		ctx, clt := setupOneTimeClient(&appsv1.Deployment{
 			Spec:   appsv1.DeploymentSpec{Replicas: new(int32(3))},
-			Status: appsv1.DeploymentStatus{ReadyReplicas: 3},
+			Status: appsv1.DeploymentStatus{Replicas: 3, UpdatedReplicas: 3, ReadyReplicas: 3},
 		})
 
 		called := false
 		run = func(context.Context, client.Client, string) error {
+			called = true
+
+			return errors.New("retry")
+		}
+
+		triggerDefaulter = func(context.Context, client.Client, string) error {
+			assert.Fail(t, "defaulting must not be triggered if the migration failed")
+
+			return nil
+		}
+
+		err := InitReconcile(ctx, clt, testNamespace)
+		assert.ErrorIs(t, err, context.Canceled) //nolint:testifylint
+		assert.True(t, called)
+	})
+
+	t.Run("defaulting error", func(t *testing.T) {
+		ctx, clt := setupOneTimeClient(&appsv1.Deployment{
+			Spec:   appsv1.DeploymentSpec{Replicas: new(int32(3))},
+			Status: appsv1.DeploymentStatus{Replicas: 3, UpdatedReplicas: 3, ReadyReplicas: 3},
+		})
+
+		run = func(context.Context, client.Client, string) error {
+			return nil
+		}
+
+		called := false
+		triggerDefaulter = func(context.Context, client.Client, string) error {
 			called = true
 
 			return errors.New("retry")
@@ -74,15 +106,23 @@ func TestInitReconcile(t *testing.T) {
 	t.Run("run ok", func(t *testing.T) {
 		ctx, clt := setupOneTimeClient(&appsv1.Deployment{
 			Spec:   appsv1.DeploymentSpec{Replicas: new(int32(3))},
-			Status: appsv1.DeploymentStatus{ReadyReplicas: 3},
+			Status: appsv1.DeploymentStatus{Replicas: 3, UpdatedReplicas: 3, ReadyReplicas: 3},
 		})
 
 		run = func(context.Context, client.Client, string) error {
 			return nil
 		}
 
+		called := false
+		triggerDefaulter = func(context.Context, client.Client, string) error {
+			called = true
+
+			return nil
+		}
+
 		err := InitReconcile(ctx, clt, testNamespace)
-		assert.NoError(t, err)
+		require.NoError(t, err)
+		assert.True(t, called)
 	})
 }
 
@@ -97,7 +137,7 @@ func Test_isDeploymentReady(t *testing.T) {
 			deploy: &appsv1.Deployment{
 				Generation: 2,
 				Spec:       appsv1.DeploymentSpec{Replicas: new(int32(3))},
-				Status:     appsv1.DeploymentStatus{ObservedGeneration: 2, ReadyReplicas: 3},
+				Status:     appsv1.DeploymentStatus{ObservedGeneration: 2, Replicas: 3, UpdatedReplicas: 3, ReadyReplicas: 3},
 			},
 			expected: true,
 		},
@@ -107,6 +147,15 @@ func Test_isDeploymentReady(t *testing.T) {
 				Generation: 2,
 				Spec:       appsv1.DeploymentSpec{Replicas: new(int32(3))},
 				Status:     appsv1.DeploymentStatus{ObservedGeneration: 2, ReadyReplicas: 2},
+			},
+			expected: false,
+		},
+		{
+			name: "not ready: rolling update in progress, old replicas are still ready",
+			deploy: &appsv1.Deployment{
+				Generation: 2,
+				Spec:       appsv1.DeploymentSpec{Replicas: new(int32(3))},
+				Status:     appsv1.DeploymentStatus{ObservedGeneration: 2, Replicas: 4, UpdatedReplicas: 1, ReadyReplicas: 3},
 			},
 			expected: false,
 		},

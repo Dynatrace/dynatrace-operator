@@ -42,8 +42,14 @@ func (dst *DynaKube) fromBase(src *dynakubelatest.DynaKube) {
 		src.Annotations = map[string]string{}
 	}
 
-	dst.ObjectMeta = *src.ObjectMeta.DeepCopy() // DeepCopy mainly relevant for testing
-	dkconversion.CleanupAnnotations(dst.Annotations)
+	// DeepCopy, so the annotation changes below don't leak into src (the maps would be shared otherwise)
+	dst.ObjectMeta = *src.ObjectMeta.DeepCopy()
+	dkconversion.NewRemovedFields(dst.Annotations).Cleanup()
+
+	// fields that don't exist in this version are kept in the annotations, so they are not lost
+	if src.Spec.NetworkZoneFallbackMode != "" {
+		dkconversion.NewAddedFields(dst.Annotations).NetworkZoneFallbackMode.Set(new(string(src.Spec.NetworkZoneFallbackMode)))
+	}
 
 	dst.Spec.Proxy = src.Spec.Proxy
 	dst.Spec.DynatraceAPIRequestThreshold = src.Spec.DynatraceAPIRequestThreshold

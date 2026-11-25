@@ -20,7 +20,10 @@ import (
 const retryInterval = 10 * time.Second
 
 // for unit tests
-var run = Run
+var (
+	run              = Run
+	triggerDefaulter = TriggerDefaulting
+)
 
 func InitReconcile(ctx context.Context, clt client.Client, namespace string) error {
 	ctx, log := logd.NewFromContext(ctx, "crd-storage-migration")
@@ -54,12 +57,27 @@ func InitReconcile(ctx context.Context, clt client.Client, namespace string) err
 			return false, nil
 		}
 
+		// only in the init container: the webhook is ready here, so the defaulting webhook can be triggered
+		if err := triggerDefaulter(ctx, clt, request.Namespace); err != nil {
+			log.Error(err, "triggering DynaKube defaulting failed")
+
+			return false, nil
+		}
+
 		return true, nil
 	})
 }
 
+// isDeploymentReady returns true only if the rollout of the deployment is complete:
+// all replicas are up-to-date and ready, and no old replicas are left.
+// Checking only the ready replicas is not enough, as during a rolling update the old (ready) pods
+// would make the deployment look ready, while they don't serve the new webhooks yet.
 func isDeploymentReady(deploy *appsv1.Deployment) bool {
 	replicas := ptr.Deref(deploy.Spec.Replicas, 1)
 
-	return deploy.Generation == deploy.Status.ObservedGeneration && replicas > 0 && replicas == deploy.Status.ReadyReplicas
+	return deploy.Generation == deploy.Status.ObservedGeneration &&
+		replicas > 0 &&
+		replicas == deploy.Status.ReadyReplicas &&
+		replicas == deploy.Status.UpdatedReplicas &&
+		replicas == deploy.Status.Replicas
 }
