@@ -13,6 +13,7 @@
 |:-|:-|:-|:-|
 |`annotations`|Extra annotations merged into the pod template metadata.|-|object|
 |`args`|Command-line arguments for the main application container.|-|array|
+|`env`|Additional environment variables for the main application container.<br/>Entries are appended to the ones set by the operator; if a name is used twice, the last entry (the one defined here) wins.|-|array|
 |`image`|Overrides the default component image (full reference including tag or digest).<br/>When omitted the operator uses the latest available image from the public Dynatrace registry.|-|string|
 |`imagePullPolicy`|Image pull policy for the component pods.|-|string|
 |`labels`|Extra labels merged into the pod template metadata.|-|object|
@@ -22,6 +23,8 @@
 |`resources`|Resource requests and limits for each component pod.|-|object|
 |`tolerations`|Tolerations for the component pods.|-|array|
 |`topologySpreadConstraints`|Topology spread constraints for the component pods.|-|array|
+|`volumeMounts`|Additional volume mounts for the main application container.<br/>Entries are appended to the ones set by the operator, their mount paths must not collide with the operator's mounts.|-|array|
+|`volumes`|Additional volumes for the component pods.<br/>Entries are appended to the ones set by the operator, their names must not collide with the operator's volumes.|-|array|
 
 ### .spec.scraper
 
@@ -29,6 +32,7 @@
 |:-|:-|:-|:-|
 |`annotations`|Extra annotations merged into the pod template metadata.|-|object|
 |`args`|Command-line arguments for the main application container.|-|array|
+|`env`|Additional environment variables for the main application container.<br/>Entries are appended to the ones set by the operator; if a name is used twice, the last entry (the one defined here) wins.|-|array|
 |`image`|Overrides the default component image (full reference including tag or digest).<br/>When omitted the operator uses the latest available image from the public Dynatrace registry.|-|string|
 |`imagePullPolicy`|Image pull policy for the component pods.|-|string|
 |`labels`|Extra labels merged into the pod template metadata.|-|object|
@@ -39,6 +43,8 @@
 |`targetsPollInterval`|Default interval to poll target allocator for scrape targets.|60s|string|
 |`tolerations`|Tolerations for the component pods.|-|array|
 |`topologySpreadConstraints`|Topology spread constraints for the component pods.|-|array|
+|`volumeMounts`|Additional volume mounts for the main application container.<br/>Entries are appended to the ones set by the operator, their mount paths must not collide with the operator's mounts.|-|array|
+|`volumes`|Additional volumes for the component pods.<br/>Entries are appended to the ones set by the operator, their names must not collide with the operator's volumes.|-|array|
 
 ### .spec.targetAllocator
 
@@ -48,6 +54,7 @@
 |`args`|Command-line arguments for the main application container.|-|array|
 |`customResourceNamespaceSelector`|Restricts which namespaces the TA watches for CRDs. An empty selector {}<br/>matches all namespaces.|-|object|
 |`customResourceSelector`|Label selector applied to all Prometheus Operator CRDs (ServiceMonitor,<br/>PodMonitor, ScrapeConfig, Probe). The TA only picks up CRDs whose labels<br/>match. When omitted, the operator defaults to matching<br/>prometheus.dynatrace.com: "true". An empty selector {} matches all CRDs.|{'matchLabels': {'prometheus.dynatrace.com': 'true'}}|object|
+|`env`|Additional environment variables for the main application container.<br/>Entries are appended to the ones set by the operator; if a name is used twice, the last entry (the one defined here) wins.|-|array|
 |`image`|Overrides the default component image (full reference including tag or digest).<br/>When omitted the operator uses the latest available image from the public Dynatrace registry.|-|string|
 |`imagePullPolicy`|Image pull policy for the component pods.|-|string|
 |`labels`|Extra labels merged into the pod template metadata.|-|object|
@@ -58,6 +65,8 @@
 |`scrapeInterval`|Default interval used by the target allocator to look for Prometheus CRs<br/>(ServiceMonitor, PodMonitor, ScrapeConfig, Probe).|60s|string|
 |`tolerations`|Tolerations for the component pods.|-|array|
 |`topologySpreadConstraints`|Topology spread constraints for the component pods.|-|array|
+|`volumeMounts`|Additional volume mounts for the main application container.<br/>Entries are appended to the ones set by the operator, their mount paths must not collide with the operator's mounts.|-|array|
+|`volumes`|Additional volumes for the component pods.<br/>Entries are appended to the ones set by the operator, their names must not collide with the operator's volumes.|-|array|
 
 ### .spec.scraper.strategy
 

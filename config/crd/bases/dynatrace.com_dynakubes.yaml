@@ -4670,6 +4670,13 @@ spec:
                 type: object
               networkZone:
                 type: string
+              networkZoneFallbackMode:
+                enum:
+                - ""
+                - default
+                - none
+                - any
+                type: string
               oneAgent:
                 properties:
                   applicationMonitoring:
