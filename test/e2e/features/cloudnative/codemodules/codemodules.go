@@ -173,7 +173,7 @@ func WithProxy(t *testing.T, proxySpec *types.ValueSource) features.Feature {
 	builder.Assess("check proxy settings in ruxitagentproc.conf", proxy.CheckRuxitAgentProcFileHasProxySetting(*sampleApp, proxySpec))
 
 	cloudnative.AssessSampleContainer(builder, sampleApp, func() []byte { return nil }, nil)
-	cloudnative.AssessOneAgentContainer(builder, func() []byte { return nil }, nil)
+	cloudnative.AssessOneAgentContainer(builder, cloudNativeDynakube, func() []byte { return nil }, nil)
 	cloudnative.AssessActiveGateContainer(builder, cloudNativeDynakube, nil)
 
 	// Register sample, dynakubeComponents and operator uninstall
@@ -247,7 +247,7 @@ func WithProxyAndAGCert(t *testing.T, proxySpec *types.ValueSource) features.Fea
 	builder.Assess("codemodules have been downloaded", provisioner.InstalledImage(cloudNativeDynakube, cloudNativeDynakube.OneAgent().GetCustomCodeModulesImage(), provisioner.ImageInstaller))
 
 	cloudnative.AssessSampleContainer(builder, sampleApp, func() []byte { return agCrt }, nil)
-	cloudnative.AssessOneAgentContainer(builder, func() []byte { return agCrt }, nil)
+	cloudnative.AssessOneAgentContainer(builder, cloudNativeDynakube, func() []byte { return agCrt }, nil)
 	cloudnative.AssessActiveGateContainer(builder, cloudNativeDynakube, nil)
 
 	// Register sample, dynakubeComponents and operator uninstall
@@ -306,7 +306,7 @@ func WithProxyAndAutomaticAGCert(t *testing.T, proxySpec *types.ValueSource) fea
 	builder.Assess("read AG TLS secret", getAgTLSSecret(&agTLSSecret))
 
 	cloudnative.AssessSampleContainer(builder, sampleApp, func() []byte { return agTLSSecret.Data[opconsts.TLSServerCrtDataName] }, nil)
-	cloudnative.AssessOneAgentContainer(builder, func() []byte { return agTLSSecret.Data[opconsts.TLSServerCrtDataName] }, nil)
+	cloudnative.AssessOneAgentContainer(builder, cloudNativeDynakube, func() []byte { return agTLSSecret.Data[opconsts.TLSServerCrtDataName] }, nil)
 	cloudnative.AssessActiveGateContainer(builder, cloudNativeDynakube, nil)
 
 	// Register sample, dynakubeComponents and operator uninstall
@@ -378,7 +378,7 @@ func WithProxyCAAndAGCert(t *testing.T, proxySpec *types.ValueSource) features.F
 	builder.Assess("codemodules have been downloaded", provisioner.InstalledImage(cloudNativeDynakube, cloudNativeDynakube.OneAgent().GetCustomCodeModulesImage(), provisioner.ImageInstaller))
 
 	cloudnative.AssessSampleContainer(builder, sampleApp, func() []byte { return agCrt }, trustedCa)
-	cloudnative.AssessOneAgentContainer(builder, func() []byte { return agCrt }, trustedCa)
+	cloudnative.AssessOneAgentContainer(builder, cloudNativeDynakube, func() []byte { return agCrt }, trustedCa)
 	cloudnative.AssessActiveGateContainer(builder, cloudNativeDynakube, trustedCa)
 
 	// Register sample, dynakubeComponents and operator uninstall
@@ -446,7 +446,7 @@ func WithProxyCAAndAutomaticAGCert(t *testing.T, proxySpec *types.ValueSource) f
 	builder.Assess("read AG TLS secret", getAgTLSSecret(&agTLSSecret))
 
 	cloudnative.AssessSampleContainer(builder, sampleApp, func() []byte { return agTLSSecret.Data[opconsts.TLSServerCrtDataName] }, trustedCa)
-	cloudnative.AssessOneAgentContainer(builder, func() []byte { return agTLSSecret.Data[opconsts.TLSServerCrtDataName] }, trustedCa)
+	cloudnative.AssessOneAgentContainer(builder, cloudNativeDynakube, func() []byte { return agTLSSecret.Data[opconsts.TLSServerCrtDataName] }, trustedCa)
 	cloudnative.AssessActiveGateContainer(builder, cloudNativeDynakube, trustedCa)
 
 	// Register sample, dynakubeComponents and operator uninstall
@@ -596,8 +596,10 @@ func checkOneAgentEnvVars(dk *dynakube.DynaKube) features.Func {
 }
 
 func checkEnvVarsInContainer(t *testing.T, pod *corev1.Pod, containerName string, envVar string) {
+	matched := false
 	for _, container := range pod.Spec.Containers {
 		if container.Name == containerName {
+			matched = true
 			require.NotNil(t, container.Env)
 			require.True(t, k8senv.Contains(container.Env, envVar))
 			for _, env := range container.Env {
@@ -607,4 +609,6 @@ func checkEnvVarsInContainer(t *testing.T, pod *corev1.Pod, containerName string
 			}
 		}
 	}
+
+	require.Truef(t, matched, "no container found with name %s", containerName)
 }

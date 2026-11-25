@@ -64,13 +64,47 @@ func checkSampleContainer(sampleApp *sample.App, agCrtFunc func() []byte, truste
 	}
 }
 
-func AssessOneAgentContainer(builder *features.FeatureBuilder, agCrtFunc func() []byte, trustedCAs []byte) {
-	builder.Assess("certificates are propagated to OneAgent containers", checkOneAgentContainer(agCrtFunc, trustedCAs))
+func AssessOneAgentContainer(builder *features.FeatureBuilder, dk *dynakube.DynaKube, agCrtFunc func() []byte, trustedCAs []byte) {
+	builder.Assess("certificates are propagated to OneAgent containers", checkOneAgentContainer(dk, agCrtFunc, trustedCAs))
 }
 
-func checkOneAgentContainer(agCrtFunc func() []byte, trustedCAs []byte) features.Func {
+func checkOneAgentContainer(dk *dynakube.DynaKube, agCrtFunc func() []byte, trustedCAs []byte) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		// TODO: when OneAgent ticket is done, probably the same pem files as in case of sample container
+		const customPemPath = "mnt/dynatrace/certs/activegate/custom.pem"
+
+		// not checking ruxit certificates shipped by default with the oneagent
+		resources := envConfig.Client().Resources()
+
+		pods := k8spod.ListForOwner(ctx, t, resources, dk.OneAgent().GetDaemonsetName(), dk.Namespace)
+		require.NotEmpty(t, pods.Items)
+
+		certs := string(agCrtFunc())
+		if len(trustedCAs) > 0 {
+			if len(certs) > 0 {
+				certs += "\n"
+			}
+
+			certs += string(trustedCAs)
+		}
+
+		for _, pod := range pods.Items {
+			if pod.DeletionTimestamp != nil {
+				continue
+			}
+
+			require.NotEmpty(t, pod.Spec.Containers)
+
+			for _, container := range pod.Spec.Containers {
+				containerName := container.Name
+
+				if string(agCrtFunc()) == "" && string(trustedCAs) == "" {
+					checkFileNotFound(ctx, t, resources, &pod, containerName, customPemPath)
+				} else {
+					checkFileContents(ctx, t, resources, &pod, containerName, customPemPath, certs)
+				}
+			}
+
+		}
 
 		return ctx
 	}
