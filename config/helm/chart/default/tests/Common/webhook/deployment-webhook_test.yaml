@@ -56,6 +56,7 @@ tests:
       - equal:
           path: spec.template.spec
           value:
+            priorityClassName: system-node-critical
             topologySpreadConstraints:
               - maxSkew: 1
                 topologyKey: "topology.kubernetes.io/zone"
@@ -203,6 +204,23 @@ tests:
                 type: RuntimeDefault
             serviceAccountName: dynatrace-webhook
 
+  - it: should apply the configured webhook priority class to the pod
+    set:
+      platform: kubernetes
+      webhook.priorityClassName: monitoring-webhook-priority
+    asserts:
+      - equal:
+          path: spec.template.spec.priorityClassName
+          value: monitoring-webhook-priority
+
+  - it: should omit the pod priority class when the webhook value is empty
+    set:
+      platform: kubernetes
+      webhook.priorityClassName: ""
+    asserts:
+      - isNull:
+          path: spec.template.spec.priorityClassName
+
   - it: should have tolerations if set
     set:
       platform: kubernetes
@@ -285,6 +303,7 @@ tests:
       - equal:
           path: spec.template.spec
           value:
+            priorityClassName: system-node-critical
             volumes:
               - emptyDir:
                   sizeLimit: 10Mi
@@ -462,6 +481,7 @@ tests:
       - equal:
           path: spec.template.spec
           value:
+            priorityClassName: system-node-critical
             volumes:
               - emptyDir:
                   sizeLimit: 10Mi
