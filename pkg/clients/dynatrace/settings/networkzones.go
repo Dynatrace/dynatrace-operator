@@ -38,10 +38,10 @@ type networkZoneItem struct {
 	Value NetworkZoneObject `json:"value"`
 }
 
-// IsEmpty returns true if no network zone was found.
-// Such a response must not stay cached, otherwise a zone created right afterwards would not be visible until the cache entry expires.
+// IsEmpty always returns false: all responses are cached, including an empty list.
+// An empty list is a valid response, it means the network zone does not exist yet.
 func (r *getNetworkZonesResponse) IsEmpty() bool {
-	return len(r.Items) == 0
+	return false
 }
 
 // GetNetworkZoneObject returns the network zone settings object with the given ID.

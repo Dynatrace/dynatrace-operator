@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -81,20 +83,19 @@ func TestGetNetworkZoneObject(t *testing.T) {
 		assert.Equal(t, NetworkZoneObject{}, zone)
 	})
 
-	t.Run("IsEmpty", func(t *testing.T) {
-		assert.True(t, (&getNetworkZonesResponse{}).IsEmpty())
+	t.Run("response is cacheable, also when empty", func(t *testing.T) {
+		assert.False(t, (&getNetworkZonesResponse{}).IsEmpty())
 		assert.False(t, (&getNetworkZonesResponse{Items: []networkZoneItem{{}}}).IsEmpty())
 	})
 }
 
 func TestGetNetworkZoneObjectCaching(t *testing.T) {
-	calls := 0
-	exists := false
+	var calls atomic.Int32
 
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		calls++
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls.Add(1)
 
-		if exists {
+		if strings.Contains(r.URL.RawQuery, "zone-1") {
 			_, _ = w.Write([]byte(`{"totalCount":1,"items":[{"value":{"id":"zone-1","fallbackMode":"NONE"}}]}`))
 		} else {
 			_, _ = w.Write([]byte(`{"totalCount":0,"items":[]}`))
@@ -112,29 +113,27 @@ func TestGetNetworkZoneObjectCaching(t *testing.T) {
 	client := NewClient(apiClient)
 	ctx := t.Context()
 
-	// not found is not cached
+	// found is cached
 	zone, err := client.GetNetworkZoneObject(ctx, "zone-1")
 	require.NoError(t, err)
-	assert.Empty(t, zone.ID)
-	assert.Equal(t, 1, calls)
-
-	zone, err = client.GetNetworkZoneObject(ctx, "zone-1")
-	require.NoError(t, err)
-	assert.Empty(t, zone.ID)
-	assert.Equal(t, 2, calls, "empty response must not be cached")
-
-	// found is cached
-	exists = true
+	assert.Equal(t, "zone-1", zone.ID)
+	assert.Equal(t, int32(1), calls.Load())
 
 	zone, err = client.GetNetworkZoneObject(ctx, "zone-1")
 	require.NoError(t, err)
 	assert.Equal(t, "zone-1", zone.ID)
-	assert.Equal(t, 3, calls)
+	assert.Equal(t, int32(1), calls.Load(), "non-empty response must be served from cache")
 
-	zone, err = client.GetNetworkZoneObject(ctx, "zone-1")
+	// not found is cached too
+	zone, err = client.GetNetworkZoneObject(ctx, "zone-2")
 	require.NoError(t, err)
-	assert.Equal(t, "zone-1", zone.ID)
-	assert.Equal(t, 3, calls, "non-empty response must be served from cache")
+	assert.Empty(t, zone.ID)
+	assert.Equal(t, int32(2), calls.Load())
+
+	zone, err = client.GetNetworkZoneObject(ctx, "zone-2")
+	require.NoError(t, err)
+	assert.Empty(t, zone.ID)
+	assert.Equal(t, int32(2), calls.Load(), "empty response must be served from cache")
 }
 
 func TestCreateNetworkZoneObject(t *testing.T) {
