@@ -112,6 +112,7 @@ var (
 		warnOneAgentResourceAttributesSanitization,
 		warnOTLPResourceAttributesSanitization,
 		selfMonitoringDisabled,
+		disabledTLSForPrometheus,
 	}
 	updateValidatorErrorFuncs = []updateValidatorFunc{
 		IsMutatedAPIURL,

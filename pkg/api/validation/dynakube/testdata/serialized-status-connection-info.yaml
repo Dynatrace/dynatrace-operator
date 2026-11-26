@@ -5,6 +5,8 @@ metadata:
   namespace: default
 spec:
   apiUrl: https://status.dev.dynatracelabs.com/api
+  tls:
+    mode: automatic
 status:
   oneAgent:
     connectionInfoStatus:

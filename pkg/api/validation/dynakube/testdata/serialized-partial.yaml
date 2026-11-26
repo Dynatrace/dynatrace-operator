@@ -5,6 +5,8 @@ metadata:
   namespace: default
 spec:
   apiUrl: https://partial.dev.dynatracelabs.com/api
+  tls:
+    mode: automatic
   metadataEnrichment:
     enabled: true
   oneAgent:

@@ -270,3 +270,105 @@ func TestCustomPullSecretReferences(t *testing.T) {
 		}
 	})
 }
+
+func TestTLSMode(t *testing.T) {
+	testCases := []struct {
+		name   string
+		tls    TLSSpec
+		expect TLSMode
+	}{
+		{
+			name:   "off",
+			tls:    TLSSpec{Mode: "off"},
+			expect: TLSModeOff,
+		},
+		{
+			name:   "automatic",
+			tls:    TLSSpec{Mode: "automatic"},
+			expect: TLSModeAutomatic,
+		},
+		{
+			name:   "automatic by default",
+			tls:    TLSSpec{},
+			expect: TLSModeAutomatic,
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			dk := &DynaKube{
+				Spec: DynaKubeSpec{
+					TLS: tc.tls,
+				},
+			}
+			assert.Equal(t, tc.expect, dk.TLSMode())
+		})
+	}
+}
+
+func TestIsTLSAutomatic(t *testing.T) {
+	testCases := []struct {
+		name   string
+		tls    TLSSpec
+		expect bool
+	}{
+		{
+			name:   "off",
+			tls:    TLSSpec{Mode: "off"},
+			expect: false,
+		},
+		{
+			name:   "automatic",
+			tls:    TLSSpec{Mode: "automatic"},
+			expect: true,
+		},
+		{
+			name:   "automatic by default",
+			tls:    TLSSpec{},
+			expect: true,
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			dk := &DynaKube{
+				Spec: DynaKubeSpec{
+					TLS: tc.tls,
+				},
+			}
+			assert.Equal(t, tc.expect, dk.IsTLSAutomatic())
+		})
+	}
+}
+
+func TestIsTLSOff(t *testing.T) {
+	testCases := []struct {
+		name   string
+		tls    TLSSpec
+		expect bool
+	}{
+		{
+			name:   "off",
+			tls:    TLSSpec{Mode: "off"},
+			expect: true,
+		},
+		{
+			name:   "automatic",
+			tls:    TLSSpec{Mode: "automatic"},
+			expect: false,
+		},
+		{
+			name:   "automatic by default",
+			tls:    TLSSpec{},
+			expect: false,
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			dk := &DynaKube{
+				Spec: DynaKubeSpec{
+					TLS: tc.tls,
+				},
+			}
+			assert.Equal(t, tc.expect, dk.IsTLSOff())
+		})
+	}
+}

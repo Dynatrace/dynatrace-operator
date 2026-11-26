@@ -216,6 +216,12 @@ type DynaKubeSpec struct { //nolint:revive
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Public Registry Override",order=10,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
 	PublicRegistryOverride string `json:"publicRegistryOverride,omitempty"`
+
+	// Configures TLS for in-cluster communication between the Operands managed by this DynaKube. Currently only affects `PrometheusMonitoring`, other Operands (e.g. OneAgent, ActiveGate, ...) will respect it in future versions.
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default={}
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="TLS",order=11,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
+	TLS TLSSpec `json:"tls,omitzero"`
 }
 
 type TemplatesSpec struct {
@@ -282,4 +288,20 @@ type SelfMonitoringSpec struct {
 	Resources corev1.ResourceRequirements `json:"resources,omitzero"`
 	// +kubebuilder:validation:Optional
 	VolumeMounts []corev1.VolumeMount `json:"volumeMounts,omitempty"`
+}
+
+type TLSMode string
+
+const (
+	TLSModeAutomatic TLSMode = "automatic"
+	TLSModeOff       TLSMode = "off"
+)
+
+type TLSSpec struct {
+	// Enables/disables TLS encryption for in-cluster Operand traffic.
+	// +kubebuilder:validation:Enum=off;automatic
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default:=automatic
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="TLS Mode",order=12,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:select:automatic","urn:alm:descriptor:com.tectonic.ui:select:off"}
+	Mode TLSMode `json:"mode,omitzero"`
 }

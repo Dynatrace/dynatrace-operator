@@ -7369,6 +7369,16 @@ spec:
                         type: array
                     type: object
                 type: object
+              tls:
+                default: {}
+                properties:
+                  mode:
+                    default: automatic
+                    enum:
+                    - "off"
+                    - automatic
+                    type: string
+                type: object
               tokens:
                 type: string
               trustedCAs:

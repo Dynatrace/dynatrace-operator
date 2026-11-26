@@ -216,3 +216,20 @@ func (dk *DynaKube) IsCACertificateNeeded() bool {
 
 	return false
 }
+
+// TLSMode returns the effective TLS mode for in-cluster Operand traffic.
+func (dk *DynaKube) TLSMode() TLSMode {
+	if string(dk.Spec.TLS.Mode) == "" {
+		return TLSModeAutomatic
+	}
+
+	return dk.Spec.TLS.Mode
+}
+
+func (dk *DynaKube) IsTLSAutomatic() bool {
+	return dk.TLSMode() == TLSModeAutomatic
+}
+
+func (dk *DynaKube) IsTLSOff() bool {
+	return dk.TLSMode() == TLSModeOff
+}
