@@ -45,6 +45,7 @@ const (
 	AnnotationTLSSecretHash            = api.InternalFlagPrefix + "kubemon-tls-secret-hash"
 	AnnotationDeploymentPropertiesHash = api.InternalFlagPrefix + "kubemon-deploymentproperties-hash"
 	AnnotationTrustedCAsHash           = api.InternalFlagPrefix + "kubemon-trustedcas-hash"
+	AnnotationProxyHash                = api.InternalFlagPrefix + "kubemon-proxy-hash"
 	StorageVolumeName                  = "kubemon-storage"
 	AuthTokenVolumeName                = "kubemon-authtoken-secret"
 	kspmTokenVolumeName                = "kspm-token"
@@ -108,7 +109,7 @@ func ensureReady(dk *dynakube.DynaKube) error {
 	return nil
 }
 
-func buildPodAnnotations(dk *dynakube.DynaKube, tokenHash, authTokenHash, customPropertiesHash, deploymentPropertiesHash, tlsSecretHash, trustedCAsHash string) map[string]string { //nolint:revive
+func buildPodAnnotations(dk *dynakube.DynaKube, tokenHash, authTokenHash, customPropertiesHash, deploymentPropertiesHash, tlsSecretHash, trustedCAsHash, proxyHash string) map[string]string { //nolint:revive
 	annotations := map[string]string{
 		AnnotationTenantTokenHash:              tokenHash,
 		AnnotationAuthTokenHash:                authTokenHash,
@@ -124,6 +125,7 @@ func buildPodAnnotations(dk *dynakube.DynaKube, tokenHash, authTokenHash, custom
 	insertNonEmptyValue(AnnotationCustomPropertiesHash, customPropertiesHash)
 	insertNonEmptyValue(AnnotationDeploymentPropertiesHash, deploymentPropertiesHash)
 	insertNonEmptyValue(AnnotationTrustedCAsHash, trustedCAsHash)
+	insertNonEmptyValue(AnnotationProxyHash, proxyHash)
 
 	if dk.KSPM().IsEnabled() {
 		annotations[AnnotationKSPMTokenHash] = dk.KSPM().TokenSecretHash
@@ -526,6 +528,11 @@ func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.D
 		return nil, err
 	}
 
+	proxyHash, err := r.getProxyHash(ctx, dk)
+	if err != nil {
+		return nil, err
+	}
+
 	km := dk.KubernetesMonitoring()
 
 	initContainer := corev1.Container{
@@ -563,7 +570,7 @@ func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context, dk *dynakube.D
 	opts := []k8sstatefulset.Option{
 		k8sstatefulset.SetReplicas(replicas),
 		k8sstatefulset.SetAllLabels(labels.AsMap(), labels.AsSelector(), labels.AsSelector(), km.Labels),
-		k8sstatefulset.SetAllAnnotations(nil, maputil.MergeMap(km.Annotations, buildPodAnnotations(dk, tokenHash, authTokenHash, customPropertiesHash, deploymentPropertiesHash, tlsSecretHash, trustedCAsHash))),
+		k8sstatefulset.SetAllAnnotations(nil, maputil.MergeMap(km.Annotations, buildPodAnnotations(dk, tokenHash, authTokenHash, customPropertiesHash, deploymentPropertiesHash, tlsSecretHash, trustedCAsHash, proxyHash))),
 		k8sstatefulset.SetServiceAccount(km.GetServiceAccountName()),
 		k8sstatefulset.SetNodeSelector(km.NodeSelector),
 		k8sstatefulset.SetTolerations(km.Tolerations),
@@ -763,6 +770,24 @@ func (r *Reconciler) getTrustedCAsHash(ctx context.Context, dk *dynakube.DynaKub
 	hash, err := hasher.GenerateSecureHash(trustedCAs)
 	if err != nil {
 		return "", errors.Wrap(err, "can't hash trusted CAs")
+	}
+
+	return hash, nil
+}
+
+func (r *Reconciler) getProxyHash(ctx context.Context, dk *dynakube.DynaKube) (string, error) {
+	if !dk.HasProxy() {
+		return "", nil
+	}
+
+	proxyURL, err := dk.Proxy(ctx, r.kubeClient)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+
+	hash, err := hasher.GenerateSecureHash(proxyURL)
+	if err != nil {
+		return "", errors.Wrap(err, "can't hash proxy")
 	}
 
 	return hash, nil
