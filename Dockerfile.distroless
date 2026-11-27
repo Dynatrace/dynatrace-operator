@@ -1,0 +1,121 @@
+# Copyright Dynatrace LLC
+# SPDX-License-Identifier: Apache-2.0
+
+# PoC (ICP-11783): distroless operator image with a statically linked mount/umount from util-linux.
+# The rest of the Dockerfile is copied as-is.
+
+# check=skip=RedundantTargetPlatform
+# setup build image
+FROM --platform=$BUILDPLATFORM golang:1.27.4@sha256:fe517acaa580cc7915457080f850c37e618b3c1e750f98b58fc6429b605147a1 AS operator-build
+
+WORKDIR /app
+
+ARG DEBUG_TOOLS
+# renovate depName=github.com/go-delve/delve/cmd/dlv
+RUN if [ "$DEBUG_TOOLS" = "true" ]; then GOBIN=/app/build/_output/bin go install github.com/go-delve/delve/cmd/dlv@v1.27.2; fi
+
+# renovate depName=github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod
+RUN go install github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod@v1.12.0
+
+COPY go.mod go.sum ./
+RUN go mod download -x
+
+COPY pkg ./pkg
+COPY cmd ./cmd
+COPY .git ./.git
+
+ARG GO_LINKER_ARGS
+ARG GO_BUILD_TAGS
+ARG TARGETARCH
+ARG TARGETOS
+ARG GOFIPS140=off
+
+RUN --mount=type=cache,target="/root/.cache/go-build" \
+    --mount=type=cache,target="/go/pkg" \
+    CGO_ENABLED=0 GOFIPS140=$GOFIPS140 GOOS=$TARGETOS GOARCH=$TARGETARCH \
+    go build -tags "${GO_BUILD_TAGS}" -trimpath -ldflags="${GO_LINKER_ARGS}" \
+    -o ./build/_output/bin/dynatrace-operator ./cmd/
+
+RUN cyclonedx-gomod app -licenses -assert-licenses -json -main cmd/ -output ./build/_output/bin/dynatrace-operator-bin-sbom.cdx.json
+
+# util-linux: static mount/umount, cross-compiled on $BUILDPLATFORM for $TARGETARCH
+FROM --platform=$BUILDPLATFORM debian:13@sha256:3cda3ca472ce45507a5109c6a3907093e24d9ae67d55954c9a07a45665dafba2 AS util-linux-build
+
+# renovate: datasource=github-tags depName=util-linux/util-linux extractVersion=^v(?<version>.*)$
+ARG UTIL_LINUX_VERSION=2.42.4
+ARG UTIL_LINUX_SHA256=fbd62a100ab7bb8746ba0661255c3c48185b1e9021507c624da01fbc696330ec
+ARG TARGETARCH
+
+# crossbuild-essential-<arch> provides <triplet>-gcc for the target arch, also when it equals the build arch.
+# Debian calls ppc64le "ppc64el"; dpkg-architecture maps the Debian arch to the triplet for configure --host.
+RUN set -eux; \
+    DEB_ARCH="$(echo "$TARGETARCH" | sed 's/^ppc64le$/ppc64el/')"; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends build-essential "crossbuild-essential-$DEB_ARCH" ca-certificates curl file xz-utils; \
+    rm -rf /var/lib/apt/lists/*; \
+    dpkg-architecture -a "$DEB_ARCH" -q DEB_HOST_GNU_TYPE 2>/dev/null > /configure-host
+
+WORKDIR /src
+
+# util-linux release directory is always major.minor, while the releases are major.minor.patch. However, patch releases omit .0. `cut` handles both cases.
+RUN set -eux; \
+    URL="https://www.kernel.org/pub/linux/utils/util-linux/v$(echo "$UTIL_LINUX_VERSION" | cut -d. -f1,2)/util-linux-${UTIL_LINUX_VERSION}.tar.xz"; \
+    curl -fsSL -o util-linux.tar.xz "$URL"; \
+    echo "${UTIL_LINUX_SHA256}  util-linux.tar.xz" | sha256sum -c -; \
+    tar xf util-linux.tar.xz --strip-components=1; \
+    rm util-linux.tar.xz; \
+    mkdir -p /out/licenses; \
+    printf 'util-linux %s (static mount, umount)\nsource: %s\nsha256: %s\n' "$UTIL_LINUX_VERSION" "$URL" "$UTIL_LINUX_SHA256" > /out/licenses/SOURCE
+
+# LDFLAGS=-s strips binaries at link time, --disable-shared skips building the unused libmount.so/libblkid.so, --disable-nls avoids gettext support
+# --host: cross-compile to build programs to run on HOST
+RUN set -eux; \
+    LDFLAGS=-s ./configure --host="$(cat /configure-host)" \
+      --disable-all-programs \
+      --enable-libblkid --enable-libmount --enable-mount \
+      --enable-static-programs=mount,umount \
+      --disable-shared --disable-nls; \
+    make -j"$(nproc)" mount.static umount.static; \
+    cp mount.static /out/mount; \
+    cp umount.static /out/umount; \
+    cp COPYING /out/licenses/; \
+    cp -r Documentation/licenses /out/licenses/texts; \
+    file /out/mount /out/umount; \
+    if file /out/mount /out/umount | grep -v 'statically linked'; then echo "mount/umount are not statically linked" >&2; exit 1; fi
+
+# platform is required, otherwise the copy command will copy the wrong architecture files, don't trust GitHub Actions linting warnings
+FROM --platform=$TARGETPLATFORM gcr.io/distroless/static-debian13:nonroot@sha256:8ce6dd87e9823c5b48dcfb2c8604714ccb351ce59607327bcc4957448da279b5
+
+# operator binary + sbom
+COPY --from=operator-build /app/build/_output/bin /usr/local/bin
+
+# static mount/umount (used by k8s.io/mount-utils in the CSI driver)
+COPY --from=util-linux-build /out/mount /out/umount /usr/local/bin/
+
+COPY ./third_party_licenses /usr/share/dynatrace-operator/third_party_licenses
+COPY LICENSE /licenses/
+COPY --from=util-linux-build /out/licenses /licenses/util-linux
+
+LABEL name="Dynatrace Operator" \
+      vendor="Dynatrace LLC" \
+      maintainer="Dynatrace LLC" \
+      version="1.x" \
+      release="1" \
+      url="https://www.dynatrace.com" \
+      summary="The Dynatrace Operator is an open source Kubernetes Operator for easily deploying and managing Dynatrace components for Kubernetes / OpenShift observability. By leveraging the Dynatrace Operator you can innovate faster with the full potential of Kubernetes / OpenShift and Dynatrace’s best-in-class observability and intelligent automation." \
+      description="Automate Kubernetes observability with Dynatrace" \
+      io.k8s.description="Automate Kubernetes observability with Dynatrace" \
+      io.k8s.display-name="Dynatrace Operator" \
+      io.openshift.tags="observability,monitoring,dynatrace,operator,logging,metrics,tracing,prometheus,alerts" \
+      vcs-url="https://github.com/Dynatrace/dynatrace-operator.git" \
+      vcs-type="git" \
+      changelog-url="https://github.com/Dynatrace/dynatrace-operator/releases"
+
+ARG GODEBUG_ARG
+
+ENV OPERATOR=dynatrace-operator \
+    GODEBUG=${GODEBUG_ARG:+fips140=only}
+
+ENTRYPOINT ["/usr/local/bin/dynatrace-operator"]
+
+USER 1001:1001

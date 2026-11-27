@@ -2,6 +2,7 @@ REGISTRY ?= ghcr.io
 REPOSITORY ?= dynatrace
 IMAGE ?= $(REGISTRY)/$(REPOSITORY)/dynatrace-operator
 DEBUG ?= false
+DOCKERFILE ?= Dockerfile
 OPERATOR_BUILD_PLATFORM ?= linux/amd64
 OPERATOR_BUILD_ARCH ?= $(shell echo "${OPERATOR_BUILD_PLATFORM}" | sed "s/.*\///")
 
@@ -34,7 +35,7 @@ endif
 
 ## Builds an Operator image with a given IMAGE and TAG-OPERATOR_BUILD_ARCH
 images/build: ensure-tag-not-snapshot
-	$(BUILD_IMAGE_SH) "${IMAGE}" "${TAG}-${OPERATOR_BUILD_ARCH}" "${DEBUG}" "Dockerfile" "${OPERATOR_BUILD_PLATFORM}"
+	$(BUILD_IMAGE_SH) "${IMAGE}" "${TAG}-${OPERATOR_BUILD_ARCH}" "${DEBUG}" "${DOCKERFILE}" "${OPERATOR_BUILD_PLATFORM}"
 
 ## Pushes an ALREADY BUILT Operator image as an image-index with a given IMAGE and TAG, containing the image for the OPERATOR_BUILD_ARCH
 images/push: ensure-tag-not-snapshot
@@ -48,7 +49,7 @@ images/build/push: images/build images/push
 # because cross-compile takes ~1h, we want to build fips locally only for local architecture
 # so that's why the recommended way to run it (assuming local platfrom is arm64) is `OPERATOR_DEV_BUILD_PLATFORM="linux/arm64" make images/build/fips
 images/build/fips: ensure-tag-not-snapshot
-	$(BUILD_IMAGE_SH) "${IMAGE}" "${TAG}-fips-${OPERATOR_BUILD_ARCH}" "${DEBUG}" "Dockerfile" "${OPERATOR_BUILD_PLATFORM}" "${GOFIPS140}"
+	$(BUILD_IMAGE_SH) "${IMAGE}" "${TAG}-fips-${OPERATOR_BUILD_ARCH}" "${DEBUG}" "${DOCKERFILE}" "${OPERATOR_BUILD_PLATFORM}" "${GOFIPS140}"
 
 images/push/fips: ensure-tag-not-snapshot
 	$(PUSH_IMAGE_SH) "${IMAGE}" "${TAG}-fips-${OPERATOR_BUILD_ARCH}"
