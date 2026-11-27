@@ -22,7 +22,7 @@ app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- if not (.Values).manifests }}
 helm.sh/chart: {{ include "dynatrace-operator.chart" . }}
 {{- end -}}
-{{- if eq (include "dynatrace-operator.platform" .) "azure-marketplace" }}
+{{- if eq (include "dynatrace-operator.marketplace" .) "azure-marketplace" }}
 azure-extensions-usage-release-identifier: {{ .Release.Name | quote }}
 {{- end -}}
 {{- end -}}

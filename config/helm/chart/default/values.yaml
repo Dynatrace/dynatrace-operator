@@ -1,9 +1,6 @@
 # Copyright Dynatrace LLC
 # SPDX-License-Identifier: Apache-2.0
 
-# special handling for "openshift" and "gke-autopilot" (deprecated)
-platform: ""
-
 #image qualifier; OBSOLETE -> use imageref instead!
 # supply either image or imageref; if both supplied, imageref will be disregarded
 image: ""
@@ -275,7 +272,7 @@ csidriver:
 
 prometheus:
   # If true, install Prometheus Operator CRDs used by OTEL target allocators. WARNING: this will overwrite existing CRDs.
-  # Will not have an affect on Openshift clusters. WARNING: Manually setting `.Values.platform` may affect this.
+  # Will not have an affect on Openshift clusters.
   installCRDs: false
 
 rbac:

@@ -480,12 +480,12 @@ properties:
     enum:
       - true
 
-  platform:
+  installSource:
     type: string
-    title: Platform
+    title: Install source
     description: |
-      Platform to deploy on.
-      Must be set to "google-marketplace" for GKE clusters.
+      Marketplace the Operator is installed from.
+      Must be set to "google-marketplace".
     default: google-marketplace
     enum:
       - "google-marketplace"

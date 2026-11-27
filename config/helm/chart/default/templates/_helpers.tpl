@@ -33,20 +33,21 @@ imageRef.tag still applies there and replaces the platform default tag or digest
         {{- end -}}
     {{- else -}}
         {{- $platform := include "dynatrace-operator.platform" . -}}
+        {{- $marketplace := include "dynatrace-operator.marketplace" . -}}
         {{- $repo := "public.ecr.aws/dynatrace/dynatrace-operator" -}}
         {{- $defaultRef := printf ":v%s" .Chart.AppVersion -}}
         {{- if hasPrefix "0.0.0-nightly-" .Chart.AppVersion -}}
             {{- $repo = "ghcr.io/dynatrace/dynatrace-operator" -}}
             {{- $defaultRef = printf ":%s" (.Chart.AppVersion | replace "0.0.0-" "") -}}
-        {{- else if eq $platform "openshift" -}}
-            {{- $repo = "registry.connect.redhat.com/dynatrace/dynatrace-operator" -}}
-        {{- else if eq $platform "google-marketplace" -}}
+        {{- else if eq $marketplace "google-marketplace" -}}
             {{- $repo = "gcr.io/dynatrace-marketplace-prod/dynatrace-operator" -}}
             {{- $defaultRef = printf ":%s" .Chart.AppVersion -}}
-        {{- else if eq $platform "azure-marketplace" -}}
+        {{- else if eq $marketplace "azure-marketplace" -}}
             {{- $azure := .Values.global.azure.images.operator -}}
             {{- $repo = printf "%s/%s" $azure.registry $azure.image -}}
             {{- $defaultRef = printf "@%s" $azure.digest -}}
+        {{- else if eq $platform "openshift" -}}
+            {{- $repo = "registry.connect.redhat.com/dynatrace/dynatrace-operator" -}}
         {{- end -}}
         {{- printf "%s%s" $repo ($tag | default $defaultRef) -}}
     {{- end -}}

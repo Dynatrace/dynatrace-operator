@@ -1,4 +1,4 @@
-{{- if eq (include "dynatrace-operator.platform" .) "google-marketplace" }}
+{{- if eq (include "dynatrace-operator.marketplace" .) "google-marketplace" }}
 # Copyright Dynatrace LLC
 # SPDX-License-Identifier: Apache-2.0
 

@@ -5,7 +5,7 @@
 Auto-detect the platform (if not set), according to the available APIVersions
 */}}
 {{- define "dynatrace-operator.platform" -}}
-    {{- if .Values.platform}}
+    {{- if has .Values.platform (list "kubernetes" "openshift") }}
         {{- printf .Values.platform -}}
     {{- else if .Capabilities.APIVersions.Has "security.openshift.io/v1" }}
         {{- printf "openshift" -}}
@@ -48,15 +48,29 @@ Override with .Values.rbac.kubeletFineGrainedAuthz: true/false
 {{- end -}}
 
 {{/*
+Determine the marketplace the chart is distributed through.
+*/}}
+{{- define "dynatrace-operator.marketplace" -}}
+    {{- $marketplaces := list "google-marketplace" "azure-marketplace" "eks-marketplace" -}}
+    {{- if .Values.installSource }}
+        {{- if not (has .Values.installSource $marketplaces) }}
+            {{- fail (printf "installSource %q is not supported, this value is reserved for the Dynatrace marketplace packaging and must not be set manually" (toString .Values.installSource)) -}}
+        {{- end }}
+        {{- print .Values.installSource -}}
+    {{- end -}}
+{{- end }}
+
+{{/*
 Set install source how the Operator was installed
 */}}
 {{- define "dynatrace-operator.installSource" -}}
+    {{- $marketplace := include "dynatrace-operator.marketplace" . -}}
     {{- if .Values.olm }}
       {{- printf "operatorhub" -}}
     {{- else if .Values.manifests }}
       {{- printf "manifest" -}}
-    {{- else if (and (.Values.platform) (not (has .Values.platform (list "kubernetes" "openshift")))) }}
-        {{- printf .Values.platform -}}
+    {{- else if $marketplace }}
+        {{- print $marketplace -}}
     {{- else }}
         {{- printf "helm" -}}
     {{- end -}}

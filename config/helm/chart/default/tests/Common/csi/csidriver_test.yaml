@@ -54,3 +54,16 @@ tests:
           path: metadata.labels
           content:
             security.openshift.io/csi-ephemeral-volume-profile: "restricted"
+
+  - it: should detect openshift via capabilities if platform is set to an unknown value
+    capabilities:
+      apiVersions:
+        - security.openshift.io/v1
+    set:
+      platform: unknown-platform
+      csidriver.enabled: true
+    asserts:
+      - isSubset:
+          path: metadata.labels
+          content:
+            security.openshift.io/csi-ephemeral-volume-profile: "restricted"

@@ -27,13 +27,54 @@ tests:
       - equal:
           path: metadata.labels["dynatrace.com/install-source"]
           value: helm
-  - it: install-source for any platform
+  - it: install-source ignores unknown platform
     set:
-      platform: anymarketplace
+      platform: unknown-platform
     asserts:
       - equal:
           path: metadata.labels["dynatrace.com/install-source"]
-          value: anymarketplace
+          value: helm
+  - it: install-source for google-marketplace
+    set:
+      installSource: google-marketplace
+    asserts:
+      - equal:
+          path: metadata.labels["dynatrace.com/install-source"]
+          value: google-marketplace
+  - it: install-source for azure-marketplace
+    set:
+      installSource: azure-marketplace
+      global:
+        azure:
+          images:
+            operator:
+              registry: azure-registry.io
+              image: azure/operator
+              digest: sha256:aaaa
+    asserts:
+      - equal:
+          path: metadata.labels["dynatrace.com/install-source"]
+          value: azure-marketplace
+  - it: install-source for eks-marketplace
+    set:
+      installSource: eks-marketplace
+    asserts:
+      - equal:
+          path: metadata.labels["dynatrace.com/install-source"]
+          value: eks-marketplace
+  - it: install-source ignores a marketplace set via platform
+    set:
+      platform: azure-marketplace
+    asserts:
+      - equal:
+          path: metadata.labels["dynatrace.com/install-source"]
+          value: helm
+  - it: unknown installSource fails
+    set:
+      installSource: unknown-marketplace
+    asserts:
+      - failedTemplate:
+          errorPattern: installSource "unknown-marketplace" is not supported
 
   - it: install-source for kubernetes manifests
     set:
@@ -47,6 +88,14 @@ tests:
     set:
       platform: openshift
       manifests: true
+    asserts:
+      - equal:
+          path: metadata.labels["dynatrace.com/install-source"]
+          value: manifest
+  - it: install-source for manifests unaffected by installSource
+    set:
+      manifests: true
+      installSource: google-marketplace
     asserts:
       - equal:
           path: metadata.labels["dynatrace.com/install-source"]
@@ -65,7 +114,27 @@ tests:
       olm: true
       manifests: true
       platform: any
+      installSource: google-marketplace
     asserts:
       - equal:
           path: metadata.labels["dynatrace.com/install-source"]
           value: operatorhub
+
+  - it: azure usage label set for installSource azure-marketplace
+    set:
+      installSource: azure-marketplace
+      global:
+        azure:
+          images:
+            operator:
+              registry: azure-registry.io
+              image: azure/operator
+              digest: sha256:aaaa
+    asserts:
+      - equal:
+          path: metadata.labels["azure-extensions-usage-release-identifier"]
+          value: RELEASE-NAME
+  - it: azure usage label not set by default
+    asserts:
+      - notExists:
+          path: metadata.labels["azure-extensions-usage-release-identifier"]

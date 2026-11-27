@@ -19,9 +19,9 @@ tests:
       - hasDocuments:
           count: 0
 
-  - it: should exist if platform is set to google-marketplace
+  - it: should exist if installSource is set to google-marketplace
     set:
-      platform: google-marketplace
+      installSource: google-marketplace
     asserts:
       - hasDocuments:
           count: 1
