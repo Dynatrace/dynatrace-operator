@@ -219,7 +219,7 @@ func testToAreSpecsEqual(t *testing.T, src *EdgeConnectSpec, dst *edgeconnect.Ed
 
 	assert.Equal(t, src.HostPatterns, dst.HostPatterns, "HostPatterns")
 
-	assert.Equal(t, src.AutoUpdate, *dst.AutoUpdate, "AutoUpdate")
+	assert.Equal(t, src.AutoUpdate, *dst.AutoUpdate, "AutoUpdate") //nolint:staticcheck // SA1019: testing deprecated field
 }
 
 func testToAreStatusesEqual(t *testing.T, src *EdgeConnectStatus, dst *edgeconnect.EdgeConnectStatus) {

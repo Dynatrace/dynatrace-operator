@@ -6,7 +6,7 @@
 |:-|:-|:-|:-|
 |`annotations`|Adds additional annotations to the EdgeConnect pods|-|object|
 |`apiServer`|Location of the Dynatrace API to connect to, including your specific environment UUID|-|string|
-|`autoUpdate`|Enables automatic restarts of EdgeConnect pods in case a new version is available (the default value is: true)|-|boolean|
+|`autoUpdate`|Enables automatic restarts of EdgeConnect pods in case a new version is available (the default value is: true)<br/><br/>Deprecated: This field is deprecated and will be removed in a future release.|-|boolean|
 |`caCertsRef`|Adds custom root certificate from a configmap. Put the certificate under certs within your configmap.|-|string|
 |`customPullSecret`|Pull secret for your private registry|-|string|
 |`env`|Adds additional environment variables to the EdgeConnect pods|-|array|

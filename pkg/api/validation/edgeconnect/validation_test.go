@@ -35,6 +35,14 @@ func assertAllowed(t *testing.T, ec *edgeconnect.EdgeConnect, other ...client.Ob
 	assert.Empty(t, warn)
 }
 
+func assertAllowedWithWarnings(t *testing.T, warningAmount int, ec *edgeconnect.EdgeConnect, other ...client.Object) {
+	t.Helper()
+
+	warn, err := runValidators(t, ec, other...)
+	require.NoError(t, err)
+	assert.Len(t, warn, warningAmount)
+}
+
 func runValidators(t *testing.T, ec *edgeconnect.EdgeConnect, other ...client.Object) (admission.Warnings, error) {
 	t.Helper()
 

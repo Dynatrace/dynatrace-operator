@@ -134,7 +134,7 @@ func testGetCurrentSpec() edgeconnect.EdgeConnectSpec {
 		HostPatterns: []string{
 			"y",
 		},
-		AutoUpdate: new(true),
+		AutoUpdate: new(true), //nolint:staticcheck // SA1019: testing deprecated field
 	}
 }
 
@@ -218,7 +218,7 @@ func testFromAreSpecsEqual(t *testing.T, src *edgeconnect.EdgeConnectSpec, dst *
 
 	assert.Equal(t, src.HostPatterns, dst.HostPatterns, "HostPatterns")
 
-	assert.Equal(t, *src.AutoUpdate, dst.AutoUpdate, "AutoUpdate")
+	assert.Equal(t, *src.AutoUpdate, dst.AutoUpdate, "AutoUpdate") //nolint:staticcheck // SA1019: testing deprecated field
 }
 
 func testFromAreStatusesEqual(t *testing.T, src *edgeconnect.EdgeConnectStatus, dst *EdgeConnectStatus) {

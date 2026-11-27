@@ -67,7 +67,7 @@ func (src *EdgeConnect) toSpec(dst *edgeconnect.EdgeConnect) {
 	dst.Spec.Tolerations = src.Spec.Tolerations
 	dst.Spec.TopologySpreadConstraints = src.Spec.TopologySpreadConstraints
 	dst.Spec.HostPatterns = src.Spec.HostPatterns
-	dst.Spec.AutoUpdate = &src.Spec.AutoUpdate
+	dst.Spec.AutoUpdate = &src.Spec.AutoUpdate //nolint:staticcheck // SA1019: deprecated field still converted to avoid data loss
 }
 
 func (src *EdgeConnect) toStatus(dst *edgeconnect.EdgeConnect) {

@@ -81,6 +81,8 @@ type EdgeConnectSpec struct { //nolint:revive
 	HostPatterns []string `json:"hostPatterns,omitempty"`
 
 	// Enables automatic restarts of EdgeConnect pods in case a new version is available (the default value is: true)
+	//
+	// Deprecated: This field is deprecated and will be removed in a future release.
 	// +kubebuilder:default:=true
 	AutoUpdate bool `json:"autoUpdate"`
 }
