@@ -203,8 +203,8 @@ func (_c *Client_CreateLogMonitoringSetting_Call) RunAndReturn(run func(ctx cont
 }
 
 // CreateNetworkZoneObject provides a mock function for the type Client
-func (_mock *Client) CreateNetworkZoneObject(ctx context.Context, networkZoneID string, fallbackMode string) (string, error) {
-	ret := _mock.Called(ctx, networkZoneID, fallbackMode)
+func (_mock *Client) CreateNetworkZoneObject(ctx context.Context, zone settings.NetworkZoneObject) (string, error) {
+	ret := _mock.Called(ctx, zone)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CreateNetworkZoneObject")
@@ -212,16 +212,16 @@ func (_mock *Client) CreateNetworkZoneObject(ctx context.Context, networkZoneID 
 
 	var r0 string
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string) (string, error)); ok {
-		return returnFunc(ctx, networkZoneID, fallbackMode)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, settings.NetworkZoneObject) (string, error)); ok {
+		return returnFunc(ctx, zone)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string) string); ok {
-		r0 = returnFunc(ctx, networkZoneID, fallbackMode)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, settings.NetworkZoneObject) string); ok {
+		r0 = returnFunc(ctx, zone)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = returnFunc(ctx, networkZoneID, fallbackMode)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, settings.NetworkZoneObject) error); ok {
+		r1 = returnFunc(ctx, zone)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -235,30 +235,24 @@ type Client_CreateNetworkZoneObject_Call struct {
 
 // CreateNetworkZoneObject is a helper method to define mock.On call
 //   - ctx context.Context
-//   - networkZoneID string
-//   - fallbackMode string
-func (_e *Client_Expecter) CreateNetworkZoneObject(ctx any, networkZoneID any, fallbackMode any) *Client_CreateNetworkZoneObject_Call {
-	return &Client_CreateNetworkZoneObject_Call{Call: _e.mock.On("CreateNetworkZoneObject", ctx, networkZoneID, fallbackMode)}
+//   - zone settings.NetworkZoneObject
+func (_e *Client_Expecter) CreateNetworkZoneObject(ctx any, zone any) *Client_CreateNetworkZoneObject_Call {
+	return &Client_CreateNetworkZoneObject_Call{Call: _e.mock.On("CreateNetworkZoneObject", ctx, zone)}
 }
 
-func (_c *Client_CreateNetworkZoneObject_Call) Run(run func(ctx context.Context, networkZoneID string, fallbackMode string)) *Client_CreateNetworkZoneObject_Call {
+func (_c *Client_CreateNetworkZoneObject_Call) Run(run func(ctx context.Context, zone settings.NetworkZoneObject)) *Client_CreateNetworkZoneObject_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 string
+		var arg1 settings.NetworkZoneObject
 		if args[1] != nil {
-			arg1 = args[1].(string)
-		}
-		var arg2 string
-		if args[2] != nil {
-			arg2 = args[2].(string)
+			arg1 = args[1].(settings.NetworkZoneObject)
 		}
 		run(
 			arg0,
 			arg1,
-			arg2,
 		)
 	})
 	return _c
@@ -269,7 +263,7 @@ func (_c *Client_CreateNetworkZoneObject_Call) Return(s string, err error) *Clie
 	return _c
 }
 
-func (_c *Client_CreateNetworkZoneObject_Call) RunAndReturn(run func(ctx context.Context, networkZoneID string, fallbackMode string) (string, error)) *Client_CreateNetworkZoneObject_Call {
+func (_c *Client_CreateNetworkZoneObject_Call) RunAndReturn(run func(ctx context.Context, zone settings.NetworkZoneObject) (string, error)) *Client_CreateNetworkZoneObject_Call {
 	_c.Call.Return(run)
 	return _c
 }

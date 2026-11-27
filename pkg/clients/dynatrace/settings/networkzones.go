@@ -15,7 +15,7 @@ var _ core.Cacheable = &getNetworkZonesResponse{}
 
 const (
 	networkZonesSchemaID      = "builtin:networkzones.zones"
-	networkZonesSchemaVersion = ""
+	networkZonesSchemaVersion = "1.0.1"
 	networkZonesScope         = "environment"
 )
 
