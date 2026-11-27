@@ -58,7 +58,10 @@ func getEnvs(dk *dynakube.DynaKube, replicas int32) []corev1.EnvVar {
 		{Name: envOTLPhttpPort, Value: defaultOLTPhttpPort},
 		{Name: envK8sClusterName, Value: dk.Status.KubernetesClusterName},
 		{Name: envK8sClusterUID, Value: dk.Status.KubeSystemUUID},
-		{Name: envDTentityK8sCluster, Value: dk.Status.KubernetesClusterMEID},
+	}
+
+	if !dk.HasPlatformToken() {
+		envs = append(envs, corev1.EnvVar{Name: envDTentityK8sCluster, Value: dk.Status.KubernetesClusterMEID})
 	}
 
 	if dk.HasProxy() {

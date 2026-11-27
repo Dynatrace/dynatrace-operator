@@ -110,5 +110,8 @@ func (attrs *Pod) readPodAttributes(request mutator.BaseRequest) {
 
 	attrs.clusterInfo[K8sClusterUIDAttr] = request.DynaKube.Status.KubeSystemUUID
 	attrs.clusterInfo[K8sClusterNameAttr] = request.DynaKube.Status.KubernetesClusterName
-	attrs.clusterInfo[K8sDTClusterEntityAttr] = request.DynaKube.Status.KubernetesClusterMEID
+
+	if !request.DynaKube.HasPlatformToken() {
+		attrs.clusterInfo[K8sDTClusterEntityAttr] = request.DynaKube.Status.KubernetesClusterMEID
+	}
 }

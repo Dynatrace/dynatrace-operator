@@ -118,6 +118,21 @@ func TestInitContainerArguments(t *testing.T) {
 		assert.Equal(t, "dt.entity.kubernetes_cluster="+testKubernetesClusterMEID, attributes[3])
 	})
 
+	t.Run("dt.entity.kubernetes_cluster is not passed with platform token", func(t *testing.T) {
+		dk := &dynakube.DynaKube{Status: baseStatus}
+		dk.Status.APIToken.Platform = new(true)
+		dsBuilder := builder{dk: dk}
+
+		arguments := dsBuilder.initContainerArguments()
+
+		attributes := strings.Split(arguments[4], ",")
+		assert.Len(t, attributes, 3)
+		assert.Equal(t, "k8s.cluster.name="+testKubernetesClusterName, attributes[0])
+		assert.Equal(t, "k8s.cluster.uid="+testKubernetesClusterUID, attributes[1])
+		assert.Equal(t, "k8s.node.name=$(DT_K8S_NODE_NAME)", attributes[2])
+		assert.NotContains(t, arguments[4], "dt.entity.kubernetes_cluster")
+	})
+
 	t.Run("global resource attributes are sorted and appended", func(t *testing.T) {
 		dk := &dynakube.DynaKube{
 			Spec: dynakube.DynaKubeSpec{

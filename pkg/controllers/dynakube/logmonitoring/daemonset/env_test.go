@@ -35,6 +35,25 @@ func TestGetInitEnvs(t *testing.T) {
 		}
 	})
 
+	t.Run("get base init envs with platform token does not pass MEID", func(t *testing.T) {
+		dk := &dynakube.DynaKube{}
+		dk.Name = "dk-name-test"
+		dk.Status.KubeSystemUUID = "test-cluster-uuid"
+		dk.Status.KubernetesClusterMEID = "test-me-id"
+		dk.Status.KubernetesClusterName = "test-cluster-name"
+		dk.Status.APIToken.Platform = new(true)
+
+		envs := getInitEnvs(dk)
+
+		assert.Len(t, envs, expectedBaseInitEnvLen-1)
+
+		for _, env := range envs {
+			assert.NotEqual(t, entityEnv, env.Name)
+		}
+
+		assert.Contains(t, envs, corev1.EnvVar{Name: clusterNameEnv, Value: "test-cluster-name"})
+	})
+
 	t.Run("get base init envs without MEID but all scopes set", func(t *testing.T) {
 		dk := &dynakube.DynaKube{}
 		dk.Name = "dk-name-test"

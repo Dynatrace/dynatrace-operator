@@ -165,14 +165,7 @@ func (r *Reconciler) getData(dk *dynakube.DynaKube) (map[string]string, error) {
 		Processor(transformPodIP, buildTransformPodIP()).
 		K8sEnrichment(otelcfg.K8sEnrichmentOpts{
 			ResourceAttributes: dk.Spec.ResourceAttributes,
-			ResourceStatements: []string{
-				otelcfg.SetAttrFromEnv("k8s.cluster.uid", "K8S_CLUSTER_UID"),
-				otelcfg.SetAttrFromEnv("k8s.cluster.name", "K8S_CLUSTER_NAME"),
-				// TODO: decide if these should be removed
-				`set(attributes["dt.kubernetes.workload.name"], attributes["k8s.workload.name"])`,
-				`set(attributes["dt.kubernetes.workload.kind"], attributes["k8s.workload.kind"])`,
-				`set(attributes["dt.entity.kubernetes_cluster"], "${env:DT_ENTITY_KUBERNETES_CLUSTER}")`,
-			},
+			ResourceStatements: buildResourceStatements(dk),
 		}).
 		Processor(otelcfg.CumulativeToDeltaID, otelcfg.Empty, pipeline.SignalMetrics).
 		Processor(batchTraces, &batchProcessorConfig{
@@ -221,4 +214,21 @@ func buildTransformPodIP() map[string]any {
 			},
 		},
 	}
+}
+
+func buildResourceStatements(dk *dynakube.DynaKube) []string {
+	statements := []string{
+		otelcfg.SetAttrFromEnv("k8s.cluster.uid", "K8S_CLUSTER_UID"),
+		otelcfg.SetAttrFromEnv("k8s.cluster.name", "K8S_CLUSTER_NAME"),
+		// TODO: decide if these should be removed
+		`set(attributes["dt.kubernetes.workload.name"], attributes["k8s.workload.name"])`,
+		`set(attributes["dt.kubernetes.workload.kind"], attributes["k8s.workload.kind"])`,
+	}
+
+	// dt.entity.kubernetes_cluster is not supported when a platform token is used
+	if !dk.HasPlatformToken() {
+		statements = append(statements, `set(attributes["dt.entity.kubernetes_cluster"], "${env:DT_ENTITY_KUBERNETES_CLUSTER}")`)
+	}
+
+	return statements
 }

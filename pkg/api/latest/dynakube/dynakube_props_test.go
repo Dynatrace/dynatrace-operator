@@ -372,3 +372,25 @@ func TestIsTLSOff(t *testing.T) {
 		})
 	}
 }
+
+func TestHasPlatformToken(t *testing.T) {
+	t.Run("false when status is not set", func(t *testing.T) {
+		dk := &DynaKube{}
+
+		assert.False(t, dk.HasPlatformToken())
+	})
+
+	t.Run("false when status is false", func(t *testing.T) {
+		dk := &DynaKube{}
+		dk.Status.APIToken.Platform = new(false)
+
+		assert.False(t, dk.HasPlatformToken())
+	})
+
+	t.Run("true when status is true", func(t *testing.T) {
+		dk := &DynaKube{}
+		dk.Status.APIToken.Platform = new(true)
+
+		assert.True(t, dk.HasPlatformToken())
+	})
+}

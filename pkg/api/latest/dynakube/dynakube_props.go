@@ -35,6 +35,10 @@ func (dk *DynaKube) FF() *exp.FeatureFlags {
 	return exp.NewFlags(dk.Annotations, ptr.Deref(dk.Status.APIToken.Platform, false))
 }
 
+func (dk *DynaKube) HasPlatformToken() bool {
+	return ptr.Deref(dk.Status.APIToken.Platform, false)
+}
+
 func (dk *DynaKube) RemovedFields() *conversion.RemovedFields {
 	if dk.Annotations == nil {
 		// Set this value here instead of in the conversion package to prevent having to use a pointer to map.

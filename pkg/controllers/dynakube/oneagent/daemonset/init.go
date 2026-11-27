@@ -51,7 +51,7 @@ func (b *builder) initContainerArguments() []string {
 		"k8s.node.name=$(DT_K8S_NODE_NAME)",
 	}
 
-	if b.dk.Status.KubernetesClusterMEID != "" {
+	if b.dk.Status.KubernetesClusterMEID != "" && !b.dk.HasPlatformToken() {
 		attributes = append(attributes, "dt.entity.kubernetes_cluster="+b.dk.Status.KubernetesClusterMEID)
 	}
 
