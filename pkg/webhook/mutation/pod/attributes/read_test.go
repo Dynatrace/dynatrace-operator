@@ -999,3 +999,37 @@ func TestReadPodAttributes(t *testing.T) {
 		assert.Equal(t, "KUBERNETES_CLUSTER-ABC", attrs.clusterInfo[K8sDTClusterEntityAttr])
 	})
 }
+
+func TestReadPodAttributes_ClusterEntity(t *testing.T) {
+	makeRequest := func(platformToken bool) dtwebhook.BaseRequest {
+		dk := &dynakube.DynaKube{
+			Status: dynakube.DynaKubeStatus{
+				KubeSystemUUID:        "uid-123",
+				KubernetesClusterName: "my-cluster",
+				KubernetesClusterMEID: "KUBERNETES_CLUSTER-ABC",
+			},
+		}
+		dk.Status.APIToken.Platform = new(platformToken)
+
+		return dtwebhook.BaseRequest{
+			Pod:      &corev1.Pod{Name: "my-pod", Namespace: "my-ns"},
+			DynaKube: dk,
+		}
+	}
+
+	t.Run("dt.entity.kubernetes_cluster is set without platform token", func(t *testing.T) {
+		attrs := newPodAttrs()
+		attrs.readPodAttributes(makeRequest(false))
+
+		assert.Equal(t, "KUBERNETES_CLUSTER-ABC", attrs.clusterInfo[K8sDTClusterEntityAttr])
+	})
+
+	t.Run("dt.entity.kubernetes_cluster is not set with platform token", func(t *testing.T) {
+		attrs := newPodAttrs()
+		attrs.readPodAttributes(makeRequest(true))
+
+		assert.NotContains(t, attrs.clusterInfo, K8sDTClusterEntityAttr)
+		assert.Equal(t, "uid-123", attrs.clusterInfo[K8sClusterUIDAttr])
+		assert.Equal(t, "my-cluster", attrs.clusterInfo[K8sClusterNameAttr])
+	})
+}

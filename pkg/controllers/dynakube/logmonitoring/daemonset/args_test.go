@@ -131,6 +131,20 @@ func Test_getInitArgs(t *testing.T) {
 		},
 	}
 
+	t.Run("platform token does not pass dt.entity.kubernetes_cluster", func(t *testing.T) {
+		dk := &dynakube.DynaKube{}
+		dk.Name = "dk-name-test"
+		dk.Status.KubernetesClusterMEID = "test-me-id"
+		dk.Status.KubernetesClusterName = "test-cluster-name"
+		dk.Status.APIToken.Platform = new(true)
+
+		args := getInitArgs(dk)
+
+		assert.Len(t, args, expectedBaseInitArgsLen-1)
+		assert.Contains(t, args, "-p k8s.cluster.name=$(K8S_CLUSTER_NAME)")
+		assert.NotContains(t, args, "-p dt.entity.kubernetes_cluster=$(DT_ENTITY_KUBERNETES_CLUSTER)")
+	})
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			dk := &dynakube.DynaKube{}

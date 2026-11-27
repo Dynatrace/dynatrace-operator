@@ -98,3 +98,23 @@ func TestReconcile(t *testing.T) {
 		})
 	}
 }
+
+func TestBuildResourceStatements(t *testing.T) {
+	const entityStatement = `set(attributes["dt.entity.kubernetes_cluster"], "${env:DT_ENTITY_KUBERNETES_CLUSTER}")`
+
+	t.Run("dt.entity.kubernetes_cluster is set without platform token", func(t *testing.T) {
+		dk := getTestDynakube(&telemetryingest.Spec{})
+
+		assert.Contains(t, buildResourceStatements(dk), entityStatement)
+	})
+
+	t.Run("dt.entity.kubernetes_cluster is not set with platform token", func(t *testing.T) {
+		dk := getTestDynakube(&telemetryingest.Spec{})
+		dk.Status.APIToken.Platform = new(true)
+
+		statements := buildResourceStatements(dk)
+		assert.NotContains(t, statements, entityStatement)
+		assert.Contains(t, statements, otelcfg.SetAttrFromEnv("k8s.cluster.uid", "K8S_CLUSTER_UID"))
+		assert.Contains(t, statements, otelcfg.SetAttrFromEnv("k8s.cluster.name", "K8S_CLUSTER_NAME"))
+	})
+}

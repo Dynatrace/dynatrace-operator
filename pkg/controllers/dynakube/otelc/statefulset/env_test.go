@@ -71,6 +71,21 @@ func TestEnvironmentVariables(t *testing.T) {
 			},
 		}}, statefulSet.Spec.Template.Spec.Containers[0].Env[11])
 	})
+
+	t.Run("no DT_ENTITY_KUBERNETES_CLUSTER env with platform token", func(t *testing.T) {
+		dk := getTestDynakube()
+		dk.Spec.TelemetryIngest = &telemetryingest.Spec{}
+		dk.Status.APIToken.Platform = new(true)
+
+		statefulSet := getWorkload(t, dk)
+
+		envs := statefulSet.Spec.Template.Spec.Containers[0].Env
+		assert.Len(t, envs, 11)
+
+		for _, env := range envs {
+			assert.NotEqual(t, envDTentityK8sCluster, env.Name)
+		}
+	})
 }
 
 func TestProxyEnvsNoProxy(t *testing.T) {

@@ -27,7 +27,11 @@ func getInitArgs(dk *dynakube.DynaKube) []string {
 	}
 
 	if isMEConfigured(dk) {
-		baseArgs = append(baseArgs, fmt.Sprintf("-p k8s.cluster.name=$(%s)", clusterNameEnv), fmt.Sprintf("-p dt.entity.kubernetes_cluster=$(%s)", entityEnv))
+		baseArgs = append(baseArgs, fmt.Sprintf("-p k8s.cluster.name=$(%s)", clusterNameEnv))
+
+		if !dk.HasPlatformToken() {
+			baseArgs = append(baseArgs, fmt.Sprintf("-p dt.entity.kubernetes_cluster=$(%s)", entityEnv))
+		}
 	}
 
 	attrs := dk.GetResourceAttributes()

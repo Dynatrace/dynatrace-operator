@@ -277,8 +277,11 @@ func buildExpectedDefaults(ctx context.Context, t *testing.T, envConfig *envconf
 	expectedDefaults["k8s.namespace.name"] = app.Namespace()
 	expectedDefaults["k8s.cluster.uid"] = dk.Status.KubeSystemUUID
 	expectedDefaults["k8s.cluster.name"] = dk.Status.KubernetesClusterName
-	expectedDefaults["dt.entity.kubernetes_cluster"] = dk.Status.KubernetesClusterMEID
 	expectedDefaults["k8s.container.name"] = app.ContainerName()
+
+	if !dk.HasPlatformToken() {
+		expectedDefaults["dt.entity.kubernetes_cluster"] = dk.Status.KubernetesClusterMEID
+	}
 
 	return expectedDefaults
 }
@@ -287,11 +290,16 @@ func buildExpectedNodeDefaults(ctx context.Context, t *testing.T, envConfig *env
 	err := envConfig.Client().Resources().Get(ctx, dk.Name, dk.Namespace, dk)
 	require.NoError(t, err)
 
-	return map[string]string{
-		"k8s.cluster.uid":              dk.Status.KubeSystemUUID,
-		"k8s.cluster.name":             dk.Status.KubernetesClusterName,
-		"dt.entity.kubernetes_cluster": dk.Status.KubernetesClusterMEID,
+	expectedDefaults := map[string]string{
+		"k8s.cluster.uid":  dk.Status.KubeSystemUUID,
+		"k8s.cluster.name": dk.Status.KubernetesClusterName,
 	}
+
+	if !dk.HasPlatformToken() {
+		expectedDefaults["dt.entity.kubernetes_cluster"] = dk.Status.KubernetesClusterMEID
+	}
+
+	return expectedDefaults
 }
 
 func buildExpectedPodDefaultsOTLP() map[string]string {
