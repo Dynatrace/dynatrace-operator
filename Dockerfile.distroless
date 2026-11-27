@@ -65,7 +65,10 @@ RUN set -eux; \
     tar xf util-linux.tar.xz --strip-components=1; \
     rm util-linux.tar.xz; \
     mkdir -p /out/licenses; \
-    printf 'util-linux %s (static mount, umount)\nsource: %s\nsha256: %s\n' "$UTIL_LINUX_VERSION" "$URL" "$UTIL_LINUX_SHA256" > /out/licenses/SOURCE
+    printf 'util-linux %s (static mount, umount)\nsource: %s\nsha256: %s\n' "$UTIL_LINUX_VERSION" "$URL" "$UTIL_LINUX_SHA256" > /out/licenses/SOURCE; \
+    V="$UTIL_LINUX_VERSION"; \
+    printf '{"bomFormat":"CycloneDX","specVersion":"1.6","version":1,"metadata":{"component":{"type":"application","name":"util-linux (static mount, umount)","version":"%s"}},"components":[{"type":"application","bom-ref":"pkg:generic/util-linux@%s","name":"util-linux","version":"%s","purl":"pkg:generic/util-linux@%s","cpe":"cpe:2.3:a:kernel:util-linux:%s:*:*:*:*:*:*:*","licenses":[{"expression":"GPL-2.0-or-later AND LGPL-2.1-or-later"}],"externalReferences":[{"type":"distribution","url":"%s","hashes":[{"alg":"SHA-256","content":"%s"}]}]}]}\n' \
+      "$V" "$V" "$V" "$V" "$V" "$URL" "$UTIL_LINUX_SHA256" > /out/util-linux-sbom.cdx.json
 
 # LDFLAGS=-s strips binaries at link time, --disable-shared skips building the unused libmount.so/libblkid.so, --disable-nls avoids gettext support
 # --host: cross-compile to build programs to run on HOST
@@ -89,8 +92,9 @@ FROM --platform=$TARGETPLATFORM gcr.io/distroless/static-debian13:nonroot@sha256
 # operator binary + sbom
 COPY --from=operator-build /app/build/_output/bin /usr/local/bin
 
-# static mount/umount (used by k8s.io/mount-utils in the CSI driver)
-COPY --from=util-linux-build /out/mount /out/umount /usr/local/bin/
+# static mount/umount (used by k8s.io/mount-utils in the CSI driver), plus a CycloneDX SBOM for them:
+# they don't come from a package manager, so image scanners can't see them otherwise
+COPY --from=util-linux-build /out/mount /out/umount /out/util-linux-sbom.cdx.json /usr/local/bin/
 
 COPY ./third_party_licenses /usr/share/dynatrace-operator/third_party_licenses
 COPY LICENSE /licenses/
