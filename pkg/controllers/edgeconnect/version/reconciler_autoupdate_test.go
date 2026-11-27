@@ -269,7 +269,7 @@ func newAutoUpdateEdgeConnect(t *testing.T, autoUpdate bool) *edgeconnect.EdgeCo
 	t.Helper()
 
 	ec := createBasicEdgeConnect(t)
-	ec.Spec.AutoUpdate = &autoUpdate
+	ec.Spec.AutoUpdate = &autoUpdate //nolint:staticcheck // SA1019: testing deprecated field
 
 	return ec
 }

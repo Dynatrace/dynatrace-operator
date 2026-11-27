@@ -243,7 +243,7 @@ func Test_updater_RequiresReconcile(t *testing.T) {
 		updater := newUpdater(fake.NewClient(), failingImageClientProvider(t), failingRegistryClientProvider(t), ec)
 
 		ec.Status.Version.LastProbeTimestamp = new(metav1.Now())
-		ec.Spec.AutoUpdate = new(true)
+		ec.Spec.AutoUpdate = new(true) //nolint:staticcheck // SA1019: testing deprecated field
 		ec.Status.Version.ImageID = fakeImageURI
 		ec.Status.Version.Source = status.PublicRegistryVersionSource
 
@@ -255,7 +255,7 @@ func Test_updater_RequiresReconcile(t *testing.T) {
 		updater := newUpdater(fake.NewClient(), failingImageClientProvider(t), failingRegistryClientProvider(t), ec)
 
 		ec.Status.Version.LastProbeTimestamp = new(metav1.NewTime(currentTime.Add(-time.Hour)))
-		ec.Spec.AutoUpdate = new(true)
+		ec.Spec.AutoUpdate = new(true) //nolint:staticcheck // SA1019: testing deprecated field
 		ec.Status.Version.ImageID = fakeImageURI
 		ec.Status.Version.Source = status.PublicRegistryVersionSource
 
@@ -267,7 +267,7 @@ func Test_updater_RequiresReconcile(t *testing.T) {
 		updater := newUpdater(fake.NewClient(), failingImageClientProvider(t), failingRegistryClientProvider(t), ec)
 
 		ec.Status.Version.LastProbeTimestamp = new(metav1.NewTime(currentTime.Add(-time.Hour)))
-		ec.Spec.AutoUpdate = new(false)
+		ec.Spec.AutoUpdate = new(false) //nolint:staticcheck // SA1019: testing deprecated field
 		ec.Status.Version.ImageID = fakeImageURI
 		ec.Status.Version.Source = status.PublicRegistryVersionSource
 
@@ -279,7 +279,7 @@ func Test_updater_RequiresReconcile(t *testing.T) {
 		updater := newUpdater(fake.NewClient(), failingImageClientProvider(t), failingRegistryClientProvider(t), ec)
 
 		ec.Spec.ImageRef = types.ImageRef{Repository: "my.registry.io/custom/edgeconnect", Tag: "1.2.3"}
-		ec.Spec.AutoUpdate = new(true)
+		ec.Spec.AutoUpdate = new(true) //nolint:staticcheck // SA1019: testing deprecated field
 		ec.Status.Version.LastProbeTimestamp = new(metav1.NewTime(currentTime.Add(-time.Hour)))
 		ec.Status.Version.ImageID = ec.Image()
 		ec.Status.Version.Source = status.CustomImageVersionSource
@@ -306,7 +306,7 @@ func Test_updater_RequiresReconcile(t *testing.T) {
 		updater := newUpdater(fake.NewClient(), failingImageClientProvider(t), failingRegistryClientProvider(t), ec)
 
 		ec.Status.Version.LastProbeTimestamp = new(metav1.Now())
-		ec.Spec.AutoUpdate = new(false)
+		ec.Spec.AutoUpdate = new(false) //nolint:staticcheck // SA1019: testing deprecated field
 		ec.Status.Version.ImageID = "docker.io/dynatrace/custom:1.2.3"
 		ec.Status.Version.Source = status.CustomImageVersionSource
 
@@ -318,7 +318,7 @@ func Test_updater_RequiresReconcile(t *testing.T) {
 		updater := newUpdater(fake.NewClient(), failingImageClientProvider(t), failingRegistryClientProvider(t), ec)
 
 		ec.Status.Version.LastProbeTimestamp = new(metav1.Now())
-		ec.Spec.AutoUpdate = new(false)
+		ec.Spec.AutoUpdate = new(false) //nolint:staticcheck // SA1019: testing deprecated field
 		ec.Spec.PublicRegistryOverride = "my.registry.io"
 		ec.Status.Version.ImageID = fakeImageURI
 		ec.Status.Version.Source = status.PublicRegistryVersionSource
@@ -331,7 +331,7 @@ func Test_updater_RequiresReconcile(t *testing.T) {
 		updater := newUpdater(fake.NewClient(), failingImageClientProvider(t), failingRegistryClientProvider(t), ec)
 
 		ec.Status.Version.LastProbeTimestamp = new(metav1.Now())
-		ec.Spec.AutoUpdate = new(false)
+		ec.Spec.AutoUpdate = new(false) //nolint:staticcheck // SA1019: testing deprecated field
 		ec.Spec.PublicRegistryOverride = ""
 		ec.Status.Version.ImageID = "my.registry.io/dynatrace/edgeconnect:1.2.3"
 		ec.Status.Version.Source = status.PublicRegistryWithOverrideVersionSource
@@ -344,7 +344,7 @@ func Test_updater_RequiresReconcile(t *testing.T) {
 		updater := newUpdater(fake.NewClient(), failingImageClientProvider(t), failingRegistryClientProvider(t), ec)
 
 		ec.Status.Version.LastProbeTimestamp = new(metav1.Now())
-		ec.Spec.AutoUpdate = new(false)
+		ec.Spec.AutoUpdate = new(false) //nolint:staticcheck // SA1019: testing deprecated field
 		ec.Spec.PublicRegistryOverride = "other.registry.io"
 		ec.Status.Version.ImageID = "my.registry.io/dynatrace/edgeconnect:1.2.3"
 		ec.Status.Version.Source = status.PublicRegistryWithOverrideVersionSource
@@ -357,7 +357,7 @@ func Test_updater_RequiresReconcile(t *testing.T) {
 		updater := newUpdater(fake.NewClient(), failingImageClientProvider(t), failingRegistryClientProvider(t), ec)
 
 		ec.Status.Version.LastProbeTimestamp = new(metav1.Now())
-		ec.Spec.AutoUpdate = new(false)
+		ec.Spec.AutoUpdate = new(false) //nolint:staticcheck // SA1019: testing deprecated field
 		ec.Spec.PublicRegistryOverride = "my.registry.io"
 		ec.Status.Version.ImageID = "my.registry.io/dynatrace/edgeconnect:1.2.3"
 		ec.Status.Version.Source = status.PublicRegistryWithOverrideVersionSource
@@ -370,7 +370,7 @@ func Test_updater_RequiresReconcile(t *testing.T) {
 		updater := newUpdater(fake.NewClient(), failingImageClientProvider(t), failingRegistryClientProvider(t), ec)
 
 		ec.Status.Version.LastProbeTimestamp = nil
-		ec.Spec.AutoUpdate = new(true)
+		ec.Spec.AutoUpdate = new(true) //nolint:staticcheck // SA1019: testing deprecated field
 		ec.Status.Version.ImageID = fakeImageURI
 		ec.Status.Version.Source = status.PublicRegistryVersionSource
 
@@ -382,7 +382,7 @@ func Test_updater_RequiresReconcile(t *testing.T) {
 		updater := newUpdater(fake.NewClient(), failingImageClientProvider(t), failingRegistryClientProvider(t), ec)
 
 		ec.Status.Version.LastProbeTimestamp = nil
-		ec.Spec.AutoUpdate = new(false)
+		ec.Spec.AutoUpdate = new(false) //nolint:staticcheck // SA1019: testing deprecated field
 		ec.Status.Version.ImageID = fakeImageURI
 		ec.Status.Version.Source = status.PublicRegistryVersionSource
 
@@ -395,7 +395,7 @@ func Test_updater_RequiresReconcile(t *testing.T) {
 			updater := newUpdater(fake.NewClient(), failingImageClientProvider(t), failingRegistryClientProvider(t), ec)
 
 			ec.Status.Version.LastProbeTimestamp = new(metav1.Now())
-			ec.Spec.AutoUpdate = new(true)
+			ec.Spec.AutoUpdate = new(true) //nolint:staticcheck // SA1019: testing deprecated field
 			ec.Status.Version.ImageID = fakeImageURI
 			ec.Status.Version.Source = status.PublicRegistryVersionSource
 

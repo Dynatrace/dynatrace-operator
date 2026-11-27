@@ -65,8 +65,10 @@ spec:
                 type: string
               autoUpdate:
                 default: true
-                description: 'Enables automatic restarts of EdgeConnect pods in case
-                  a new version is available (the default value is: true)'
+                description: |-
+                  Enables automatic restarts of EdgeConnect pods in case a new version is available (the default value is: true)
+
+                  Deprecated: This field is deprecated and will be removed in a future release.
                 type: boolean
               caCertsRef:
                 description: Adds custom root certificate from a configmap. Put the
@@ -756,8 +758,10 @@ spec:
                   your specific environment UUID
                 type: string
               autoUpdate:
-                description: 'Enables automatic restarts of EdgeConnect pods in case
-                  a new version is available (the default value is: true)'
+                description: |-
+                  Enables automatic restarts of EdgeConnect pods in case a new version is available (the default value is: true)
+
+                  Deprecated: This field is deprecated and will be removed in a future release.
                 type: boolean
               caCertsRef:
                 description: Adds custom root certificate from a configmap. Put the

@@ -41,6 +41,10 @@ var validatorErrorFuncs = []validatorFunc{
 	publicRegistryOverrideWithCustomImage,
 }
 
+var validatorWarningFuncs = []validatorFunc{
+	deprecatedAutoUpdate,
+}
+
 func New(apiReader client.Reader, cfg *rest.Config) admission.Validator[runtime.Object] {
 	return &Validator{
 		apiReader: apiReader,
@@ -49,7 +53,7 @@ func New(apiReader client.Reader, cfg *rest.Config) admission.Validator[runtime.
 	}
 }
 
-func (v *Validator) ValidateCreate(ctx context.Context, obj runtime.Object) (_ admission.Warnings, err error) {
+func (v *Validator) ValidateCreate(ctx context.Context, obj runtime.Object) (warnings admission.Warnings, err error) {
 	ctx, _ = logd.NewFromContext(ctx, "validation")
 
 	ec, err := getEdgeConnect(obj)
@@ -58,6 +62,7 @@ func (v *Validator) ValidateCreate(ctx context.Context, obj runtime.Object) (_ a
 	}
 
 	validationErrors := v.runValidators(ctx, validatorErrorFuncs, ec)
+	warnings = v.runValidators(ctx, validatorWarningFuncs, ec)
 
 	if len(validationErrors) > 0 {
 		err = errors.New(validation.SumErrors(validationErrors, "EdgeConnect"))
@@ -75,6 +80,7 @@ func (v *Validator) ValidateUpdate(ctx context.Context, _, newObj runtime.Object
 	}
 
 	validationErrors := v.runValidators(ctx, validatorErrorFuncs, ec)
+	warnings = v.runValidators(ctx, validatorWarningFuncs, ec)
 
 	if len(validationErrors) > 0 {
 		err = errors.New(validation.SumErrors(validationErrors, "EdgeConnect"))

@@ -44,6 +44,8 @@ type EdgeConnectSpec struct { //nolint:revive
 	ServiceAccountName *string `json:"serviceAccountName,omitempty"`
 
 	// Enables automatic restarts of EdgeConnect pods in case a new version is available (the default value is: true)
+	//
+	// Deprecated: This field is deprecated and will be removed in a future release.
 	AutoUpdate *bool `json:"autoUpdate,omitempty"`
 
 	// Overrides the default public registry from which the EdgeConnect image is pulled.
