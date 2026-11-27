@@ -43,6 +43,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
@@ -846,6 +847,84 @@ func TestReconcileTrustedCAs(t *testing.T) {
 
 		err := statefulset.NewReconciler(fakeClient).Reconcile(t.Context(), dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t))
 		require.ErrorContains(t, err, "boom")
+	})
+}
+
+func TestReconcileProxy(t *testing.T) {
+	reconcileProxy := func(t *testing.T, fakeClient client.Client, dk *dynakube.DynaKube) *appsv1.StatefulSet {
+		t.Helper()
+
+		require.ErrorIs(t, statefulset.NewReconciler(fakeClient).Reconcile(t.Context(), dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t)), k8sstatefulset.ErrRolloutInProgress)
+
+		return requireTestStatefulSet(t, t.Context(), fakeClient, dk)
+	}
+
+	t.Run("no annotation when proxy is not set", func(t *testing.T) {
+		sts := reconcileAndGetSTS(t, newTestDynaKube(), imageclientmock.NewClient(t), versionclientmock.NewClient(t))
+
+		assert.NotContains(t, sts.Spec.Template.Annotations, statefulset.AnnotationProxyHash)
+	})
+
+	t.Run("proxy value change changes the hash", func(t *testing.T) {
+		dk := newTestDynaKube()
+		dk.Spec.Proxy = &types.ValueSource{Value: "http://proxy-a:3128"}
+		fakeClient := fake.NewClient(dk, newTestTenantSecret(dk), newTestAuthTokenSecret(dk))
+
+		initialHash := reconcileProxy(t, fakeClient, dk).Spec.Template.Annotations[statefulset.AnnotationProxyHash]
+		require.NotEmpty(t, initialHash)
+
+		dk.Spec.Proxy = &types.ValueSource{Value: "http://proxy-b:3128"}
+
+		changedHash := reconcileProxy(t, fakeClient, dk).Spec.Template.Annotations[statefulset.AnnotationProxyHash]
+		assert.NotEmpty(t, changedHash)
+		assert.NotEqual(t, initialHash, changedHash)
+	})
+
+	t.Run("proxy secret content change changes the hash", func(t *testing.T) {
+		dk := newTestDynaKube()
+		dk.Spec.Proxy = &types.ValueSource{ValueFrom: "proxy-secret"}
+		proxySecret := &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{Name: "proxy-secret", Namespace: dk.Namespace},
+			Data:       map[string][]byte{dynakube.ProxyKey: []byte("http://proxy-a:3128")},
+		}
+		fakeClient := fake.NewClient(dk, newTestTenantSecret(dk), newTestAuthTokenSecret(dk), proxySecret)
+
+		initialHash := reconcileProxy(t, fakeClient, dk).Spec.Template.Annotations[statefulset.AnnotationProxyHash]
+		require.NotEmpty(t, initialHash)
+
+		proxySecret.Data[dynakube.ProxyKey] = []byte("http://proxy-b:3128")
+		require.NoError(t, fakeClient.Update(t.Context(), proxySecret))
+
+		changedHash := reconcileProxy(t, fakeClient, dk).Spec.Template.Annotations[statefulset.AnnotationProxyHash]
+		assert.NotEmpty(t, changedHash)
+		assert.NotEqual(t, initialHash, changedHash)
+	})
+
+	t.Run("same proxy as value or as secret gives the same hash", func(t *testing.T) {
+		const proxyURL = "http://proxy:3128"
+
+		dk := newTestDynaKube()
+		dk.Spec.Proxy = &types.ValueSource{Value: proxyURL}
+		fakeClient := fake.NewClient(dk, newTestTenantSecret(dk), newTestAuthTokenSecret(dk), &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{Name: "proxy-secret", Namespace: dk.Namespace},
+			Data:       map[string][]byte{dynakube.ProxyKey: []byte(proxyURL)},
+		})
+
+		valueHash := reconcileProxy(t, fakeClient, dk).Spec.Template.Annotations[statefulset.AnnotationProxyHash]
+
+		dk.Spec.Proxy = &types.ValueSource{ValueFrom: "proxy-secret"}
+
+		secretHash := reconcileProxy(t, fakeClient, dk).Spec.Template.Annotations[statefulset.AnnotationProxyHash]
+		assert.Equal(t, valueHash, secretHash)
+	})
+
+	t.Run("returns error when the proxy secret is missing", func(t *testing.T) {
+		dk := newTestDynaKube()
+		dk.Spec.Proxy = &types.ValueSource{ValueFrom: "missing-proxy-secret"}
+		fakeClient := fake.NewClient(dk, newTestTenantSecret(dk), newTestAuthTokenSecret(dk))
+
+		err := statefulset.NewReconciler(fakeClient).Reconcile(t.Context(), dk, imageclientmock.NewClient(t), versionclientmock.NewClient(t))
+		require.ErrorContains(t, err, "missing-proxy-secret")
 	})
 }
 
