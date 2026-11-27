@@ -61,10 +61,12 @@ type Client interface {
 	GetKSPMSettings(ctx context.Context, monitoredEntity string) (KSPMSettingsResponse, error)
 	// CreateKSPMSetting returns the object ID of the created kspm settings.
 	CreateKSPMSetting(ctx context.Context, monitoredEntity string, datasetPipelineEnabled bool) (string, error)
-	// GetNetworkZoneObject returns NZ object related to the networkZoneID
+	// GetNetworkZoneObject returns the network zone with the given ID, or an empty object if it does not exist.
+	// Responses are cached, including "not found".
 	GetNetworkZoneObject(ctx context.Context, networkZoneID string) (NetworkZoneObject, error)
-	// CreateNetworkZoneObject returns the object ID of the created NZ object
-	CreateNetworkZoneObject(ctx context.Context, networkZoneID string, fallbackMode string) (string, error)
+	// CreateNetworkZoneObject returns the object ID of the created network zone.
+	// An existing zone with the same ID is replaced, so pass the object from GetNetworkZoneObject to keep its other fields.
+	CreateNetworkZoneObject(ctx context.Context, zone NetworkZoneObject) (string, error)
 }
 
 // K8sClusterME is representing the relevant info for a Kubernetes Cluster Monitored Entity

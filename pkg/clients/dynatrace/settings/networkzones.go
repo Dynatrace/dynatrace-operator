@@ -25,8 +25,10 @@ var (
 
 // NetworkZoneObject is the relevant info of a `builtin:networkzones.zones` settings object.
 type NetworkZoneObject struct {
-	ID           string `json:"id"`
-	FallbackMode string `json:"fallbackMode"`
+	ID               string   `json:"id"`
+	FallbackMode     string   `json:"fallbackMode"`
+	Description      string   `json:"description,omitempty"`
+	AlternativeZones []string `json:"alternativeZones"`
 }
 
 type getNetworkZonesResponse struct {
@@ -38,14 +40,12 @@ type networkZoneItem struct {
 	Value NetworkZoneObject `json:"value"`
 }
 
-// IsEmpty always returns false: all responses are cached, including an empty list.
-// An empty list is a valid response, it means the network zone does not exist yet.
+// IsEmpty always returns false: all responses are cached, including an empty list (zone does not exist).
 func (r *getNetworkZonesResponse) IsEmpty() bool {
 	return false
 }
 
-// GetNetworkZoneObject returns the network zone settings object with the given ID.
-// In case the network zone does not exist, we return an empty object, without an error.
+// GetNetworkZoneObject returns the network zone with the given ID, or an empty object if it does not exist.
 func (c *ClientImpl) GetNetworkZoneObject(ctx context.Context, networkZoneID string) (NetworkZoneObject, error) {
 	if networkZoneID == "" {
 		return NetworkZoneObject{}, errMissingNetworkZoneID
@@ -71,20 +71,22 @@ func (c *ClientImpl) GetNetworkZoneObject(ctx context.Context, networkZoneID str
 	return response.Items[0].Value, nil
 }
 
-// CreateNetworkZoneObject returns the object ID of the created network zone settings object.
-func (c *ClientImpl) CreateNetworkZoneObject(ctx context.Context, networkZoneID string, fallbackMode string) (string, error) {
-	if networkZoneID == "" {
+// CreateNetworkZoneObject returns the object ID of the created network zone.
+// An existing zone with the same ID is replaced, so pass the object from GetNetworkZoneObject to keep its other fields.
+func (c *ClientImpl) CreateNetworkZoneObject(ctx context.Context, zone NetworkZoneObject) (string, error) {
+	if zone.ID == "" {
 		return "", errMissingNetworkZoneID
+	}
+
+	if zone.AlternativeZones == nil {
+		zone.AlternativeZones = []string{}
 	}
 
 	body := newPostObjectsBody(
 		networkZonesSchemaID,
 		networkZonesSchemaVersion,
 		networkZonesScope,
-		NetworkZoneObject{
-			ID:           networkZoneID,
-			FallbackMode: fallbackMode,
-		},
+		zone,
 	)
 
 	var response []postObjectsResponse

@@ -4,6 +4,7 @@
 package settings
 
 import (
+	"encoding/json"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -37,7 +38,7 @@ func TestGetNetworkZoneObject(t *testing.T) {
 		request.EXPECT().Execute(new(getNetworkZonesResponse)).Run(injectResponse(getNetworkZonesResponse{
 			TotalCount: 1,
 			Items: []networkZoneItem{
-				{Value: NetworkZoneObject{ID: "zone-1", FallbackMode: "NONE"}},
+				{Value: NetworkZoneObject{ID: "zone-1", FallbackMode: "NONE", Description: "my zone", AlternativeZones: []string{"zone-2"}}},
 			},
 		})).Return(nil).Once()
 		apiClient.EXPECT().GET(ctx, ObjectsPath).Return(request).Once()
@@ -45,7 +46,7 @@ func TestGetNetworkZoneObject(t *testing.T) {
 		client := NewClient(apiClient)
 		zone, err := client.GetNetworkZoneObject(ctx, "zone-1")
 		require.NoError(t, err)
-		assert.Equal(t, NetworkZoneObject{ID: "zone-1", FallbackMode: "NONE"}, zone)
+		assert.Equal(t, NetworkZoneObject{ID: "zone-1", FallbackMode: "NONE", Description: "my zone", AlternativeZones: []string{"zone-2"}}, zone)
 	})
 
 	t.Run("error from API", func(t *testing.T) {
@@ -141,20 +142,24 @@ func TestCreateNetworkZoneObject(t *testing.T) {
 
 	params := map[string]string{validateOnlyQueryParam: "false"}
 
-	matchBody := mock.MatchedBy(func(arg any) bool {
-		body, ok := arg.([]postObjectsBody[NetworkZoneObject])
+	matchBody := func(expected NetworkZoneObject) any {
+		return mock.MatchedBy(func(arg any) bool {
+			body, ok := arg.([]postObjectsBody[NetworkZoneObject])
 
-		return ok && len(body) == 1 &&
-			body[0].SchemaID == networkZonesSchemaID &&
-			body[0].Scope == networkZonesScope &&
-			body[0].Value == NetworkZoneObject{ID: "zone-1", FallbackMode: "NONE"}
-	})
+			return ok && len(body) == 1 &&
+				body[0].SchemaID == networkZonesSchemaID &&
+				body[0].Scope == networkZonesScope &&
+				assert.ObjectsAreEqual(expected, body[0].Value)
+		})
+	}
 
-	t.Run("empty networkZoneID", func(t *testing.T) {
+	newZone := NetworkZoneObject{ID: "zone-1", FallbackMode: "NONE", AlternativeZones: []string{}}
+
+	t.Run("empty network zone ID", func(t *testing.T) {
 		apiClient := coremock.NewClient(t)
 
 		client := NewClient(apiClient)
-		objectID, err := client.CreateNetworkZoneObject(ctx, "", "NONE")
+		objectID, err := client.CreateNetworkZoneObject(ctx, NetworkZoneObject{FallbackMode: "NONE"})
 		require.ErrorIs(t, err, errMissingNetworkZoneID)
 		assert.Empty(t, objectID)
 	})
@@ -163,12 +168,28 @@ func TestCreateNetworkZoneObject(t *testing.T) {
 		apiClient := coremock.NewClient(t)
 		request := coremock.NewRequest(t)
 		request.EXPECT().WithQueryParams(params).Return(request).Once()
-		request.EXPECT().WithJSONBody(matchBody).Return(request).Once()
+		request.EXPECT().WithJSONBody(matchBody(newZone)).Return(request).Once()
 		request.EXPECT().Execute(new([]postObjectsResponse)).Run(injectResponse([]postObjectsResponse{{ObjectID: "obj-123"}})).Return(nil).Once()
 		apiClient.EXPECT().POST(ctx, ObjectsPath).Return(request).Once()
 
 		client := NewClient(apiClient)
-		objectID, err := client.CreateNetworkZoneObject(ctx, "zone-1", "NONE")
+		objectID, err := client.CreateNetworkZoneObject(ctx, NetworkZoneObject{ID: "zone-1", FallbackMode: "NONE"})
+		require.NoError(t, err)
+		assert.Equal(t, "obj-123", objectID)
+	})
+
+	t.Run("keeps the other fields of an existing zone", func(t *testing.T) {
+		existing := NetworkZoneObject{ID: "zone-1", FallbackMode: "NONE", Description: "my zone", AlternativeZones: []string{"zone-2", "zone-3"}}
+
+		apiClient := coremock.NewClient(t)
+		request := coremock.NewRequest(t)
+		request.EXPECT().WithQueryParams(params).Return(request).Once()
+		request.EXPECT().WithJSONBody(matchBody(existing)).Return(request).Once()
+		request.EXPECT().Execute(new([]postObjectsResponse)).Run(injectResponse([]postObjectsResponse{{ObjectID: "obj-123"}})).Return(nil).Once()
+		apiClient.EXPECT().POST(ctx, ObjectsPath).Return(request).Once()
+
+		client := NewClient(apiClient)
+		objectID, err := client.CreateNetworkZoneObject(ctx, existing)
 		require.NoError(t, err)
 		assert.Equal(t, "obj-123", objectID)
 	})
@@ -177,12 +198,12 @@ func TestCreateNetworkZoneObject(t *testing.T) {
 		apiClient := coremock.NewClient(t)
 		request := coremock.NewRequest(t)
 		request.EXPECT().WithQueryParams(params).Return(request).Once()
-		request.EXPECT().WithJSONBody(matchBody).Return(request).Once()
+		request.EXPECT().WithJSONBody(matchBody(newZone)).Return(request).Once()
 		request.EXPECT().Execute(new([]postObjectsResponse)).Return(errors.New("api error")).Once()
 		apiClient.EXPECT().POST(ctx, ObjectsPath).Return(request).Once()
 
 		client := NewClient(apiClient)
-		objectID, err := client.CreateNetworkZoneObject(ctx, "zone-1", "NONE")
+		objectID, err := client.CreateNetworkZoneObject(ctx, NetworkZoneObject{ID: "zone-1", FallbackMode: "NONE"})
 		require.Error(t, err)
 		assert.Empty(t, objectID)
 	})
@@ -191,13 +212,27 @@ func TestCreateNetworkZoneObject(t *testing.T) {
 		apiClient := coremock.NewClient(t)
 		request := coremock.NewRequest(t)
 		request.EXPECT().WithQueryParams(params).Return(request).Once()
-		request.EXPECT().WithJSONBody(matchBody).Return(request).Once()
+		request.EXPECT().WithJSONBody(matchBody(newZone)).Return(request).Once()
 		request.EXPECT().Execute(new([]postObjectsResponse)).Return(nil).Once()
 		apiClient.EXPECT().POST(ctx, ObjectsPath).Return(request).Once()
 
 		client := NewClient(apiClient)
-		objectID, err := client.CreateNetworkZoneObject(ctx, "zone-1", "NONE")
+		objectID, err := client.CreateNetworkZoneObject(ctx, NetworkZoneObject{ID: "zone-1", FallbackMode: "NONE"})
 		require.ErrorAs(t, err, new(notSingleEntryError))
 		assert.Empty(t, objectID)
+	})
+}
+
+func TestNetworkZoneObjectJSON(t *testing.T) {
+	t.Run("empty description is omitted, alternative zones are an empty list", func(t *testing.T) {
+		body, err := json.Marshal(NetworkZoneObject{ID: "zone-1", FallbackMode: "NONE", AlternativeZones: []string{}})
+		require.NoError(t, err)
+		assert.JSONEq(t, `{"id":"zone-1","fallbackMode":"NONE","alternativeZones":[]}`, string(body))
+	})
+
+	t.Run("all fields", func(t *testing.T) {
+		body, err := json.Marshal(NetworkZoneObject{ID: "zone-1", FallbackMode: "ANY_ACTIVE_GATE", Description: "my zone", AlternativeZones: []string{"zone-2"}})
+		require.NoError(t, err)
+		assert.JSONEq(t, `{"id":"zone-1","fallbackMode":"ANY_ACTIVE_GATE","description":"my zone","alternativeZones":["zone-2"]}`, string(body))
 	})
 }
