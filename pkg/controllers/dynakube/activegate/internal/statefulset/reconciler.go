@@ -120,7 +120,12 @@ func (r *Reconciler) calculateActiveGateConfigurationHash(ctx context.Context, d
 		return "", err
 	}
 
-	return hasher.GenerateSecureHash([]any{customPropertyData, authTokenData, deploymentPropertiesData, tlsData, trustedCAs})
+	proxyURL, err := r.getProxyValue(ctx, dk)
+	if err != nil {
+		return "", err
+	}
+
+	return hasher.GenerateSecureHash([]any{customPropertyData, authTokenData, deploymentPropertiesData, tlsData, trustedCAs, proxyURL})
 }
 
 func (r *Reconciler) getCustomPropertyValue(ctx context.Context, dk *dynakube.DynaKube, agCapability capability.Capability) (string, error) {
@@ -147,6 +152,14 @@ func (r *Reconciler) getAuthTokenValue(ctx context.Context, dk *dynakube.DynaKub
 	}
 
 	return authTokenData, nil
+}
+
+func (r *Reconciler) getProxyValue(ctx context.Context, dk *dynakube.DynaKube) (string, error) {
+	if !dk.NeedsActiveGateProxy() {
+		return "", nil
+	}
+
+	return dk.Proxy(ctx, r.apiReader)
 }
 
 func (r *Reconciler) getDataFromCustomProperty(ctx context.Context, dk *dynakube.DynaKube, customProperties *types.ValueSource) (string, error) {
