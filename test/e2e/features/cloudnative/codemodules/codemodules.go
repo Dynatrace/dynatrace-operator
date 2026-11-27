@@ -477,7 +477,7 @@ func measureDiskUsage(namespace string, storageMap map[string]int) features.Func
 			Name:      csi.DaemonSetName,
 			Namespace: namespace,
 		}).ForEachPod(func(pod *corev1.Pod) {
-			diskUsage := getDiskUsage(ctx, t, envConfig.Client().Resources(), pod, csi.ProvisionerContainerName, dataPath)
+			diskUsage := getDiskUsage(ctx, t, envConfig.Client().Resources(), pod, k8spod.ExecInDebugContainer, csi.ProvisionerContainerName, dataPath)
 			storageMap[pod.Name] = diskUsage
 		})
 		require.NoError(t, err)
@@ -493,7 +493,7 @@ func diskUsageDoesNotIncrease(namespace string, storageMap map[string]int) featu
 			Name:      csi.DaemonSetName,
 			Namespace: namespace,
 		}).ForEachPod(func(pod *corev1.Pod) {
-			diskUsage := getDiskUsage(ctx, t, envConfig.Client().Resources(), pod, csi.ProvisionerContainerName, dataPath)
+			diskUsage := getDiskUsage(ctx, t, envConfig.Client().Resources(), pod, k8spod.ExecInDebugContainer, csi.ProvisionerContainerName, dataPath)
 			assert.InDelta(t, storageMap[pod.Name], diskUsage, diskUsageKiBDelta)
 		})
 		require.NoError(t, err)
@@ -502,14 +502,17 @@ func diskUsageDoesNotIncrease(namespace string, storageMap map[string]int) featu
 	}
 }
 
-func getDiskUsage(ctx context.Context, t *testing.T, resource *resources.Resources, pod *corev1.Pod, containerName, path string) int { //nolint:revive
+// execFunc is either k8spod.Exec or k8spod.ExecInDebugContainer (for containers without a shell).
+type execFunc func(ctx context.Context, resource *resources.Resources, pod *corev1.Pod, container string, command ...string) (*k8spod.ExecutionResult, error)
+
+func getDiskUsage(ctx context.Context, t *testing.T, resource *resources.Resources, pod *corev1.Pod, exec execFunc, containerName, path string) int { //nolint:revive
 	diskUsageCommand := shell.Shell(
 		shell.Pipe(
 			shell.DiskUsageWithTotal(path),
 			shell.FilterLastLineOnly(),
 		),
 	)
-	result, err := k8spod.Exec(ctx, resource, pod, containerName, diskUsageCommand...)
+	result, err := exec(ctx, resource, pod, containerName, diskUsageCommand...)
 	require.NoError(t, err)
 
 	diskUsage, err := strconv.Atoi(strings.Split(result.StdOut.String(), "\t")[0])
@@ -537,7 +540,7 @@ func VolumesAreMountedCorrectly(sampleApp sample.App) features.Func {
 			require.NoError(t, err)
 			assert.NotEmpty(t, executionResult.StdOut.String())
 
-			diskUsage := getDiskUsage(ctx, t, envConfig.Client().Resources(), pod, sampleApp.ContainerName(), oacommon.DefaultInstallPath)
+			diskUsage := getDiskUsage(ctx, t, envConfig.Client().Resources(), pod, k8spod.Exec, sampleApp.ContainerName(), oacommon.DefaultInstallPath)
 			assert.Positive(t, diskUsage)
 		})
 

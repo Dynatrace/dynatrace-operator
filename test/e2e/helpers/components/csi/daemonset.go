@@ -7,12 +7,15 @@ package csi
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8sdaemonset"
 	"github.com/Dynatrace/dynatrace-operator/test/e2e/helpers/kubernetes/objects/k8spod"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
 	"sigs.k8s.io/e2e-framework/pkg/env"
@@ -47,6 +50,15 @@ func WaitForDaemonset(namespace string) env.Func {
 
 func cleanUpPodConsumer(ctx context.Context, resource *resources.Resources) k8sdaemonset.PodConsumer {
 	return func(p *corev1.Pod) {
-		_, _ = k8spod.Exec(ctx, resource, p, "server", "rm", "-rf", dtcsi.DataPath)
+		// Only remove the content: the data directory is a mount point and can't be removed itself.
+		// The globs are expanded by the shell of the debug container: the CSI image doesn't contain a shell.
+		dataPath := strings.TrimSuffix(dtcsi.DataPath, "/")
+		removeContent := fmt.Sprintf("rm -rf %[1]s/* %[1]s/.[!.]* %[1]s/..?*", dataPath)
+
+		_, err := k8spod.ExecInDebugContainer(ctx, resource, p, "server", "sh", "-c", removeContent)
+		if err != nil {
+			// a leftover data directory makes later assertions about the used disk space fail in a confusing way
+			klog.ErrorS(err, "failed to clean up the CSI data directory", "pod", p.Name, "namespace", p.Namespace)
+		}
 	}
 }
