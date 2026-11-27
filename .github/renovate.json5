@@ -47,7 +47,7 @@
     {
       customType: 'regex',
       managerFilePatterns: [
-        '/(^|/|\\.)Dockerfile$/',
+        '/(^|/|\\.)Dockerfile(\.distroless)?$/',
         '/(^|/|\\.)prerequisites.mk$/',
         '/(^|/|\\.)third-party-licenses.sh$/',
       ],
