@@ -237,6 +237,73 @@ func TestReconcile_GetResourceAttributesHash(t *testing.T) {
 	})
 }
 
+func TestReconcile_GetProxyHash(t *testing.T) {
+	ctx := t.Context()
+
+	t.Run("proxy change changes the hash", func(t *testing.T) {
+		r, _, dk := createDefaultReconciler(t)
+		agCapability := capability.NewMultiCapability(dk)
+
+		hashWithout, err := r.calculateActiveGateConfigurationHash(ctx, dk, agCapability)
+		require.NoError(t, err)
+
+		dk.Spec.Proxy = &types.ValueSource{Value: "http://proxy1:3128"}
+		hash1, err := r.calculateActiveGateConfigurationHash(ctx, dk, agCapability)
+		require.NoError(t, err)
+		assert.NotEqual(t, hashWithout, hash1)
+
+		dk.Spec.Proxy = &types.ValueSource{Value: "http://proxy2:3128"}
+		hash2, err := r.calculateActiveGateConfigurationHash(ctx, dk, agCapability)
+		require.NoError(t, err)
+		assert.NotEqual(t, hash1, hash2)
+	})
+
+	t.Run("proxy ignored by AG does not change the hash", func(t *testing.T) {
+		r, _, dk := createDefaultReconciler(t)
+		agCapability := capability.NewMultiCapability(dk)
+		dk.Annotations = map[string]string{exp.AGIgnoreProxyKey: "true"} //nolint:staticcheck
+
+		hashWithout, err := r.calculateActiveGateConfigurationHash(ctx, dk, agCapability)
+		require.NoError(t, err)
+
+		dk.Spec.Proxy = &types.ValueSource{Value: "http://proxy1:3128"}
+		hashWith, err := r.calculateActiveGateConfigurationHash(ctx, dk, agCapability)
+		require.NoError(t, err)
+
+		assert.Equal(t, hashWithout, hashWith)
+	})
+
+	t.Run("proxy secret content change changes the hash", func(t *testing.T) {
+		r, clt, dk := createDefaultReconciler(t)
+		agCapability := capability.NewMultiCapability(dk)
+
+		secret := &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{Name: "proxy-secret", Namespace: dk.Namespace},
+			Data:       map[string][]byte{dynakube.ProxyKey: []byte("http://proxy1:3128")},
+		}
+		require.NoError(t, clt.Create(ctx, secret))
+
+		dk.Spec.Proxy = &types.ValueSource{ValueFrom: secret.Name}
+		hash1, err := r.calculateActiveGateConfigurationHash(ctx, dk, agCapability)
+		require.NoError(t, err)
+
+		secret.Data[dynakube.ProxyKey] = []byte("http://proxy2:3128")
+		require.NoError(t, clt.Update(ctx, secret))
+
+		hash2, err := r.calculateActiveGateConfigurationHash(ctx, dk, agCapability)
+		require.NoError(t, err)
+		assert.NotEqual(t, hash1, hash2)
+	})
+
+	t.Run("missing proxy secret returns error", func(t *testing.T) {
+		r, _, dk := createDefaultReconciler(t)
+		dk.Spec.Proxy = &types.ValueSource{ValueFrom: "missing"}
+
+		_, err := r.calculateActiveGateConfigurationHash(ctx, dk, capability.NewMultiCapability(dk))
+		require.Error(t, err)
+	})
+}
+
 func TestReconcile_GetTLSSecretHash(t *testing.T) {
 	ctx := t.Context()
 
