@@ -80,6 +80,10 @@ func TestStandard_cloudnative_codemodules_migrate_to_node_image_pull(t *testing.
 	testEnv.Test(t, codemodules.MigrateToNodeImagePull(t))
 }
 
+func TestStandard_codemodules_with_custom_ca_ag_cert(t *testing.T) {
+	testEnv.Test(t, codemodules.WithCustomCAAndAGCert(t))
+}
+
 func TestStandard_cloudnative_image_volume_injection(t *testing.T) {
 	testEnv.Test(t, codemodules.ImageVolume(t))
 }

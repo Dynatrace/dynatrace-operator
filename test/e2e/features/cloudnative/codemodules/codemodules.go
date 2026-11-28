@@ -173,7 +173,7 @@ func WithProxy(t *testing.T, proxySpec *types.ValueSource) features.Feature {
 	builder.Assess("check proxy settings in ruxitagentproc.conf", proxy.CheckRuxitAgentProcFileHasProxySetting(*sampleApp, proxySpec))
 
 	cloudnative.AssessSampleContainer(builder, sampleApp, func() []byte { return nil }, nil)
-	cloudnative.AssessOneAgentContainer(builder, func() []byte { return nil }, nil)
+	cloudnative.AssessOneAgentContainer(builder, cloudNativeDynakube, func() []byte { return nil }, nil)
 	cloudnative.AssessActiveGateContainer(builder, cloudNativeDynakube, nil)
 
 	// Register sample, dynakubeComponents and operator uninstall
@@ -192,6 +192,25 @@ func getAgTLSSecret(secret *corev1.Secret) features.Func {
 
 		return ctx
 	}
+}
+
+// newAGTLSSecret builds the custom ActiveGate TLS secret from testdata.
+// It also returns the public certificate, which is expected to be propagated to the OneAgents.
+func newAGTLSSecret(t *testing.T, namespace string) (*corev1.Secret, []byte) {
+	// public certificate for OneAgents
+	agCrt, err := os.ReadFile(filepath.Join(project.TestDataDir(), agCertificate))
+	require.NoError(t, err)
+	// public certificate and private key for ActiveGate server
+	agP12, err := os.ReadFile(filepath.Join(project.TestDataDir(), agCertificateAndPrivateKey))
+	require.NoError(t, err)
+
+	agSecret := k8ssecret.New(agSecretName, namespace,
+		map[string][]byte{
+			opconsts.TLSServerCrtDataName:   agCrt,
+			agCertificateAndPrivateKeyField: agP12,
+		})
+
+	return agSecret, agCrt
 }
 
 func WithProxyAndAGCert(t *testing.T, proxySpec *types.ValueSource) features.Feature {
@@ -218,15 +237,7 @@ func WithProxyAndAGCert(t *testing.T, proxySpec *types.ValueSource) features.Fea
 	builder.Assess("create sample namespace", sampleApp.InstallNamespace())
 
 	// Add ActiveGate TLS secret
-	// public certificate for OneAgents
-	agCrt, _ := os.ReadFile(filepath.Join(project.TestDataDir(), agCertificate))
-	// public certificate and private key for ActiveGate server
-	agP12, _ := os.ReadFile(filepath.Join(project.TestDataDir(), agCertificateAndPrivateKey))
-	agSecret := k8ssecret.New(agSecretName, cloudNativeDynakube.Namespace,
-		map[string][]byte{
-			opconsts.TLSServerCrtDataName:   agCrt,
-			agCertificateAndPrivateKeyField: agP12,
-		})
+	agSecret, agCrt := newAGTLSSecret(t, cloudNativeDynakube.Namespace)
 	builder.Assess("create AG TLS secret", k8ssecret.Create(agSecret))
 
 	// Register proxy create and delete
@@ -247,7 +258,7 @@ func WithProxyAndAGCert(t *testing.T, proxySpec *types.ValueSource) features.Fea
 	builder.Assess("codemodules have been downloaded", provisioner.InstalledImage(cloudNativeDynakube, cloudNativeDynakube.OneAgent().GetCustomCodeModulesImage(), provisioner.ImageInstaller))
 
 	cloudnative.AssessSampleContainer(builder, sampleApp, func() []byte { return agCrt }, nil)
-	cloudnative.AssessOneAgentContainer(builder, func() []byte { return agCrt }, nil)
+	cloudnative.AssessOneAgentContainer(builder, cloudNativeDynakube, func() []byte { return agCrt }, nil)
 	cloudnative.AssessActiveGateContainer(builder, cloudNativeDynakube, nil)
 
 	// Register sample, dynakubeComponents and operator uninstall
@@ -306,7 +317,7 @@ func WithProxyAndAutomaticAGCert(t *testing.T, proxySpec *types.ValueSource) fea
 	builder.Assess("read AG TLS secret", getAgTLSSecret(&agTLSSecret))
 
 	cloudnative.AssessSampleContainer(builder, sampleApp, func() []byte { return agTLSSecret.Data[opconsts.TLSServerCrtDataName] }, nil)
-	cloudnative.AssessOneAgentContainer(builder, func() []byte { return agTLSSecret.Data[opconsts.TLSServerCrtDataName] }, nil)
+	cloudnative.AssessOneAgentContainer(builder, cloudNativeDynakube, func() []byte { return agTLSSecret.Data[opconsts.TLSServerCrtDataName] }, nil)
 	cloudnative.AssessActiveGateContainer(builder, cloudNativeDynakube, nil)
 
 	// Register sample, dynakubeComponents and operator uninstall
@@ -340,15 +351,7 @@ func WithProxyCAAndAGCert(t *testing.T, proxySpec *types.ValueSource) features.F
 	builder.Assess("create sample namespace", sampleApp.InstallNamespace())
 
 	// Add ActiveGate TLS secret
-	// public certificate for OneAgents
-	agCrt, _ := os.ReadFile(filepath.Join(project.TestDataDir(), agCertificate))
-	// public certificate and private key for ActiveGate server
-	agP12, _ := os.ReadFile(filepath.Join(project.TestDataDir(), agCertificateAndPrivateKey))
-	agSecret := k8ssecret.New(agSecretName, cloudNativeDynakube.Namespace,
-		map[string][]byte{
-			opconsts.TLSServerCrtDataName:   agCrt,
-			agCertificateAndPrivateKeyField: agP12,
-		})
+	agSecret, agCrt := newAGTLSSecret(t, cloudNativeDynakube.Namespace)
 	builder.Assess("create AG TLS secret", k8ssecret.Create(agSecret))
 
 	proxyCert, proxyPk, err := proxy.CreateProxyTLSCertAndKey()
@@ -378,7 +381,68 @@ func WithProxyCAAndAGCert(t *testing.T, proxySpec *types.ValueSource) features.F
 	builder.Assess("codemodules have been downloaded", provisioner.InstalledImage(cloudNativeDynakube, cloudNativeDynakube.OneAgent().GetCustomCodeModulesImage(), provisioner.ImageInstaller))
 
 	cloudnative.AssessSampleContainer(builder, sampleApp, func() []byte { return agCrt }, trustedCa)
-	cloudnative.AssessOneAgentContainer(builder, func() []byte { return agCrt }, trustedCa)
+	cloudnative.AssessOneAgentContainer(builder, cloudNativeDynakube, func() []byte { return agCrt }, trustedCa)
+	cloudnative.AssessActiveGateContainer(builder, cloudNativeDynakube, trustedCa)
+
+	// Register sample, dynakubeComponents and operator uninstall
+	builder.Teardown(sampleApp.Uninstall())
+
+	builder.WithTeardown("deleted trusted CAs config map", k8sconfigmap.Delete(caConfigMap))
+	builder.WithTeardown("custom tls secret exists", k8ssecret.Exists(agSecretName, cloudNativeDynakube.Namespace))
+
+	return builder.Feature()
+}
+
+// WithCustomCAAndAGCert is the OneAgent + ActiveGate part of WithProxyCAAndAGCert, without Istio and without a proxy:
+// it checks that the custom ActiveGate certificate and the trusted CAs are propagated to the sample app, OneAgent and ActiveGate containers.
+func WithCustomCAAndAGCert(t *testing.T) features.Feature {
+	builder := features.New("codemodules-with-custom-ca-ag-cert")
+	secretConfigs := tenant.GetMultiTenantSecret(t)
+	require.Len(t, secretConfigs, 2)
+
+	cloudNativeDynakube := dynakubeComponents.New(
+		dynakubeComponents.WithName("codemodules-custom-ca-ag-cert"),
+		dynakubeComponents.WithAPIURL(secretConfigs[0].APIURL),
+		dynakubeComponents.WithCloudNativeSpec(codeModulesCloudNativeSpec(t)),
+		dynakubeComponents.WithCustomCAs(configMapName),
+		dynakubeComponents.WithActiveGate(),
+		dynakubeComponents.WithActiveGateTLSSecret(agSecretName),
+	)
+
+	sampleNamespace := k8snamespace.New("codemodules-sample-custom-ca-ag-cert")
+	sampleApp := sample.NewApp(t, cloudNativeDynakube,
+		sample.AsDeployment(),
+		sample.WithNamespace(sampleNamespace),
+	)
+
+	builder.Assess("create sample namespace", sampleApp.InstallNamespace())
+
+	// Add ActiveGate TLS secret
+	agSecret, agCrt := newAGTLSSecret(t, cloudNativeDynakube.Namespace)
+	builder.Assess("create AG TLS secret", k8ssecret.Create(agSecret))
+
+	proxyCert, _, err := proxy.CreateProxyTLSCertAndKey()
+	require.NoError(t, err, "failed to create proxy TLS secret")
+
+	// Add customCA config map
+	trustedCa := proxyCert
+	caConfigMap := k8sconfigmap.New(configMapName, cloudNativeDynakube.Namespace,
+		map[string]string{dynakube.TrustedCAKey: string(trustedCa)})
+	builder.Assess("create trusted CAs config map", k8sconfigmap.Create(caConfigMap))
+
+	// Register dynakubeComponents install
+	dynakubeComponents.Install(builder, secretConfigs[0], cloudNativeDynakube)
+
+	// Register sample app install
+	builder.Assess("install sample app", sampleApp.Install())
+
+	// Register actual test
+	cloudnative.AssessSampleInitContainers(builder, sampleApp)
+
+	builder.Assess("codemodules have been downloaded", provisioner.InstalledImage(cloudNativeDynakube, cloudNativeDynakube.OneAgent().GetCustomCodeModulesImage(), provisioner.ImageInstaller))
+
+	cloudnative.AssessSampleContainer(builder, sampleApp, func() []byte { return agCrt }, trustedCa)
+	cloudnative.AssessOneAgentContainer(builder, cloudNativeDynakube, func() []byte { return agCrt }, trustedCa)
 	cloudnative.AssessActiveGateContainer(builder, cloudNativeDynakube, trustedCa)
 
 	// Register sample, dynakubeComponents and operator uninstall
@@ -446,7 +510,7 @@ func WithProxyCAAndAutomaticAGCert(t *testing.T, proxySpec *types.ValueSource) f
 	builder.Assess("read AG TLS secret", getAgTLSSecret(&agTLSSecret))
 
 	cloudnative.AssessSampleContainer(builder, sampleApp, func() []byte { return agTLSSecret.Data[opconsts.TLSServerCrtDataName] }, trustedCa)
-	cloudnative.AssessOneAgentContainer(builder, func() []byte { return agTLSSecret.Data[opconsts.TLSServerCrtDataName] }, trustedCa)
+	cloudnative.AssessOneAgentContainer(builder, cloudNativeDynakube, func() []byte { return agTLSSecret.Data[opconsts.TLSServerCrtDataName] }, trustedCa)
 	cloudnative.AssessActiveGateContainer(builder, cloudNativeDynakube, trustedCa)
 
 	// Register sample, dynakubeComponents and operator uninstall
@@ -580,13 +644,15 @@ func isVolumeAttached(t *testing.T, volumes []corev1.Volume, volumeName string) 
 }
 
 func checkOneAgentEnvVars(dk *dynakube.DynaKube) features.Func {
+	const containerName = "dynatrace-oneagent"
+
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resources := envConfig.Client().Resources()
 		err := k8sdaemonset.NewQuery(ctx, resources, client.ObjectKey{
 			Name:      dk.OneAgent().GetDaemonsetName(),
 			Namespace: dk.Namespace,
 		}).ForEachPod(func(pod *corev1.Pod) {
-			checkEnvVarsInContainer(t, pod, dk.OneAgent().GetDaemonsetName(), httpsProxy)
+			checkEnvVarsInContainer(t, pod, containerName, httpsProxy)
 		})
 
 		require.NoError(t, err)
@@ -596,8 +662,10 @@ func checkOneAgentEnvVars(dk *dynakube.DynaKube) features.Func {
 }
 
 func checkEnvVarsInContainer(t *testing.T, pod *corev1.Pod, containerName string, envVar string) {
+	matched := false
 	for _, container := range pod.Spec.Containers {
 		if container.Name == containerName {
+			matched = true
 			require.NotNil(t, container.Env)
 			require.True(t, k8senv.Contains(container.Env, envVar))
 			for _, env := range container.Env {
@@ -607,4 +675,6 @@ func checkEnvVarsInContainer(t *testing.T, pod *corev1.Pod, containerName string
 			}
 		}
 	}
+
+	require.Truef(t, matched, "no container found with name %s", containerName)
 }
